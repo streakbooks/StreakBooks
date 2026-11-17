@@ -80,9 +80,21 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Frontend** | Reports `AgedView` uses as-at path; basis copy updated |
 | **Tests** | `ap-asat.test.ts`, updated `payables-integrity.test.ts` |
 | **Acceptance** | Past as-of includes bills paid after that date; unapplied payments/credits as negatives; currencies separate; future dates rejected |
-| **Development status** | Implemented on branch `feature/ap-asat-historical-aged-payables` (`eba127b4`+) |
+| **Development status** | Implemented on branch `feature/ap-asat-historical-aged-payables` (`467b33e9`+); period-close as-at follow-up in same PR |
 | **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 |
-| **Release verification** | Open — unit 9/9, `check:modules` pass, full `tsc` exit 0 after TS4111 fix; authenticated staging not run |
+| **Release verification** | Open — unit/module/`tsc` green locally; GitHub Actions fail with 0 jobs (commented `quality.yml`; restore via #227); staging not run |
+
+## Detailed finding — Period close as-at (B1.1)
+
+| Field | Value |
+|-------|-------|
+| **Gap ID** | GAP-CLOSE-ASAT-001 |
+| **Module** | Accounting / Live close |
+| **Missing/incomplete** | Period close called legacy aged AR/AP; after B1, AP rejected non-today `asOf`, so period-end lock checks broke |
+| **Priority** | P0 |
+| **Development status** | Implemented on #229 branch (`period-close-subledger` + PeriodClosePanel) |
+| **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 |
+| **Originality** | Adapter reuses LinkBooks as-at contracts; no competitor UI/code |
 
 ## Acceptance questions (programme-wide)
 

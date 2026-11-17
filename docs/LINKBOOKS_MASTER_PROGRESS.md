@@ -37,8 +37,9 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 | Batch | Status | Evidence |
 |-------|--------|----------|
 | B0 — Tracker + IP register + full-coverage gap skeleton | **Done on branch** | This file; IP register; gap register |
-| B1 — Historical Aged Payables (dated AP allocations) | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 @ `eba127b4` — unit 9/9; `check:modules` pass; full `tsc --noEmit` exit 0 after TS4111 bracket-access fix in `ap-reports.functions.ts`; staging verify open |
-| B2+ — Next financial-correctness / fail-closed module gaps | Pending | Priority: PO matching, inventory valuation, timesheets, bank feeds (provider), Coding Memory (#225) |
+| B1 — Historical Aged Payables (dated AP allocations) | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 @ `467b33e9`+ — unit tests + full `tsc` exit 0; period-close as-at wiring in progress on same PR |
+| B1.1 — Period close uses dated AR/AP as-at | **In progress on #229** | Fixes regression: legacy `getAgedPayables` rejected period-end dates after B1 |
+| B2+ — Next financial-correctness gaps | Pending after B1.1 push | Priority: PO receive/match (schema depth), inventory COGS; avoid Coding Memory (#225) |
 
 ### B1 typecheck remediation (2026-11-17)
 
@@ -54,10 +55,10 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 2. PR #227 conflicts with main after #228; release-gate repair needs rebase/decision.
 3. External providers (bank feeds, email delivery, payroll filing) remain fail-closed / unavailable until configured and verified.
 4. Pre-archive deleted AP allocations cannot be reconstructed (documented limitation).
-5. PR #229 CI status empty/pending at last check — do not merge without green checks + review.
+5. PR #229 CI: Actions runs conclude **failure** with **0 jobs** because `.github/workflows/quality.yml` is entirely commented out on `main`. Restoring gates is owned by conflicting PR #227 — do not duplicate that restore on #229. Do not merge without green checks + review once gates exist.
 
 ## Next executable step
 
-1. Await/green CI on #229; authenticated Aged Payables as-at smoke on staging when authorized.
-2. Recheck #225 vs main typecheck readiness; do not duplicate Coding Memory.
-3. Continue gap register depth for Banking reconciliation and Inventory/COGS.
+1. Push B1.1 period-close as-at fix to #229; keep #229 unmerged until reviews + real CI exist.
+2. Start B2 on a new branch from `main` (PO receive/match or next P0), avoiding #225 Coding Memory.
+3. Authenticated Aged Payables / period-close smoke when staging access is authorized.

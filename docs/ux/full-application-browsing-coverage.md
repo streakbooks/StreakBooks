@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Payments persistent native navigation (2026-11-17)
+
+- `src/screens/payroll/payments.tsx`: retain PageHeader and PayrollSubnav in company loading, missing-company, payroll.view denial, payments loading and payments-query error states, allowing native navigation out of blocked views. Source commit `6bcddb2452f1852343067ba672e5b8d62797bb09`. **SOURCE REVIEW ONLY; NOT RUN.** No payment posting, reversal, permission or accounting logic changed.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll partial evidence updated in commit `fe6c87c50f865cd154a904a3e4299c81aa3a05da`. No criterion, module or workflow marked fully verified.
+- **NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser Back/Forward/new-tab/refresh, accessibility, RLS/accounting regression. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. Fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No main, manual CI, production DB or deployment changes.
+
 ### Payroll Runs payment, status and net-pay native links (2026-11-17)
 
 - `src/screens/payroll/runs.tsx`: Payment, Status and Net pay cells now link natively to the payroll run detail, retaining status, normalized search draft and sort return context. Keyboard focus and new-tab semantics are supported by native links. Source commit `71c3752c02ecf46cac2df35f3d1d3f819cb149db`. **SOURCE REVIEW ONLY, NOT RUN.**

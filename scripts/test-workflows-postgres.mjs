@@ -164,7 +164,7 @@ try {
     );
   await Promise.all([1, 2, 3, 4].map(contactRace));
   sql(
-    `DO $ DECLARE nums text[]; BEGIN
+    `DO $$ DECLARE nums text[]; BEGIN
       SELECT array_agg(account_number ORDER BY account_number) INTO nums
       FROM public.contacts WHERE name LIKE 'Numbering Concurrent %';
       IF nums IS DISTINCT FROM ARRAY['C1005','C1006','C1007','C1008']::text[]
@@ -172,7 +172,7 @@ try {
             WHERE company_id='10000000-0000-4000-8000-000000000001') <> 1009 THEN
         RAISE EXCEPTION 'Parallel contact creation duplicated or skipped numbers';
       END IF;
-    END $;`,
+    END $$;`,
   );
   console.log("Four concurrent contact creates received C1005–C1008, no duplicates or gaps.");
   console.log(

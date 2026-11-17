@@ -86,7 +86,7 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
     queryKey: ["tax-rates", companyId],
     queryFn: () => fetchRates({ data: { companyId } }),
   });
-  const rows = (q.data ?? []) as TaxRateRow[];
+  const rows = useMemo(() => (q.data ?? []) as TaxRateRow[], [q.data]);
   const visibleRows = useMemo(
     () =>
       rows.filter((rate) => {

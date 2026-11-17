@@ -73,7 +73,7 @@ export function FirmOnboardingWorkloadPanel({
     ? selectedStaff
     : viewerId;
   const selected = staff.find((member) => member.user_id === selectedId);
-  const rows = overviewQ.data ?? [];
+  const rows = useMemo(() => overviewQ.data ?? [], [overviewQ.data]);
   const report = useMemo(() => onboardingCompletionReport(rows, today), [rows, today]);
   const taskQueue = useMemo(
     () => onboardingTaskQueue(rows, selectedId, today),

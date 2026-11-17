@@ -124,8 +124,8 @@ export function HrReportsPage() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  const columns = reportQ.data?.columns ?? [];
-  const rows = reportQ.data?.rows ?? [];
+  const columns = useMemo(() => reportQ.data?.columns ?? [], [reportQ.data?.columns]);
+  const rows = useMemo(() => reportQ.data?.rows ?? [], [reportQ.data?.rows]);
   const reportCsv = useMemo(() => {
     if (!company || columns.length === 0) return null;
     return toCsv(

@@ -168,11 +168,17 @@ function CategoryBudgetEditor({
   const { company } = useActiveCompany();
   const client = useQueryClient();
   const saveFn = useServerFn(saveBudgetDimensionAllocations);
-  const options = data.options.filter((o) => o.category_id === category.id);
+  const options = useMemo(
+    () => data.options.filter((o) => o.category_id === category.id),
+    [data.options, category.id],
+  );
   const optionById = new Map(options.map((o) => [o.id, o]));
   const accountById = new Map(data.accounts.map((a) => [a.id, a]));
   const baseAccounts = new Set(data.base.filter((l) => l.amountMinor > 0).map((l) => l.accountId));
-  const monthIndex = new Map(data.months.map((month, index) => [month, index]));
+  const monthIndex = useMemo(
+    () => new Map(data.months.map((month, index) => [month, index])),
+    [data.months],
+  );
   const existing = useMemo(() => {
     const pairs = new Map<string, PairRow>();
     for (const line of data.lines) {
@@ -188,7 +194,7 @@ function CategoryBudgetEditor({
       pairs.set(key, row);
     }
     return [...pairs.values()];
-  }, [data, category.id]);
+  }, [data.lines, data.currency, options, monthIndex]);
 
   const [rows, setRows] = useState<PairRow[]>(existing);
   const [dirty, setDirty] = useState(false);

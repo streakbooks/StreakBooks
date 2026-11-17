@@ -91,7 +91,7 @@ export function TaxCodesPanel({
     queryKey: ["tax-rates", companyId],
     queryFn: () => fetchRates({ data: { companyId } }),
   });
-  const rows = (codesQ.data ?? []) as unknown as CodeRow[];
+  const rows = useMemo(() => (codesQ.data ?? []) as unknown as CodeRow[], [codesQ.data]);
   const rates = (ratesQ.data ?? []) as Array<{ id: string; name: string; is_active: boolean }>;
   const pickable = useMemo(() => filterTaxAccountPicker(accounts, "code_account"), [accounts]);
   const visibleRows = useMemo(

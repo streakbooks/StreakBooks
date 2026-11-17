@@ -32,8 +32,9 @@ export function FirmOnboardingDashboard({
       ),
     [clients],
   );
+  type StepRow = NonNullable<typeof query.data>[number];
   const groups = useMemo(() => {
-    const scoped = new Map<string, NonNullable<typeof query.data>>();
+    const scoped = new Map<string, StepRow[]>();
     for (const step of query.data ?? []) {
       if (!clientNames.has(step.company_id)) continue;
       const rows = scoped.get(step.company_id) ?? [];

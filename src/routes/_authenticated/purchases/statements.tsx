@@ -79,7 +79,7 @@ function Statements() {
   return (
     <ListWorkspace
       title="Supplier statements"
-      description="Chronological bills, payments and credits. Print/PDF only — email delivery is not configured."
+      description="Opening balance before From, then bills, payments and credits by currency. Print/PDF only — email delivery is not configured."
       actions={
         <Button variant="outline" size="sm" onClick={() => window.print()}>
           <Printer className="mr-1 size-4" /> Print / PDF
@@ -203,6 +203,21 @@ function Statements() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {from ? (
+                <TableRow>
+                  <TableCell>{from}</TableCell>
+                  <TableCell>Opening</TableCell>
+                  <TableCell>Balance brought forward</TableCell>
+                  <TableCell className="text-right">—</TableCell>
+                  <TableCell className="text-right">—</TableCell>
+                  <TableCell className="text-right">
+                    {fromMinorUnits(
+                      (stmtQ.data as { openingBalanceMinor?: number }).openingBalanceMinor ?? 0,
+                      currency,
+                    )}
+                  </TableCell>
+                </TableRow>
+              ) : null}
               {(
                 (
                   stmtQ.data as {
@@ -211,6 +226,7 @@ function Statements() {
                       type: string;
                       id: string;
                       reference: string | null;
+                      description?: string;
                       debit_minor: number;
                       credit_minor: number;
                       balance_minor: number;
@@ -218,7 +234,7 @@ function Statements() {
                   }
                 ).lines ?? []
               ).map((l) => (
-                <TableRow key={`${l.type}-${l.id}`}>
+                <TableRow key={`${l.type}-${l.id}-${l.date}`}>
                   <TableCell>{l.date}</TableCell>
                   <TableCell className="capitalize">{l.type.replace("_", " ")}</TableCell>
                   <TableCell>
@@ -247,7 +263,7 @@ function Statements() {
                         {l.reference ?? l.id.slice(0, 8)}
                       </Link>
                     ) : (
-                      (l.reference ?? l.id.slice(0, 8))
+                      (l.description ?? l.reference ?? l.id.slice(0, 8))
                     )}
                   </TableCell>
                   <TableCell className="text-right">

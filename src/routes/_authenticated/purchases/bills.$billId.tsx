@@ -15,6 +15,7 @@ import {
   downloadBillAttachment,
   getBill,
   getBillNeighbors,
+  getBillPurchaseOrderMatch,
   listBillActivity,
   listBillNotes,
   listSuppliers,
@@ -85,6 +86,7 @@ import {
 } from "@/components/ui/select";
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ReasonDialog } from "@/components/sales/ReasonDialog";
 
 type BillSearch = { fromTab?: string; files?: boolean };
 
@@ -115,6 +117,7 @@ type BillPayload = {
   due_date_manual_override?: boolean | null;
   tax_calculation?: string | null;
   duplicate_override?: boolean | null;
+  purchase_order_id?: string | null;
   supplier_address_line1?: string | null;
   supplier_address_line2?: string | null;
   supplier_address_city?: string | null;
@@ -129,6 +132,8 @@ type BillPayload = {
   balance_due_minor: number;
   document_total_minor: number;
   posted_journal_id: string | null;
+  void_date?: string | null;
+  void_reason?: string | null;
   contact_id: string;
   approval_comment: string | null;
   rejection_reason: string | null;
@@ -194,6 +199,7 @@ function BillDocumentWorkspace() {
   const { can } = useCan();
   const saveDraft = useServerFn(saveBillDraft);
   const doAuthorise = useServerFn(authoriseBill);
+  const fetchPoMatch = useServerFn(getBillPurchaseOrderMatch);
   const doVoid = useServerFn(voidBill);
   const doSubmit = useServerFn(submitBillForApproval);
   const doReject = useServerFn(rejectBillApproval);
@@ -209,6 +215,7 @@ function BillDocumentWorkspace() {
   const [approvalComment, setApprovalComment] = useState("");
   const [filesOpen, setFilesOpen] = useState(Boolean(search.files));
   const [formError, setFormError] = useState<string | null>(null);
+  const [voidOpen, setVoidOpen] = useState(false);
 
   const [contactId, setContactId] = useState("");
   const [billDate, setBillDate] = useState("");
@@ -251,6 +258,12 @@ function BillDocumentWorkspace() {
     queryKey: ["bill-neighbors", companyId, billId],
     enabled: Boolean(companyId),
     queryFn: () => fetchNeighbors({ data: { companyId: companyId!, billId } }),
+  });
+
+  const poMatchQ = useQuery({
+    queryKey: ["bill-po-match", companyId, billId],
+    enabled: Boolean(companyId),
+    queryFn: () => fetchPoMatch({ data: { companyId: companyId!, billId } }),
   });
 
   const notesQ = useQuery({
@@ -359,6 +372,7 @@ function BillDocumentWorkspace() {
     await queryClient.invalidateQueries({ queryKey: ["bills-workspace-summary", companyId] });
     await queryClient.invalidateQueries({ queryKey: ["bill-notes", companyId, billId] });
     await queryClient.invalidateQueries({ queryKey: ["bill-activity", companyId, billId] });
+    await queryClient.invalidateQueries({ queryKey: ["bill-po-match", companyId, billId] });
   };
 
   const editorState: BillEditorState = {
@@ -429,10 +443,19 @@ function BillDocumentWorkspace() {
   });
 
   const voidMutation = useMutation({
-    mutationFn: () => doVoid({ data: { companyId: companyId!, billId } }),
+    mutationFn: (v: { reason: string; date: string }) =>
+      doVoid({
+        data: {
+          companyId: companyId!,
+          billId,
+          reason: v.reason,
+          voidDate: v.date,
+        },
+      }),
     onSuccess: async () => {
+      setVoidOpen(false);
       await invalidate();
-      toast.success("Bill voided (reversing journal if posted)");
+      toast.success("Bill voided — reversing journal posted when applicable");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -739,7 +762,10 @@ function BillDocumentWorkspace() {
             <Alert>
               <AlertTitle>Voided</AlertTitle>
               <AlertDescription>
-                Historical read-only. Posted journals were reversed.
+                Historical read-only
+                {bill.void_date ? ` from ${bill.void_date}` : ""}
+                {bill.void_reason ? `: ${bill.void_reason}` : ""}. Posted journals were reversed when
+                present.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -834,11 +860,23 @@ function BillDocumentWorkspace() {
                 ) : null}
                 <Button
                   size="sm"
-                  disabled={authoriseMutation.isPending || !can("purchases.authorise")}
+                  disabled={
+                    authoriseMutation.isPending ||
+                    !can("purchases.authorise") ||
+                    Boolean(
+                      poMatchQ.data?.required &&
+                        poMatchQ.data.match.applicable &&
+                        poMatchQ.data.match.status !== "pass",
+                    )
+                  }
                   title={
-                    can("purchases.authorise")
-                      ? undefined
-                      : "You do not have permission to authorise bills"
+                    !can("purchases.authorise")
+                      ? "You do not have permission to authorise bills"
+                      : poMatchQ.data?.required &&
+                          poMatchQ.data.match.applicable &&
+                          poMatchQ.data.match.status !== "pass"
+                        ? "Three-way matching must pass before authorising"
+                        : undefined
                   }
                   onClick={() => authoriseMutation.mutate()}
                 >
@@ -883,11 +921,7 @@ function BillDocumentWorkspace() {
                     size="sm"
                     variant="destructive"
                     disabled={voidMutation.isPending}
-                    onClick={() => {
-                      if (confirm("Void this bill? Posted journals will be reversed.")) {
-                        voidMutation.mutate();
-                      }
-                    }}
+                    onClick={() => setVoidOpen(true)}
                   >
                     Void
                   </Button>
@@ -917,6 +951,48 @@ function BillDocumentWorkspace() {
         <Alert variant="destructive">
           <AlertTitle>Could not save</AlertTitle>
           <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {poMatchQ.data?.match.applicable ? (
+        <Alert
+          variant={
+            poMatchQ.data.match.status === "pass"
+              ? "default"
+              : poMatchQ.data.required
+                ? "destructive"
+                : "default"
+          }
+          className="mb-4"
+        >
+          <AlertTitle>
+            {poMatchQ.data.match.status === "pass"
+              ? "Three-way match passed"
+              : poMatchQ.data.required
+                ? "Three-way match blocked"
+                : "Three-way match warning"}
+          </AlertTitle>
+          <AlertDescription>
+            {poMatchQ.data.match.status === "pass"
+              ? "Order, goods receipt and bill quantities/amounts agree."
+              : (poMatchQ.data.match.issues[0] ??
+                "Order, receipt and bill do not yet agree.")}
+            {poMatchQ.data.required
+              ? " Authorisation is blocked until matching passes."
+              : " Enable purchases three-way matching in Settings to enforce this at authorise."}
+            {bill.purchase_order_id ? (
+              <>
+                {" "}
+                <Link
+                  to="/purchases/orders/$orderId"
+                  params={{ orderId: bill.purchase_order_id }}
+                  className="underline"
+                >
+                  Open purchase order
+                </Link>
+              </>
+            ) : null}
+          </AlertDescription>
         </Alert>
       ) : null}
 
@@ -1407,6 +1483,19 @@ function BillDocumentWorkspace() {
         billId={billId}
         attachments={bill.attachments ?? []}
         canUpload={canEdit}
+      />
+
+      <ReasonDialog
+        open={voidOpen}
+        onOpenChange={setVoidOpen}
+        title="Void this bill?"
+        description="Posted journals will be reversed. A void date is required so historical Aged Payables can exclude this bill from the correct as-at date."
+        confirmLabel="Void bill"
+        dateLabel="Void date"
+        minDate={bill.bill_date}
+        defaultDate={new Date().toISOString().slice(0, 10)}
+        pending={voidMutation.isPending}
+        onConfirm={(v) => voidMutation.mutate(v)}
       />
     </RecordWorkspace>
   );

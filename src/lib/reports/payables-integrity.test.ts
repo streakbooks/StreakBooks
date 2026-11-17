@@ -1,18 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { assertCurrentPayablesDate, payableOutstandingInBase } from "./payables-integrity";
+import {
+  assertCurrentPayablesDate,
+  assertPayablesAsOfNotFuture,
+  payableOutstandingInBase,
+} from "./payables-integrity";
 
 describe("payables reporting integrity", () => {
-  it("only permits the company's current-date snapshot without historical allocations", () => {
-    expect(() => assertCurrentPayablesDate("2026-11-03", "2026-11-03")).not.toThrow();
-    expect(() => assertCurrentPayablesDate("2026-10-31", "2026-11-03")).toThrow(
-      "dated payment and credit allocation history",
+  it("allows historical as-at dates and rejects future dates", () => {
+    expect(() => assertPayablesAsOfNotFuture("2026-11-03", "2026-11-03")).not.toThrow();
+    expect(() => assertPayablesAsOfNotFuture("2026-10-31", "2026-11-03")).not.toThrow();
+    expect(() => assertPayablesAsOfNotFuture("2026-11-04", "2026-11-03")).toThrow(
+      "future as-at date",
     );
-    expect(() => assertCurrentPayablesDate("2026-11-04", "2026-11-03")).toThrow(
-      "Choose 2026-11-03",
-    );
-    // The company-local date can differ from the host's UTC date.
-    expect(() => assertCurrentPayablesDate("2026-11-04", "2026-11-04")).not.toThrow();
+    expect(() => assertCurrentPayablesDate("2026-10-01", "2026-11-03")).not.toThrow();
   });
+
   it("never silently mixes foreign outstanding amounts into the base-currency total", () => {
     expect(() => payableOutstandingInBase(10000n, "USD", "GBP", null)).toThrow(
       "no posted exchange rate",

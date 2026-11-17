@@ -18,6 +18,10 @@ export type PurchaseOrderDetail = {
     description: string;
     account_id: string;
     quantity: number;
+    /** Cumulative goods received; 0 when the receipt migration is not applied yet. */
+    quantity_received?: number;
+    /** Cumulative quantity already converted to bills. */
+    quantity_billed?: number;
     unit_price_minor: number;
     net_minor: number;
     tax_rate_bps: number;

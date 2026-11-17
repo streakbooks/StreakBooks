@@ -1,7 +1,7 @@
 import { parseAccountingBasis, type AccountingBasis } from "./accounting-basis";
 import { resolveReportingBasis } from "./accounting-basis.server";
 import { loadCashReportLines } from "./cash-report.server";
-import { assertCurrentPayablesDate, payableOutstandingInBase } from "./payables-integrity";
+import { assertPayablesAsOfNotFuture, payableOutstandingInBase } from "./payables-integrity";
 import { shouldIncludeLedgerAccount } from "./account-scope";
 import { parseReportAccountIds } from "./report-account-selection";
 import {
@@ -955,7 +955,14 @@ export const getAgedPayables = createServerFn({ method: "GET" })
       "basis" in data ? parseAccountingBasis(data.basis) : undefined,
     );
     const defaults = await loadCompanyDefaults(context.supabase, data.companyId);
-    assertCurrentPayablesDate(data.asOf, defaults.today);
+    // Legacy current-counter path retained for period-close helpers. Prefer getAgedPayablesAsAt
+    // for historical as-at reporting in the Reports centre.
+    assertPayablesAsOfNotFuture(data.asOf, defaults.today);
+    if (data.asOf !== defaults.today) {
+      throw new Error(
+        `Historical Aged Payables requires getAgedPayablesAsAt (dated allocations). Choose ${defaults.today} for this legacy snapshot path.`,
+      );
+    }
     type Row = {
       id: string;
       contact_id: string;

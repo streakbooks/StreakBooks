@@ -35,6 +35,7 @@
 | 2026-11-17 | Historical Aged Payables (as-at) | No new npm packages; original `ap-asat` maths mirroring LinkBooks AR as-at contract; competitors referenced only as public aged-payables capability |
 | 2026-11-17 | PO goods receipt foundation | No new npm packages; original `po-receipt` maths + RPC; public PO receiving concepts only; no competitor UI/code |
 | 2026-11-17 | PO three-way match | No new npm packages; original `po-three-way-match` maths; uses existing `purchases.three_way_matching` setting; public 3-way match concepts only |
+| 2026-11-17 | Partial bill-from-received | No new npm packages; original `po-partial-bill` maths; convert bills unbilled received qty only; no competitor code; no inventory valuation claim |
 
 ## Open compliance items
 

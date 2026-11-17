@@ -36,8 +36,10 @@ export function remainingToReceive(line: PoReceiptLineState): number {
   return Math.max(0, Number((ordered - received).toFixed(6)));
 }
 
-export function assertCanReceiveAgainstOrder(status: string, billedBillId: string | null): void {
-  if (billedBillId) throw new Error("This order is already billed and cannot receive more goods");
+export function assertCanReceiveAgainstOrder(status: string, _billedBillId?: string | null): void {
+  if (status === "billed") {
+    throw new Error("This order is fully billed and cannot receive more goods");
+  }
   if (!["sent", "partially_received"].includes(status)) {
     throw new Error("Receive goods only on sent or partially received purchase orders");
   }
@@ -50,11 +52,11 @@ export function assertCanReceiveAgainstOrder(status: string, billedBillId: strin
  */
 export function applyPurchaseOrderReceipt(input: {
   status: string;
-  billedBillId: string | null;
+  billedBillId?: string | null;
   lines: PoReceiptLineState[];
   deltas: PoReceiptDelta[];
 }): { nextLines: PoReceiptLineState[]; nextStatus: "partially_received" } {
-  assertCanReceiveAgainstOrder(input.status, input.billedBillId);
+  assertCanReceiveAgainstOrder(input.status, input.billedBillId ?? null);
   if (!Array.isArray(input.deltas) || input.deltas.length < 1) {
     throw new Error("Add at least one receipt quantity");
   }

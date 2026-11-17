@@ -18,7 +18,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | M-01 | Dashboard | Partial | P1 | Ledger-backed KPIs exist; multi-currency/permission tie-out not certified | Xero/QBO dashboard overview | Fixture golden vs reports |
 | M-02 | Banking & reconciliation | Partial | P0 | CSV/QIF/rules/match/unmatch/recon sessions present; live bank feeds blocked | Xero bank feed (paid), Odoo sync (Enterprise) | Provider selection; E2E recon proof |
 | M-03 | Sales & receivables | Partial | P0 | Invoice/quote/credit/receipt/statement/as-at AR present | Xero/QBO AR | Gateway + authenticated lifecycle matrix |
-| M-04 | Purchases & payables | Partial | P0 | Bills/PO/payments/credits; AP as-at **merged**; goods receipt **merged**; **3-way match B3 integrating** | Xero/Odoo AP / receiving / matching | Merge #231–#232; then void/statement PRs |
+| M-04 | Purchases & payables | Partial | P0 | Bills/PO/payments/credits; AP as-at #229; receipt #230; 3-way #231; **partial bill-from-received B4 in progress** | Xero/Odoo AP / receiving / matching | Merge B1–B4; inventory COGS only with real layers |
 | M-05 | Expenses & reimbursements | Partial | P1 | EM module + claims; OCR/payout provider gaps | Expensify/Xero expenses | Provider + approval depth |
 | M-06 | Contacts | Partial | P1 | CRUD/duplicates/portals partial | Xero contacts | Portal isolation proof |
 | M-07 | Products & Services | Partial | P1 | Non-inventory catalogue ready | QBO products | — |
@@ -129,6 +129,20 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **PR reference** | Pending |
 | **Originality** | Independent `po-three-way-match` maths; existing Settings registry key; no competitor UI/code |
 | **Release verification** | Open — depends on #230 migration for receipt quantities; fail-closed when required and receipt data missing |
+
+## Detailed finding — Partial bill-from-received (B4)
+
+| Field | Value |
+|-------|-------|
+| **Gap ID** | GAP-PO-PBILL-001 |
+| **Module** | Purchases / Purchase orders |
+| **Missing/incomplete** | Convert billed full ordered qty regardless of receipt; no `quantity_billed`; blocked further receive after first bill |
+| **Priority** | P0 |
+| **Development status** | Implemented on `feature/po-partial-bill-from-received-20261117` |
+| **PR reference** | Pending |
+| **Originality** | Independent `po-partial-bill` maths; reuses existing convert RPC + bill authorise posting path |
+| **Honesty** | No inventory/COGS valuation claimed; ledger posts only via bill authorisation |
+| **Release verification** | Open — migrations #230/#B4 not applied live in this session |
 
 ## Acceptance questions (programme-wide)
 

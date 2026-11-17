@@ -24,7 +24,7 @@ describe("purchase order goods receipt", () => {
     expect(() => assertCanReceiveAgainstOrder("sent", null)).not.toThrow();
     expect(() => assertCanReceiveAgainstOrder("partially_received", null)).not.toThrow();
     expect(() => assertCanReceiveAgainstOrder("draft", null)).toThrow(/sent or partially/);
-    expect(() => assertCanReceiveAgainstOrder("sent", "bill")).toThrow(/already billed/);
+    expect(() => assertCanReceiveAgainstOrder("billed", "bill")).toThrow(/fully billed/);
   });
 
   it("applies deltas without exceeding outstanding and sets partially_received", () => {

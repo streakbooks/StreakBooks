@@ -376,14 +376,40 @@ export function PayrollRunsPage() {
                           {fmt.date(run.period_start)} – {fmt.date(run.period_end)}
                         </Link>
                       </TableCell>
-                      <TableCell>{fmt.date(run.payment_date)}</TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant(run.status)}>
-                          {STATUS_LABEL[run.status]}
-                        </Badge>
+                        <Link
+                          to="/payroll/runs/$runId"
+                          params={{ runId: run.id }}
+                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
+                          className="block rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          aria-label={`Open payroll run ${run.run_number}, payment date ${fmt.date(run.payment_date)}`}
+                        >
+                          {fmt.date(run.payment_date)}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          to="/payroll/runs/$runId"
+                          params={{ runId: run.id }}
+                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
+                          className="inline-flex rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          aria-label={`Open payroll run ${run.run_number}, status ${STATUS_LABEL[run.status]}`}
+                        >
+                          <Badge variant={statusVariant(run.status)}>
+                            {STATUS_LABEL[run.status]}
+                          </Badge>
+                        </Link>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        {fmt.money(run.net_minor, run.currency)}
+                        <Link
+                          to="/payroll/runs/$runId"
+                          params={{ runId: run.id }}
+                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
+                          className="inline-block rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          aria-label={`Open payroll run ${run.run_number}, net pay ${fmt.money(run.net_minor, run.currency)}`}
+                        >
+                          {fmt.money(run.net_minor, run.currency)}
+                        </Link>
                       </TableCell>
                     </TableRow>
                   ))}

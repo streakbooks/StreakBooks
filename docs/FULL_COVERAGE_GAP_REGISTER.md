@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Updated** | 2026-11-17 |
-| **Baseline** | GitHub `main` @ `ddaff917` |
+| **Baseline** | GitHub `main` @ `62e971ed` (after #229) |
 | **IP policy** | Originality-first — see [IP_AND_DEPENDENCY_COMPLIANCE.md](./IP_AND_DEPENDENCY_COMPLIANCE.md) |
 | **Classification** | Complete and Verified / Partial / UI Only / Backend Only / Missing / Blocked / Intentionally Deferred |
 
@@ -18,7 +18,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | M-01 | Dashboard | Partial | P1 | Ledger-backed KPIs exist; multi-currency/permission tie-out not certified | Xero/QBO dashboard overview | Fixture golden vs reports |
 | M-02 | Banking & reconciliation | Partial | P0 | CSV/QIF/rules/match/unmatch/recon sessions present; live bank feeds blocked | Xero bank feed (paid), Odoo sync (Enterprise) | Provider selection; E2E recon proof |
 | M-03 | Sales & receivables | Partial | P0 | Invoice/quote/credit/receipt/statement/as-at AR present | Xero/QBO AR | Gateway + authenticated lifecycle matrix |
-| M-04 | Purchases & payables | Partial | P0 | Bills/PO/payments/credits; **historical AP as-at implemented in B1** | Xero/Odoo AP ageing | Merge B1; PO 3-way match |
+| M-04 | Purchases & payables | Partial | P0 | Bills/PO/payments/credits; historical AP as-at **merged (#229)**; **PO goods receipt B2 integrating (#230)** | Xero/Odoo AP ageing / receiving | Merge #230–#232; then voids/statements |
 | M-05 | Expenses & reimbursements | Partial | P1 | EM module + claims; OCR/payout provider gaps | Expensify/Xero expenses | Provider + approval depth |
 | M-06 | Contacts | Partial | P1 | CRUD/duplicates/portals partial | Xero contacts | Portal isolation proof |
 | M-07 | Products & Services | Partial | P1 | Non-inventory catalogue ready | QBO products | — |
@@ -95,6 +95,26 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Development status** | Implemented on #229 branch (`period-close-subledger` + PeriodClosePanel) |
 | **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 |
 | **Originality** | Adapter reuses LinkBooks as-at contracts; no competitor UI/code |
+
+## Detailed finding — PO goods receipt (B2)
+
+| Field | Value |
+|-------|-------|
+| **Gap ID** | GAP-PO-RCV-001 |
+| **Module / submodule** | Purchases / Purchase orders |
+| **Screen / route** | `/purchases/orders/$orderId` |
+| **Missing/incomplete** | `partially_received` existed in enum/filters but no receive quantities or action; convert blocked after receive |
+| **Competitor reference** | Public PO receiving / goods receipt concepts (Odoo/Xero) — capability only |
+| **Business impact** | Cannot track ordered vs received before billing |
+| **Accounting impact** | None until bill authorised (receive is non-posting by design) |
+| **Priority** | P0/P1 purchasing depth |
+| **Complexity** | M |
+| **Database** | `quantity_received` + `receive_purchase_order_goods` RPC; convert allows `partially_received` |
+| **Frontend** | Received/outstanding columns; Receive remaining goods |
+| **Tests** | `po-receipt.test.ts` |
+| **Development status** | Integrating via PR #230 (rebased onto main after #229) |
+| **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/230 |
+| **Release verification** | Open — migration not applied to staging/prod in this session |
 
 ## Acceptance questions (programme-wide)
 

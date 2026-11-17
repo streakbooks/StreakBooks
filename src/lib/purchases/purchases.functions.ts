@@ -3379,6 +3379,53 @@ export const convertPurchaseOrderToBill = createServerFn({ method: "POST" })
     });
   });
 
+/** Non-posting goods receipt against a sent / partially received purchase order. */
+export const receivePurchaseOrderGoods = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      orderId: string;
+      lines: Array<{ lineId: string; receiveQuantity: number }>;
+    }) => {
+      if (!Array.isArray(input.lines) || input.lines.length < 1) {
+        throw new Error("Add at least one receipt quantity");
+      }
+      const seen = new Set<string>();
+      return {
+        companyId: assertUuid(input.companyId),
+        orderId: assertUuid(input.orderId, "order"),
+        lines: input.lines.map((line, i) => {
+          const lineId = assertUuid(line.lineId, `Line ${i + 1}`);
+          if (seen.has(lineId)) throw new Error("Each order line can appear once in a receipt");
+          seen.add(lineId);
+          const receiveQuantity = Number(line.receiveQuantity);
+          if (
+            !Number.isFinite(receiveQuantity) ||
+            receiveQuantity <= 0 ||
+            receiveQuantity > 1e9 ||
+            receiveQuantity !== Number(receiveQuantity.toFixed(6))
+          ) {
+            throw new Error(`Line ${i + 1}: enter a positive quantity with up to six decimal places`);
+          }
+          return { lineId, receiveQuantity };
+        }),
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "purchases.draft");
+    return workflowRpc<{ id: string; status: string; updated: number }>(
+      context.supabase,
+      "receive_purchase_order_goods",
+      {
+        _company: data.companyId,
+        _order: data.orderId,
+        _payload: { lines: data.lines },
+      },
+    );
+  });
+
 // ---- Recurring bills ----
 
 export const listRecurringBills = createServerFn({ method: "GET" })

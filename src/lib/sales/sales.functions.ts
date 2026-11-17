@@ -42,6 +42,7 @@ import {
 } from "@/lib/sales/list-filters";
 import { fetchAllPages } from "@/lib/sales/fetch-all";
 import { minorToDecimalString, toCsv } from "@/lib/sales/csv";
+import { assertHeaderMatchesLines } from "@/lib/purchases/authorise-totals";
 import {
   assertQuoteTransition,
   isQuoteConvertible,
@@ -766,13 +767,13 @@ async function authoriseInvoiceCore(
   };
   if (b.status !== "draft") throw new Error("Only draft invoices can be authorised");
   if (b.posted_journal_id) throw new Error("Invoice already posted");
-  if (!b.sales_invoice_lines.length) throw new Error("Invoice has no lines");
-  const lineNet = b.sales_invoice_lines.reduce((s, l) => s + Number(l.net_minor), 0);
-  const lineTax = b.sales_invoice_lines.reduce((s, l) => s + Number(l.tax_minor), 0);
-  if (lineNet !== Number(b.subtotal_minor) || lineTax !== Number(b.tax_minor)) {
-    throw new Error("Invoice totals do not match its lines — re-save the draft before authorising");
-  }
-  if (!(Number(b.total_minor) > 0)) throw new Error("Invoice total must be greater than zero");
+  assertHeaderMatchesLines({
+    documentLabel: "Invoice",
+    subtotalMinor: Number(b.subtotal_minor) || 0,
+    taxMinor: Number(b.tax_minor) || 0,
+    totalMinor: Number(b.total_minor) || 0,
+    lines: b.sales_invoice_lines,
+  });
 
   const credit = await loadCreditLimitAssessment(supabase as SalesClient, companyId, {
     id: b.id,
@@ -825,7 +826,8 @@ async function authoriseInvoiceCore(
     .eq("status" as never, "draft" as never)
     .select("id");
   if (upErr) {
-    throw new Error(
+    throw new JournalPostedUnlinkedError(
+      journalId,
       `The journal was posted but the invoice could not be marked authorised (${upErr.message}). Retry authorise — it is safe to repeat.`,
     );
   }
@@ -834,6 +836,17 @@ async function authoriseInvoiceCore(
     return { journalId, invoiceNumber: number, alreadyAuthorised: true };
   }
   return { journalId, invoiceNumber: number, alreadyAuthorised: false };
+}
+
+/** Journal exists but the document status link failed — caller must surface retry, not "draft only". */
+export class JournalPostedUnlinkedError extends Error {
+  readonly journalId: string;
+  readonly statusHint = "posted_unauthorised" as const;
+  constructor(journalId: string, message: string) {
+    super(message);
+    this.name = "JournalPostedUnlinkedError";
+    this.journalId = journalId;
+  }
 }
 
 export const authoriseInvoice = createServerFn({ method: "POST" })
@@ -863,12 +876,26 @@ export const saveAndAuthoriseInvoice = createServerFn({ method: "POST" })
     const saved = await saveInvoiceDraftCore(context, data);
     try {
       const res = await authoriseInvoiceCore(context, data.companyId, saved.id);
-      return { id: saved.id, journalId: res.journalId, authoriseError: null as string | null };
+      return {
+        id: saved.id,
+        journalId: res.journalId,
+        authoriseError: null as string | null,
+        statusHint: null as "posted_unauthorised" | null,
+      };
     } catch (e) {
+      if (e instanceof JournalPostedUnlinkedError) {
+        return {
+          id: saved.id,
+          journalId: e.journalId,
+          authoriseError: e.message,
+          statusHint: e.statusHint,
+        };
+      }
       return {
         id: saved.id,
         journalId: null as string | null,
         authoriseError: e instanceof Error ? e.message : "Could not authorise the invoice",
+        statusHint: null as "posted_unauthorised" | null,
       };
     }
   });

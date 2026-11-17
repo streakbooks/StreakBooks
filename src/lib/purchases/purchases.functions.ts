@@ -2976,6 +2976,8 @@ export type CreditNoteDetail = {
   tax_minor: number;
   amount_allocated_minor: number;
   posted_journal_id: string | null;
+  void_date?: string | null;
+  void_reason?: string | null;
   contacts: { id: string; name: string; email: string | null } | null;
   purchase_credit_note_lines: Array<{
     id: string;
@@ -3164,11 +3166,25 @@ export const unallocatePurchaseCredit = createServerFn({ method: "POST" })
 
 export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; creditNoteId: string; reason?: string }) => ({
-    companyId: assertUuid(input.companyId),
-    creditNoteId: assertUuid(input.creditNoteId, "credit note"),
-    reason: (input.reason ?? "").trim().slice(0, 500) || null,
-  }))
+  .inputValidator(
+    (input: { companyId: string; creditNoteId: string; reason: string; voidDate?: string }) => {
+      const reason = String(input.reason ?? "").trim();
+      if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
+      const voidDate =
+        input.voidDate && String(input.voidDate).trim()
+          ? String(input.voidDate).trim()
+          : null;
+      if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
+        throw new Error("Void date must be YYYY-MM-DD");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        creditNoteId: assertUuid(input.creditNoteId, "credit note"),
+        reason: reason.slice(0, 500),
+        voidDate,
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "purchases.authorise");
@@ -3177,6 +3193,13 @@ export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
     if (credit.status === "draft" || !credit.posted_journal_id) {
       throw new Error("Draft credit notes have no ledger entry - delete the draft instead");
     }
+    const { assertCreditNoteVoidDate } = await import("@/lib/purchases/bill-void");
+    const today = new Date().toISOString().slice(0, 10);
+    const voidDate = assertCreditNoteVoidDate({
+      creditDate: credit.credit_date,
+      voidDate: data.voidDate ?? today,
+      today,
+    });
     const { data: allocRows, error: allocErr } = await supabase
       .from("purchase_credit_allocations" as never)
       .select("amount_minor" as never)
@@ -3199,17 +3222,26 @@ export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
       supabase as never,
       credit.posted_journal_id,
       `purchase_credit_note:${data.creditNoteId}:void`,
+      voidDate,
     );
     const { error: upErr } = await supabase
       .from("purchase_credit_notes" as never)
       .update({
         status: "void",
         amount_allocated_minor: 0,
+        void_date: voidDate,
+        void_reason: data.reason,
         updated_at: new Date().toISOString(),
       } as never)
       .eq("company_id" as never, data.companyId as never)
-      .eq("id" as never, data.creditNoteId as never);
+      .eq("id" as never, data.creditNoteId as never)
+      .neq("status" as never, "void" as never);
     if (upErr) {
+      if (/void_date|42703|PGRST204/i.test(upErr.message)) {
+        throw new Error(
+          "The supplier credit void-date migration must be applied before voiding with a dated as-at history.",
+        );
+      }
       throw new Error(
         `The credit note was reversed in the ledger but could not be marked void (${upErr.message}). Reload and click Void again - it will not post twice.`,
       );
@@ -3219,10 +3251,15 @@ export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
       data.companyId,
       "credit_note.void",
       data.creditNoteId,
-      { void_journal_id: voidJournalId, reason: data.reason, unallocated_minor: onBills },
+      {
+        void_journal_id: voidJournalId,
+        void_date: voidDate,
+        reason: data.reason,
+        unallocated_minor: onBills,
+      },
       "purchase_credit_note",
     );
-    return { voidJournalId };
+    return { voidJournalId, voidDate };
   });
 
 /**

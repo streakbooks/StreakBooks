@@ -8333,6 +8333,8 @@ export type Database = {
           tax_minor: number;
           total_minor: number;
           updated_at: string;
+          void_date: string | null;
+          void_reason: string | null;
         };
         Insert: {
           amount_allocated_minor?: number;
@@ -8352,6 +8354,8 @@ export type Database = {
           tax_minor?: number;
           total_minor?: number;
           updated_at?: string;
+          void_date?: string | null;
+          void_reason?: string | null;
         };
         Update: {
           amount_allocated_minor?: number;
@@ -8371,6 +8375,8 @@ export type Database = {
           tax_minor?: number;
           total_minor?: number;
           updated_at?: string;
+          void_date?: string | null;
+          void_reason?: string | null;
         };
         Relationships: [
           {

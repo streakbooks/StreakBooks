@@ -153,8 +153,21 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Missing/incomplete** | `voidBill` reversed journals but did not store `void_date`/`void_reason`; `purchase_bills` lacked columns (sales invoices already have void_date) |
 | **Priority** | P0 (historical AP as-at honesty) |
 | **Development status** | Implemented on `feature/bill-void-date-20261117` |
-| **PR reference** | Pending |
+| **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/233 |
 | **Originality** | Reuses LinkBooks `ReasonDialog` + sales void dating pattern; independent purchases helper |
+| **Release verification** | Open — migration not applied live |
+
+## Detailed finding — Supplier credit void_date (B6)
+
+| Field | Value |
+|-------|-------|
+| **Gap ID** | GAP-AP-CRED-VOID-001 |
+| **Module** | Purchases / Supplier credit notes |
+| **Missing/incomplete** | `voidPurchaseCreditNote` reversed journals but did not require/store `void_date`/`void_reason` |
+| **Priority** | P0 (historical AP as-at honesty) |
+| **Development status** | Implemented on `feature/supplier-credit-void-date-20261117` |
+| **PR reference** | Pending |
+| **Originality** | Shared `assertPurchaseDocVoidDate` with B5; ReasonDialog reuse; no competitor code |
 | **Release verification** | Open — migration not applied live |
 
 ## Acceptance questions (programme-wide)

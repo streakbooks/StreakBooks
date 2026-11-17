@@ -303,7 +303,7 @@ export async function voidPostedDocument(
       } as never,
     );
     if (!error && typeof data === "string") return data;
-    // Missing RPC: fall back to original-date reversal; void_date is still stored on the bill.
+    // Missing RPC: fall back to original-date reversal; void_date is still stored on the document.
     if (error && !/42883|PGRST202/i.test(error.message) && error.code !== "PGRST202") {
       throw new Error(error.message);
     }

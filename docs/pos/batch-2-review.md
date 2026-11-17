@@ -2,24 +2,24 @@
 
 Continuation of [POS PR #238](https://github.com/linkbusinessadvisory/LinkBooks/pull/238). Adds physical-location register setup, cashier location grants, dedicated POS role permissions, real opening/unchanged-float closing commands and closed-session history. There are no sale/payment/stock/journal mutations. This is not a production-ready POS release.
 
-| Required verification           | Actual status at foundation commit                                                                                                                     |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Task implementation             | Partial: configuration/session foundation implemented                                                                                                  |
-| PR                              | #238 continuation; integration update pending                                                                                                          |
-| Merge into main                 | POS not merged; unrelated #241 audit repair merged externally                                                                                          |
-| Main inspected                  | `fa57d602`; concurrent main work preserved                                                                                                             |
-| GitHub CI                       | Blocked before any steps by account billing/spending limit; [actual run](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44111433825)   |
-| Unit tests                      | 99 focused tests passed across 9 files; initial full run had 3,997 passed / 7 failed, with corrective batches isolated for integration                 |
-| PostgreSQL integration/security | 45 assertions passed, including 3 real concurrent-operation scenarios; production migration applied unmodified to disposable PG17 master/auth fixtures |
-| Browser / E2E                   | 9 passed, isolated services, desktop/tablet/mobile; shared lookups, counts/variance, company switch and error recovery                                 |
-| TypeScript                      | Local incremental check passed; final integrated revision still requires rerun                                                                         |
-| Production build                | Local build passed before final integration; no deployment                                                                                             |
-| ESLint                          | New POS implementation and fixtures passed; broad baseline formatting/type/hook debt repaired in separate branch                                       |
-| Lookup contract                 | POS uses shared lookups; remaining baseline architecture violations repaired separately                                                                |
-| Supabase migrations             | New POS migration local-fixture tested only; NOT applied to hosted project                                                                             |
-| Live read-only audit            | Prerequisite columns confirmed, POS tables absent; advisor summary below                                                                               |
-| Authenticated staging           | Not executed                                                                                                                                           |
-| Deployment / production         | Not deployed / not verified                                                                                                                            |
+| Required verification           | Actual integrated review status                                                                                                                           |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Task implementation             | Partial: configuration/session foundation implemented                                                                                                     |
+| PR                              | [#238](https://github.com/linkbusinessadvisory/LinkBooks/pull/238), draft; published integrated register/session foundation                               |
+| Merge into main                 | POS not merged; #241 audit repair and #246 regression repairs merged externally                                                                           |
+| Main inspected                  | `0b8e459a5fc854e432cde8b1eb55bfade1e30047`; latest banking/sales work merged locally into this feature branch                                             |
+| GitHub CI                       | Blocked before any steps by account billing/spending limit; [actual run](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44120925296)      |
+| Unit tests                      | 4,045 passed / 0 failed / 0 skipped across 586 files on integrated source revision `20a8c1eb`                                                             |
+| PostgreSQL integration/security | 45 POS assertions including 3 concurrency scenarios passed; broader accounting-workflow and platform PostgreSQL suites also passed, all isolated fixtures |
+| Browser / E2E                   | 9 POS fixtures plus 74 shared UI/accessibility fixtures passed; no authenticated live browser flow                                                        |
+| TypeScript                      | Final integrated incremental TypeScript check passed with no diagnostics                                                                                  |
+| Production build                | Integrated production build and client bootstrap budget passed (269,310 gzip bytes); no deployment                                                        |
+| ESLint                          | Final full-repository lint passed with zero errors and zero warnings                                                                                      |
+| Lookup contract                 | 378 shared lookup declarations, zero violations; 147 baseline dynamic selectors migrated                                                                  |
+| Supabase migrations             | New POS migration local-fixture tested only; NOT applied to hosted project                                                                                |
+| Live read-only audit            | Prerequisite columns confirmed, POS tables absent; advisor summary below                                                                                  |
+| Authenticated staging           | Not executed                                                                                                                                              |
+| Deployment / production         | Not deployed / not verified                                                                                                                               |
 
 Database ownership and security: reuse `hr_locations`, `accounts`, `company_members`, `profiles` and existing audit history. Composite tenant FKs protect register location/account links; RLS and current permission/location checks protect reads. Only private, guarded commands elevate; public RPCs use invoker rights; anonymous execute and direct cashier writes are revoked. Mutable operation IDs cannot alter a prior result, and one register cannot have multiple open sessions. Atomic audit failure rolls back creation/opening/closing. SQL tests cover foreign-register replay and null access actions. An opening float declares existing cash, without inventing an accounting transfer. Closing a variance fails and leaves the session open until a later approved accounting workflow exists.
 
@@ -70,6 +70,16 @@ Connected database audit was read-only: required master columns exist, latest mi
 - `tests/integration/pos-register-sessions.sql`
 - `docs/pos/batch-2-review.md` (this report)
 
+## Integrated release repairs
+
+This PR includes reviewable dependencies: [#246](https://github.com/linkbusinessadvisory/LinkBooks/pull/246) corrects stale accounting assertions, voice navigation and the missing payroll feature-catalogue seed (merged externally); [#252](https://github.com/linkbusinessadvisory/LinkBooks/pull/252) repairs repository lint debt using relevant existing #227 fixes; [#253](https://github.com/linkbusinessadvisory/LinkBooks/pull/253) migrates 147 dynamic record selectors in 66 files onto the shared searchable lookup. These branches are preserved, with overlap documented; no remote main merge or history rewrite occurred. The broad formatting changes are not POS business logic. I can inspect repository branches and commits, but cannot inspect unsaved changes in a separate Cursor session. Concurrent work is therefore reconciled through Git, not certified absent.
+
+Integrated static gates passed: 706 TSX files / 189 routes with zero UI violations; all module/workspace, navigation and lookup checks passed. The quality workflow retains all prior checks and adds the disposable POS PostgreSQL job. Shared browser fixtures now explicitly isolate unused messaging mutations and throw if invoked without a configured fixture, rather than importing real server middleware.
+
+The broader workflow runner also needed two fixture repairs: a dedicated one-company test actor (the prior actor legitimately belonged to the supposed foreign company), and valid PostgreSQL `$$` delimiters in the concurrent-numbering assertion. Both suites now pass without changing production contact-numbering code.
+
+An initial integrated unit run passed 4,031 tests and timed out five PDF/export tests under simultaneous typecheck/browser/lint load. The quieter complete rerun passed all 4,045 tests; timeouts were not increased and tests were not disabled. Final results are recorded in the verification table. The tested source revision is [`20a8c1eb`](https://github.com/linkbusinessadvisory/LinkBooks/commit/20a8c1ebc92faaa3bca8826cf7193cceb26b4bc2); subsequent commits update documentation only. Broader workflow fixture repairs isolate the tenant-denial actor and restore the concurrency assertion SQL delimiter. Build warnings remain for pre-existing deprecated TanStack inputValidator usage and Nitro configuration; they did not fail the build.
+
 ## Safe Windows review
 
 The cloud checkout is separate from `D:\MyApp\LinkBooks`. Protect local edits, fetch, and check out the review branch after it is published:
@@ -98,3 +108,5 @@ Use the existing authorized development configuration and `http://localhost:8080
 - Do not collect customer payments through this module. Checkout, cash movements, adjustments, receipts/refunds, COGS, providers, offline/devices and restaurant workflows remain unimplemented.
 
 Next release step: fix the GitHub account runner blocker, review release dependencies and complete approved full-schema/authenticated staging gates. Merge, live migration and deployment need separate explicit authorization. No such action was performed.
+
+Existing build notices remain: the framework deprecates `inputValidator()` in favor of `validator()`, and Nitro reports its ignored `inlineDynamicImports` option. These did not fail the build and have not been represented as resolved.

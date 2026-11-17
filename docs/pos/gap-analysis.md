@@ -1,6 +1,6 @@
 # Repository gap analysis
 
-Evidence is static source inspection plus local tests where stated; existing modules have not been authenticated against staging here.
+The table below records the original main baseline, before the POS batches; current implementation is described in the Batch 2 re-audit and tracker. Evidence is static source inspection plus local tests where stated; existing modules have not been authenticated against staging here.
 
 | Capability                                        | Classification                            | Evidence / decision                                                                                                                                                            |
 | ------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -20,11 +20,11 @@ Evidence is static source inspection plus local tests where stated; existing mod
 
 No existing capability is marked “Existing and working” solely from finding its code. No defect is asserted without reproduction.
 
-Concurrent PR audit on 2026-11-17: #225 financial intelligence, #227 production contracts (draft), #229 historical AP, #230–236 purchasing, #237 CI. No POS branch found in remote branch listing. Shared files and migration ordering require a fresh fetch before every subsequent batch. This batch avoids purchasing, accounting and migration edits.
+Original baseline concurrent PR audit on 2026-11-17: #225 financial intelligence, #227 production contracts (draft), #229 historical AP, #230–236 purchasing, #237 CI. No POS branch found in remote branch listing. Shared files and migration ordering require a fresh fetch before every subsequent batch. This batch avoids purchasing, accounting and migration edits.
 
-Next executable batch: store/location ownership audit and dedicated permission/configuration migration with isolated PostgreSQL RLS tests; then register/session lifecycle. Retail stock remains blocked on separate inventory design. Provider work requires a named provider, supported region/device and test merchant credentials.
+Original Batch 1 next step (now implemented in Batch 2): store/location ownership audit and dedicated permission/configuration migration with isolated PostgreSQL RLS tests; then register/session lifecycle. Retail stock remains blocked on separate inventory design. Provider work requires a named provider, supported region/device and test merchant credentials.
 
-Supabase guidance review: fetched current changelog and RLS documentation. The April 2026 Data API exposure change is relevant to future table grants; this batch adds no tables and retains existing product grants/RLS. No schema mutation or new privileged function was needed. Postgres best practices informed bounded tenant-scoped queries and the proposed locking/index design.
+Supabase guidance review: fetched current changelog and RLS documentation. The April 2026 Data API exposure change is relevant to future table grants; Batch 1 added no tables and retained existing product grants/RLS. Batch 2 adds the guarded register/session tables described below. No schema mutation or new privileged function was needed for Batch 1. Postgres best practices informed bounded tenant-scoped queries and the proposed locking/index design.
 
 ## Batch 2 re-audit
 

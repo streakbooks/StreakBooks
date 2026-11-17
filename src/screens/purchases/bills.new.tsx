@@ -13,7 +13,7 @@ import {
   listSuppliers,
   upsertSupplier,
   saveBillDraft,
-  authoriseBill,
+  saveAndAuthoriseBill,
   checkDuplicateSupplierBill,
   listPaymentTerms,
   createPaymentTerm,
@@ -249,8 +249,8 @@ export function NewBill({
   const doUpsertDimCategory = useServerFn(upsertTrackingCategory);
   const doUpsertCustomer = useServerFn(upsertCustomer);
   const saveDraft = useServerFn(saveBillDraft);
+  const saveAndAuthorise = useServerFn(saveAndAuthoriseBill);
   const recordVoiceSave = useServerFn(recordVoiceDraftOutcome);
-  const authorise = useServerFn(authoriseBill);
   const checkDup = useServerFn(checkDuplicateSupplierBill);
   const doUpsertSupplier = useServerFn(upsertSupplier);
   const doCreateTerm = useServerFn(createPaymentTerm);
@@ -1047,11 +1047,7 @@ export function NewBill({
     return saved.id;
   };
 
-  const persistDraft = async (forAuthorise = false): Promise<string> => {
-    const saved = await saveDraft({ data: buildSavePayload(forAuthorise) });
-    const id = saved.id;
-    setBillId(id);
-    // Flush pending attachments
+  const flushBillExtras = async (id: string) => {
     for (const file of pendingAttachments) {
       await doUpload({
         data: {
@@ -1075,6 +1071,13 @@ export function NewBill({
     await queryClient.invalidateQueries({ queryKey: ["bill-attachments", companyId, id] });
     await queryClient.invalidateQueries({ queryKey: ["bill-notes", companyId, id] });
     await queryClient.invalidateQueries({ queryKey: ["bill-activity", companyId, id] });
+  };
+
+  const persistDraft = async (forAuthorise = false): Promise<string> => {
+    const saved = await saveDraft({ data: buildSavePayload(forAuthorise) });
+    const id = saved.id;
+    setBillId(id);
+    await flushBillExtras(id);
     return id;
   };
 
@@ -1093,27 +1096,18 @@ export function NewBill({
             statusHint: null as "posted_unauthorised" | null,
           };
         }
-        const id = await persistDraft(mode === "authorise");
         if (mode === "authorise") {
-          try {
-            await authorise({ data: { companyId: companyId!, billId: id } });
-            return {
-              id,
-              mode,
-              authoriseError: null as string | null,
-              statusHint: null as "posted_unauthorised" | null,
-            };
-          } catch (e) {
-            const msg = friendlyAuthError(e);
-            const posted = /journal was posted but/i.test(msg);
-            return {
-              id,
-              mode,
-              authoriseError: msg,
-              statusHint: posted ? ("posted_unauthorised" as const) : null,
-            };
-          }
+          const r = await saveAndAuthorise({ data: buildSavePayload(true) });
+          setBillId(r.id);
+          await flushBillExtras(r.id);
+          return {
+            id: r.id,
+            mode,
+            authoriseError: r.authoriseError,
+            statusHint: r.statusHint,
+          };
         }
+        const id = await persistDraft(false);
         return {
           id,
           mode,

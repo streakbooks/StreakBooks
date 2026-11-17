@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import { useCanDo } from "@/hooks/use-can";
+import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { decideHrAttendanceCorrection } from "@/lib/hr/time.functions";
 import { decideHrLeaveRequest } from "@/lib/hr/time.functions";
@@ -25,13 +25,17 @@ import { listHrApprovalsInbox } from "@/lib/hr/workspace.functions";
 
 export function HrApprovalsPage() {
   const { company, isPending } = useActiveCompany();
+  const { can: hasPermission } = useCan();
   const can =
-    useCanDo("hr.approvals.manage") ||
-    useCanDo("hr.manager") ||
-    useCanDo("hr.leave.approve") ||
-    useCanDo("hr.attendance.manage");
-  const canLeave = useCanDo("hr.leave.approve") || useCanDo("hr.leave.manage") || useCanDo("hr.manager");
-  const canAttendance = useCanDo("hr.attendance.manage");
+    hasPermission("hr.approvals.manage") ||
+    hasPermission("hr.manager") ||
+    hasPermission("hr.leave.approve") ||
+    hasPermission("hr.attendance.manage");
+  const canLeave =
+    hasPermission("hr.leave.approve") ||
+    hasPermission("hr.leave.manage") ||
+    hasPermission("hr.manager");
+  const canAttendance = hasPermission("hr.attendance.manage");
   const queryClient = useQueryClient();
 
   const fetchInbox = useServerFn(listHrApprovalsInbox);
@@ -129,7 +133,10 @@ export function HrApprovalsPage() {
               Leave requests
             </h2>
             {leave.length === 0 ? (
-              <EmptyState title="No leave awaiting decision" description="Submitted leave appears here." />
+              <EmptyState
+                title="No leave awaiting decision"
+                description="Submitted leave appears here."
+              />
             ) : (
               <TableCard>
                 <Table>

@@ -183,9 +183,7 @@ export function BrandingWorkspace({
     );
 
   const brandingTitle =
-    from === "purchases"
-      ? "Purchase document themes & branding"
-      : "Invoice themes & branding";
+    from === "purchases" ? "Purchase document themes & branding" : "Invoice themes & branding";
   const workspace = (
     <>
       <div className="mb-8">

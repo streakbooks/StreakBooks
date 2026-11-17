@@ -16,10 +16,7 @@ function MessagingSettingsRoute() {
     <ListWorkspace
       title="Messaging settings"
       description="Organisation collaboration controls"
-      breadcrumbs={[
-        { label: "Messages", to: "/messages" },
-        { label: "Settings" },
-      ]}
+      breadcrumbs={[{ label: "Messages", to: "/messages" }, { label: "Settings" }]}
     >
       <div className="space-y-6">
         <MessagingSettingsPanel companyId={company?.id ?? null} />

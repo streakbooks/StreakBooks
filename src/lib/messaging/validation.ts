@@ -1,5 +1,4 @@
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function isMessagingUuid(value: unknown): value is string {
   return typeof value === "string" && UUID_RE.test(value);
@@ -12,7 +11,7 @@ export function assertMessagingUuid(value: unknown, label = "id"): string {
 
 export function normaliseMessageBody(raw: unknown): string {
   if (typeof raw !== "string") throw new Error("Message body is required");
-  const body = raw.replace(/\u0000/g, "").trim();
+  const body = raw.replaceAll("\u0000", "").trim();
   if (body.length < 1) throw new Error("Message cannot be empty");
   if (body.length > 8000) throw new Error("Message is too long (8000 characters max)");
   return body;

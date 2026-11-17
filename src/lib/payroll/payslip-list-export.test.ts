@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { payrollPayslipsToCsv, payslipNetBalances, PAYSLIP_EXPORT_HEADERS } from "./payslip-list-export";
+import {
+  payrollPayslipsToCsv,
+  payslipNetBalances,
+  PAYSLIP_EXPORT_HEADERS,
+} from "./payslip-list-export";
 import type { PayrollPayslipsListPage } from "@/lib/payroll/types";
 
 type ListRow = PayrollPayslipsListPage["payslips"][number];

@@ -10,23 +10,30 @@ import { readFile, stat, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  REVIEW_MIGRATIONS, RECONCILIATION_TEST_FILES,
-  accountingReleaseSteps, verifyVitestStep,
-  migrationSourceCheck, accountingReleasePreflight,
+  REVIEW_MIGRATIONS,
+  RECONCILIATION_TEST_FILES,
+  accountingReleaseSteps,
+  verifyVitestStep,
+  migrationSourceCheck,
+  accountingReleasePreflight,
   accountingReleaseDecision,
 } from "./lib/accounting-reconciliation-release-plan.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const flags = new Set(["--dry-run", "--skip-install", "--help"]);
-const invalid = args.find(arg => !flags.has(arg));
+const invalid = args.find((arg) => !flags.has(arg));
 if (invalid) {
   console.error("Unsupported argument: " + invalid);
   process.exitCode = 2;
 } else if (args.includes("--help")) {
-  console.log("Usage: node scripts/verify-accounting-reconciliation-release.mjs [--dry-run] [--skip-install]");
+  console.log(
+    "Usage: node scripts/verify-accounting-reconciliation-release.mjs [--dry-run] [--skip-install]",
+  );
   console.log("Runs only local non-GitHub-CI checks; no Supabase writes or Vercel deployment.");
-  console.log("Always blocks production approval until authenticated staging/deployment checks are independently verified.");
+  console.log(
+    "Always blocks production approval until authenticated staging/deployment checks are independently verified.",
+  );
 } else {
   await main({
     dryRun: args.includes("--dry-run"),
@@ -36,8 +43,11 @@ if (invalid) {
 
 function git(...args) {
   const result = spawnSync("git", args, {
-    cwd: root, encoding: "utf8", windowsHide: true,
-    timeout: 45000, stdio: ["ignore", "pipe", "pipe"],
+    cwd: root,
+    encoding: "utf8",
+    windowsHide: true,
+    timeout: 45000,
+    stdio: ["ignore", "pipe", "pipe"],
   });
   return result.status === 0 ? (result.stdout ?? "").trim() : null;
 }
@@ -52,17 +62,24 @@ function gitInfo(fresh) {
     workingTreeClean: clean === "",
     remoteRefFresh: fresh,
     // Never record remote URL: URLs can embed credentials.
-    originMatchesRepo: typeof remote === "string" &&
-      /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)linkbusinessadvisory\/LinkBooks(?:\.git)?\/?$/i.test(remote),
+    originMatchesRepo:
+      typeof remote === "string" &&
+      /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)linkbusinessadvisory\/LinkBooks(?:\.git)?\/?$/i.test(
+        remote,
+      ),
   };
 }
 function refreshMain() {
-  const result = spawnSync("git", [
-    "fetch", "--no-tags", "origin",
-    "refs/heads/main:refs/remotes/origin/main",
-  ], {
-    cwd: root, stdio: "ignore", windowsHide: true, timeout: 90000,
-  });
+  const result = spawnSync(
+    "git",
+    ["fetch", "--no-tags", "origin", "refs/heads/main:refs/remotes/origin/main"],
+    {
+      cwd: root,
+      stdio: "ignore",
+      windowsHide: true,
+      timeout: 90000,
+    },
+  );
   return result.status === 0 && !result.error;
 }
 async function migrationEvidence() {
@@ -73,31 +90,37 @@ async function migrationEvidence() {
       const source = await readFile(path.join(root, item.path), "utf8");
       contents[item.path] = source;
       digest[item.path] = createHash("sha256").update(source).digest("hex");
-    } catch { contents[item.path] = null; }
+    } catch {
+      contents[item.path] = null;
+    }
   }
   const status = migrationSourceCheck(contents);
   let testsPresent = true;
   for (const relative of RECONCILIATION_TEST_FILES) {
     try {
       if (!(await stat(path.join(root, relative))).isFile()) testsPresent = false;
-    } catch { testsPresent = false; }
+    } catch {
+      testsPresent = false;
+    }
   }
   return { status, digest, testsPresent };
 }
 function npmSpec(args) {
   if (process.platform !== "win32") return { file: "npm", args };
   // All arguments come from static, source-defined test plans.
-  const quoted = args.map(x => '"' + x.replaceAll('"', '""') + '"').join(" ");
+  const quoted = args.map((x) => '"' + x.replaceAll('"', '""') + '"').join(" ");
   return { file: "cmd.exe", args: ["/d", "/s", "/c", "npm.cmd " + quoted] };
 }
 async function performStep(step) {
   const started = Date.now();
   const { file, args } = npmSpec(step.args);
   console.log("\n>>> " + step.id + ": npm " + step.args.join(" "));
-  const response = await new Promise(resolve => {
+  const response = await new Promise((resolve) => {
     const child = spawn(file, args, {
-      cwd: root, env: process.env,
-      stdio: ["ignore", "pipe", "pipe"], windowsHide: true,
+      cwd: root,
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
     });
     let buffer = "";
     let settled = false;
@@ -110,20 +133,27 @@ async function performStep(step) {
       stream.write(chunk);
       buffer = (buffer + String(chunk)).slice(-40000);
     }
-    child.stdout?.on("data", x => capture(x, process.stdout));
-    child.stderr?.on("data", x => capture(x, process.stderr));
+    child.stdout?.on("data", (x) => capture(x, process.stdout));
+    child.stderr?.on("data", (x) => capture(x, process.stderr));
     child.on("error", () => done(null));
-    child.on("close", code => done(code));
+    child.on("close", (code) => done(code));
   });
   const verification = ["focused", "full_unit"].includes(step.id)
     ? verifyVitestStep({
-      exitCode: response.exitCode, output: response.output,
-      expectedFiles: step.id === "focused" ? RECONCILIATION_TEST_FILES.length : null,
-    }) : null;
+        exitCode: response.exitCode,
+        output: response.output,
+        expectedFiles: step.id === "focused" ? RECONCILIATION_TEST_FILES.length : null,
+      })
+    : null;
   return {
     id: step.id,
-    status: verification ? (verification.passed ? "passed" : "failed") :
-      response.exitCode === 0 ? "passed" : "failed",
+    status: verification
+      ? verification.passed
+        ? "passed"
+        : "failed"
+      : response.exitCode === 0
+        ? "passed"
+        : "failed",
     exitCode: response.exitCode,
     seconds: Math.round((Date.now() - started) / 1000),
     ...(verification ? { vitest: verification.counts } : {}),
@@ -137,7 +167,9 @@ async function main({ dryRun, install }) {
   const fresh = !dryRun && before.originMatchesRepo && refreshMain();
   const migration = await migrationEvidence();
   const preflight = accountingReleasePreflight(
-    gitInfo(fresh), migration.status, migration.testsPresent,
+    gitInfo(fresh),
+    migration.status,
+    migration.testsPresent,
   );
   const results = [];
   console.log("LinkBooks Accounting reconciliation local verification (no GitHub CI)");
@@ -150,8 +182,10 @@ async function main({ dryRun, install }) {
       results.push({ id: step.id, status: "planned" });
       continue;
     }
-    if (!preflight.passed || (step.id !== "install" &&
-        results.some(x => x.id === "install" && x.status !== "passed"))) {
+    if (
+      !preflight.passed ||
+      (step.id !== "install" && results.some((x) => x.id === "install" && x.status !== "passed"))
+    ) {
       results.push({ id: step.id, status: "blocked" });
       continue;
     }
@@ -160,17 +194,24 @@ async function main({ dryRun, install }) {
   const beforeFinal = gitInfo(false);
   const finalFresh = !dryRun && beforeFinal.originMatchesRepo && refreshMain();
   const postflight = accountingReleasePreflight(
-    gitInfo(finalFresh), migration.status, migration.testsPresent,
+    gitInfo(finalFresh),
+    migration.status,
+    migration.testsPresent,
   );
   const decision = accountingReleaseDecision({
-    preflight, postflight, steps: results, plan, dryRun,
+    preflight,
+    postflight,
+    steps: results,
+    plan,
+    dryRun,
   });
   const report = {
     workstream: "Accounting Reconciliation — Fixed Assets + persistent reviews",
     generatedAt: new Date().toISOString(),
     repository: "linkbusinessadvisory/LinkBooks",
     git: gitInfo(finalFresh),
-    preflight, postflight,
+    preflight,
+    postflight,
     migrationSource: migration.status,
     migrationDigests: migration.digest,
     requiredFocusedTestFiles: RECONCILIATION_TEST_FILES.length,
@@ -183,8 +224,11 @@ async function main({ dryRun, install }) {
     ...decision,
   };
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const destination = path.join(root, "artifacts",
-    "accounting-reconciliation-release-" + timestamp + ".json");
+  const destination = path.join(
+    root,
+    "artifacts",
+    "accounting-reconciliation-release-" + timestamp + ".json",
+  );
   await mkdir(path.dirname(destination), { recursive: true });
   await writeFile(destination, JSON.stringify(report, null, 2) + "\n", { mode: 0o600 });
   console.log("\nRelease evidence: " + destination);

@@ -115,7 +115,11 @@ export function CrmSettingsPage() {
       <CrmSubnav current="settings" />
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
-        <ErrorState title="Could not load settings" description={friendlyAuthError(settings.error)} onRetry={() => settings.refetch()} />
+        <ErrorState
+          title="Could not load settings"
+          description={friendlyAuthError(settings.error)}
+          onRetry={() => settings.refetch()}
+        />
       ) : null}
       {current ? (
         <div className="space-y-4">

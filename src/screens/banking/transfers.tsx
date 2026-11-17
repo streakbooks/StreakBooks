@@ -228,8 +228,8 @@ export function Transfers({
             <span>
               Transfer {amount} {currency} from {fromAcc?.name ?? "source account"} to{" "}
               {toAcc?.name ?? "destination account"} on {date}.
-              {currencyMismatch ? ` Destination receives ${received} ${toCurrency}.` : ""}
-              {" "}This creates a ledger journal; corrections require a reversal.
+              {currencyMismatch ? ` Destination receives ${received} ${toCurrency}.` : ""} This
+              creates a ledger journal; corrections require a reversal.
             </span>
           }
           confirmLabel="Post transfer"
@@ -238,7 +238,9 @@ export function Transfers({
             if (canPost && !mutation.isPending) mutation.mutate();
           }}
         >
-          {mutation.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+          {mutation.isPending ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          ) : null}
           Post transfer
         </ConfirmButton>
       </div>

@@ -223,7 +223,9 @@ export function DocumentReviewQueue({
                     {item.file_name}
                   </td>
                   <td className="p-3">{REVIEW_TYPE_LABELS[item.document_type]}</td>
-                  <td className="p-3"><StatusBadge status={item.status} label={REVIEW_STATUS_LABELS[item.status]} /></td>
+                  <td className="p-3">
+                    <StatusBadge status={item.status} label={REVIEW_STATUS_LABELS[item.status]} />
+                  </td>
                   <td className="p-3">{formatFileSize(item.size_bytes)}</td>
                   <td className="p-3">
                     <Button
@@ -319,7 +321,10 @@ export function DocumentReviewQueue({
             ) : history.data?.length ? (
               <ol className="space-y-2 border-l border-border/70 pl-4 text-xs">
                 {history.data.map((event) => (
-                  <li key={event.id} className="relative rounded-lg border border-border/70 bg-card p-3">
+                  <li
+                    key={event.id}
+                    className="relative rounded-lg border border-border/70 bg-card p-3"
+                  >
                     <span
                       aria-hidden="true"
                       className="absolute -left-[1.4rem] top-4 size-2 rounded-full bg-primary"
@@ -328,10 +333,14 @@ export function DocumentReviewQueue({
                       {new Date(event.created_at).toLocaleString()}
                     </time>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      {event.old_status ? <StatusBadge status={event.old_status} /> : (
+                      {event.old_status ? (
+                        <StatusBadge status={event.old_status} />
+                      ) : (
                         <span className="text-muted-foreground">New</span>
                       )}
-                      <span aria-label="changed to" className="text-muted-foreground">→</span>
+                      <span aria-label="changed to" className="text-muted-foreground">
+                        →
+                      </span>
                       <StatusBadge status={event.new_status} />
                       <span className="text-muted-foreground">· {event.new_type}</span>
                     </div>

@@ -117,7 +117,9 @@ describe("posted journal evidence explanations", () => {
     expect(explained.actions.map((action) => action.id)).toEqual(
       expect.arrayContaining(["inactive_accounts", "memo", "source_support", "period_tax"]),
     );
-    expect(explained.actions.some((action) => /post a correction automatically/i.test(action.detail))).toBe(false);
+    expect(
+      explained.actions.some((action) => /post a correction automatically/i.test(action.detail)),
+    ).toBe(false);
   });
 
   it("flags a missing source reference only when a document-backed source is expected", () => {

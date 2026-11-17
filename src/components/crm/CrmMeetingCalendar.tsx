@@ -69,11 +69,25 @@ export function CrmMeetingCalendar({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => moveMonth(-1)} aria-label="Previous month">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => moveMonth(-1)}
+            aria-label="Previous month"
+          >
             Previous
           </Button>
-          <span className="min-w-28 text-center text-sm font-semibold" aria-live="polite">{monthLabel}</span>
-          <Button type="button" variant="outline" size="sm" onClick={() => moveMonth(1)} aria-label="Next month">
+          <span className="min-w-28 text-center text-sm font-semibold" aria-live="polite">
+            {monthLabel}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => moveMonth(1)}
+            aria-label="Next month"
+          >
             Next
           </Button>
         </div>
@@ -81,7 +95,12 @@ export function CrmMeetingCalendar({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-7 gap-1" aria-label={monthLabel}>
           {WEEKDAYS.map((day) => (
-            <span key={day} className="py-1 text-center text-xs font-semibold text-muted-foreground">{day}</span>
+            <span
+              key={day}
+              className="py-1 text-center text-xs font-semibold text-muted-foreground"
+            >
+              {day}
+            </span>
           ))}
           {slots.map((day, index) => {
             if (day === null) return <span key={`blank-${index}`} aria-hidden="true" />;
@@ -109,17 +128,32 @@ export function CrmMeetingCalendar({
         </div>
         <section aria-live="polite" className="rounded-xl border border-border/70 bg-muted/20 p-3">
           <h3 className="text-sm font-semibold">
-            {selected.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}
+            {selected.toLocaleDateString(undefined, {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
           </h3>
           {selectedMeetings.length === 0 ? (
-            <p className="mt-1 text-sm text-muted-foreground">No loaded CRM meetings on this date.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              No loaded CRM meetings on this date.
+            </p>
           ) : (
             <ul className="mt-2 space-y-2">
               {selectedMeetings.map((meeting) => (
-                <li key={meeting.id} className="flex flex-wrap justify-between gap-2 rounded-lg border bg-card px-3 py-2 text-sm">
+                <li
+                  key={meeting.id}
+                  className="flex flex-wrap justify-between gap-2 rounded-lg border bg-card px-3 py-2 text-sm"
+                >
                   <span className="font-medium">{meeting.subject}</span>
                   <span className="text-muted-foreground">
-                    {meeting.dueAt ? new Date(meeting.dueAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : "—"} · {meeting.status}
+                    {meeting.dueAt
+                      ? new Date(meeting.dueAt).toLocaleTimeString(undefined, {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })
+                      : "—"}{" "}
+                    · {meeting.status}
                   </span>
                 </li>
               ))}
@@ -127,7 +161,8 @@ export function CrmMeetingCalendar({
           )}
         </section>
         <p className="text-xs text-muted-foreground">
-          Meetings come from the selected month (up to 500 records). Very large months require additional pagination.
+          Meetings come from the selected month (up to 500 records). Very large months require
+          additional pagination.
         </p>
       </CardContent>
     </Card>

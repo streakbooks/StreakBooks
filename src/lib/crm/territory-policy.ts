@@ -5,9 +5,7 @@ export type CrmTerritoryPolicy = {
   reason: string;
 };
 
-export function resolveCrmTerritoryPolicy(input?: {
-  backendReady?: boolean;
-}): CrmTerritoryPolicy {
+export function resolveCrmTerritoryPolicy(input?: { backendReady?: boolean }): CrmTerritoryPolicy {
   if (input?.backendReady) {
     return {
       canManageTerritories: true,

@@ -64,7 +64,14 @@ export function DataTableToolbar({
         </span>
         <div className="flex flex-wrap items-center gap-2">{bulkActions}</div>
         {onClearSelection ? (
-          <Button type="button" variant="ghost" size="sm" className="ml-auto" aria-label="Clear" onClick={onClearSelection}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            aria-label="Clear"
+            onClick={onClearSelection}
+          >
             <X />
             Clear
           </Button>
@@ -121,7 +128,10 @@ export function DataTableToolbar({
       ) : null}
       {filters}
       {summary ? (
-        <span className="rounded-md bg-muted/45 px-2 py-1 text-xs font-medium tabular-nums text-muted-foreground" role="status">
+        <span
+          className="rounded-md bg-muted/45 px-2 py-1 text-xs font-medium tabular-nums text-muted-foreground"
+          role="status"
+        >
           {summary}
         </span>
       ) : null}

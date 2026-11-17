@@ -19,8 +19,15 @@ const GROUP = new Set(["unreconciled", "posted", "all"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SIZES = new Set([25, 50, 100, 200]);
 const KEYS: Array<keyof BankTransactionReturnSearch> = [
-  "status", "statusGroup", "bankAccountId", "q",
-  "dateFrom", "dateTo", "direction", "page", "pageSize",
+  "status",
+  "statusGroup",
+  "bankAccountId",
+  "q",
+  "dateFrom",
+  "dateTo",
+  "direction",
+  "page",
+  "pageSize",
 ];
 const MAX_LENGTH = 2048;
 
@@ -29,12 +36,7 @@ export function parseBankTransactionReturnSearch(
 ): BankTransactionReturnSearch {
   const out: BankTransactionReturnSearch = {};
   if (typeof input["status"] === "string" && STATUS.has(input["status"])) {
-    out.status = input["status"] as
-      | "uncategorised"
-      | "matched"
-      | "reconciled"
-      | "excluded"
-      | "all";
+    out.status = input["status"] as "uncategorised" | "matched" | "reconciled" | "excluded" | "all";
   }
   if (typeof input["statusGroup"] === "string" && GROUP.has(input["statusGroup"])) {
     out.statusGroup = input["statusGroup"] as "unreconciled" | "posted" | "all";
@@ -54,10 +56,13 @@ export function parseBankTransactionReturnSearch(
   if (
     (typeof page === "number" && Number.isSafeInteger(page) && page >= 0) ||
     (typeof page === "string" && /^\d{1,7}$/.test(page))
-  ) out.page = Math.min(Number(page), 1_000_000);
+  )
+    out.page = Math.min(Number(page), 1_000_000);
   const pageSize = input["pageSize"];
-  if ((typeof pageSize === "number" || typeof pageSize === "string") &&
-      SIZES.has(Number(pageSize))) {
+  if (
+    (typeof pageSize === "number" || typeof pageSize === "string") &&
+    SIZES.has(Number(pageSize))
+  ) {
     out.pageSize = Number(pageSize) as 25 | 50 | 100 | 200;
   }
   return out;

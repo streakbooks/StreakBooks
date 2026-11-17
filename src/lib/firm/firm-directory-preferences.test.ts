@@ -19,18 +19,21 @@ const base: FirmSavedView = {
 
 describe("firm client cloud preferences", () => {
   it("normalizes only allowed columns and keeps an explicit empty selection", () => {
-    expect(normalizeFirmDirectoryPreference("columns", ["review", "review", "bogus", "status"]))
-      .toEqual(["review", "status"]);
+    expect(
+      normalizeFirmDirectoryPreference("columns", ["review", "review", "bogus", "status"]),
+    ).toEqual(["review", "status"]);
     expect(normalizeFirmDirectoryPreference("columns", [])).toEqual([]);
   });
 
   it("handles unknown, duplicate and malformed saved view values", () => {
     expect(normalizeFirmSavedViews(null)).toEqual([]);
     expect(normalizeFirmSavedViews([base, { ...base, id: "other" }])).toEqual([base]);
-    expect(normalizeFirmSavedViews([
-      { id: "unsafe/html", name: "Invalid" },
-      { ...base, name: "  Monthly due  " },
-    ])).toEqual([base]);
+    expect(
+      normalizeFirmSavedViews([
+        { id: "unsafe/html", name: "Invalid" },
+        { ...base, name: "  Monthly due  " },
+      ]),
+    ).toEqual([base]);
     const normalized = normalizeFirmSavedViews([
       { ...base, id: "two", status: "other", review: "none", sort: "unsafe", query: 42 },
     ]);

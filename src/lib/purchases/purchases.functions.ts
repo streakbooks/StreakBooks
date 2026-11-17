@@ -1590,6 +1590,111 @@ export const saveBillDraft = createServerFn({ method: "POST" })
   .inputValidator(parseBillDraftInput)
   .handler(async ({ data, context }) => saveBillDraftCore(data, context));
 
+/** Copy a bill into a NEW draft dated today with the supplier's payment terms. */
+export const copyBill = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; billId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    billId: assertUuid(input.billId, "bill"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+    const { data: row, error } = await supabase
+      .from("purchase_bills" as never)
+      .select(
+        "contact_id, memo, currency_code, fx_rate_to_base, tax_calculation, payment_terms_days, payment_term_id, supplier_address_line1, supplier_address_line2, supplier_address_city, supplier_address_region, supplier_address_postal, supplier_address_country, purchase_bill_lines(*)" as never,
+      )
+      .eq("id" as never, data.billId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Bill not found");
+
+    const src = row as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      fx_rate_to_base: number | null;
+      tax_calculation: string | null;
+      payment_terms_days: number | null;
+      payment_term_id: string | null;
+      supplier_address_line1: string | null;
+      supplier_address_line2: string | null;
+      supplier_address_city: string | null;
+      supplier_address_region: string | null;
+      supplier_address_postal: string | null;
+      supplier_address_country: string | null;
+      purchase_bill_lines: Array<{
+        description: string;
+        account_id: string | null;
+        quantity: number;
+        unit_price_minor: number;
+        discount_minor?: number | null;
+        tax_rate_bps?: number | null;
+        product_id?: string | null;
+        tax_code_id?: string | null;
+        class_option_id?: string | null;
+        location_option_id?: string | null;
+        project_option_id?: string | null;
+        customer_contact_id?: string | null;
+        is_billable?: boolean | null;
+        line_no?: number | null;
+      }>;
+    };
+
+    const { mapBillLinesForCopy } = await import("@/lib/purchases/copy-bill");
+    const { calculateDueDate } = await import("@/lib/purchases/bill-form-helpers");
+    const lines = mapBillLinesForCopy(src.purchase_bill_lines ?? []);
+    if (!lines.length) throw new Error("Bill has no lines to copy");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const termsDays =
+      src.payment_terms_days == null ? 30 : Math.max(0, Math.floor(Number(src.payment_terms_days)));
+    const dueDate = calculateDueDate(today, {
+      days: termsDays,
+      calculation_method: "days_after_bill_date",
+    });
+    const taxCalculation =
+      src.tax_calculation === "inclusive" || src.tax_calculation === "none"
+        ? src.tax_calculation
+        : "exclusive";
+
+    const supplierAddress: {
+      line1?: string;
+      line2?: string;
+      city?: string;
+      region?: string;
+      postal?: string;
+      country?: string;
+    } = {};
+    if (src.supplier_address_line1) supplierAddress.line1 = src.supplier_address_line1;
+    if (src.supplier_address_line2) supplierAddress.line2 = src.supplier_address_line2;
+    if (src.supplier_address_city) supplierAddress.city = src.supplier_address_city;
+    if (src.supplier_address_region) supplierAddress.region = src.supplier_address_region;
+    if (src.supplier_address_postal) supplierAddress.postal = src.supplier_address_postal;
+    if (src.supplier_address_country) supplierAddress.country = src.supplier_address_country;
+
+    return saveBillDraftCore(
+      parseBillDraftInput({
+        companyId: data.companyId,
+        contactId: src.contact_id,
+        billDate: today,
+        dueDate,
+        ...(src.memo ? { memo: src.memo } : {}),
+        currencyCode: src.currency_code,
+        taxCalculation,
+        paymentTermId: src.payment_term_id,
+        paymentTermsDays: termsDays,
+        dueDateManualOverride: false,
+        fxRateToBase: src.fx_rate_to_base,
+        supplierAddress,
+        lines,
+      }),
+      context,
+    );
+  });
+
 export async function authoriseBillInternal(
   supabase: Parameters<typeof assertCompanyPermission>[0],
   userId: string,
@@ -1729,7 +1834,9 @@ export const getBillPurchaseOrderMatch = createServerFn({ method: "GET" })
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
     const { data: bill, error } = await context.supabase
       .from("purchase_bills" as never)
-      .select("purchase_order_id, purchase_bill_lines(line_no, description, account_id, quantity, net_minor)" as never)
+      .select(
+        "purchase_order_id, purchase_bill_lines(line_no, description, account_id, quantity, net_minor)" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.billId as never)
       .maybeSingle();
@@ -1760,9 +1867,7 @@ export const voidBill = createServerFn({ method: "POST" })
       const reason = String(input.reason ?? "").trim();
       if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
       const voidDate =
-        input.voidDate && String(input.voidDate).trim()
-          ? String(input.voidDate).trim()
-          : null;
+        input.voidDate && String(input.voidDate).trim() ? String(input.voidDate).trim() : null;
       if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
         throw new Error("Void date must be YYYY-MM-DD");
       }
@@ -2378,9 +2483,7 @@ export const reverseSupplierPayment = createServerFn({ method: "POST" })
       const reason = String(input.reason ?? "").trim();
       if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
       const voidDate =
-        input.voidDate && String(input.voidDate).trim()
-          ? String(input.voidDate).trim()
-          : null;
+        input.voidDate && String(input.voidDate).trim() ? String(input.voidDate).trim() : null;
       if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
         throw new Error("Void date must be YYYY-MM-DD");
       }
@@ -3222,9 +3325,7 @@ export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
       const reason = String(input.reason ?? "").trim();
       if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
       const voidDate =
-        input.voidDate && String(input.voidDate).trim()
-          ? String(input.voidDate).trim()
-          : null;
+        input.voidDate && String(input.voidDate).trim() ? String(input.voidDate).trim() : null;
       if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
         throw new Error("Void date must be YYYY-MM-DD");
       }
@@ -3598,7 +3699,9 @@ export const receivePurchaseOrderGoods = createServerFn({ method: "POST" })
             receiveQuantity > 1e9 ||
             receiveQuantity !== Number(receiveQuantity.toFixed(6))
           ) {
-            throw new Error(`Line ${i + 1}: enter a positive quantity with up to six decimal places`);
+            throw new Error(
+              `Line ${i + 1}: enter a positive quantity with up to six decimal places`,
+            );
           }
           return { lineId, receiveQuantity };
         }),
@@ -4302,45 +4405,39 @@ export const getSupplierStatement = createServerFn({ method: "GET" })
     const cur = (c: string | null | undefined) => (c ?? baseCur).toUpperCase();
 
     const docs: SupplierStatementDoc[] = [
-      ...billsAll.map(
-        (b): SupplierStatementDoc => ({
-          kind: "bill",
-          id: b.id,
-          date: b.bill_date,
-          currencyCode: cur(b.currency_code),
-          amountMinor: Number(b.total_minor),
-          reference: b.supplier_invoice_number ?? b.bill_number,
-          status: b.status === "paid" || b.status === "partly_paid" ? "authorised" : b.status,
-          voidDate: b.void_date ?? null,
-          dueDate: b.due_date,
-        }),
-      ),
+      ...billsAll.map((b): SupplierStatementDoc => ({
+        kind: "bill",
+        id: b.id,
+        date: b.bill_date,
+        currencyCode: cur(b.currency_code),
+        amountMinor: Number(b.total_minor),
+        reference: b.supplier_invoice_number ?? b.bill_number,
+        status: b.status === "paid" || b.status === "partly_paid" ? "authorised" : b.status,
+        voidDate: b.void_date ?? null,
+        dueDate: b.due_date,
+      })),
       ...paymentsAll
         .filter((p) => p.status === "paid" || p.status === "void")
-        .map(
-          (p): SupplierStatementDoc => ({
-            kind: "payment",
-            id: p.id,
-            date: p.payment_date,
-            currencyCode: cur(p.currency_code),
-            amountMinor: Number(p.amount_minor),
-            reference: p.reference,
-            status: p.status === "paid" ? "posted" : p.status,
-            voidDate: p.void_date ?? null,
-          }),
-        ),
-      ...creditNotesAll.map(
-        (c): SupplierStatementDoc => ({
-          kind: "credit_note",
-          id: c.id,
-          date: c.credit_date,
-          currencyCode: cur(c.currency_code),
-          amountMinor: Number(c.total_minor),
-          reference: c.credit_number,
-          status: c.status === "partly_paid" ? "authorised" : c.status,
-          voidDate: c.void_date ?? null,
-        }),
-      ),
+        .map((p): SupplierStatementDoc => ({
+          kind: "payment",
+          id: p.id,
+          date: p.payment_date,
+          currencyCode: cur(p.currency_code),
+          amountMinor: Number(p.amount_minor),
+          reference: p.reference,
+          status: p.status === "paid" ? "posted" : p.status,
+          voidDate: p.void_date ?? null,
+        })),
+      ...creditNotesAll.map((c): SupplierStatementDoc => ({
+        kind: "credit_note",
+        id: c.id,
+        date: c.credit_date,
+        currencyCode: cur(c.currency_code),
+        amountMinor: Number(c.total_minor),
+        reference: c.credit_number,
+        status: c.status === "partly_paid" ? "authorised" : c.status,
+        voidDate: c.void_date ?? null,
+      })),
     ];
 
     // Cap activity at asOf (defaults to today) when no explicit To date is provided.

@@ -38,7 +38,9 @@ export function WorkspaceInsights({
 
   return (
     <div className={cn("space-y-4 text-sm", className)} data-slot="workspace-insights">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h2>
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h2>
       {hasFacts ? (
         <dl className="space-y-2">
           {facts!.map((fact) => (
@@ -70,7 +72,9 @@ export function WorkspaceInsights({
           ))}
         </ul>
       ) : null}
-      {footer ? <div className="border-t border-border/60 pt-3 text-xs text-muted-foreground">{footer}</div> : null}
+      {footer ? (
+        <div className="border-t border-border/60 pt-3 text-xs text-muted-foreground">{footer}</div>
+      ) : null}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -330,7 +331,10 @@ export function HrSelfServicePage() {
             {leaveQ.isPending ? (
               <LoadingState />
             ) : (leaveQ.data?.items.length ?? 0) === 0 ? (
-              <EmptyState title="No leave requests" description="Submit a leave request when needed." />
+              <EmptyState
+                title="No leave requests"
+                description="Submit a leave request when needed."
+              />
             ) : (
               <TableCard>
                 <Table>
@@ -413,7 +417,7 @@ export function HrSelfServicePage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Leave type</Label>
-              <Select value={leaveTypeId} onValueChange={setLeaveTypeId}>
+              <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -424,12 +428,16 @@ export function HrSelfServicePage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label>Start</Label>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label>End</Label>

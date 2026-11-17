@@ -73,5 +73,3 @@ describe("demo company isolation", () => {
     expect(assertCompanyMember).toHaveBeenCalledWith(expect.anything(), companyId);
   });
 });
-
-

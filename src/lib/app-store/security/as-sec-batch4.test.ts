@@ -158,7 +158,7 @@ describe("token compromise and enqueue gates", () => {
     expect(containsRawTokenMaterial('{"access_token":"abc"}')).toBe(true);
     const alert = buildMarketplaceAbuseAlert({
       alertType: "token_compromise",
-      summary: 'leak Bearer abc.def.ghi',
+      summary: "leak Bearer abc.def.ghi",
       details: { sample: '{"access_token":"secret"}' },
       signals: { failedAuthCount: 2, crossTenantAttempts: 1 },
     });
@@ -182,4 +182,3 @@ describe("token compromise and enqueue gates", () => {
     expect(decision.allowed).toBe(false);
   });
 });
-

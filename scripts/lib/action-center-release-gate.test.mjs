@@ -27,26 +27,53 @@ test("approves matching production deployment evidence", () => {
 });
 
 test("rejects a READY deployment from the previous repository", () => {
-  assert.throws(() => validateActionCenterDeployment({
-    ...record, meta: { ...record.meta, githubOrg: "rohitmehra86" },
-  }, sha), /Wrong deployment repository/);
+  assert.throws(
+    () =>
+      validateActionCenterDeployment(
+        {
+          ...record,
+          meta: { ...record.meta, githubOrg: "rohitmehra86" },
+        },
+        sha,
+      ),
+    /Wrong deployment repository/,
+  );
 });
 
 test("rejects a non-approved commit", () => {
-  assert.throws(() => validateActionCenterDeployment({
-    ...record, meta: { ...record.meta, githubCommitSha: "b".repeat(40) },
-  }, sha), /does not match/);
+  assert.throws(
+    () =>
+      validateActionCenterDeployment(
+        {
+          ...record,
+          meta: { ...record.meta, githubCommitSha: "b".repeat(40) },
+        },
+        sha,
+      ),
+    /does not match/,
+  );
 });
 
 test("rejects non-main branches", () => {
-  assert.throws(() => validateActionCenterDeployment({
-    ...record, meta: { ...record.meta, githubCommitRef: "feature/action-center" },
-  }, sha), /main branch/);
+  assert.throws(
+    () =>
+      validateActionCenterDeployment(
+        {
+          ...record,
+          meta: { ...record.meta, githubCommitRef: "feature/action-center" },
+        },
+        sha,
+      ),
+    /main branch/,
+  );
 });
 
 test("rejects preview and unready deployments", () => {
   for (const target of ["preview", undefined]) {
-    assert.throws(() => validateActionCenterDeployment({ ...record, target }, sha), /target production/);
+    assert.throws(
+      () => validateActionCenterDeployment({ ...record, target }, sha),
+      /target production/,
+    );
   }
   for (const state of ["ERROR", "BUILDING", undefined]) {
     assert.throws(() => validateActionCenterDeployment({ ...record, state }, sha), /not READY/);

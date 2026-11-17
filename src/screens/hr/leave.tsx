@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -187,10 +188,7 @@ export function HrLeavePage() {
   });
 
   const decideM = useMutation({
-    mutationFn: (input: {
-      requestId: string;
-      decision: "approved" | "rejected" | "cancelled";
-    }) =>
+    mutationFn: (input: { requestId: string; decision: "approved" | "rejected" | "cancelled" }) =>
       decideRequest({
         data: {
           companyId: company!.id,
@@ -462,7 +460,11 @@ export function HrLeavePage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Annual leave" />
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Annual leave"
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Annual allowance (days)</Label>
@@ -476,7 +478,7 @@ export function HrLeavePage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Accrual method</Label>
-              <Select value={accrual} onValueChange={setAccrual}>
+              <RecordLookupSelect value={accrual} onValueChange={setAccrual}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -487,7 +489,7 @@ export function HrLeavePage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Requires approval</Label>
@@ -525,7 +527,7 @@ export function HrLeavePage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              <Select value={employeeId} onValueChange={setEmployeeId}>
+              <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
@@ -536,11 +538,11 @@ export function HrLeavePage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Leave type</Label>
-              <Select value={leaveTypeId} onValueChange={setLeaveTypeId}>
+              <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -551,12 +553,16 @@ export function HrLeavePage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label>Start</Label>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label>End</Label>
@@ -565,20 +571,20 @@ export function HrLeavePage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Status</Label>
-              <Select value={status} onValueChange={setStatus}>
+              <RecordLookupSelect value={status} onValueChange={setStatus}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {HR_LEAVE_REQUEST_STATUSES.filter((s) =>
-                    s === "draft" || s === "submitted" || s === "cancelled",
+                  {HR_LEAVE_REQUEST_STATUSES.filter(
+                    (s) => s === "draft" || s === "submitted" || s === "cancelled",
                   ).map((s) => (
                     <SelectItem key={s} value={s}>
                       {s}
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Reason</Label>
@@ -591,9 +597,7 @@ export function HrLeavePage() {
             </Button>
             <Button
               type="button"
-              disabled={
-                !employeeId || !leaveTypeId || !startDate || !endDate || saveReqM.isPending
-              }
+              disabled={!employeeId || !leaveTypeId || !startDate || !endDate || saveReqM.isPending}
               onClick={() => saveReqM.mutate()}
             >
               Save
@@ -610,7 +614,7 @@ export function HrLeavePage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              <Select value={employeeId} onValueChange={setEmployeeId}>
+              <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
@@ -621,11 +625,11 @@ export function HrLeavePage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Leave type</Label>
-              <Select value={leaveTypeId} onValueChange={setLeaveTypeId}>
+              <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -636,7 +640,7 @@ export function HrLeavePage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
           </div>
           <DialogFooter>

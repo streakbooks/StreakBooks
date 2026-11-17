@@ -1,15 +1,22 @@
-export const HR_DOCUMENT_TYPES = ["contract","id","visa","certificate","policy","other"] as const;
+export const HR_DOCUMENT_TYPES = [
+  "contract",
+  "id",
+  "visa",
+  "certificate",
+  "policy",
+  "other",
+] as const;
 export type HrDocumentType = (typeof HR_DOCUMENT_TYPES)[number];
-export const HR_DOCUMENT_STATUSES = ["active","expired","superseded","archived"] as const;
+export const HR_DOCUMENT_STATUSES = ["active", "expired", "superseded", "archived"] as const;
 export type HrDocumentStatus = (typeof HR_DOCUMENT_STATUSES)[number];
 
-export const HR_ASSET_STATUSES = ["assigned","returned","lost","written_off"] as const;
+export const HR_ASSET_STATUSES = ["assigned", "returned", "lost", "written_off"] as const;
 export type HrAssetStatus = (typeof HR_ASSET_STATUSES)[number];
-export const HR_ASSET_CONDITIONS = ["new","good","fair","poor","damaged","lost"] as const;
+export const HR_ASSET_CONDITIONS = ["new", "good", "fair", "poor", "damaged", "lost"] as const;
 
-export const HR_CASE_TYPES = ["grievance","disciplinary","investigation","other"] as const;
-export const HR_CASE_STATUSES = ["open","in_review","resolved","closed","cancelled"] as const;
-export const HR_CASE_SEVERITIES = ["low","medium","high","critical"] as const;
+export const HR_CASE_TYPES = ["grievance", "disciplinary", "investigation", "other"] as const;
+export const HR_CASE_STATUSES = ["open", "in_review", "resolved", "closed", "cancelled"] as const;
+export const HR_CASE_SEVERITIES = ["low", "medium", "high", "critical"] as const;
 
 export type HrEmployeeDocument = {
   id: string;

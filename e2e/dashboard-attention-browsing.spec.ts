@@ -20,16 +20,19 @@ test.describe("Dashboard native attention-workspace browsing", () => {
     await signIn(page, "/?attention=overdue");
     const group = page.getByRole("group", { name: "Filter bookkeeping tasks" });
     await expect(group.getByRole("link", { name: /Overdue/ })).toHaveAttribute(
-      "aria-current", "page",
+      "aria-current",
+      "page",
     );
     await page.reload();
     await expect(group.getByRole("link", { name: /Overdue/ })).toHaveAttribute(
-      "aria-current", "page",
+      "aria-current",
+      "page",
     );
   });
 
   test("queue navigation preserves browser history and supports native new-tab links", async ({
-    page, context,
+    page,
+    context,
   }) => {
     await signIn(page, "/?attention=all");
     const group = page.getByRole("group", { name: "Filter bookkeeping tasks" });

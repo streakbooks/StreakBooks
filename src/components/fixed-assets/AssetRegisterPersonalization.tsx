@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useState } from "react";
 import { Columns3, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -135,28 +136,33 @@ export function FixedAssetSavedFilterViews({
     setStorageKey(null);
     setStorageError(null);
     setLoading(true);
-    void supabase.auth.getUser().then(({ data, error }) => {
-      if (cancelled) return;
-      if (error || !data.user?.id) {
-        setStorageError("Your session could not be verified for saved views.");
+    void supabase.auth
+      .getUser()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data.user?.id) {
+          setStorageError("Your session could not be verified for saved views.");
+          setLoading(false);
+          return;
+        }
+        const key = "linkbooks-fixed-assets-views:v1:" + data.user.id + ":" + companyId;
+        try {
+          setViews(parseSavedAssetFilterViews(window.localStorage.getItem(key)));
+          setStorageKey(key);
+        } catch {
+          setStorageError("Browser storage is unavailable. Saved views are disabled.");
+        }
         setLoading(false);
-        return;
-      }
-      const key = "linkbooks-fixed-assets-views:v1:" + data.user.id + ":" + companyId;
-      try {
-        setViews(parseSavedAssetFilterViews(window.localStorage.getItem(key)));
-        setStorageKey(key);
-      } catch {
-        setStorageError("Browser storage is unavailable. Saved views are disabled.");
-      }
-      setLoading(false);
-    }).catch(() => {
-      if (!cancelled) {
-        setStorageError("Saved views are unavailable until your session is restored.");
-        setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStorageError("Saved views are unavailable until your session is restored.");
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [companyId]);
 
   const persist = (updated: SavedAssetFilterView[]) => {
@@ -188,7 +194,10 @@ export function FixedAssetSavedFilterViews({
   };
   const chosen = views.find((view) => view.name === selected);
   return (
-    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2" aria-label="Saved fixed asset filter views">
+    <div
+      className="flex min-w-0 flex-1 flex-wrap items-center gap-2"
+      aria-label="Saved fixed asset filter views"
+    >
       <Input
         aria-label="Name current fixed asset filters"
         className="min-w-32 flex-1 sm:max-w-48"
@@ -207,18 +216,20 @@ export function FixedAssetSavedFilterViews({
       >
         <Save className="mr-2 size-4" /> Save view
       </Button>
-      <select
+      <RecordLookupSelect
         className="h-9 min-w-36 max-w-full rounded-md border bg-background px-3 text-sm"
         aria-label="Select a saved fixed assets filter view"
         value={selected}
         disabled={!storageKey || loading || views.length === 0}
-        onChange={(event) => setSelected(event.target.value)}
+        onValueChange={(event) => setSelected(event)}
       >
         <option value="">Saved views ({views.length})</option>
         {views.map((view) => (
-          <option key={view.name} value={view.name}>{view.name}</option>
+          <option key={view.name} value={view.name}>
+            {view.name}
+          </option>
         ))}
-      </select>
+      </RecordLookupSelect>
       <Button
         size="sm"
         variant="outline"
@@ -248,11 +259,13 @@ export function FixedAssetSavedFilterViews({
         <Trash2 className="size-4" />
       </Button>
       {storageError ? (
-        <span className="w-full text-xs text-destructive" role="status">{storageError}</span>
+        <span className="w-full text-xs text-destructive" role="status">
+          {storageError}
+        </span>
       ) : (
         <span className="w-full text-xs text-muted-foreground">
-          Saves filters and sorting only, on this browser for your account and organisation.
-          Column layout is saved separately.
+          Saves filters and sorting only, on this browser for your account and organisation. Column
+          layout is saved separately.
         </span>
       )}
     </div>

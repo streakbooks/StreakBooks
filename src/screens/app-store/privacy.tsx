@@ -126,19 +126,19 @@ export function AppStorePrivacyPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Privacy & access" description="App Store"
-    >
-      <EmptyState title="No access" description="Requires appstore.view or manage_connections." />
-    </ListWorkspace>
+      <ListWorkspace title="Privacy & access" description="App Store">
+        <EmptyState title="No access" description="Requires appstore.view or manage_connections." />
+      </ListWorkspace>
     );
   }
 
   const activeConsents = (consents.data ?? []).filter((c) => c.status === "active");
 
   return (
-      <ListWorkspace title="Privacy & access"
-        description="Granular consent, permission visibility, connection history and revocation for marketplace apps."
-      subnav={<AppStoreSubnav current="privacy"/>}
+    <ListWorkspace
+      title="Privacy & access"
+      description="Granular consent, permission visibility, connection history and revocation for marketplace apps."
+      subnav={<AppStoreSubnav current="privacy" />}
     >
       <Alert className="mb-6">
         <AlertTitle>Zero-trust customer controls</AlertTitle>
@@ -332,5 +332,5 @@ export function AppStorePrivacyPage() {
         ) : null}
       </div>
     </ListWorkspace>
-    );
+  );
 }

@@ -1,4 +1,5 @@
-"use client";
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
+("use client");
 
 import { VoiceFields, VoiceSelect } from "@/components/ai-voice/voice-fields";
 
@@ -61,10 +62,18 @@ import { Button } from "@/components/ui/button";
 import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 
 export type SalesDocKind = "invoice" | "quote" | "credit_note";
@@ -213,7 +222,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   );
   // null: accept the customer's default; "": explicitly use normal catalogue prices.
   const [manualPriceListId, setManualPriceListId] = useState<string | null>(
-    existing ? existing.priceListId ?? "" : null,
+    existing ? (existing.priceListId ?? "") : null,
   );
   const [applyPriceListOpen, setApplyPriceListOpen] = useState(false);
   const [priceListAmountsTouched, setPriceListAmountsTouched] = useState(false);
@@ -229,24 +238,29 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const customerDefaultQ = useQuery({
     queryKey: ["customer-price-list", companyId, contactId, currency],
     enabled: enabled && isSalesDraft && !existing && Boolean(contactId && currency),
-    queryFn: () => fetchCustomerPriceList({
-      data: {
-        companyId: companyId!,
-        contactId,
-        documentCurrency: currency,
-      },
-    }),
+    queryFn: () =>
+      fetchCustomerPriceList({
+        data: {
+          companyId: companyId!,
+          contactId,
+          documentCurrency: currency,
+        },
+      }),
   });
   const selectedPriceListId = resolvedDraftPriceList(
     manualPriceListId,
     customerDefaultQ.data?.priceListId,
   );
   const customerDefaultPending = Boolean(
-    isSalesDraft && !existing && contactId && currency &&
-    manualPriceListId === null && customerDefaultQ.isPending,
+    isSalesDraft &&
+    !existing &&
+    contactId &&
+    currency &&
+    manualPriceListId === null &&
+    customerDefaultQ.isPending,
   );
-  const selectedPriceList = priceListsQ.data?.find((list) =>
-    list.id === selectedPriceListId && list.is_active && list.currency_code === currency,
+  const selectedPriceList = priceListsQ.data?.find(
+    (list) => list.id === selectedPriceListId && list.is_active && list.currency_code === currency,
   );
   const targetProductIds = useMemo(
     () => [
@@ -260,47 +274,60 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const priceListTooLarge = targetProductIds.length > 250;
   const draftPricesQ = useQuery({
     queryKey: [
-      "sales-draft-price-list", companyId, selectedPriceListId, currency,
+      "sales-draft-price-list",
+      companyId,
+      selectedPriceListId,
+      currency,
       targetProductIds.join(","),
     ],
     enabled:
-      enabled && isSalesDraft && Boolean(selectedPriceListId && currency) &&
-      !priceListTooLarge && Boolean(selectedPriceList),
-    queryFn: () => resolvePriceList({
-      data: {
-        companyId: companyId!,
-        priceListId: selectedPriceListId,
-        documentCurrency: currency,
-        productIds: targetProductIds,
-      },
-    }),
+      enabled &&
+      isSalesDraft &&
+      Boolean(selectedPriceListId && currency) &&
+      !priceListTooLarge &&
+      Boolean(selectedPriceList),
+    queryFn: () =>
+      resolvePriceList({
+        data: {
+          companyId: companyId!,
+          priceListId: selectedPriceListId,
+          documentCurrency: currency,
+          productIds: targetProductIds,
+        },
+      }),
   });
   const draftPricesReady = Boolean(selectedPriceList && draftPricesQ.isSuccess);
   const draftPriceOverrides = useMemo(
-    () =>
-      draftPricesReady
-        ? indexDraftPriceOverrides(draftPricesQ.data?.items ?? [])
-        : {},
+    () => (draftPricesReady ? indexDraftPriceOverrides(draftPricesQ.data?.items ?? []) : {}),
     [draftPricesReady, draftPricesQ.data],
   );
   const draftCatalogueBases = useMemo(
-    () => draftPricesReady
-      ? indexDraftPriceOverrides(draftPricesQ.data?.basePrices ?? [])
-      : {},
+    () => (draftPricesReady ? indexDraftPriceOverrides(draftPricesQ.data?.basePrices ?? []) : {}),
     [draftPricesReady, draftPricesQ.data],
   );
   const pricePreview = useMemo(
-    () => draftPricesReady
-      ? previewPriceListApplication(
-          lines, draftPriceOverrides, currency,
-          draftPricesQ.data?.rules ?? [], docDate,
-          draftPricesQ.data?.discounts ?? [], draftCatalogueBases,
-          selectedPriceListId,
-        )
-      : null,
+    () =>
+      draftPricesReady
+        ? previewPriceListApplication(
+            lines,
+            draftPriceOverrides,
+            currency,
+            draftPricesQ.data?.rules ?? [],
+            docDate,
+            draftPricesQ.data?.discounts ?? [],
+            draftCatalogueBases,
+            selectedPriceListId,
+          )
+        : null,
     [
-      draftPricesReady, lines, draftPriceOverrides,
-      currency, draftPricesQ.data, docDate, draftCatalogueBases, selectedPriceListId,
+      draftPricesReady,
+      lines,
+      draftPriceOverrides,
+      currency,
+      draftPricesQ.data,
+      docDate,
+      draftCatalogueBases,
+      selectedPriceListId,
     ],
   );
 
@@ -428,7 +455,8 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
         "Changing customer selects that customer's price-list default, if available. " +
           "Previously entered unit prices will NOT be changed. Review them before saving. Continue?",
       )
-    ) return;
+    )
+      return;
     setContactId(id);
     setManualPriceListId(existing ? "" : null);
     setApplyPriceListOpen(false);
@@ -471,19 +499,23 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           currencyCode: currency,
           fxRateToBase: fx,
           lines: payloadLines,
-          ...(isSalesDraft ? {
-            pricing: {
-              priceListId: selectedPriceListId || null,
-              lines: lines.map((line) => verifiedLinePricing({
-                trace: line.pricingTrace,
-                selectedPriceListId: selectedPriceListId || null,
-                productId: line.productId,
-                quantity: line.quantity,
-                unitPrice: line.unitPrice,
-                currency,
-              })),
-            },
-          } : {}),
+          ...(isSalesDraft
+            ? {
+                pricing: {
+                  priceListId: selectedPriceListId || null,
+                  lines: lines.map((line) =>
+                    verifiedLinePricing({
+                      trace: line.pricingTrace,
+                      selectedPriceListId: selectedPriceListId || null,
+                      productId: line.productId,
+                      quantity: line.quantity,
+                      unitPrice: line.unitPrice,
+                      currency,
+                    }),
+                  ),
+                },
+              }
+            : {}),
         };
 
         if (kind === "invoice") {
@@ -700,312 +732,316 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           </Button>
         }
       >
-      {formError ? (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{formError}</AlertDescription>
-        </Alert>
-      ) : null}
-      <div className="grid max-w-4xl gap-4">
-        <div className="space-y-2">
-          <Label>Customer</Label>
-          <EntityCombobox
-            voiceField={{ key: "contactId", label: "Customer", order: 10 }}
-            aria-label="Customer"
-            options={customerOptions}
-            value={contactId}
-            onChange={onCustomerChange}
-            placeholder="Search customers"
-            allowClear={false}
-            disabled={sourceLocked}
-            companyId={companyId}
-            canAddNew={can("contacts.manage") && !sourceLocked}
-            createTitle="New customer"
-            renderCreate={
-              can("contacts.manage") && !sourceLocked
-                ? (ctx) => <ContactCreateForm companyId={companyId} kind="customer" ctx={ctx} />
-                : undefined
-            }
-            onCreated={(option) => {
-              if (kind !== "invoice") return;
-              const terms = Number(option.meta);
-              if (Number.isFinite(terms)) setSecondDate(addDaysIso(docDate || today, terms));
-            }}
-          />
-        </div>
-        {kind === "credit_note" ? (
-          <div className="space-y-2">
-            <Label>Credit against invoice (optional)</Label>
-            <EntityCombobox
-              aria-label="Source invoice"
-              options={creditableInvoices.map((i) => ({
-                value: i.id,
-                label: `${i.invoice_number ?? i.id.slice(0, 8)} (${i.status.replace("_", " ")}, ${i.currency_code})`,
-              }))}
-              value={sourceInvoiceId}
-              onChange={(v) => {
-                setSourceInvoiceId(v);
-                const inv = creditableInvoices.find((i) => i.id === v);
-                if (inv) setCurrency(inv.currency_code);
-              }}
-              placeholder={contactId ? "None — standalone credit" : "Choose a customer first"}
-              disabled={!contactId}
-            />
-          </div>
+        {formError ? (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{formError}</AlertDescription>
+          </Alert>
         ) : null}
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid max-w-4xl gap-4">
           <div className="space-y-2">
-            <Label>{copy.dateLabel}</Label>
-            <Input
-              type="date"
-              voiceField={{
-                key: "date",
-                label: "Document date",
-                aliases: ["date", "invoice date", "quote date", "credit note date"],
-                order: 20,
+            <Label>Customer</Label>
+            <EntityCombobox
+              voiceField={{ key: "contactId", label: "Customer", order: 10 }}
+              aria-label="Customer"
+              options={customerOptions}
+              value={contactId}
+              onChange={onCustomerChange}
+              placeholder="Search customers"
+              allowClear={false}
+              disabled={sourceLocked}
+              companyId={companyId}
+              canAddNew={can("contacts.manage") && !sourceLocked}
+              createTitle="New customer"
+              renderCreate={
+                can("contacts.manage") && !sourceLocked
+                  ? (ctx) => <ContactCreateForm companyId={companyId} kind="customer" ctx={ctx} />
+                  : undefined
+              }
+              onCreated={(option) => {
+                if (kind !== "invoice") return;
+                const terms = Number(option.meta);
+                if (Number.isFinite(terms)) setSecondDate(addDaysIso(docDate || today, terms));
               }}
-              value={docDate}
-              onChange={(e) => onDocumentDateChange(e.target.value)}
             />
           </div>
-          {copy.secondLabel ? (
+          {kind === "credit_note" ? (
             <div className="space-y-2">
-              <Label>{copy.secondLabel}</Label>
+              <Label>Credit against invoice (optional)</Label>
+              <EntityCombobox
+                aria-label="Source invoice"
+                options={creditableInvoices.map((i) => ({
+                  value: i.id,
+                  label: `${i.invoice_number ?? i.id.slice(0, 8)} (${i.status.replace("_", " ")}, ${i.currency_code})`,
+                }))}
+                value={sourceInvoiceId}
+                onChange={(v) => {
+                  setSourceInvoiceId(v);
+                  const inv = creditableInvoices.find((i) => i.id === v);
+                  if (inv) setCurrency(inv.currency_code);
+                }}
+                placeholder={contactId ? "None — standalone credit" : "Choose a customer first"}
+                disabled={!contactId}
+              />
+            </div>
+          ) : null}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label>{copy.dateLabel}</Label>
               <Input
                 type="date"
                 voiceField={{
-                  key: "dueDate",
-                  label: "Due date",
-                  aliases: ["expiry date"],
-                  order: 30,
+                  key: "date",
+                  label: "Document date",
+                  aliases: ["date", "invoice date", "quote date", "credit note date"],
+                  order: 20,
                 }}
-                value={secondDate}
-                onChange={(e) => setSecondDate(e.target.value)}
+                value={docDate}
+                onChange={(e) => onDocumentDateChange(e.target.value)}
               />
+            </div>
+            {copy.secondLabel ? (
+              <div className="space-y-2">
+                <Label>{copy.secondLabel}</Label>
+                <Input
+                  type="date"
+                  voiceField={{
+                    key: "dueDate",
+                    label: "Due date",
+                    aliases: ["expiry date"],
+                    order: 30,
+                  }}
+                  value={secondDate}
+                  onChange={(e) => setSecondDate(e.target.value)}
+                />
+              </div>
+            ) : null}
+            <div className="space-y-2">
+              <Label>{copy.numberLabel}</Label>
+              <Input
+                voiceField={{
+                  key: "number",
+                  label: "Number",
+                  aliases: [
+                    "reference",
+                    "invoice number",
+                    "supplier reference",
+                    "reference number",
+                  ],
+                  order: 40,
+                }}
+                value={number}
+                onChange={(e) => setNumber(e.target.value)}
+                placeholder="Leave blank to auto-number"
+              />
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label>Currency</Label>
+              <VoiceSelect
+                voiceField={{ key: "currency", label: "Currency", order: 50 }}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={currency}
+                disabled={sourceLocked}
+                onChange={(e) => onDocumentCurrencyChange(e.target.value)}
+              >
+                {currencyOptions(base, currency ? [currency] : []).map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                    {c === base ? " (base)" : ""}
+                  </option>
+                ))}
+              </VoiceSelect>
+            </div>
+            {isForeign ? (
+              <div className="space-y-2">
+                <Label>
+                  Exchange rate (1 {currency} = ? {base})
+                </Label>
+                <Input
+                  value={fxRate}
+                  onChange={(e) => setFxRate(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="e.g. 0.79"
+                />
+              </div>
+            ) : null}
+          </div>
+          {isSalesDraft ? (
+            <div className="space-y-3 rounded-md border p-3">
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                <div className="space-y-2">
+                  <Label htmlFor="sales-price-list">Sales price list (optional)</Label>
+                  <RecordLookupSelect
+                    value={selectedPriceListId || "none"}
+                    onValueChange={(value) => {
+                      setManualPriceListId(value === "none" ? "" : value);
+                      setApplyPriceListOpen(false);
+                      setLines((previous) =>
+                        previous.map((line) => ({
+                          ...line,
+                          pricingTrace:
+                            line.pricingTrace?.price_list_id === value ? line.pricingTrace : null,
+                        })),
+                      );
+                    }}
+                  >
+                    <SelectTrigger id="sales-price-list" aria-label="Sales price list">
+                      <SelectValue placeholder="Catalogue prices" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Catalogue prices (default)</SelectItem>
+                      {(priceListsQ.data ?? [])
+                        .filter((list) => list.is_active && list.currency_code === currency)
+                        .map((list) => (
+                          <SelectItem key={list.id} value={list.id}>
+                            {list.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </RecordLookupSelect>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!draftPricesReady || !pricePreview?.changed || mutation.isPending}
+                  onClick={() => setApplyPriceListOpen(true)}
+                >
+                  Preview existing-line prices
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                The selected price list and genuine line pricing sources are recorded when you save
+                this draft. Price lists are available in their own currency only. New catalogue
+                selections use the applicable quantity tier and document date, then a fixed or
+                catalogue price. A single eligible percentage rule can reduce that unit price before
+                separate line discount amounts and tax. Changing quantity or date never silently
+                reprices existing lines: review and confirm any price changes. Saved documents
+                retain line prices; the list selection itself is not stored on the document.
+              </p>
+              {customerDefaultPending ? (
+                <p className="text-xs text-muted-foreground">
+                  Checking the selected customer's default price list…
+                </p>
+              ) : null}
+              {manualPriceListId === null && customerDefaultQ.data?.reason === "available" ? (
+                <p className="text-xs text-muted-foreground">
+                  Customer default selected for this new draft. You can choose a different list.
+                </p>
+              ) : null}
+              {manualPriceListId === null &&
+              customerDefaultQ.data?.reason === "unavailable_or_currency_mismatch" ? (
+                <p className="text-xs text-muted-foreground">
+                  The customer has a default list, but it is archived or uses another currency.
+                  Catalogue pricing will apply unless you choose an eligible list.
+                </p>
+              ) : null}
+              {manualPriceListId === null && customerDefaultQ.isError ? (
+                <div role="alert" className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm text-destructive">
+                    Customer default lookup failed: {friendlyAuthError(customerDefaultQ.error)}
+                  </p>
+                  <Button size="sm" variant="outline" onClick={() => customerDefaultQ.refetch()}>
+                    Retry
+                  </Button>
+                </div>
+              ) : null}
+              {priceListsQ.isError ? (
+                <p role="alert" className="text-sm text-destructive">
+                  Could not load price lists: {friendlyAuthError(priceListsQ.error)}
+                </p>
+              ) : null}
+              {priceListTooLarge && selectedPriceListId ? (
+                <p role="alert" className="text-sm text-destructive">
+                  Too many different products to resolve this list (maximum 250). Reduce the
+                  catalogue selection before using a price list.
+                </p>
+              ) : null}
+              {selectedPriceListId && draftPricesQ.isPending && !priceListTooLarge ? (
+                <p className="text-sm text-muted-foreground">Loading price-list amounts…</p>
+              ) : null}
+              {selectedPriceListId && draftPricesQ.isError ? (
+                <div role="alert" className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm text-destructive">
+                    Price-list amounts unavailable: {friendlyAuthError(draftPricesQ.error)}
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => draftPricesQ.refetch()}>
+                    Retry
+                  </Button>
+                </div>
+              ) : null}
+              {selectedPriceListId && !selectedPriceList && !priceListsQ.isPending ? (
+                <p role="alert" className="text-sm text-destructive">
+                  This price list is archived or does not match the document currency. Choose
+                  another list or the default catalogue prices.
+                </p>
+              ) : null}
+              {pricePreview ? (
+                <p className="text-xs text-muted-foreground" aria-live="polite">
+                  {pricePreview.matched} current line(s) have eligible list prices;
+                  {pricePreview.changed} price(s) differ. No existing line is automatically changed.
+                </p>
+              ) : null}
             </div>
           ) : null}
           <div className="space-y-2">
-            <Label>{copy.numberLabel}</Label>
+            <Label>Memo / customer message</Label>
             <Input
               voiceField={{
-                key: "number",
-                label: "Number",
-                aliases: ["reference", "invoice number", "supplier reference", "reference number"],
-                order: 40,
+                key: "memo",
+                label: "Memo",
+                aliases: ["internal reference", "customer message"],
+                order: 60,
               }}
-              value={number}
-              onChange={(e) => setNumber(e.target.value)}
-              placeholder="Leave blank to auto-number"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
             />
           </div>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Currency</Label>
-            <VoiceSelect
-              voiceField={{ key: "currency", label: "Currency", order: 50 }}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-              value={currency}
-              disabled={sourceLocked}
-              onChange={(e) => onDocumentCurrencyChange(e.target.value)}
-            >
-              {currencyOptions(base, currency ? [currency] : []).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                  {c === base ? " (base)" : ""}
-                </option>
-              ))}
-            </VoiceSelect>
-          </div>
-          {isForeign ? (
-            <div className="space-y-2">
-              <Label>
-                Exchange rate (1 {currency} = ? {base})
-              </Label>
-              <Input
-                value={fxRate}
-                onChange={(e) => setFxRate(e.target.value)}
-                inputMode="decimal"
-                placeholder="e.g. 0.79"
-              />
-            </div>
-          ) : null}
-        </div>
-        {isSalesDraft ? (
-          <div className="space-y-3 rounded-md border p-3">
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-              <div className="space-y-2">
-                <Label htmlFor="sales-price-list">Sales price list (optional)</Label>
-                <Select
-                  value={selectedPriceListId || "none"}
-                  onValueChange={(value) => {
-                    setManualPriceListId(value === "none" ? "" : value);
-                    setApplyPriceListOpen(false);
-                    setLines((previous) => previous.map((line) => ({
-                      ...line,
-                      pricingTrace:
-                        line.pricingTrace?.price_list_id === value
-                          ? line.pricingTrace : null,
-                    })));
-                  }}
-                >
-                  <SelectTrigger id="sales-price-list" aria-label="Sales price list">
-                    <SelectValue placeholder="Catalogue prices" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Catalogue prices (default)</SelectItem>
-                    {(priceListsQ.data ?? [])
-                      .filter((list) => list.is_active && list.currency_code === currency)
-                      .map((list) => (
-                        <SelectItem key={list.id} value={list.id}>{list.name}</SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={
-                  !draftPricesReady || !pricePreview?.changed || mutation.isPending
-                }
-                onClick={() => setApplyPriceListOpen(true)}
-              >
-                Preview existing-line prices
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              The selected price list and genuine line pricing sources are recorded when you save
-              this draft. Price lists are available in their own currency only.
-              New catalogue selections use
-              the applicable quantity tier and document date, then a fixed or catalogue price.
-              A single eligible percentage rule can reduce that unit price before separate line
-              discount amounts and tax. Changing quantity or date never silently reprices existing
-              lines: review and confirm any price changes. Saved documents retain line prices;
-              the list selection itself is not stored on the document.
-            </p>
-            {customerDefaultPending ? (
-              <p className="text-xs text-muted-foreground">
-                Checking the selected customer's default price list…
-              </p>
-            ) : null}
-            {manualPriceListId === null && customerDefaultQ.data?.reason === "available" ? (
-              <p className="text-xs text-muted-foreground">
-                Customer default selected for this new draft. You can choose a different list.
-              </p>
-            ) : null}
-            {manualPriceListId === null &&
-              customerDefaultQ.data?.reason === "unavailable_or_currency_mismatch" ? (
-              <p className="text-xs text-muted-foreground">
-                The customer has a default list, but it is archived or uses another currency.
-                Catalogue pricing will apply unless you choose an eligible list.
-              </p>
-            ) : null}
-            {manualPriceListId === null && customerDefaultQ.isError ? (
-              <div role="alert" className="flex flex-wrap items-center gap-2">
-                <p className="text-sm text-destructive">
-                  Customer default lookup failed: {friendlyAuthError(customerDefaultQ.error)}
-                </p>
-                <Button size="sm" variant="outline" onClick={() => customerDefaultQ.refetch()}>
-                  Retry
-                </Button>
-              </div>
-            ) : null}
-            {priceListsQ.isError ? (
-              <p role="alert" className="text-sm text-destructive">
-                Could not load price lists: {friendlyAuthError(priceListsQ.error)}
-              </p>
-            ) : null}
-            {priceListTooLarge && selectedPriceListId ? (
-              <p role="alert" className="text-sm text-destructive">
-                Too many different products to resolve this list (maximum 250).
-                Reduce the catalogue selection before using a price list.
-              </p>
-            ) : null}
-            {selectedPriceListId && draftPricesQ.isPending && !priceListTooLarge ? (
-              <p className="text-sm text-muted-foreground">Loading price-list amounts…</p>
-            ) : null}
-            {selectedPriceListId && draftPricesQ.isError ? (
-              <div role="alert" className="flex flex-wrap items-center gap-2">
-                <p className="text-sm text-destructive">
-                  Price-list amounts unavailable: {friendlyAuthError(draftPricesQ.error)}
-                </p>
-                <Button variant="outline" size="sm" onClick={() => draftPricesQ.refetch()}>
-                  Retry
-                </Button>
-              </div>
-            ) : null}
-            {selectedPriceListId && !selectedPriceList && !priceListsQ.isPending ? (
-              <p role="alert" className="text-sm text-destructive">
-                This price list is archived or does not match the document currency.
-                Choose another list or the default catalogue prices.
-              </p>
-            ) : null}
-            {pricePreview ? (
-              <p className="text-xs text-muted-foreground" aria-live="polite">
-                {pricePreview.matched} current line(s) have eligible list prices;
-                {pricePreview.changed} price(s) differ. No existing line is automatically changed.
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-        <div className="space-y-2">
-          <Label>Memo / customer message</Label>
-          <Input
-            voiceField={{
-              key: "memo",
-              label: "Memo",
-              aliases: ["internal reference", "customer message"],
-              order: 60,
-            }}
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
+          <SalesDocumentLines
+            lines={lines}
+            onChange={setLines}
+            products={(productsQ.data ?? []) as never}
+            priceOverrides={draftPricesReady ? draftPriceOverrides : {}}
+            priceRules={draftPricesReady ? (draftPricesQ.data?.rules ?? []) : []}
+            discountRules={draftPricesReady ? (draftPricesQ.data?.discounts ?? []) : []}
+            pricingDate={docDate}
+            selectedPriceListId={selectedPriceListId}
+            productSelectionDisabled={
+              customerDefaultPending || (Boolean(selectedPriceListId) && !draftPricesReady)
+            }
+            onPriceListProductSelected={() => setPriceListAmountsTouched(true)}
+            accounts={incomeAccounts}
+            currency={currency || base}
+            treatment={treatment}
+            taxCodes={config?.taxCodes ?? []}
+            toMinor={(d) => toMinorUnits(d, currency || base)}
+            companyId={companyId}
+            baseCurrency={base}
           />
-        </div>
-        <SalesDocumentLines
-          lines={lines}
-          onChange={setLines}
-          products={(productsQ.data ?? []) as never}
-          priceOverrides={draftPricesReady ? draftPriceOverrides : {}}
-          priceRules={draftPricesReady ? draftPricesQ.data?.rules ?? [] : []}
-          discountRules={draftPricesReady ? draftPricesQ.data?.discounts ?? [] : []}
-          pricingDate={docDate}
-          selectedPriceListId={selectedPriceListId}
-          productSelectionDisabled={
-            customerDefaultPending ||
-            (Boolean(selectedPriceListId) && !draftPricesReady)
-          }
-          onPriceListProductSelected={() => setPriceListAmountsTouched(true)}
-          accounts={incomeAccounts}
-          currency={currency || base}
-          treatment={treatment}
-          taxCodes={config?.taxCodes ?? []}
-          toMinor={(d) => toMinorUnits(d, currency || base)}
-          companyId={companyId}
-          baseCurrency={base}
-        />
-        <DocumentRecordPanel
-          ref={recordRef}
-          entityType={recordEntityType}
-          entityId={savedId ?? null}
-          audience="customer"
-        />
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={mutation.isPending}
-            onClick={() => mutation.mutate(false)}
-          >
-            {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            {savedId ? "Save changes" : "Save draft"}
-          </Button>
-          {copy.authorise ? (
-            <Button size="sm" disabled={mutation.isPending} onClick={() => mutation.mutate(true)}>
+          <DocumentRecordPanel
+            ref={recordRef}
+            entityType={recordEntityType}
+            entityId={savedId ?? null}
+            audience="customer"
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate(false)}
+            >
               {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              {copy.authorise}
+              {savedId ? "Save changes" : "Save draft"}
             </Button>
-          ) : null}
+            {copy.authorise ? (
+              <Button size="sm" disabled={mutation.isPending} onClick={() => mutation.mutate(true)}>
+                {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                {copy.authorise}
+              </Button>
+            ) : null}
+          </div>
         </div>
-      </div>
       </ListWorkspace>
       <Dialog
         open={applyPriceListOpen}
@@ -1018,9 +1054,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             <DialogTitle>Apply current price list to existing lines?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            {pricePreview?.changed ?? 0} price(s) will change.
-            This operation changes only unit prices on matching lines in this draft.
-            Quantity, tax, discount, account and unlisted item prices are retained.
+            {pricePreview?.changed ?? 0} price(s) will change. This operation changes only unit
+            prices on matching lines in this draft. Quantity, tax, discount, account and unlisted
+            item prices are retained.
           </p>
           <div className="space-y-2">
             {lines.map((line, index) => {

@@ -171,8 +171,16 @@ function BudgetsPage() {
         </div>
       }
     >
-      <section aria-label="Create budget" className="lb-budget-create mb-6 grid max-w-2xl gap-4 rounded-2xl border border-border/85 bg-card p-5 shadow-card sm:p-6">
-        <div className="space-y-1"><h2 className="text-base font-bold tracking-[-0.02em]">New budget</h2><p className="text-xs text-muted-foreground">Create a financial-year plan, then add your accounts and monthly amounts.</p></div>
+      <section
+        aria-label="Create budget"
+        className="lb-budget-create mb-6 grid max-w-2xl gap-4 rounded-2xl border border-border/85 bg-card p-5 shadow-card sm:p-6"
+      >
+        <div className="space-y-1">
+          <h2 className="text-base font-bold tracking-[-0.02em]">New budget</h2>
+          <p className="text-xs text-muted-foreground">
+            Create a financial-year plan, then add your accounts and monthly amounts.
+          </p>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="budget-name">Name</Label>
           <Input
@@ -218,8 +226,8 @@ function BudgetsPage() {
           <div>
             <h2 className="text-lg font-bold tracking-[-0.02em]">Existing budgets</h2>
             <p className="text-xs text-muted-foreground">
-              {query.data.budgets.length} budget{query.data.budgets.length === 1 ? "" : "s"} in
-              this organisation
+              {query.data.budgets.length} budget{query.data.budgets.length === 1 ? "" : "s"} in this
+              organisation
             </p>
           </div>
           {query.data.budgets.length > 0 ? (
@@ -263,58 +271,58 @@ function BudgetsPage() {
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-border/85 bg-card shadow-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Financial year from</TableHead>
-              <TableHead>Last changed</TableHead>
-              <TableHead className="w-28 text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredBudgets.map((b) => (
-              <TableRow key={b.id}>
-                <TableCell>
-                  <Link
-                    to="/budgets/$budgetId"
-                    params={{ budgetId: b.id }}
-                    className="font-medium underline-offset-2 hover:underline"
-                  >
-                    {b.name}
-                  </Link>
-                </TableCell>
-                <TableCell>{fmt.date(b.fiscal_year_start)}</TableCell>
-                <TableCell>{fmt.dateTime(b.updated_at)}</TableCell>
-                <TableCell className="whitespace-nowrap text-right">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Duplicate ${b.name}`}
-                    title="Duplicate budget into another financial year"
-                    disabled={!canManage || copy.isPending || remove.isPending}
-                    onClick={() => openCopy(b)}
-                  >
-                    <Copy className="size-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Delete ${b.name}`}
-                    disabled={!canManage || remove.isPending}
-                    onClick={() => {
-                      if (window.confirm(`Delete budget "${b.name}" and all its amounts?`)) {
-                        remove.mutate(b.id);
-                      }
-                    }}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </TableCell>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Financial year from</TableHead>
+                <TableHead>Last changed</TableHead>
+                <TableHead className="w-28 text-right">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filteredBudgets.map((b) => (
+                <TableRow key={b.id}>
+                  <TableCell>
+                    <Link
+                      to="/budgets/$budgetId"
+                      params={{ budgetId: b.id }}
+                      className="font-medium underline-offset-2 hover:underline"
+                    >
+                      {b.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{fmt.date(b.fiscal_year_start)}</TableCell>
+                  <TableCell>{fmt.dateTime(b.updated_at)}</TableCell>
+                  <TableCell className="whitespace-nowrap text-right">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Duplicate ${b.name}`}
+                      title="Duplicate budget into another financial year"
+                      disabled={!canManage || copy.isPending || remove.isPending}
+                      onClick={() => openCopy(b)}
+                    >
+                      <Copy className="size-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Delete ${b.name}`}
+                      disabled={!canManage || remove.isPending}
+                      onClick={() => {
+                        if (window.confirm(`Delete budget "${b.name}" and all its amounts?`)) {
+                          remove.mutate(b.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -357,7 +365,7 @@ function BudgetsPage() {
               />
               <p className="text-xs text-muted-foreground">
                 Each monthly amount stays in its fiscal-month position, even when the target year
-              differs.
+                differs.
               </p>
             </div>
             <div className="flex items-center gap-3">

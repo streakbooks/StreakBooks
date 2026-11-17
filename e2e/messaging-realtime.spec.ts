@@ -133,7 +133,10 @@ test.describe("firm multi-client isolation (gated)", () => {
     await expect(page.getByRole("heading", { name: "Messages" })).toBeVisible({
       timeout: 20_000,
     });
-    for (const title of clientATitles.map((t) => t.trim()).filter(Boolean).slice(0, 5)) {
+    for (const title of clientATitles
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .slice(0, 5)) {
       // Titles may legitimately overlap; this asserts the firm fixture wires two contexts.
       // Live isolation proof still requires seeded distinct conversation IDs in the harness.
       expect(title.length).toBeGreaterThan(0);

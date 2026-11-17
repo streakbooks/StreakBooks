@@ -1,15 +1,8 @@
 export const EXPENSE_CORPORATE_CARD_STATUSES = ["active", "suspended", "closed"] as const;
-export type ExpenseCorporateCardStatus =
-  (typeof EXPENSE_CORPORATE_CARD_STATUSES)[number];
+export type ExpenseCorporateCardStatus = (typeof EXPENSE_CORPORATE_CARD_STATUSES)[number];
 
-export const EXPENSE_CARD_TX_STATUSES = [
-  "unmatched",
-  "matched",
-  "excluded",
-  "disputed",
-] as const;
-export type ExpenseCorporateCardTxStatus =
-  (typeof EXPENSE_CARD_TX_STATUSES)[number];
+export const EXPENSE_CARD_TX_STATUSES = ["unmatched", "matched", "excluded", "disputed"] as const;
+export type ExpenseCorporateCardTxStatus = (typeof EXPENSE_CARD_TX_STATUSES)[number];
 
 export type ExpenseCorporateCard = {
   id: string;
@@ -80,9 +73,7 @@ export function mapExpenseCorporateCard(row: unknown): ExpenseCorporateCard {
   };
 }
 
-export function mapExpenseCorporateCardTransaction(
-  row: unknown,
-): ExpenseCorporateCardTransaction {
+export function mapExpenseCorporateCardTransaction(row: unknown): ExpenseCorporateCardTransaction {
   const r = asRecord(row);
   const status = str(r["status"], "unmatched") as ExpenseCorporateCardTxStatus;
   return {
@@ -195,7 +186,9 @@ export function buildCorporateCardAccrualCredit(input: {
   liabilityAccountId: string;
   amountMinor: number;
   last4: string;
-}): { ok: true; accountId: string; creditMinor: number; description: string } | { ok: false; error: string } {
+}):
+  | { ok: true; accountId: string; creditMinor: number; description: string }
+  | { ok: false; error: string } {
   if (!input.liabilityAccountId) {
     return { ok: false, error: "Card liability account is required." };
   }

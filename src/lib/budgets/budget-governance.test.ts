@@ -28,11 +28,11 @@ describe("budget governance request validation", () => {
   });
 
   it("limits lock and unlock notes to 500 characters", () => {
-    expect(validateBudgetLockCommand({ locked: false, reason: "a".repeat(500) }).reason).toHaveLength(
-      500,
+    expect(
+      validateBudgetLockCommand({ locked: false, reason: "a".repeat(500) }).reason,
+    ).toHaveLength(500);
+    expect(() => validateBudgetLockCommand({ locked: false, reason: "a".repeat(501) })).toThrow(
+      /500/,
     );
-    expect(() =>
-      validateBudgetLockCommand({ locked: false, reason: "a".repeat(501) }),
-    ).toThrow(/500/);
   });
 });

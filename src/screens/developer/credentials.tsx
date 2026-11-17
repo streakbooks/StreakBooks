@@ -28,8 +28,8 @@ export function DeveloperCredentialsPage() {
     return (
       <>
         <ListWorkspace title="API Credentials" description="Developer portal">
-        <EmptyState title="No access" description="Requires developer.manage_apps." />
-    </ListWorkspace>
+          <EmptyState title="No access" description="Requires developer.manage_apps." />
+        </ListWorkspace>
       </>
     );
   }
@@ -48,48 +48,48 @@ export function DeveloperCredentialsPage() {
         }
         subnav={<DeveloperSubnav current="credentials" />}
       >
-      <Alert className="mb-6">
-        <AlertTitle>Credential vault locked</AlertTitle>
-        <AlertDescription>
-          Client secret material is hash-only in the database. Issuing new clients stays disabled
-          until the server-side vault is configured. Partners never receive service-role keys or
-          unrestricted database access.
-        </AlertDescription>
-      </Alert>
+        <Alert className="mb-6">
+          <AlertTitle>Credential vault locked</AlertTitle>
+          <AlertDescription>
+            Client secret material is hash-only in the database. Issuing new clients stays disabled
+            until the server-side vault is configured. Partners never receive service-role keys or
+            unrestricted database access.
+          </AlertDescription>
+        </Alert>
 
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        <Badge variant="secondary">Vault: not configured</Badge>
-        <Badge variant="outline">Storage: hash-only</Badge>
-        <Badge variant="outline">Rotation: pending vault</Badge>
-      </div>
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">Vault: not configured</Badge>
+          <Badge variant="outline">Storage: hash-only</Badge>
+          <Badge variant="outline">Rotation: pending vault</Badge>
+        </div>
 
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Client ID</TableHead>
-              <TableHead>Application</TableHead>
-              <TableHead>Secret prefix</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Rotated</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell colSpan={5} className="text-muted-foreground">
-                No OAuth clients issued yet. Create applications after publisher verification, then
-                issue credentials when the vault is online.
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
+        <div className="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Client ID</TableHead>
+                <TableHead>Application</TableHead>
+                <TableHead>Secret prefix</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Rotated</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell colSpan={5} className="text-muted-foreground">
+                  No OAuth clients issued yet. Create applications after publisher verification,
+                  then issue credentials when the vault is online.
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
 
-      <div className="mt-6">
-        <Button disabled title="Vault not configured">
-          Issue client credentials
-        </Button>
-      </div>
+        <div className="mt-6">
+          <Button disabled title="Vault not configured">
+            Issue client credentials
+          </Button>
+        </div>
       </ListWorkspace>
     </>
   );

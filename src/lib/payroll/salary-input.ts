@@ -7,11 +7,7 @@ export const PAYROLL_SALARY_MAX_MINOR = 900_000_000_000_000n;
 export const PAYROLL_PERCENT_MAX_BPS = 1_000_000n;
 
 /** Do not silently round employee salary structures or hourly rates. */
-export function parsePayrollSalaryMinor(
-  input: string,
-  currency: string,
-  field: string,
-): bigint {
+export function parsePayrollSalaryMinor(input: string, currency: string, field: string): bigint {
   const value = input.trim() || "0";
   if (!/^\d+(?:\.\d+)?$/.test(value)) {
     throw new Error(`${field} must be a non-negative decimal amount.`);

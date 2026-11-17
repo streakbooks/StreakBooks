@@ -46,20 +46,20 @@ export function AppStoreAdvisoryPage() {
   }
   if (!canAdvise) {
     return (
-      <ListWorkspace title="Accountant Advisory" description="App Store"
-    >
-      <EmptyState
+      <ListWorkspace title="Accountant Advisory" description="App Store">
+        <EmptyState
           title="No advisory access"
           description="Requires appstore.advise on the practice organisation."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
   return (
-      <ListWorkspace title="Accountant Advisory"
-        description="Recommend apps to authorized client organisations, request approvals and monitor integrations — without bypassing client consent."
-      subnav={<AppStoreSubnav current="advisory"/>}
+    <ListWorkspace
+      title="Accountant Advisory"
+      description="Recommend apps to authorized client organisations, request approvals and monitor integrations — without bypassing client consent."
+      subnav={<AppStoreSubnav current="advisory" />}
     >
       <Alert className="mb-6">
         <AlertTitle>Practice-scoped recommendations</AlertTitle>
@@ -132,5 +132,5 @@ export function AppStoreAdvisoryPage() {
         )
       ) : null}
     </ListWorkspace>
-    );
+  );
 }

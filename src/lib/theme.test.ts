@@ -40,7 +40,13 @@ describe("appearance modes and palettes", () => {
       for (const canvas of ["#777777", "#ffffff", "#000000", "#123456"]) {
         for (const dark of [false, true]) {
           const tokens = computeCustomTokens(
-            { primary, accent: "#168393", sidebar: canvas, lightBackground: canvas, darkBackground: canvas },
+            {
+              primary,
+              accent: "#168393",
+              sidebar: canvas,
+              lightBackground: canvas,
+              darkBackground: canvas,
+            },
             dark,
           );
           for (const [foreground, background] of [
@@ -140,8 +146,13 @@ describe("appearance modes and palettes", () => {
 
   it("exposes the requested professional palette labels without changing persisted IDs", () => {
     for (const name of [
-      "LinkBooks Signature", "Executive Slate", "Emerald Professional",
-      "Royal Indigo", "Modern Teal", "Rose Professional", "Warm Sand",
+      "LinkBooks Signature",
+      "Executive Slate",
+      "Emerald Professional",
+      "Royal Indigo",
+      "Modern Teal",
+      "Rose Professional",
+      "Warm Sand",
     ]) {
       expect(PALETTE_OPTIONS.some((option) => option.name === name)).toBe(true);
     }
@@ -149,7 +160,8 @@ describe("appearance modes and palettes", () => {
 
   it("validates a separate custom accent and coordinates chart colours", () => {
     const palette = validateCustomPalette({
-      ...DEFAULT_CUSTOM_PALETTE, accent: "#28a3b1",
+      ...DEFAULT_CUSTOM_PALETTE,
+      accent: "#28a3b1",
     });
     const tokens = computeCustomTokens(palette, false);
     expect(tokens["--chart-1"]).toBe(palette.primary);
@@ -157,8 +169,9 @@ describe("appearance modes and palettes", () => {
     expect(tokens["--chart-3"]).toMatch(/^#[0-9a-f]{6}$/i);
     expect(tokens["--chart-4"]).toMatch(/^#[0-9a-f]{6}$/i);
     expect(tokens["--chart-5"]).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(validateCustomPalette({ accent: "javascript:alert(1)" }).accent)
-      .toBe(DEFAULT_CUSTOM_PALETTE.accent);
+    expect(validateCustomPalette({ accent: "javascript:alert(1)" }).accent).toBe(
+      DEFAULT_CUSTOM_PALETTE.accent,
+    );
   });
 
   it("prepaint initializer retains the original mode key and applies chosen palette", () => {

@@ -158,9 +158,7 @@ export function evaluateThreeWayMatch(input: {
       parts.push("received quantity missing");
     } else if (round6(receivedQuantity) < round6(billedQuantity)) {
       status = "fail";
-      parts.push(
-        `billed quantity ${billedQuantity} exceeds received ${receivedQuantity}`,
-      );
+      parts.push(`billed quantity ${billedQuantity} exceeds received ${receivedQuantity}`);
     }
 
     if (round6(billedQuantity) > round6(orderedQuantity)) {
@@ -189,9 +187,7 @@ export function evaluateThreeWayMatch(input: {
     }
 
     const detail =
-      status === "pass"
-        ? "Order, receipt and bill quantities/amounts agree."
-        : parts.join("; ");
+      status === "pass" ? "Order, receipt and bill quantities/amounts agree." : parts.join("; ");
     if (status !== "pass") issues.push(`Line ${order.lineNo}: ${detail}`);
 
     verdicts.push({

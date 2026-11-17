@@ -41,10 +41,7 @@ export function HrAuditPage() {
   if (!canView) {
     return (
       <ListWorkspace title="HR Audit Trail" description="Sensitive change history">
-        <EmptyState
-          title="No audit access"
-          description="Ask an administrator for hr.audit.view."
-        />
+        <EmptyState title="No audit access" description="Ask an administrator for hr.audit.view." />
       </ListWorkspace>
     );
   }

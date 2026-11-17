@@ -43,10 +43,7 @@ import {
   scanExpenseClaimRisks,
   validateExpenseClaimFx,
 } from "@/lib/expenses/expenses.functions";
-import {
-  buildRebillSalesLines,
-  canPrepareClaimForRebilling,
-} from "@/lib/expenses/rebilling";
+import { buildRebillSalesLines, canPrepareClaimForRebilling } from "@/lib/expenses/rebilling";
 import { riskScoreBand } from "@/lib/expenses/risk";
 import { saveInvoiceDraft } from "@/lib/sales/sales.functions";
 import type { Permission } from "@/lib/permissions";
@@ -61,12 +58,9 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
   const queryClient = useQueryClient();
-  const canPost =
-    can("expenses.post" as Permission) || can("expenses.admin" as Permission);
-  const canRebill =
-    can("expenses.submit" as Permission) || can("expenses.admin" as Permission);
-  const canDraftInvoice =
-    can("sales.draft" as Permission) || can("expenses.admin" as Permission);
+  const canPost = can("expenses.post" as Permission) || can("expenses.admin" as Permission);
+  const canRebill = can("expenses.submit" as Permission) || can("expenses.admin" as Permission);
+  const canDraftInvoice = can("sales.draft" as Permission) || can("expenses.admin" as Permission);
   const fetchClaim = useServerFn(getExpenseClaim);
   const postClaim = useServerFn(postExpenseClaim);
   const fetchSettings = useServerFn(getExpenseManagementSettings);
@@ -164,7 +158,9 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["expense-claim", company?.id, claimId] });
       void queryClient.invalidateQueries({ queryKey: ["expense-claims", company?.id] });
-      void queryClient.invalidateQueries({ queryKey: ["expense-management-overview", company?.id] });
+      void queryClient.invalidateQueries({
+        queryKey: ["expense-management-overview", company?.id],
+      });
       toast.success("Claim posted to the ledger (employee payable accrual).");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -291,11 +287,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
     !claim.postedJournalId;
 
   const alreadyRebilled = claim.rebillingStatus === "invoiced" && Boolean(claim.rebillingInvoiceId);
-  const canRebillNow =
-    canRebill &&
-    canDraftInvoice &&
-    !alreadyRebilled &&
-    claim.lines.length > 0;
+  const canRebillNow = canRebill && canDraftInvoice && !alreadyRebilled && claim.lines.length > 0;
 
   return (
     <RecordWorkspace
@@ -357,10 +349,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
             {fxMut.isPending ? "Checking FX…" : "Validate FX"}
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link
-              to="/expense-management/$section"
-              params={{ section: "my-expenses" }}
-            >
+            <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
               Back to My Expenses
             </Link>
           </Button>
@@ -396,9 +385,18 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
 
       <div className="mb-6 flex flex-wrap gap-2">
         <StatusBadge status={claim.approvalStatus} />
-        <StatusBadge status={claim.postingStatus} label={`Posting: ${claim.postingStatus.replace(/[_-]/g, " ")}`} />
-        <StatusBadge status={claim.reimbursementStatus} label={`Reimbursement: ${claim.reimbursementStatus.replace(/[_-]/g, " ")}`} />
-        <StatusBadge status={claim.rebillingStatus} label={`Rebilling: ${claim.rebillingStatus.replace(/[_-]/g, " ")}`} />
+        <StatusBadge
+          status={claim.postingStatus}
+          label={`Posting: ${claim.postingStatus.replace(/[_-]/g, " ")}`}
+        />
+        <StatusBadge
+          status={claim.reimbursementStatus}
+          label={`Reimbursement: ${claim.reimbursementStatus.replace(/[_-]/g, " ")}`}
+        />
+        <StatusBadge
+          status={claim.rebillingStatus}
+          label={`Rebilling: ${claim.rebillingStatus.replace(/[_-]/g, " ")}`}
+        />
         {riskQ.data ? (
           <Badge
             variant={
@@ -426,8 +424,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
         </Alert>
       ) : null}
 
-      {riskQ.isError &&
-      friendlyAuthError(riskQ.error).includes("20261107146000") ? (
+      {riskQ.isError && friendlyAuthError(riskQ.error).includes("20261107146000") ? (
         <Alert className="mb-6">
           <AlertTitle>Risk checks pending migration</AlertTitle>
           <AlertDescription>{EXPENSE_RISK_MIGRATION}</AlertDescription>

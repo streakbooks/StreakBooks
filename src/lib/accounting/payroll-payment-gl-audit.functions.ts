@@ -28,20 +28,28 @@ export const auditPayrollPaymentGl = createServerFn({ method: "GET" })
     const sb = context.supabase;
     const { data: rawPayment, error: payError } = await sb
       .from("payroll_payments" as never)
-      .select("id, company_id, payment_date, amount_minor, unallocated_minor, currency, clearing_account_id, journal_id, status, idempotency_key, reversal_journal_id" as never)
+      .select(
+        "id, company_id, payment_date, amount_minor, unallocated_minor, currency, clearing_account_id, journal_id, status, idempotency_key, reversal_journal_id" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.paymentId as never)
       .maybeSingle();
     if (payError) throw new Error(payError.message);
     if (!rawPayment) throw new Error("Payroll payment source record was not found.");
     const payment = rawPayment as unknown as PaymentAuditPayment;
-    if (payment.id !== data.paymentId || payment.company_id !== data.companyId || payment.journal_id !== data.journalId) {
+    if (
+      payment.id !== data.paymentId ||
+      payment.company_id !== data.companyId ||
+      payment.journal_id !== data.journalId
+    ) {
       throw new Error("Selected journal does not match an authorised Payroll payment.");
     }
 
     const { data: rawJournal, error: journalError } = await sb
       .from("journals" as never)
-      .select("id, company_id, status, source_type, source_id, idempotency_key, journal_date, currency_code, reverses_journal_id, reversed_by_journal_id" as never)
+      .select(
+        "id, company_id, status, source_type, source_id, idempotency_key, journal_date, currency_code, reverses_journal_id, reversed_by_journal_id" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.journalId as never)
       .maybeSingle();
@@ -56,7 +64,9 @@ export const auditPayrollPaymentGl = createServerFn({ method: "GET" })
     if (payment.reversal_journal_id) {
       const { data: rawRev, error: revError } = await sb
         .from("journals" as never)
-        .select("id, company_id, status, source_type, source_id, idempotency_key, journal_date, currency_code, reverses_journal_id, reversed_by_journal_id" as never)
+        .select(
+          "id, company_id, status, source_type, source_id, idempotency_key, journal_date, currency_code, reverses_journal_id, reversed_by_journal_id" as never,
+        )
         .eq("company_id" as never, data.companyId as never)
         .eq("id" as never, payment.reversal_journal_id as never)
         .maybeSingle();
@@ -66,7 +76,9 @@ export const auditPayrollPaymentGl = createServerFn({ method: "GET" })
 
     const { data: rawAllocations, error: allocationError } = await sb
       .from("payroll_payment_allocations" as never)
-      .select("id, company_id, payment_id, payslip_id, run_id, run_employee_id, amount_minor" as never)
+      .select(
+        "id, company_id, payment_id, payslip_id, run_id, run_employee_id, amount_minor" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .eq("payment_id" as never, data.paymentId as never)
       .order("id" as never)
@@ -74,10 +86,12 @@ export const auditPayrollPaymentGl = createServerFn({ method: "GET" })
     if (allocationError) throw new Error(allocationError.message);
     const allocations = (rawAllocations ?? []) as unknown as PaymentAuditAllocation[];
     if (allocations.length >= 101) {
-      throw new Error("Payroll payment exceeds 100 allocations; an incomplete audit cannot be approved.");
+      throw new Error(
+        "Payroll payment exceeds 100 allocations; an incomplete audit cannot be approved.",
+      );
     }
-    const payslipIds = [...new Set(allocations.map(a => a.payslip_id).filter(Boolean))];
-    const runIds = [...new Set(allocations.map(a => a.run_id).filter(Boolean))];
+    const payslipIds = [...new Set(allocations.map((a) => a.payslip_id).filter(Boolean))];
+    const runIds = [...new Set(allocations.map((a) => a.run_id).filter(Boolean))];
     let payslips: PaymentAuditPayslip[] = [];
     let runs: PaymentAuditRun[] = [];
     if (payslipIds.length) {
@@ -113,14 +127,19 @@ export const auditPayrollPaymentGl = createServerFn({ method: "GET" })
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
     if (settingsError) throw new Error(settingsError.message);
-    const settings = rawSettings as { company_id?: string; net_pay_liability_account_id?: string | null } | null;
+    const settings = rawSettings as {
+      company_id?: string;
+      net_pay_liability_account_id?: string | null;
+    } | null;
     if (!settings || settings.company_id !== data.companyId) {
-      throw new Error("Payroll liability account settings are not available for this organisation.");
+      throw new Error(
+        "Payroll liability account settings are not available for this organisation.",
+      );
     }
 
-    const glJournalIds = [...new Set([journal.id, reversal?.id].filter(
-      (id): id is string => Boolean(id),
-    ))];
+    const glJournalIds = [
+      ...new Set([journal.id, reversal?.id].filter((id): id is string => Boolean(id))),
+    ];
     const { data: rawLines, error: lineError } = await sb
       .from("journal_lines" as never)
       .select("id, company_id, journal_id, line_no, account_id, debit_minor, credit_minor" as never)
@@ -131,18 +150,27 @@ export const auditPayrollPaymentGl = createServerFn({ method: "GET" })
       .limit(11);
     if (lineError) throw new Error(lineError.message);
     const allLines = (rawLines ?? []) as unknown as PaymentAuditGlLine[];
-    if (allLines.length >= 11) throw new Error("Payroll payment GL exceeds ten lines; no partial audit returned.");
-    const originalLines = allLines.filter(line => line.journal_id === journal.id);
-    const reversalLines = reversal ? allLines.filter(line => line.journal_id === reversal.id) : [];
+    if (allLines.length >= 11)
+      throw new Error("Payroll payment GL exceeds ten lines; no partial audit returned.");
+    const originalLines = allLines.filter((line) => line.journal_id === journal.id);
+    const reversalLines = reversal
+      ? allLines.filter((line) => line.journal_id === reversal.id)
+      : [];
     if (allLines.length !== originalLines.length + reversalLines.length) {
       throw new Error("Unexpected journal line identity in the payment GL result.");
     }
 
-    const accountIds = [...new Set([
-      payment.clearing_account_id, settings.net_pay_liability_account_id,
-      ...allLines.map(line => line.account_id),
-    ].filter((id): id is string => Boolean(id)))];
-    if (accountIds.length > 10) throw new Error("Payroll payment GL account evidence is out of bounds.");
+    const accountIds = [
+      ...new Set(
+        [
+          payment.clearing_account_id,
+          settings.net_pay_liability_account_id,
+          ...allLines.map((line) => line.account_id),
+        ].filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    if (accountIds.length > 10)
+      throw new Error("Payroll payment GL account evidence is out of bounds.");
     let accounts: PaymentAuditAccount[] = [];
     if (accountIds.length) {
       const { data: rawAccounts, error } = await sb
@@ -159,7 +187,16 @@ export const auditPayrollPaymentGl = createServerFn({ method: "GET" })
     }
 
     return reviewPayrollPaymentGl(
-      data.companyId, payment, allocations, payslips, runs, journal, reversal,
-      originalLines, reversalLines, accounts, settings.net_pay_liability_account_id ?? null,
+      data.companyId,
+      payment,
+      allocations,
+      payslips,
+      runs,
+      journal,
+      reversal,
+      originalLines,
+      reversalLines,
+      accounts,
+      settings.net_pay_liability_account_id ?? null,
     );
   });

@@ -39,8 +39,7 @@ const SUPPLIER_NOUNS = {
 
 function toArDoc(doc: SupplierStatementDoc): StatementDoc {
   return {
-    kind:
-      doc.kind === "bill" ? "invoice" : doc.kind === "payment" ? "receipt" : "credit_note",
+    kind: doc.kind === "bill" ? "invoice" : doc.kind === "payment" ? "receipt" : "credit_note",
     id: doc.id,
     date: doc.date,
     currencyCode: doc.currencyCode,
@@ -75,11 +74,7 @@ export function buildSupplierStatement(
   range: { from: string | null; to: string | null },
 ): SupplierStatementCurrency[] {
   assertSupplierStatementRange(range.from, range.to);
-  return buildCustomerStatement(
-    docs.map(toArDoc),
-    range,
-    SUPPLIER_NOUNS,
-  ).map((currency) => ({
+  return buildCustomerStatement(docs.map(toArDoc), range, SUPPLIER_NOUNS).map((currency) => ({
     ...currency,
     lines: currency.lines.map((line) => ({
       ...line,

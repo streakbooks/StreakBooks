@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,11 +10,30 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { TableCard } from "@/components/common/table-card";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
@@ -101,10 +121,14 @@ export function HrDocumentsPage() {
   });
 
   if (isPending) return <LoadingState />;
-  if (!company) return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+  if (!company)
+    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
   if (!canView) {
     return (
-      <ListWorkspace title="Employee Documents" breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Documents" }]}>
+      <ListWorkspace
+        title="Employee Documents"
+        breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Documents" }]}
+      >
         <HrSubnav current="documents" />
         <EmptyState title="No access" description="You need hr.view to open documents." />
       </ListWorkspace>
@@ -121,7 +145,21 @@ export function HrDocumentsPage() {
       breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Documents" }]}
       actions={
         canManage ? (
-          <Button type="button" onClick={() => { setEmployeeId(""); setDocumentType("contract"); setTitle(""); setDocumentNumber(""); setIssuedOn(""); setExpiresOn(""); setStatus("active"); setNotes(""); setFile(null); setOpen(true); }}>
+          <Button
+            type="button"
+            onClick={() => {
+              setEmployeeId("");
+              setDocumentType("contract");
+              setTitle("");
+              setDocumentNumber("");
+              setIssuedOn("");
+              setExpiresOn("");
+              setStatus("active");
+              setNotes("");
+              setFile(null);
+              setOpen(true);
+            }}
+          >
             Add document
           </Button>
         ) : undefined
@@ -136,9 +174,16 @@ export function HrDocumentsPage() {
       {docsQ.isPending ? (
         <LoadingState />
       ) : docsQ.isError ? (
-        <ErrorState title="Could not load documents" description={friendlyAuthError(docsQ.error)} onRetry={() => void docsQ.refetch()} />
+        <ErrorState
+          title="Could not load documents"
+          description={friendlyAuthError(docsQ.error)}
+          onRetry={() => void docsQ.refetch()}
+        />
       ) : items.length === 0 ? (
-        <EmptyState title="No documents yet" description="Register contracts and IDs against the shared employee identity." />
+        <EmptyState
+          title="No documents yet"
+          description="Register contracts and IDs against the shared employee identity."
+        />
       ) : (
         <TableCard>
           <Table>
@@ -163,7 +208,9 @@ export function HrDocumentsPage() {
                   <TableCell>{row.title}</TableCell>
                   <TableCell>{row.expiresOn ?? "—"}</TableCell>
                   <TableCell>{row.storagePath ? "Attached" : "—"}</TableCell>
-                  <TableCell><StatusBadge status={row.status} /></TableCell>
+                  <TableCell>
+                    <StatusBadge status={row.status} />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -173,27 +220,39 @@ export function HrDocumentsPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add employee document</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Add employee document</DialogTitle>
+          </DialogHeader>
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              <Select value={employeeId} onValueChange={setEmployeeId}>
-                <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
+              <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
                 <SelectContent>
                   {employees.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>{e.employeeNumber} — {e.firstName} {e.lastName}</SelectItem>
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.employeeNumber} — {e.firstName} {e.lastName}
+                    </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Type</Label>
-              <Select value={documentType} onValueChange={setDocumentType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <RecordLookupSelect value={documentType} onValueChange={setDocumentType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {HR_DOCUMENT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {HR_DOCUMENT_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Title</Label>
@@ -210,21 +269,35 @@ export function HrDocumentsPage() {
               </div>
               <div className="grid gap-1.5">
                 <Label>Expires</Label>
-                <Input type="date" value={expiresOn} onChange={(e) => setExpiresOn(e.target.value)} />
+                <Input
+                  type="date"
+                  value={expiresOn}
+                  onChange={(e) => setExpiresOn(e.target.value)}
+                />
               </div>
             </div>
             <div className="grid gap-1.5">
               <Label>Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <RecordLookupSelect value={status} onValueChange={setStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {HR_DOCUMENT_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {HR_DOCUMENT_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>File (optional)</Label>
-              <Input type="file" accept={FILE_INPUT_ACCEPT} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <Input
+                type="file"
+                accept={FILE_INPUT_ACCEPT}
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Notes</Label>
@@ -232,8 +305,16 @@ export function HrDocumentsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="button" disabled={!employeeId || !title.trim() || saveM.isPending} onClick={() => saveM.mutate()}>Save</Button>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={!employeeId || !title.trim() || saveM.isPending}
+              onClick={() => saveM.mutate()}
+            >
+              Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

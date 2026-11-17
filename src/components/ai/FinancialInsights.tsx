@@ -7,10 +7,7 @@ import { getManagementMetrics } from "@/lib/reports/ecosystem.functions";
 import { todayIso, monthStart } from "@/lib/accounting/fiscal-year";
 import { priorPeriodRange } from "@/lib/reports/statements";
 import { isReportDate } from "@/lib/reports/date-validation";
-import {
-  buildFinancialInsights,
-  type FinancialSnapshot,
-} from "@/lib/ai/financial-insights";
+import { buildFinancialInsights, type FinancialSnapshot } from "@/lib/ai/financial-insights";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -53,13 +50,15 @@ export function AiFinancialInsights({
   const [active, setActive] = useState<Selection>(INITIAL);
   const [compare, setCompare] = useState(true);
   const [error, setError] = useState("");
-  const validRange = isReportDate(active.from) && isReportDate(active.to) && active.from <= active.to;
+  const validRange =
+    isReportDate(active.from) && isReportDate(active.to) && active.from <= active.to;
   const enabled = canUse && canViewReports && validRange;
   const previousRange = validRange ? priorPeriodRange(active.from, active.to) : null;
   const requestedBasis = active.basis === "organisation" ? {} : { basis: active.basis };
   const currentQ = useQuery({
     queryKey: ["ai-financial-insights", companyId, active.from, active.to, active.basis, "current"],
-    queryFn: () => load({ data: { companyId, from: active.from, to: active.to, ...requestedBasis } }),
+    queryFn: () =>
+      load({ data: { companyId, from: active.from, to: active.to, ...requestedBasis } }),
     enabled,
     staleTime: 60_000,
   });
@@ -78,9 +77,10 @@ export function AiFinancialInsights({
   if (!canUse) return null;
 
   const current = currentQ.data as FinancialSnapshot | undefined;
-  const previous = compare && !priorQ.isError && !priorQ.isPending
-    ? (priorQ.data as FinancialSnapshot | undefined)
-    : undefined;
+  const previous =
+    compare && !priorQ.isError && !priorQ.isPending
+      ? (priorQ.data as FinancialSnapshot | undefined)
+      : undefined;
   const result = current ? buildFinancialInsights(current, previous ?? null, currency) : null;
   const waitingForComparison = compare && priorQ.isPending;
 
@@ -113,13 +113,17 @@ export function AiFinancialInsights({
             <ShieldCheck className="size-4" />
             <AlertTitle>Reporting permission required</AlertTitle>
             <AlertDescription>
-              Financial insights require both AI access and the Reports View permission.
-              Your current role cannot load these figures.
+              Financial insights require both AI access and the Reports View permission. Your
+              current role cannot load these figures.
             </AlertDescription>
           </Alert>
         ) : (
           <>
-            <form onSubmit={applyFilters} className="flex flex-wrap items-end gap-3" aria-label="Financial insight filters">
+            <form
+              onSubmit={applyFilters}
+              className="flex flex-wrap items-end gap-3"
+              aria-label="Financial insight filters"
+            >
               <div className="space-y-1.5">
                 <Label htmlFor="ai-insights-from">From</Label>
                 <Input
@@ -150,7 +154,9 @@ export function AiFinancialInsights({
                     setDraft((old) => ({ ...old, basis: value as BasisSelection }))
                   }
                 >
-                  <SelectTrigger id="ai-insights-basis" className="w-48"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="ai-insights-basis" className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="organisation">Organisation default</SelectItem>
                     <SelectItem value="accrual">Accrual</SelectItem>
@@ -158,17 +164,25 @@ export function AiFinancialInsights({
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" variant="outline">Run insights</Button>
+              <Button type="submit" variant="outline">
+                Run insights
+              </Button>
               <Button
                 type="button"
                 variant="ghost"
                 disabled={currentQ.isFetching || priorQ.isFetching}
-                onClick={() => void qc.invalidateQueries({ queryKey: ["ai-financial-insights", companyId] })}
+                onClick={() =>
+                  void qc.invalidateQueries({ queryKey: ["ai-financial-insights", companyId] })
+                }
               >
                 <RefreshCw className="size-4" /> Refresh
               </Button>
             </form>
-            {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+            {error ? (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            ) : null}
             <div className="flex items-center gap-2">
               <Checkbox
                 id="ai-insights-compare"
@@ -180,7 +194,10 @@ export function AiFinancialInsights({
               </Label>
             </div>
             {currentQ.isPending ? (
-              <div role="status" className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+              <div
+                role="status"
+                className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground"
+              >
                 Calculating metrics from the authorised reporting engine…
               </div>
             ) : currentQ.isError ? (
@@ -188,13 +205,17 @@ export function AiFinancialInsights({
                 <AlertTitle>Financial insight data unavailable</AlertTitle>
                 <AlertDescription>
                   {friendlyAuthError(currentQ.error)}{" "}
-                  <Button size="sm" variant="outline" onClick={() => void currentQ.refetch()}>Retry</Button>
+                  <Button size="sm" variant="outline" onClick={() => void currentQ.refetch()}>
+                    Retry
+                  </Button>
                 </AlertDescription>
               </Alert>
             ) : result && current ? (
               <>
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span>Period: {current.from} to {current.to}</span>
+                  <span>
+                    Period: {current.from} to {current.to}
+                  </span>
                   <span>·</span>
                   <span>Basis: {current.accountingBasis}</span>
                   <span>·</span>
@@ -215,7 +236,9 @@ export function AiFinancialInsights({
                     <AlertTitle>Comparison unavailable</AlertTitle>
                     <AlertDescription>
                       {friendlyAuthError(priorQ.error)}. Current-period figures remain available.
-                      <Button size="sm" variant="outline" onClick={() => void priorQ.refetch()}>Retry comparison</Button>
+                      <Button size="sm" variant="outline" onClick={() => void priorQ.refetch()}>
+                        Retry comparison
+                      </Button>
                     </AlertDescription>
                   </Alert>
                 ) : null}
@@ -223,7 +246,9 @@ export function AiFinancialInsights({
                   {result.cards.map((card) => (
                     <div key={card.id} className="rounded-lg border p-3">
                       <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
-                      <p className="mt-1 break-words text-xl font-semibold tabular-nums">{card.value}</p>
+                      <p className="mt-1 break-words text-xl font-semibold tabular-nums">
+                        {card.value}
+                      </p>
                       {card.priorValue !== null ? (
                         <p className="mt-1 text-xs text-muted-foreground">
                           Prior: {card.priorValue}
@@ -234,7 +259,11 @@ export function AiFinancialInsights({
                       <Link
                         to="/reports/$reportId"
                         params={{ reportId: card.sourceReportId }}
-                        search={{ from: active.from, to: active.to, basis: current.accountingBasis === "cash" ? "cash" : "accrual" }}
+                        search={{
+                          from: active.from,
+                          to: active.to,
+                          basis: current.accountingBasis === "cash" ? "cash" : "accrual",
+                        }}
                         className="mt-2 inline-flex text-xs font-medium text-primary underline-offset-4 hover:underline"
                       >
                         View source report
@@ -247,12 +276,19 @@ export function AiFinancialInsights({
                     <TrendingDown className="size-4" /> Review observations
                   </p>
                   {result.observations.map((finding) => (
-                    <div key={finding.id} className="flex flex-wrap items-start justify-between gap-2 border-t pt-2 text-sm first:border-0 first:pt-0">
+                    <div
+                      key={finding.id}
+                      className="flex flex-wrap items-start justify-between gap-2 border-t pt-2 text-sm first:border-0 first:pt-0"
+                    >
                       <p className="max-w-3xl text-muted-foreground">{finding.text}</p>
                       <Link
                         to="/reports/$reportId"
                         params={{ reportId: finding.sourceReportId }}
-                        search={{ from: active.from, to: active.to, basis: current.accountingBasis === "cash" ? "cash" : "accrual" }}
+                        search={{
+                          from: active.from,
+                          to: active.to,
+                          basis: current.accountingBasis === "cash" ? "cash" : "accrual",
+                        }}
                         className="shrink-0 text-xs text-primary underline-offset-4 hover:underline"
                       >
                         Check report
@@ -261,10 +297,10 @@ export function AiFinancialInsights({
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Reporting basis, cut-off and posted-ledger completeness affect all results.
-                  Prior comparisons show absolute changes, not causes, and are omitted if the
-                  periods or bases are incompatible. Bank GL balances are not independently
-                  reconciled bank-feed balances. Insights are review prompts, not audit or tax conclusions.
+                  Reporting basis, cut-off and posted-ledger completeness affect all results. Prior
+                  comparisons show absolute changes, not causes, and are omitted if the periods or
+                  bases are incompatible. Bank GL balances are not independently reconciled
+                  bank-feed balances. Insights are review prompts, not audit or tax conclusions.
                 </p>
               </>
             ) : null}

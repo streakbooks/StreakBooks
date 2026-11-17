@@ -19,8 +19,13 @@ export function notificationCursorFilter(
   sort: NotificationSort,
 ): string {
   const { priorityRank, createdAt, id } = cursor;
-  if (!UUID.test(id) || !DB_TIMESTAMP.test(createdAt) || !Number.isInteger(priorityRank) ||
-      priorityRank < 0 || priorityRank > 3) {
+  if (
+    !UUID.test(id) ||
+    !DB_TIMESTAMP.test(createdAt) ||
+    !Number.isInteger(priorityRank) ||
+    priorityRank < 0 ||
+    priorityRank > 3
+  ) {
     throw new Error("Invalid notification history cursor");
   }
   const cmp = sort === "oldest" ? "gt" : "lt";
@@ -35,9 +40,13 @@ export function notificationCursorFilter(
   ].join(",");
 }
 
-export function nextNotificationCursor<T extends {
-  id: string; created_at: string; priority_rank: number;
-}>(rows: readonly T[], pageSize: number): NotificationCursor | null {
+export function nextNotificationCursor<
+  T extends {
+    id: string;
+    created_at: string;
+    priority_rank: number;
+  },
+>(rows: readonly T[], pageSize: number): NotificationCursor | null {
   if (rows.length <= pageSize || pageSize < 1) return null;
   const last = rows[pageSize - 1];
   if (!last) return null;
@@ -53,8 +62,6 @@ export function nextNotificationCursor<T extends {
  * Subsequent pages already use one-row lookahead; avoid repeated expensive
  * COUNT(*) queries on growing notification history.
  */
-export function notificationPageCountMode(
-  cursor: NotificationCursor | null,
-): "exact" | undefined {
+export function notificationPageCountMode(cursor: NotificationCursor | null): "exact" | undefined {
   return cursor === null ? "exact" : undefined;
 }

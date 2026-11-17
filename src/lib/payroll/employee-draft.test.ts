@@ -192,19 +192,23 @@ describe("payroll employee drafts", () => {
     expect(isValidPayrollDateOnly("2026-02-30")).toBe(false);
     expect(isValidPayrollDateOnly("0000-01-01")).toBe(false);
     expect(isValidPayrollDateOnly("2026-13-01")).toBe(false);
-    expect(parsePayrollEmployeeDraft({
-      ...base,
-      firstName: "Dana",
-      lastName: "Lee",
-      hireDate: "2026-02-30",
-    }).ok).toBe(false);
-    expect(parsePayrollEmployeeDraft({
-      ...base,
-      firstName: "Dana",
-      lastName: "Lee",
-      hireDate: "2024-02-29",
-      terminationDate: "2025-02-29",
-    }).ok).toBe(false);
+    expect(
+      parsePayrollEmployeeDraft({
+        ...base,
+        firstName: "Dana",
+        lastName: "Lee",
+        hireDate: "2026-02-30",
+      }).ok,
+    ).toBe(false);
+    expect(
+      parsePayrollEmployeeDraft({
+        ...base,
+        firstName: "Dana",
+        lastName: "Lee",
+        hireDate: "2024-02-29",
+        terminationDate: "2025-02-29",
+      }).ok,
+    ).toBe(false);
   });
 
   it("rejects wrong-width CSV rows and manual employee payment methods", () => {
@@ -240,14 +244,24 @@ describe("payroll employee drafts", () => {
       customLines: [],
     };
     expect(parseSalaryAssignDraft(baseAssignment, "GBP").ok).toBe(false);
-    expect(parseSalaryAssignDraft({
-      ...baseAssignment,
-      effectiveFrom: "0000-01-01",
-    }, "GBP").ok).toBe(false);
-    expect(parseSalaryAssignDraft({
-      ...baseAssignment,
-      effectiveFrom: "2024-02-29",
-    }, "GBP").ok).toBe(true);
+    expect(
+      parseSalaryAssignDraft(
+        {
+          ...baseAssignment,
+          effectiveFrom: "0000-01-01",
+        },
+        "GBP",
+      ).ok,
+    ).toBe(false);
+    expect(
+      parseSalaryAssignDraft(
+        {
+          ...baseAssignment,
+          effectiveFrom: "2024-02-29",
+        },
+        "GBP",
+      ).ok,
+    ).toBe(true);
   });
 
   it("refuses invalid salary amounts, rates and percentages before server writes", () => {
@@ -255,36 +269,47 @@ describe("payroll employee drafts", () => {
       name: "Salary review",
       description: "",
       isActive: true,
-      lines: [{
-        componentTypeId: "11111111-1111-1111-1111-111111111111",
-        amount: "123.456",
-        rate: "0",
-        percentage: "0",
-        isRecurring: true,
-        sortOrder: "100",
-      }],
+      lines: [
+        {
+          componentTypeId: "11111111-1111-1111-1111-111111111111",
+          amount: "123.456",
+          rate: "0",
+          percentage: "0",
+          isRecurring: true,
+          sortOrder: "100",
+        },
+      ],
     };
     const fraction = parseSalaryStructureDraft(structure, "GBP");
     expect(fraction.ok).toBe(false);
     if (!fraction.ok) expect(fraction.error).toMatch(/decimal places/);
 
-    const invalidPct = parseSalaryStructureDraft({
-      ...structure,
-      lines: [{ ...structure.lines[0]!, amount: "100", percentage: "unknown" }],
-    }, "GBP");
+    const invalidPct = parseSalaryStructureDraft(
+      {
+        ...structure,
+        lines: [{ ...structure.lines[0]!, amount: "100", percentage: "unknown" }],
+      },
+      "GBP",
+    );
     expect(invalidPct.ok).toBe(false);
     if (!invalidPct.ok) expect(invalidPct.error).toMatch(/percentage/i);
 
-    const invalidRate = parseSalaryStructureDraft({
-      ...structure,
-      lines: [{ ...structure.lines[0]!, amount: "100", rate: "-12" }],
-    }, "GBP");
+    const invalidRate = parseSalaryStructureDraft(
+      {
+        ...structure,
+        lines: [{ ...structure.lines[0]!, amount: "100", rate: "-12" }],
+      },
+      "GBP",
+    );
     expect(invalidRate.ok).toBe(false);
 
-    const valid = parseSalaryStructureDraft({
-      ...structure,
-      lines: [{ ...structure.lines[0]!, amount: "100.25", rate: "0", percentage: "12.34" }],
-    }, "GBP");
+    const valid = parseSalaryStructureDraft(
+      {
+        ...structure,
+        lines: [{ ...structure.lines[0]!, amount: "100.25", rate: "0", percentage: "12.34" }],
+      },
+      "GBP",
+    );
     expect(valid.ok).toBe(true);
     if (valid.ok) {
       const lines = valid.value["lines"] as Array<Record<string, number>>;
@@ -303,33 +328,45 @@ describe("payroll employee drafts", () => {
       sortOrder: "100",
     };
     const baseStructure = { name: "Safeguarded salary", description: "", isActive: true };
-    expect(parseSalaryStructureDraft({
-      ...baseStructure,
-      lines: [blankLine],
-    }, "GBP").ok).toBe(true);
+    expect(
+      parseSalaryStructureDraft(
+        {
+          ...baseStructure,
+          lines: [blankLine],
+        },
+        "GBP",
+      ).ok,
+    ).toBe(true);
 
-    const invalid = parseSalaryStructureDraft({
-      ...baseStructure,
-      lines: [{ ...blankLine, amount: "1500" }],
-    }, "GBP");
+    const invalid = parseSalaryStructureDraft(
+      {
+        ...baseStructure,
+        lines: [{ ...blankLine, amount: "1500" }],
+      },
+      "GBP",
+    );
     expect(invalid.ok).toBe(false);
     if (!invalid.ok) expect(invalid.error).toMatch(/choose a pay component/i);
 
-    const custom = parseSalaryAssignDraft({
-      structureId: "22222222-2222-2222-2222-222222222222",
-      effectiveFrom: "2026-04-01",
-      changeReason: "Annual review",
-      customLines: [{
-        componentTypeId: "",
-        amount: "0",
-        rate: "12.5",
-        percentage: "0",
-        isRecurring: true,
-        notes: "",
-      }],
-    }, "GBP");
+    const custom = parseSalaryAssignDraft(
+      {
+        structureId: "22222222-2222-2222-2222-222222222222",
+        effectiveFrom: "2026-04-01",
+        changeReason: "Annual review",
+        customLines: [
+          {
+            componentTypeId: "",
+            amount: "0",
+            rate: "12.5",
+            percentage: "0",
+            isRecurring: true,
+            notes: "",
+          },
+        ],
+      },
+      "GBP",
+    );
     expect(custom.ok).toBe(false);
     if (!custom.ok) expect(custom.error).toMatch(/choose a pay component/i);
   });
-
 });

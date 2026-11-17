@@ -21,14 +21,24 @@ test.describe("Native LinkBooks module section browsing", () => {
     const nav = page.getByRole("navigation", { name: "Purchases sections" });
     await expect(nav.getByTestId("module-section-strip")).toBeVisible();
     for (const name of [
-      "Overview", "Bills", "Expenses", "Suppliers", "Payments", "Credit notes",
-      "Purchase orders", "Recurring", "Employee expenses", "Statements", "Portal inbox",
+      "Overview",
+      "Bills",
+      "Expenses",
+      "Suppliers",
+      "Payments",
+      "Credit notes",
+      "Purchase orders",
+      "Recurring",
+      "Employee expenses",
+      "Statements",
+      "Portal inbox",
     ]) {
       await expect(nav.getByRole("link", { name, exact: true })).toHaveCount(1);
     }
     await expect(nav.getByRole("button", { name: /More Purchases sections/ })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "Bills", exact: true })).toHaveAttribute(
-      "aria-current", "page",
+      "aria-current",
+      "page",
     );
     const orders = nav.getByRole("link", { name: "Purchase orders" });
     await orders.scrollIntoViewIfNeeded();

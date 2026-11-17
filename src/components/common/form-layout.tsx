@@ -28,8 +28,12 @@ export function FormSection({
       )}
     >
       <div>
-        <h2 className="border-l-[3px] border-primary/65 pl-3 text-sm font-bold tracking-[-0.01em] text-foreground">{title}</h2>
-        {description ? <p className="mt-2 pl-3 text-xs leading-relaxed text-muted-foreground">{description}</p> : null}
+        <h2 className="border-l-[3px] border-primary/65 pl-3 text-sm font-bold tracking-[-0.01em] text-foreground">
+          {title}
+        </h2>
+        {description ? (
+          <p className="mt-2 pl-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
+        ) : null}
       </div>
       <div
         className={cn(

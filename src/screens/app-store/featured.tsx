@@ -30,19 +30,20 @@ export function AppStoreFeaturedPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Featured & Recommended" description="App Store"
-    >
-      <EmptyState title="No access" description="Requires appstore.view." />
-    </ListWorkspace>
+      <ListWorkspace title="Featured & Recommended" description="App Store">
+        <EmptyState title="No access" description="Requires appstore.view." />
+      </ListWorkspace>
     );
   }
   if (catalogue.isLoading) {
     return (
-      <ListWorkspace title="Featured & Recommended" description="Eligibility-based collections."
-      subnav={<AppStoreSubnav current="featured"/>}
-    >
-      <LoadingState />
-    </ListWorkspace>
+      <ListWorkspace
+        title="Featured & Recommended"
+        description="Eligibility-based collections."
+        subnav={<AppStoreSubnav current="featured" />}
+      >
+        <LoadingState />
+      </ListWorkspace>
     );
   }
   if (catalogue.isError) {
@@ -60,9 +61,10 @@ export function AppStoreFeaturedPage() {
   const recommended = filterMarketplaceApps(apps, { recommended: true });
 
   return (
-      <ListWorkspace title="Featured & Recommended"
-        description="Collections use catalogue flags and eligibility — not fabricated popularity metrics."
-      subnav={<AppStoreSubnav current="featured"/>}
+    <ListWorkspace
+      title="Featured & Recommended"
+      description="Collections use catalogue flags and eligibility — not fabricated popularity metrics."
+      subnav={<AppStoreSubnav current="featured" />}
     >
       <section className="mb-10 space-y-4">
         <h2 className="text-xl font-semibold tracking-tight">Featured</h2>
@@ -93,5 +95,5 @@ export function AppStoreFeaturedPage() {
         )}
       </section>
     </ListWorkspace>
-    );
+  );
 }

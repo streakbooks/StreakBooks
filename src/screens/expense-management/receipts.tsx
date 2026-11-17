@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -36,10 +37,7 @@ import {
   MAX_FILE_BYTES,
   validateUpload,
 } from "@/lib/documents/attachments";
-import {
-  getAttachmentDownload,
-  registerAttachment,
-} from "@/lib/documents/attachments.functions";
+import { getAttachmentDownload, registerAttachment } from "@/lib/documents/attachments.functions";
 import { uploadCompanyDocument } from "@/lib/documents/upload-client";
 import {
   dismissExpenseReceiptInboxEntry,
@@ -234,32 +232,36 @@ export function ExpenseManagementReceiptsPage() {
   }
   if (!canOpen) {
     return (
-      <ListWorkspace title="Receipts & Inbox"
-      subnav={<ExpenseManagementSubnav current="receipts"/>}
-    >
-      <EmptyState
+      <ListWorkspace
+        title="Receipts & Inbox"
+        subnav={<ExpenseManagementSubnav current="receipts" />}
+      >
+        <EmptyState
           title="No access"
           description="Ask an administrator for expenses.submit or expenses.view."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
   if (inboxQ.isLoading) {
     return (
-      <ListWorkspace title="Receipts & Inbox" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="receipts"/>}
-    >
-      <LoadingState />
-    </ListWorkspace>
+      <ListWorkspace
+        title="Receipts & Inbox"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="receipts" />}
+      >
+        <LoadingState />
+      </ListWorkspace>
     );
   }
   if (inboxQ.isError) {
     const message = friendlyAuthError(inboxQ.error);
     return (
-      <ListWorkspace title="Receipts & Inbox"
-      subnav={<ExpenseManagementSubnav current="receipts"/>}
-    >
-      {message.includes("2026110713") ? (
+      <ListWorkspace
+        title="Receipts & Inbox"
+        subnav={<ExpenseManagementSubnav current="receipts" />}
+      >
+        {message.includes("2026110713") ? (
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
             <AlertDescription>{EXPENSE_RECEIPT_MIGRATION}</AlertDescription>
@@ -271,18 +273,19 @@ export function ExpenseManagementReceiptsPage() {
             onRetry={() => inboxQ.refetch()}
           />
         )}
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
   const inbox = inboxQ.data;
   if (!inbox) {
     return (
-      <ListWorkspace title="Receipts & Inbox"
-      subnav={<ExpenseManagementSubnav current="receipts"/>}
-    >
-      <LoadingState />
-    </ListWorkspace>
+      <ListWorkspace
+        title="Receipts & Inbox"
+        subnav={<ExpenseManagementSubnav current="receipts" />}
+      >
+        <LoadingState />
+      </ListWorkspace>
     );
   }
   const draftClaims = (claimsQ.data ?? []).filter(
@@ -316,7 +319,9 @@ export function ExpenseManagementReceiptsPage() {
       description="Upload receipts, then match them to a claim. Email OCR is not configured."
       actions={
         <Button asChild variant="outline" size="sm">
-          <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>Open My Expenses</Link>
+          <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
+            Open My Expenses
+          </Link>
         </Button>
       }
       subnav={<ExpenseManagementSubnav current="receipts" />}
@@ -435,13 +440,16 @@ export function ExpenseManagementReceiptsPage() {
                       >
                         Request OCR
                       </Button>
-                      <Select
+                      <RecordLookupSelect
                         value={matchClaimByEntry[entry.id] ?? ""}
                         onValueChange={(value) =>
                           setMatchClaimByEntry((current) => ({ ...current, [entry.id]: value }))
                         }
                       >
-                        <SelectTrigger className="w-[220px]" aria-label={`Match claim for ${entry.fileName}`}>
+                        <SelectTrigger
+                          className="w-[220px]"
+                          aria-label={`Match claim for ${entry.fileName}`}
+                        >
                           <SelectValue placeholder="Select claim" />
                         </SelectTrigger>
                         <SelectContent>
@@ -451,7 +459,7 @@ export function ExpenseManagementReceiptsPage() {
                             </SelectItem>
                           ))}
                         </SelectContent>
-                      </Select>
+                      </RecordLookupSelect>
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button
                           size="sm"

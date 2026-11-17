@@ -75,11 +75,7 @@ export function reviewJournalLines(
     const index = i + 1;
     if (!line.id || ids.has(line.id)) issues.push(`Line ${index} has a missing or duplicate ID.`);
     ids.add(line.id);
-    if (
-      !Number.isSafeInteger(line.line_no) ||
-      line.line_no < 1 ||
-      numbers.has(line.line_no)
-    ) {
+    if (!Number.isSafeInteger(line.line_no) || line.line_no < 1 || numbers.has(line.line_no)) {
       issues.push(`Line ${index} has an invalid or duplicate line number.`);
     }
     numbers.add(line.line_no);

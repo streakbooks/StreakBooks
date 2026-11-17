@@ -22,7 +22,11 @@ import { csvFilename, csvMoney, downloadCsv, toCsv } from "@/lib/reports/csv";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { isValidTaxDate } from "@/lib/tax/tax-input-validation";
 import { returnVariances } from "@/lib/tax/tax-reconciliation";
-import { filterSavedTaxReturns, isStaleTaxPreview, type SavedReturnFilter } from "@/lib/tax/tax-return-view";
+import {
+  filterSavedTaxReturns,
+  isStaleTaxPreview,
+  type SavedReturnFilter,
+} from "@/lib/tax/tax-return-view";
 import { useFormat } from "@/hooks/use-format";
 import { useCanDo } from "@/hooks/use-can";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
@@ -400,7 +404,8 @@ export function TaxReturnsPanel({
             <Alert>
               <AlertTitle>Calculation needs refreshing</AlertTitle>
               <AlertDescription>
-                The dates or basis have changed. Calculate again before saving a draft or exporting this preview.
+                The dates or basis have changed. Calculate again before saving a draft or exporting
+                this preview.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -441,7 +446,12 @@ export function TaxReturnsPanel({
               ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button
-                  disabled={!canTax || previewStale || saveDraft.isPending || (list.data ? !list.data.available : false)}
+                  disabled={
+                    !canTax ||
+                    previewStale ||
+                    saveDraft.isPending ||
+                    (list.data ? !list.data.available : false)
+                  }
                   onClick={() => saveDraft.mutate()}
                 >
                   {saveDraft.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -482,7 +492,10 @@ export function TaxReturnsPanel({
               value={returnSearch}
               onChange={(e) => setReturnSearch(e.target.value)}
             />
-            <Select value={returnFilter} onValueChange={(v) => setReturnFilter(v as SavedReturnFilter)}>
+            <Select
+              value={returnFilter}
+              onValueChange={(v) => setReturnFilter(v as SavedReturnFilter)}
+            >
               <SelectTrigger aria-label="Filter tax returns" className="w-full sm:w-48">
                 <SelectValue placeholder="All returns" />
               </SelectTrigger>
@@ -494,7 +507,9 @@ export function TaxReturnsPanel({
               </SelectContent>
             </Select>
             {!list.isPending && !list.isError ? (
-              <span className="text-xs text-muted-foreground">{matchingReturns.length} of {list.data?.returns.length ?? 0} saved returns</span>
+              <span className="text-xs text-muted-foreground">
+                {matchingReturns.length} of {list.data?.returns.length ?? 0} saved returns
+              </span>
             ) : null}
           </div>
           {list.isPending ? (
@@ -511,7 +526,10 @@ export function TaxReturnsPanel({
               description="Calculate a period above and save it."
             />
           ) : matchingReturns.length === 0 ? (
-            <EmptyState title="No matching returns" description="Change the search or status filter." />
+            <EmptyState
+              title="No matching returns"
+              description="Change the search or status filter."
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -653,8 +671,8 @@ export function TaxReturnsPanel({
                     </Link>
                   </Button>
                   <span className="text-xs text-muted-foreground">
-                    The GL summary uses posted journal movements; differences may arise from
-                    timing, settlement and adjustments.
+                    The GL summary uses posted journal movements; differences may arise from timing,
+                    settlement and adjustments.
                   </span>
                 </div>
 
@@ -803,7 +821,11 @@ export function TaxReturnsPanel({
                         </div>
                         <Button
                           disabled={
-                            !canTax || !confirmSettle || !settleAccount || !settleDate || settle.isPending
+                            !canTax ||
+                            !confirmSettle ||
+                            !settleAccount ||
+                            !settleDate ||
+                            settle.isPending
                           }
                           onClick={() => settle.mutate()}
                         >

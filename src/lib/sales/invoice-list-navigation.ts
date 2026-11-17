@@ -14,10 +14,24 @@ export type InvoiceListSearch = {
 };
 
 const STATUSES = new Set(["all", "draft", "authorised", "partly_paid", "paid", "void"]);
-const SORT_FIELDS = new Set(["invoice_date", "due_date", "invoice_number", "total_minor", "status"]);
+const SORT_FIELDS = new Set([
+  "invoice_date",
+  "due_date",
+  "invoice_number",
+  "total_minor",
+  "status",
+]);
 const PAGE_SIZES = new Set([25, 50, 100, 200]);
 const QUERY_KEYS: ReadonlyArray<keyof InvoiceListSearch> = [
-  "q", "status", "from", "to", "sort", "dir", "page", "pageSize", "overdue",
+  "q",
+  "status",
+  "from",
+  "to",
+  "sort",
+  "dir",
+  "page",
+  "pageSize",
+  "overdue",
 ];
 const MAX_CONTEXT_LENGTH = 2048;
 
@@ -41,7 +55,8 @@ export function parseInvoiceListSearch(raw: Record<string, unknown>): InvoiceLis
   if (
     (typeof page === "number" && Number.isSafeInteger(page) && page >= 0) ||
     (typeof page === "string" && /^\d{1,7}$/.test(page))
-  ) out.page = Math.min(Number(page), 1_000_000);
+  )
+    out.page = Math.min(Number(page), 1_000_000);
   const size = raw["pageSize"];
   if ((typeof size === "number" || typeof size === "string") && PAGE_SIZES.has(Number(size)))
     out.pageSize = Number(size);

@@ -89,10 +89,7 @@ export function readFirmDirectoryPreferences(
   };
 }
 
-export function replaceFirmSavedView(
-  views: FirmSavedView[],
-  view: FirmSavedView,
-): FirmSavedView[] {
+export function replaceFirmSavedView(views: FirmSavedView[], view: FirmSavedView): FirmSavedView[] {
   const current = normalizeFirmSavedViews(views);
   const normalized = normalizeFirmSavedViews([view])[0];
   if (!normalized) return current;
@@ -101,9 +98,7 @@ export function replaceFirmSavedView(
   );
   if (sameName) {
     return normalizeFirmSavedViews(
-      current.map((item) =>
-        item.id === sameName.id ? { ...normalized, id: sameName.id } : item,
-      ),
+      current.map((item) => (item.id === sameName.id ? { ...normalized, id: sameName.id } : item)),
     );
   }
   if (current.length >= 20) return current;

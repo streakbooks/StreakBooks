@@ -14,10 +14,12 @@ import { addDaysIso, addMonthsIso, monthStart } from "@/lib/accounting/fiscal-ye
  *
  * Keep the full posted-line object for subsequent FX-safe debit/credit aggregation.
  */
-export function eligibleDimensionActualLines<T extends {
-  source_type?: string;
-  memo?: string | null;
-}>(postedLines: readonly T[]): T[] {
+export function eligibleDimensionActualLines<
+  T extends {
+    source_type?: string;
+    memo?: string | null;
+  },
+>(postedLines: readonly T[]): T[] {
   return postedLines.filter((line) => !isYearEndCloseLine(line));
 }
 
@@ -45,7 +47,6 @@ export function batchPostedLineIds(
   }
   return batches;
 }
-
 
 /** Default to fully completed months; explicit as-of may include partial current month. */
 export function resolveDimensionActualCutoff(
@@ -128,8 +129,7 @@ function variance(kind: BudgetAccountKind, b: bigint, a: bigint): DimensionVaria
   const d = kind === "income" ? a - b : b - a;
   const base = b < 0n ? -b : b;
   const bps = base === 0n ? null : safe(roundDiv(d * 10000n, base), "Variance percentage");
-  const status: VarianceStatus =
-    d > 0n ? "favourable" : d < 0n ? "unfavourable" : "on_budget";
+  const status: VarianceStatus = d > 0n ? "favourable" : d < 0n ? "unfavourable" : "on_budget";
   return {
     budgetMinor: safe(b, "Budget"),
     actualMinor: safe(a, "Actual"),
@@ -177,8 +177,7 @@ export function buildDimensionVariance(input: {
     const key = `${b.optionId}|${b.accountId}|${b.month}`;
     if (budgetSeen.has(key)) throw new Error("Duplicate dimension budget cell.");
     budgetSeen.add(key);
-    pairFor(b.optionId, b.accountId)[index]!.budget =
-      value(b.amountMinor, "Dimension budget");
+    pairFor(b.optionId, b.accountId)[index]!.budget = value(b.amountMinor, "Dimension budget");
   }
 
   const seenLines = new Set<string>();
@@ -223,10 +222,11 @@ export function buildDimensionVariance(input: {
       ),
     });
   }
-  rows.sort((a, b) =>
-    (a.optionId ?? "").localeCompare(b.optionId ?? "") ||
-    a.accountCode.localeCompare(b.accountCode, undefined, { numeric: true }) ||
-    a.accountName.localeCompare(b.accountName),
+  rows.sort(
+    (a, b) =>
+      (a.optionId ?? "").localeCompare(b.optionId ?? "") ||
+      a.accountCode.localeCompare(b.accountCode, undefined, { numeric: true }) ||
+      a.accountName.localeCompare(b.accountName),
   );
 
   const optionsInReport = new Set(rows.map((r) => r.optionId ?? UNASSIGNED));
@@ -235,11 +235,13 @@ export function buildDimensionVariance(input: {
     const optionRows = rows.filter((r) => (r.optionId ?? UNASSIGNED) === optionKey);
     const section = (kind: BudgetAccountKind) => {
       const group = optionRows.filter((r) => r.kind === kind);
-      const months = input.months.map((_, index) => variance(
-        kind,
-        group.reduce((v, r) => v + BigInt(r.months[index]!.budgetMinor), 0n),
-        group.reduce((v, r) => v + BigInt(r.months[index]!.actualMinor), 0n),
-      ));
+      const months = input.months.map((_, index) =>
+        variance(
+          kind,
+          group.reduce((v, r) => v + BigInt(r.months[index]!.budgetMinor), 0n),
+          group.reduce((v, r) => v + BigInt(r.months[index]!.actualMinor), 0n),
+        ),
+      );
       return {
         months,
         ytd: variance(
@@ -252,14 +254,17 @@ export function buildDimensionVariance(input: {
     const income = section("income");
     const expense = section("expense");
     const netCell = (a: DimensionVarianceCell, b: DimensionVarianceCell) =>
-      variance("income",
+      variance(
+        "income",
         BigInt(a.budgetMinor) - BigInt(b.budgetMinor),
         BigInt(a.actualMinor) - BigInt(b.actualMinor),
       );
     summaries.push({
       optionId: optionKey === UNASSIGNED ? null : optionKey,
-      optionName: optionKey === UNASSIGNED
-        ? "Unassigned posted activity" : optionById.get(optionKey)?.name ?? "Unknown option",
+      optionName:
+        optionKey === UNASSIGNED
+          ? "Unassigned posted activity"
+          : (optionById.get(optionKey)?.name ?? "Unknown option"),
       income,
       expense,
       net: {
@@ -268,9 +273,10 @@ export function buildDimensionVariance(input: {
       },
     });
   }
-  summaries.sort((a, b) =>
-    (a.optionId === null ? 1 : 0) - (b.optionId === null ? 1 : 0) ||
-    a.optionName.localeCompare(b.optionName),
+  summaries.sort(
+    (a, b) =>
+      (a.optionId === null ? 1 : 0) - (b.optionId === null ? 1 : 0) ||
+      a.optionName.localeCompare(b.optionName),
   );
   return { months: [...input.months], rows, summaries, assignedLines, unassignedLines };
 }

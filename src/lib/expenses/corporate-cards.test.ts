@@ -25,12 +25,10 @@ describe("canMatchCardTransaction", () => {
   });
 
   it("rejects mismatched totals or sources", () => {
-    expect(
-      canMatchCardTransaction({ ...base, claimTotalMinor: 4999 }).ok,
-    ).toBe(false);
-    expect(
-      canMatchCardTransaction({ ...base, claimPaymentSource: "employee_paid" }).ok,
-    ).toBe(false);
+    expect(canMatchCardTransaction({ ...base, claimTotalMinor: 4999 }).ok).toBe(false);
+    expect(canMatchCardTransaction({ ...base, claimPaymentSource: "employee_paid" }).ok).toBe(
+      false,
+    );
   });
 });
 
@@ -42,12 +40,10 @@ describe("card disputes", () => {
   });
 
   it("resolves disputed lines to unmatched or excluded", () => {
-    expect(
-      canResolveCardDispute({ txStatus: "disputed", resolution: "unmatched" }),
-    ).toEqual({ ok: true });
-    expect(
-      canResolveCardDispute({ txStatus: "unmatched", resolution: "excluded" }).ok,
-    ).toBe(false);
+    expect(canResolveCardDispute({ txStatus: "disputed", resolution: "unmatched" })).toEqual({
+      ok: true,
+    });
+    expect(canResolveCardDispute({ txStatus: "unmatched", resolution: "excluded" }).ok).toBe(false);
   });
 });
 

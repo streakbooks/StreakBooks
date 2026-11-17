@@ -77,7 +77,8 @@ if (root === null || resolve(root).toLowerCase() !== repoRoot.toLowerCase()) {
 }
 
 const branch = git(["branch", "--show-current"]);
-if (branch !== "main") refuse("Check out main. Feature or detached branches cannot pass the release gate.");
+if (branch !== "main")
+  refuse("Check out main. Feature or detached branches cannot pass the release gate.");
 
 const worktree = git(["status", "--porcelain=v1", "--untracked-files=normal"]);
 if (worktree === null) refuse("Cannot inspect local Git status.");
@@ -89,14 +90,18 @@ if (sha === null || trackedMain === null) {
   refuse("Missing HEAD or origin/main. Run git fetch origin first.");
 }
 if (sha !== trackedMain) {
-  refuse("Local main does not exactly match fetched origin/main. Fetch and fast-forward main first.");
+  refuse(
+    "Local main does not exactly match fetched origin/main. Fetch and fast-forward main first.",
+  );
 }
 
 console.log("Repository: linkbusinessadvisory/LinkBooks (origin verified; URL hidden)");
 console.log("Branch: main (verified clean)");
 console.log("Local HEAD: " + sha);
 console.log("Fetched origin/main: " + trackedMain);
-console.log("NOTE: origin/main is the LOCAL tracking ref; it may be stale if you have not fetched.");
+console.log(
+  "NOTE: origin/main is the LOCAL tracking ref; it may be stale if you have not fetched.",
+);
 console.log("No network access, GitHub Actions/CI, migrations or deployment are invoked.\n");
 
 const results = [];
@@ -115,8 +120,15 @@ for (const task of tasks) {
 
 console.log("\nFixed Assets release gate — local verification summary");
 for (const item of results) {
-  console.log((item.ok ? "PASS" : "FAIL") + " | " + item.name + " | " + item.seconds + "s" +
-    (item.ok ? "" : " | exit " + (item.code ?? "unable to start")));
+  console.log(
+    (item.ok ? "PASS" : "FAIL") +
+      " | " +
+      item.name +
+      " | " +
+      item.seconds +
+      "s" +
+      (item.ok ? "" : " | exit " + (item.code ?? "unable to start")),
+  );
 }
 const passed = results.filter((item) => item.ok).length;
 
@@ -133,12 +145,16 @@ const statePreserved =
   finalTrackedMain === trackedMain &&
   finalWorktree === "";
 if (!statePreserved) {
-  console.error("FINAL GIT CHECK FAILED: branch, commit, origin/main or working tree changed during verification.");
+  console.error(
+    "FINAL GIT CHECK FAILED: branch, commit, origin/main or working tree changed during verification.",
+  );
   console.error("Results are not accepted for release, even if the npm tasks themselves passed.");
 }
 console.log("Result:", passed + " / " + results.length + " checks passed.");
 console.log("Final Git state:", statePreserved ? "UNCHANGED" : "CHANGED — release gate blocked");
-console.log("NOT VERIFIED HERE: authenticated browser, RLS, accounting posting/FX, staging, production deployment.");
+console.log(
+  "NOT VERIFIED HERE: authenticated browser, RLS, accounting posting/FX, staging, production deployment.",
+);
 if (passed !== results.length || !statePreserved) {
   console.error("Local release gate FAILED. Full QA and production readiness remain unverified.");
   process.exitCode = 1;

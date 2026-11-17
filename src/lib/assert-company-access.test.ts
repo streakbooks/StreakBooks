@@ -24,18 +24,16 @@ describe("assertCompanyPermission", () => {
 
   it("denies with a clear organisation-scoped message when the RPC returns false", async () => {
     const supabase = mockClient({ data: false, error: null });
-    await expect(
-      assertCompanyPermission(supabase, companyId, "sales.authorise"),
-    ).rejects.toThrow(
+    await expect(assertCompanyPermission(supabase, companyId, "sales.authorise")).rejects.toThrow(
       "You do not have permission to perform this action for this organisation.",
     );
   });
 
   it("surfaces RPC failures instead of treating them as grants", async () => {
     const supabase = mockClient({ data: null, error: { message: "rpc unavailable" } });
-    await expect(
-      assertCompanyPermission(supabase, companyId, "sales.view"),
-    ).rejects.toThrow("rpc unavailable");
+    await expect(assertCompanyPermission(supabase, companyId, "sales.view")).rejects.toThrow(
+      "rpc unavailable",
+    );
   });
 });
 
@@ -65,4 +63,3 @@ describe("assertCompanyMember", () => {
     );
   });
 });
-

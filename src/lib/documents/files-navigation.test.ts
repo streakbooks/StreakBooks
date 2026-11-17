@@ -6,23 +6,48 @@ describe("Files workspace native browsing state", () => {
   const file = "11cd7a39-7692-44ac-8c16-27ee1bd6fcef";
 
   it("restores a complete bookmarked file view", () => {
-    expect(parseFilesListSearch({
-      folder, file, q: "receipts & invoices", type: "purchase_bill",
-      sort: "oldest", view: "all", page: "3",
-    })).toEqual({
-      folder, file, q: "receipts & invoices", type: "purchase_bill",
-      sort: "oldest", view: "all", page: 3,
+    expect(
+      parseFilesListSearch({
+        folder,
+        file,
+        q: "receipts & invoices",
+        type: "purchase_bill",
+        sort: "oldest",
+        view: "all",
+        page: "3",
+      }),
+    ).toEqual({
+      folder,
+      file,
+      q: "receipts & invoices",
+      type: "purchase_bill",
+      sort: "oldest",
+      view: "all",
+      page: 3,
     });
   });
 
   it("retains search and sorting through folder navigation", () => {
     const context = parseFilesListSearch({
-      q: "pdf", type: "company", sort: "largest", page: 7, view: "all",
+      q: "pdf",
+      type: "company",
+      sort: "largest",
+      page: 7,
+      view: "all",
     });
-    expect(parseFilesListSearch({
-      ...context, folder, page: 0,
-    })).toEqual({
-      q: "pdf", type: "company", sort: "largest", page: 0, view: "all", folder,
+    expect(
+      parseFilesListSearch({
+        ...context,
+        folder,
+        page: 0,
+      }),
+    ).toEqual({
+      q: "pdf",
+      type: "company",
+      sort: "largest",
+      page: 0,
+      view: "all",
+      folder,
     });
   });
 
@@ -33,11 +58,17 @@ describe("Files workspace native browsing state", () => {
   });
 
   it("rejects unsafe destinations, arbitrary flags and unknown types", () => {
-    expect(parseFilesListSearch({
-      redirect: "https://evil.example", admin: true,
-      folder: "../outside", file: "x", type: "private",
-      sort: "random", view: "../settings",
-    })).toEqual({});
+    expect(
+      parseFilesListSearch({
+        redirect: "https://evil.example",
+        admin: true,
+        folder: "../outside",
+        file: "x",
+        type: "private",
+        sort: "random",
+        view: "../settings",
+      }),
+    ).toEqual({});
   });
 
   it("rejects excessively long terms and bounds pagination", () => {
@@ -57,7 +88,9 @@ describe("Files workspace native browsing state", () => {
     const query = "Tax & books + FY/26";
     const params = new URLSearchParams({ q: query, sort: "name", view: "to-file" });
     expect(parseFilesListSearch(Object.fromEntries(params))).toEqual({
-      q: query, sort: "name", view: "to-file",
+      q: query,
+      sort: "name",
+      view: "to-file",
     });
   });
 });

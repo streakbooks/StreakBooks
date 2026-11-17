@@ -38,19 +38,19 @@ export function AppStoreBillingPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="App Billing" description="App Store"
-    >
-      <EmptyState title="No access" description="Requires appstore.view." />
-    </ListWorkspace>
+      <ListWorkspace title="App Billing" description="App Store">
+        <EmptyState title="No access" description="Requires appstore.view." />
+      </ListWorkspace>
     );
   }
 
   const apps = catalogue.data?.apps ?? [];
 
   return (
-      <ListWorkspace title="App Billing"
-        description="Marketplace pricing models for catalogue apps. Separate from LinkBooks SaaS and Advisors billing. No charges are collected here."
-      subnav={<AppStoreSubnav current="billing"/>}
+    <ListWorkspace
+      title="App Billing"
+      description="Marketplace pricing models for catalogue apps. Separate from LinkBooks SaaS and Advisors billing. No charges are collected here."
+      subnav={<AppStoreSubnav current="billing" />}
     >
       <Alert className="mb-6">
         <AlertTitle>No marketplace charges without authorization</AlertTitle>
@@ -104,5 +104,5 @@ export function AppStoreBillingPage() {
         )
       ) : null}
     </ListWorkspace>
-    );
+  );
 }

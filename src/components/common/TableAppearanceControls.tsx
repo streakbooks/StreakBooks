@@ -50,7 +50,10 @@ export function TableAppearanceControls({
               Columns
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-60 rounded-xl border-border/85 shadow-overlay">
+          <DropdownMenuContent
+            align="end"
+            className="w-60 rounded-xl border-border/85 shadow-overlay"
+          >
             <DropdownMenuLabel>Optional columns</DropdownMenuLabel>
             {columns.map((column) => (
               <DropdownMenuCheckboxItem
@@ -75,15 +78,16 @@ export function TableAppearanceControls({
             <Button
               variant="outline"
               size="sm"
-              aria-label={
-                density === "compact" ? "Compact row density" : "Comfortable row density"
-              }
+              aria-label={density === "compact" ? "Compact row density" : "Comfortable row density"}
             >
               <Rows3 className="size-4" aria-hidden />
               {density === "compact" ? "Compact" : "Comfortable"}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 rounded-xl border-border/85 shadow-overlay">
+          <DropdownMenuContent
+            align="end"
+            className="w-48 rounded-xl border-border/85 shadow-overlay"
+          >
             <DropdownMenuLabel>Row spacing</DropdownMenuLabel>
             <DropdownMenuRadioGroup
               value={density}

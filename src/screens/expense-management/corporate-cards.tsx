@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -138,18 +139,13 @@ export function ExpenseManagementCorporateCardsPage() {
     () =>
       (accountsQ.data ?? []).filter(
         (account) =>
-          account.is_active &&
-          account.is_postable &&
-          account.account_type === "liability",
+          account.is_active && account.is_postable && account.account_type === "liability",
       ),
     [accountsQ.data],
   );
 
   const cardClaims = useMemo(
-    () =>
-      (claimsQ.data ?? []).filter(
-        (claim) => claim.paymentSource === "corporate_card",
-      ),
+    () => (claimsQ.data ?? []).filter((claim) => claim.paymentSource === "corporate_card"),
     [claimsQ.data],
   );
 
@@ -249,10 +245,7 @@ export function ExpenseManagementCorporateCardsPage() {
   });
 
   const resolveMut = useMutation({
-    mutationFn: async (input: {
-      transactionId: string;
-      resolution: "unmatched" | "excluded";
-    }) =>
+    mutationFn: async (input: { transactionId: string; resolution: "unmatched" | "excluded" }) =>
       resolveTx({
         data: {
           companyId: company!.id,
@@ -275,34 +268,35 @@ export function ExpenseManagementCorporateCardsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Corporate Cards" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="corporate-cards"/>}
-    >
-      <EmptyState
+      <ListWorkspace
+        title="Corporate Cards"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="corporate-cards" />}
+      >
+        <EmptyState
           title="No access"
           description="Ask an administrator for expenses.manage_cards."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
   const migrationMissing =
-    (cardsQ.error &&
-      String(cardsQ.error.message ?? "").includes("20261107143000")) ||
-    (txQ.error &&
-      String(txQ.error.message ?? "").includes("20261107144000"));
+    (cardsQ.error && String(cardsQ.error.message ?? "").includes("20261107143000")) ||
+    (txQ.error && String(txQ.error.message ?? "").includes("20261107144000"));
 
   return (
-      <ListWorkspace title="Corporate Cards"
-        description="Register cards, import statement lines, and match them to corporate-card claims."
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
-              My expenses
-            </Link>
-          </Button>
-        }
-      subnav={<ExpenseManagementSubnav current="corporate-cards"/>}
+    <ListWorkspace
+      title="Corporate Cards"
+      description="Register cards, import statement lines, and match them to corporate-card claims."
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
+            My expenses
+          </Link>
+        </Button>
+      }
+      subnav={<ExpenseManagementSubnav current="corporate-cards" />}
     >
       {migrationMissing ? (
         <Alert className="mb-6" variant="destructive">
@@ -329,11 +323,7 @@ export function ExpenseManagementCorporateCardsPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="card-label">Label</Label>
-              <Input
-                id="card-label"
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-              />
+              <Input id="card-label" value={label} onChange={(e) => setLabel(e.target.value)} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="card-last4">Last 4</Label>
@@ -370,7 +360,10 @@ export function ExpenseManagementCorporateCardsPage() {
               <Button
                 onClick={() => createCardMut.mutate()}
                 disabled={
-                  createCardMut.isPending || !label.trim() || last4.length !== 4 || !liabilityAccountId
+                  createCardMut.isPending ||
+                  !label.trim() ||
+                  last4.length !== 4 ||
+                  !liabilityAccountId
                 }
               >
                 {createCardMut.isPending ? "Saving…" : "Save card"}
@@ -482,7 +475,7 @@ export function ExpenseManagementCorporateCardsPage() {
 
           <section className="mb-6 grid max-w-lg gap-2">
             <Label>Claim for matching</Label>
-            <Select value={matchClaimId} onValueChange={setMatchClaimId}>
+            <RecordLookupSelect value={matchClaimId} onValueChange={setMatchClaimId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select corporate-card claim" />
               </SelectTrigger>
@@ -493,7 +486,7 @@ export function ExpenseManagementCorporateCardsPage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
           </section>
 
           <section className="space-y-3">
@@ -537,24 +530,15 @@ export function ExpenseManagementCorporateCardsPage() {
                       <TableRow key={tx.id}>
                         <TableCell>{tx.transactionDate}</TableCell>
                         <TableCell>
-                          <div className="font-medium">
-                            {tx.merchantName ?? tx.description}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {tx.description}
-                          </div>
+                          <div className="font-medium">{tx.merchantName ?? tx.description}</div>
+                          <div className="text-xs text-muted-foreground">{tx.description}</div>
                         </TableCell>
-                        <TableCell>
-                          {fromMinorUnits(tx.amountMinor, tx.currencyCode)}
-                        </TableCell>
+                        <TableCell>{fromMinorUnits(tx.amountMinor, tx.currencyCode)}</TableCell>
                         <TableCell className="space-x-2 text-right">
                           <Button
                             size="sm"
                             disabled={
-                              matchMut.isPending ||
-                              !matchClaimId ||
-                              !gate ||
-                              gate.ok === false
+                              matchMut.isPending || !matchClaimId || !gate || gate.ok === false
                             }
                             onClick={() => matchMut.mutate(tx.id)}
                           >
@@ -563,9 +547,7 @@ export function ExpenseManagementCorporateCardsPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={
-                              disputeMut.isPending || disputeGate.ok === false
-                            }
+                            disabled={disputeMut.isPending || disputeGate.ok === false}
                             onClick={() => disputeMut.mutate(tx.id)}
                           >
                             Dispute
@@ -610,20 +592,14 @@ export function ExpenseManagementCorporateCardsPage() {
                       <TableRow key={tx.id}>
                         <TableCell>{tx.transactionDate}</TableCell>
                         <TableCell>
-                          <div className="font-medium">
-                            {tx.merchantName ?? tx.description}
-                          </div>
+                          <div className="font-medium">{tx.merchantName ?? tx.description}</div>
                           <Badge variant="secondary">disputed</Badge>
                         </TableCell>
-                        <TableCell>
-                          {fromMinorUnits(tx.amountMinor, tx.currencyCode)}
-                        </TableCell>
+                        <TableCell>{fromMinorUnits(tx.amountMinor, tx.currencyCode)}</TableCell>
                         <TableCell className="space-x-2 text-right">
                           <Button
                             size="sm"
-                            disabled={
-                              resolveMut.isPending || toUnmatched.ok === false
-                            }
+                            disabled={resolveMut.isPending || toUnmatched.ok === false}
                             onClick={() =>
                               resolveMut.mutate({
                                 transactionId: tx.id,
@@ -636,9 +612,7 @@ export function ExpenseManagementCorporateCardsPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={
-                              resolveMut.isPending || toExcluded.ok === false
-                            }
+                            disabled={resolveMut.isPending || toExcluded.ok === false}
                             onClick={() =>
                               resolveMut.mutate({
                                 transactionId: tx.id,

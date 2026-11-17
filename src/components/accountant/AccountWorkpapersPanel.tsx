@@ -346,7 +346,9 @@ export function AccountWorkpapersPanel({
             canStageReference={canManage && (!saved || saved.status === "draft")}
             onUseReference={(value) => {
               setReference(value);
-              toast.message("AI review reference staged. Verify supporting documentation and save the workpaper manually.");
+              toast.message(
+                "AI review reference staged. Verify supporting documentation and save the workpaper manually.",
+              );
             }}
           />
           <div className="grid gap-3 sm:grid-cols-2">

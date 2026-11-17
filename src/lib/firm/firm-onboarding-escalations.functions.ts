@@ -55,12 +55,14 @@ export const listFirmOnboardingEscalationPolicy = createServerFn({ method: "GET"
     return (policy ?? null) as FirmOnboardingEscalationPolicy | null;
   });
 
-export const saveFirmEscalationPolicyInput = scope.extend({
-  expectedVersion: z.number().int().min(0),
-  enabled: z.boolean(),
-  firstOverdueDays: z.number().int().min(1).max(30),
-  repeatEveryDays: z.number().int().min(1).max(30),
-}).strict();
+export const saveFirmEscalationPolicyInput = scope
+  .extend({
+    expectedVersion: z.number().int().min(0),
+    enabled: z.boolean(),
+    firstOverdueDays: z.number().int().min(1).max(30),
+    repeatEveryDays: z.number().int().min(1).max(30),
+  })
+  .strict();
 
 export const saveFirmOnboardingEscalationPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

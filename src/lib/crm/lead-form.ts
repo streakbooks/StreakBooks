@@ -15,7 +15,9 @@ export type CrmLeadFormResult =
   | { valid: false; estimatedValueMinor: null; message: string };
 
 export function validateCrmLeadForm(input: CrmLeadFormInput): CrmLeadFormResult {
-  if (![input.firstName, input.lastName, input.organizationName, input.email].some((v) => v.trim())) {
+  if (
+    ![input.firstName, input.lastName, input.organizationName, input.email].some((v) => v.trim())
+  ) {
     return {
       valid: false,
       estimatedValueMinor: null,

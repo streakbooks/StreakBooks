@@ -157,7 +157,11 @@ function MethodFields({
             aria-describedby={lifeError ? "dep-life-error" : undefined}
             onChange={(e) => setLife(e.target.value)}
           />
-          {lifeError ? <p id="dep-life-error" className="text-xs text-destructive">{lifeError}</p> : null}
+          {lifeError ? (
+            <p id="dep-life-error" className="text-xs text-destructive">
+              {lifeError}
+            </p>
+          ) : null}
         </div>
       ) : null}
       {method === "reducing_balance" ? (
@@ -172,7 +176,11 @@ function MethodFields({
             aria-describedby={rateError ? "dep-rate-error" : undefined}
             onChange={(e) => setRate(e.target.value)}
           />
-          {rateError ? <p id="dep-rate-error" className="text-xs text-destructive">{rateError}</p> : null}
+          {rateError ? (
+            <p id="dep-rate-error" className="text-xs text-destructive">
+              {rateError}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </>
@@ -538,8 +546,19 @@ export function AssetDialog({
         frozen,
       }),
     [
-      name, purchase, start, method, costMinor, residualMinor, openingMinor,
-      life, rate, asset, acc, exp, frozen,
+      name,
+      purchase,
+      start,
+      method,
+      costMinor,
+      residualMinor,
+      openingMinor,
+      life,
+      rate,
+      asset,
+      acc,
+      exp,
+      frozen,
     ],
   );
 
@@ -590,27 +609,25 @@ export function AssetDialog({
         {frozen ? (
           <Alert>
             <AlertDescription>
-              Depreciation has been posted for this asset, so only the name, description, notes
-              and type can change.
+              Depreciation has been posted for this asset, so only the name, description, notes and
+              type can change.
             </AlertDescription>
           </Alert>
         ) : null}
         {fromBillLine ? (
           <Alert>
             <AlertDescription>
-              Review bill {fromBillLine.billNumber ?? ""} (
-              {fromBillLine.supplier ?? "supplier"}): {fromBillLine.description}.{" "}
+              Review bill {fromBillLine.billNumber ?? ""} ({fromBillLine.supplier ?? "supplier"}):{" "}
+              {fromBillLine.description}.{" "}
               {fromBillLine.currency === currency
                 ? "The cost starts at the bill line's net less the linked register cost. Check recoverable tax, partial purchases, and existing entries before saving."
-                : `The bill is in ${fromBillLine.currency}. The cost is intentionally blank: enter the verified acquisition amount in the organisation base currency (${currency}) using the transaction's applicable FX rate. Do not compare nominal foreign-currency and base-currency amounts.`}
-              {" "}Saving only registers the asset; it does not post the bill again.
+                : `The bill is in ${fromBillLine.currency}. The cost is intentionally blank: enter the verified acquisition amount in the organisation base currency (${currency}) using the transaction's applicable FX rate. Do not compare nominal foreign-currency and base-currency amounts.`}{" "}
+              Saving only registers the asset; it does not post the bill again.
             </AlertDescription>
           </Alert>
         ) : null}
         <div className="grid gap-3 sm:grid-cols-2">
-          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">
-            Asset identity
-          </h3>
+          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">Asset identity</h3>
           <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="asset-name">Name</Label>
             <Input
@@ -646,8 +663,8 @@ export function AssetDialog({
               onChange={(e) => setNotes(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              {notes.length} of 4,000 characters · Use notes for serial numbers, location and
-              other non-financial details.
+              {notes.length} of 4,000 characters · Use notes for serial numbers, location and other
+              non-financial details.
             </p>
           </div>
           <div className="space-y-1">
@@ -701,9 +718,7 @@ export function AssetDialog({
               }}
             />
           </div>
-          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">
-            Depreciation policy
-          </h3>
+          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">Depreciation policy</h3>
           <MethodFields
             method={method}
             setMethod={setMethod}
@@ -806,9 +821,7 @@ export function AssetDialog({
               </p>
             ) : null}
           </div>
-          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">
-            Account mapping
-          </h3>
+          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">Account mapping</h3>
           <AccountSelect
             id="asset-asset"
             label="Asset account (cost)"
@@ -876,11 +889,7 @@ export function AssetDialog({
             Cancel
           </Button>
           <Button
-            disabled={
-              m.isPending ||
-              !name.trim() ||
-              !feedback.valid
-            }
+            disabled={m.isPending || !name.trim() || !feedback.valid}
             onClick={() => m.mutate()}
           >
             {m.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}

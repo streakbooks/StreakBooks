@@ -51,15 +51,12 @@ describe("Fixed Assets register CSV export", () => {
   });
 
   it("refuses accumulated depreciation below opening or above the residual floor", () => {
-    expect(() => toCsv([asset("a")], new Map([["a", 999]])))
-      .toThrow(/exact as-at/i);
-    expect(() => toCsv([asset("a")], new Map([["a", 9001]])))
-      .toThrow(/exact as-at/i);
+    expect(() => toCsv([asset("a")], new Map([["a", 999]]))).toThrow(/exact as-at/i);
+    expect(() => toCsv([asset("a")], new Map([["a", 9001]]))).toThrow(/exact as-at/i);
   });
 
   it("preserves residual NBV for a fully depreciated active asset", () => {
-    expect(toCsv([asset("a")], new Map([["a", 9000]])))
-      .toContain('"9000","1000"');
+    expect(toCsv([asset("a")], new Map([["a", 9000]]))).toContain('"9000","1000"');
   });
 
   it("reports disposed assets at zero as-at NBV but retains their accumulated history", () => {
@@ -92,27 +89,38 @@ describe("Fixed Assets register CSV export", () => {
   });
 
   it("refuses duplicate asset rows rather than exporting multiple identical records", () => {
-    expect(() => toCsv([asset("a"), asset("a")], new Map([["a", 2000]])))
-      .toThrow(/duplicate/i);
+    expect(() => toCsv([asset("a"), asset("a")], new Map([["a", 2000]]))).toThrow(/duplicate/i);
   });
 
   it("does not mutate the source register or balances", () => {
     const rows = [asset("a"), asset("b")];
-    const map = new Map([["a", 3000], ["b", 4000]]);
+    const map = new Map([
+      ["a", 3000],
+      ["b", 4000],
+    ]);
     const before = JSON.stringify({ rows, balances: [...map] });
     toCsv(rows, map);
     expect(JSON.stringify({ rows, balances: [...map] })).toBe(before);
   });
 
   it("fails when an asset's recorded financial terms contradict its cost", () => {
-    expect(() => toCsv(
-      [asset("bad", { residual_minor: 9500, opening_accumulated_minor: 1000 })],
-      new Map([["bad", 1000]]),
-    )).toThrow(/exact as-at/i);
+    expect(() =>
+      toCsv(
+        [asset("bad", { residual_minor: 9500, opening_accumulated_minor: 1000 })],
+        new Map([["bad", 1000]]),
+      ),
+    ).toThrow(/exact as-at/i);
   });
 
   it("refuses malformed reporting dates", () => {
-    expect(() => buildFixedAssetRegisterCsv([asset("a")], new Map([["a", 2000]]),
-      "2026-99-06", types, accounts)).toThrow(/valid register/i);
+    expect(() =>
+      buildFixedAssetRegisterCsv(
+        [asset("a")],
+        new Map([["a", 2000]]),
+        "2026-99-06",
+        types,
+        accounts,
+      ),
+    ).toThrow(/valid register/i);
   });
 });

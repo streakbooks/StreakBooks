@@ -32,9 +32,7 @@ describe("isPerDiemRateEffectiveOn", () => {
       isActive: true,
     };
     expect(isPerDiemRateEffectiveOn(rate, "2026-06-01")).toBe(true);
-    expect(isPerDiemRateEffectiveOn({ ...rate, isActive: false }, "2026-06-01")).toBe(
-      false,
-    );
+    expect(isPerDiemRateEffectiveOn({ ...rate, isActive: false }, "2026-06-01")).toBe(false);
   });
 });
 

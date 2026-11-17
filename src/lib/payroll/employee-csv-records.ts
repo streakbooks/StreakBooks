@@ -3,8 +3,7 @@
  */
 export type PayrollCsvRecord = { line: number; cells: string[] };
 export type PayrollCsvRecordsResult =
-  | { ok: true; records: PayrollCsvRecord[] }
-  | { ok: false; error: string };
+  { ok: true; records: PayrollCsvRecord[] } | { ok: false; error: string };
 
 export function readPayrollCsvRecords(input: string): PayrollCsvRecordsResult {
   if (input.length > 1_000_000) {

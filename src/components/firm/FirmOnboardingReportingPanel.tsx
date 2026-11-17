@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -5,7 +6,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getFirmClientName, type FirmClientRow } from "@/lib/firm/client-portfolio";
@@ -23,9 +28,7 @@ import {
 import { staffOnboardingWorkload } from "@/lib/firm/firm-onboarding-workload";
 
 function saveCsv(name: string, content: string) {
-  const url = URL.createObjectURL(
-    new Blob([content], { type: "text/csv;charset=utf-8" }),
-  );
+  const url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = name;
@@ -97,8 +100,9 @@ export function FirmOnboardingReportingPanel({
   const visibleIds = useMemo(() => new Set(clientNames.keys()), [clientNames]);
   const effectiveCompany = visibleIds.has(selectedCompany) ? selectedCompany : "all";
   const effectiveAssignee =
-    selectedAssignee === "all" || selectedAssignee === "unassigned" ||
-      staff.some((member) => member.user_id === selectedAssignee)
+    selectedAssignee === "all" ||
+    selectedAssignee === "unassigned" ||
+    staff.some((member) => member.user_id === selectedAssignee)
       ? selectedAssignee
       : "all";
   const today = new Date().toISOString().slice(0, 10);
@@ -111,21 +115,23 @@ export function FirmOnboardingReportingPanel({
     [staff],
   );
   const filtered = useMemo(
-    () => onboardingOperationalRows(liveRows, today, {
-      companyId: effectiveCompany,
-      assigneeId: effectiveAssignee,
-      age,
-      includeCompleted,
-    }),
+    () =>
+      onboardingOperationalRows(liveRows, today, {
+        companyId: effectiveCompany,
+        assigneeId: effectiveAssignee,
+        age,
+        includeCompleted,
+      }),
     [liveRows, today, effectiveCompany, effectiveAssignee, age, includeCompleted],
   );
   const counts = useMemo(() => onboardingAgeCounts(filtered), [filtered]);
   const historicalIds = useMemo(
-    () => new Set(
-      [...visibleIds].filter((companyId) =>
-        effectiveCompany === "all" || companyId === effectiveCompany,
+    () =>
+      new Set(
+        [...visibleIds].filter(
+          (companyId) => effectiveCompany === "all" || companyId === effectiveCompany,
+        ),
       ),
-    ),
     [visibleIds, effectiveCompany],
   );
   const dailyTrends = useMemo(
@@ -133,18 +139,20 @@ export function FirmOnboardingReportingPanel({
     [historyQ.data, historicalIds],
   );
   const workloads = useMemo(
-    () => staff.map((person) => ({
-      ...person,
-      ...staffOnboardingWorkload(
-        liveRows, person.user_id, person.max_open_steps, today,
-      ),
-    })).sort((a, b) =>
-      b.utilizationPercent - a.utilizationPercent || a.display_name.localeCompare(b.display_name),
-    ),
+    () =>
+      staff
+        .map((person) => ({
+          ...person,
+          ...staffOnboardingWorkload(liveRows, person.user_id, person.max_open_steps, today),
+        }))
+        .sort(
+          (a, b) =>
+            b.utilizationPercent - a.utilizationPercent ||
+            a.display_name.localeCompare(b.display_name),
+        ),
     [staff, liveRows, today],
   );
-  const operationalReady =
-    overviewQ.isSuccess && staffQ.isSuccess && knownClients.length > 0;
+  const operationalReady = overviewQ.isSuccess && staffQ.isSuccess && knownClients.length > 0;
   const historicalReady = historyQ.isSuccess && knownClients.length > 0;
   const reportError = overviewQ.error ?? staffQ.error ?? historyQ.error;
   const isLoading = overviewQ.isPending || staffQ.isPending || historyQ.isPending;
@@ -201,10 +209,7 @@ export function FirmOnboardingReportingPanel({
       if (activeFirmRef.current !== firmId) {
         throw new Error("Active firm changed during export. Restart from the selected firm.");
       }
-      saveCsv(
-        `firm-onboarding-observed-trend-${today}.csv`,
-        onboardingTrendCsv(authorizedTrends),
-      );
+      saveCsv(`firm-onboarding-observed-trend-${today}.csv`, onboardingTrendCsv(authorizedTrends));
       toast.success(`Exported ${authorizedTrends.length} observed reporting dates`);
     } catch (error) {
       toast.error("History export failed: " + friendlyAuthError(error));
@@ -214,22 +219,28 @@ export function FirmOnboardingReportingPanel({
   }
 
   return (
-    <section className="space-y-4 rounded-lg border bg-card p-4"
-      aria-label="Advanced onboarding operational reports">
+    <section
+      className="space-y-4 rounded-lg border bg-card p-4"
+      aria-label="Advanced onboarding operational reports"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="font-semibold">Onboarding reports and trends</h3>
           <p className="text-sm text-muted-foreground">
-            Live overdue ageing and staff comparisons, plus actual daily UTC
-            observations for clients you are authorized to access.
+            Live overdue ageing and staff comparisons, plus actual daily UTC observations for
+            clients you are authorized to access.
           </p>
         </div>
-        <Button size="sm" variant="outline" disabled={isLoading}
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={isLoading}
           onClick={() => {
             void overviewQ.refetch();
             void staffQ.refetch();
             void historyQ.refetch();
-          }}>
+          }}
+        >
           Refresh reports
         </Button>
       </div>
@@ -242,8 +253,7 @@ export function FirmOnboardingReportingPanel({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1">
           <Label>Client</Label>
-          <Select value={effectiveCompany}
-            onValueChange={setSelectedCompany}>
+          <RecordLookupSelect value={effectiveCompany} onValueChange={setSelectedCompany}>
             <SelectTrigger aria-label="Filter onboarding report by client">
               <SelectValue placeholder="All accessible clients" />
             </SelectTrigger>
@@ -255,12 +265,11 @@ export function FirmOnboardingReportingPanel({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="space-y-1">
           <Label>Assigned staff</Label>
-          <Select value={effectiveAssignee}
-            onValueChange={setSelectedAssignee}>
+          <RecordLookupSelect value={effectiveAssignee} onValueChange={setSelectedAssignee}>
             <SelectTrigger aria-label="Filter onboarding report by staff">
               <SelectValue />
             </SelectTrigger>
@@ -273,12 +282,14 @@ export function FirmOnboardingReportingPanel({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="space-y-1">
           <Label>Overdue age</Label>
-          <Select value={age}
-            onValueChange={(value) => setAge(value as OnboardingAgeFilter)}>
+          <RecordLookupSelect
+            value={age}
+            onValueChange={(value) => setAge(value as OnboardingAgeFilter)}
+          >
             <SelectTrigger aria-label="Filter overdue ageing">
               <SelectValue />
             </SelectTrigger>
@@ -289,12 +300,14 @@ export function FirmOnboardingReportingPanel({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="space-y-1">
           <Label>Completion</Label>
-          <Select value={includeCompleted ? "all" : "open"}
-            onValueChange={(value) => setIncludeCompleted(value === "all")}>
+          <Select
+            value={includeCompleted ? "all" : "open"}
+            onValueChange={(value) => setIncludeCompleted(value === "all")}
+          >
             <SelectTrigger aria-label="Filter open and completed onboarding tasks">
               <SelectValue />
             </SelectTrigger>
@@ -306,29 +319,32 @@ export function FirmOnboardingReportingPanel({
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {([
-          ["Filtered tasks", filtered.length],
-          ["1–7 days overdue", counts["1_7"]],
-          ["8–30 days overdue", counts["8_30"]],
-          ["31+ days overdue", counts["31_60"] + counts["61_plus"]],
-        ] as const).map(([label, value]) => (
+        {(
+          [
+            ["Filtered tasks", filtered.length],
+            ["1–7 days overdue", counts["1_7"]],
+            ["8–30 days overdue", counts["8_30"]],
+            ["31+ days overdue", counts["31_60"] + counts["61_plus"]],
+          ] as const
+        ).map(([label, value]) => (
           <div key={label} className="rounded-md border p-3">
             <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="text-xl font-semibold tabular-nums">
-              {operationalReady ? value : "—"}
-            </p>
+            <p className="text-xl font-semibold tabular-nums">{operationalReady ? value : "—"}</p>
           </div>
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="outline"
+        <Button
+          size="sm"
+          variant="outline"
           disabled={!operationalReady || !filtered.length || exportingOperational}
-          onClick={() => void exportCurrentOperations()}>
+          onClick={() => void exportCurrentOperations()}
+        >
           {exportingOperational ? "Verifying export…" : "Export filtered tasks (CSV)"}
         </Button>
         <p className="text-xs text-muted-foreground">
-          Only accessible client tasks and displayed filters are exported.
-          CSV formula values are neutralized before download.
+          Only accessible client tasks and displayed filters are exported. CSV formula values are
+          neutralized before download.
         </p>
       </div>
       <div className="max-h-64 overflow-auto rounded-md border">
@@ -343,39 +359,45 @@ export function FirmOnboardingReportingPanel({
             </tr>
           </thead>
           <tbody>
-            {operationalReady && filtered.slice(0, 30).map((row) => (
-              <tr key={row.company_id + ":" + row.task_key} className="border-t">
-                <td className="p-2">
-                  <div className="font-medium">{row.title}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {clientNames.get(row.company_id) ?? "Authorized client"}
-                  </div>
-                </td>
-                <td className="p-2">{row.due_date ?? "—"}</td>
-                <td className="p-2">
-                  {row.assignee_id
-                    ? staffNames.get(row.assignee_id) ?? "Assigned colleague"
-                    : "Unassigned"}
-                </td>
-                <td className="p-2">
-                  {row.completed_at ? "Complete"
-                    : row.daysOverdue ? `${row.daysOverdue} days overdue`
-                      : row.blocked ? "Blocked" : "Not due"}
-                </td>
-                <td className="p-2">
-                  <Button size="sm" variant="outline"
-                    onClick={() => onChooseClient(row.company_id)}>
-                    Open
-                  </Button>
-                </td>
-              </tr>
-            ))}
+            {operationalReady &&
+              filtered.slice(0, 30).map((row) => (
+                <tr key={row.company_id + ":" + row.task_key} className="border-t">
+                  <td className="p-2">
+                    <div className="font-medium">{row.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {clientNames.get(row.company_id) ?? "Authorized client"}
+                    </div>
+                  </td>
+                  <td className="p-2">{row.due_date ?? "—"}</td>
+                  <td className="p-2">
+                    {row.assignee_id
+                      ? (staffNames.get(row.assignee_id) ?? "Assigned colleague")
+                      : "Unassigned"}
+                  </td>
+                  <td className="p-2">
+                    {row.completed_at
+                      ? "Complete"
+                      : row.daysOverdue
+                        ? `${row.daysOverdue} days overdue`
+                        : row.blocked
+                          ? "Blocked"
+                          : "Not due"}
+                  </td>
+                  <td className="p-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onChooseClient(row.company_id)}
+                    >
+                      Open
+                    </Button>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
         {operationalReady && !filtered.length && (
-          <p className="p-3 text-sm text-muted-foreground">
-            No tasks match these filters.
-          </p>
+          <p className="p-3 text-sm text-muted-foreground">No tasks match these filters.</p>
         )}
         {filtered.length > 30 && (
           <p className="p-2 text-xs text-muted-foreground">
@@ -389,20 +411,24 @@ export function FirmOnboardingReportingPanel({
           Based on the accessible client subset. Capacity is an advisory target.
         </p>
         <div className="max-h-44 space-y-2 overflow-y-auto">
-          {operationalReady && workloads.length ? workloads.map((person) => (
-            <div key={person.user_id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded border p-2 text-sm">
-              <span className="font-medium">{person.display_name}</span>
-              <span className="tabular-nums">
-                {person.assignedOpen} / {person.capacity} open steps
-                {" · "}{person.utilizationPercent}% utilization
-                {" · "}{person.overdue} overdue
-              </span>
-            </div>
-          )) : (
-            <p className="text-sm text-muted-foreground">
-              No staff workload comparison available.
-            </p>
+          {operationalReady && workloads.length ? (
+            workloads.map((person) => (
+              <div
+                key={person.user_id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded border p-2 text-sm"
+              >
+                <span className="font-medium">{person.display_name}</span>
+                <span className="tabular-nums">
+                  {person.assignedOpen} / {person.capacity} open steps
+                  {" · "}
+                  {person.utilizationPercent}% utilization
+                  {" · "}
+                  {person.overdue} overdue
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">No staff workload comparison available.</p>
           )}
         </div>
       </div>
@@ -410,8 +436,10 @@ export function FirmOnboardingReportingPanel({
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-40 space-y-1">
             <Label>Historical observation window</Label>
-            <Select value={String(days)}
-              onValueChange={(value) => setDays(Number(value) as 30 | 60 | 90)}>
+            <Select
+              value={String(days)}
+              onValueChange={(value) => setDays(Number(value) as 30 | 60 | 90)}
+            >
               <SelectTrigger aria-label="Historical reporting window">
                 <SelectValue />
               </SelectTrigger>
@@ -422,50 +450,61 @@ export function FirmOnboardingReportingPanel({
               </SelectContent>
             </Select>
           </div>
-          <Button size="sm" variant="outline"
+          <Button
+            size="sm"
+            variant="outline"
             disabled={!historicalReady || !dailyTrends.length || exportingHistory}
-            onClick={() => void exportObservedHistory()}>
+            onClick={() => void exportObservedHistory()}
+          >
             {exportingHistory ? "Verifying export…" : "Export observed trends (CSV)"}
           </Button>
         </div>
         <h4 className="text-sm font-semibold">Completion trend (recorded observations only)</h4>
         <p className="text-xs text-muted-foreground">
-          Daily snapshots start with the first scheduled capture after migration.
-          Previous dates are not reconstructed. Changing accessible clients
-          can change the observed reporting population.
-          Historical snapshots are per client; staff filters apply only to live tasks.
+          Daily snapshots start with the first scheduled capture after migration. Previous dates are
+          not reconstructed. Changing accessible clients can change the observed reporting
+          population. Historical snapshots are per client; staff filters apply only to live tasks.
         </p>
         {historyQ.isPending ? (
           <p className="text-sm text-muted-foreground">Loading daily snapshots…</p>
         ) : historicalReady && !dailyTrends.length ? (
           <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-            No recorded daily snapshots yet. The scheduled daily capture
-            will populate the first available observation.
+            No recorded daily snapshots yet. The scheduled daily capture will populate the first
+            available observation.
           </p>
         ) : historicalReady ? (
           <div className="space-y-2" aria-label="Observed completion percentages by UTC date">
-            {dailyTrends.slice(-14).reverse().map((day) => (
-              <div key={day.date} className="rounded-md border p-3 text-sm">
-                <div className="mb-2 flex flex-wrap justify-between gap-2">
-                  <span>{day.date} · {day.clientCount} clients</span>
-                  <span className="font-medium tabular-nums">
-                    {day.completed}/{day.total} complete · {day.completionPercent}%
-                  </span>
+            {dailyTrends
+              .slice(-14)
+              .reverse()
+              .map((day) => (
+                <div key={day.date} className="rounded-md border p-3 text-sm">
+                  <div className="mb-2 flex flex-wrap justify-between gap-2">
+                    <span>
+                      {day.date} · {day.clientCount} clients
+                    </span>
+                    <span className="font-medium tabular-nums">
+                      {day.completed}/{day.total} complete · {day.completionPercent}%
+                    </span>
+                  </div>
+                  <div
+                    className="h-2 overflow-hidden rounded-full bg-muted"
+                    role="progressbar"
+                    aria-label={`Completion percentage on ${day.date}`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={day.completionPercent}
+                  >
+                    <div
+                      className="h-full bg-primary"
+                      style={{ width: `${day.completionPercent}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {day.overdue} overdue · {day.blocked} blocked · {day.unassigned} unassigned
+                  </p>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-muted"
-                  role="progressbar"
-                  aria-label={`Completion percentage on ${day.date}`}
-                  aria-valuemin={0} aria-valuemax={100}
-                  aria-valuenow={day.completionPercent}>
-                  <div className="h-full bg-primary"
-                    style={{ width: `${day.completionPercent}%` }} />
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {day.overdue} overdue · {day.blocked} blocked ·
-                  {" "}{day.unassigned} unassigned
-                </p>
-              </div>
-            ))}
+              ))}
           </div>
         ) : null}
       </div>

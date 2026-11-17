@@ -123,16 +123,17 @@ describe("Budgets release: six pending migrations", () => {
   });
 
   it("pages more than 250 saved scenarios even with a smaller server row cap", async () => {
-    const saved = Array.from({length: 263}, (_, index) => ({
+    const saved = Array.from({ length: 263 }, (_, index) => ({
       id: String(index).padStart(4, "0"),
       name: "Scenario " + index,
     }));
     const pages = await fetchAllPages(
-      (from, to) => Promise.resolve({
-        data: saved.slice(from, Math.min(to + 1, from + 60)),
-        error: null,
-      }),
-      {pageSize: 100},
+      (from, to) =>
+        Promise.resolve({
+          data: saved.slice(from, Math.min(to + 1, from + 60)),
+          error: null,
+        }),
+      { pageSize: 100 },
     );
     expect(pages).toHaveLength(263);
     expect(pages[0]).toEqual(saved[0]);
@@ -144,7 +145,9 @@ describe("Budgets release: six pending migrations", () => {
     expect(text).toContain("public.budget_forecast_scenarios ENABLE ROW LEVEL SECURITY");
     expect(text).toContain("public.budget_forecast_scenario_events ENABLE ROW LEVEL SECURITY");
     expect(text).toContain("IS DISTINCT FROM _expected_updated_at");
-    expect(text).not.toMatch(/\b(?:INSERT INTO|UPDATE|DELETE FROM)\s+public\.(?:journals|journal_lines|budget_lines)\b/i);
+    expect(text).not.toMatch(
+      /\b(?:INSERT INTO|UPDATE|DELETE FROM)\s+public\.(?:journals|journal_lines|budget_lines)\b/i,
+    );
     expect(text).toContain("GRANT SELECT ON public.budget_forecast_scenarios");
   });
 });

@@ -60,7 +60,9 @@ export function BillMobileCards({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Supplier bill</p>
-                <h3 className="mt-1 break-words text-base font-bold tracking-[-0.02em]">{reference}</h3>
+                <h3 className="mt-1 break-words text-base font-bold tracking-[-0.02em]">
+                  {reference}
+                </h3>
                 <p className="mt-1 break-words text-sm text-muted-foreground">
                   {bill.contacts?.name ?? "Supplier not specified"}
                 </p>

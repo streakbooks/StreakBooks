@@ -149,9 +149,7 @@ function BankingAccounts() {
           title="Banking shortcuts"
           facts={[
             { label: "Active accounts", value: String(accounts.filter((a) => a.isActive).length) },
-            ...(archivedCount > 0
-              ? [{ label: "Archived", value: String(archivedCount) }]
-              : []),
+            ...(archivedCount > 0 ? [{ label: "Archived", value: String(archivedCount) }] : []),
           ]}
           links={[
             {
@@ -375,7 +373,11 @@ function BankingAccounts() {
         </Button>
       ) : null}
 
-      <div className="grid max-w-lg gap-3 rounded-md border p-4" role="group" aria-label="Add bank or cash account">
+      <div
+        className="grid max-w-lg gap-3 rounded-md border p-4"
+        role="group"
+        aria-label="Add bank or cash account"
+      >
         <Label htmlFor="bank-account-name">Add bank / cash account</Label>
         <Input
           ref={accountNameRef}

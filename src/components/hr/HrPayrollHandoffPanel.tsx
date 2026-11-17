@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -6,8 +7,21 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/common/states
 import { TableCard } from "@/components/common/table-card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,13 +69,21 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
 
   const applyCompM = useMutation({
     mutationFn: (args: { changeId: string; componentTypeId: string }) =>
-      applyComp({ data: { companyId, changeId: args.changeId, componentTypeId: args.componentTypeId } }),
-    onSuccess: async () => { toast.success("Compensation applied in Payroll"); await inv(); },
+      applyComp({
+        data: { companyId, changeId: args.changeId, componentTypeId: args.componentTypeId },
+      }),
+    onSuccess: async () => {
+      toast.success("Compensation applied in Payroll");
+      await inv();
+    },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
   const applyExitM = useMutation({
     mutationFn: (caseId: string) => applyExit({ data: { companyId, caseId } }),
-    onSuccess: async () => { toast.success("Employee terminated via Payroll handoff"); await inv(); },
+    onSuccess: async () => {
+      toast.success("Employee terminated via Payroll handoff");
+      await inv();
+    },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
@@ -74,13 +96,26 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
   return (
     <section className="mt-8 space-y-4 rounded-lg border p-4">
       <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Payroll handoffs</h2>
-        <p className="text-sm text-muted-foreground">Apply approved HR proposals. Finalized pay runs are never mutated.</p>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Payroll handoffs
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Apply approved HR proposals. Finalized pay runs are never mutated.
+        </p>
       </div>
-      {handoffQ.isPending ? <LoadingState /> : handoffQ.isError ? (
-        <ErrorState title="Could not load handoffs" description={friendlyAuthError(handoffQ.error)} onRetry={() => void handoffQ.refetch()} />
+      {handoffQ.isPending ? (
+        <LoadingState />
+      ) : handoffQ.isError ? (
+        <ErrorState
+          title="Could not load handoffs"
+          description={friendlyAuthError(handoffQ.error)}
+          onRetry={() => void handoffQ.refetch()}
+        />
       ) : compensation.length === 0 && offboarding.length === 0 ? (
-        <EmptyState title="No open Payroll handoffs" description="Approved compensation and ready offboarding cases appear here." />
+        <EmptyState
+          title="No open Payroll handoffs"
+          description="Approved compensation and ready offboarding cases appear here."
+        />
       ) : (
         <>
           {compensation.length > 0 ? (
@@ -102,21 +137,29 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
                       <TableRow key={row.id}>
                         <TableCell>{row.employeeName ?? "—"}</TableCell>
                         <TableCell>{row.effectiveOn}</TableCell>
-                        <TableCell>{row.currencyCode} {row.proposedAmount}</TableCell>
+                        <TableCell>
+                          {row.currencyCode} {row.proposedAmount}
+                        </TableCell>
                         <TableCell>
                           <div className="grid gap-1.5">
                             <Label className="sr-only">Component</Label>
-                            <Select
+                            <RecordLookupSelect
                               value={componentByChange[row.id] ?? ""}
-                              onValueChange={(v) => setComponentByChange((prev) => ({ ...prev, [row.id]: v }))}
+                              onValueChange={(v) =>
+                                setComponentByChange((prev) => ({ ...prev, [row.id]: v }))
+                              }
                             >
-                              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select component" /></SelectTrigger>
+                              <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Select component" />
+                              </SelectTrigger>
                               <SelectContent>
                                 {components.map((c) => (
-                                  <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>
+                                  <SelectItem key={c.id} value={c.id}>
+                                    {c.code} — {c.name}
+                                  </SelectItem>
                                 ))}
                               </SelectContent>
-                            </Select>
+                            </RecordLookupSelect>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -124,7 +167,12 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
                             type="button"
                             size="sm"
                             disabled={!componentByChange[row.id] || applyCompM.isPending}
-                            onClick={() => applyCompM.mutate({ changeId: row.id, componentTypeId: componentByChange[row.id]! })}
+                            onClick={() =>
+                              applyCompM.mutate({
+                                changeId: row.id,
+                                componentTypeId: componentByChange[row.id]!,
+                              })
+                            }
                           >
                             Apply
                           </Button>
@@ -156,7 +204,12 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
                         <TableCell>{row.employeeName ?? "—"}</TableCell>
                         <TableCell>{row.lastWorkingDay}</TableCell>
                         <TableCell className="text-right">
-                          <Button type="button" size="sm" disabled={applyExitM.isPending} onClick={() => applyExitM.mutate(row.id)}>
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={applyExitM.isPending}
+                            onClick={() => applyExitM.mutate(row.id)}
+                          >
                             Terminate in Payroll
                           </Button>
                         </TableCell>

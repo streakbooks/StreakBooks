@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -373,7 +374,7 @@ export function HrRecruitmentPage() {
             </div>
             <div className="space-y-1">
               <Label>Status</Label>
-              <Select value={reqStatus} onValueChange={setReqStatus}>
+              <RecordLookupSelect value={reqStatus} onValueChange={setReqStatus}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -384,7 +385,7 @@ export function HrRecruitmentPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="req-hc">Headcount</Label>
@@ -428,7 +429,7 @@ export function HrRecruitmentPage() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Requisition</Label>
-              <Select value={selectedReqId} onValueChange={setSelectedReqId}>
+              <RecordLookupSelect value={selectedReqId} onValueChange={setSelectedReqId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select requisition" />
                 </SelectTrigger>
@@ -439,7 +440,7 @@ export function HrRecruitmentPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
@@ -470,7 +471,7 @@ export function HrRecruitmentPage() {
             </div>
             <div className="space-y-1">
               <Label>Status</Label>
-              <Select value={appStatus} onValueChange={setAppStatus}>
+              <RecordLookupSelect value={appStatus} onValueChange={setAppStatus}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -481,7 +482,7 @@ export function HrRecruitmentPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
           </div>
           <DialogFooter>
@@ -490,9 +491,7 @@ export function HrRecruitmentPage() {
             </Button>
             <Button
               type="button"
-              disabled={
-                !selectedReqId || !firstName.trim() || !lastName.trim() || appMut.isPending
-              }
+              disabled={!selectedReqId || !firstName.trim() || !lastName.trim() || appMut.isPending}
               onClick={() => appMut.mutate()}
             >
               {appMut.isPending ? "Saving…" : "Save"}
@@ -538,7 +537,7 @@ export function HrRecruitmentPage() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Status</Label>
-              <Select value={offerStatus} onValueChange={setOfferStatus}>
+              <RecordLookupSelect value={offerStatus} onValueChange={setOfferStatus}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -549,7 +548,7 @@ export function HrRecruitmentPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="offer-start">Proposed start date</Label>

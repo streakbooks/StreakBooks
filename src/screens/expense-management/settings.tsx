@@ -79,9 +79,7 @@ export function ExpenseManagementSettingsPage() {
   const canMigrate =
     can("expenses.admin" as Permission) || can("expenses.manage_policies" as Permission);
   const canView =
-    canEdit ||
-    can("expenses.view" as Permission) ||
-    can("expenses.submit" as Permission);
+    canEdit || can("expenses.view" as Permission) || can("expenses.submit" as Permission);
   const queryClient = useQueryClient();
   const fetchSettings = useServerFn(getExpenseManagementSettings);
   const saveSettings = useServerFn(saveExpenseManagementSettings);
@@ -136,8 +134,7 @@ export function ExpenseManagementSettingsPage() {
   const assetAccounts = useMemo(
     () =>
       (accountsQ.data ?? []).filter(
-        (account) =>
-          account.is_active && account.is_postable && account.account_type === "asset",
+        (account) => account.is_active && account.is_postable && account.account_type === "asset",
       ),
     [accountsQ.data],
   );
@@ -145,8 +142,7 @@ export function ExpenseManagementSettingsPage() {
   const incomeAccounts = useMemo(
     () =>
       (accountsQ.data ?? []).filter(
-        (account) =>
-          account.is_active && account.is_postable && account.account_type === "income",
+        (account) => account.is_active && account.is_postable && account.account_type === "income",
       ),
     [accountsQ.data],
   );
@@ -164,9 +160,7 @@ export function ExpenseManagementSettingsPage() {
       }
       const spendThreshold = Number(draft.requireSpendingRequestAboveMinor);
       if (!Number.isSafeInteger(spendThreshold) || spendThreshold < 0) {
-        throw new Error(
-          "Spending-request threshold must be a whole number of minor units ≥ 0.",
-        );
+        throw new Error("Spending-request threshold must be a whole number of minor units ≥ 0.");
       }
       return saveSettings({
         data: {
@@ -207,13 +201,12 @@ export function ExpenseManagementSettingsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Expense settings"
-    >
-      <EmptyState
+      <ListWorkspace title="Expense settings">
+        <EmptyState
           title="No access"
           description="Ask an administrator for expenses.manage_policies."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
   if (settingsQ.isPending || !draft) return <LoadingState />;
@@ -221,10 +214,12 @@ export function ExpenseManagementSettingsPage() {
     const message = friendlyAuthError(settingsQ.error);
     const migrationPending = message.includes("20261107120000");
     return (
-      <ListWorkspace title="Expense settings" description="Policies, numbering and account defaults."
-      subnav={<ExpenseManagementSubnav current="settings"/>}
-    >
-      {migrationPending ? (
+      <ListWorkspace
+        title="Expense settings"
+        description="Policies, numbering and account defaults."
+        subnav={<ExpenseManagementSubnav current="settings" />}
+      >
+        {migrationPending ? (
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
             <AlertDescription>{EXPENSE_MANAGEMENT_MIGRATION}</AlertDescription>
@@ -236,25 +231,22 @@ export function ExpenseManagementSettingsPage() {
             onRetry={() => settingsQ.refetch()}
           />
         )}
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
   return (
-      <ListWorkspace title="Expense settings"
-        description="Organisation defaults for Expenses."
-        actions={
-          canEdit ? (
-            <Button
-              size="sm"
-              disabled={save.isPending}
-              onClick={() => save.mutate()}
-            >
-              {save.isPending ? "Saving…" : "Save settings"}
-            </Button>
-          ) : null
-        }
-      subnav={<ExpenseManagementSubnav current="settings"/>}
+    <ListWorkspace
+      title="Expense settings"
+      description="Organisation defaults for Expenses."
+      actions={
+        canEdit ? (
+          <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+            {save.isPending ? "Saving…" : "Save settings"}
+          </Button>
+        ) : null
+      }
+      subnav={<ExpenseManagementSubnav current="settings" />}
     >
       {!settingsQ.data.exists ? (
         <Alert className="mb-6">
@@ -288,9 +280,7 @@ export function ExpenseManagementSettingsPage() {
             value={draft.claimNumberPrefix}
             disabled={!canEdit || save.isPending}
             maxLength={12}
-            onChange={(event) =>
-              setDraft({ ...draft, claimNumberPrefix: event.target.value })
-            }
+            onChange={(event) => setDraft({ ...draft, claimNumberPrefix: event.target.value })}
           />
         </div>
 
@@ -314,9 +304,7 @@ export function ExpenseManagementSettingsPage() {
             companyId={company.id}
             accounts={liabilityAccounts}
             value={draft.employeePayableAccountId}
-            onChange={(next) =>
-              setDraft({ ...draft, employeePayableAccountId: next ?? "" })
-            }
+            onChange={(next) => setDraft({ ...draft, employeePayableAccountId: next ?? "" })}
             allowClear
             disabled={!canEdit || save.isPending}
             ariaLabel="Employee payable account"
@@ -333,17 +321,15 @@ export function ExpenseManagementSettingsPage() {
             companyId={company.id}
             accounts={assetAccounts}
             value={draft.employeeAdvanceAccountId}
-            onChange={(next) =>
-              setDraft({ ...draft, employeeAdvanceAccountId: next ?? "" })
-            }
+            onChange={(next) => setDraft({ ...draft, employeeAdvanceAccountId: next ?? "" })}
             allowClear
             disabled={!canEdit || save.isPending}
             ariaLabel="Employee advance account"
             purpose="posting"
           />
           <p className="text-sm text-muted-foreground">
-            Asset cleared when cash-advance claims are posted (EM-08b). Required before
-            issuing advances.
+            Asset cleared when cash-advance claims are posted (EM-08b). Required before issuing
+            advances.
           </p>
         </div>
 
@@ -353,17 +339,14 @@ export function ExpenseManagementSettingsPage() {
             companyId={company.id}
             accounts={assetAccounts}
             value={draft.pettyCashAccountId}
-            onChange={(next) =>
-              setDraft({ ...draft, pettyCashAccountId: next ?? "" })
-            }
+            onChange={(next) => setDraft({ ...draft, pettyCashAccountId: next ?? "" })}
             allowClear
             disabled={!canEdit || save.isPending}
             ariaLabel="Petty cash account"
             purpose="posting"
           />
           <p className="text-sm text-muted-foreground">
-            Asset funded from bank and credited when company-paid petty cash claims post
-            (EM-08c).
+            Asset funded from bank and credited when company-paid petty cash claims post (EM-08c).
           </p>
         </div>
 
@@ -373,17 +356,14 @@ export function ExpenseManagementSettingsPage() {
             companyId={company.id}
             accounts={incomeAccounts}
             value={draft.rebillingIncomeAccountId}
-            onChange={(next) =>
-              setDraft({ ...draft, rebillingIncomeAccountId: next ?? "" })
-            }
+            onChange={(next) => setDraft({ ...draft, rebillingIncomeAccountId: next ?? "" })}
             allowClear
             disabled={!canEdit || save.isPending}
             ariaLabel="Rebilling income account"
             purpose="posting"
           />
           <p className="text-sm text-muted-foreground">
-            Income account used when creating a customer invoice from a billable claim
-            (EM-09b).
+            Income account used when creating a customer invoice from a billable claim (EM-09b).
           </p>
         </div>
 
@@ -449,9 +429,7 @@ export function ExpenseManagementSettingsPage() {
             id="em-fx"
             checked={draft.allowMultiCurrencyClaims}
             disabled={!canEdit || save.isPending}
-            onCheckedChange={(checked) =>
-              setDraft({ ...draft, allowMultiCurrencyClaims: checked })
-            }
+            onCheckedChange={(checked) => setDraft({ ...draft, allowMultiCurrencyClaims: checked })}
           />
         </div>
 
@@ -466,9 +444,7 @@ export function ExpenseManagementSettingsPage() {
             id="em-self"
             checked={draft.preventSelfApproval}
             disabled={!canEdit || save.isPending}
-            onCheckedChange={(checked) =>
-              setDraft({ ...draft, preventSelfApproval: checked })
-            }
+            onCheckedChange={(checked) => setDraft({ ...draft, preventSelfApproval: checked })}
           />
         </div>
       </div>
@@ -479,16 +455,14 @@ export function ExpenseManagementSettingsPage() {
             <div>
               <h2 className="text-base font-semibold">Legacy employee claim import</h2>
               <p className="text-sm text-muted-foreground">
-                Copy unmigrated Purchases employee expense claims into Expenses as
-                drafts. Journals and payments are not re-posted.
+                Copy unmigrated Purchases employee expense claims into Expenses as drafts. Journals
+                and payments are not re-posted.
               </p>
             </div>
             <Button
               size="sm"
               disabled={
-                importMut.isPending ||
-                legacyQ.isLoading ||
-                (legacyQ.data?.pendingCount ?? 0) === 0
+                importMut.isPending || legacyQ.isLoading || (legacyQ.data?.pendingCount ?? 0) === 0
               }
               onClick={() => importMut.mutate()}
             >

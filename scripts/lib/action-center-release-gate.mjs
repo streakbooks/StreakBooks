@@ -1,4 +1,4 @@
-/** 
+/**
  * Fail-closed evidence check for Smart Action Center production releases.
  * Treat a READY Vercel deployment as unverified unless its metadata matches
  * the exact approved repository and source commit.

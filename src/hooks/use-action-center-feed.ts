@@ -224,15 +224,27 @@ export function useActionCenterFeed(
         () => {
           void client.invalidateQueries({ queryKey: ["action-center-feed", companyId, userId] });
           void client.invalidateQueries({ queryKey: ["action-center-summary", companyId, userId] });
-          void client.invalidateQueries({ queryKey: ["action-notifications-unread", companyId, userId] });
+          void client.invalidateQueries({
+            queryKey: ["action-notifications-unread", companyId, userId],
+          });
         },
       )
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [client, companyId, userId]);
 
   const changeState = useMutation({
-    mutationFn: async ({ id, read, archive }: { id: string; read?: boolean; archive?: boolean }) => {
+    mutationFn: async ({
+      id,
+      read,
+      archive,
+    }: {
+      id: string;
+      read?: boolean;
+      archive?: boolean;
+    }) => {
       const { data, error } = await supabase.rpc(
         "set_action_notification_state" as never,
         {

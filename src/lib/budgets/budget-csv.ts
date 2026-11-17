@@ -102,8 +102,7 @@ export function parseBudgetCsv(
     if (expectedMonths.length !== 12) throw new Error("Expected twelve budget months.");
     for (let i = 0; i < 12; i++) {
       if (
-        headers[i + 2]?.toLocaleLowerCase() !==
-        monthLabel(expectedMonths[i]!).toLocaleLowerCase()
+        headers[i + 2]?.toLocaleLowerCase() !== monthLabel(expectedMonths[i]!).toLocaleLowerCase()
       ) {
         return {
           values,

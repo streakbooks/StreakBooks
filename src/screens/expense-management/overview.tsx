@@ -82,10 +82,7 @@ export function ExpenseManagementOverviewPage() {
   }
   if (!canOpen) {
     return (
-      <ListWorkspace
-        title="Expenses"
-        description="Claims, receipts, approvals and reimbursements."
-      >
+      <ListWorkspace title="Expenses" description="Claims, receipts, approvals and reimbursements.">
         <EmptyState
           title="No expense access"
           description="Ask an administrator for expenses.submit or expenses.view."
@@ -153,7 +150,6 @@ export function ExpenseManagementOverviewPage() {
       }
       subnav={<ExpenseManagementSubnav current="overview" />}
     >
-
       {migrationMessage ? (
         <Alert className="mb-6">
           <AlertTitle>Foundation migration pending</AlertTitle>

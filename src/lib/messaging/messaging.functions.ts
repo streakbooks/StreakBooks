@@ -564,10 +564,15 @@ export const updateMessagingMembership = createServerFn({ method: "POST" })
       companyId: string;
       conversationId: string;
       action: "mute" | "unmute" | "archive" | "unarchive" | "star" | "unstar" | "leave";
+      muteHours?: number;
     }) => ({
       companyId: assertUuid(input?.companyId),
       conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
       action: input?.action,
+      muteHours:
+        typeof input?.muteHours === "number" && input.muteHours > 0 && input.muteHours <= 24 * 365
+          ? Math.floor(input.muteHours)
+          : null,
     }),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
@@ -583,11 +588,57 @@ export const updateMessagingMembership = createServerFn({ method: "POST" })
       "leave",
     ]);
     if (!allowed.has(data.action)) throw new Error("Invalid membership action");
+    const mutedUntil =
+      data.action === "mute"
+        ? new Date(
+            Date.now() + (data.muteHours ?? 24 * 365) * 60 * 60 * 1000,
+          ).toISOString()
+        : null;
     const { data: ok, error } = await supabase.rpc("messaging_update_membership" as never, {
       _company_id: data.companyId,
       _conversation_id: data.conversationId,
       _action: data.action,
-      _muted_until: null,
+      _muted_until: mutedUntil,
+    } as never);
+    if (error) asError(error);
+    return { ok: Boolean(ok) };
+  });
+
+export const renameMessagingConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; conversationId: string; title: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+    title: normaliseGroupTitle(input?.title),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: row, error } = await supabase.rpc("messaging_rename_conversation" as never, {
+      _company_id: data.companyId,
+      _conversation_id: data.conversationId,
+      _title: data.title,
+    } as never);
+    if (error) asError(error);
+    return row as MessagingConversation;
+  });
+
+export const removeMessagingInternalMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; conversationId: string; memberUserId: string }) => ({
+      companyId: assertUuid(input?.companyId),
+      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+      memberUserId: assertMessagingUuid(input?.memberUserId, "memberUserId"),
+    }),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.invite_internal");
+    const { data: ok, error } = await supabase.rpc("messaging_remove_internal_member" as never, {
+      _company_id: data.companyId,
+      _conversation_id: data.conversationId,
+      _member_user_id: data.memberUserId,
     } as never);
     if (error) asError(error);
     return { ok: Boolean(ok) };

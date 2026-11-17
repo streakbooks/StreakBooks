@@ -227,12 +227,14 @@ export function useMessagingActions(companyId: string | null) {
     mutationFn: (input: {
       conversationId: string;
       action: "mute" | "unmute" | "archive" | "unarchive" | "star" | "unstar" | "leave";
+      muteHours?: number;
     }) =>
       updateMembership({
         data: {
           companyId: companyId!,
           conversationId: input.conversationId,
           action: input.action,
+          ...(typeof input.muteHours === "number" ? { muteHours: input.muteHours } : {}),
         },
       }),
     onSuccess: invalidate,

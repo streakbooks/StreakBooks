@@ -66,6 +66,18 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
+    SELECT 1 FROM pg_proc WHERE proname = 'messaging_rename_conversation'
+  ) THEN
+    RAISE EXCEPTION 'messaging_rename_conversation RPC missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc WHERE proname = 'messaging_remove_internal_member'
+  ) THEN
+    RAISE EXCEPTION 'messaging_remove_internal_member RPC missing';
+  END IF;
+
+  IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
     WHERE conname = 'communication_send_claims_kind_check'

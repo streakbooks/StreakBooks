@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -39,6 +39,7 @@ import {
   openAdvisorEngagementConversation,
   openHrPrivateConversation,
   registerMessagingAttachment,
+  renameMessagingConversation,
   requestMessagingFormalApproval,
 } from "@/lib/messaging/messaging.functions";
 import { insertMentionToken } from "@/lib/messaging/mentions";
@@ -47,6 +48,11 @@ import {
   createMessagingSendPaceState,
   recordMessagingSend,
 } from "@/lib/messaging/rate-limit";
+import {
+  clearMessagingComposerDraft,
+  loadMessagingComposerDraft,
+  saveMessagingComposerDraft,
+} from "@/lib/messaging/composer-drafts";
 import {
   buildMessagingThreadExport,
   downloadTextFile,
@@ -127,6 +133,8 @@ export function MessagesScreen({
   const [replyTo, setReplyTo] = useState<MessagingMessage | null>(null);
   const [sendPace, setSendPace] = useState(() => createMessagingSendPaceState());
   const [receiptMessageId, setReceiptMessageId] = useState<string | null>(null);
+  const [renameTitle, setRenameTitle] = useState("");
+  const [showRename, setShowRename] = useState(false);
   const queryClient = useQueryClient();
   const registerAttachment = useServerFn(registerMessagingAttachment);
   const requestApproval = useServerFn(requestMessagingFormalApproval);
@@ -134,6 +142,18 @@ export function MessagesScreen({
   const openAdvisor = useServerFn(openAdvisorEngagementConversation);
   const openAccountant = useServerFn(openAccountantClientConversation);
   const addMembers = useServerFn(addMessagingInternalMembers);
+  const renameConversation = useServerFn(renameMessagingConversation);
+
+  useEffect(() => {
+    setComposer(loadMessagingComposerDraft(companyId, conversationId ?? null));
+    setReplyTo(null);
+    setShowRename(false);
+    setRenameTitle("");
+  }, [companyId, conversationId]);
+
+  useEffect(() => {
+    saveMessagingComposerDraft(companyId, conversationId ?? null, composer);
+  }, [companyId, conversationId, composer]);
   const threadHits = useMessagingThreadSearch(
     companyId,
     conversationId ?? null,
@@ -170,6 +190,7 @@ export function MessagesScreen({
       });
       setSendPace((prev) => recordMessagingSend(prev));
       setComposer("");
+      clearMessagingComposerDraft(companyId, conversationId);
       setReplyTo(null);
     } finally {
       setSending(false);
@@ -405,32 +426,94 @@ export function MessagesScreen({
                   >
                     Mark unread
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      actions.membershipMutation.mutate({
-                        conversationId,
-                        action: selected?.muted_until ? "unmute" : "mute",
-                      })
-                    }
-                  >
-                    {selected?.muted_until ? "Unmute" : "Mute"}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      actions.membershipMutation.mutate({
-                        conversationId,
-                        action: "archive",
-                      })
-                    }
-                  >
-                    Archive
-                  </Button>
+                  {selected?.muted_until ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        actions.membershipMutation.mutate({
+                          conversationId,
+                          action: "unmute",
+                        })
+                      }
+                    >
+                      Unmute
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          actions.membershipMutation.mutate({
+                            conversationId,
+                            action: "mute",
+                            muteHours: 8,
+                          })
+                        }
+                      >
+                        Mute 8h
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          actions.membershipMutation.mutate({
+                            conversationId,
+                            action: "mute",
+                            muteHours: 24 * 7,
+                          })
+                        }
+                      >
+                        Mute 1w
+                      </Button>
+                    </>
+                  )}
+                  {filter === "archived" || selected?.member_archived ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        actions.membershipMutation.mutate({
+                          conversationId,
+                          action: "unarchive",
+                        })
+                      }
+                    >
+                      Unarchive
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        actions.membershipMutation.mutate({
+                          conversationId,
+                          action: "archive",
+                        })
+                      }
+                    >
+                      Archive
+                    </Button>
+                  )}
+                  {selected && selected.conversation_type !== "dm" ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setRenameTitle(selected.title ?? "");
+                        setShowRename(true);
+                      }}
+                    >
+                      Rename
+                    </Button>
+                  ) : null}
                   <Button
                     type="button"
                     size="sm"
@@ -579,6 +662,10 @@ export function MessagesScreen({
                     conversationId={conversationId}
                     currentUserId={user?.id ?? null}
                     allowBlock={selected?.conversation_type === "dm"}
+                    allowRemove={
+                      Boolean(selected) &&
+                      selected!.conversation_type !== "dm"
+                    }
                   />
                 </div>
               ) : null}
@@ -700,7 +787,13 @@ export function MessagesScreen({
                     setComposer(e.target.value);
                     void presence.signalTyping();
                   }}
-                  placeholder="Write a message. Use @ to mention people."
+                  onKeyDown={(event) => {
+                    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                      event.preventDefault();
+                      void handleSend();
+                    }
+                  }}
+                  placeholder="Write a message. Use @ to mention people. Ctrl/⌘+Enter to send."
                   rows={3}
                   maxLength={8000}
                 />
@@ -827,6 +920,57 @@ export function MessagesScreen({
           )}
         </section>
       </div>
+
+      {showRename && conversationId && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Rename conversation"
+          className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4"
+        >
+          <div className="w-full max-w-md rounded-lg border bg-card p-4 shadow-lg">
+            <h3 className="text-base font-semibold">Rename conversation</h3>
+            <div className="mt-3 space-y-2">
+              <Label htmlFor="rename-title">Title</Label>
+              <Input
+                id="rename-title"
+                value={renameTitle}
+                maxLength={120}
+                onChange={(event) => setRenameTitle(event.target.value)}
+              />
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setShowRename(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={!renameTitle.trim() || !companyId}
+                onClick={() => {
+                  if (!companyId || !conversationId) return;
+                  void renameConversation({
+                    data: {
+                      companyId,
+                      conversationId,
+                      title: renameTitle,
+                    },
+                  })
+                    .then(() => {
+                      notify.success("Conversation renamed");
+                      setShowRename(false);
+                      void queryClient.invalidateQueries({
+                        queryKey: ["messaging-conversations", companyId],
+                      });
+                    })
+                    .catch((error) => notify.error(error, "Could not rename conversation"));
+                }}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAddMembers && conversationId && (
         <div

@@ -18,6 +18,11 @@ import {
   saveMessagingNotificationPreferences,
 } from "@/lib/messaging/messaging.functions";
 import { notify } from "@/lib/notify";
+import {
+  getMessagingPushPermissionState,
+  messagingPushPermissionLabel,
+  requestMessagingPushPermission,
+} from "@/lib/messaging/push-permission";
 
 type Prefs = {
   email_enabled: boolean;
@@ -38,6 +43,7 @@ export function MessagingNotificationPreferences({ companyId }: { companyId: str
     queryFn: () => fetchPrefs({ data: { companyId: companyId! } }) as Promise<Prefs>,
   });
   const [draft, setDraft] = useState<Prefs | null>(null);
+  const [pushState, setPushState] = useState(getMessagingPushPermissionState);
 
   useEffect(() => {
     if (query.data) setDraft(query.data);
@@ -103,13 +109,41 @@ export function MessagingNotificationPreferences({ companyId }: { companyId: str
           onCheckedChange={(value) => setDraft({ ...draft, email_enabled: value })}
         />
       </div>
-      <div className="flex items-center justify-between gap-4">
-        <Label htmlFor="msg-push">Browser / push (when supported)</Label>
-        <Switch
-          id="msg-push"
-          checked={draft.push_enabled}
-          onCheckedChange={(value) => setDraft({ ...draft, push_enabled: value })}
-        />
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor="msg-push">Browser / push (when supported)</Label>
+          <Switch
+            id="msg-push"
+            checked={draft.push_enabled}
+            onCheckedChange={(value) => setDraft({ ...draft, push_enabled: value })}
+          />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">{messagingPushPermissionLabel(pushState)}</p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              void requestMessagingPushPermission().then((state) => {
+                setPushState(state);
+                if (state === "granted") {
+                  setDraft({ ...draft, push_enabled: true });
+                  notify.success("Browser notifications allowed");
+                } else if (state === "denied") {
+                  notify.warning(
+                    "Notifications blocked",
+                    "Enable notifications in the browser settings if you change your mind.",
+                  );
+                } else if (state === "unsupported") {
+                  notify.info("Unsupported", "This browser does not support notifications.");
+                }
+              });
+            }}
+          >
+            Request browser permission
+          </Button>
+        </div>
       </div>
       <div className="flex items-center justify-between gap-4">
         <Label htmlFor="msg-mention">Mentions only</Label>

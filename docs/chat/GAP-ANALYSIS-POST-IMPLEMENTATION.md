@@ -5,31 +5,26 @@ Compared delivered branch work to the master directive, Phase 0 PRD and competit
 ## Delivered (code present)
 
 - Unified `messaging_*` schema, RLS, durable outbox, DM/group/record/portal RPCs  
-- Permissions, access catalogue, feature catalogue key, demo settings enablement  
-- Messages workspace + Discuss on invoice/PO/bill/claim/quote/contact/leave/credit-note  
-- Membership revoke; add members; members panel; block/unblock UI  
-- Action Center fan-out; read receipts; report moderation event  
-- Approval handoff helpers that refuse informal “approved” text  
-- AI assist + voice/video fail-closed stubs/UI  
-- Attachments, pins, export thread, SafeMessageBody mentions  
-- Portal Message Business + purchasing discuss bridges  
-- Presence/typing, reactions/edit/redact, reply, leave, connection health  
-- Notification preferences + digest-cron messaging worker  
-- Collaboration flags + retention policy + dry-run retention purge cron  
-- Send rate limiting (30/min)  
-- Analytics + performance budget helpers  
+- Permissions, access catalogue, feature catalogue, demo enablement  
+- Messages workspace + Discuss on invoice/PO/bill/claim/quote/contact/leave/credit-note/journal  
+- Membership lifecycle: add/remove/leave/mute durations/archive/unarchive/rename/star  
+- Block/unblock UI; report; export; drafts; Ctrl/⌘+Enter  
+- Action Center fan-out; read receipts; formal approval handoff  
+- AI/voice fail-closed; attachments; pins; SafeMessageBody  
+- Portal Message Business bridges; presence/typing/reactions/edit/redact/reply  
+- Notification prefs + browser permission helper + digest/retention cron workers  
+- Analytics, performance budgets, rate limits  
 - Unit/integration scaffolds and gated E2E  
 
 ## Essential gaps before production claim
 
 | Gap | Severity | Notes |
 | --- | -------- | ----- |
-| Migrations not applied to staging/prod | Blocker | SQL only on branch (9 files) |
+| Migrations not applied to staging/prod | Blocker | SQL only on branch (10 files) |
 | Two-browser realtime E2E | Blocker for Phase 1 acceptance | Scaffolded; not run live |
 | Live cross-tenant RLS harness | Blocker for security verified | Structural script only |
 | Firm multi-client isolation E2E | High | Gated scaffold; live isolation unproven |
-| Digest worker live proof | Medium | Needs Resend + cron + migrated prefs |
-| Retention purge execute proof | Medium | Dry-run default; execute needs env flag + cron |
+| Digest/purge live proof | Medium | Needs cron secrets + migrated DB |
 | Voice/video provider | Low | Explicitly optional / fail-closed |
 | Performance budgets measured live | Medium | Budgets defined; not measured on staging |
 

@@ -11,6 +11,7 @@ import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
+import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 import {
   Table,
   TableBody,
@@ -104,9 +105,18 @@ function JournalDetail() {
         />
       }
       actions={
-        <Button size="sm" variant="outline" asChild>
-          <Link to="/banking/transactions">Back to transactions</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <RecordDiscussButton
+            companyId={companyId ?? null}
+            recordType="journal"
+            recordId={journalId}
+            title={`Journal #${journal.journal_number}`}
+            label="Discuss"
+          />
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/banking/transactions">Back to transactions</Link>
+          </Button>
+        </div>
       }
     >
       <div className="mb-3 flex flex-wrap gap-2">

@@ -589,6 +589,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <Alert variant="destructive">
                 <AlertDescription>
                   Could not load payroll settings. {friendlyAuthError(settingsQ.error)}
+                  <Button type="button" size="sm" variant="outline" className="ml-2" onClick={() => void settingsQ.refetch()}>Retry settings</Button>
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -605,6 +606,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <Alert variant="destructive">
                 <AlertDescription>
                   Could not load open payslips. {friendlyAuthError(payslipsQ.error)}
+                  <Button type="button" size="sm" variant="outline" className="ml-2" onClick={() => void payslipsQ.refetch()}>Retry payslips</Button>
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -612,6 +614,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <Alert variant="destructive">
                 <AlertDescription>
                   Could not load clearing accounts. {friendlyAuthError(accountsQ.error)}
+                  <Button type="button" size="sm" variant="outline" className="ml-2" onClick={() => void accountsQ.refetch()}>Retry accounts</Button>
                 </AlertDescription>
               </Alert>
             ) : null}

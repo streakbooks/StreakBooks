@@ -31,12 +31,20 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 
 | Batch | Status | Evidence |
 |-------|--------|----------|
-| B1 / B1.1 — Historical Aged Payables + period-close as-at | **Merged** | #229 → included in `edeeb092` |
-| B2 — PO goods receipt foundation | **Merged** | #230 → `edeeb092` — migration pending authorized apply |
-| B3 — Fail-closed PO three-way match | **Integrating** | PR #231 cherry-picked onto main after #230 |
-| B4 — Partial bill-from-received | **Open** | #232 — rebase after #231 |
-| B5–B8 — Bill/credit/payment void dates + supplier statement | **Open** | #233–#236 |
-| CI restore | **Open** | #237 — Actions jobs currently empty-step failures on private repo |
+| B0 — Tracker + IP register + full-coverage gap skeleton | **Done on branch** | This file; IP register; gap register |
+| B1 — Historical Aged Payables (dated AP allocations) | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 |
+| B1.1 — Period close uses dated AR/AP as-at | **Pushed on #229** | `30238d5a` — PeriodClosePanel + `period-close-subledger` |
+| B2 — PO goods receipt foundation | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/230 — migration pending authorized apply |
+| B3 — PO three-way match (order×receipt×bill) | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/231 — stacked on #230 |
+| B4 — Partial bill-from-received | **In progress** | Branch `feature/po-partial-bill-from-received-20261117` stacked on #231; bills only unbilled received qty; no inventory/COGS claim |
+
+### B1 typecheck remediation (2026-11-17)
+
+| Check | Result |
+|-------|--------|
+| Failure | Shell `787035` exit 2 — TS4111 on `Record<string, unknown>` dot access in `historyAllocation` |
+| Fix | Index signature access via `src["bill_id"]` (etc.) |
+| Re-run | Full `tsc --noEmit` exit **0** (shell `177001`); focused vitest **9/9** |
 
 ## Current blockers
 
@@ -47,7 +55,6 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 
 ## Next executable step
 
-1. Merge #231 then #232 stack.
-2. Rebase/merge #233–#236.
-3. Recover Actions runners for #237.
-4. Resume new feature work only after integration backlog clears.
+1. Open/review B4 partial bill-from-received PR (depends on #230/#231).
+2. Keep #229–#231 unmerged until reviews; do not apply live migrations without authorization; quality.yml restore remains #227.
+3. After B4: honest inventory valuation/COGS only if stock layers exist; else next P0 bookkeeping gap. Avoid Coding Memory (#225).

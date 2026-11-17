@@ -3425,6 +3425,7 @@ export const savePurchaseOrder = createServerFn({ method: "POST" })
     );
   });
 
+/** Convert unbilled received quantities into a draft bill (fail closed if nothing billable). */
 export const convertPurchaseOrderToBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; orderId: string }) => ({
@@ -3433,10 +3434,14 @@ export const convertPurchaseOrderToBill = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.draft");
-    return workflowRpc<{ billId: string }>(context.supabase, "convert_purchase_order_atomic", {
-      _company: data.companyId,
-      _order: data.orderId,
-    });
+    return workflowRpc<{ billId: string; fullyBilled?: boolean; status?: string }>(
+      context.supabase,
+      "convert_purchase_order_atomic",
+      {
+        _company: data.companyId,
+        _order: data.orderId,
+      },
+    );
   });
 
 /** Non-posting goods receipt against a sent / partially received purchase order. */

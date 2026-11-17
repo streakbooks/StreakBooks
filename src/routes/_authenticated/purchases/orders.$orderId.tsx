@@ -15,6 +15,7 @@ import {
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { impliedDiscountMinor } from "@/lib/purchases/po-convert";
 import { receiveAllOutstanding, remainingToReceive } from "@/lib/purchases/po-receipt";
+import { billableQuantity } from "@/lib/purchases/po-partial-bill";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
@@ -103,7 +104,11 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
     onSuccess: async (result) => {
       await refresh();
       await queryClient.invalidateQueries({ queryKey: ["bills", companyId] });
-      toast.success("Draft bill created");
+      toast.success(
+        result.fullyBilled
+          ? "Draft bill created from received goods. Order is fully billed."
+          : "Draft bill created from received goods. Order remains open for further receipts.",
+      );
       navigate({ to: "/purchases/bills/$billId", params: { billId: result.billId } });
     },
     onError: async (e) => {
@@ -136,15 +141,22 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
   const currency = order.currency_code.trim();
   const pending =
     statusMutation.isPending || convertMutation.isPending || receiveMutation.isPending;
-  const editableStatus = !order.billed_bill_id && ["draft", "sent"].includes(order.status);
-  const canReceive =
-    !order.billed_bill_id && ["sent", "partially_received"].includes(order.status);
+  const editableStatus = order.status !== "billed" && ["draft", "sent"].includes(order.status);
+  const canReceive = ["sent", "partially_received"].includes(order.status);
   const outstanding = receiveAllOutstanding(
     order.purchase_order_lines.map((line) => ({
       lineId: line.id,
       orderedQuantity: Number(line.quantity),
       quantityReceived: Number(line.quantity_received ?? 0),
     })),
+  );
+  const billableLines = order.purchase_order_lines.filter(
+    (line) =>
+      billableQuantity({
+        orderedQuantity: Number(line.quantity),
+        quantityReceived: Number(line.quantity_received ?? 0),
+        quantityBilled: Number(line.quantity_billed ?? 0),
+      }) > 0,
   );
   return (
     <>
@@ -249,12 +261,9 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
             Receive remaining goods
           </Button>
         ) : null}
-        {!order.billed_bill_id &&
-        order.status !== "cancelled" &&
-        ["draft", "sent", "partially_received"].includes(order.status) &&
-        can("purchases.draft") ? (
+        {canReceive && can("purchases.draft") && billableLines.length > 0 ? (
           <Button size="sm" disabled={pending} onClick={() => convertMutation.mutate()}>
-            Convert to draft bill
+            Bill received goods
           </Button>
         ) : null}
         {order.billed_bill_id ? (
@@ -266,9 +275,9 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
         ) : null}
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
-        This order has no ledger impact. Receiving goods updates quantities only. A converted bill
-        affects the ledger only when authorised. Mark as sent records supplier delivery status;
-        email delivery is recorded separately below.
+        This order has no ledger impact. Receiving updates quantities only. Bill received goods
+        creates a draft bill for unbilled received quantities; the ledger posts only when that bill
+        is authorised. Inventory/COGS valuation is not claimed by this flow.
       </p>
       <TableCard>
         <Table>
@@ -277,6 +286,7 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
               <TableHead>Description</TableHead>
               <TableHead className="text-right">Ordered</TableHead>
               <TableHead className="text-right">Received</TableHead>
+              <TableHead className="text-right">Billed</TableHead>
               <TableHead className="text-right">Outstanding</TableHead>
               <TableHead className="text-right">Unit price</TableHead>
               <TableHead className="text-right">Discount</TableHead>
@@ -294,11 +304,13 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
                   orderedQuantity: Number(line.quantity),
                   quantityReceived: Number(line.quantity_received ?? 0),
                 };
+                const billedQty = Number(line.quantity_billed ?? 0);
                 return (
                   <TableRow key={line.id}>
                     <TableCell>{line.description}</TableCell>
                     <TableCell className="text-right">{fmt.number(state.orderedQuantity)}</TableCell>
                     <TableCell className="text-right">{fmt.number(state.quantityReceived)}</TableCell>
+                    <TableCell className="text-right">{fmt.number(billedQty)}</TableCell>
                     <TableCell className="text-right">
                       {fmt.number(remainingToReceive(state))}
                     </TableCell>

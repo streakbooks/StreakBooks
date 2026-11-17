@@ -4,6 +4,7 @@
  */
 
 import { getMessagingPushPermissionState } from "@/lib/messaging/push-permission";
+import { isWithinMessagingQuietHours } from "@/lib/messaging/quiet-hours";
 
 export type MessagingDesktopNotifyInput = {
   title: string;
@@ -18,11 +19,23 @@ export function shouldShowMessagingDesktopNotification(
     permission?: ReturnType<typeof getMessagingPushPermissionState>;
     documentHidden?: boolean;
     pushEnabled?: boolean;
+    quietHoursStart?: string | null;
+    quietHoursEnd?: string | null;
+    now?: Date;
   } = {},
 ): boolean {
   const permission = opts.permission ?? getMessagingPushPermissionState();
   if (permission !== "granted") return false;
   if (opts.pushEnabled === false) return false;
+  if (
+    isWithinMessagingQuietHours(
+      opts.quietHoursStart,
+      opts.quietHoursEnd,
+      opts.now ?? new Date(),
+    )
+  ) {
+    return false;
+  }
   const hidden =
     typeof opts.documentHidden === "boolean"
       ? opts.documentHidden
@@ -38,6 +51,9 @@ export function showMessagingDesktopNotification(
     permission?: ReturnType<typeof getMessagingPushPermissionState>;
     documentHidden?: boolean;
     pushEnabled?: boolean;
+    quietHoursStart?: string | null;
+    quietHoursEnd?: string | null;
+    now?: Date;
   } = {},
 ): boolean {
   if (!shouldShowMessagingDesktopNotification(opts)) return false;

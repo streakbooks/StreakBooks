@@ -289,9 +289,11 @@ export const listMessagingConversations = createServerFn({ method: "GET" })
     let rows = ((conversations ?? []) as Array<Record<string, unknown>>).map((c) => {
       const mem = memById.get(String(c["id"]))!;
       const previewSeqGuess = c["last_message_at"] ? 1 : 0;
+      const provisionalUnread = previewSeqGuess > 0 && Number(mem.last_read_seq) === 0;
       return {
         ...(c as unknown as MessagingConversation),
-        unread: previewSeqGuess > 0 && Number(mem.last_read_seq) === 0,
+        unread: provisionalUnread,
+        unread_count: provisionalUnread ? 1 : 0,
         is_starred: mem.is_starred,
         member_archived: mem.is_archived,
         muted_until: mem.muted_until,
@@ -311,7 +313,12 @@ export const listMessagingConversations = createServerFn({ method: "GET" })
     rows = rows.map((c) => {
       const mem = memById.get(c.id)!;
       const max = maxSeq.get(c.id) ?? 0;
-      return { ...c, unread: max > Number(mem.last_read_seq) };
+      const unreadCount = Math.max(0, max - Number(mem.last_read_seq));
+      return {
+        ...c,
+        unread: unreadCount > 0,
+        unread_count: unreadCount,
+      };
     });
 
     if (data.filter === "mentions") {
@@ -1188,6 +1195,82 @@ export const markMessagingUnread = createServerFn({ method: "POST" })
     } as never);
     if (error) asError(error);
     return { ok: Boolean(ok) };
+  });
+
+/** Mark every active membership as read up to the conversation max seq. */
+export const markAllMessagingRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+  }))
+  .handler(async ({ data, context }): Promise<{ marked: number }> => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: memberships, error: memError } = await supabase
+      .from("messaging_conversation_members" as never)
+      .select("conversation_id, last_read_seq" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("user_id" as never, userId as never)
+      .eq("status" as never, "active" as never)
+      .eq("is_archived" as never, false as never);
+    if (memError) asError(memError);
+    const memRows = (memberships ?? []) as Array<{
+      conversation_id: string;
+      last_read_seq: number;
+    }>;
+    if (!memRows.length) return { marked: 0 };
+
+    const ids = memRows.map((row) => row.conversation_id);
+    const { data: seqRows, error: seqError } = await supabase
+      .from("messaging_messages" as never)
+      .select("conversation_id, seq" as never)
+      .in("conversation_id" as never, ids as never)
+      .order("seq" as never, { ascending: false });
+    if (seqError) asError(seqError);
+    const maxSeq = new Map<string, number>();
+    for (const row of (seqRows ?? []) as Array<{ conversation_id: string; seq: number }>) {
+      if (!maxSeq.has(row.conversation_id)) maxSeq.set(row.conversation_id, Number(row.seq));
+    }
+
+    let marked = 0;
+    for (const mem of memRows) {
+      const max = maxSeq.get(mem.conversation_id) ?? 0;
+      if (max <= Number(mem.last_read_seq)) continue;
+      const { error } = await supabase.rpc("messaging_mark_read" as never, {
+        _company_id: data.companyId,
+        _conversation_id: mem.conversation_id,
+        _seq: max,
+      } as never);
+      if (error) asError(error);
+      marked += 1;
+    }
+    return { marked };
+  });
+
+export type MessagingRecordLink = {
+  record_type: string;
+  record_id: string;
+  deep_link_path: string | null;
+};
+
+export const getMessagingConversationRecordLink = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; conversationId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+  }))
+  .handler(async ({ data, context }): Promise<MessagingRecordLink | null> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: rows, error } = await supabase
+      .from("messaging_record_links" as never)
+      .select("record_type, record_id, deep_link_path" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("conversation_id" as never, data.conversationId as never)
+      .limit(1);
+    if (error) asError(error);
+    const row = ((rows ?? []) as MessagingRecordLink[])[0];
+    return row ?? null;
   });
 
 export const getMessagingNotificationPreferences = createServerFn({ method: "GET" })

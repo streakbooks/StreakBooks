@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import {
   useMessagingActions,
+  useMessagingConversationRecordLink,
   useMessagingConversations,
   useMessagingGlobalSearch,
   useMessagingMessages,
@@ -30,6 +31,7 @@ import {
   useMessagingSettings,
   useMessagingThreadSearch,
 } from "@/hooks/use-messaging";
+import { getMessagingRecordAdapter } from "@/lib/messaging/module-adapters";
 import {
   messagingConnectionLabel,
   useMessagingConnection,
@@ -81,15 +83,18 @@ function messagesSearch(input: {
   filter?: MessagingInboxFilter;
   conversation?: string;
   q?: string;
+  message?: string;
 }) {
   const next: {
     filter?: MessagingInboxFilter;
     conversation?: string;
     q?: string;
+    message?: string;
   } = {};
   if (input.filter) next.filter = input.filter;
   if (input.conversation) next.conversation = input.conversation;
   if (input.q) next.q = input.q;
+  if (input.message) next.message = input.message;
   return next;
 }
 
@@ -97,10 +102,12 @@ export function MessagesScreen({
   conversationId,
   filter = "inbox",
   searchQuery = "",
+  focusMessageId,
 }: {
   conversationId?: string;
   filter?: MessagingInboxFilter;
   searchQuery?: string;
+  focusMessageId?: string;
 }) {
   const { company } = useActiveCompany();
   const { user } = useRouteContext({ from: "/_authenticated" });
@@ -118,8 +125,11 @@ export function MessagesScreen({
   const [composer, setComposer] = useState("");
   const [search, setSearch] = useState(searchQuery);
   const [threadSearch, setThreadSearch] = useState("");
-  const [highlightMessageId, setHighlightMessageId] = useState<string | null>(null);
+  const [highlightMessageId, setHighlightMessageId] = useState<string | null>(
+    focusMessageId ?? null,
+  );
   const [liveAnnounce, setLiveAnnounce] = useState("");
+  const [showJumpLatest, setShowJumpLatest] = useState(false);
   const [peerSearch, setPeerSearch] = useState("");
   const [peers, setPeers] = useState<MessagingParticipant[]>([]);
   const [groupTitle, setGroupTitle] = useState("");
@@ -170,11 +180,23 @@ export function MessagesScreen({
     companyId,
     filter === "search" ? searchQuery || search : "",
   );
+  const recordLink = useMessagingConversationRecordLink(companyId, conversationId ?? null);
 
   const selected = useMemo(
     () => conversations.data?.find((c) => c.id === conversationId) ?? null,
     [conversations.data, conversationId],
   );
+
+  const recordHref = useMemo(() => {
+    const link = recordLink.data;
+    if (!link) return null;
+    if (link.deep_link_path) return link.deep_link_path;
+    return getMessagingRecordAdapter(link.record_type)?.buildDeepLink(link.record_id) ?? null;
+  }, [recordLink.data]);
+
+  useEffect(() => {
+    if (focusMessageId) setHighlightMessageId(focusMessageId);
+  }, [focusMessageId]);
 
   useEffect(() => {
     const rows = messages.data;
@@ -189,6 +211,20 @@ export function MessagesScreen({
     const el = document.getElementById(`msg-${highlightMessageId}`);
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [highlightMessageId, messages.data]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setReplyTo(null);
+      setForwardMessage(null);
+      setShowNew(null);
+      setShowMentionPicker(false);
+      setShowRename(false);
+      setShowAddMembers(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   async function loadPeers(q: string) {
     setPeerSearch(q);
@@ -274,6 +310,14 @@ export function MessagesScreen({
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" asChild>
             <Link to="/messages/settings">Settings</Link>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={actions.markAllReadMutation.isPending}
+            onClick={() => actions.markAllReadMutation.mutate()}
+          >
+            Mark all read
           </Button>
           <Button type="button" variant="outline" onClick={() => setShowNew("dm")}>
             New message
@@ -448,7 +492,15 @@ export function MessagesScreen({
                           ? "Direct message"
                           : conversation.conversation_type)}
                     </span>
-                    {conversation.unread && <Badge variant="default">Unread</Badge>}
+                    {conversation.unread ? (
+                      <Badge variant="default">
+                        {conversation.unread_count > 99
+                          ? "99+"
+                          : conversation.unread_count > 1
+                            ? conversation.unread_count
+                            : "Unread"}
+                      </Badge>
+                    ) : null}
                   </div>
                   <span className="truncate text-xs text-muted-foreground">
                     {conversation.last_message_preview || "No messages yet"}
@@ -493,8 +545,18 @@ export function MessagesScreen({
                       {messagingConnectionLabel(connection.state)}
                     </span>
                   </p>
+                  {selected?.description ? (
+                    <p className="mt-1 max-w-xl truncate text-xs text-muted-foreground">
+                      {selected.description}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {recordHref ? (
+                    <Button type="button" size="sm" variant="outline" asChild>
+                      <a href={recordHref}>Open record</a>
+                    </Button>
+                  ) : null}
                   <Button
                     type="button"
                     size="sm"
@@ -776,7 +838,15 @@ export function MessagesScreen({
                   />
                 </div>
               ) : null}
-              <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+              <div
+                className="relative flex-1 space-y-3 overflow-y-auto px-4 py-4"
+                onScroll={(event) => {
+                  const target = event.currentTarget;
+                  const distance =
+                    target.scrollHeight - target.scrollTop - target.clientHeight;
+                  setShowJumpLatest(distance > 160);
+                }}
+              >
                 {messages.isPending && <LoadingState />}
                 {messages.isError && (
                   <ErrorState
@@ -795,6 +865,26 @@ export function MessagesScreen({
                       onClick={() => void messages.loadOlder()}
                     >
                       {messages.loadingOlder ? "Loading…" : "Load older messages"}
+                    </Button>
+                  </div>
+                ) : null}
+                {showJumpLatest ? (
+                  <div className="sticky top-2 z-10 flex justify-center">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        const rows = messages.data;
+                        const last = rows?.[rows.length - 1];
+                        if (!last) return;
+                        document
+                          .getElementById(`msg-${last.id}`)
+                          ?.scrollIntoView({ behavior: "smooth", block: "end" });
+                        setShowJumpLatest(false);
+                      }}
+                    >
+                      Jump to latest
                     </Button>
                   </div>
                 ) : null}

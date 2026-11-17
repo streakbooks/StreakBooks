@@ -46,6 +46,7 @@ export type MessagingConversation = {
   created_at: string;
   updated_at: string;
   unread: boolean;
+  unread_count: number;
   is_starred: boolean;
   member_archived: boolean;
   muted_until: string | null;

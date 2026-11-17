@@ -12,6 +12,9 @@ describe("messaging module adapters", () => {
     );
     expect(getMessagingRecordAdapter("journal")?.allowExternal).toBe(false);
     expect(getMessagingRecordAdapter("expense_claim")?.allowExternal).toBe(false);
+    expect(getMessagingRecordAdapter("supplier_payment")?.buildDeepLink("abc")).toBe(
+      "/purchases/payments/abc",
+    );
     expect(getMessagingRecordAdapter("hr_leave_request")?.defaultVisibility).toBe("hr_private");
     expect(getMessagingRecordAdapter("advisor_engagement")?.defaultVisibility).toBe("advisor");
   });

@@ -34,7 +34,10 @@ Keep `allow_customer` / `allow_vendor` off until portal isolation passes.
 10. Create channel + forward message between authorised threads.  
 11. Load older messages on a long thread; confirm latest window loads first.  
 12. Apply search with a body keyword; open a global hit and land on the highlighted message.  
-13. Enable push prefs + browser permission; background the tab; confirm desktop notification on inbound activity.
+13. Enable push prefs + browser permission; background the tab; confirm desktop notification on inbound activity.  
+14. Quiet hours suppress desktop notifications; Mark all read clears unread badges.  
+15. Open `/messages?conversation=<id>&message=<id>` highlights the target message.  
+16. Supplier payment Discuss opens a linked record thread with Open record.
 
 ## Rollback
 

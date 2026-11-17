@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -8,12 +9,15 @@ import { supabase } from "@/integrations/supabase/client";
 export function useMessagingPresence(conversationId: string | null, userId: string | null) {
   const [onlineIds, setOnlineIds] = useState<string[]>([]);
   const [typingIds, setTypingIds] = useState<string[]>([]);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const lastTypingAt = useRef(0);
 
   useEffect(() => {
     if (!conversationId || !userId) return;
     const channel = supabase.channel(`messaging-presence:${conversationId}`, {
       config: { presence: { key: userId } },
     });
+    channelRef.current = channel;
 
     channel
       .on("presence", { event: "sync" }, () => {
@@ -39,13 +43,20 @@ export function useMessagingPresence(conversationId: string | null, userId: stri
       });
 
     return () => {
+      channelRef.current = null;
       void supabase.removeChannel(channel);
+      setOnlineIds([]);
+      setTypingIds([]);
     };
   }, [conversationId, userId]);
 
   const signalTyping = async () => {
     if (!conversationId || !userId) return;
-    const channel = supabase.channel(`messaging-presence:${conversationId}`);
+    const now = Date.now();
+    if (now - lastTypingAt.current < 1200) return;
+    lastTypingAt.current = now;
+    const channel = channelRef.current;
+    if (!channel) return;
     await channel.send({
       type: "broadcast",
       event: "typing",

@@ -14,6 +14,8 @@ import {
   listEligibleMessagingParticipants,
   listMessagingConversations,
   listMessagingMessages,
+  getMessagingConversationRecordLink,
+  markAllMessagingRead,
   markMessagingRead,
   markMessagingUnread,
   searchMessagingAcrossConversations,
@@ -21,6 +23,7 @@ import {
   sendMessagingMessage,
   updateMessagingMembership,
 } from "@/lib/messaging/messaging.functions";
+import { isWithinMessagingQuietHours } from "@/lib/messaging/quiet-hours";
 import type { MessagingInboxFilter, MessagingMessage } from "@/lib/messaging/types";
 
 let messagingChannelSequence = 0;
@@ -74,10 +77,16 @@ export function useMessagingConversations(
           void client.invalidateQueries({ queryKey: ["messaging-conversations", companyId] });
           void client.invalidateQueries({ queryKey: ["messaging-unread", companyId] });
           void client.invalidateQueries({ queryKey: ["messaging-messages", companyId] });
-          const prefs = client.getQueryData<{ push_enabled?: boolean }>([
-            "messaging-notification-prefs",
-            companyId,
-          ]);
+          const prefs = client.getQueryData<{
+            push_enabled?: boolean;
+            quiet_hours_start?: string | null;
+            quiet_hours_end?: string | null;
+          }>(["messaging-notification-prefs", companyId]);
+          if (
+            isWithinMessagingQuietHours(prefs?.quiet_hours_start, prefs?.quiet_hours_end)
+          ) {
+            return;
+          }
           showMessagingDesktopNotification(
             {
               title: "New LinkBooks message",
@@ -85,7 +94,11 @@ export function useMessagingConversations(
               tag: `messaging-${companyId}`,
               href: "/messages",
             },
-            { pushEnabled: prefs?.push_enabled === true },
+            {
+              pushEnabled: prefs?.push_enabled === true,
+              quietHoursStart: prefs?.quiet_hours_start ?? null,
+              quietHoursEnd: prefs?.quiet_hours_end ?? null,
+            },
           );
         },
       )
@@ -231,6 +244,21 @@ export function useMessagingMissedRecovery(
   }, [client, companyId, connectionState, conversationId, list]);
 }
 
+export function useMessagingConversationRecordLink(
+  companyId: string | null,
+  conversationId: string | null,
+) {
+  const fetchLink = useServerFn(getMessagingConversationRecordLink);
+  return useQuery({
+    queryKey: ["messaging-record-link", companyId, conversationId],
+    enabled: Boolean(companyId && conversationId),
+    queryFn: () =>
+      fetchLink({
+        data: { companyId: companyId!, conversationId: conversationId! },
+      }),
+  });
+}
+
 export function useMessagingThreadSearch(
   companyId: string | null,
   conversationId: string | null,
@@ -274,6 +302,7 @@ export function useMessagingActions(companyId: string | null) {
   const createChannel = useServerFn(createChannelConversation);
   const updateMembership = useServerFn(updateMessagingMembership);
   const markUnread = useServerFn(markMessagingUnread);
+  const markAllRead = useServerFn(markAllMessagingRead);
   const listParticipants = useServerFn(listEligibleMessagingParticipants);
 
   const invalidate = () => {
@@ -365,6 +394,19 @@ export function useMessagingActions(companyId: string | null) {
     onError: (error) => notify.error(error, "Could not mark unread"),
   });
 
+  const markAllReadMutation = useMutation({
+    mutationFn: () => markAllRead({ data: { companyId: companyId! } }),
+    onSuccess: (result) => {
+      invalidate();
+      notify.success(
+        result.marked > 0
+          ? `Marked ${result.marked} conversation${result.marked === 1 ? "" : "s"} read`
+          : "Inbox already caught up",
+      );
+    },
+    onError: (error) => notify.error(error, "Could not mark all read"),
+  });
+
   return {
     sendMutation,
     dmMutation,
@@ -372,6 +414,7 @@ export function useMessagingActions(companyId: string | null) {
     channelMutation,
     membershipMutation,
     markUnreadMutation,
+    markAllReadMutation,
     listParticipants: (search?: string) =>
       listParticipants({
         data: {

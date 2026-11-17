@@ -71,6 +71,15 @@ export const MESSAGING_RECORD_ADAPTERS: readonly MessagingRecordAdapter[] = [
     retentionClass: "standard",
   },
   {
+    recordType: "supplier_payment",
+    label: "Supplier payment",
+    defaultVisibility: "internal",
+    allowExternal: false,
+    requiredViewPermission: "purchases.view",
+    buildDeepLink: (id) => `/purchases/payments/${id}`,
+    retentionClass: "standard",
+  },
+  {
     recordType: "expense_claim",
     label: "Expense claim",
     defaultVisibility: "internal",

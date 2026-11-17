@@ -14,7 +14,8 @@ Compared delivered branch work to the master directive, Phase 0 PRD and competit
 - Portal Message Business bridges; presence/typing/reactions/edit/redact/reply  
 - Notification prefs + browser permission helper + digest/retention cron workers  
 - Latest-window pagination + load-older; membership-scoped global message search  
-- Desktop notify (hidden tab + push opt-in); demo messaging banner; aria-live  
+- Desktop notify (hidden tab + push opt-in + quiet hours); demo messaging banner; aria-live  
+- Mark all read; message deep links; Open record; supplier payment Discuss; typing channel fix  
 - Analytics, performance budgets, rate limits  
 - Unit/integration scaffolds and gated E2E  
 

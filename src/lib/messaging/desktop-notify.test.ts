@@ -32,4 +32,18 @@ describe("messaging desktop notifications", () => {
       }),
     ).toBe(false);
   });
+
+  it("suppresses during quiet hours", () => {
+    const night = new Date(2026, 10, 17, 23, 15, 0);
+    expect(
+      shouldShowMessagingDesktopNotification({
+        permission: "granted",
+        documentHidden: true,
+        pushEnabled: true,
+        quietHoursStart: "22:00",
+        quietHoursEnd: "07:00",
+        now: night,
+      }),
+    ).toBe(false);
+  });
 });

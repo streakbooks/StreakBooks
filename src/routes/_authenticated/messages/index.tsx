@@ -19,6 +19,7 @@ type MessagesSearch = {
   conversation?: string;
   filter?: MessagingInboxFilter;
   q?: string;
+  message?: string;
 };
 
 export const Route = createFileRoute("/_authenticated/messages/")({
@@ -28,6 +29,11 @@ export const Route = createFileRoute("/_authenticated/messages/")({
       typeof conversationRaw === "string" && /^[0-9a-f-]{36}$/i.test(conversationRaw)
         ? conversationRaw
         : undefined;
+    const messageRaw = search["message"];
+    const message =
+      typeof messageRaw === "string" && /^[0-9a-f-]{36}$/i.test(messageRaw)
+        ? messageRaw
+        : undefined;
     const filterRaw = typeof search["filter"] === "string" ? search["filter"] : "inbox";
     const filter = FILTERS.has(filterRaw as MessagingInboxFilter)
       ? (filterRaw as MessagingInboxFilter)
@@ -36,6 +42,7 @@ export const Route = createFileRoute("/_authenticated/messages/")({
     const q = typeof qRaw === "string" ? qRaw.slice(0, 120) : undefined;
     const result: MessagesSearch = { filter };
     if (conversation) result.conversation = conversation;
+    if (message) result.message = message;
     if (q) result.q = q;
     return result;
   },
@@ -49,6 +56,7 @@ function MessagesRoute() {
       {...(search.conversation ? { conversationId: search.conversation } : {})}
       filter={search.filter ?? "inbox"}
       {...(search.q ? { searchQuery: search.q } : {})}
+      {...(search.message ? { focusMessageId: search.message } : {})}
     />
   );
 }

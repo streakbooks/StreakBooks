@@ -62,6 +62,7 @@ test.describe("messaging realtime (two browsers)", () => {
     await expect(pageA.getByRole("button", { name: "Files" })).toBeVisible();
     await expect(pageA.getByRole("button", { name: "New channel" })).toBeVisible();
     await expect(pageA.getByRole("button", { name: "Apply search" })).toBeVisible();
+    await expect(pageA.getByRole("button", { name: "Mark all read" })).toBeVisible();
     await expect(pageA.getByRole("link", { name: "Settings" })).toBeVisible();
     await contextA.close();
   });

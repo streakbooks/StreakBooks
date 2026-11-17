@@ -22,6 +22,7 @@ import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
 import { DocumentPostingJournals } from "@/components/documents/DocumentPostingJournals";
+import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
@@ -215,25 +216,36 @@ function PaymentDocument() {
         />
       }
       actions={
-        payment.status !== "void" && payment.posted_journal_id && can("purchases.payment") ? (
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-destructive"
-            disabled={reverseM.isPending}
-            onClick={() => {
-              if (
-                confirm(
-                  "Reverse this payment? The bank and accounts payable journal will be voided and the bill balance restored.",
-                )
-              ) {
-                reverseM.mutate();
-              }
-            }}
-          >
-            Reverse payment
-          </Button>
-        ) : null
+        <div className="flex flex-wrap gap-2">
+          {companyId ? (
+            <RecordDiscussButton
+              companyId={companyId}
+              recordType="supplier_payment"
+              recordId={paymentId}
+              title={`Payment ${payment.supplier_name ?? paymentId.slice(0, 8)}`}
+              label="Discuss"
+            />
+          ) : null}
+          {payment.status !== "void" && payment.posted_journal_id && can("purchases.payment") ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive"
+              disabled={reverseM.isPending}
+              onClick={() => {
+                if (
+                  confirm(
+                    "Reverse this payment? The bank and accounts payable journal will be voided and the bill balance restored.",
+                  )
+                ) {
+                  reverseM.mutate();
+                }
+              }}
+            >
+              Reverse payment
+            </Button>
+          ) : null}
+        </div>
       }
     >
       <section className="rounded-lg border border-border bg-background p-4">

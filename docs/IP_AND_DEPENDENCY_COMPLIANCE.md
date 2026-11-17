@@ -36,6 +36,7 @@
 | 2026-11-17 | PO goods receipt foundation | No new npm packages; original `po-receipt` maths + RPC; public PO receiving concepts only; no competitor UI/code |
 | 2026-11-17 | PO three-way match | No new npm packages; original `po-three-way-match` maths; uses existing `purchases.three_way_matching` setting; public 3-way match concepts only |
 | 2026-11-17 | Partial bill-from-received | No new npm packages; original `po-partial-bill` maths; convert bills unbilled received qty only; no competitor code; no inventory valuation claim |
+| 2026-11-17 | Purchase bill void_date | No new npm packages; records void date/reason for AP as-at; reuses existing ReasonDialog; inventory still not claimed |
 
 ## Open compliance items
 

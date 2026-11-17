@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Updated** | 2026-11-17 |
-| **Baseline** | GitHub `main` @ `edeeb092` (after #229+#230) |
+| **Baseline** | GitHub `main` @ `ddaff917` |
 | **IP policy** | Originality-first — see [IP_AND_DEPENDENCY_COMPLIANCE.md](./IP_AND_DEPENDENCY_COMPLIANCE.md) |
 | **Classification** | Complete and Verified / Partial / UI Only / Backend Only / Missing / Blocked / Intentionally Deferred |
 
@@ -22,7 +22,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | M-05 | Expenses & reimbursements | Partial | P1 | EM module + claims; OCR/payout provider gaps | Expensify/Xero expenses | Provider + approval depth |
 | M-06 | Contacts | Partial | P1 | CRUD/duplicates/portals partial | Xero contacts | Portal isolation proof |
 | M-07 | Products & Services | Partial | P1 | Non-inventory catalogue ready | QBO products | — |
-| M-08 | Inventory & stock | Partial / Intentionally Deferred depth | P2 | Marked beta/unavailable for full valuation | Odoo Inventory, QBO Advanced | Movement ledger + COGS |
+| M-08 | Inventory & stock | **Missing layers / Intentionally Deferred** | P2 | No stock cost-layer tables; COA cogs subtypes + unused valuation setting only — **do not claim COGS** | Odoo Inventory, QBO Advanced | Build movement ledger before valuation |
 | M-09 | Accounting / GL | Partial | P0 | Posting engine, periods, journals, health | All majors | Race/lock live proof |
 | M-10 | Budgets & forecasting | Partial | P1 | Budgets + variance runners | Xero budgets | Fixture acceptance |
 | M-11 | Fixed assets | Partial | P1 | Register/depreciation batches shipped | Xero assets, Odoo assets | GL recon certification |
@@ -126,7 +126,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Competitor reference** | Public three-way matching capability (order/receipt/invoice) — concepts only |
 | **Priority** | P0 |
 | **Development status** | Implemented on `feature/po-three-way-match-20261117` (stacked on #230) |
-| **PR reference** | Pending |
+| **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/231 |
 | **Originality** | Independent `po-three-way-match` maths; existing Settings registry key; no competitor UI/code |
 | **Release verification** | Open — depends on #230 migration for receipt quantities; fail-closed when required and receipt data missing |
 
@@ -139,10 +139,23 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Missing/incomplete** | Convert billed full ordered qty regardless of receipt; no `quantity_billed`; blocked further receive after first bill |
 | **Priority** | P0 |
 | **Development status** | Implemented on `feature/po-partial-bill-from-received-20261117` |
-| **PR reference** | Pending |
+| **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/232 |
 | **Originality** | Independent `po-partial-bill` maths; reuses existing convert RPC + bill authorise posting path |
 | **Honesty** | No inventory/COGS valuation claimed; ledger posts only via bill authorisation |
 | **Release verification** | Open — migrations #230/#B4 not applied live in this session |
+
+## Detailed finding — Purchase bill void_date (B5)
+
+| Field | Value |
+|-------|-------|
+| **Gap ID** | GAP-AP-VOID-001 |
+| **Module** | Purchases / Bills |
+| **Missing/incomplete** | `voidBill` reversed journals but did not store `void_date`/`void_reason`; `purchase_bills` lacked columns (sales invoices already have void_date) |
+| **Priority** | P0 (historical AP as-at honesty) |
+| **Development status** | Implemented on `feature/bill-void-date-20261117` |
+| **PR reference** | Pending |
+| **Originality** | Reuses LinkBooks `ReasonDialog` + sales void dating pattern; independent purchases helper |
+| **Release verification** | Open — migration not applied live |
 
 ## Acceptance questions (programme-wide)
 

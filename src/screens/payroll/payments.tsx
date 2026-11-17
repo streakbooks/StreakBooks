@@ -412,6 +412,11 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
             <span>Showing payments linked to this payroll run.</span>
             <Button asChild size="sm" variant="outline">
+              <Link to="/payroll/runs/$runId" params={{ runId: runIdFilter }} search={{ tab: "payments" }}>
+                View payroll run
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
               <Link to="/payroll/payments" search={{ runId: undefined }}>
                 Clear run filter
               </Link>

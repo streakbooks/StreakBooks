@@ -1,0 +1,35 @@
+{
+  "main": "a2a8a79efbf8ad11b0aa64bd00a7e64095ba0484",
+  "runtime_source": "188bbc71e2dc6f1040f209bdd65beabe941f81dc",
+  "schema_and_fixture_revision": "a83cc45b22a0e80c95e178aee0b367f3454c0944",
+  "environment": {
+    "node": "24.19.0",
+    "npm": "11.9.0",
+    "database": "disposable local PostgreSQL 17 Docker fixtures; no production connection",
+    "browser": "isolated Chromium UI with stubbed API/auth"
+  },
+  "unit_summary": ["Test Files  22 passed (22)", "Tests  208 passed (208)"],
+  "postgres_summary": [
+    "Coding Memory PostgreSQL: 59 assertions passed; 0 failed. Isolated fixtures, no production connection. Includes concurrent relink and reversal sessions."
+  ],
+  "browser_summary": ["5 passed (19.9s)"],
+  "local_build": "passed; execution exit 0; existing warnings remain",
+  "changed_file_eslint": "passed; 0 errors/warnings",
+  "typecheck": {
+    "status": "failed",
+    "current_diagnostics": 107,
+    "baseline_diagnostics": 107,
+    "introduced": [],
+    "removed": []
+  },
+  "not_verified": [
+    "full-schema clean migration",
+    "actual Supabase upgrade",
+    "authenticated staging",
+    "full financial E2E",
+    "production",
+    "performance p50/p95",
+    "independent security review",
+    "backup restoration"
+  ]
+}

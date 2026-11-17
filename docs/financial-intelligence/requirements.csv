@@ -1,14 +1,14 @@
 Requirement,Title,Implemented in this batch,Executed test evidence,Acceptance verified,Remaining
-CM-01,Approved learning,Not completed in this batch,Not established,No,Full directive acceptance remains open
-CM-02,Smart recommendations,Ranked scope-aware rules; qualitative match labels; bounded recommendations,Unit/mocked tests,No,Full directive acceptance remains open
-CM-03,User controls,Not completed in this batch,Not established,No,Full directive acceptance remains open
-CM-04,Feedback lifecycle,Not completed in this batch,Not established,No,Full directive acceptance remains open
+CM-01,Approved learning,Posted/link-derived immutable events; approved learning only; no legacy backfill,Batch 02 isolated tests; see report,No,Full directive acceptance and authenticated staging gates remain open
+CM-02,Smart recommendations,Approved evidence scoped by bank/currency/direction; counts and matching-strength labels,Batch 02 isolated tests; see report,No,Full directive acceptance and authenticated staging gates remain open
+CM-03,User controls,Use/reject and disable/re-enable controls; reset remains open,Batch 02 isolated tests; see report,No,Full directive acceptance and authenticated staging gates remain open
+CM-04,Feedback lifecycle,Durable accepted/edited/rejected account feedback and request deduplication,Batch 02 isolated tests; see report,No,Full directive acceptance and authenticated staging gates remain open
 CM-05,Conflict detection,Conflicting account history flagged,Unit/mocked tests,No,Full directive acceptance remains open
-CM-06,Historical integrity,Eligible-account filtering and evidence-query failures surfaced,Unit/mocked tests,No,Full directive acceptance remains open
+CM-06,Historical integrity,Live reversal/unmatch exclusion and eligibility checks; replay/concurrency fixture assertions,Batch 02 isolated tests; see report,No,Full directive acceptance and authenticated staging gates remain open
 CM-07,Accounting integration,Not completed in this batch,Not established,No,Full directive acceptance remains open
-CM-08,UX integration,Existing banking buttons enhanced; load/retry/coverage messages,Unit/mocked tests,No,Full directive acceptance remains open
-CM-09,Database,Not completed in this batch,Not established,No,Full directive acceptance remains open
-CM-10,Validation,Focused local regression and mocked server denial tests,Unit/mocked tests,No,Full directive acceptance remains open
+CM-08,UX integration,"Banking controls, supporting latest posting, feedback context and responsive fixture tests",Batch 02 isolated tests; see report,No,Full directive acceptance and authenticated staging gates remain open
+CM-09,Database,Additive event/preference/feedback migration; isolated PostgreSQL verification only,Batch 02 isolated tests; see report,No,Full directive acceptance and authenticated staging gates remain open
+CM-10,Validation,"208 unit tests, 59 SQL assertions, 5 browser fixtures; actual staging remains open",Batch 02 isolated tests; see report,No,Full directive acceptance and authenticated staging gates remain open
 ES-01,Duplicate transaction risk,Not completed in this batch,Not established,No,Full directive acceptance remains open
 ES-02,Account coding anomalies,Not completed in this batch,Not established,No,Full directive acceptance remains open
 ES-03,Vendor and payment risk,Not completed in this batch,Not established,No,Full directive acceptance remains open

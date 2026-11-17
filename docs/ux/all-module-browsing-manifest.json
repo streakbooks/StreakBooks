@@ -360,6 +360,7 @@
         "src/screens/payroll/reports.tsx — selected report uses native history/deep link; commit e163c19d6cbd7f7714c4e9706b0a0e1cace76cb3",
         "src/routes/_authenticated/payroll/runs.index.tsx — validated status/q/sort route search; commit a8d51491862ca32e1e59d1577cde4130cb53c1e0; source only, NOT RUN",
         "src/screens/payroll/runs.tsx — native URL-backed status/search/sort preserving refresh and browser history state; commit e1aa93cc72ec729562bc35843458d45d4b91d5d7; source only, NOT RUN",
+        "2026-11-17: Payroll Runs schedule and period cells now use native accessible links retaining status, search draft and sort return context; code commit 06fc1e49c6adbb6d8062247445c94da904de79cb; SOURCE ONLY, NOT RUN. Remaining payment/status/net cells and full 12-criterion verification pending.",
         "src/screens/payroll/runs.tsx — status/sort/clear now push browser history entries; typing search uses replace to avoid per-keystroke history; commit 9847bd3a355ef8c55cae7eb0afbd1580454d592c; SOURCE ONLY, NOT RUN",
         "src/routes/_authenticated/payroll/runs.$runId.tsx — allowlisted employees/journals/payments tab search, commit 5d87318737c19686c9f1783091ea624499a7fbff; SOURCE ONLY, NOT RUN",
         "src/screens/payroll/run-detail.tsx — URL-backed detail tab navigation for Back/Forward/deep link/refresh, commit 2d3e0bf24ca9bcb1638dd12e831bfe8a76f3c85d; SOURCE ONLY, NOT RUN",

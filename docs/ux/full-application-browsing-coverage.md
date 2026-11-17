@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll payment detail in-dialog refresh (2026-11-18)
+
+- `src/screens/payroll/payments.tsx`: loaded payment details dialog now exposes a keyboard-focusable **Refresh details** control using the existing payment detail query refetch, disabled while fetching. Retains dialog context and does not change settlement, reversal or journal code. Source commit `918f1cab1384b6bf9eecded2b31ddb7c3ace420f`. **SOURCE ONLY; NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Payroll partial evidence and pending browser checks updated in commit `7a0794a3547a48eb150fb7095cc9edeb607c5280`.
+- **NOT RUN:** local inventory guard, TypeScript, lint, unit/integration, build, authenticated browser refresh/keyboard/accessibility, security/RLS and accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; 0/21 modules, 0/15 supporting routes, 0/12 batches fully verified. No main, manual CI, production DB or deployment changes.
+
 ### Payroll settlement form query retry (2026-11-17)
 
 - `src/screens/payroll/payments.tsx`: add inline Retry settings, Retry payslips and Retry accounts buttons for three failed settlement-form queries, invoking their existing React Query refetch methods. Source commit `771e402b4175f28f55135ab488c517ce4e4903e8`. **SOURCE ONLY; NOT RUN.** Posting, reversal and accounting calculations unchanged.

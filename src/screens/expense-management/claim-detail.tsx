@@ -9,6 +9,7 @@ import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
+import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 import { ContactLookup } from "@/components/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -332,6 +333,13 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
               {post.isPending ? "Posting…" : "Post to ledger"}
             </Button>
           ) : null}
+          <RecordDiscussButton
+            companyId={company?.id ?? null}
+            recordType="expense_claim"
+            recordId={claimId}
+            title="Expense claim discussion"
+            label="Discuss"
+          />
           <Button
             size="sm"
             variant="secondary"

@@ -431,6 +431,24 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     premiumStatus: "partial",
   },
   {
+    id: "messages",
+    label: "Messages",
+    description: "Direct messages, groups and transaction discussions",
+    path: "/messages",
+    group: "tools",
+    inSidebar: true,
+    pageKind: "list",
+    subnav: [
+      { to: "/messages", label: "Inbox", exact: true },
+      { to: "/messages/settings", label: "Settings" },
+    ],
+    screenRoot: "src/screens/messages",
+    experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
+    premiumStatus: "in-progress",
+    notes:
+      "Unified messaging platform; feature-flagged via messaging_collaboration / messaging_settings.",
+  },
+  {
     id: "ai-assistant",
     label: "AI Assistant",
     description: "Accounting guidance and review",

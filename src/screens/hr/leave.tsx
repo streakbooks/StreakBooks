@@ -48,6 +48,7 @@ import {
   upsertHrLeaveType,
 } from "@/lib/hr/time.functions";
 import { HR_LEAVE_ACCRUAL_METHODS, HR_LEAVE_REQUEST_STATUSES } from "@/lib/hr/time-types";
+import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 
 export function HrLeavePage() {
   const { company, isPending } = useActiveCompany();
@@ -403,6 +404,14 @@ export function HrLeavePage() {
                       <StatusBadge status={row.status} />
                     </TableCell>
                     <TableCell className="space-x-2 text-right">
+                      <RecordDiscussButton
+                        companyId={company?.id ?? null}
+                        recordType="hr_leave_request"
+                        recordId={row.id}
+                        title={`Leave ${row.requestNumber}`}
+                        visibility="hr_private"
+                        label="Discuss"
+                      />
                       {canApprove && row.status === "submitted" && (
                         <>
                           <Button

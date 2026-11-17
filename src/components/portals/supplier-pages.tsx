@@ -1,5 +1,6 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ import {
   requestBankChange,
   submitSupplierDocument,
 } from "@/lib/portals/portals.functions";
+import { portalOpenPurchaseOrderDiscussion } from "@/lib/messaging/messaging.functions";
 import { usePortal } from "@/components/portals/use-portal";
 
 type Row = Record<string, unknown>;
@@ -187,9 +189,11 @@ export function PortalBills() {
 export function PortalOrders() {
   const portal = usePortal();
   const current = portal.current;
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const fetchWorkspace = useServerFn(getSupplierWorkspace);
   const acknowledge = useServerFn(acknowledgePurchaseOrder);
+  const openDiscuss = useServerFn(portalOpenPurchaseOrderDiscussion);
   const query = useQuery({
     queryKey: ["portal-supplier", current?.membership_id],
     enabled: Boolean(current?.role === "supplier"),
@@ -207,6 +211,19 @@ export function PortalOrders() {
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
+  const discuss = useMutation({
+    mutationFn: (orderId: string) =>
+      openDiscuss({
+        data: { membershipId: current!.membership_id, orderId },
+      }),
+    onSuccess: (result) => {
+      void navigate({
+        to: "/portal/app/messages",
+        search: { conversation: result.conversationId },
+      });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
   if (!current || current.role !== "supplier") return <LoadingState />;
   const orders = (query.data?.["orders"] as Row[] | undefined) ?? [];
   return (
@@ -217,14 +234,24 @@ export function PortalOrders() {
             <p className="font-medium">
               {String(order["order_number"] ?? "Purchase order")} · {String(order["status"])}
             </p>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={Boolean(order["supplier_acknowledged_at"]) || ack.isPending}
-              onClick={() => ack.mutate(String(order["id"]))}
-            >
-              {order["supplier_acknowledged_at"] ? "Acknowledged" : "Acknowledge"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={discuss.isPending}
+                onClick={() => discuss.mutate(String(order["id"]))}
+              >
+                Message Purchasing
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={Boolean(order["supplier_acknowledged_at"]) || ack.isPending}
+                onClick={() => ack.mutate(String(order["id"]))}
+              >
+                {order["supplier_acknowledged_at"] ? "Acknowledged" : "Acknowledge"}
+              </Button>
+            </div>
           </div>
           <p>
             {formatMoney(

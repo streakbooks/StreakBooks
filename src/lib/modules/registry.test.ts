@@ -16,7 +16,7 @@ describe("MODULE_REGISTRY", () => {
   it("stays synchronized with sidebar navItems", () => {
     expect(assertRegistryMatchesNav()).toEqual([]);
     expect(MODULE_REGISTRY.filter((module) => module.inSidebar)).toHaveLength(navItems.length);
-    expect(navItems).toHaveLength(26);
+    expect(navItems).toHaveLength(27);
   });
 
   it("has unique stable ids", () => {

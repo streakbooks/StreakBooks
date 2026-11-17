@@ -95,6 +95,8 @@ import { Route as AuthenticatedFirmInviteTokenRouteImport } from './routes/_auth
 import { Route as AuthenticatedHrIndexRouteImport } from './routes/_authenticated/hr/index'
 import { Route as AuthenticatedHrSectionRouteImport } from './routes/_authenticated/hr/$section'
 import { Route as AuthenticatedInviteTokenRouteImport } from './routes/_authenticated/invite.$token'
+import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated/messages/index'
+import { Route as AuthenticatedMessagesSettingsRouteImport } from './routes/_authenticated/messages/settings'
 import { Route as AuthenticatedPayrollIndexRouteImport } from './routes/_authenticated/payroll/index'
 import { Route as AuthenticatedPayrollReportsRouteImport } from './routes/_authenticated/payroll/reports'
 import { Route as AuthenticatedPayrollSalaryStructuresRouteImport } from './routes/_authenticated/payroll/salary-structures'
@@ -673,6 +675,18 @@ const AuthenticatedInviteTokenRoute =
   AuthenticatedInviteTokenRouteImport.update({
     id: '/invite/$token',
     path: '/invite/$token',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMessagesIndexRoute =
+  AuthenticatedMessagesIndexRouteImport.update({
+    id: '/messages/',
+    path: '/messages/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMessagesSettingsRoute =
+  AuthenticatedMessagesSettingsRouteImport.update({
+    id: '/messages/settings',
+    path: '/messages/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPayrollIndexRoute =
@@ -1322,6 +1336,7 @@ export interface FileRoutesByFullPath {
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/hr/$section': typeof AuthenticatedHrSectionRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
+  '/messages/settings': typeof AuthenticatedMessagesSettingsRoute
   '/payroll/reports': typeof AuthenticatedPayrollReportsRoute
   '/payroll/salary-structures': typeof AuthenticatedPayrollSalaryStructuresRoute
   '/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
@@ -1368,6 +1383,7 @@ export interface FileRoutesByFullPath {
   '/developer/': typeof AuthenticatedDeveloperIndexRoute
   '/expense-management/': typeof AuthenticatedExpenseManagementIndexRoute
   '/hr/': typeof AuthenticatedHrIndexRoute
+  '/messages/': typeof AuthenticatedMessagesIndexRoute
   '/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/platform/': typeof AuthenticatedPlatformIndexRoute
   '/purchases/': typeof AuthenticatedPurchasesIndexRoute
@@ -1499,6 +1515,7 @@ export interface FileRoutesByTo {
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/hr/$section': typeof AuthenticatedHrSectionRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
+  '/messages/settings': typeof AuthenticatedMessagesSettingsRoute
   '/payroll/reports': typeof AuthenticatedPayrollReportsRoute
   '/payroll/salary-structures': typeof AuthenticatedPayrollSalaryStructuresRoute
   '/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
@@ -1545,6 +1562,7 @@ export interface FileRoutesByTo {
   '/developer': typeof AuthenticatedDeveloperIndexRoute
   '/expense-management': typeof AuthenticatedExpenseManagementIndexRoute
   '/hr': typeof AuthenticatedHrIndexRoute
+  '/messages': typeof AuthenticatedMessagesIndexRoute
   '/payroll': typeof AuthenticatedPayrollIndexRoute
   '/platform': typeof AuthenticatedPlatformIndexRoute
   '/purchases': typeof AuthenticatedPurchasesIndexRoute
@@ -1683,6 +1701,7 @@ export interface FileRoutesById {
   '/_authenticated/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/_authenticated/hr/$section': typeof AuthenticatedHrSectionRoute
   '/_authenticated/invite/$token': typeof AuthenticatedInviteTokenRoute
+  '/_authenticated/messages/settings': typeof AuthenticatedMessagesSettingsRoute
   '/_authenticated/payroll/reports': typeof AuthenticatedPayrollReportsRoute
   '/_authenticated/payroll/salary-structures': typeof AuthenticatedPayrollSalaryStructuresRoute
   '/_authenticated/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
@@ -1729,6 +1748,7 @@ export interface FileRoutesById {
   '/_authenticated/developer/': typeof AuthenticatedDeveloperIndexRoute
   '/_authenticated/expense-management/': typeof AuthenticatedExpenseManagementIndexRoute
   '/_authenticated/hr/': typeof AuthenticatedHrIndexRoute
+  '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
   '/_authenticated/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/_authenticated/platform/': typeof AuthenticatedPlatformIndexRoute
   '/_authenticated/purchases/': typeof AuthenticatedPurchasesIndexRoute
@@ -1870,6 +1890,7 @@ export interface FileRouteTypes {
     | '/firm-invite/$token'
     | '/hr/$section'
     | '/invite/$token'
+    | '/messages/settings'
     | '/payroll/reports'
     | '/payroll/salary-structures'
     | '/payroll/settings'
@@ -1916,6 +1937,7 @@ export interface FileRouteTypes {
     | '/developer/'
     | '/expense-management/'
     | '/hr/'
+    | '/messages/'
     | '/payroll/'
     | '/platform/'
     | '/purchases/'
@@ -2047,6 +2069,7 @@ export interface FileRouteTypes {
     | '/firm-invite/$token'
     | '/hr/$section'
     | '/invite/$token'
+    | '/messages/settings'
     | '/payroll/reports'
     | '/payroll/salary-structures'
     | '/payroll/settings'
@@ -2093,6 +2116,7 @@ export interface FileRouteTypes {
     | '/developer'
     | '/expense-management'
     | '/hr'
+    | '/messages'
     | '/payroll'
     | '/platform'
     | '/purchases'
@@ -2230,6 +2254,7 @@ export interface FileRouteTypes {
     | '/_authenticated/firm-invite/$token'
     | '/_authenticated/hr/$section'
     | '/_authenticated/invite/$token'
+    | '/_authenticated/messages/settings'
     | '/_authenticated/payroll/reports'
     | '/_authenticated/payroll/salary-structures'
     | '/_authenticated/payroll/settings'
@@ -2276,6 +2301,7 @@ export interface FileRouteTypes {
     | '/_authenticated/developer/'
     | '/_authenticated/expense-management/'
     | '/_authenticated/hr/'
+    | '/_authenticated/messages/'
     | '/_authenticated/payroll/'
     | '/_authenticated/platform/'
     | '/_authenticated/purchases/'
@@ -2963,6 +2989,20 @@ declare module '@tanstack/react-router' {
       path: '/invite/$token'
       fullPath: '/invite/$token'
       preLoaderRoute: typeof AuthenticatedInviteTokenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/messages/': {
+      id: '/_authenticated/messages/'
+      path: '/messages'
+      fullPath: '/messages/'
+      preLoaderRoute: typeof AuthenticatedMessagesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/messages/settings': {
+      id: '/_authenticated/messages/settings'
+      path: '/messages/settings'
+      fullPath: '/messages/settings'
+      preLoaderRoute: typeof AuthenticatedMessagesSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/payroll/': {
@@ -4049,6 +4089,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFirmInviteTokenRoute: typeof AuthenticatedFirmInviteTokenRoute
   AuthenticatedHrSectionRoute: typeof AuthenticatedHrSectionRoute
   AuthenticatedInviteTokenRoute: typeof AuthenticatedInviteTokenRoute
+  AuthenticatedMessagesSettingsRoute: typeof AuthenticatedMessagesSettingsRoute
   AuthenticatedReportsReportIdRoute: typeof AuthenticatedReportsReportIdRoute
   AuthenticatedAdvisorsPortalIndexRoute: typeof AuthenticatedAdvisorsPortalIndexRoute
   AuthenticatedAppStoreIndexRoute: typeof AuthenticatedAppStoreIndexRoute
@@ -4058,6 +4099,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDeveloperIndexRoute: typeof AuthenticatedDeveloperIndexRoute
   AuthenticatedExpenseManagementIndexRoute: typeof AuthenticatedExpenseManagementIndexRoute
   AuthenticatedHrIndexRoute: typeof AuthenticatedHrIndexRoute
+  AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
   AuthenticatedAppStoreAppsAppCodeRoute: typeof AuthenticatedAppStoreAppsAppCodeRoute
   AuthenticatedCrmLeadsLeadIdRoute: typeof AuthenticatedCrmLeadsLeadIdRoute
@@ -4116,6 +4158,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFirmInviteTokenRoute: AuthenticatedFirmInviteTokenRoute,
   AuthenticatedHrSectionRoute: AuthenticatedHrSectionRoute,
   AuthenticatedInviteTokenRoute: AuthenticatedInviteTokenRoute,
+  AuthenticatedMessagesSettingsRoute: AuthenticatedMessagesSettingsRoute,
   AuthenticatedReportsReportIdRoute: AuthenticatedReportsReportIdRoute,
   AuthenticatedAdvisorsPortalIndexRoute: AuthenticatedAdvisorsPortalIndexRoute,
   AuthenticatedAppStoreIndexRoute: AuthenticatedAppStoreIndexRoute,
@@ -4126,6 +4169,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExpenseManagementIndexRoute:
     AuthenticatedExpenseManagementIndexRoute,
   AuthenticatedHrIndexRoute: AuthenticatedHrIndexRoute,
+  AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedAppStoreAppsAppCodeRoute: AuthenticatedAppStoreAppsAppCodeRoute,
   AuthenticatedCrmLeadsLeadIdRoute: AuthenticatedCrmLeadsLeadIdRoute,

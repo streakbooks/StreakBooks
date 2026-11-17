@@ -16,6 +16,7 @@ const REQUIRED_MODULES = [
   ["Files", "/files"],
   ["Accounting", "/accounting"],
   ["Action Center", "/notifications"],
+  ["Messages", "/messages"],
   ["Budgets", "/budgets"],
   ["Fixed assets", "/fixed-assets"],
   ["Payroll", "/payroll"],

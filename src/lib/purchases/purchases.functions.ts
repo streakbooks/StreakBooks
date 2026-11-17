@@ -4132,70 +4132,114 @@ export const getSupplierStatement = createServerFn({ method: "GET" })
       to?: string;
       asOf?: string;
       currencyCode?: string;
-    }) => ({
-      currencyCode: /^[A-Za-z]{3}$/.test(input.currencyCode ?? "")
-        ? (input.currencyCode as string).toUpperCase()
-        : null,
-      companyId: assertUuid(input.companyId),
-      contactId: assertUuid(input.contactId, "supplier"),
-      from: input.from && /^\d{4}-\d{2}-\d{2}$/.test(input.from) ? input.from : null,
-      to: input.to && /^\d{4}-\d{2}-\d{2}$/.test(input.to) ? input.to : null,
-      asOf:
-        input.asOf && /^\d{4}-\d{2}-\d{2}$/.test(input.asOf)
-          ? input.asOf
-          : new Date().toISOString().slice(0, 10),
-    }),
+    }) => {
+      const from = input.from && /^\d{4}-\d{2}-\d{2}$/.test(input.from) ? input.from : null;
+      const to = input.to && /^\d{4}-\d{2}-\d{2}$/.test(input.to) ? input.to : null;
+      if (from && to && from > to) {
+        throw new Error("Statement From date cannot be after the To date");
+      }
+      return {
+        currencyCode: /^[A-Za-z]{3}$/.test(input.currencyCode ?? "")
+          ? (input.currencyCode as string).toUpperCase()
+          : null,
+        companyId: assertUuid(input.companyId),
+        contactId: assertUuid(input.contactId, "supplier"),
+        from,
+        to,
+        asOf:
+          input.asOf && /^\d{4}-\d{2}-\d{2}$/.test(input.asOf)
+            ? input.asOf
+            : new Date().toISOString().slice(0, 10),
+      };
+    },
   )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
-    let billQ = context.supabase
-      .from("purchase_bills" as never)
-      .select(
-        "id, bill_date, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, supplier_invoice_number, bill_number, currency_code" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .eq("contact_id" as never, data.contactId as never)
-      .neq("status" as never, "void" as never)
-      .neq("status" as never, "draft" as never)
-      .lte("bill_date" as never, data.asOf as never)
-      .order("bill_date" as never);
-    if (data.from) billQ = billQ.gte("bill_date" as never, data.from as never);
-    if (data.to) billQ = billQ.lte("bill_date" as never, data.to as never);
-    const { data: billsAll, error } = await billQ;
-    if (error) throw new Error(error.message);
+    const { buildSupplierStatement } = await import("@/lib/purchases/supplier-statement");
+    type SupplierStatementDoc = import("@/lib/purchases/supplier-statement").SupplierStatementDoc;
 
-    let payQ = context.supabase
-      .from("supplier_payments" as never)
-      .select(
-        "id, payment_date, amount_minor, unallocated_minor, reference, status, currency_code" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .eq("contact_id" as never, data.contactId as never)
-      .eq("status" as never, "paid" as never)
-      .lte("payment_date" as never, data.asOf as never)
-      .order("payment_date" as never);
-    if (data.from) payQ = payQ.gte("payment_date" as never, data.from as never);
-    if (data.to) payQ = payQ.lte("payment_date" as never, data.to as never);
-    const { data: paymentsAll, error: pErr } = await payQ;
-    if (pErr) throw new Error(pErr.message);
+    const loadRows = async <T>(
+      table: string,
+      rich: string,
+      basic: string,
+      orderCol: string,
+    ): Promise<T[]> => {
+      const run = async (cols: string) => {
+        const { data: rows, error } = await context.supabase
+          .from(table as never)
+          .select(cols as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("contact_id" as never, data.contactId as never)
+          .neq("status" as never, "draft" as never)
+          .order(orderCol as never);
+        return { rows: (rows ?? []) as T[], error };
+      };
+      const first = await run(rich);
+      if (!first.error) return first.rows;
+      if (/void_date|42703|PGRST204/i.test(first.error.message)) {
+        const second = await run(basic);
+        if (second.error) throw new Error(second.error.message);
+        return second.rows;
+      }
+      throw new Error(first.error.message);
+    };
 
-    let cnQ = context.supabase
-      .from("purchase_credit_notes" as never)
-      .select(
-        "id, credit_date, credit_number, status, total_minor, amount_allocated_minor, currency_code" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .eq("contact_id" as never, data.contactId as never)
-      .neq("status" as never, "void" as never)
-      .neq("status" as never, "draft" as never)
-      .lte("credit_date" as never, data.asOf as never)
-      .order("credit_date" as never);
-    if (data.from) cnQ = cnQ.gte("credit_date" as never, data.from as never);
-    if (data.to) cnQ = cnQ.lte("credit_date" as never, data.to as never);
-    const { data: creditNotesAll, error: cErr } = await cnQ;
-    if (cErr) throw new Error(cErr.message);
+    type BillRow = {
+      id: string;
+      bill_date: string;
+      due_date: string;
+      status: string;
+      total_minor: number;
+      amount_paid_minor: number;
+      amount_credited_minor: number;
+      supplier_invoice_number: string | null;
+      bill_number: string | null;
+      currency_code: string | null;
+      void_date?: string | null;
+    };
+    type PayRow = {
+      id: string;
+      payment_date: string;
+      amount_minor: number;
+      unallocated_minor: number;
+      reference: string | null;
+      status: string;
+      currency_code: string | null;
+      void_date?: string | null;
+    };
+    type CreditRow = {
+      id: string;
+      credit_date: string;
+      credit_number: string | null;
+      status: string;
+      total_minor: number;
+      amount_allocated_minor: number;
+      currency_code: string | null;
+      void_date?: string | null;
+    };
 
-    // A statement is in ONE currency: amounts in different currencies are never netted together.
+    // Load full history (including voids) so opening balance and void lines match AR honesty.
+    const [billsAll, paymentsAll, creditNotesAll] = await Promise.all([
+      loadRows<BillRow>(
+        "purchase_bills",
+        "id, bill_date, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, supplier_invoice_number, bill_number, currency_code, void_date",
+        "id, bill_date, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, supplier_invoice_number, bill_number, currency_code",
+        "bill_date",
+      ),
+      loadRows<PayRow>(
+        "supplier_payments",
+        "id, payment_date, amount_minor, unallocated_minor, reference, status, currency_code, void_date",
+        "id, payment_date, amount_minor, unallocated_minor, reference, status, currency_code",
+        "payment_date",
+      ),
+      loadRows<CreditRow>(
+        "purchase_credit_notes",
+        "id, credit_date, credit_number, status, total_minor, amount_allocated_minor, currency_code, void_date",
+        "id, credit_date, credit_number, status, total_minor, amount_allocated_minor, currency_code",
+        "credit_date",
+      ),
+    ]);
+
     const baseCur = await (async () => {
       const { data: co } = await context.supabase
         .from("companies")
@@ -4205,181 +4249,108 @@ export const getSupplierStatement = createServerFn({ method: "GET" })
       return (co?.base_currency ?? "GBP").toUpperCase();
     })();
     const cur = (c: string | null | undefined) => (c ?? baseCur).toUpperCase();
-    const availableCurrencies = [
-      ...new Set([
-        ...((billsAll ?? []) as Array<{ currency_code: string | null }>).map((r) =>
-          cur(r.currency_code),
+
+    const docs: SupplierStatementDoc[] = [
+      ...billsAll.map(
+        (b): SupplierStatementDoc => ({
+          kind: "bill",
+          id: b.id,
+          date: b.bill_date,
+          currencyCode: cur(b.currency_code),
+          amountMinor: Number(b.total_minor),
+          reference: b.supplier_invoice_number ?? b.bill_number,
+          status: b.status === "paid" || b.status === "partly_paid" ? "authorised" : b.status,
+          voidDate: b.void_date ?? null,
+          dueDate: b.due_date,
+        }),
+      ),
+      ...paymentsAll
+        .filter((p) => p.status === "paid" || p.status === "void")
+        .map(
+          (p): SupplierStatementDoc => ({
+            kind: "payment",
+            id: p.id,
+            date: p.payment_date,
+            currencyCode: cur(p.currency_code),
+            amountMinor: Number(p.amount_minor),
+            reference: p.reference,
+            status: p.status === "paid" ? "posted" : p.status,
+            voidDate: p.void_date ?? null,
+          }),
         ),
-        ...((paymentsAll ?? []) as Array<{ currency_code: string | null }>).map((r) =>
-          cur(r.currency_code),
-        ),
-        ...((creditNotesAll ?? []) as Array<{ currency_code: string | null }>).map((r) =>
-          cur(r.currency_code),
-        ),
-      ]),
+      ...creditNotesAll.map(
+        (c): SupplierStatementDoc => ({
+          kind: "credit_note",
+          id: c.id,
+          date: c.credit_date,
+          currencyCode: cur(c.currency_code),
+          amountMinor: Number(c.total_minor),
+          reference: c.credit_number,
+          status: c.status === "partly_paid" ? "authorised" : c.status,
+          voidDate: c.void_date ?? null,
+        }),
+      ),
     ];
+
+    // Cap activity at asOf (defaults to today) when no explicit To date is provided.
+    const currencies = buildSupplierStatement(docs, {
+      from: data.from,
+      to: data.to ?? data.asOf,
+    });
+    const availableCurrencies = currencies.map((c) => c.currency_code);
     const statementCurrency =
       data.currencyCode ??
       (availableCurrencies.includes(baseCur) ? baseCur : (availableCurrencies[0] ?? baseCur));
-    const bills = ((billsAll ?? []) as Array<{ currency_code: string | null }>).filter(
-      (r) => cur(r.currency_code) === statementCurrency,
-    ) as typeof billsAll;
-    const payments = ((paymentsAll ?? []) as Array<{ currency_code: string | null }>).filter(
-      (r) => cur(r.currency_code) === statementCurrency,
-    ) as typeof paymentsAll;
-    const creditNotes = ((creditNotesAll ?? []) as Array<{ currency_code: string | null }>).filter(
-      (r) => cur(r.currency_code) === statementCurrency,
-    ) as typeof creditNotesAll;
+    const selected =
+      currencies.find((c) => c.currency_code === statementCurrency) ??
+      ({
+        currency_code: statementCurrency,
+        opening_balance_minor: 0,
+        lines: [],
+        closing_balance_minor: 0,
+        total_debits_minor: 0,
+        total_credits_minor: 0,
+      } as const);
 
-    // Opening balance: everything dated before the statement period starts (P-24).
-    let openingBalanceMinor = 0;
-    if (data.from) {
-      const sumCol = (rows: unknown, col: string) =>
-        ((rows ?? []) as Array<Record<string, number | string | null>>)
-          .filter((r) => cur(r["currency_code"] as string | null) === statementCurrency)
-          .reduce((n, r) => n + Number(r[col] ?? 0), 0);
-      const [priorBills, priorPays, priorCns] = await Promise.all([
-        context.supabase
-          .from("purchase_bills" as never)
-          .select("total_minor, currency_code" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq("contact_id" as never, data.contactId as never)
-          .not("status" as never, "in" as never, "(void,draft)" as never)
-          .lt("bill_date" as never, data.from as never),
-        context.supabase
-          .from("supplier_payments" as never)
-          .select("amount_minor, currency_code" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq("contact_id" as never, data.contactId as never)
-          .eq("status" as never, "paid" as never)
-          .lt("payment_date" as never, data.from as never),
-        context.supabase
-          .from("purchase_credit_notes" as never)
-          .select("total_minor, currency_code" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq("contact_id" as never, data.contactId as never)
-          .not("status" as never, "in" as never, "(void,draft)" as never)
-          .lt("credit_date" as never, data.from as never),
-      ]);
-      if (priorBills.error) throw new Error(priorBills.error.message);
-      if (priorPays.error) throw new Error(priorPays.error.message);
-      if (priorCns.error) throw new Error(priorCns.error.message);
-      openingBalanceMinor =
-        sumCol(priorBills.data, "total_minor") -
-        sumCol(priorPays.data, "amount_minor") -
-        sumCol(priorCns.data, "total_minor");
-    }
+    const billsInCurrency = billsAll.filter((b) => cur(b.currency_code) === statementCurrency);
+    const paymentsInCurrency = paymentsAll.filter(
+      (p) => cur(p.currency_code) === statementCurrency && p.status === "paid",
+    );
+    const creditsInCurrency = creditNotesAll.filter(
+      (c) => cur(c.currency_code) === statementCurrency,
+    );
 
-    type TimelineRow = {
-      date: string;
-      type: "bill" | "payment" | "credit_note";
-      id: string;
-      reference: string | null;
-      debit_minor: number;
-      credit_minor: number;
-      status: string;
-    };
-    const timeline: TimelineRow[] = [];
-    for (const b of (bills ?? []) as Array<{
-      id: string;
-      bill_date: string;
-      total_minor: number;
-      supplier_invoice_number: string | null;
-      bill_number: string | null;
-      status: string;
-    }>) {
-      timeline.push({
-        date: b.bill_date,
-        type: "bill",
-        id: b.id,
-        reference: b.supplier_invoice_number ?? b.bill_number,
-        debit_minor: b.total_minor,
-        credit_minor: 0,
-        status: b.status,
-      });
-    }
-    for (const p of (payments ?? []) as Array<{
-      id: string;
-      payment_date: string;
-      amount_minor: number;
-      reference: string | null;
-      status: string;
-    }>) {
-      timeline.push({
-        date: p.payment_date,
-        type: "payment",
-        id: p.id,
-        reference: p.reference,
-        debit_minor: 0,
-        credit_minor: p.amount_minor,
-        status: p.status,
-      });
-    }
-    for (const cn of (creditNotes ?? []) as Array<{
-      id: string;
-      credit_date: string;
-      credit_number: string | null;
-      total_minor: number;
-      status: string;
-    }>) {
-      timeline.push({
-        date: cn.credit_date,
-        type: "credit_note",
-        id: cn.id,
-        reference: cn.credit_number,
-        debit_minor: 0,
-        credit_minor: cn.total_minor,
-        status: cn.status,
-      });
-    }
-    timeline.sort((a, b) => a.date.localeCompare(b.date) || a.type.localeCompare(b.type));
-    let running = openingBalanceMinor;
-    const lines = timeline.map((t) => {
-      running += t.debit_minor - t.credit_minor;
-      return { ...t, balance_minor: running };
-    });
-
-    const rows = (
-      (bills ?? []) as Array<{
-        id: string;
-        bill_date: string;
-        due_date: string;
-        status: string;
-        total_minor: number;
-        amount_paid_minor: number;
-        amount_credited_minor: number;
-        supplier_invoice_number: string | null;
-        currency_code: string;
-      }>
-    ).map((b) => ({
-      ...b,
-      outstanding_minor: b.total_minor - b.amount_paid_minor - b.amount_credited_minor,
-    }));
-    const open = rows.filter((r) => r.outstanding_minor > 0 && r.status !== "draft");
-    const unappliedCredits = (
-      (creditNotes ?? []) as Array<{
-        total_minor: number;
-        amount_allocated_minor: number;
-        status: string;
-      }>
-    )
+    const rows = billsInCurrency
+      .filter((b) => b.status !== "void")
+      .map((b) => ({
+        ...b,
+        currency_code: cur(b.currency_code),
+        outstanding_minor:
+          Number(b.total_minor) - Number(b.amount_paid_minor) - Number(b.amount_credited_minor),
+      }));
+    const open = rows.filter((r) => r.outstanding_minor > 0);
+    const unappliedCredits = creditsInCurrency
       .filter((c) => ["authorised", "partly_paid"].includes(c.status))
-      .reduce((s, c) => s + (c.total_minor - c.amount_allocated_minor), 0);
-    const unappliedPayments = ((payments ?? []) as Array<{ unallocated_minor: number }>).reduce(
-      (s, p) => s + (p.unallocated_minor ?? 0),
+      .reduce((s, c) => s + (Number(c.total_minor) - Number(c.amount_allocated_minor)), 0);
+    const unappliedPayments = paymentsInCurrency.reduce(
+      (s, p) => s + Number(p.unallocated_minor ?? 0),
       0,
     );
 
     return {
       asOf: data.asOf,
+      from: data.from,
+      to: data.to,
       currencyCode: statementCurrency,
-      availableCurrencies,
+      availableCurrencies:
+        availableCurrencies.length > 0 ? availableCurrencies : [statementCurrency],
+      currencies,
       bills: rows,
-      payments: payments ?? [],
-      creditNotes: creditNotes ?? [],
-      lines,
-      openingBalanceMinor,
-      closingBalanceMinor: running,
+      payments: paymentsInCurrency,
+      creditNotes: creditsInCurrency.filter((c) => c.status !== "void"),
+      lines: selected.lines,
+      openingBalanceMinor: selected.opening_balance_minor,
+      closingBalanceMinor: selected.closing_balance_minor,
       openBalanceMinor: open.reduce((s, r) => s + r.outstanding_minor, 0),
       unappliedCreditMinor: unappliedCredits,
       unappliedPaymentMinor: unappliedPayments,

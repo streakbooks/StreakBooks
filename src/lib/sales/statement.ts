@@ -46,15 +46,27 @@ type Event = Omit<StatementLine, "balance_minor"> & { currency: string; order: n
 
 const TYPE_ORDER: Record<string, number> = { invoice: 0, credit_note: 1, receipt: 2, void: 3 };
 
-function eventsFor(doc: StatementDoc): Event[] {
+export type StatementNouns = {
+  invoice: string;
+  receipt: string;
+  credit_note: string;
+};
+
+const DEFAULT_NOUNS: StatementNouns = {
+  invoice: "Invoice",
+  receipt: "Payment received",
+  credit_note: "Credit note",
+};
+
+function eventsFor(doc: StatementDoc, nouns: StatementNouns): Event[] {
   if (doc.status === "draft") return [];
   const sign = doc.kind === "invoice" ? 1 : -1; // + increases what the customer owes
   const noun =
     doc.kind === "invoice"
-      ? "Invoice"
+      ? nouns.invoice
       : doc.kind === "receipt"
-        ? "Payment received"
-        : "Credit note";
+        ? nouns.receipt
+        : nouns.credit_note;
   const isVoid = doc.status === "void";
   if (isVoid && !doc.voidDate) return [];
   const mk = (type: Event["type"], date: string, signed: number, description: string): Event => ({
@@ -80,10 +92,11 @@ function eventsFor(doc: StatementDoc): Event[] {
 export function buildCustomerStatement(
   docs: StatementDoc[],
   range: { from: string | null; to: string | null },
+  nouns: StatementNouns = DEFAULT_NOUNS,
 ): StatementCurrency[] {
   const byCurrency = new Map<string, Event[]>();
   for (const d of docs) {
-    for (const e of eventsFor(d)) {
+    for (const e of eventsFor(d, nouns)) {
       const arr = byCurrency.get(e.currency);
       if (arr) arr.push(e);
       else byCurrency.set(e.currency, [e]);

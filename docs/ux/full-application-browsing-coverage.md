@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll Payments linked data-cell detail actions (2026-11-17)
+
+- `src/screens/payroll/payments.tsx`: method, amount, reference and status cells now expose keyboard-focusable buttons opening the existing payment details dialog, in addition to the previously linked date cell. Source commit `41c9b5c5a9abadcf780350e5c19ceca7f25c5cb7`. **SOURCE ONLY; NOT RUN.** This does **not** create a native URL-backed payment detail route or guarantee browser Back/Forward/new-tab behavior.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll partial evidence recorded in commit `c24cd99afc35d98cacb9cd16710378527f47cc2d`.
+- **NOT RUN:** inventory guard, TypeScript, lint, unit/integration tests, build, authenticated browser/keyboard/accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No changes to main, manual CI, production database or deployment.
+
 ### Payroll Payments date-cell detail action (2026-11-17)
 
 - `src/screens/payroll/payments.tsx`: payment-date cells now provide a keyboard-focusable button opening the existing payment details dialog, rather than inert date text. Source commit `a2e79503e64719873887c2836c2c602159ea073a`. This is a dialog action, **not a native deep link**; native URL-backed payment detail remains pending. **SOURCE ONLY; NOT RUN.**

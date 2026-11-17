@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Payments native run-filter clearing (2026-11-17)
+
+- `src/screens/payroll/payments.tsx`: replace imperative Clear run filter button navigation with a native, keyboard-focusable TanStack Link to `/payroll/payments`, omitting `runId`. This supports normal browser link/new-tab semantics without touching payroll payment or journal logic. Source commit `9e5ab9a4a9583a4ad62829108d7f327773b75c52`. **SOURCE REVIEW ONLY; NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: record Payroll partial evidence and pending checks; commit `b878301cac75c813e2c709e25891dfda39f6acd9`.
+- **NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser Back/Forward/new-tab/refresh, accessibility and RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; 0/21 modules, 0/15 supporting routes, 0/12 batches fully verified. No changes to `main`, manual CI, production database or deployment.
+
 ### Payroll Payments persistent native navigation (2026-11-17)
 
 - `src/screens/payroll/payments.tsx`: retain PageHeader and PayrollSubnav in company loading, missing-company, payroll.view denial, payments loading and payments-query error states, allowing native navigation out of blocked views. Source commit `6bcddb2452f1852343067ba672e5b8d62797bb09`. **SOURCE REVIEW ONLY; NOT RUN.** No payment posting, reversal, permission or accounting logic changed.

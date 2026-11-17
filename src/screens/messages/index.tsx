@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useRouteContext } from "@tanstack/react-router";
+import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -11,14 +11,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ConversationFiles } from "@/components/messaging/ConversationFiles";
 import { MessageActions } from "@/components/messaging/MessageActions";
+import { MessagingAiAssistPanel } from "@/components/messaging/MessagingAiAssistPanel";
 import { cn } from "@/lib/utils";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import {
   useMessagingActions,
   useMessagingConversations,
   useMessagingMessages,
+  useMessagingMissedRecovery,
   useMessagingSettings,
+  useMessagingThreadSearch,
 } from "@/hooks/use-messaging";
+import {
+  messagingConnectionLabel,
+  useMessagingConnection,
+} from "@/hooks/use-messaging-connection";
 import { useMessagingPresence } from "@/hooks/use-messaging-presence";
 import type { MessagingInboxFilter, MessagingParticipant } from "@/lib/messaging/types";
 import {
@@ -35,8 +42,10 @@ const FILTERS: { id: MessagingInboxFilter; label: string }[] = [
   { id: "inbox", label: "Inbox" },
   { id: "dm", label: "Direct" },
   { id: "groups", label: "Groups" },
+  { id: "mentions", label: "Mentions" },
   { id: "unread", label: "Unread" },
   { id: "starred", label: "Starred" },
+  { id: "files", label: "Files" },
   { id: "transactions", label: "Transactions" },
   { id: "archived", label: "Archived" },
 ];
@@ -75,9 +84,12 @@ export function MessagesScreen({
   const messages = useMessagingMessages(companyId, conversationId ?? null);
   const actions = useMessagingActions(companyId);
   const presence = useMessagingPresence(conversationId ?? null, user?.id ?? null);
+  const connection = useMessagingConnection(companyId);
+  useMessagingMissedRecovery(companyId, conversationId ?? null, connection.state);
 
   const [composer, setComposer] = useState("");
   const [search, setSearch] = useState("");
+  const [threadSearch, setThreadSearch] = useState("");
   const [peerSearch, setPeerSearch] = useState("");
   const [peers, setPeers] = useState<MessagingParticipant[]>([]);
   const [groupTitle, setGroupTitle] = useState("");
@@ -87,11 +99,17 @@ export function MessagesScreen({
   const [uploading, setUploading] = useState(false);
   const [approvalPeer, setApprovalPeer] = useState("");
   const [showFiles, setShowFiles] = useState(false);
+  const [showAi, setShowAi] = useState(false);
   const queryClient = useQueryClient();
   const registerAttachment = useServerFn(registerMessagingAttachment);
   const requestApproval = useServerFn(requestMessagingFormalApproval);
   const openHr = useServerFn(openHrPrivateConversation);
   const openAdvisor = useServerFn(openAdvisorEngagementConversation);
+  const threadHits = useMessagingThreadSearch(
+    companyId,
+    conversationId ?? null,
+    threadSearch,
+  );
 
   const selected = useMemo(
     () => conversations.data?.find((c) => c.id === conversationId) ?? null,
@@ -171,6 +189,9 @@ export function MessagesScreen({
       breadcrumbs={[{ label: "Messages" }]}
       actions={
         <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" asChild>
+            <Link to="/messages/settings">Settings</Link>
+          </Button>
           <Button type="button" variant="outline" onClick={() => setShowNew("dm")}>
             New message
           </Button>
@@ -307,6 +328,18 @@ export function MessagesScreen({
                     {presence.typingIds.length
                       ? ` · ${presence.typingIds.length} typing`
                       : ""}
+                    {" · "}
+                    <span
+                      className={cn(
+                        connection.state === "connected" && "text-emerald-700 dark:text-emerald-400",
+                        (connection.state === "offline" || connection.state === "error") &&
+                          "text-destructive",
+                        (connection.state === "reconnecting" || connection.state === "connecting") &&
+                          "text-amber-700 dark:text-amber-400",
+                      )}
+                    >
+                      {messagingConnectionLabel(connection.state)}
+                    </span>
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -322,6 +355,15 @@ export function MessagesScreen({
                     }
                   >
                     {selected?.is_starred ? "Unstar" : "Star"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={actions.markUnreadMutation.isPending}
+                    onClick={() => actions.markUnreadMutation.mutate(conversationId)}
+                  >
+                    Mark unread
                   </Button>
                   <Button
                     type="button"
@@ -357,11 +399,67 @@ export function MessagesScreen({
                   >
                     {showFiles ? "Hide files" : "Shared files"}
                   </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowAi((value) => !value)}
+                  >
+                    {showAi ? "Hide AI" : "AI assist"}
+                  </Button>
                 </div>
               </header>
+              <div className="border-b px-4 py-2">
+                <Label htmlFor="thread-search" className="sr-only">
+                  Search in conversation
+                </Label>
+                <Input
+                  id="thread-search"
+                  value={threadSearch}
+                  onChange={(e) => setThreadSearch(e.target.value)}
+                  placeholder="Search in this conversation"
+                  aria-label="Search in this conversation"
+                />
+                {threadSearch.trim().length >= 2 ? (
+                  <div className="mt-2 max-h-32 space-y-1 overflow-y-auto text-xs">
+                    {threadHits.isPending ? (
+                      <p className="text-muted-foreground">Searching…</p>
+                    ) : null}
+                    {threadHits.data?.length === 0 ? (
+                      <p className="text-muted-foreground">No matches</p>
+                    ) : null}
+                    {threadHits.data?.map((hit) => (
+                      <button
+                        key={hit.id}
+                        type="button"
+                        className="block w-full truncate rounded px-2 py-1 text-left hover:bg-muted/50"
+                        onClick={() => {
+                          const el = document.getElementById(`msg-${hit.id}`);
+                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }}
+                      >
+                        <span className="font-medium">#{hit.seq}</span> {hit.body}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               {showFiles && companyId ? (
                 <div className="border-b px-4 py-3">
                   <ConversationFiles companyId={companyId} conversationId={conversationId} />
+                </div>
+              ) : null}
+              {showAi ? (
+                <div className="border-b px-4 py-3">
+                  <MessagingAiAssistPanel
+                    companyId={companyId}
+                    conversationId={conversationId}
+                    authorisedExcerpts={(messages.data ?? [])
+                      .filter((m) => !m.is_redacted)
+                      .map((m) => m.body)
+                      .slice(-20)}
+                    aiEnabled={Boolean(settings.data?.allow_ai_assist)}
+                  />
                 </div>
               ) : null}
               <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
@@ -376,6 +474,7 @@ export function MessagesScreen({
                 {messages.data?.map((message) => (
                   <article
                     key={message.id}
+                    id={`msg-${message.id}`}
                     className="rounded-md border bg-background px-3 py-2"
                     aria-label={`Message from ${message.author_name ?? "member"}`}
                   >

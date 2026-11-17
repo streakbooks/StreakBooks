@@ -22,6 +22,7 @@ import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
+import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -180,6 +181,13 @@ function QuoteDetailPage() {
             <Button variant="outline" size="sm" asChild>
               <Link to="/sales/quotes">Back</Link>
             </Button>
+            <RecordDiscussButton
+              companyId={company?.id ?? null}
+              recordType="sales_quote"
+              recordId={quoteId}
+              title={q.quote_number ? `Quote ${q.quote_number}` : "Quote discussion"}
+              label="Discuss"
+            />
             <Button variant="outline" size="sm" onClick={() => window.print()}>
               <Printer className="mr-1 size-4" /> Print / PDF
             </Button>

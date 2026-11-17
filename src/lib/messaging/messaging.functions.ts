@@ -210,6 +210,18 @@ export const listMessagingConversations = createServerFn({ method: "GET" })
       return { ...c, unread: max > Number(mem.last_read_seq) };
     });
 
+    if (data.filter === "mentions") {
+      const { data: mentionIds, error: mentionError } = await supabase.rpc(
+        "messaging_list_mention_conversation_ids" as never,
+        { _company_id: data.companyId } as never,
+      );
+      if (mentionError) asError(mentionError);
+      const allowed = new Set(
+        ((mentionIds ?? []) as Array<{ conversation_id: string }>).map((r) => r.conversation_id),
+      );
+      rows = rows.filter((c) => allowed.has(c.id));
+    }
+
     switch (data.filter) {
       case "dm":
         rows = rows.filter((c) => c.conversation_type === "dm");
@@ -225,12 +237,27 @@ export const listMessagingConversations = createServerFn({ method: "GET" })
       case "unread":
         rows = rows.filter((c) => c.unread);
         break;
+      case "files":
+        {
+          const { data: fileRows } = await supabase
+            .from("messaging_attachments" as never)
+            .select("conversation_id" as never)
+            .eq("company_id" as never, data.companyId as never)
+            .in("conversation_id" as never, ids as never);
+          const withFiles = new Set(
+            ((fileRows ?? []) as Array<{ conversation_id: string }>).map((r) => r.conversation_id),
+          );
+          rows = rows.filter((c) => withFiles.has(c.id));
+        }
+        break;
       case "transactions":
         rows = rows.filter((c) =>
           ["record", "customer", "vendor", "accountant_client", "advisor_engagement"].includes(
             c.conversation_type,
           ),
         );
+        break;
+      case "mentions":
         break;
       default:
         break;
@@ -282,6 +309,42 @@ export const listMessagingMessages = createServerFn({ method: "GET" })
       ...m,
       body: m.is_redacted ? "[Message removed]" : m.body,
       author_name: m.author_user_id ? (names.get(m.author_user_id) ?? "Member") : "System",
+    }));
+  });
+
+/** In-conversation message search (authorised membership only). */
+export const searchMessagingMessages = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; conversationId: string; q: string; limit?: number }) => ({
+      companyId: assertUuid(input?.companyId),
+      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+      q: typeof input?.q === "string" ? input.q.trim().slice(0, 120) : "",
+      limit:
+        typeof input?.limit === "number" && input.limit > 0 && input.limit <= 100
+          ? Math.floor(input.limit)
+          : 40,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<MessagingMessage[]> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    if (!data.q) return [];
+    const { data: rows, error } = await supabase
+      .from("messaging_messages" as never)
+      .select(
+        "id,company_id,conversation_id,seq,author_user_id,author_kind,body,body_format,reply_to_message_id,idempotency_key,is_edited,is_redacted,is_pinned,created_at,edited_at" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .eq("conversation_id" as never, data.conversationId as never)
+      .eq("is_redacted" as never, false as never)
+      .ilike("body" as never, `%${data.q.replace(/[%_]/g, "")}%` as never)
+      .order("seq" as never, { ascending: false })
+      .limit(data.limit);
+    if (error) asError(error);
+    return ((rows ?? []) as MessagingMessage[]).map((m) => ({
+      ...m,
+      body: m.is_redacted ? "[Message removed]" : m.body,
     }));
   });
 
@@ -783,6 +846,103 @@ export const openAdvisorEngagementConversation = createServerFn({ method: "POST"
     } as never);
     if (error) asError(error);
     return { conversationId: String(id) };
+  });
+
+export const markMessagingUnread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; conversationId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { supabase } = context;
+    const { data: ok, error } = await supabase.rpc("messaging_mark_unread" as never, {
+      _company_id: data.companyId,
+      _conversation_id: data.conversationId,
+    } as never);
+    if (error) asError(error);
+    return { ok: Boolean(ok) };
+  });
+
+export const getMessagingNotificationPreferences = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: row, error } = await supabase
+      .from("messaging_notification_preferences" as never)
+      .select(
+        "company_id,user_id,email_enabled,push_enabled,mention_only,digest_frequency,quiet_hours_start,quiet_hours_end,updated_at" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .eq("user_id" as never, userId as never)
+      .maybeSingle();
+    if (error) asError(error);
+    return (
+      row ?? {
+        company_id: data.companyId,
+        user_id: userId,
+        email_enabled: true,
+        push_enabled: false,
+        mention_only: false,
+        digest_frequency: "off",
+        quiet_hours_start: null,
+        quiet_hours_end: null,
+        updated_at: null,
+      }
+    );
+  });
+
+export const saveMessagingNotificationPreferences = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      emailEnabled?: boolean;
+      pushEnabled?: boolean;
+      mentionOnly?: boolean;
+      digestFrequency?: "off" | "daily" | "weekly";
+      quietHoursStart?: string | null;
+      quietHoursEnd?: string | null;
+    }) => ({
+      companyId: assertUuid(input?.companyId),
+      emailEnabled: input?.emailEnabled !== false,
+      pushEnabled: Boolean(input?.pushEnabled),
+      mentionOnly: Boolean(input?.mentionOnly),
+      digestFrequency:
+        input?.digestFrequency === "daily" || input?.digestFrequency === "weekly"
+          ? input.digestFrequency
+          : "off",
+      quietHoursStart:
+        typeof input?.quietHoursStart === "string" && input.quietHoursStart
+          ? input.quietHoursStart.slice(0, 8)
+          : null,
+      quietHoursEnd:
+        typeof input?.quietHoursEnd === "string" && input.quietHoursEnd
+          ? input.quietHoursEnd.slice(0, 8)
+          : null,
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: row, error } = await supabase.rpc(
+      "messaging_upsert_notification_preferences" as never,
+      {
+        _company_id: data.companyId,
+        _email_enabled: data.emailEnabled,
+        _push_enabled: data.pushEnabled,
+        _mention_only: data.mentionOnly,
+        _digest_frequency: data.digestFrequency,
+        _quiet_hours_start: data.quietHoursStart,
+        _quiet_hours_end: data.quietHoursEnd,
+      } as never,
+    );
+    if (error) asError(error);
+    return row;
   });
 
 export const pinMessagingMessage = createServerFn({ method: "POST" })

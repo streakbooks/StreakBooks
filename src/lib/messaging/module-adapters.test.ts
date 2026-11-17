@@ -4,6 +4,9 @@ import { getMessagingRecordAdapter, MESSAGING_RECORD_ADAPTERS } from "./module-a
 describe("messaging module adapters", () => {
   it("registers core record types", () => {
     expect(getMessagingRecordAdapter("sales_invoice")?.allowExternal).toBe(true);
+    expect(getMessagingRecordAdapter("sales_quote")?.buildDeepLink("abc")).toBe(
+      "/sales/quotes/abc",
+    );
     expect(getMessagingRecordAdapter("expense_claim")?.allowExternal).toBe(false);
     expect(getMessagingRecordAdapter("hr_leave_request")?.defaultVisibility).toBe("hr_private");
     expect(getMessagingRecordAdapter("advisor_engagement")?.defaultVisibility).toBe("advisor");

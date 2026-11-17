@@ -12,6 +12,8 @@ import {
   listMessagingConversations,
   listMessagingMessages,
   markMessagingRead,
+  markMessagingUnread,
+  searchMessagingMessages,
   sendMessagingMessage,
   updateMessagingMembership,
 } from "@/lib/messaging/messaging.functions";
@@ -107,12 +109,71 @@ export function useMessagingMessages(companyId: string | null, conversationId: s
   return query;
 }
 
+/** Recover messages after a reconnect gap using afterSeq. */
+export function useMessagingMissedRecovery(
+  companyId: string | null,
+  conversationId: string | null,
+  connectionState: string,
+) {
+  const list = useServerFn(listMessagingMessages);
+  const client = useQueryClient();
+
+  useEffect(() => {
+    if (!companyId || !conversationId) return;
+    if (connectionState !== "connected" && connectionState !== "reconnecting") return;
+
+    const cached = client.getQueryData<Array<{ seq: number }>>([
+      "messaging-messages",
+      companyId,
+      conversationId,
+    ]);
+    const afterSeq = cached?.length ? Math.max(...cached.map((m) => Number(m.seq) || 0)) : 0;
+
+    void list({
+      data: { companyId, conversationId, afterSeq },
+    }).then((rows) => {
+      if (!rows?.length) {
+        void client.invalidateQueries({
+          queryKey: ["messaging-messages", companyId, conversationId],
+        });
+        return;
+      }
+      void client.invalidateQueries({
+        queryKey: ["messaging-messages", companyId, conversationId],
+      });
+      void client.invalidateQueries({ queryKey: ["messaging-conversations", companyId] });
+      void client.invalidateQueries({ queryKey: ["messaging-unread", companyId] });
+    });
+  }, [client, companyId, connectionState, conversationId, list]);
+}
+
+export function useMessagingThreadSearch(
+  companyId: string | null,
+  conversationId: string | null,
+  q: string,
+) {
+  const search = useServerFn(searchMessagingMessages);
+  return useQuery({
+    queryKey: ["messaging-thread-search", companyId, conversationId, q],
+    enabled: Boolean(companyId && conversationId && q.trim().length >= 2),
+    queryFn: () =>
+      search({
+        data: {
+          companyId: companyId!,
+          conversationId: conversationId!,
+          q: q.trim(),
+        },
+      }),
+  });
+}
+
 export function useMessagingActions(companyId: string | null) {
   const client = useQueryClient();
   const send = useServerFn(sendMessagingMessage);
   const createDm = useServerFn(createDirectConversation);
   const createGroup = useServerFn(createGroupConversation);
   const updateMembership = useServerFn(updateMessagingMembership);
+  const markUnread = useServerFn(markMessagingUnread);
   const listParticipants = useServerFn(listEligibleMessagingParticipants);
 
   const invalidate = () => {
@@ -178,11 +239,22 @@ export function useMessagingActions(companyId: string | null) {
     onError: (error) => notify.error(error, "Could not update conversation"),
   });
 
+  const markUnreadMutation = useMutation({
+    mutationFn: (conversationId: string) =>
+      markUnread({ data: { companyId: companyId!, conversationId } }),
+    onSuccess: () => {
+      invalidate();
+      notify.success("Marked unread");
+    },
+    onError: (error) => notify.error(error, "Could not mark unread"),
+  });
+
   return {
     sendMutation,
     dmMutation,
     groupMutation,
     membershipMutation,
+    markUnreadMutation,
     listParticipants: (search?: string) =>
       listParticipants({
         data: {

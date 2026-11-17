@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   editMessagingMessage,
+  pinMessagingMessage,
   reactMessagingMessage,
   redactMessagingMessage,
+  starMessagingMessage,
 } from "@/lib/messaging/messaging.functions";
 import { notify } from "@/lib/notify";
 import type { MessagingMessage } from "@/lib/messaging/types";
@@ -26,6 +28,8 @@ export function MessageActions({
   const edit = useServerFn(editMessagingMessage);
   const redact = useServerFn(redactMessagingMessage);
   const react = useServerFn(reactMessagingMessage);
+  const pin = useServerFn(pinMessagingMessage);
+  const star = useServerFn(starMessagingMessage);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.body);
 
@@ -62,6 +66,22 @@ export function MessageActions({
     onError: (error) => notify.error(error, "Could not react"),
   });
 
+  const pinMutation = useMutation({
+    mutationFn: () =>
+      pin({ data: { companyId, messageId: message.id, pinned: !message.is_pinned } }),
+    onSuccess: () => {
+      invalidate();
+      notify.success(message.is_pinned ? "Message unpinned" : "Message pinned");
+    },
+    onError: (error) => notify.error(error, "Could not update pin"),
+  });
+
+  const starMutation = useMutation({
+    mutationFn: () => star({ data: { companyId, messageId: message.id, starred: true } }),
+    onSuccess: () => notify.success("Message starred"),
+    onError: (error) => notify.error(error, "Could not star message"),
+  });
+
   if (message.is_redacted) return null;
 
   return (
@@ -81,6 +101,40 @@ export function MessageActions({
             {emoji}
           </Button>
         ))}
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-7"
+          onClick={() => {
+            void navigator.clipboard
+              .writeText(message.body)
+              .then(() => notify.success("Copied to clipboard"))
+              .catch(() => notify.error(new Error("Clipboard unavailable"), "Could not copy"));
+          }}
+        >
+          Copy
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-7"
+          disabled={pinMutation.isPending}
+          onClick={() => pinMutation.mutate()}
+        >
+          {message.is_pinned ? "Unpin" : "Pin"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-7"
+          disabled={starMutation.isPending}
+          onClick={() => starMutation.mutate()}
+        >
+          Star
+        </Button>
         {canEdit ? (
           <>
             <Button

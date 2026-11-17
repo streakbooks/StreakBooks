@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { MessagingSettingsPanel } from "@/components/messaging/MessagingSettingsPanel";
+import { MessagingNotificationPreferences } from "@/components/messaging/MessagingNotificationPreferences";
 import { useActiveCompany } from "@/hooks/use-active-company";
 
 export const Route = createFileRoute("/_authenticated/messages/settings")({
@@ -18,7 +19,10 @@ function MessagingSettingsRoute() {
         { label: "Settings" },
       ]}
     >
-      <MessagingSettingsPanel companyId={company?.id ?? null} />
+      <div className="space-y-6">
+        <MessagingSettingsPanel companyId={company?.id ?? null} />
+        <MessagingNotificationPreferences companyId={company?.id ?? null} />
+      </div>
     </ListWorkspace>
   );
 }

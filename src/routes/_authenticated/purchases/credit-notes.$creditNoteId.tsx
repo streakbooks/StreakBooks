@@ -40,6 +40,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ReasonDialog } from "@/components/sales/ReasonDialog";
 
 export const Route = createFileRoute("/_authenticated/purchases/credit-notes/$creditNoteId")({
   head: () => ({ meta: [{ title: "Supplier credit — LinkBooks" }] }),
@@ -71,6 +73,7 @@ function CreditNoteDetail() {
   const [editDate, setEditDate] = useState("");
   const [editMemo, setEditMemo] = useState("");
   const [editLines, setEditLines] = useState<EditLine[]>([]);
+  const [voidOpen, setVoidOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ["purchase-credit", companyId, creditNoteId],
@@ -211,8 +214,17 @@ function CreditNoteDetail() {
   });
 
   const voidM = useMutation({
-    mutationFn: () => doVoid({ data: { companyId: companyId!, creditNoteId } }),
+    mutationFn: (v: { reason: string; date: string }) =>
+      doVoid({
+        data: {
+          companyId: companyId!,
+          creditNoteId,
+          reason: v.reason,
+          voidDate: v.date,
+        },
+      }),
     onSuccess: async () => {
+      setVoidOpen(false);
       await refresh();
       toast.success("Credit note voided — the journal was reversed");
     },
@@ -364,15 +376,7 @@ function CreditNoteDetail() {
                 size="sm"
                 variant="destructive"
                 disabled={voidM.isPending}
-                onClick={() => {
-                  if (
-                    confirm(
-                      "Void this credit note? Its journal is reversed and any allocations are removed.",
-                    )
-                  ) {
-                    voidM.mutate();
-                  }
-                }}
+                onClick={() => setVoidOpen(true)}
               >
                 Void
               </Button>
@@ -383,6 +387,17 @@ function CreditNoteDetail() {
           </div>
         }
       >
+      {cn.status === "void" ? (
+        <Alert className="mb-4">
+          <AlertTitle>Voided</AlertTitle>
+          <AlertDescription>
+            Historical read-only
+            {cn.void_date ? ` from ${cn.void_date}` : ""}
+            {cn.void_reason ? `: ${cn.void_reason}` : ""}. Allocations were removed and the journal
+            was reversed when present.
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <div className="mb-4 flex flex-wrap gap-3 text-sm">
         <StatusBadge status={cn.status} />
         <span>#{cn.credit_number ?? "—"}</span>
@@ -657,6 +672,18 @@ function CreditNoteDetail() {
         entityType="purchase_credit_note"
         entityId={creditNoteId}
         audience="supplier"
+      />
+      <ReasonDialog
+        open={voidOpen}
+        onOpenChange={setVoidOpen}
+        title="Void this supplier credit?"
+        description="Its journal is reversed and any bill allocations are removed. A void date is required so historical Aged Payables can treat the credit correctly as at that date."
+        confirmLabel="Void credit note"
+        dateLabel="Void date"
+        minDate={cn.credit_date}
+        defaultDate={new Date().toISOString().slice(0, 10)}
+        pending={voidM.isPending}
+        onConfirm={(v) => voidM.mutate(v)}
       />
       </RecordWorkspace>
     </>

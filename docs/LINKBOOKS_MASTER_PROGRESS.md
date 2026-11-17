@@ -42,7 +42,8 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 | B2 — PO goods receipt foundation | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/230 — migration pending authorized apply |
 | B3 — PO three-way match (order×receipt×bill) | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/231 — stacked on #230 |
 | B4 — Partial bill-from-received | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/232 — stacked on #231; migrations not applied live |
-| B5 — Purchase bill void_date | **In progress** | Branch `feature/bill-void-date-20261117` from main; records void date/reason for AP as-at honesty |
+| B5 — Purchase bill void_date | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/233 — from main; migration not applied live |
+| B6 — Supplier credit void_date | **In progress** | Branch `feature/supplier-credit-void-date-20261117` from main; parity with B5 / sales credits |
 
 ### B1 typecheck remediation (2026-11-17)
 
@@ -70,6 +71,6 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 
 ## Next executable step
 
-1. Open/review B5 bill void_date PR (independent of PO stack).
-2. Keep #229–#232 unmerged until reviews; no live migrations without authorization; CI restore remains #227.
-3. Next P0/P1 after B5: supplier statement depth / AP credit void_date parity / banking recon acceptance — avoid #225; still no inventory COGS without layers.
+1. Review #233 and #234 (bill + supplier credit void_date); keep #229–#232 unmerged until reviews; no live migrations without authorization; CI restore remains #227.
+2. Next P0/P1: supplier statement opening-balance / AP statement depth.
+3. Inventory/COGS remains deferred until stock cost layers exist. Avoid Coding Memory (#225).

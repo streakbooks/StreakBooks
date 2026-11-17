@@ -1,5 +1,5 @@
 /**
- * Fail-closed header ↔ line totals before AP authorise (parity with sales invoices/credits).
+ * Fail-closed header ↔ line totals before document authorise (AR and AP).
  * Prevents posting a journal from lines while the stored header (statements / as-at) disagrees.
  */
 

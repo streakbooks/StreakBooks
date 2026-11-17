@@ -27,6 +27,7 @@ import {
 } from "@/lib/sales/list-filters";
 import { fetchAllPages } from "@/lib/sales/fetch-all";
 import { minorToDecimalString, toCsv } from "@/lib/sales/csv";
+import { assertHeaderMatchesLines } from "@/lib/purchases/authorise-totals";
 
 const CN_SORTS = ["credit_date", "credit_number", "total_minor", "status"] as const;
 const CN_STATUSES = ["draft", "authorised", "partly_paid", "paid", "void"] as const;
@@ -439,14 +440,13 @@ export const authoriseCreditNote = createServerFn({ method: "POST" })
     };
     if (c.status !== "draft") throw new Error("Only draft credit notes can be authorised");
     if (c.posted_journal_id) throw new Error("Credit note already posted");
-    if (!c.sales_credit_note_lines.length) throw new Error("Credit note has no lines");
-    const net = c.sales_credit_note_lines.reduce((s, l) => s + Number(l.net_minor), 0);
-    const tax = c.sales_credit_note_lines.reduce((s, l) => s + Number(l.tax_minor), 0);
-    if (net !== Number(c.subtotal_minor) || tax !== Number(c.tax_minor)) {
-      throw new Error("Credit note totals do not match its lines — re-save the draft first");
-    }
-    if (!(Number(c.total_minor) > 0))
-      throw new Error("Credit note total must be greater than zero");
+    assertHeaderMatchesLines({
+      documentLabel: "Credit note",
+      subtotalMinor: Number(c.subtotal_minor) || 0,
+      taxMinor: Number(c.tax_minor) || 0,
+      totalMinor: Number(c.total_minor) || 0,
+      lines: c.sales_credit_note_lines,
+    });
 
     let number = c.credit_number;
     if (!number) {

@@ -89,3 +89,26 @@ set role authenticated;
 select public.test_link('base');
 reset role;
 select public.test_assert((select count(*)=1 from public.bank_coding_events where journal_id=md5('base-journal')::uuid),'relink retry deduplicated');
+-- Live account eligibility and direction/bank partitions are rechecked at read time.
+update public.bank_transactions set amount_minor=10000 where id=md5('next-txn')::uuid;
+select public.test_assert(public.get_bank_coding_memory(md5('company-a')::uuid,md5('next-txn')::uuid)='[]'::jsonb,'opposite direction never borrows evidence');
+update public.bank_transactions set amount_minor=-10000 where id=md5('next-txn')::uuid;
+update public.accounts set is_active=false where id=md5('expense')::uuid;
+select public.test_assert(public.get_bank_coding_memory(md5('company-a')::uuid,md5('next-txn')::uuid)='[]'::jsonb,'inactive account excluded');
+update public.accounts set is_active=true,is_control=true where id=md5('expense')::uuid;
+select public.test_assert(public.get_bank_coding_memory(md5('company-a')::uuid,md5('next-txn')::uuid)='[]'::jsonb,'control account excluded');
+update public.accounts set is_control=false,is_postable=false where id=md5('expense')::uuid;
+select public.test_assert(public.get_bank_coding_memory(md5('company-a')::uuid,md5('next-txn')::uuid)='[]'::jsonb,'non-postable account excluded');
+update public.accounts set is_postable=true,archived_at=now() where id=md5('expense')::uuid;
+select public.test_assert(public.get_bank_coding_memory(md5('company-a')::uuid,md5('next-txn')::uuid)='[]'::jsonb,'archived account excluded');
+update public.accounts set archived_at=null where id=md5('expense')::uuid;
+update public.bank_accounts set is_active=false where id=md5('bank')::uuid;
+select public.test_assert(public.get_bank_coding_memory(md5('company-a')::uuid,md5('next-txn')::uuid)='[]'::jsonb,'archived bank excluded');
+update public.bank_accounts set is_active=true where id=md5('bank')::uuid;
+-- A mandatory audit failure cannot leave learning or the new link behind.
+select public.test_seed('audit-fail');
+set test.fail_audit='on';
+select public.test_denied($q$select public.test_link('audit-fail')$q$,'audit failure blocks learning atomically');
+set test.fail_audit='off';
+select public.test_assert((select count(*)=0 from public.bank_coding_events where journal_id=md5('audit-fail-journal')::uuid),'failed audit leaves no event');
+select public.test_assert((select count(*)=0 from public.reconciliation_links where bank_transaction_id=md5('audit-fail-txn')::uuid),'failed audit leaves no link');

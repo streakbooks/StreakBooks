@@ -3,62 +3,56 @@
 | Field | Value |
 |-------|-------|
 | **Updated** | 2026-11-17 |
-| **Baseline commit** | `b090bfc8` (GitHub `main` after sales copy credit + #246/#249/#250) |
+| **Baseline commit** | `2ba48da1` (GitHub `main` after Coding Memory #225) |
 | **Programme** | Complete module coverage & zero-gap execution (originality-first) |
 | **Authoritative repo** | https://github.com/linkbusinessadvisory/LinkBooks |
 
-## Originality-first & IP protection
+## Honest completion status (addendum)
 
-Independent LinkBooks product. Competitors are functional references only. See [IP_AND_DEPENDENCY_COMPLIANCE.md](./IP_AND_DEPENDENCY_COMPLIANCE.md).
-
-## Measured overall status
-
-| Metric | Value | Evidence |
-|--------|-------|----------|
-| Complete and Verified (staging + production gates) | **0** | No module has authenticated staging + production verification in this tracker |
-| Merged to main (code present) | Many core bookkeeping paths | See tables below |
-| Deployed / live migrations applied | **Not verified / not authorized** | SQL on disk ≠ applied |
-| GitHub Actions job execution | **Blocked (infra)** | Jobs fail in ~1–2s with 0 steps on private repo |
+| Gate | Measured result |
+|------|-----------------|
+| Complete and Verified modules (staging + production) | **0** |
+| Full 43-module deep audit + competitor matrix | **Not complete** |
+| Gap register exhaustive per §4 fields | **Partial** |
+| Production-ready product claim | **Not allowed yet** |
 
 ## Status lanes (do not conflate)
 
 | Lane | Meaning |
 |------|---------|
-| Completed (local/PR) | Implemented and locally tested; may still be draft |
-| Merged | On GitHub `main` SHA |
-| Tested | Named suite + counts/revision recorded |
-| Deployed | Hosted app URL verified |
-| Production-ready | Auth staging + production gates passed — **none yet** |
+| Merged | On GitHub `main` |
+| Tested | Named local/isolated suite recorded |
+| Deployed | Hosted URL verified |
+| Production-ready | Auth staging + production gates — **none** |
 
-## Merged this programme wave (code on main — not production-certified)
+## Merged this wave (code on main — not production-certified)
 
-| PR / commit | Topic | Main tip after |
-|-------------|-------|----------------|
-| #229–#236 | AP as-at, PO receive/match/partial bill, voids, statements | through `a053e7f4` |
-| #239–#245 | Hotfixes, tracker, credit-limits, copy-bill, CI restore | through `150b78b3` |
-| #246 | Release regression fixtures / payroll registration | `b9f4e863` |
-| #247 | Copy supplier credit note | `af14b142` |
-| #248 | First-session recon opening from Account Details | `fa57d602` |
-| #249 | Ledger-only truncate fail-closed | `afc4cfa1` |
-| #250 | Transfer auto-match statement line | `65f719e8` |
-| `b090bfc8` | Sales copy credit note | `b090bfc8` |
+| Item | Topic | Tip |
+|------|-------|-----|
+| #246–#255, `b090bfc8` | Regression, banking honesty, copy credits, AP totals | through `40480743` |
+| [#225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225) | Coding Memory events/suggestions | `2ba48da1` |
+| Copy quote | In flight / next PR | — |
 
-## Open / in progress
+## Critical blockers (production-ready cannot clear these alone)
 
-| Item | Status | Notes |
-|------|--------|-------|
-| [#225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225) Coding Memory | **Draft** | Keep until isolated migration test |
-| [#227](https://github.com/linkbusinessadvisory/LinkBooks/pull/227) Large release gates | Draft | Prefer #237 for CI |
-| [#238](https://github.com/linkbusinessadvisory/LinkBooks/pull/238) POS draft | Draft | Do not overwrite |
-| [#251](https://github.com/linkbusinessadvisory/LinkBooks/pull/251) FI readiness | Draft / conflicting | Do not overwrite |
-| [#252](https://github.com/linkbusinessadvisory/LinkBooks/pull/252) Lint mega-repair | Open (~28k lines) | Coordinate separately |
-| [#253](https://github.com/linkbusinessadvisory/LinkBooks/pull/253) Shared lookups | Draft | Do not overwrite |
-| Actions hosted runners / minutes | **Blocked** | Org admin needed |
+| Blocker | Evidence | Owner |
+|---------|----------|-------|
+| GitHub Actions jobs `steps=[]` | Runs fail ~1–2s; runners `total_count=0`; org billing API 404/403 | Org admin |
+| Coding Memory / purchase SQL on disk ≠ applied | Migration `20261117104621_bank_coding_memory_events.sql` committed; **live apply not done** | Explicit migrate auth |
+| Authenticated staging / production lifecycle | Not executed in this tracker | Ops + auth |
+| Full module audit / competitor gap depth | Still Partial for most of M-01…M-42 | Continued programme |
+
+## Open PRs (coordinate — do not blindly overwrite)
+
+| PR | Notes |
+|----|-------|
+| #252 | Lint mega (~597 files) — merge carefully / after rebase |
+| #253 | Lookups draft |
+| #251 / #238 / #227 | Drafts |
 
 ## Next executable steps
 
-1. Keep #225 draft until Coding Memory migration isolated-tested.
-2. Org admin: restore Actions minutes so quality gates execute.
-3. Coordinate #252 lint repair (large surface) without overwriting financial work.
-4. Authenticated staging for credit-limit + copy + recon + transfer auto-match.
-5. Next P0/P1 gaps without duplicating open drafts.
+1. Ship copy-quote PR; continue P0 honesty gaps.
+2. Org admin: restore Actions minutes.
+3. Isolated DB: apply Coding Memory migration; run fixture suite — then staging with auth.
+4. Do **not** mark modules Complete and Verified without staging/production evidence.

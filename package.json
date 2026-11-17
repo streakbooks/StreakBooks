@@ -50,7 +50,9 @@
     "test:billing:e2e": "playwright test --config playwright.billing.config.ts",
     "test:banking:postgres": "node scripts/test-coding-memory-postgres.mjs",
     "test:banking:ui": "playwright test --config playwright.coding-memory.config.ts",
-    "check:migrations": "node scripts/check-migration-identities.mjs && node --test scripts/check-migration-identities.test.mjs"
+    "check:migrations": "node scripts/check-migration-identities.mjs && node --test scripts/check-migration-identities.test.mjs",
+    "test:banking:local-api": "python3 scripts/test-banking-local-api.py",
+    "test:banking:local-ui": "playwright test --config playwright.banking-local-api.config.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"

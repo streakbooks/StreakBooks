@@ -6,7 +6,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useFormat } from "@/hooks/use-format";
 import { csvMoney } from "@/lib/reports/csv";
 import {
-  getAgedPayables,
   getAgedReceivables,
   getAuditFilterOptions,
   getAuditReport,
@@ -15,6 +14,7 @@ import {
   getTaxReport,
 } from "@/lib/reports/report.functions";
 import { getAgedReceivablesAsAt } from "@/lib/sales/ar-reports.functions";
+import { getAgedPayablesAsAt } from "@/lib/purchases/ap-reports.functions";
 import { getCashGeneralLedgerAll } from "@/lib/reports/cash-general-ledger.functions";
 import { SOURCE_LABELS, sourceLabel } from "@/lib/reports/links";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -559,7 +559,7 @@ type AgedData = Pick<
 export function AgedView({ ctx, kind }: { ctx: ReportCtx; kind: "ar" | "ap" }) {
   const fmt = useFormat();
   const fetchAr = useServerFn(getAgedReceivablesAsAt);
-  const fetchAp = useServerFn(getAgedPayables);
+  const fetchAp = useServerFn(getAgedPayablesAsAt);
   const q = useQuery({
     queryKey: ["report-aged", kind, ctx.companyId, ctx.to],
     queryFn: async (): Promise<AgedData> => {
@@ -593,7 +593,31 @@ export function AgedView({ ctx, kind }: { ctx: ReportCtx; kind: "ar" | "ap" }) {
         };
       }
       const r = await fetchAp({ data: { companyId: ctx.companyId, asOf: ctx.to } });
-      return { ...r, controlMinor: r.apControlBalanceMinor };
+      const baseTotals = r.totalsByCurrency.find((t) => t.currency_code === r.baseCurrency);
+      const total = baseTotals?.total ?? 0;
+      const foreign = r.totalsByCurrency.filter((t) => t.currency_code !== r.baseCurrency);
+      const variance = typeof r.varianceMinor === "number" ? r.varianceMinor : total - r.apControlBalanceMinor;
+      return {
+        rows: r.rows
+          .filter((row) => row.currency_code === r.baseCurrency)
+          .map((row) => ({ ...row, docs: [] })),
+        total,
+        byBucket: baseTotals?.byBucket ?? {
+          current: 0,
+          "1_30": 0,
+          "31_60": 0,
+          "61_90": 0,
+          "90_plus": 0,
+        },
+        varianceMinor: variance,
+        tiesToControl: variance === 0 && foreign.length === 0,
+        excludedUnpostedCount: 0,
+        controlMinor: r.apControlBalanceMinor,
+        diagnostic:
+          foreign.length > 0
+            ? `Foreign-currency balances (${foreign.map((t) => t.currency_code).join(", ")}) are not included in the ${r.baseCurrency} table above; the control account is in base currency.`
+            : r.diagnostic,
+      };
     },
   });
   const d = q.data;
@@ -606,7 +630,7 @@ export function AgedView({ ctx, kind }: { ctx: ReportCtx; kind: "ar" | "ap" }) {
       mode="asof"
       basis={
         kind === "ap"
-          ? "Current outstanding snapshot · historical payment allocation history is unavailable"
+          ? "Dated payables and allocations · currencies kept separate"
           : "Dated receivables and allocations · currencies kept separate"
       }
       getCsv={() =>
@@ -614,7 +638,7 @@ export function AgedView({ ctx, kind }: { ctx: ReportCtx; kind: "ar" | "ap" }) {
           ? {
               basis:
                 kind === "ap"
-                  ? "Current outstanding snapshot; historical dated allocations are unavailable"
+                  ? "Dated payables; base-currency table only"
                   : "Dated receivables; base-currency table only",
               headers: ["Contact", "Current", "1-30", "31-60", "61-90", "90+", "Total"],
               rows: [

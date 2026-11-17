@@ -24,6 +24,7 @@ import {
   Code2,
   ContactRound,
   IdCard,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react";
 
@@ -113,6 +114,13 @@ export const navItems: NavItem[] = [
     icon: BookOpen,
     group: "accounting",
     description: "Chart of accounts, journals, ledger",
+  },
+  {
+    label: "Messages",
+    to: "/messages",
+    icon: MessageSquare,
+    group: "tools",
+    description: "Direct messages, groups and transaction discussions",
   },
   {
     label: "Action Center",

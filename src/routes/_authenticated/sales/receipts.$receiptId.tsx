@@ -16,6 +16,7 @@ import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
+import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -158,6 +159,15 @@ function ReceiptDetail() {
         }
         actions={
           <div className="flex flex-wrap gap-2">
+            {companyId ? (
+              <RecordDiscussButton
+                companyId={companyId}
+                recordType="sales_receipt"
+                recordId={receiptId}
+                title={`Receipt ${receipt.reference ?? receiptId.slice(0, 8)}`}
+                label="Discuss"
+              />
+            ) : null}
             <Button size="sm" variant="outline" asChild>
               <Link to="/sales/receipts">Back</Link>
             </Button>

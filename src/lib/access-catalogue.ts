@@ -481,6 +481,78 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     ],
   },
   {
+    id: "messaging",
+    label: "Messaging & collaboration",
+    description: "Internal chat, groups, record discussions and external portal messaging.",
+    items: [
+      {
+        permission: "messaging.view",
+        label: "View messages",
+        detail: "Open the Messages workspace and read authorised conversations.",
+      },
+      {
+        permission: "messaging.send",
+        label: "Send messages",
+        detail: "Post to conversations you belong to.",
+      },
+      {
+        permission: "messaging.create",
+        label: "Start conversations",
+        detail: "Create direct messages with eligible participants.",
+      },
+      {
+        permission: "messaging.create_group",
+        label: "Create groups",
+        detail: "Create organisation or departmental group conversations.",
+      },
+      {
+        permission: "messaging.manage_group",
+        label: "Manage groups",
+        detail: "Rename groups, transfer ownership and manage members.",
+      },
+      {
+        permission: "messaging.invite_internal",
+        label: "Invite internal people",
+        detail: "Add organisation members to conversations within your scope.",
+      },
+      {
+        permission: "messaging.invite_external",
+        label: "Invite external participants",
+        detail: "Invite portal customers, vendors or advisors when enabled.",
+      },
+      {
+        permission: "messaging.share_files",
+        label: "Share files in chat",
+        detail: "Upload and open authorised messaging attachments.",
+      },
+      {
+        permission: "messaging.link_records",
+        label: "Link transactions",
+        detail: "Open or create discussions linked to business records.",
+      },
+      {
+        permission: "messaging.manage_external",
+        label: "Manage external messaging",
+        detail: "Configure customer and vendor conversation visibility.",
+      },
+      {
+        permission: "messaging.manage_settings",
+        label: "Messaging settings",
+        detail: "Enable messaging features and organisation defaults.",
+      },
+      {
+        permission: "messaging.view_audit",
+        label: "View messaging audit",
+        detail: "Inspect messaging audit and moderation events.",
+      },
+      {
+        permission: "messaging.manage_retention",
+        label: "Manage retention",
+        detail: "Configure retention and legal hold policies.",
+      },
+    ],
+  },
+  {
     id: "payroll",
     label: "Payroll",
     description: "Employees, pay runs, settlements and payroll reports.",

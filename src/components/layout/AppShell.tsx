@@ -30,9 +30,11 @@ import { initialsFrom } from "@/lib/auth-helpers";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { CompanySwitcher } from "@/components/layout/CompanySwitcher";
+import { CalculatorPopover } from "@/components/layout/CalculatorPopover";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { MessagesBell } from "@/components/messaging/MessagesBell";
 import { CreateNewMenu } from "@/components/create-new/CreateNewMenu";
 import { AppLauncher } from "@/components/app-store/AppLauncher";
 import { VoiceAssistant } from "@/components/ai-voice/VoiceAssistant";
@@ -596,7 +598,9 @@ function AppShellLayout({ children }: { children: ReactNode }) {
           </div>
 
           <VoiceAssistant />
+          <CalculatorPopover />
           <AppLauncher />
+          <MessagesBell companyId={company?.id ?? null} />
           <NotificationBell companyId={company?.id ?? null} userId={user.id} />
           <CreateNewMenu />
           <ThemeToggle />

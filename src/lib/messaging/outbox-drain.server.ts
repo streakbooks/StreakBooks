@@ -36,7 +36,11 @@ export async function runMessagingOutboxDrain(input?: {
     .limit(limit);
   if (error) throw new Error(error.message);
 
-  const events = (rows ?? []) as Array<{ id: string; created_at: string; processed_at: string | null }>;
+  const events = (rows ?? []) as Array<{
+    id: string;
+    created_at: string;
+    processed_at: string | null;
+  }>;
   summary.inspected = events.length;
   if (!events.length) return summary;
 

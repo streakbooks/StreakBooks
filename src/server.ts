@@ -111,9 +111,8 @@ export default {
         const { authenticateCronRequest } = await import("./integrations/supabase/cron-auth");
         const authFailure = await authenticateCronRequest(request);
         if (authFailure) return authFailure;
-        const { runMessagingRetentionPurge } = await import(
-          "./lib/messaging/retention-purge.server"
-        );
+        const { runMessagingRetentionPurge } =
+          await import("./lib/messaging/retention-purge.server");
         try {
           const url = new URL(request.url);
           const execute = url.searchParams.get("execute") === "1";

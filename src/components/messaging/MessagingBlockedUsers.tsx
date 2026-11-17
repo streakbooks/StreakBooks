@@ -31,9 +31,7 @@ export function MessagingBlockedUsers({ companyId }: { companyId: string | null 
   if (!companyId) return null;
   if (query.isPending) return <LoadingState rows={2} />;
   if (query.isError) {
-    return (
-      <ErrorState title="Could not load blocked users" onRetry={() => void query.refetch()} />
-    );
+    return <ErrorState title="Could not load blocked users" onRetry={() => void query.refetch()} />;
   }
 
   return (

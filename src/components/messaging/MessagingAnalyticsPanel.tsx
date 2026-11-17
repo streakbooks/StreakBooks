@@ -23,10 +23,7 @@ export function MessagingAnalyticsPanel({ companyId }: { companyId: string | nul
   if (query.isPending) return <LoadingState rows={3} />;
   if (query.isError) {
     return (
-      <ErrorState
-        title="Could not load messaging analytics"
-        onRetry={() => void query.refetch()}
-      />
+      <ErrorState title="Could not load messaging analytics" onRetry={() => void query.refetch()} />
     );
   }
 
@@ -37,8 +34,8 @@ export function MessagingAnalyticsPanel({ companyId }: { companyId: string | nul
         <p className="text-sm text-muted-foreground">{query.data.note}</p>
       </div>
       <p className="text-sm">
-        Last {query.data.days} days: <strong>{query.data.totalMessages}</strong> messages
-        (excluding HR/private).
+        Last {query.data.days} days: <strong>{query.data.totalMessages}</strong> messages (excluding
+        HR/private).
       </p>
       <ul className="max-h-48 space-y-1 overflow-y-auto text-sm">
         {query.data.volume.map((point) => (

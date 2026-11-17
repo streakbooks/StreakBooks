@@ -18,10 +18,7 @@ export function canSendMessagingNow(
   state: MessagingSendPaceState,
   now = Date.now(),
 ): { ok: true } | { ok: false; reason: string; retryAfterMs: number } {
-  if (
-    state.lastSentAt != null &&
-    now - state.lastSentAt < MESSAGING_SEND_RATE.minIntervalMs
-  ) {
+  if (state.lastSentAt != null && now - state.lastSentAt < MESSAGING_SEND_RATE.minIntervalMs) {
     return {
       ok: false,
       reason: "Please wait a moment before sending again.",

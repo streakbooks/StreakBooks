@@ -3,11 +3,7 @@
  * Fail-closed: never assumes grant; never sends payloads from this helper.
  */
 
-export type MessagingPushPermissionState =
-  | "unsupported"
-  | "default"
-  | "granted"
-  | "denied";
+export type MessagingPushPermissionState = "unsupported" | "default" | "granted" | "denied";
 
 export function getMessagingPushPermissionState(): MessagingPushPermissionState {
   if (typeof window === "undefined" || typeof Notification === "undefined") {

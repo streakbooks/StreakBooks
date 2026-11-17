@@ -445,7 +445,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     screenRoot: "src/screens/messages",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
     premiumStatus: "in-progress",
-    notes: "Unified messaging platform; feature-flagged via messaging_collaboration / messaging_settings.",
+    notes:
+      "Unified messaging platform; feature-flagged via messaging_collaboration / messaging_settings.",
   },
   {
     id: "ai-assistant",

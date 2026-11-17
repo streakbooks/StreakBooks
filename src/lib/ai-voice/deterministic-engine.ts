@@ -74,6 +74,7 @@ const modulePermission: Record<string, Permission> = {
   "/crm": "crm.view",
   "/hr": "hr.view",
   "/payroll": "payroll.view",
+  "/messages": "messaging.view",
 };
 const MODULE_NAV = navItems.map((item) => ({
   destination: item.to,

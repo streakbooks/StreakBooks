@@ -34,7 +34,7 @@ export async function runMessagingRetentionPurge(input?: {
   limitPerCompany?: number;
 }): Promise<RetentionPurgeSummary> {
   const mode = resolveMessagingRetentionPurgeMode({
-    execute: input?.execute,
+    ...(input?.execute === undefined ? {} : { execute: input.execute }),
   });
   const now = input?.now ?? new Date();
   const limitPerCompany = input?.limitPerCompany ?? 200;

@@ -158,7 +158,7 @@ describe("POS catalogue lookup", () => {
     expect(from).not.toHaveBeenCalled();
   });
   it("propagates lookup errors", async () => {
-    errors.products = { message: "Lookup failed" };
+    errors["products"] = { message: "Lookup failed" };
     await expect(search()).rejects.toThrow("Lookup failed");
   });
 });

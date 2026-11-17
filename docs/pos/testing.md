@@ -23,5 +23,5 @@ Local evidence for batch 1:
 - Production Vite/Nitro build passed with `NODE_OPTIONS=--max-old-space-size=6144`; existing deprecation/chunk warnings remain. This creates local artifacts only.
 - Module and navigation contracts passed. Shared `check:ui` fails because it references absent `src/screens/messages.tsx` on audited main; no checker was disabled or changed.
 - ESLint for new POS implementation and browser fixtures passed. Including shared `modules/registry.ts` also reports two pre-existing formatting findings outside the inserted POS entry; no unrelated reformat was made.
-- Default-memory TypeScript process exhausted the Node heap; larger-memory rerun pending final evidence.
+- Default-memory TypeScript process exhausted the Node heap; final larger-memory incremental rerun passed after correcting strict test-fixture access and generating the route tree.
 - Final isolated Playwright run: 6 passed, 0 failed, covering desktop/tablet/mobile, company-switch cart purge, permission denial, and quote failure/retry recovery. Earlier retry-selector failure was fixed to use the shared component's actual “Try again” label and verified recovery.

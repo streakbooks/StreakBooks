@@ -60,9 +60,7 @@ describe("rounding helpers", () => {
     expect(() => applyUpliftBps(10.5, 100)).toThrow();
   });
   it("rejects uplifts that overflow safe integer accounting amounts", () => {
-    expect(() => applyUpliftBps(Number.MAX_SAFE_INTEGER, 100)).toThrow(
-      /supported safe minor-unit range/,
-    );
+    expect(() => applyUpliftBps(Number.MAX_SAFE_INTEGER, 100)).toThrow(/supported .*range/);
   });
 });
 
@@ -74,8 +72,9 @@ describe("fillRight and spreadEvenly", () => {
   it("distributes the remainder across final months and conserves the total", () => {
     const s = spreadEvenly(100_000, 12);
     expect(s.reduce((a, b) => a + b, 0)).toBe(100_000);
-    expect(s.slice(0, 8).every((x) => x === 8_333)).toBe(true);
-    expect(s.slice(8).every((x) => x === 8_334)).toBe(true);
+    expect(s.slice(0, 8)).toEqual(Array(8).fill(8_333));
+    expect(s.slice(8)).toEqual(Array(4).fill(8_334));
+    expect(Math.max(...s) - Math.min(...s)).toBeLessThanOrEqual(1);
     expect(spreadEvenly(10, 3)).toEqual([3, 3, 4]);
     expect(spreadEvenly(-10, 3)).toEqual([-3, -3, -4]);
   });

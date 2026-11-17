@@ -379,10 +379,9 @@ describe("Fixed Assets posting evidence endpoints: read-only and company-scoped"
   it("rejects missing and foreign GL accounts before source parity review", async () => {
     tables["accounts"] = initial.accounts.filter((x) => x.id !== "acc");
     await expect(callRun()).rejects.toThrow(/foreign GL accounts/);
-    tables["accounts"] = [
-      { ...initial.accounts[0]!, company_id: "other" },
-      ...initial.accounts.slice(1),
-    ];
+    tables["accounts"] = initial.accounts.map((account) =>
+      account.id === "acc" ? { ...account, company_id: "other" } : account,
+    );
     await expect(callRun()).rejects.toThrow(/foreign GL accounts/);
   });
   it("returns exceptions for incorrect source journal metadata rather than a match", async () => {

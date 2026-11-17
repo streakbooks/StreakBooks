@@ -110,6 +110,9 @@ export function Transfers({
           currencyCode: currency,
           toAmountMinor: currencyMismatch && receivedMinor !== null ? Number(receivedMinor) : null,
           memo,
+          ...(typeof search.bankTransactionId === "string"
+            ? { matchBankTransactionId: search.bankTransactionId }
+            : {}),
         },
       }),
     onSuccess: async (result) => {
@@ -121,12 +124,22 @@ export function Transfers({
         );
       }
       setRecordId(result.id);
+      if (result.matched) {
+        toast.success("Transfer posted and statement line matched.");
+      } else if (result.matchError) {
+        toast.error(
+          `Transfer posted, but the statement line was not matched: ${result.matchError}`,
+        );
+      } else {
       toast.success("Transfer posted. One journal only.");
+      }
       setAmount("");
       setReceived("");
       setMemo("");
       await qc.invalidateQueries({ queryKey: ["bank-transfers", companyId] });
       await qc.invalidateQueries({ queryKey: ["bank-account-summaries", companyId] });
+      await qc.invalidateQueries({ queryKey: ["bank-transactions", companyId] });
+      await qc.invalidateQueries({ queryKey: ["bank-match-candidates", companyId] });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -150,7 +163,11 @@ export function Transfers({
   return (
     <ListWorkspace
       title="Transfers"
-      description="Moves money between your bank/cash accounts with a single DR/CR journal, so nothing is counted twice. Match the statement lines on both accounts to it afterwards."
+      description={
+        typeof search.bankTransactionId === "string"
+          ? "Moves money between your bank/cash accounts with a single DR/CR journal. The source statement line will be matched automatically after posting."
+          : "Moves money between your bank/cash accounts with a single DR/CR journal, so nothing is counted twice. Match the statement lines on both accounts to it afterwards."
+      }
     >
       <div className="grid max-w-md gap-3">
         <div className="space-y-1">

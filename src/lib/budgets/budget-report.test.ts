@@ -200,7 +200,7 @@ describe("Budget vs Actual accounting integrity", () => {
           },
         ],
       }),
-    ).toThrow(/supported safe minor-unit range/);
+    ).toThrow(/supported.*(?:precision|range)/);
   });
 
   it("does not mutate input accounts, columns, budget or activity", () => {

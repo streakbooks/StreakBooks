@@ -13,6 +13,8 @@ export const Route = createFileRoute("/_authenticated/banking/transfers")({
       out.bankAccountId = s["bankAccountId"];
     if (typeof s["amount"] === "string" && s["amount"]) out.amount = s["amount"];
     if (s["direction"] === "in" || s["direction"] === "out") out.direction = s["direction"];
+    if (typeof s["bankTransactionId"] === "string" && s["bankTransactionId"])
+      out.bankTransactionId = s["bankTransactionId"];
     return out;
   },
   head: () => ({ meta: [{ title: "Transfers — LinkBooks" }] }),
@@ -31,6 +33,9 @@ function TransfersRoute() {
         ...(typeof search.amount === "string" ? { amount: search.amount } : {}),
         ...(search.direction === "in" || search.direction === "out"
           ? { direction: search.direction }
+          : {}),
+        ...(typeof search.bankTransactionId === "string"
+          ? { bankTransactionId: search.bankTransactionId }
           : {}),
       }}
     />

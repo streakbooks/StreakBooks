@@ -259,6 +259,7 @@ export function BankMatchPanel({
               bankAccountId: txn.bankAccountId,
               amount: fromMinorUnits(Math.abs(txn.amountMinor), currency),
               direction: txn.amountMinor > 0 ? "in" : "out",
+              bankTransactionId: txn.id,
             } as never
           }
           className="underline underline-offset-4"

@@ -3,7 +3,7 @@
 | Field                  | Value                                                             |
 | ---------------------- | ----------------------------------------------------------------- |
 | **Updated**            | 2026-11-17                                                        |
-| **Baseline commit**    | `af14b142` (GitHub `main` after #247 copy supplier credit)        |
+| **Baseline commit** | `fa57d602` (GitHub `main` after #248 first-session recon opening) |
 | **Programme**          | Complete module coverage & zero-gap execution (originality-first) |
 | **Authoritative repo** | https://github.com/linkbusinessadvisory/LinkBooks                 |
 
@@ -51,7 +51,8 @@ Independent LinkBooks product. Competitors are functional references only. See [
 | [#227](https://github.com/linkbusinessadvisory/LinkBooks/pull/227) Large release gates | Draft / conflict risk           | Prefer #237 for CI; rebase/close remainder later                |
 | [#238](https://github.com/linkbusinessadvisory/LinkBooks/pull/238) POS draft           | Unrelated draft                 | Do not overwrite                                                |
 | Copy supplier credit note                                                              | **Merged** (#247)               | On `af14b142` — not production-certified                        |
-| First-session recon opening from Account Details                                       | **In PR**                       | No migration; session continuity still wins                     |
+| First-session recon opening from Account Details | **Merged** (#248) | On `fa57d602` — not production-certified |
+| Ledger-only truncate fail-closed | **In PR** | UI + server block when outstanding GL list exceeds review cap |
 | Actions hosted runners / minutes                                                       | **Blocked**                     | Org billing API 404/403; 0 self-hosted runners; jobs `steps=[]` |
 
 ## CI investigation (evidence)

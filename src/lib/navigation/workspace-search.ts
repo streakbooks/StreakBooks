@@ -20,4 +20,10 @@ export type AccountingSearch = {
   journal?: string | undefined;
   period?: string | undefined;
 };
-export type Search = { bankAccountId?: string; amount?: string; direction?: "in" | "out" };
+export type Search = {
+  bankAccountId?: string;
+  amount?: string;
+  direction?: "in" | "out";
+  /** Statement line to auto-match after posting a transfer created from the match panel. */
+  bankTransactionId?: string;
+};

@@ -67,6 +67,88 @@ import {
 } from "@/lib/purchases/posting";
 import { applyReverseChargeToLines, loadTaxCodeInfo } from "@/lib/purchases/reverse-charge-lines";
 import { parseScheduleOptions } from "@/lib/recurring/recurring-schedule-options";
+import {
+  assessSupplierCreditLimit,
+  type SupplierCreditLimitAssessment,
+  type SupplierCreditLimitBill,
+} from "@/lib/purchases/supplier-credit-limit";
+
+export const SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED = "SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED";
+
+type PurchasesClient = Parameters<typeof assertCompanyPermission>[0];
+
+async function loadSupplierCreditLimitAssessment(
+  supabase: PurchasesClient,
+  companyId: string,
+  candidate: {
+    id: string;
+    contactId: string;
+    currencyCode: string;
+    status: string;
+    totalMinor: number;
+    amountPaidMinor: number;
+    amountCreditedMinor: number;
+  },
+): Promise<SupplierCreditLimitAssessment> {
+  const { data: company } = await supabase
+    .from("companies" as never)
+    .select("base_currency" as never)
+    .eq("id" as never, companyId as never)
+    .maybeSingle();
+  const baseCurrency = String(
+    (company as { base_currency?: string } | null)?.base_currency ?? "USD",
+  ).toUpperCase();
+
+  const { data: contact, error: cErr } = await supabase
+    .from("contacts" as never)
+    .select("credit_limit_minor, default_currency" as never)
+    .eq("id" as never, candidate.contactId as never)
+    .eq("company_id" as never, companyId as never)
+    .maybeSingle();
+  if (cErr) throw new Error(cErr.message);
+  const c = contact as { credit_limit_minor?: number | null; default_currency?: string | null } | null;
+  const limitCurrency = String(c?.default_currency || baseCurrency).toUpperCase();
+
+  const { data: openRows, error: oErr } = await supabase
+    .from("purchase_bills" as never)
+    .select("id, currency_code, status, total_minor, amount_paid_minor, amount_credited_minor" as never)
+    .eq("company_id" as never, companyId as never)
+    .eq("contact_id" as never, candidate.contactId as never)
+    .in("status" as never, ["authorised", "partly_paid"] as never);
+  if (oErr) throw new Error(oErr.message);
+
+  const openBills: SupplierCreditLimitBill[] = (
+    (openRows ?? []) as Array<{
+      id: string;
+      currency_code: string;
+      status: string;
+      total_minor: number;
+      amount_paid_minor: number;
+      amount_credited_minor: number;
+    }>
+  ).map((r) => ({
+    id: r.id,
+    currencyCode: String(r.currency_code || baseCurrency).toUpperCase(),
+    status: r.status,
+    totalMinor: Number(r.total_minor) || 0,
+    amountPaidMinor: Number(r.amount_paid_minor) || 0,
+    amountCreditedMinor: Number(r.amount_credited_minor) || 0,
+  }));
+
+  return assessSupplierCreditLimit({
+    creditLimitMinor: c?.credit_limit_minor ?? null,
+    limitCurrencyCode: limitCurrency,
+    openBills,
+    candidate: {
+      id: candidate.id,
+      currencyCode: candidate.currencyCode.toUpperCase(),
+      status: candidate.status,
+      totalMinor: candidate.totalMinor,
+      amountPaidMinor: candidate.amountPaidMinor,
+      amountCreditedMinor: candidate.amountCreditedMinor,
+    },
+  });
+}
 
 async function recordBillAudit(
   supabase: unknown,
@@ -1067,6 +1149,25 @@ export const getBill = createServerFn({ method: "GET" })
     const credited = Number(b.amount_credited_minor ?? 0);
     const balance = Math.max(0, total - paid - credited);
 
+    let supplierCreditLimitAssessment: SupplierCreditLimitAssessment | null = null;
+    try {
+      supplierCreditLimitAssessment = await loadSupplierCreditLimitAssessment(
+        context.supabase,
+        data.companyId,
+        {
+          id: b.id,
+          contactId: b.contact_id,
+          currencyCode: String(b.currency_code || "USD"),
+          status: b.status,
+          totalMinor: total,
+          amountPaidMinor: paid,
+          amountCreditedMinor: credited,
+        },
+      );
+    } catch {
+      supplierCreditLimitAssessment = null;
+    }
+
     return {
       id: b.id,
       status: b.status,
@@ -1125,6 +1226,7 @@ export const getBill = createServerFn({ method: "GET" })
       balance_due_minor: status === "draft" || status === "awaiting_approval" ? 0 : balance,
       document_total_minor: total,
       display_reference: b.supplier_invoice_number?.trim() || b.bill_number?.trim() || null,
+      supplierCreditLimitAssessment,
     };
   });
 
@@ -1700,6 +1802,7 @@ export async function authoriseBillInternal(
   userId: string,
   companyId: string,
   billId: string,
+  acknowledgeCreditLimit = false,
 ): Promise<{ journalId: string }> {
   await assertCompanyPermission(supabase, companyId, "purchases.authorise");
   const { data: bill, error } = await supabase
@@ -1711,10 +1814,15 @@ export async function authoriseBillInternal(
   if (error) throw new Error(error.message);
   if (!bill) throw new Error("Bill not found");
   const b = bill as {
+    id: string;
+    contact_id: string;
     status: string;
     bill_date: string;
     currency_code: string;
     memo: string | null;
+    total_minor: number;
+    amount_paid_minor?: number;
+    amount_credited_minor?: number;
     posted_journal_id: string | null;
     purchase_bill_lines: Array<{
       account_id: string;
@@ -1734,6 +1842,19 @@ export async function authoriseBillInternal(
     b.purchase_bill_lines.map((l) => l.tax_code_id ?? ""),
   );
   if (b.posted_journal_id) throw new Error("Bill already posted");
+
+  const credit = await loadSupplierCreditLimitAssessment(supabase, companyId, {
+    id: b.id,
+    contactId: b.contact_id,
+    currencyCode: b.currency_code,
+    status: b.status,
+    totalMinor: Number(b.total_minor) || 0,
+    amountPaidMinor: Number(b.amount_paid_minor) || 0,
+    amountCreditedMinor: Number(b.amount_credited_minor) || 0,
+  });
+  if (credit.overLimit && !acknowledgeCreditLimit) {
+    throw new Error(`${SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED}: ${credit.message}`);
+  }
 
   // Fail closed when purchases.three_way_matching is enabled for PO-linked bills.
   const billWithPo = bill as {
@@ -1815,12 +1936,23 @@ export async function authoriseBillInternal(
 
 export const authoriseBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string }) => ({
+  .inputValidator((input: {
+    companyId: string;
+    billId: string;
+    acknowledgeCreditLimit?: boolean;
+  }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
+    acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
   }))
   .handler(async ({ data, context }) => {
-    return authoriseBillInternal(context.supabase, context.userId, data.companyId, data.billId);
+    return authoriseBillInternal(
+      context.supabase,
+      context.userId,
+      data.companyId,
+      data.billId,
+      data.acknowledgeCreditLimit,
+    );
   });
 
 /** Order × received × bill match for a purchase-order-linked bill (advisory + authorise gate). */
@@ -2972,6 +3104,143 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
         `The credit note was saved as draft ${creditNumber} but could not be authorised: ${(authoriseError as Error).message}`,
       );
     }
+  });
+
+/** Copy a supplier credit note into a NEW draft dated today (no allocations). */
+export const copyCreditNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; creditNoteId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    creditNoteId: assertUuid(input.creditNoteId, "credit note"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+    const { data: row, error } = await supabase
+      .from("purchase_credit_notes" as never)
+      .select(
+        "contact_id, memo, currency_code, fx_rate_to_base, purchase_credit_note_lines(*)" as never,
+      )
+      .eq("id" as never, data.creditNoteId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Credit note not found");
+
+    const src = row as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      fx_rate_to_base?: number | null;
+      purchase_credit_note_lines: Array<{
+        description: string;
+        account_id: string | null;
+        net_minor: number;
+        tax_minor?: number | null;
+        line_no?: number | null;
+      }>;
+    };
+
+    const { mapCreditNoteLinesForCopy } = await import("@/lib/purchases/copy-credit-note");
+    const mapped = mapCreditNoteLinesForCopy(src.purchase_credit_note_lines ?? []);
+    if (!mapped.length) throw new Error("Credit note has no lines to copy");
+    const lines = normaliseCreditLines(mapped);
+
+    for (const accountId of new Set(lines.map((l) => l.accountId))) {
+      await requireAccountInCompany(supabase, data.companyId, accountId);
+    }
+
+    const currencyCode = String(src.currency_code || "").toUpperCase();
+    if (!/^[A-Z]{3}$/.test(currencyCode)) throw new Error("Currency code required");
+
+    const subtotal = lines.reduce((s, l) => s + l.netMinor, 0);
+    const tax = lines.reduce((s, l) => s + l.taxMinor, 0);
+    const total = subtotal + tax;
+    if (total <= 0) throw new Error("Credit total must be greater than zero");
+
+    const { data: supplier, error: supplierErr } = await supabase
+      .from("contacts" as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, src.contact_id as never)
+      .maybeSingle();
+    if (supplierErr) throw new Error(supplierErr.message);
+    if (!supplier) throw new Error("Supplier not found in this organisation");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const fxRaw = src.fx_rate_to_base == null ? null : Number(src.fx_rate_to_base);
+    const fxRateToBase =
+      fxRaw != null && Number.isFinite(fxRaw) && fxRaw > 0 && fxRaw !== 1 ? fxRaw : null;
+
+    const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
+    const creditNumber = await allocateDocumentNumber(
+      supabase as never,
+      data.companyId,
+      "purchase_credit_note",
+    );
+
+    const { data: cn, error: insertErr } = await supabase
+      .from("purchase_credit_notes" as never)
+      .insert({
+        company_id: data.companyId,
+        contact_id: src.contact_id,
+        credit_number: creditNumber,
+        credit_date: today,
+        currency_code: currencyCode,
+        memo: src.memo,
+        subtotal_minor: subtotal,
+        tax_minor: tax,
+        total_minor: total,
+        status: "draft",
+        created_by: userId,
+        ...(fxRateToBase != null ? { fx_rate_to_base: fxRateToBase } : {}),
+      } as never)
+      .select("id")
+      .single();
+    if (insertErr) {
+      if (fxRateToBase != null && /fx_rate_to_base|schema cache/i.test(insertErr.message)) {
+        throw new Error(
+          "Foreign-currency credit notes need a database update that has not been applied yet.",
+        );
+      }
+      throw new Error(insertErr.message);
+    }
+    const creditId = (cn as { id: string }).id;
+    const { error: lineErr } = await supabase.from("purchase_credit_note_lines" as never).insert(
+      lines.map((l, i) => ({
+        company_id: data.companyId,
+        credit_note_id: creditId,
+        line_no: i + 1,
+        description: l.description,
+        account_id: l.accountId,
+        net_minor: l.netMinor,
+        tax_minor: l.taxMinor,
+      })) as never,
+    );
+    if (lineErr) {
+      await supabase
+        .from("purchase_credit_notes" as never)
+        .delete()
+        .eq("company_id" as never, data.companyId as never)
+        .eq("id" as never, creditId as never)
+        .eq("status" as never, "draft" as never);
+      throw new Error(`Could not save credit note lines: ${lineErr.message}`);
+    }
+
+    await recordBillAudit(
+      supabase,
+      data.companyId,
+      "credit_note.draft.copy",
+      creditId,
+      {
+        source_credit_note_id: data.creditNoteId,
+        credit_number: creditNumber,
+        total_minor: total,
+        line_count: lines.length,
+      },
+      "purchase_credit_note",
+    );
+    return { id: creditId };
   });
 
 export const authoriseCreditNote = createServerFn({ method: "POST" })

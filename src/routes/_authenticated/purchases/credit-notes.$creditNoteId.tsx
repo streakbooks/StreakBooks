@@ -10,6 +10,7 @@ import { listAccounts } from "@/lib/accounting/accounting.functions";
 import {
   allocatePurchaseCreditNote,
   authoriseCreditNote,
+  copyCreditNote,
   deleteCreditNoteDraft,
   getCreditNote,
   listBills,
@@ -68,6 +69,7 @@ function CreditNoteDetail() {
   const doUnallocate = useServerFn(unallocatePurchaseCredit);
   const doVoid = useServerFn(voidPurchaseCreditNote);
   const doUpdate = useServerFn(updateCreditNoteDraft);
+  const doCopy = useServerFn(copyCreditNote);
   const [allocs, setAllocs] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState(false);
   const [editDate, setEditDate] = useState("");
@@ -256,6 +258,18 @@ function CreditNoteDetail() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
+  const copyM = useMutation({
+    mutationFn: () => doCopy({ data: { companyId: companyId!, creditNoteId } }),
+    onSuccess: async (r) => {
+      toast.success("Copied to a new draft credit note");
+      await navigate({
+        to: "/purchases/credit-notes/$creditNoteId",
+        params: { creditNoteId: r.id },
+      });
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
   if (query.isError || !cn) {
@@ -381,6 +395,20 @@ function CreditNoteDetail() {
                 Void
               </Button>
             ) : null}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={copyM.isPending || !can("purchases.draft")}
+              title={
+                can("purchases.draft")
+                  ? "Create a new draft with today's date (allocations are not copied)"
+                  : "You do not have permission to create drafts"
+              }
+              onClick={() => copyM.mutate()}
+            >
+              {copyM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Copy credit
+            </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to="/purchases/credit-notes">Back</Link>
             </Button>

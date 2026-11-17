@@ -23,8 +23,10 @@ import {
   rejectBillApproval,
   saveBillDraft,
   submitBillForApproval,
+  SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED,
   voidBill,
 } from "@/lib/purchases/purchases.functions";
+import type { SupplierCreditLimitAssessment } from "@/lib/purchases/supplier-credit-limit";
 import { listProducts } from "@/lib/products/products.functions";
 import { listTaxCodes } from "@/lib/tax/tax.functions";
 import { listTrackingDimensions } from "@/lib/settings/dimensions.functions";
@@ -179,6 +181,7 @@ type BillPayload = {
     created_at: string;
   }>;
   payment_allocations: BillPaymentAllocation[];
+  supplierCreditLimitAssessment?: SupplierCreditLimitAssessment | null;
 };
 
 function BillDocumentWorkspace() {
@@ -232,6 +235,7 @@ function BillDocumentWorkspace() {
   const [taxCalculation, setTaxCalculation] = useState<TaxCalculationMode>("exclusive");
   const [fxRate, setFxRate] = useState("");
   const [acknowledgeDuplicate, setAcknowledgeDuplicate] = useState(false);
+  const [ackCreditLimit, setAckCreditLimit] = useState(false);
   const [address, setAddress] = useState<BillEditorAddress>({
     line1: "",
     line2: "",
@@ -431,15 +435,27 @@ function BillDocumentWorkspace() {
   const authoriseMutation = useMutation({
     mutationFn: async () => {
       await saveIfDirty();
-      return doAuthorise({ data: { companyId: companyId!, billId } });
+      return doAuthorise({
+        data: {
+          companyId: companyId!,
+          billId,
+          acknowledgeCreditLimit: ackCreditLimit,
+        },
+      });
     },
     onSuccess: async () => {
       setHydrated(false);
+      setAckCreditLimit(false);
       await invalidate();
       toast.success("Bill authorised — journal posted");
     },
     onError: (e) => {
       const msg = friendlyAuthError(e);
+      if (msg.includes(SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED)) {
+        setFormError(msg);
+        toast.error("Credit limit exceeded — tick the acknowledgement to authorise anyway.");
+        return;
+      }
       setFormError(msg);
       toast.error(msg);
     },
@@ -974,6 +990,38 @@ function BillDocumentWorkspace() {
         <Alert variant="destructive">
           <AlertTitle>Could not save</AlertTitle>
           <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {bill.supplierCreditLimitAssessment &&
+      bill.supplierCreditLimitAssessment.status !== "no_limit" &&
+      bill.supplierCreditLimitAssessment.status !== "ok" ? (
+        <Alert
+          className="mb-4"
+          variant={bill.supplierCreditLimitAssessment.overLimit ? "destructive" : "default"}
+        >
+          <AlertTitle>
+            {bill.supplierCreditLimitAssessment.overLimit
+              ? "Supplier credit limit exceeded"
+              : "Supplier credit exposure review"}
+          </AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p>{bill.supplierCreditLimitAssessment.message}</p>
+            {canEdit && bill.supplierCreditLimitAssessment.overLimit ? (
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={ackCreditLimit}
+                  onChange={(e) => setAckCreditLimit(e.target.checked)}
+                />
+                <span>
+                  I acknowledge this bill takes the supplier over their credit limit and
+                  authorise anyway.
+                </span>
+              </label>
+            ) : null}
+          </AlertDescription>
         </Alert>
       ) : null}
 

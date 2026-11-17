@@ -239,8 +239,10 @@ function Reconcile() {
           />
           <p className="text-xs text-muted-foreground">
             {openingLocked
-              ? `From the reconciliation completed on ${ws?.lastSession?.statementDate}.`
-              : "First reconciliation for this account: enter the statement's opening balance once (0 if you reconcile from the very first ledger entry)."}
+              ? ws?.openingProposalSource === "account_details"
+                ? "From Account Details opening statement balance (first reconciliation)."
+                : `From the reconciliation completed on ${ws?.lastSession?.statementDate}.`
+              : "First reconciliation for this account: enter the statement opening once, or save it under Account Details so it fills automatically."}
           </p>
         </div>
         <div className="space-y-1">

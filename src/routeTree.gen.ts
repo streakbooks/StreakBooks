@@ -105,6 +105,7 @@ import { Route as AuthenticatedPlatformIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedPlatformAutomationRouteImport } from './routes/_authenticated/platform.automation'
 import { Route as AuthenticatedPlatformBillingRouteImport } from './routes/_authenticated/platform.billing'
 import { Route as AuthenticatedPlatformOperationsRouteImport } from './routes/_authenticated/platform.operations'
+import { Route as AuthenticatedPosIndexRouteImport } from './routes/_authenticated/pos/index'
 import { Route as AuthenticatedPurchasesIndexRouteImport } from './routes/_authenticated/purchases/index'
 import { Route as AuthenticatedPurchasesEmployeeExpensesRouteImport } from './routes/_authenticated/purchases/employee-expenses'
 import { Route as AuthenticatedPurchasesPortalInboxRouteImport } from './routes/_authenticated/purchases/portal-inbox'
@@ -737,6 +738,11 @@ const AuthenticatedPlatformOperationsRoute =
     path: '/operations',
     getParentRoute: () => AuthenticatedPlatformRoute,
   } as any)
+const AuthenticatedPosIndexRoute = AuthenticatedPosIndexRouteImport.update({
+  id: '/pos/',
+  path: '/pos/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPurchasesIndexRoute =
   AuthenticatedPurchasesIndexRouteImport.update({
     id: '/',
@@ -1386,6 +1392,7 @@ export interface FileRoutesByFullPath {
   '/messages/': typeof AuthenticatedMessagesIndexRoute
   '/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/platform/': typeof AuthenticatedPlatformIndexRoute
+  '/pos/': typeof AuthenticatedPosIndexRoute
   '/purchases/': typeof AuthenticatedPurchasesIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
   '/sales/': typeof AuthenticatedSalesIndexRoute
@@ -1565,6 +1572,7 @@ export interface FileRoutesByTo {
   '/messages': typeof AuthenticatedMessagesIndexRoute
   '/payroll': typeof AuthenticatedPayrollIndexRoute
   '/platform': typeof AuthenticatedPlatformIndexRoute
+  '/pos': typeof AuthenticatedPosIndexRoute
   '/purchases': typeof AuthenticatedPurchasesIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
   '/sales': typeof AuthenticatedSalesIndexRoute
@@ -1751,6 +1759,7 @@ export interface FileRoutesById {
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
   '/_authenticated/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/_authenticated/platform/': typeof AuthenticatedPlatformIndexRoute
+  '/_authenticated/pos/': typeof AuthenticatedPosIndexRoute
   '/_authenticated/purchases/': typeof AuthenticatedPurchasesIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/sales/': typeof AuthenticatedSalesIndexRoute
@@ -1940,6 +1949,7 @@ export interface FileRouteTypes {
     | '/messages/'
     | '/payroll/'
     | '/platform/'
+    | '/pos/'
     | '/purchases/'
     | '/reports/'
     | '/sales/'
@@ -2119,6 +2129,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/payroll'
     | '/platform'
+    | '/pos'
     | '/purchases'
     | '/reports'
     | '/sales'
@@ -2304,6 +2315,7 @@ export interface FileRouteTypes {
     | '/_authenticated/messages/'
     | '/_authenticated/payroll/'
     | '/_authenticated/platform/'
+    | '/_authenticated/pos/'
     | '/_authenticated/purchases/'
     | '/_authenticated/reports/'
     | '/_authenticated/sales/'
@@ -3060,6 +3072,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/platform/operations'
       preLoaderRoute: typeof AuthenticatedPlatformOperationsRouteImport
       parentRoute: typeof AuthenticatedPlatformRoute
+    }
+    '/_authenticated/pos/': {
+      id: '/_authenticated/pos/'
+      path: '/pos'
+      fullPath: '/pos/'
+      preLoaderRoute: typeof AuthenticatedPosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/purchases/': {
       id: '/_authenticated/purchases/'
@@ -4100,6 +4119,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExpenseManagementIndexRoute: typeof AuthenticatedExpenseManagementIndexRoute
   AuthenticatedHrIndexRoute: typeof AuthenticatedHrIndexRoute
   AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
+  AuthenticatedPosIndexRoute: typeof AuthenticatedPosIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
   AuthenticatedAppStoreAppsAppCodeRoute: typeof AuthenticatedAppStoreAppsAppCodeRoute
   AuthenticatedCrmLeadsLeadIdRoute: typeof AuthenticatedCrmLeadsLeadIdRoute
@@ -4170,6 +4190,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedExpenseManagementIndexRoute,
   AuthenticatedHrIndexRoute: AuthenticatedHrIndexRoute,
   AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
+  AuthenticatedPosIndexRoute: AuthenticatedPosIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedAppStoreAppsAppCodeRoute: AuthenticatedAppStoreAppsAppCodeRoute,
   AuthenticatedCrmLeadsLeadIdRoute: AuthenticatedCrmLeadsLeadIdRoute,

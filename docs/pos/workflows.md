@@ -1,0 +1,7 @@
+# UI inventory and user/admin guide
+
+Implemented review workflow: sign in → select an authorized company → open `/pos` → search active catalogue by name/SKU → Add → change quantity or Remove → read server preview → Refresh prices or Clear cart. Search is submitted explicitly (Enter works), rather than making a network request per keystroke. The review route is registered but not in the sidebar. No completed order is saved. Leaving, reloading or switching company discards the cart. Do not use this preview to collect customer payment.
+
+Administrator: manage active items and scalar default tax in existing Products & Services / company settings. Access requires existing Sales view permission. Review the module with keyboard, desktop, tablet and mobile; Add/Remove have item-specific accessible labels, quantity inputs have labels, status updates use a polite live region. These controls have not yet passed browser accessibility acceptance.
+
+Planned screens: mission control (authoritative drill-down metrics); store/register/mapping settings; register open/handover/close and cash movements; cashier checkout; held carts; orders/receipt timeline; linked return/refund approval; clearing/settlement exceptions; device configuration; sync recovery; optional table floor/KDS. All remain unimplemented. Restaurant and intelligence screens follow core retail gates. No inactive buttons pretend these capabilities exist.

@@ -1590,6 +1590,111 @@ export const saveBillDraft = createServerFn({ method: "POST" })
   .inputValidator(parseBillDraftInput)
   .handler(async ({ data, context }) => saveBillDraftCore(data, context));
 
+/** Copy a bill into a NEW draft dated today with the supplier's payment terms. */
+export const copyBill = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; billId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    billId: assertUuid(input.billId, "bill"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+    const { data: row, error } = await supabase
+      .from("purchase_bills" as never)
+      .select(
+        "contact_id, memo, currency_code, fx_rate_to_base, tax_calculation, payment_terms_days, payment_term_id, supplier_address_line1, supplier_address_line2, supplier_address_city, supplier_address_region, supplier_address_postal, supplier_address_country, purchase_bill_lines(*)" as never,
+      )
+      .eq("id" as never, data.billId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Bill not found");
+
+    const src = row as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      fx_rate_to_base: number | null;
+      tax_calculation: string | null;
+      payment_terms_days: number | null;
+      payment_term_id: string | null;
+      supplier_address_line1: string | null;
+      supplier_address_line2: string | null;
+      supplier_address_city: string | null;
+      supplier_address_region: string | null;
+      supplier_address_postal: string | null;
+      supplier_address_country: string | null;
+      purchase_bill_lines: Array<{
+        description: string;
+        account_id: string | null;
+        quantity: number;
+        unit_price_minor: number;
+        discount_minor?: number | null;
+        tax_rate_bps?: number | null;
+        product_id?: string | null;
+        tax_code_id?: string | null;
+        class_option_id?: string | null;
+        location_option_id?: string | null;
+        project_option_id?: string | null;
+        customer_contact_id?: string | null;
+        is_billable?: boolean | null;
+        line_no?: number | null;
+      }>;
+    };
+
+    const { mapBillLinesForCopy } = await import("@/lib/purchases/copy-bill");
+    const { calculateDueDate } = await import("@/lib/purchases/bill-form-helpers");
+    const lines = mapBillLinesForCopy(src.purchase_bill_lines ?? []);
+    if (!lines.length) throw new Error("Bill has no lines to copy");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const termsDays =
+      src.payment_terms_days == null ? 30 : Math.max(0, Math.floor(Number(src.payment_terms_days)));
+    const dueDate = calculateDueDate(today, {
+      days: termsDays,
+      calculation_method: "days_after_bill_date",
+    });
+    const taxCalculation =
+      src.tax_calculation === "inclusive" || src.tax_calculation === "none"
+        ? src.tax_calculation
+        : "exclusive";
+
+    const supplierAddress: {
+      line1?: string;
+      line2?: string;
+      city?: string;
+      region?: string;
+      postal?: string;
+      country?: string;
+    } = {};
+    if (src.supplier_address_line1) supplierAddress.line1 = src.supplier_address_line1;
+    if (src.supplier_address_line2) supplierAddress.line2 = src.supplier_address_line2;
+    if (src.supplier_address_city) supplierAddress.city = src.supplier_address_city;
+    if (src.supplier_address_region) supplierAddress.region = src.supplier_address_region;
+    if (src.supplier_address_postal) supplierAddress.postal = src.supplier_address_postal;
+    if (src.supplier_address_country) supplierAddress.country = src.supplier_address_country;
+
+    return saveBillDraftCore(
+      parseBillDraftInput({
+        companyId: data.companyId,
+        contactId: src.contact_id,
+        billDate: today,
+        dueDate,
+        ...(src.memo ? { memo: src.memo } : {}),
+        currencyCode: src.currency_code,
+        taxCalculation,
+        paymentTermId: src.payment_term_id,
+        paymentTermsDays: termsDays,
+        dueDateManualOverride: false,
+        fxRateToBase: src.fx_rate_to_base,
+        supplierAddress,
+        lines,
+      }),
+      context,
+    );
+  });
+
 export async function authoriseBillInternal(
   supabase: Parameters<typeof assertCompanyPermission>[0],
   userId: string,

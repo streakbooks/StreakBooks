@@ -17,7 +17,10 @@ describe("persistent reconciliation review identity", () => {
   });
   it("is stable across ephemeral finding key/index changes and input order", () => {
     expect(reconciliationFindingFingerprint(finding))
-      .toBe(reconciliationFindingFingerprint({ ...finding, key: "fixed_assets:depreciation:run-1:issue:99" }));
+      .toBe(reconciliationFindingFingerprint({
+        ...finding,
+        key: "fixed_assets:depreciation:run-1:issue:99",
+      } as ExceptionFinding));
   });
   it("keeps identical audit evidence associated with the same case across refreshes", () => {
     expect(reconciliationFindingFingerprint({ ...finding }))

@@ -33,9 +33,9 @@ export async function runMessagingRetentionPurge(input?: {
   now?: Date;
   limitPerCompany?: number;
 }): Promise<RetentionPurgeSummary> {
-  const mode = resolveMessagingRetentionPurgeMode({
-    execute: input?.execute,
-  });
+  const mode = resolveMessagingRetentionPurgeMode(
+    input?.execute !== undefined ? { execute: input.execute } : {},
+  );
   const now = input?.now ?? new Date();
   const limitPerCompany = input?.limitPerCompany ?? 200;
   const db = supabaseAdmin;

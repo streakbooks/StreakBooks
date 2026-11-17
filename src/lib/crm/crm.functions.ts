@@ -13,6 +13,7 @@ import {
   mapCrmPipeline,
   mapCrmPipelineStage,
   mapCrmSettings,
+  mapCrmTerritory,
 } from "@/lib/crm/mappers";
 import { crmClient } from "@/lib/crm/query";
 import { buildIlikeOr } from "@/lib/purchases/search-terms";
@@ -29,6 +30,7 @@ import type {
   CrmPipeline,
   CrmPipelineStage,
   CrmSettings,
+  CrmTerritory,
 } from "@/lib/crm/types";
 import { CRM_CAMPAIGN_STATUSES, validateCrmCampaignDraft } from "@/lib/crm/campaign-draft";
 import { validateCrmTerritoryDraft } from "@/lib/crm/territory-draft";
@@ -1562,8 +1564,8 @@ export const upsertCrmCampaign = createServerFn({ method: "POST" })
         status,
         budgetMinor: typeof input.budgetMinor === "number" ? input.budgetMinor : 0,
         currencyCode: input.currencyCode ?? "USD",
-        startsOn: input.startsOn,
-        endsOn: input.endsOn,
+        startsOn: input.startsOn ?? null,
+        endsOn: input.endsOn ?? null,
       });
       if (draftError) throw new Error(draftError);
       return {
@@ -1693,12 +1695,12 @@ export const upsertCrmTerritory = createServerFn({ method: "POST" })
       CRM_TERRITORIES_MIGRATION,
     );
     return mapCrmTerritory({
-      id: raw.id as string,
-      name: raw.name as string,
-      code: (raw.code as string | null) ?? null,
-      description: (raw.description as string | null) ?? null,
-      owner_user_id: (raw.ownerUserId as string | null) ?? null,
-      is_active: raw.isActive as boolean,
-      sort_order: raw.sortOrder as number,
+      id: raw["id"] as string,
+      name: raw["name"] as string,
+      code: (raw["code"] as string | null) ?? null,
+      description: (raw["description"] as string | null) ?? null,
+      owner_user_id: (raw["ownerUserId"] as string | null) ?? null,
+      is_active: raw["isActive"] as boolean,
+      sort_order: raw["sortOrder"] as number,
     });
   });

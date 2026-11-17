@@ -19,5 +19,6 @@ export const Route = createFileRoute("/portal/app/messages")({
 
 function PortalMessagesRoute() {
   const { conversation } = Route.useSearch();
-  return <PortalMessages conversationId={conversation} />;
+  if (conversation) return <PortalMessages conversationId={conversation} />;
+  return <PortalMessages />;
 }

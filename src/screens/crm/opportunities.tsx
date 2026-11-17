@@ -105,7 +105,7 @@ export function CrmOpportunitiesPage() {
       data: {
         companyId: company!.id,
         status: "open",
-        pipelineId: effectivePipelineId,
+        ...(effectivePipelineId ? { pipelineId: effectivePipelineId } : {}),
         q: appliedSearch,
         limit: OPPORTUNITY_PAGE_SIZE + 1,
         offset: page * OPPORTUNITY_PAGE_SIZE,
@@ -118,9 +118,10 @@ export function CrmOpportunitiesPage() {
   const closedOpps = useQuery({
     queryKey: ["crm-opportunities", company?.id, "closed", effectivePipelineId],
     queryFn: async () => {
+      const pipeline = effectivePipelineId ? { pipelineId: effectivePipelineId } : {};
       const [won, lost] = await Promise.all([
-        fetchOpps({ data: { companyId: company!.id, status: "won", pipelineId: effectivePipelineId } }),
-        fetchOpps({ data: { companyId: company!.id, status: "lost", pipelineId: effectivePipelineId } }),
+        fetchOpps({ data: { companyId: company!.id, status: "won", ...pipeline } }),
+        fetchOpps({ data: { companyId: company!.id, status: "lost", ...pipeline } }),
       ]);
       return [...won, ...lost];
     },

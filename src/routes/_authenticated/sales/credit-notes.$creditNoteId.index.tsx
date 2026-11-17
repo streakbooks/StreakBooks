@@ -277,7 +277,7 @@ function CreditNoteDetail() {
               companyId={company?.id ?? null}
               recordType="sales_credit_note"
               recordId={creditNoteId}
-              title={cn.credit_note_number ? `Credit note ${cn.credit_note_number}` : "Credit note discussion"}
+              title={cn.credit_number ? `Credit note ${cn.credit_number}` : "Credit note discussion"}
               label="Discuss"
             />
             {cn.status === "draft" ? (

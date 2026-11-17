@@ -288,8 +288,8 @@ describe("payroll employee drafts", () => {
     expect(valid.ok).toBe(true);
     if (valid.ok) {
       const lines = valid.value["lines"] as Array<Record<string, number>>;
-      expect(lines[0]?.amount_minor).toBe(10025);
-      expect(lines[0]?.percentage_bps).toBe(1234);
+      expect(lines[0]?.["amount_minor"]).toBe(10025);
+      expect(lines[0]?.["percentage_bps"]).toBe(1234);
     }
   });
 

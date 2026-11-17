@@ -30,11 +30,11 @@ export function parseFilesListSearch(raw: Record<string, unknown>): FilesListSea
 
   const sort = raw["sort"];
   if (typeof sort === "string" && SORT.has(sort))
-    result.sort = sort as FilesListSearch["sort"];
+    result.sort = sort as "newest" | "oldest" | "name" | "largest";
 
   const view = raw["view"];
   if (typeof view === "string" && VIEWS.has(view))
-    result.view = view as FilesListSearch["view"];
+    result.view = view as "all" | "to-file" | "review";
 
   const page = raw["page"];
   if (

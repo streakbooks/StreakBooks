@@ -127,7 +127,12 @@ export function resolveDomainStatus(
   const key = normalizeKey(status);
   const extra = EXTRA.get(key);
   if (extra) {
-    return { label: extra.label, tone: extra.tone, muted: extra.muted, unmapped: false };
+    return {
+      label: extra.label,
+      tone: extra.tone,
+      ...(extra.muted !== undefined ? { muted: extra.muted } : {}),
+      unmapped: false,
+    };
   }
   if (CORE_KEYS.has(key)) {
     return { ...statusDisplay(status), unmapped: false };

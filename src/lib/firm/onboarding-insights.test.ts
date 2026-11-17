@@ -7,9 +7,30 @@ import {
   onboardingStepSummary,
 } from "./onboarding-insights";
 
-const parent = { task_key: "details", completed_at: null, due_date: "2026-11-04", assignee_id: null, depends_on_task_key: null };
-const child = { task_key: "records", completed_at: null, due_date: "2026-11-06", assignee_id: "staff", depends_on_task_key: "details" };
-const final = { task_key: "approval", completed_at: null, due_date: "2026-11-12", assignee_id: "staff", depends_on_task_key: "records" };
+const parent = {
+  task_key: "details",
+  title: "Company details",
+  completed_at: null,
+  due_date: "2026-11-04",
+  assignee_id: null,
+  depends_on_task_key: null,
+};
+const child = {
+  task_key: "records",
+  title: "Records setup",
+  completed_at: null,
+  due_date: "2026-11-06",
+  assignee_id: "staff",
+  depends_on_task_key: "details",
+};
+const final = {
+  task_key: "approval",
+  title: "Partner approval",
+  completed_at: null,
+  due_date: "2026-11-12",
+  assignee_id: "staff",
+  depends_on_task_key: "records",
+};
 
 describe("firm onboarding workflow insights", () => {
   it("shows blocked tasks and disallows out-of-order completion", () => {

@@ -148,7 +148,7 @@ export const listHrAutomationRules = createServerFn({ method: "GET" })
         return {
           id: str(pick(r, "id")), code: str(pick(r, "code")), name: str(pick(r, "name")),
           triggerKind: str(pick(r, "triggerKind")), isEnabled: bool(pick(r, "isEnabled"), true),
-          config: cfg && typeof cfg === "object" ? (cfg as Record<string, unknown>) : {},
+          config: cfg && typeof cfg === "object" ? (cfg as import("@/integrations/supabase/types").Json) : {},
           lastRunAt: strOrNull(pick(r, "lastRunAt")), lastRunStatus: strOrNull(pick(r, "lastRunStatus")),
           lastRunSummary: strOrNull(pick(r, "lastRunSummary")), updatedAt: str(pick(r, "updatedAt")),
         };

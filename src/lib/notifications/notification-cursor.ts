@@ -40,6 +40,7 @@ export function nextNotificationCursor<T extends {
 }>(rows: readonly T[], pageSize: number): NotificationCursor | null {
   if (rows.length <= pageSize || pageSize < 1) return null;
   const last = rows[pageSize - 1];
+  if (!last) return null;
   return {
     priorityRank: last.priority_rank,
     createdAt: last.created_at,

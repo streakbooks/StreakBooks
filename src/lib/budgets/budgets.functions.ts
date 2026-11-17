@@ -620,7 +620,12 @@ export const saveBudgetDocument = createServerFn({ method: "POST" })
       expectedUpdatedAt: string;
       rows: Array<{ accountId: string; months: number[] }>;
     }) => {
-      const validated = validateBudgetDocumentInput(input);
+      const validated = validateBudgetDocumentInput({
+        name: input.name,
+        notes: input.notes ?? null,
+        expectedUpdatedAt: input.expectedUpdatedAt,
+        rows: input.rows,
+      });
       return {
         companyId: companyIdOf(input),
         budgetId: assertUuid(input?.budgetId, "budget"),
@@ -1161,7 +1166,13 @@ export const saveBudgetForecastScenario = createServerFn({method:"POST"})
       companyId:companyIdOf(input),
       budgetId:assertUuid(input.budgetId,"budget"),
       scenarioId:id,expectedUpdatedAt:id?input.expectedUpdatedAt!:null,
-      ...validateForecastScenarioDraft(input),
+      ...validateForecastScenarioDraft({
+        name: input.name,
+        notes: input.notes,
+        method: input.method,
+        incomeBps: input.incomeBps,
+        expenseBps: input.expenseBps,
+      }),
     };
   })
   .handler(async({data,context})=>{

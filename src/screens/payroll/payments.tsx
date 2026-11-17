@@ -515,12 +515,26 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                       {fmt.date(p.payment_date)}
                     </button>
                   </TableCell>
-                  <TableCell>{METHOD_LABELS[p.payment_method] ?? p.payment_method}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">
-                    {fmt.money(p.amount_minor, p.currency)}
+                  <TableCell>
+                    <button type="button" className="rounded-sm text-left underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setDetailPaymentId(p.id)} aria-label={`View payment details for ${METHOD_LABELS[p.payment_method] ?? p.payment_method} payment`}>
+                      {METHOD_LABELS[p.payment_method] ?? p.payment_method}
+                    </button>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{p.reference ?? "—"}</TableCell>
-                  <TableCell>{p.status === "reversed" ? "Reversed" : "Posted"}</TableCell>
+                  <TableCell className="text-right font-mono text-sm">
+                    <button type="button" className="rounded-sm underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setDetailPaymentId(p.id)} aria-label={`View payment details for ${fmt.money(p.amount_minor, p.currency)}`}>
+                      {fmt.money(p.amount_minor, p.currency)}
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    <button type="button" className="rounded-sm text-left underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setDetailPaymentId(p.id)} aria-label={`View payment details for reference ${p.reference ?? "none"}`}>
+                      {p.reference ?? "—"}
+                    </button>
+                  </TableCell>
+                  <TableCell>
+                    <button type="button" className="rounded-sm text-left underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setDetailPaymentId(p.id)} aria-label={`View details for ${p.status === "reversed" ? "reversed" : "posted"} payment`}>
+                      {p.status === "reversed" ? "Reversed" : "Posted"}
+                    </button>
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" variant="outline" onClick={() => setDetailPaymentId(p.id)}>

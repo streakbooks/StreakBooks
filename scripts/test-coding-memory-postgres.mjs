@@ -148,6 +148,30 @@ try {
   if (!linkDenied) throw Error("Concurrent reversed journal was incorrectly learned");
   sql(`select public.test_assert((select count(*)=0 from public.bank_coding_events where journal_id=md5('race-journal')::uuid),'concurrent reversal cannot learn');
     select public.test_assert((select count(*)=0 from public.reconciliation_links where bank_transaction_id=md5('race-txn')::uuid),'concurrent reversal rolls link back');`);
+  sql(`select public.test_seed('split');
+    update public.journal_lines set debit_minor=6000 where id=md5('split-offsetline')::uuid;
+    insert into public.journal_lines(id,journal_id,company_id,line_no,account_id,debit_minor,credit_minor)
+      values(md5('split-otherline')::uuid,md5('split-journal')::uuid,md5('company-a')::uuid,3,md5('other')::uuid,4000,0);
+    set request.jwt.claims='{"sub":"11111111-1111-4111-8111-111111111111","aal":"aal2"}'; set role authenticated;
+    select public.test_link('split'); reset role;
+    select public.test_assert((select jsonb_array_length(allocations)=2 from public.bank_coding_events where journal_id=md5('split-journal')::uuid),'split allocations preserved');
+    select public.test_assert((public.get_bank_coding_memory(md5('company-a')::uuid,md5('next-txn')::uuid)->0->>'times_used')::int=1,'split not flattened into a single account hint');`);
+  sql(`set request.jwt.claims='{"sub":"11111111-1111-4111-8111-111111111111","aal":"aal2"}';
+    select public.test_denied('select public.reset_demo_company(md5(''company-a'')::uuid)','reset requires explicit permission');
+    insert into public.test_permissions values(md5('company-a')::uuid,'11111111-1111-4111-8111-111111111111','demo.reset');
+    select public.test_denied('select public.reset_demo_company(md5(''company-a'')::uuid)','production company cannot reset');
+    select public.test_assert((select count(*)>0 from public.bank_coding_events),'denied reset preserves events');
+    update public.companies set is_demo=true where id=md5('company-a')::uuid;
+    set test.fail_reset='on';
+    select public.test_denied('select public.reset_demo_company(md5(''company-a'')::uuid)','parent reset failure propagates');
+    set test.fail_reset='off';
+    select public.test_assert((select count(*)>0 from public.bank_coding_events),'parent reset failure rolls event purge back');
+    set role authenticated;
+    select public.reset_demo_company(md5('company-a')::uuid);
+    reset role;
+    select public.test_assert((select count(*)=0 from public.bank_coding_events),'authorised demo reset clears events');
+    select public.test_assert((select count(*)=0 from public.bank_coding_feedback),'authorised demo reset clears feedback');
+    select public.test_assert((select count(*)=0 from public.bank_coding_memory_preferences),'authorised demo reset clears preferences');`);
   console.log(
     `Coding Memory PostgreSQL: ${sql("select count(*) from public.test_assertions").trim()} assertions passed; 0 failed. Isolated fixtures, no production connection. Includes concurrent relink and reversal sessions.`,
   );

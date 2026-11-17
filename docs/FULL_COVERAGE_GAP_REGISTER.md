@@ -166,9 +166,22 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Missing/incomplete** | `voidPurchaseCreditNote` reversed journals but did not require/store `void_date`/`void_reason` |
 | **Priority** | P0 (historical AP as-at honesty) |
 | **Development status** | Implemented on `feature/supplier-credit-void-date-20261117` |
-| **PR reference** | Pending |
+| **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/234 |
 | **Originality** | Shared `assertPurchaseDocVoidDate` with B5; ReasonDialog reuse; no competitor code |
 | **Release verification** | Open — migration not applied live |
+
+## Detailed finding — Supplier statement opening balance (B7)
+
+| Field | Value |
+|-------|-------|
+| **Gap ID** | GAP-AP-STMT-001 (P-24) |
+| **Module** | Purchases / Supplier statements |
+| **Missing/incomplete** | Opening balance existed but voids excluded; not shared with AR statement engine; no BBF line |
+| **Priority** | P0 |
+| **Development status** | Implemented on `feature/supplier-statement-opening-20261117` |
+| **PR reference** | Pending |
+| **Originality** | Reuses LinkBooks AR `buildCustomerStatement` with supplier nouns; no competitor code |
+| **Release verification** | Open — unit tests; void_date columns improve void honesty when #233/#234 applied |
 
 ## Acceptance questions (programme-wide)
 

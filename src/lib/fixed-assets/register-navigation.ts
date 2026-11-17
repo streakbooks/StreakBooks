@@ -31,7 +31,7 @@ export function parseFixedAssetRegisterSearch(
   if (typeof q === "string" && q.length > 0 && q.length <= 120) result.q = q;
   const status = raw["status"];
   if (typeof status === "string" && STATUSES.has(status)) {
-    result.status = status as FixedAssetRegisterSearch["status"];
+    result.status = status as "all" | "active" | "disposed";
   }
   for (const key of ["typeId", "accountId"] as const) {
     const id = raw[key];

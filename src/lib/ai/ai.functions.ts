@@ -364,7 +364,7 @@ export const listAiSuggestions = createServerFn({ method: "GET" })
       status: string;
       title: string;
       summary: string;
-      payload: Record<string, unknown>;
+      payload: import("@/integrations/supabase/types").Json;
       validation_errors: string[];
       created_at: string;
       applied_journal_id: string | null;

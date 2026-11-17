@@ -189,6 +189,7 @@ export async function runMessagingDigests(now = new Date()): Promise<{
           {
             to: [recipient.user.email],
             subject: preview.subject,
+            html: text.replace(/\n/g, "<br>"),
             text,
             ...(sender.replyTo ? { replyTo: sender.replyTo } : {}),
           },

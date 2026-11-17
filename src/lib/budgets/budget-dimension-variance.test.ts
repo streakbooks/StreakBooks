@@ -81,10 +81,12 @@ describe("dimension budget vs posted journal actuals", () => {
   it("does not include excluded closing values in option profit/expense variances", () => {
     const posted = eligibleDimensionActualLines([
       {
-        ...inputs.actual[0], source_type: "other",
-        memo: "Year-end close FY 2026", creditMinor: 50000,
+        ...inputs.actual[0]!,
+        source_type: "other",
+        memo: "Year-end close FY 2026",
+        creditMinor: 50000,
       },
-      { ...inputs.actual[1], source_type: "manual", memo: "Normal rent" },
+      { ...inputs.actual[1]!, source_type: "manual", memo: "Normal rent" },
     ]);
     const result = buildDimensionVariance({ ...inputs, actual: posted });
     expect(result.summaries.find(s => s.optionId === "north")?.income.ytd.actualMinor).toBe(0);

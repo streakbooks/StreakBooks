@@ -60,11 +60,11 @@ function SalesOverview() {
       insights={
         <WorkspaceInsights
           title="Sales shortcuts"
-          facts={
-            overviewQ.data
-              ? [{ label: "Draft invoices", value: String(overviewQ.data.draftCount) }]
-              : undefined
-          }
+          {...(overviewQ.data
+            ? {
+                facts: [{ label: "Draft invoices", value: String(overviewQ.data.draftCount) }],
+              }
+            : {})}
           links={[
             { label: "Invoices", to: "/sales/invoices", hint: "Customer invoices" },
             { label: "Quotes", to: "/sales/quotes", hint: "Quotes never post to the ledger" },

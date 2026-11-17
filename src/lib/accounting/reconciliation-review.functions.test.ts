@@ -58,7 +58,8 @@ const from = vi.fn((table: string) => {
   };
   return q;
 });
-const rpc = vi.fn(async (_name: string, _args: unknown) => ({
+type RpcResult = { data: unknown; error: { message: string } | null };
+const rpc = vi.fn(async (_name: string, _args: unknown): Promise<RpcResult> => ({
   data: { id: uuid, status: "open", version: 1, assigned_to: null,
     updated_at: "2026-11-06T00:00:00Z" },
   error: null,

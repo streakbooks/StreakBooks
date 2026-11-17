@@ -12,9 +12,9 @@ describe("prior-year budget copy integrity", () => {
     ];
     const draft = preparePriorYearActualsDraft(active, rows);
     expect(Object.keys(draft).sort()).toEqual(["rent", "sales"]);
-    expect(draft.sales).toEqual(months(100));
-    expect(draft.rent).toEqual(months(-10));
-    draft.sales![0] = 777;
+    expect(draft["sales"]).toEqual(months(100));
+    expect(draft["rent"]).toEqual(months(-10));
+    draft["sales"]![0] = 777;
     expect(rows[0]!.months[0]).toBe(100);
   });
 

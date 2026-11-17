@@ -9,6 +9,7 @@ import type {
   CrmPipeline,
   CrmPipelineStage,
   CrmSettings,
+  CrmTerritory,
 } from "@/lib/crm/types";
 import { emptyCrmDashboardKpis } from "@/lib/crm/types";
 

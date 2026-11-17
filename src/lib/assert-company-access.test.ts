@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 
 const companyId = "11111111-1111-4111-8111-111111111111";
 
 function mockClient(rpcResult: { data: unknown; error: { message: string } | null }) {
-  return {
-    rpc: vi.fn().mockResolvedValue(rpcResult),
-  } as never;
+  const rpc = vi.fn().mockResolvedValue(rpcResult);
+  return { rpc } as unknown as SupabaseClient<Database>;
 }
 
 describe("assertCompanyPermission", () => {

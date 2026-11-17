@@ -35,7 +35,7 @@ export function parseJournalBrowseSearch(raw: Record<string, unknown>): JournalB
   const pageSize = raw["journalPageSize"];
   if ((typeof pageSize === "number" || typeof pageSize === "string") &&
       PAGE_SIZES.has(Number(pageSize))) {
-    result.journalPageSize = Number(pageSize) as JournalBrowseSearch["journalPageSize"];
+    result.journalPageSize = Number(pageSize) as 50 | 100 | 200;
   }
 
   const page = raw["journalPage"];
@@ -46,7 +46,7 @@ export function parseJournalBrowseSearch(raw: Record<string, unknown>): JournalB
 
   const sort = raw["journalSort"];
   if (typeof sort === "string" && SORTS.has(sort)) {
-    result.journalSort = sort as JournalBrowseSearch["journalSort"];
+    result.journalSort = sort as "number" | "date" | "source" | "amount";
     result.journalDir = raw["journalDir"] === "desc" ? "desc" : "asc";
   }
   return result;

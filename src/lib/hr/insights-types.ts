@@ -31,13 +31,15 @@ export const HR_AUTOMATION_TRIGGERS = [
 ] as const;
 export type HrAutomationTrigger = (typeof HR_AUTOMATION_TRIGGERS)[number];
 
+import type { Json } from "@/integrations/supabase/types";
+
 export type HrAutomationRule = {
   id: string;
   code: string;
   name: string;
   triggerKind: string;
   isEnabled: boolean;
-  config: Record<string, unknown>;
+  config: Json;
   lastRunAt: string | null;
   lastRunStatus: string | null;
   lastRunSummary: string | null;

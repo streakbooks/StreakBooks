@@ -45,7 +45,7 @@ describe("Action Center stable keyset pagination", () => {
       priority_rank: index,
     }));
     expect(nextNotificationCursor(rows, 3)).toEqual({
-      id: rows[2].id, createdAt: stamp, priorityRank: 2,
+      id: rows[2]!.id, createdAt: stamp, priorityRank: 2,
     });
     expect(nextNotificationCursor(rows.slice(0, 3), 3)).toBeNull();
     expect(nextNotificationCursor([], 3)).toBeNull();

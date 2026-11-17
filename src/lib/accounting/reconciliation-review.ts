@@ -1,3 +1,4 @@
+import type { Json } from "@/integrations/supabase/types";
 import type { ExceptionFinding } from "./reconciliation-exceptions";
 
 /** Stable across reordered exception lists. This is an operational dedupe key,
@@ -41,6 +42,6 @@ export type ReconciliationReviewAction = "attach_evidence" | "submit" | "sign_of
 export type ReconciliationReviewEvent = {
   id: string; company_id: string; case_id: string;
   actor_id: string; action: string; note: string;
-  old_state: Record<string, unknown> | null;
-  new_state: Record<string, unknown>; created_at: string;
+  old_state: Json | null;
+  new_state: Json; created_at: string;
 };

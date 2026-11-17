@@ -23,7 +23,7 @@ function KpiCard({
   label: string;
   value: string | number;
   hint: string;
-  to?: "employees" | "organization" | "approvals" | "documents" | "attendance";
+  to?: "employees" | "organization" | "approvals" | "documents" | "attendance" | "offboarding";
 }) {
   const body = (
     <Card>

@@ -7,7 +7,7 @@ import {
   type ProgressReconciliationReviewInput,
 } from "@/lib/accounting/reconciliation-review-signoff.functions";
 import type {
-  ReconciliationSavedCase, ReconciliationReviewAction,
+  ReconciliationSavedCase, ReconciliationReviewAction, ReconciliationReviewEvent,
 } from "@/lib/accounting/reconciliation-review";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Button } from "@/components/ui/button";
@@ -163,7 +163,7 @@ export function ReconciliationReviewSignoffPanel({
               {history.data.hasMore
                 ? " · more than 100 actions exist; this is a partial history" : ""}
             </p>
-            {history.data.events.map(event => (
+            {history.data.events.map((event: ReconciliationReviewEvent) => (
               <div key={event.id} className="rounded-md border p-2 space-y-1 text-xs">
                 <p>
                   <strong>{event.action}</strong>
@@ -174,9 +174,9 @@ export function ReconciliationReviewSignoffPanel({
                 </p>
                 <p className="whitespace-pre-wrap break-words">{event.note || "(No note)"}</p>
                 <p className="text-muted-foreground">
-                  Version: {String(event.new_state.version ?? "?")}
-                  {" · "}{String(event.old_state?.status ?? "new")}
-                  {" → "}{String(event.new_state.status ?? "?")}
+                  Version: {String((event.new_state as Record<string, unknown>)["version"] ?? "?")}
+                  {" · "}{String((event.old_state as Record<string, unknown> | null)?.["status"] ?? "new")}
+                  {" → "}{String((event.new_state as Record<string, unknown>)["status"] ?? "?")}
                 </p>
               </div>
             ))}

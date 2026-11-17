@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ConversationFiles } from "@/components/messaging/ConversationFiles";
+import { ConversationPinned } from "@/components/messaging/ConversationPinned";
 import { MessageActions } from "@/components/messaging/MessageActions";
 import { MessagingAiAssistPanel } from "@/components/messaging/MessagingAiAssistPanel";
+import { MessagingVoiceVideoPanel } from "@/components/messaging/MessagingVoiceVideoPanel";
 import { cn } from "@/lib/utils";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import {
@@ -29,6 +31,7 @@ import {
 import { useMessagingPresence } from "@/hooks/use-messaging-presence";
 import type { MessagingInboxFilter, MessagingParticipant } from "@/lib/messaging/types";
 import {
+  addMessagingInternalMembers,
   openAccountantClientConversation,
   openAdvisorEngagementConversation,
   openHrPrivateConversation,
@@ -104,7 +107,9 @@ export function MessagesScreen({
   const [uploading, setUploading] = useState(false);
   const [approvalPeer, setApprovalPeer] = useState("");
   const [showFiles, setShowFiles] = useState(false);
+  const [showPinned, setShowPinned] = useState(false);
   const [showAi, setShowAi] = useState(false);
+  const [showAddMembers, setShowAddMembers] = useState(false);
   const [showMentionPicker, setShowMentionPicker] = useState(false);
   const [replyTo, setReplyTo] = useState<MessagingMessage | null>(null);
   const queryClient = useQueryClient();
@@ -113,6 +118,7 @@ export function MessagesScreen({
   const openHr = useServerFn(openHrPrivateConversation);
   const openAdvisor = useServerFn(openAdvisorEngagementConversation);
   const openAccountant = useServerFn(openAccountantClientConversation);
+  const addMembers = useServerFn(addMessagingInternalMembers);
   const threadHits = useMessagingThreadSearch(
     companyId,
     conversationId ?? null,
@@ -439,6 +445,30 @@ export function MessagesScreen({
                     type="button"
                     size="sm"
                     variant="outline"
+                    onClick={() => setShowPinned((value) => !value)}
+                  >
+                    {showPinned ? "Hide pins" : "Pinned"}
+                  </Button>
+                  {selected &&
+                  ["group", "channel", "hr_private", "accountant_client", "advisor_engagement"].includes(
+                    selected.conversation_type,
+                  ) ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setShowAddMembers(true);
+                        void loadPeers("");
+                      }}
+                    >
+                      Add members
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
                     onClick={() => setShowAi((value) => !value)}
                   >
                     {showAi ? "Hide AI" : "AI assist"}
@@ -485,8 +515,13 @@ export function MessagesScreen({
                   <ConversationFiles companyId={companyId} conversationId={conversationId} />
                 </div>
               ) : null}
-              {showAi ? (
+              {showPinned && companyId ? (
                 <div className="border-b px-4 py-3">
+                  <ConversationPinned companyId={companyId} conversationId={conversationId} />
+                </div>
+              ) : null}
+              {showAi ? (
+                <div className="border-b space-y-3 px-4 py-3">
                   <MessagingAiAssistPanel
                     companyId={companyId}
                     conversationId={conversationId}
@@ -495,6 +530,9 @@ export function MessagesScreen({
                       .map((m) => m.body)
                       .slice(-20)}
                     aiEnabled={Boolean(settings.data?.allow_ai_assist)}
+                  />
+                  <MessagingVoiceVideoPanel
+                    allowVoiceVideo={Boolean(settings.data?.allow_voice_video)}
                   />
                 </div>
               ) : null}
@@ -707,6 +745,69 @@ export function MessagesScreen({
           )}
         </section>
       </div>
+
+      {showAddMembers && conversationId && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Add members"
+          className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4"
+        >
+          <div className="w-full max-w-md rounded-lg border bg-card p-4 shadow-lg">
+            <h3 className="text-base font-semibold">Add members</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Only active organisation members can be invited. External invites stay off until
+              isolation is verified.
+            </p>
+            <div className="mt-3 space-y-2">
+              <Label htmlFor="add-member-search">Find people</Label>
+              <Input
+                id="add-member-search"
+                value={peerSearch}
+                onChange={(e) => void loadPeers(e.target.value)}
+                placeholder="Search by name or email"
+              />
+              <ul className="max-h-48 overflow-y-auto rounded border">
+                {peers.map((peer) => (
+                  <li key={peer.user_id}>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted/50"
+                      onClick={() => {
+                        if (!companyId || !conversationId) return;
+                        void addMembers({
+                          data: {
+                            companyId,
+                            conversationId,
+                            memberUserIds: [peer.user_id],
+                          },
+                        })
+                          .then((result) => {
+                            notify.success(
+                              result.added > 0 ? "Member added" : "Already a member",
+                            );
+                            setShowAddMembers(false);
+                          })
+                          .catch((error) => notify.error(error, "Could not add member"));
+                      }}
+                    >
+                      <span>
+                        {peer.full_name || peer.email || peer.user_id}
+                        <span className="block text-xs text-muted-foreground">{peer.email}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button type="button" variant="ghost" onClick={() => setShowAddMembers(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showNew && (
         <div

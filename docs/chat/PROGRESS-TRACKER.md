@@ -2,10 +2,10 @@
 
 **Branch:** `feature/chat-collaboration-platform`  
 **Updated:** 2026-11-17  
-**Overall verified completion:** ~74% (reply/leave/mentions, digests preview, collaboration flags, HR Discuss, expanded gated E2E; staging DB + live E2E still outstanding)
+**Overall verified completion:** ~79% (add-members, pins, analytics, digest worker, performance/voice stubs; staging DB + live E2E still outstanding)
 
 ```
-[██████████████░░░░░░] 74%
+[███████████████░░░░░] 79%
 ```
 
 ## Phase status
@@ -13,14 +13,14 @@
 | Phase | State | Req | Impl | Verified | Remaining | Blocked |
 | ----- | ----- | --- | ---- | -------- | --------- | ------- |
 | 0 Audit & architecture | Security Verified | 15 | 15 | 15 | 0 | 0 |
-| 1 Core internal chat | Implemented | 40 | 40 | 16 | 24 | 0 |
+| 1 Core internal chat | Implemented | 40 | 40 | 18 | 22 | 0 |
 | 2 Employee/HR | Implemented | 20 | 19 | 4 | 16 | 0 |
 | 3 Customer portal | Implemented | 18 | 16 | 2 | 16 | 0 |
 | 4 Vendor portal | Implemented | 16 | 14 | 2 | 14 | 0 |
-| 5 Accountant/firm/advisor | Implemented | 16 | 16 | 3 | 13 | 0 |
-| 6 Workflows & notifications | Implemented | 22 | 22 | 6 | 16 | 0 |
-| 7 AI & integrations | Implemented | 14 | 12 | 4 | 10 | 0 |
-| 8 Hardening & production | In Progress | 30 | 22 | 8 | 22 | 1 |
+| 5 Accountant/firm/advisor | Implemented | 16 | 16 | 4 | 12 | 0 |
+| 6 Workflows & notifications | Implemented | 22 | 22 | 8 | 14 | 0 |
+| 7 AI & integrations | Implemented | 14 | 13 | 5 | 9 | 0 |
+| 8 Hardening & production | In Progress | 30 | 24 | 9 | 21 | 1 |
 
 Blocked: staging Supabase migration apply pending authorized isolated project confirmation.
 
@@ -29,22 +29,22 @@ Blocked: staging Supabase migration apply pending authorized isolated project co
 | Item | Status |
 | ---- | ------ |
 | Current branch | `feature/chat-collaboration-platform` (pushed) |
-| Relevant commits | Through reply/leave/mentions/digests/flags batch on PR #224 |
-| Migration status | 6 SQL migrations on branch; **not applied** remotely |
-| Security tests | Structural + scenario scripts only |
-| Unit tests | Messaging suite + digests/mentions/connection |
-| E2E tests | Expanded gated two-browser + portal scaffold |
+| Relevant commits | Through add-members/pins/analytics/digest-worker batch on PR #224 |
+| Migration status | 7 SQL migrations on branch; **not applied** remotely |
+| Security tests | Expanded structural SQL scripts |
+| Unit tests | Messaging suite + digests/mentions/performance/voice/firm |
+| E2E tests | Expanded gated scaffolds |
 | PR | **Draft [#224](https://github.com/linkbusinessadvisory/LinkBooks/pull/224)** |
 | Merge / deploy / prod | Not done |
 
 ## Latest batch
 
-- Reply-to composer + Leave conversation
-- @Mention picker (plain-text mentions)
-- Accountant chat entry + HR leave Discuss (`hr_private`)
-- Collaboration flags RPC + settings toggles
-- Safe digest preview (no outbound mailer)
-- Expanded gated E2E coverage
+- Add internal members RPC + UI
+- Pinned messages panel
+- Messaging analytics (HR/private excluded)
+- Messaging digest worker hooked into digest-cron (`messaging_digest` claim kind)
+- Performance budgets + voice/video fail-closed panel
+- Firm isolation helper tests + expanded RLS structural checks
 
 ## Remaining blockers
 

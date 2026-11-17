@@ -29,5 +29,32 @@ BEGIN
     RAISE EXCEPTION 'messaging_send_message RPC missing';
   END IF;
 
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc WHERE proname = 'messaging_add_internal_members'
+  ) THEN
+    RAISE EXCEPTION 'messaging_add_internal_members RPC missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc WHERE proname = 'messaging_set_collaboration_flags'
+  ) THEN
+    RAISE EXCEPTION 'messaging_set_collaboration_flags RPC missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc WHERE proname = 'messaging_mark_unread'
+  ) THEN
+    RAISE EXCEPTION 'messaging_mark_unread RPC missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'communication_send_claims_kind_check'
+      AND pg_get_constraintdef(oid) ILIKE '%messaging_digest%'
+  ) THEN
+    RAISE EXCEPTION 'messaging_digest claim kind missing from communication_send_claims';
+  END IF;
+
   RAISE NOTICE 'messaging security structural checks passed';
 END $$;

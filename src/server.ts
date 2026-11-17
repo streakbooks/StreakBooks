@@ -98,9 +98,14 @@ export default {
         const authFailure = await authenticateCronRequest(request);
         if (authFailure) return authFailure;
         const { runScheduledDigests } = await import("./lib/notifications/digest-worker.server");
+        const { runMessagingDigests } = await import("./lib/messaging/digest-worker.server");
         try {
-          const result = await runScheduledDigests();
-          return Response.json(result, { headers: { "cache-control": "no-store" } });
+          const communications = await runScheduledDigests();
+          const messaging = await runMessagingDigests();
+          return Response.json(
+            { communications, messaging },
+            { headers: { "cache-control": "no-store" } },
+          );
         } catch (error) {
           console.error("Scheduled digest worker error", error);
           return Response.json({ error: "Scheduled digest worker failed" }, { status: 503 });

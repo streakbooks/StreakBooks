@@ -1084,3 +1084,108 @@ export const starMessagingMessage = createServerFn({ method: "POST" })
     if (error) asError(error);
     return { ok: Boolean(ok) };
   });
+
+export const addMessagingInternalMembers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; conversationId: string; memberUserIds: string[] }) => ({
+      companyId: assertUuid(input?.companyId),
+      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+      memberUserIds: Array.isArray(input?.memberUserIds)
+        ? input.memberUserIds
+            .slice(0, 40)
+            .map((id) => assertMessagingUuid(id, "memberUserId"))
+        : [],
+    }),
+  )
+  .handler(async ({ data, context }): Promise<{ added: number }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.invite_internal");
+    if (!data.memberUserIds.length) return { added: 0 };
+    const { data: added, error } = await supabase.rpc(
+      "messaging_add_internal_members" as never,
+      {
+        _company_id: data.companyId,
+        _conversation_id: data.conversationId,
+        _member_user_ids: data.memberUserIds,
+      } as never,
+    );
+    if (error) asError(error);
+    return { added: Number(added ?? 0) };
+  });
+
+export const listPinnedMessagingMessages = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; conversationId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+  }))
+  .handler(async ({ data, context }): Promise<MessagingMessage[]> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: rows, error } = await supabase
+      .from("messaging_messages" as never)
+      .select(
+        "id,company_id,conversation_id,seq,author_user_id,author_kind,body,body_format,reply_to_message_id,idempotency_key,is_edited,is_redacted,is_pinned,created_at,edited_at" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .eq("conversation_id" as never, data.conversationId as never)
+      .eq("is_pinned" as never, true as never)
+      .eq("is_redacted" as never, false as never)
+      .order("seq" as never, { ascending: false })
+      .limit(20);
+    if (error) asError(error);
+    return ((rows ?? []) as MessagingMessage[]).map((m) => ({
+      ...m,
+      body: m.is_redacted ? "[Message removed]" : m.body,
+    }));
+  });
+
+export const getMessagingAnalyticsSummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; days?: number }) => ({
+    companyId: assertUuid(input?.companyId),
+    days:
+      typeof input?.days === "number" && input.days > 0 && input.days <= 90
+        ? Math.floor(input.days)
+        : 14,
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.manage_settings");
+    const { summariseMessagingVolume } = await import("@/lib/messaging/analytics");
+    const since = new Date();
+    since.setUTCDate(since.getUTCDate() - data.days);
+    const { data: rows, error } = await supabase
+      .from("messaging_messages" as never)
+      .select("created_at, conversation_id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .gte("created_at" as never, since.toISOString() as never)
+      .limit(5_000);
+    if (error) asError(error);
+    const messageRows = (rows ?? []) as Array<{ created_at: string; conversation_id: string }>;
+    const conversationIds = [...new Set(messageRows.map((row) => row.conversation_id))];
+    const visibilityById = new Map<string, string>();
+    if (conversationIds.length) {
+      const { data: conversations, error: conversationError } = await supabase
+        .from("messaging_conversations" as never)
+        .select("id, visibility" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .in("id" as never, conversationIds as never);
+      if (conversationError) asError(conversationError);
+      for (const row of (conversations ?? []) as Array<{ id: string; visibility: string }>) {
+        visibilityById.set(row.id, row.visibility);
+      }
+    }
+    const safeRows = messageRows.filter((row) => {
+      const visibility = visibilityById.get(row.conversation_id) ?? "internal";
+      return visibility !== "hr_private" && visibility !== "payroll_restricted";
+    });
+    const volume = summariseMessagingVolume(safeRows);
+    return {
+      days: data.days,
+      totalMessages: safeRows.length,
+      volume,
+      note: "HR/private and payroll-restricted conversations are excluded from analytics.",
+    };
+  });

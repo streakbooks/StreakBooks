@@ -40,6 +40,15 @@
 -- 7) Informal approval text
 -- messaging_request_formal_approval creates action_notifications only; sales_invoices.status unchanged.
 
+-- 8) Firm multi-client isolation
+-- Accountant conversation opened in company_a must not appear when active company is company_b.
+
+-- 9) Add members
+-- messaging_add_internal_members allows only active company members; foreigners DENY.
+
+-- 10) Digest claims
+-- messaging digest worker inserts communication_send_claims.kind = messaging_digest once per day.
+
 DO $$
 BEGIN
   IF to_regclass('public.messaging_conversations') IS NULL THEN
@@ -56,6 +65,12 @@ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'messaging_open_advisor_engagement') THEN
     RAISE EXCEPTION 'Advisor engagement RPC missing';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'messaging_add_internal_members') THEN
+    RAISE EXCEPTION 'Add members RPC missing';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'messaging_open_accountant_client') THEN
+    RAISE EXCEPTION 'Accountant client RPC missing';
   END IF;
   RAISE NOTICE 'messaging-rls-scenarios: RPC presence checks passed';
 END $$;

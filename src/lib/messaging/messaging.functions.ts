@@ -766,3 +766,57 @@ export const portalSendMessagingMessage = createServerFn({ method: "POST" })
     if (error) asError(error);
     return row as MessagingMessage;
   });
+
+export const openAdvisorEngagementConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; title: string; peerUserId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    title: normaliseGroupTitle(input?.title || "Advisor engagement"),
+    peerUserId: assertMessagingUuid(input?.peerUserId, "peerUserId"),
+  }))
+  .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
+    const { supabase } = context;
+    const { data: id, error } = await supabase.rpc("messaging_open_advisor_engagement" as never, {
+      _company_id: data.companyId,
+      _title: data.title,
+      _peer_user_id: data.peerUserId,
+    } as never);
+    if (error) asError(error);
+    return { conversationId: String(id) };
+  });
+
+export const pinMessagingMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; messageId: string; pinned?: boolean }) => ({
+    companyId: assertUuid(input?.companyId),
+    messageId: assertMessagingUuid(input?.messageId, "messageId"),
+    pinned: input?.pinned !== false,
+  }))
+  .handler(async ({ data, context }): Promise<MessagingMessage> => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase.rpc("messaging_pin_message" as never, {
+      _company_id: data.companyId,
+      _message_id: data.messageId,
+      _pinned: data.pinned,
+    } as never);
+    if (error) asError(error);
+    return row as MessagingMessage;
+  });
+
+export const starMessagingMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; messageId: string; starred?: boolean }) => ({
+    companyId: assertUuid(input?.companyId),
+    messageId: assertMessagingUuid(input?.messageId, "messageId"),
+    starred: input?.starred !== false,
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { supabase } = context;
+    const { data: ok, error } = await supabase.rpc("messaging_star_message" as never, {
+      _company_id: data.companyId,
+      _message_id: data.messageId,
+      _starred: data.starred,
+    } as never);
+    if (error) asError(error);
+    return { ok: Boolean(ok) };
+  });

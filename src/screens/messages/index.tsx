@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouteContext } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
@@ -7,10 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { ConversationFiles } from "@/components/messaging/ConversationFiles";
+import { MessageActions } from "@/components/messaging/MessageActions";
 import { cn } from "@/lib/utils";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import { useRouteContext } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import {
   useMessagingActions,
   useMessagingConversations,
@@ -19,7 +21,12 @@ import {
 } from "@/hooks/use-messaging";
 import { useMessagingPresence } from "@/hooks/use-messaging-presence";
 import type { MessagingInboxFilter, MessagingParticipant } from "@/lib/messaging/types";
-import { registerMessagingAttachment, requestMessagingFormalApproval } from "@/lib/messaging/messaging.functions";
+import {
+  openAdvisorEngagementConversation,
+  openHrPrivateConversation,
+  registerMessagingAttachment,
+  requestMessagingFormalApproval,
+} from "@/lib/messaging/messaging.functions";
 import { uploadMessagingAttachment } from "@/lib/messaging/upload-client";
 import { notify } from "@/lib/notify";
 import { looksLikeInformalApproval } from "@/lib/messaging/approvals";
@@ -75,12 +82,16 @@ export function MessagesScreen({
   const [peers, setPeers] = useState<MessagingParticipant[]>([]);
   const [groupTitle, setGroupTitle] = useState("");
   const [selectedPeers, setSelectedPeers] = useState<string[]>([]);
-  const [showNew, setShowNew] = useState<"dm" | "group" | null>(null);
+  const [showNew, setShowNew] = useState<"dm" | "group" | "hr" | "advisor" | null>(null);
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [approvalPeer, setApprovalPeer] = useState("");
+  const [showFiles, setShowFiles] = useState(false);
+  const queryClient = useQueryClient();
   const registerAttachment = useServerFn(registerMessagingAttachment);
   const requestApproval = useServerFn(requestMessagingFormalApproval);
+  const openHr = useServerFn(openHrPrivateConversation);
+  const openAdvisor = useServerFn(openAdvisorEngagementConversation);
 
   const selected = useMemo(
     () => conversations.data?.find((c) => c.id === conversationId) ?? null,
@@ -163,8 +174,14 @@ export function MessagesScreen({
           <Button type="button" variant="outline" onClick={() => setShowNew("dm")}>
             New message
           </Button>
-          <Button type="button" onClick={() => setShowNew("group")}>
+          <Button type="button" variant="outline" onClick={() => setShowNew("group")}>
             New group
+          </Button>
+          <Button type="button" variant="outline" onClick={() => setShowNew("hr")}>
+            Private HR
+          </Button>
+          <Button type="button" onClick={() => setShowNew("advisor")}>
+            Advisor chat
           </Button>
         </div>
       }
@@ -332,8 +349,21 @@ export function MessagesScreen({
                   >
                     Archive
                   </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowFiles((value) => !value)}
+                  >
+                    {showFiles ? "Hide files" : "Shared files"}
+                  </Button>
                 </div>
               </header>
+              {showFiles && companyId ? (
+                <div className="border-b px-4 py-3">
+                  <ConversationFiles companyId={companyId} conversationId={conversationId} />
+                </div>
+              ) : null}
               <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
                 {messages.isPending && <LoadingState />}
                 {messages.isError && (
@@ -350,12 +380,23 @@ export function MessagesScreen({
                     aria-label={`Message from ${message.author_name ?? "member"}`}
                   >
                     <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                      <span>{message.author_name ?? "Member"}</span>
+                      <span>
+                        {message.author_name ?? "Member"}
+                        {message.is_edited ? " · edited" : ""}
+                        {message.is_pinned ? " · pinned" : ""}
+                      </span>
                       <time dateTime={message.created_at}>
                         {new Date(message.created_at).toLocaleString()}
                       </time>
                     </div>
                     <p className="whitespace-pre-wrap text-sm">{message.body}</p>
+                    {companyId ? (
+                      <MessageActions
+                        companyId={companyId}
+                        message={message}
+                        canEdit={Boolean(user?.id && message.author_user_id === user.id)}
+                      />
+                    ) : null}
                   </article>
                 ))}
                 {!messages.isPending && !messages.isError && (messages.data?.length ?? 0) === 0 && (
@@ -411,7 +452,13 @@ export function MessagesScreen({
                           maxBytes: settings.data?.max_attachment_bytes,
                           register: registerAttachment,
                         })
-                          .then(() => notify.success("File shared securely"))
+                          .then(() => {
+                            notify.success("File shared securely");
+                            setShowFiles(true);
+                            void queryClient.invalidateQueries({
+                              queryKey: ["messaging-attachments", companyId, conversationId],
+                            });
+                          })
                           .catch((error) => notify.error(error, "Could not share file"))
                           .finally(() => setUploading(false));
                       }}
@@ -475,24 +522,51 @@ export function MessagesScreen({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={showNew === "dm" ? "New direct message" : "New group"}
+          aria-label={
+            showNew === "dm"
+              ? "New direct message"
+              : showNew === "group"
+                ? "New group"
+                : showNew === "hr"
+                  ? "Private HR discussion"
+                  : "Advisor engagement"
+          }
           className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4"
         >
           <div className="w-full max-w-md rounded-lg border bg-card p-4 shadow-lg">
             <h3 className="text-base font-semibold">
-              {showNew === "dm" ? "New direct message" : "New group"}
+              {showNew === "dm"
+                ? "New direct message"
+                : showNew === "group"
+                  ? "New group"
+                  : showNew === "hr"
+                    ? "Private HR discussion"
+                    : "Advisor engagement"}
             </h3>
-            {showNew === "group" && (
+            {(showNew === "group" || showNew === "hr" || showNew === "advisor") && (
               <div className="mt-3 space-y-2">
-                <Label htmlFor="group-title">Group name</Label>
+                <Label htmlFor="group-title">Title</Label>
                 <Input
                   id="group-title"
                   value={groupTitle}
                   onChange={(e) => setGroupTitle(e.target.value)}
                   maxLength={120}
+                  placeholder={
+                    showNew === "hr"
+                      ? "Leave / payroll query"
+                      : showNew === "advisor"
+                        ? "Engagement discussion"
+                        : "Group name"
+                  }
                 />
               </div>
             )}
+            {showNew === "hr" ? (
+              <p className="mt-3 text-xs text-muted-foreground">
+                HR-private visibility. Payroll and sensitive personal data stay out of general
+                channels.
+              </p>
+            ) : null}
             <div className="mt-3 space-y-2">
               <Label htmlFor="peer-search">Find people</Label>
               <Input
@@ -521,6 +595,52 @@ export function MessagesScreen({
                               });
                             },
                           });
+                          return;
+                        }
+                        if (showNew === "hr" && companyId) {
+                          void openHr({
+                            data: {
+                              companyId,
+                              title: groupTitle || "Private HR discussion",
+                              peerUserId: peer.user_id,
+                            },
+                          })
+                            .then((result) => {
+                              setShowNew(null);
+                              setGroupTitle("");
+                              void navigate({
+                                to: "/messages",
+                                search: messagesSearch({
+                                  filter: "inbox",
+                                  conversation: result.conversationId,
+                                }),
+                              });
+                            })
+                            .catch((error) => notify.error(error, "Could not open HR discussion"));
+                          return;
+                        }
+                        if (showNew === "advisor" && companyId) {
+                          void openAdvisor({
+                            data: {
+                              companyId,
+                              title: groupTitle || "Advisor engagement",
+                              peerUserId: peer.user_id,
+                            },
+                          })
+                            .then((result) => {
+                              setShowNew(null);
+                              setGroupTitle("");
+                              void navigate({
+                                to: "/messages",
+                                search: messagesSearch({
+                                  filter: "transactions",
+                                  conversation: result.conversationId,
+                                }),
+                              });
+                            })
+                            .catch((error) =>
+                              notify.error(error, "Could not open advisor conversation"),
+                            );
                           return;
                         }
                         setSelectedPeers((prev) =>

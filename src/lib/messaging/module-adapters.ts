@@ -70,6 +70,15 @@ export const MESSAGING_RECORD_ADAPTERS: readonly MessagingRecordAdapter[] = [
     buildDeepLink: (id) => `/contacts/${id}`,
     retentionClass: "standard",
   },
+  {
+    recordType: "advisor_engagement",
+    label: "Advisor engagement",
+    defaultVisibility: "advisor",
+    allowExternal: false,
+    requiredViewPermission: "messaging.create",
+    buildDeepLink: (id) => `/advisors-admin/engagements?id=${id}`,
+    retentionClass: "external",
+  },
 ];
 
 export function getMessagingRecordAdapter(recordType: string): MessagingRecordAdapter | undefined {

@@ -54,5 +54,8 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'messaging_register_attachment') THEN
     RAISE EXCEPTION 'Attachment RPC missing';
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'messaging_open_advisor_engagement') THEN
+    RAISE EXCEPTION 'Advisor engagement RPC missing';
+  END IF;
   RAISE NOTICE 'messaging-rls-scenarios: RPC presence checks passed';
 END $$;

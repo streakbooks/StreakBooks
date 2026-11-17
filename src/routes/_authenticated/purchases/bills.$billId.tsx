@@ -47,6 +47,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
+import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
 import {
@@ -751,6 +752,13 @@ function BillDocumentWorkspace() {
                 Back to Bills
               </Link>
             </Button>
+            <RecordDiscussButton
+              companyId={companyId ?? null}
+              recordType="purchase_bill"
+              recordId={billId}
+              title={bill.bill_number ? `Bill ${bill.bill_number}` : "Bill discussion"}
+              label="Discuss"
+            />
             {neighbors?.previousId ? (
               <Button variant="outline" size="sm" asChild>
                 <Link

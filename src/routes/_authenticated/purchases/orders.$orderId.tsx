@@ -20,6 +20,7 @@ import { StatusBadge } from "@/components/common/stat-card";
 import { TableCard } from "@/components/common/table-card";
 import { DocumentActions } from "@/components/documents/DocumentActions";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
+import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -168,9 +169,18 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
           />
         }
         actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/purchases/orders">All orders</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/purchases/orders">All orders</Link>
+            </Button>
+            <RecordDiscussButton
+              companyId={companyId}
+              recordType="purchase_order"
+              recordId={orderId}
+              title={order.order_number ? `PO ${order.order_number}` : "Purchase order discussion"}
+              label="Discuss"
+            />
+          </div>
         }
       >
       <div className="mb-5 flex flex-wrap items-center gap-2">

@@ -215,6 +215,15 @@ export const FEATURE_CATALOG: FeatureDefinition[] = [
     consumerModules: ["products"],
     preservesHistory: true,
   },
+  {
+    key: "messaging_collaboration",
+    label: "Messaging & collaboration",
+    description:
+      "Organisation messaging, groups, record discussions and portal collaboration. Chat never posts or pays.",
+    implementation: "beta",
+    consumerModules: ["messages", "portals", "hr", "advisors"],
+    preservesHistory: true,
+  },
 ];
 
 export type FeatureStateCode =

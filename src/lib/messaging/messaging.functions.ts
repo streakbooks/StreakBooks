@@ -1,0 +1,510 @@
+import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertCompanyPermission } from "@/lib/assert-company-access";
+import { assertUuid } from "@/lib/company-validation";
+import {
+  assertMessagingUuid,
+  normaliseGroupTitle,
+  normaliseMessageBody,
+} from "@/lib/messaging/validation";
+import type {
+  MessagingConversation,
+  MessagingInboxFilter,
+  MessagingMessage,
+  MessagingParticipant,
+  MessagingSettings,
+  MessagingVisibility,
+} from "@/lib/messaging/types";
+import { getMessagingRecordAdapter } from "@/lib/messaging/module-adapters";
+
+function asError(error: { message: string } | null): never {
+  throw new Error(error?.message ?? "Messaging request failed");
+}
+
+export const getMessagingSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+  }))
+  .handler(async ({ data, context }): Promise<MessagingSettings> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: ensured, error: ensureError } = await supabase.rpc(
+      "messaging_ensure_settings" as never,
+      { _company_id: data.companyId } as never,
+    );
+    if (ensureError) asError(ensureError);
+    const row = (ensured ?? null) as MessagingSettings | null;
+    if (row) return row;
+    const { data: settings, error } = await supabase
+      .from("messaging_settings" as never)
+      .select("*")
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) asError(error);
+    return (settings ?? {
+      company_id: data.companyId,
+      enabled: false,
+      allow_internal: true,
+      allow_employee: true,
+      allow_customer: false,
+      allow_vendor: false,
+      allow_accountant: true,
+      allow_advisor: true,
+      allow_group_create: true,
+      allow_external_invite: false,
+      allow_file_share: true,
+      allow_ai_assist: false,
+      allow_voice_video: false,
+      max_attachment_bytes: 5_242_880,
+      retention_days: null,
+    }) as MessagingSettings;
+  });
+
+export const setMessagingEnabled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; enabled: boolean }) => ({
+    companyId: assertUuid(input?.companyId),
+    enabled: Boolean(input?.enabled),
+  }))
+  .handler(async ({ data, context }): Promise<MessagingSettings> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.manage_settings");
+    const { data: row, error } = await supabase.rpc("messaging_set_enabled" as never, {
+      _company_id: data.companyId,
+      _enabled: data.enabled,
+    } as never);
+    if (error) asError(error);
+    return row as MessagingSettings;
+  });
+
+export const getMessagingUnreadCount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+  }))
+  .handler(async ({ data, context }): Promise<number> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: count, error } = await supabase.rpc("messaging_unread_count" as never, {
+      _company_id: data.companyId,
+    } as never);
+    if (error) asError(error);
+    return Number(count ?? 0);
+  });
+
+export const listEligibleMessagingParticipants = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; search?: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    search: typeof input?.search === "string" ? input.search.trim().slice(0, 80) : "",
+  }))
+  .handler(async ({ data, context }): Promise<MessagingParticipant[]> => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.create");
+    const { data: rows, error } = await supabase
+      .from("company_members")
+      .select("user_id, role, status")
+      .eq("company_id", data.companyId)
+      .eq("status", "active")
+      .order("created_at");
+    if (error) asError(error);
+    const ids = (rows ?? []).map((r) => r.user_id).filter((id) => id !== userId);
+    if (!ids.length) return [];
+    const { data: profiles, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", ids);
+    if (profileError) asError(profileError);
+    const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+    const search = data.search.toLowerCase();
+    return (rows ?? [])
+      .filter((r) => r.user_id !== userId)
+      .map((r) => ({
+        user_id: r.user_id,
+        role: r.role,
+        status: r.status,
+        full_name: byId.get(r.user_id)?.full_name ?? "",
+        email: byId.get(r.user_id)?.email ?? "",
+      }))
+      .filter((p) => {
+        if (!search) return true;
+        return (
+          p.full_name.toLowerCase().includes(search) || p.email.toLowerCase().includes(search)
+        );
+      })
+      .slice(0, 50);
+  });
+
+export const listMessagingConversations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; filter?: MessagingInboxFilter; q?: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    filter: (input?.filter ?? "inbox") as MessagingInboxFilter,
+    q: typeof input?.q === "string" ? input.q.trim().slice(0, 120) : "",
+  }))
+  .handler(async ({ data, context }): Promise<MessagingConversation[]> => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+
+    const { data: memberships, error: memError } = await supabase
+      .from("messaging_conversation_members" as never)
+      .select(
+        "conversation_id, last_read_seq, is_starred, is_archived, muted_until, status" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .eq("user_id" as never, userId as never)
+      .eq("status" as never, "active" as never);
+    if (memError) asError(memError);
+    const memRows = (memberships ?? []) as Array<{
+      conversation_id: string;
+      last_read_seq: number;
+      is_starred: boolean;
+      is_archived: boolean;
+      muted_until: string | null;
+      status: string;
+    }>;
+    if (!memRows.length) return [];
+
+    const wantArchived = data.filter === "archived";
+    const filteredMem = memRows.filter((m) => (wantArchived ? m.is_archived : !m.is_archived));
+    const ids = filteredMem.map((m) => m.conversation_id);
+    if (!ids.length) return [];
+
+    const { data: conversations, error } = await supabase
+      .from("messaging_conversations" as never)
+      .select(
+        "id,company_id,conversation_type,visibility,title,description,dm_pair_key,channel_epoch,is_archived,last_message_at,last_message_preview,created_at,updated_at" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .in("id" as never, ids as never)
+      .order("last_message_at" as never, { ascending: false, nullsFirst: false });
+    if (error) asError(error);
+
+    const memById = new Map(filteredMem.map((m) => [m.conversation_id, m]));
+    let rows = ((conversations ?? []) as Array<Record<string, unknown>>).map((c) => {
+      const mem = memById.get(String(c["id"]))!;
+      const previewSeqGuess = c["last_message_at"] ? 1 : 0;
+      return {
+        ...(c as unknown as MessagingConversation),
+        unread: previewSeqGuess > 0 && Number(mem.last_read_seq) === 0,
+        is_starred: mem.is_starred,
+        member_archived: mem.is_archived,
+        muted_until: mem.muted_until,
+      };
+    });
+
+    // Refine unread using max seq when possible
+    const { data: seqRows } = await supabase
+      .from("messaging_messages" as never)
+      .select("conversation_id, seq" as never)
+      .in("conversation_id" as never, ids as never)
+      .order("seq" as never, { ascending: false });
+    const maxSeq = new Map<string, number>();
+    for (const row of (seqRows ?? []) as Array<{ conversation_id: string; seq: number }>) {
+      if (!maxSeq.has(row.conversation_id)) maxSeq.set(row.conversation_id, Number(row.seq));
+    }
+    rows = rows.map((c) => {
+      const mem = memById.get(c.id)!;
+      const max = maxSeq.get(c.id) ?? 0;
+      return { ...c, unread: max > Number(mem.last_read_seq) };
+    });
+
+    switch (data.filter) {
+      case "dm":
+        rows = rows.filter((c) => c.conversation_type === "dm");
+        break;
+      case "groups":
+        rows = rows.filter((c) =>
+          ["group", "channel"].includes(c.conversation_type),
+        );
+        break;
+      case "starred":
+        rows = rows.filter((c) => c.is_starred);
+        break;
+      case "unread":
+        rows = rows.filter((c) => c.unread);
+        break;
+      case "transactions":
+        rows = rows.filter((c) =>
+          ["record", "customer", "vendor", "accountant_client", "advisor_engagement"].includes(
+            c.conversation_type,
+          ),
+        );
+        break;
+      default:
+        break;
+    }
+
+    if (data.q) {
+      const q = data.q.toLowerCase();
+      rows = rows.filter(
+        (c) =>
+          (c.title ?? "").toLowerCase().includes(q) ||
+          (c.last_message_preview ?? "").toLowerCase().includes(q),
+      );
+    }
+
+    return rows;
+  });
+
+export const listMessagingMessages = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; conversationId: string; afterSeq?: number }) => ({
+    companyId: assertUuid(input?.companyId),
+    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+    afterSeq: typeof input?.afterSeq === "number" && input.afterSeq >= 0 ? input.afterSeq : 0,
+  }))
+  .handler(async ({ data, context }): Promise<MessagingMessage[]> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    let query = supabase
+      .from("messaging_messages" as never)
+      .select(
+        "id,company_id,conversation_id,seq,author_user_id,author_kind,body,body_format,reply_to_message_id,idempotency_key,is_edited,is_redacted,is_pinned,created_at,edited_at" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .eq("conversation_id" as never, data.conversationId as never)
+      .order("seq" as never, { ascending: true })
+      .limit(200);
+    if (data.afterSeq > 0) {
+      query = query.gt("seq" as never, data.afterSeq as never);
+    }
+    const { data: rows, error } = await query;
+    if (error) asError(error);
+    const messages = (rows ?? []) as MessagingMessage[];
+    const authorIds = [...new Set(messages.map((m) => m.author_user_id).filter(Boolean))] as string[];
+    const { data: profiles } = authorIds.length
+      ? await supabase.from("profiles").select("id, full_name").in("id", authorIds)
+      : { data: [] as { id: string; full_name: string }[] };
+    const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
+    return messages.map((m) => ({
+      ...m,
+      body: m.is_redacted ? "[Message removed]" : m.body,
+      author_name: m.author_user_id ? (names.get(m.author_user_id) ?? "Member") : "System",
+    }));
+  });
+
+export const createDirectConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; peerUserId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    peerUserId: assertMessagingUuid(input?.peerUserId, "peerUserId"),
+  }))
+  .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.create");
+    const { data: id, error } = await supabase.rpc("messaging_create_dm" as never, {
+      _company_id: data.companyId,
+      _peer_user_id: data.peerUserId,
+    } as never);
+    if (error) asError(error);
+    return { conversationId: String(id) };
+  });
+
+export const createGroupConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      title: string;
+      description?: string;
+      memberUserIds?: string[];
+    }) => ({
+      companyId: assertUuid(input?.companyId),
+      title: normaliseGroupTitle(input?.title),
+      description:
+        typeof input?.description === "string" ? input.description.trim().slice(0, 2000) : "",
+      memberUserIds: Array.isArray(input?.memberUserIds)
+        ? input.memberUserIds.filter((id) => isFiniteUuid(id)).slice(0, 50)
+        : [],
+    }),
+  )
+  .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.create_group");
+    const { data: id, error } = await supabase.rpc("messaging_create_group" as never, {
+      _company_id: data.companyId,
+      _title: data.title,
+      _description: data.description || null,
+      _member_user_ids: data.memberUserIds,
+    } as never);
+    if (error) asError(error);
+    return { conversationId: String(id) };
+  });
+
+function isFiniteUuid(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value);
+}
+
+export const sendMessagingMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      conversationId: string;
+      body: string;
+      idempotencyKey: string;
+      replyToMessageId?: string | null;
+    }) => ({
+      companyId: assertUuid(input?.companyId),
+      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+      body: normaliseMessageBody(input?.body),
+      idempotencyKey: assertMessagingUuid(input?.idempotencyKey, "idempotencyKey"),
+      replyToMessageId: input?.replyToMessageId
+        ? assertMessagingUuid(input.replyToMessageId, "replyToMessageId")
+        : null,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<MessagingMessage> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.send");
+    const { data: row, error } = await supabase.rpc("messaging_send_message" as never, {
+      _company_id: data.companyId,
+      _conversation_id: data.conversationId,
+      _body: data.body,
+      _idempotency_key: data.idempotencyKey,
+      _reply_to_message_id: data.replyToMessageId,
+      _body_format: "plain",
+    } as never);
+    if (error) asError(error);
+    return row as MessagingMessage;
+  });
+
+export const markMessagingRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; conversationId: string; seq: number }) => ({
+    companyId: assertUuid(input?.companyId),
+    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+    seq: Number.isFinite(input?.seq) ? Math.max(0, Math.floor(input.seq)) : 0,
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: ok, error } = await supabase.rpc("messaging_mark_read" as never, {
+      _company_id: data.companyId,
+      _conversation_id: data.conversationId,
+      _seq: data.seq,
+    } as never);
+    if (error) asError(error);
+    return { ok: Boolean(ok) };
+  });
+
+export const updateMessagingMembership = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      conversationId: string;
+      action: "mute" | "unmute" | "archive" | "unarchive" | "star" | "unstar" | "leave";
+    }) => ({
+      companyId: assertUuid(input?.companyId),
+      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+      action: input?.action,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const allowed = new Set([
+      "mute",
+      "unmute",
+      "archive",
+      "unarchive",
+      "star",
+      "unstar",
+      "leave",
+    ]);
+    if (!allowed.has(data.action)) throw new Error("Invalid membership action");
+    const { data: ok, error } = await supabase.rpc("messaging_update_membership" as never, {
+      _company_id: data.companyId,
+      _conversation_id: data.conversationId,
+      _action: data.action,
+      _muted_until: null,
+    } as never);
+    if (error) asError(error);
+    return { ok: Boolean(ok) };
+  });
+
+export const openPortalDiscussion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      portalRole: "customer" | "supplier";
+      contactId: string;
+      recordType: string;
+      recordId: string;
+      title?: string;
+      deepLinkPath?: string;
+    }) => ({
+      companyId: assertUuid(input?.companyId),
+      portalRole: input?.portalRole === "supplier" ? "supplier" : "customer",
+      contactId: assertMessagingUuid(input?.contactId, "contactId"),
+      recordType: String(input?.recordType ?? "").trim().slice(0, 80),
+      recordId: assertMessagingUuid(input?.recordId, "recordId"),
+      title: typeof input?.title === "string" ? input.title.trim().slice(0, 120) : "",
+      deepLinkPath:
+        typeof input?.deepLinkPath === "string" ? input.deepLinkPath.trim().slice(0, 400) : "",
+    }),
+  )
+  .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.link_records");
+    const { data: id, error } = await supabase.rpc("messaging_open_portal_discussion" as never, {
+      _company_id: data.companyId,
+      _portal_role: data.portalRole,
+      _contact_id: data.contactId,
+      _record_type: data.recordType,
+      _record_id: data.recordId,
+      _title: data.title || null,
+      _deep_link_path: data.deepLinkPath || null,
+    } as never);
+    if (error) asError(error);
+    return { conversationId: String(id) };
+  });
+
+export const openRecordDiscussion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      recordType: string;
+      recordId: string;
+      visibility?: MessagingVisibility;
+      title?: string;
+    }) => ({
+      companyId: assertUuid(input?.companyId),
+      recordType: String(input?.recordType ?? "").trim().slice(0, 80),
+      recordId: assertMessagingUuid(input?.recordId, "recordId"),
+      visibility: (input?.visibility ?? "internal") as MessagingVisibility,
+      title: typeof input?.title === "string" ? input.title.trim().slice(0, 120) : "",
+    }),
+  )
+  .handler(async ({ data, context }): Promise<{ conversationId: string; path: string }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.link_records");
+    const adapter = getMessagingRecordAdapter(data.recordType);
+    if (!adapter) throw new Error("Unsupported record type for discussion");
+    await assertCompanyPermission(
+      supabase,
+      data.companyId,
+      adapter.requiredViewPermission as never,
+    );
+    if (data.visibility !== "internal" && data.visibility !== adapter.defaultVisibility) {
+      if (["customer", "vendor"].includes(data.visibility) && !adapter.allowExternal) {
+        throw new Error("External discussion is not enabled for this record type");
+      }
+    }
+    const deepLink = adapter.buildDeepLink(data.recordId);
+    const { data: id, error } = await supabase.rpc("messaging_open_record_discussion" as never, {
+      _company_id: data.companyId,
+      _record_type: data.recordType,
+      _record_id: data.recordId,
+      _visibility: data.visibility || adapter.defaultVisibility,
+      _title: data.title || adapter.label,
+      _deep_link_path: deepLink,
+    } as never);
+    if (error) asError(error);
+    return { conversationId: String(id), path: `/messages?conversation=${id}` };
+  });

@@ -141,6 +141,10 @@ const EXPECTED_TOP_LEVEL = new Map([
     "/accounting"
   ],
   [
+    "Messages",
+    "/messages"
+  ],
+  [
     "Action Center",
     "/notifications"
   ],

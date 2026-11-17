@@ -353,11 +353,15 @@ function LocationAccess({ companyId, workspace }: { companyId: string; workspace
   const [locationId, setLocationId] = useState("");
   const [userId, setUserId] = useState("");
   const [allowed, setAllowed] = useState(true);
+  const [revokeTarget, setRevokeTarget] = useState<string | null>(null);
   const save = useServerFn(setPosLocationAccess);
   const client = useQueryClient();
   const mutation = useMutation({
     mutationFn: (data: PosLocationAccessInput) => save({ data }),
-    onSuccess: () => client.invalidateQueries({ queryKey: workspaceKey(companyId) }),
+    onSuccess: () => {
+      setRevokeTarget(null);
+      return client.invalidateQueries({ queryKey: workspaceKey(companyId) });
+    },
   });
   return (
     <section
@@ -437,15 +441,60 @@ function LocationAccess({ companyId, workspace }: { companyId: string; workspace
         <p className="text-sm text-muted-foreground">No cashier location grants.</p>
       ) : (
         <ul className="space-y-1 text-sm">
-          {workspace.locationAccess.map((access) => (
-            <li key={`${access.location_id}-${access.user_id}`}>
-              {workspace.members.find((member) => member.id === access.user_id)?.name ??
-                "Member not in current list"}{" "}
-              ·{" "}
-              {workspace.locations.find((location) => location.id === access.location_id)?.name ??
-                "Inactive location"}
-            </li>
-          ))}
+          {workspace.locationAccess.map((access) => {
+            const target = `${access.location_id}:${access.user_id}`;
+            const member =
+              workspace.members.find((item) => item.id === access.user_id)?.name ??
+              "Member not in current list";
+            const location =
+              workspace.locations.find((item) => item.id === access.location_id)?.name ??
+              "Inactive location";
+            return (
+              <li key={target} className="flex flex-wrap items-center justify-between gap-3">
+                <span>{member} · {location}</span>
+                {revokeTarget === target ? (
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-muted-foreground">
+                      Revoke this cashier's access to this location?
+                    </span>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      disabled={mutation.isPending}
+                      onClick={() =>
+                        mutation.mutate({
+                          companyId,
+                          locationId: access.location_id,
+                          userId: access.user_id,
+                          allowed: false,
+                        })
+                      }
+                    >
+                      Confirm revoke
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={mutation.isPending}
+                      onClick={() => setRevokeTarget(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </span>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={mutation.isPending}
+                    aria-label={`Revoke location access for ${member} at ${location}`}
+                    onClick={() => setRevokeTarget(target)}
+                  >
+                    Revoke
+                  </Button>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
       {workspace.members.length === 100 || workspace.locationAccess.length === 1000 ? (

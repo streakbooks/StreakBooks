@@ -96,8 +96,6 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 |
 | **Originality** | Adapter reuses LinkBooks as-at contracts; no competitor UI/code |
 
-<<<<<<< HEAD
-=======
 ## Detailed finding — PO goods receipt (B2)
 
 | Field | Value |
@@ -114,11 +112,10 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Database** | `quantity_received` + `receive_purchase_order_goods` RPC; convert allows `partially_received` |
 | **Frontend** | Received/outstanding columns; Receive remaining goods |
 | **Tests** | `po-receipt.test.ts` |
-| **Development status** | Implemented on `feature/po-goods-receipt-foundation-20261117` |
-| **PR reference** | Pending |
+| **Development status** | Integrating via PR #230 (rebased onto main after #229) |
+| **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/230 |
 | **Release verification** | Open — migration not applied to staging/prod in this session |
 
->>>>>>> c5434483 (feat(purchases): non-posting PO goods receipt foundation)
 ## Acceptance questions (programme-wide)
 
 All fifteen functional acceptance questions from the master addendum remain **open** at programme level. Module-level answers must be filled as each module reaches Complete and Verified — never inferred from UI presence alone.

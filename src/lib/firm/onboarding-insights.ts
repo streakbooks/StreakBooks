@@ -26,13 +26,17 @@ export function onboardingCanComplete(step: RelevantStep, steps: RelevantStep[])
 }
 
 export function onboardingCanReopen(step: RelevantStep, steps: RelevantStep[]): boolean {
-  return Boolean(step.completed_at) && !steps.some(
-    (item) => item.completed_at && item.depends_on_task_key === step.task_key,
+  return (
+    Boolean(step.completed_at) &&
+    !steps.some((item) => item.completed_at && item.depends_on_task_key === step.task_key)
   );
 }
 
 /** Candidates must not be this step or any of its transitive dependents. */
-export function onboardingDependencyChoices(step: RelevantStep, steps: RelevantStep[]): RelevantStep[] {
+export function onboardingDependencyChoices<T extends RelevantStep>(
+  step: RelevantStep,
+  steps: T[],
+): T[] {
   function leadsBack(candidateKey: string): boolean {
     const seen = new Set<string>();
     let current: string | null = candidateKey;
@@ -43,8 +47,8 @@ export function onboardingDependencyChoices(step: RelevantStep, steps: RelevantS
     }
     return false;
   }
-  return steps.filter((candidate) =>
-    candidate.task_key !== step.task_key && !leadsBack(candidate.task_key),
+  return steps.filter(
+    (candidate) => candidate.task_key !== step.task_key && !leadsBack(candidate.task_key),
   );
 }
 

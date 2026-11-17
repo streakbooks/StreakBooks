@@ -13,6 +13,7 @@ import {
   mapCrmPipeline,
   mapCrmPipelineStage,
   mapCrmSettings,
+  mapCrmTerritory,
 } from "@/lib/crm/mappers";
 import { crmClient } from "@/lib/crm/query";
 import { buildIlikeOr } from "@/lib/purchases/search-terms";
@@ -29,45 +30,28 @@ import type {
   CrmPipeline,
   CrmPipelineStage,
   CrmSettings,
+  CrmTerritory,
 } from "@/lib/crm/types";
 import { CRM_CAMPAIGN_STATUSES, validateCrmCampaignDraft } from "@/lib/crm/campaign-draft";
 import { validateCrmTerritoryDraft } from "@/lib/crm/territory-draft";
 import { emptyCrmDashboardKpis } from "@/lib/crm/types";
-import {
-  buildCrmAccountOverlay,
-  type CrmAccountOverlayRow,
-} from "@/lib/crm/account-overlay";
+import { buildCrmAccountOverlay, type CrmAccountOverlayRow } from "@/lib/crm/account-overlay";
 import {
   buildCrmPersonDirectory,
   type CrmAccountPerson,
   type CrmPersonDirectoryRow,
 } from "@/lib/crm/person-directory";
 import { buildOpportunityQuoteLine } from "@/lib/crm/quote-bridge";
-import {
-  buildCrmDealInvoiceRow,
-  type CrmDealInvoiceRow,
-} from "@/lib/crm/payment-visibility";
-import {
-  buildForecastReport,
-  type ForecastReport,
-} from "@/lib/crm/forecast-report";
+import { buildCrmDealInvoiceRow, type CrmDealInvoiceRow } from "@/lib/crm/payment-visibility";
+import { buildForecastReport, type ForecastReport } from "@/lib/crm/forecast-report";
 import { resolveCrmCommsPolicy, type CrmCommsPolicy } from "@/lib/crm/comms-policy";
-import {
-  resolveCrmAutomationPolicy,
-  type CrmAutomationPolicy,
-} from "@/lib/crm/automation-policy";
+import { resolveCrmAutomationPolicy, type CrmAutomationPolicy } from "@/lib/crm/automation-policy";
 import {
   resolveCrmImportExportPolicy,
   type CrmImportExportPolicy,
 } from "@/lib/crm/import-export-policy";
-import {
-  resolveCrmTerritoryPolicy,
-  type CrmTerritoryPolicy,
-} from "@/lib/crm/territory-policy";
-import {
-  buildCrmTeamWorkload,
-  type CrmTeamWorkloadRow,
-} from "@/lib/crm/team-workload";
+import { resolveCrmTerritoryPolicy, type CrmTerritoryPolicy } from "@/lib/crm/territory-policy";
+import { buildCrmTeamWorkload, type CrmTeamWorkloadRow } from "@/lib/crm/team-workload";
 import {
   resolveCrmPublicFormsPolicy,
   type CrmPublicFormsPolicy,
@@ -191,23 +175,26 @@ export const getCrmDashboardKpis = createServerFn({ method: "GET" })
 
 export const listCrmLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    status?: string;
-    activeOnly?: boolean;
-    q?: string;
-    limit?: number;
-    offset?: number;
-  }) => ({
-    companyId: companyIdOf(input),
-    status: input.status?.trim() || undefined,
-    activeOnly: input.activeOnly === true,
-    q: (input.q ?? "").trim().slice(0, 120),
-    limit: Math.min(Math.max(input.limit ?? 100, 1), 500),
-    offset: Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
-      ? Math.min(input.offset ?? 0, 1000000)
-      : 0,
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      status?: string;
+      activeOnly?: boolean;
+      q?: string;
+      limit?: number;
+      offset?: number;
+    }) => ({
+      companyId: companyIdOf(input),
+      status: input.status?.trim() || undefined,
+      activeOnly: input.activeOnly === true,
+      q: (input.q ?? "").trim().slice(0, 120),
+      limit: Math.min(Math.max(input.limit ?? 100, 1), 500),
+      offset:
+        Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
+          ? Math.min(input.offset ?? 0, 1000000)
+          : 0,
+    }),
+  )
   .handler(async ({ data, context }): Promise<CrmLead[]> => {
     await requireCrmView(context.supabase, data.companyId);
     let q = crmClient(context.supabase)
@@ -218,7 +205,8 @@ export const listCrmLeads = createServerFn({ method: "GET" })
     if (data.status) q = q.eq("status", data.status);
     if (data.activeOnly) q = q.not("status", "in", "(converted,disqualified)");
     const filter = buildIlikeOr(
-      ["lead_number", "first_name", "last_name", "organization_name", "email"], data.q,
+      ["lead_number", "first_name", "last_name", "organization_name", "email"],
+      data.q,
     );
     if (filter) q = q.or(filter);
     // Stable ordering allows deterministic page navigation when timestamps are equal.
@@ -280,7 +268,10 @@ export const upsertCrmLead = createServerFn({ method: "POST" })
       currencyCode: (input.currencyCode ?? "USD").trim().toUpperCase().slice(0, 3),
       score:
         typeof input.score === "number" ? Math.min(100, Math.max(0, Math.trunc(input.score))) : 0,
-      tags: (input.tags ?? []).map((t) => String(t).trim().slice(0, 40)).filter(Boolean).slice(0, 20),
+      tags: (input.tags ?? [])
+        .map((t) => String(t).trim().slice(0, 40))
+        .filter(Boolean)
+        .slice(0, 20),
       notes: input.notes?.trim().slice(0, 4000) || undefined,
       nextFollowUpAt: input.nextFollowUpAt || null,
       disqualifiedReason: input.disqualifiedReason?.trim().slice(0, 400) || null,
@@ -406,7 +397,9 @@ export const findCrmDuplicateLeads = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }): Promise<{ matches: CrmDuplicateLeadMatch[] }> => {
     await requireCrmView(context.supabase, data.companyId);
-    const raw = await callRpc<{ matches?: Array<Record<string, unknown>> } | Array<Record<string, unknown>>>(
+    const raw = await callRpc<
+      { matches?: Array<Record<string, unknown>> } | Array<Record<string, unknown>>
+    >(
       context.supabase,
       "find_crm_duplicate_leads",
       {
@@ -514,50 +507,67 @@ export const reopenCrmOpportunity = createServerFn({ method: "POST" })
 export const listCrmPipelines = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
-  .handler(async ({ data, context }): Promise<{ pipelines: CrmPipeline[]; stages: CrmPipelineStage[] }> => {
-    await requireCrmView(context.supabase, data.companyId);
-    try {
-      await callRpc(context.supabase, "get_crm_settings", { _company_id: data.companyId }, CRM_MIGRATION);
-    } catch {
-      /* settings seed optional for list */
-    }
-    const pipelinesRes = await crmClient(context.supabase)
-      .from("crm_pipelines")
-      .select("*")
-      .eq("company_id", data.companyId)
-      .order("sort_order", { ascending: true });
-    throwIfRelation(pipelinesRes.error);
-    const stagesRes = await crmClient(context.supabase)
-      .from("crm_pipeline_stages")
-      .select("*")
-      .eq("company_id", data.companyId)
-      .order("sort_order", { ascending: true });
-    throwIfRelation(stagesRes.error);
-    return {
-      pipelines: ((pipelinesRes.data as Record<string, unknown>[] | null) ?? []).map(mapCrmPipeline),
-      stages: ((stagesRes.data as Record<string, unknown>[] | null) ?? []).map(mapCrmPipelineStage),
-    };
-  });
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ pipelines: CrmPipeline[]; stages: CrmPipelineStage[] }> => {
+      await requireCrmView(context.supabase, data.companyId);
+      try {
+        await callRpc(
+          context.supabase,
+          "get_crm_settings",
+          { _company_id: data.companyId },
+          CRM_MIGRATION,
+        );
+      } catch {
+        /* settings seed optional for list */
+      }
+      const pipelinesRes = await crmClient(context.supabase)
+        .from("crm_pipelines")
+        .select("*")
+        .eq("company_id", data.companyId)
+        .order("sort_order", { ascending: true });
+      throwIfRelation(pipelinesRes.error);
+      const stagesRes = await crmClient(context.supabase)
+        .from("crm_pipeline_stages")
+        .select("*")
+        .eq("company_id", data.companyId)
+        .order("sort_order", { ascending: true });
+      throwIfRelation(stagesRes.error);
+      return {
+        pipelines: ((pipelinesRes.data as Record<string, unknown>[] | null) ?? []).map(
+          mapCrmPipeline,
+        ),
+        stages: ((stagesRes.data as Record<string, unknown>[] | null) ?? []).map(
+          mapCrmPipelineStage,
+        ),
+      };
+    },
+  );
 
 export const listCrmOpportunities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    status?: string;
-    pipelineId?: string;
-    q?: string;
-    limit?: number;
-    offset?: number;
-  }) => ({
-    companyId: companyIdOf(input),
-    status: input.status?.trim() || undefined,
-    pipelineId: input.pipelineId ? assertUuid(input.pipelineId) : undefined,
-    q: (input.q ?? "").trim().slice(0, 120),
-    limit: Math.min(Math.max(input.limit ?? 200, 1), 500),
-    offset: Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
-      ? Math.min(input.offset ?? 0, 1000000)
-      : 0,
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      status?: string;
+      pipelineId?: string;
+      q?: string;
+      limit?: number;
+      offset?: number;
+    }) => ({
+      companyId: companyIdOf(input),
+      status: input.status?.trim() || undefined,
+      pipelineId: input.pipelineId ? assertUuid(input.pipelineId) : undefined,
+      q: (input.q ?? "").trim().slice(0, 120),
+      limit: Math.min(Math.max(input.limit ?? 200, 1), 500),
+      offset:
+        Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
+          ? Math.min(input.offset ?? 0, 1000000)
+          : 0,
+    }),
+  )
   .handler(async ({ data, context }): Promise<CrmOpportunity[]> => {
     await requireCrmView(context.supabase, data.companyId);
     let q = crmClient(context.supabase)
@@ -672,36 +682,41 @@ export const setCrmOpportunityStage = createServerFn({ method: "POST" })
 
 export const listCrmActivities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    status?: string;
-    kind?: string;
-    q?: string;
-    dueFrom?: string;
-    dueTo?: string;
-    limit?: number;
-    offset?: number;
-  }) => {
-    const dueFrom = input.dueFrom?.trim() || undefined;
-    const dueTo = input.dueTo?.trim() || undefined;
-    if (dueFrom && !Number.isFinite(Date.parse(dueFrom))) throw new Error("Invalid activity start date");
-    if (dueTo && !Number.isFinite(Date.parse(dueTo))) throw new Error("Invalid activity end date");
-    if (dueFrom && dueTo && new Date(dueFrom) >= new Date(dueTo)) {
-      throw new Error("Activity end date must follow start date");
-    }
-    return {
-      companyId: companyIdOf(input),
-      status: input.status?.trim() || undefined,
-      kind: input.kind?.trim() || undefined,
-      q: (input.q ?? "").trim().slice(0, 120),
-      dueFrom,
-      dueTo,
-      limit: Math.min(Math.max(input.limit ?? 100, 1), 500),
-      offset: Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
-        ? Math.min(input.offset ?? 0, 1000000)
-        : 0,
-    };
-  })
+  .inputValidator(
+    (input: {
+      companyId: string;
+      status?: string;
+      kind?: string;
+      q?: string;
+      dueFrom?: string;
+      dueTo?: string;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const dueFrom = input.dueFrom?.trim() || undefined;
+      const dueTo = input.dueTo?.trim() || undefined;
+      if (dueFrom && !Number.isFinite(Date.parse(dueFrom)))
+        throw new Error("Invalid activity start date");
+      if (dueTo && !Number.isFinite(Date.parse(dueTo)))
+        throw new Error("Invalid activity end date");
+      if (dueFrom && dueTo && new Date(dueFrom) >= new Date(dueTo)) {
+        throw new Error("Activity end date must follow start date");
+      }
+      return {
+        companyId: companyIdOf(input),
+        status: input.status?.trim() || undefined,
+        kind: input.kind?.trim() || undefined,
+        q: (input.q ?? "").trim().slice(0, 120),
+        dueFrom,
+        dueTo,
+        limit: Math.min(Math.max(input.limit ?? 100, 1), 500),
+        offset:
+          Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
+            ? Math.min(input.offset ?? 0, 1000000)
+            : 0,
+      };
+    },
+  )
   .handler(async ({ data, context }): Promise<CrmActivity[]> => {
     await requireCrmView(context.supabase, data.companyId);
     let q = crmClient(context.supabase)
@@ -805,7 +820,12 @@ export const listCrmLeadSources = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<CrmLeadSource[]> => {
     await requireCrmView(context.supabase, data.companyId);
     try {
-      await callRpc(context.supabase, "get_crm_settings", { _company_id: data.companyId }, CRM_MIGRATION);
+      await callRpc(
+        context.supabase,
+        "get_crm_settings",
+        { _company_id: data.companyId },
+        CRM_MIGRATION,
+      );
     } catch {
       /* ignore */
     }
@@ -849,14 +869,18 @@ export const listCrmContactPeople = createServerFn({ method: "GET" })
 
     const { data: people, error: peopleError } = await context.supabase
       .from("contact_people" as never)
-      .select("id, contact_id, first_name, last_name, email, phone, job_title, role_label, is_primary" as never)
+      .select(
+        "id, contact_id, first_name, last_name, email, phone, job_title, role_label, is_primary" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .in("contact_id" as never, accounts.map((account) => account.id) as never)
       .order("first_name" as never, { ascending: true })
       .limit(500);
     throwIfRelation(peopleError as { message: string; code?: string } | null);
 
-    const typedPeople: CrmAccountPerson[] = ((people as Array<Record<string, unknown>> | null) ?? []).map((row) => ({
+    const typedPeople: CrmAccountPerson[] = (
+      (people as Array<Record<string, unknown>> | null) ?? []
+    ).map((row) => ({
       id: String(row["id"] ?? ""),
       contactId: String(row["contact_id"] ?? ""),
       firstName: row["first_name"] == null ? null : String(row["first_name"]),
@@ -872,12 +896,14 @@ export const listCrmContactPeople = createServerFn({ method: "GET" })
 
 export const listCrmAccountOverlay = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; q?: string; crmOnly?: boolean; limit?: number }) => ({
-    companyId: companyIdOf(input),
-    q: (input.q ?? "").trim().slice(0, 100),
-    crmOnly: Boolean(input.crmOnly),
-    limit: Math.min(Math.max(input.limit ?? 200, 1), 500),
-  }))
+  .inputValidator(
+    (input: { companyId: string; q?: string; crmOnly?: boolean; limit?: number }) => ({
+      companyId: companyIdOf(input),
+      q: (input.q ?? "").trim().slice(0, 100),
+      crmOnly: Boolean(input.crmOnly),
+      limit: Math.min(Math.max(input.limit ?? 200, 1), 500),
+    }),
+  )
   .handler(async ({ data, context }): Promise<CrmAccountOverlayRow[]> => {
     await requireCrmView(context.supabase, data.companyId);
     // Contacts remain the customer master; CRM only attaches pipeline facts.
@@ -947,23 +973,23 @@ export const listCrmAccountOverlay = createServerFn({ method: "GET" })
     return data.crmOnly ? rows.filter((r) => r.hasCrmActivity) : rows;
   });
 
-
 async function resolveCrmQuoteIncomeAccount(
   supabase: unknown,
   companyId: string,
   contactId: string,
 ): Promise<string> {
-  const contactRes = await (supabase as any)
+  const contactRes = await crmClient(supabase)
     .from("contacts")
     .select("default_sales_account_id")
     .eq("company_id", companyId)
     .eq("id", contactId)
     .maybeSingle();
   if (contactRes.error) throw new Error(contactRes.error.message);
-  const preferred = contactRes.data?.default_sales_account_id as string | null | undefined;
+  const preferred = (contactRes.data as { default_sales_account_id?: string | null } | null)
+    ?.default_sales_account_id;
   if (preferred) return preferred;
 
-  const acctRes = await (supabase as any)
+  const acctRes = await crmClient(supabase)
     .from("accounts")
     .select("id")
     .eq("company_id", companyId)
@@ -974,7 +1000,7 @@ async function resolveCrmQuoteIncomeAccount(
     .order("code", { ascending: true })
     .limit(1);
   if (acctRes.error) throw new Error(acctRes.error.message);
-  const id = (acctRes.data?.[0] as { id?: string } | undefined)?.id;
+  const id = (acctRes.data as Array<{ id?: string }> | null)?.[0]?.id;
   if (!id) {
     throw new Error(
       "No active postable income account is available. Set a default sales account on the contact or chart of accounts.",
@@ -1030,7 +1056,12 @@ export const createCrmOpportunityQuote = createServerFn({ method: "POST" })
       amountMinor: opp.amountMinor,
       accountId,
     });
-    const lines = await prepareSalesLines(supabase as never, data.companyId, [line], defaults.today);
+    const lines = await prepareSalesLines(
+      supabase as never,
+      data.companyId,
+      [line],
+      defaults.today,
+    );
     const saved = await saveSalesDocument(supabase as never, {
       kind: "quote",
       companyId: data.companyId,
@@ -1043,7 +1074,7 @@ export const createCrmOpportunityQuote = createServerFn({ method: "POST" })
       lines,
     });
 
-    const upd = await (supabase as any)
+    const upd = await crmClient(supabase)
       .from("crm_opportunities")
       .update({ quote_id: saved.id, updated_at: new Date().toISOString(), updated_by: userId })
       .eq("company_id", data.companyId)
@@ -1051,7 +1082,7 @@ export const createCrmOpportunityQuote = createServerFn({ method: "POST" })
       .is("quote_id", null)
       .select("id");
     if (upd.error) throw new Error(upd.error.message);
-    if (!upd.data?.length) {
+    if (!Array.isArray(upd.data) || upd.data.length === 0) {
       // Concurrent create — return existing link if set
       const again = await crmClient(supabase)
         .from("crm_opportunities")
@@ -1065,7 +1096,12 @@ export const createCrmOpportunityQuote = createServerFn({ method: "POST" })
       throw new Error("Could not link the quote to the opportunity. Refresh and try again.");
     }
 
-    return { quoteId: saved.id, quoteNumber: saved.number, created: true as const, opportunityId: opp.id };
+    return {
+      quoteId: saved.id,
+      quoteNumber: saved.number,
+      created: true as const,
+      opportunityId: opp.id,
+    };
   });
 
 export const upsertCrmPipeline = createServerFn({ method: "POST" })
@@ -1213,16 +1249,17 @@ export const listCrmDealInvoices = createServerFn({ method: "GET" })
       .limit(data.limit);
     throwIfRelation(oppsRes.error);
 
-    const opps = (oppsRes.data as Array<{
-      id: string;
-      opportunity_number: string;
-      name: string;
-      quote_id: string;
-    }> | null) ?? [];
+    const opps =
+      (oppsRes.data as Array<{
+        id: string;
+        opportunity_number: string;
+        name: string;
+        quote_id: string;
+      }> | null) ?? [];
     if (opps.length === 0) return [];
 
     const quoteIds = [...new Set(opps.map((o) => o.quote_id))];
-    const quotesRes = await (context.supabase as any)
+    const quotesRes = await crmClient(context.supabase)
       .from("sales_quotes")
       .select("id, quote_number, converted_invoice_id")
       .eq("company_id", data.companyId)
@@ -1261,7 +1298,7 @@ export const listCrmDealInvoices = createServerFn({ method: "GET" })
       }
     >();
     if (invoiceIds.length > 0) {
-      const invRes = await (context.supabase as any)
+      const invRes = await crmClient(context.supabase)
         .from("sales_invoices")
         .select(
           "id, invoice_number, status, currency_code, total_minor, amount_paid_minor, amount_credited_minor, due_date",
@@ -1287,7 +1324,7 @@ export const listCrmDealInvoices = createServerFn({ method: "GET" })
     return opps.map((opp) => {
       const quote = quotes.get(opp.quote_id);
       const invoice = quote?.converted_invoice_id
-        ? invoices.get(quote.converted_invoice_id) ?? null
+        ? (invoices.get(quote.converted_invoice_id) ?? null)
         : null;
       return buildCrmDealInvoiceRow({
         opportunityId: opp.id,
@@ -1335,9 +1372,7 @@ export const getCrmForecastReport = createServerFn({ method: "GET" })
     const allStages = ((stagesRes.data as Record<string, unknown>[] | null) ?? []).map(
       mapCrmPipelineStage,
     );
-    const stages = pipeline
-      ? allStages.filter((s) => s.pipelineId === pipeline.id)
-      : allStages;
+    const stages = pipeline ? allStages.filter((s) => s.pipelineId === pipeline.id) : allStages;
 
     let oppQ = crmClient(context.supabase)
       .from("crm_opportunities")
@@ -1396,34 +1431,41 @@ export const getCrmAutomationPolicy = createServerFn({ method: "GET" })
 export const getCrmImportExportPolicy = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
-  .handler(async ({ data, context }): Promise<CrmImportExportPolicy & { hasImportPermission: boolean; hasExportPermission: boolean }> => {
-    await assertCompanyMember(context.supabase, data.companyId);
-    let hasImportPermission = false;
-    let hasExportPermission = false;
-    try {
-      await assertCompanyPermission(context.supabase, data.companyId, "crm.import");
-      hasImportPermission = true;
-    } catch {
-      /* optional */
-    }
-    try {
-      await assertCompanyPermission(context.supabase, data.companyId, "crm.export");
-      hasExportPermission = true;
-    } catch {
-      /* optional */
-    }
-    if (!hasImportPermission && !hasExportPermission) {
-      await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
-      hasImportPermission = true;
-      hasExportPermission = true;
-    }
-    const policy = resolveCrmImportExportPolicy({
-      backendReady: false,
-      hasImportPermission,
-      hasExportPermission,
-    });
-    return { ...policy, hasImportPermission, hasExportPermission };
-  });
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<
+      CrmImportExportPolicy & { hasImportPermission: boolean; hasExportPermission: boolean }
+    > => {
+      await assertCompanyMember(context.supabase, data.companyId);
+      let hasImportPermission = false;
+      let hasExportPermission = false;
+      try {
+        await assertCompanyPermission(context.supabase, data.companyId, "crm.import");
+        hasImportPermission = true;
+      } catch {
+        /* optional */
+      }
+      try {
+        await assertCompanyPermission(context.supabase, data.companyId, "crm.export");
+        hasExportPermission = true;
+      } catch {
+        /* optional */
+      }
+      if (!hasImportPermission && !hasExportPermission) {
+        await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
+        hasImportPermission = true;
+        hasExportPermission = true;
+      }
+      const policy = resolveCrmImportExportPolicy({
+        backendReady: false,
+        hasImportPermission,
+        hasExportPermission,
+      });
+      return { ...policy, hasImportPermission, hasExportPermission };
+    },
+  );
 
 export const getCrmTerritoryPolicy = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -1453,26 +1495,27 @@ export const listCrmTeamWorkload = createServerFn({ method: "GET" })
       await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
       const { supabase, userId } = context;
 
-      const membersRes = await (supabase as any)
+      const membersRes = await crmClient(supabase)
         .from("company_members")
         .select("user_id, role, status")
         .eq("company_id", data.companyId)
         .order("created_at");
       if (membersRes.error) throw new Error(membersRes.error.message);
-      const memberRows = (membersRes.data as Array<{
-        user_id: string;
-        role: string;
-        status: string;
-      }> | null) ?? [];
+      const memberRows =
+        (membersRes.data as Array<{
+          user_id: string;
+          role: string;
+          status: string;
+        }> | null) ?? [];
       const ids = memberRows.map((r) => r.user_id);
       const profilesRes = ids.length
-        ? await (supabase as any).from("profiles").select("id, full_name, email").in("id", ids)
+        ? await crmClient(supabase).from("profiles").select("id, full_name, email").in("id", ids)
         : { data: [], error: null };
       if (profilesRes.error) throw new Error(profilesRes.error.message);
       const byId = new Map(
-        ((profilesRes.data as Array<{ id: string; full_name: string; email: string }> | null) ?? []).map(
-          (p) => [p.id, p],
-        ),
+        (
+          (profilesRes.data as Array<{ id: string; full_name: string; email: string }> | null) ?? []
+        ).map((p) => [p.id, p]),
       );
 
       const leadsRes = await crmClient(supabase)
@@ -1501,12 +1544,14 @@ export const listCrmTeamWorkload = createServerFn({ method: "GET" })
           status: r.status,
           isYou: r.user_id === userId,
         })),
-        leads: ((leadsRes.data as Array<{ owner_user_id: string | null }> | null) ?? []).map((r) => ({
-          ownerUserId: r.owner_user_id,
-        })),
-        opportunities: (
-          (oppsRes.data as Array<{ owner_user_id: string | null }> | null) ?? []
-        ).map((r) => ({ ownerUserId: r.owner_user_id })),
+        leads: ((leadsRes.data as Array<{ owner_user_id: string | null }> | null) ?? []).map(
+          (r) => ({
+            ownerUserId: r.owner_user_id,
+          }),
+        ),
+        opportunities: ((oppsRes.data as Array<{ owner_user_id: string | null }> | null) ?? []).map(
+          (r) => ({ ownerUserId: r.owner_user_id }),
+        ),
       });
 
       return {
@@ -1562,8 +1607,8 @@ export const upsertCrmCampaign = createServerFn({ method: "POST" })
         status,
         budgetMinor: typeof input.budgetMinor === "number" ? input.budgetMinor : 0,
         currencyCode: input.currencyCode ?? "USD",
-        startsOn: input.startsOn,
-        endsOn: input.endsOn,
+        startsOn: input.startsOn ?? null,
+        endsOn: input.endsOn ?? null,
       });
       if (draftError) throw new Error(draftError);
       return {
@@ -1606,20 +1651,22 @@ export const upsertCrmCampaign = createServerFn({ method: "POST" })
         },
       },
       CRM_CAMPAIGNS_MIGRATION,
-    ).then((raw) => mapCrmCampaign({
-      id: (raw as { id?: string }).id,
-      name: (raw as { name?: string }).name,
-      code: (raw as { code?: string | null }).code,
-      status: (raw as { status?: CrmCampaignStatus }).status,
-      channel: (raw as { channel?: string | null }).channel,
-      source_id: (raw as { sourceId?: string | null }).sourceId,
-      starts_on: (raw as { startsOn?: string | null }).startsOn,
-      ends_on: (raw as { endsOn?: string | null }).endsOn,
-      budget_minor: (raw as { budgetMinor?: number }).budgetMinor,
-      currency_code: (raw as { currencyCode?: string }).currencyCode,
-      notes: (raw as { notes?: string | null }).notes,
-      is_active: (raw as { isActive?: boolean }).isActive,
-    }));
+    ).then((raw) =>
+      mapCrmCampaign({
+        id: (raw as { id?: string }).id,
+        name: (raw as { name?: string }).name,
+        code: (raw as { code?: string | null }).code,
+        status: (raw as { status?: CrmCampaignStatus }).status,
+        channel: (raw as { channel?: string | null }).channel,
+        source_id: (raw as { sourceId?: string | null }).sourceId,
+        starts_on: (raw as { startsOn?: string | null }).startsOn,
+        ends_on: (raw as { endsOn?: string | null }).endsOn,
+        budget_minor: (raw as { budgetMinor?: number }).budgetMinor,
+        currency_code: (raw as { currencyCode?: string }).currencyCode,
+        notes: (raw as { notes?: string | null }).notes,
+        is_active: (raw as { isActive?: boolean }).isActive,
+      }),
+    );
   });
 
 export const listCrmTerritories = createServerFn({ method: "GET" })
@@ -1693,12 +1740,12 @@ export const upsertCrmTerritory = createServerFn({ method: "POST" })
       CRM_TERRITORIES_MIGRATION,
     );
     return mapCrmTerritory({
-      id: raw.id as string,
-      name: raw.name as string,
-      code: (raw.code as string | null) ?? null,
-      description: (raw.description as string | null) ?? null,
-      owner_user_id: (raw.ownerUserId as string | null) ?? null,
-      is_active: raw.isActive as boolean,
-      sort_order: raw.sortOrder as number,
+      id: raw["id"] as string,
+      name: raw["name"] as string,
+      code: (raw["code"] as string | null) ?? null,
+      description: (raw["description"] as string | null) ?? null,
+      owner_user_id: (raw["ownerUserId"] as string | null) ?? null,
+      is_active: raw["isActive"] as boolean,
+      sort_order: raw["sortOrder"] as number,
     });
   });

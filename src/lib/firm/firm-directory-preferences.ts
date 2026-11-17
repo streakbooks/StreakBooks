@@ -38,27 +38,27 @@ export function normalizeFirmSavedViews(value: unknown): FirmSavedView[] {
   for (const raw of value) {
     if (typeof raw !== "object" || raw === null || Array.isArray(raw)) continue;
     const item = raw as Record<string, unknown>;
-    if (typeof item.id !== "string" || !/^[a-zA-Z0-9_-]{1,80}$/.test(item.id)) continue;
-    if (typeof item.name !== "string" || !item.name.trim()) continue;
-    const name = item.name.trim().slice(0, 60);
+    if (typeof item["id"] !== "string" || !/^[a-zA-Z0-9_-]{1,80}$/.test(item["id"])) continue;
+    if (typeof item["name"] !== "string" || !item["name"].trim()) continue;
+    const name = item["name"].trim().slice(0, 60);
     const normalizedName = name.toLocaleLowerCase();
-    if (ids.has(item.id) || names.has(normalizedName)) continue;
-    ids.add(item.id);
+    if (ids.has(item["id"]) || names.has(normalizedName)) continue;
+    ids.add(item["id"]);
     names.add(normalizedName);
     result.push({
-      id: item.id,
+      id: item["id"],
       name,
-      query: typeof item.query === "string" ? item.query.trim().slice(0, 100) : "",
+      query: typeof item["query"] === "string" ? item["query"].trim().slice(0, 100) : "",
       status:
-        item.status === "all" ||
-        (typeof item.status === "string" &&
-          Object.prototype.hasOwnProperty.call(STATUS_LABELS, item.status))
-          ? (item.status as FirmSavedView["status"])
+        item["status"] === "all" ||
+        (typeof item["status"] === "string" &&
+          Object.prototype.hasOwnProperty.call(STATUS_LABELS, item["status"]))
+          ? (item["status"] as FirmSavedView["status"])
           : "all",
-      review: REVIEW_FILTERS.some((review) => review === item.review)
-        ? (item.review as FirmClientReviewFilter)
+      review: REVIEW_FILTERS.some((review) => review === item["review"])
+        ? (item["review"] as FirmClientReviewFilter)
         : "all",
-      sort: SORTS.some((sort) => sort === item.sort) ? (item.sort as FirmClientSort) : "name",
+      sort: SORTS.some((sort) => sort === item["sort"]) ? (item["sort"] as FirmClientSort) : "name",
     });
     if (result.length >= 20) break;
   }
@@ -84,20 +84,17 @@ export function readFirmDirectoryPreferences(
   };
 }
 
-export function replaceFirmSavedView(
-  views: FirmSavedView[],
-  view: FirmSavedView,
-): FirmSavedView[] {
+export function replaceFirmSavedView(views: FirmSavedView[], view: FirmSavedView): FirmSavedView[] {
   const current = normalizeFirmSavedViews(views);
   const normalized = normalizeFirmSavedViews([view])[0];
   if (!normalized) return current;
   const sameName = current.find(
-    (item) => item.name.toLocaleLowerCase() === normalized.name.toLocaleLowerCase(),
+    (item) => item["name"].toLocaleLowerCase() === normalized.name.toLocaleLowerCase(),
   );
   if (sameName) {
     return normalizeFirmSavedViews(
       current.map((item) =>
-        item.id === sameName.id ? { ...normalized, id: sameName.id } : item,
+        item["id"] === sameName.id ? { ...normalized, id: sameName.id } : item,
       ),
     );
   }

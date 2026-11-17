@@ -1,3 +1,4 @@
+import type { Json } from "@/integrations/supabase/types";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -364,7 +365,7 @@ export const listAiSuggestions = createServerFn({ method: "GET" })
       status: string;
       title: string;
       summary: string;
-      payload: Record<string, unknown>;
+      payload: Record<string, Json>;
       validation_errors: string[];
       created_at: string;
       applied_journal_id: string | null;
@@ -378,23 +379,30 @@ export const listAiSuggestions = createServerFn({ method: "GET" })
  */
 export const applyAiSuggestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; suggestionId: string; confirm: boolean; journalDate?: string }) => {
-    const journalDate = input.journalDate ?? new Date().toISOString().slice(0, 10);
-    const parsedDate = new Date(journalDate + "T00:00:00.000Z");
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(journalDate) ||
-      !Number.isFinite(parsedDate.getTime()) ||
-      parsedDate.toISOString().slice(0, 10) !== journalDate
-    ) {
-      throw new Error("Choose a valid journal date (YYYY-MM-DD)");
-    }
-    return {
-      companyId: assertUuid(input.companyId),
-      suggestionId: assertUuid(input.suggestionId, "suggestion"),
-      confirm: input.confirm === true,
-      journalDate,
-    };
-  })
+  .inputValidator(
+    (input: {
+      companyId: string;
+      suggestionId: string;
+      confirm: boolean;
+      journalDate?: string;
+    }) => {
+      const journalDate = input.journalDate ?? new Date().toISOString().slice(0, 10);
+      const parsedDate = new Date(journalDate + "T00:00:00.000Z");
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(journalDate) ||
+        !Number.isFinite(parsedDate.getTime()) ||
+        parsedDate.toISOString().slice(0, 10) !== journalDate
+      ) {
+        throw new Error("Choose a valid journal date (YYYY-MM-DD)");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        suggestionId: assertUuid(input.suggestionId, "suggestion"),
+        confirm: input.confirm === true,
+        journalDate,
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     assertSafeApplyConfirm(data.confirm);
     await assertCompanyPermission(context.supabase, data.companyId, "ai.apply_suggestion");
@@ -418,7 +426,9 @@ export const applyAiSuggestion = createServerFn({ method: "POST" })
       throw new Error("Suggestion does not belong to this organisation");
     }
     if (!getJournalPreview(suggestion)) {
-      throw new Error("Only validated, balanced journal drafts can be posted. Review or regenerate this suggestion.");
+      throw new Error(
+        "Only validated, balanced journal drafts can be posted. Review or regenerate this suggestion.",
+      );
     }
 
     const { data: accounts } = await context.supabase

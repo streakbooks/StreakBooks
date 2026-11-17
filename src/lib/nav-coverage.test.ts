@@ -10,6 +10,8 @@ const REQUIRED_MODULES = [
   ["Purchases", "/purchases"],
   ["Expenses", "/expense-management"],
   ["Contacts", "/contacts"],
+  ["CRM", "/crm"],
+  ["HR", "/hr"],
   ["Products & Services", "/products-services"],
   ["Files", "/files"],
   ["Accounting", "/accounting"],

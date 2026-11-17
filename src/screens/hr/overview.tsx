@@ -23,7 +23,7 @@ function KpiCard({
   label: string;
   value: string | number;
   hint: string;
-  to?: "employees" | "organization" | "approvals" | "documents" | "attendance";
+  to?: "employees" | "organization" | "approvals" | "documents" | "attendance" | "offboarding";
 }) {
   const body = (
     <Card>
@@ -113,8 +113,8 @@ export function HrOverviewPage() {
         <Alert className="mb-4">
           <AlertTitle>HR is not enabled</AlertTitle>
           <AlertDescription>
-            Enable HR in settings before relying on organisation and profile workflows. Employee
-            pay records remain available in Payroll.
+            Enable HR in settings before relying on organisation and profile workflows. Employee pay
+            records remain available in Payroll.
             {can("hr.settings.edit" as Permission) ? (
               <>
                 {" "}

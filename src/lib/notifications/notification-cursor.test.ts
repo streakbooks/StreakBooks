@@ -17,7 +17,7 @@ describe("Action Center stable keyset pagination", () => {
   it("sorts beyond the priority, timestamp and ID cursor", () => {
     expect(notificationCursorFilter(cursor, "priority")).toBe(
       `priority_rank.gt.1,and(priority_rank.eq.1,created_at.lt.${stamp}),` +
-      `and(priority_rank.eq.1,created_at.eq.${stamp},id.lt.${id})`,
+        `and(priority_rank.eq.1,created_at.eq.${stamp},id.lt.${id})`,
     );
   });
   it("paginates newest to oldest by timestamp and deterministic UUID ties", () => {
@@ -31,12 +31,15 @@ describe("Action Center stable keyset pagination", () => {
     );
   });
   it("rejects unsafe IDs or unexpected timestamps and ranks", () => {
-    expect(() => notificationCursorFilter({ ...cursor, id: "x),title.eq.secret" }, "newest"))
-      .toThrow("Invalid notification history cursor");
-    expect(() => notificationCursorFilter({ ...cursor, createdAt: "2026-11-06),id.gt.0" }, "newest"))
-      .toThrow("Invalid notification history cursor");
-    expect(() => notificationCursorFilter({ ...cursor, priorityRank: 6 }, "priority"))
-      .toThrow("Invalid notification history cursor");
+    expect(() =>
+      notificationCursorFilter({ ...cursor, id: "x),title.eq.secret" }, "newest"),
+    ).toThrow("Invalid notification history cursor");
+    expect(() =>
+      notificationCursorFilter({ ...cursor, createdAt: "2026-11-06),id.gt.0" }, "newest"),
+    ).toThrow("Invalid notification history cursor");
+    expect(() => notificationCursorFilter({ ...cursor, priorityRank: 6 }, "priority")).toThrow(
+      "Invalid notification history cursor",
+    );
   });
   it("returns only the final visible row as a cursor when there is an extra item", () => {
     const rows = Array.from({ length: 4 }, (_, index) => ({
@@ -45,9 +48,17 @@ describe("Action Center stable keyset pagination", () => {
       priority_rank: index,
     }));
     expect(nextNotificationCursor(rows, 3)).toEqual({
-      id: rows[2].id, createdAt: stamp, priorityRank: 2,
+      id: rows[2]?.id,
+      createdAt: stamp,
+      priorityRank: 2,
     });
     expect(nextNotificationCursor(rows.slice(0, 3), 3)).toBeNull();
     expect(nextNotificationCursor([], 3)).toBeNull();
+  });
+  it("rejects nonintegral and invalid pagination bounds", () => {
+    const rows = [{ id, created_at: stamp, priority_rank: 1 }];
+    for (const size of [0, -1, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(nextNotificationCursor(rows, size)).toBeNull();
+    }
   });
 });

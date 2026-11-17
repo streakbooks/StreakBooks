@@ -1,5 +1,11 @@
 import { useEffect } from "react";
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+} from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 import type { ActionNotification } from "@/hooks/use-action-notifications";
@@ -53,14 +59,19 @@ export function useActionCenterFeed(
     sort,
   ] as const;
 
-  const inbox = useInfiniteQuery({
+  const inbox = useInfiniteQuery<
+    NotificationPage,
+    Error,
+    InfiniteData<NotificationPage, NotificationCursor | null>,
+    typeof feedKey,
+    NotificationCursor | null
+  >({
     queryKey: feedKey,
     enabled: Boolean(companyId && userId),
     initialPageParam: null as NotificationCursor | null,
     // Avoid polling every historical page once the user has loaded several.
     // Realtime invalidation and the explicit Refresh button remain available.
-    refetchInterval: (query) =>
-      (query.state.data?.pages.length ?? 0) > 1 ? false : 60_000,
+    refetchInterval: (query) => ((query.state.data?.pages.length ?? 0) > 1 ? false : 60_000),
     queryFn: async ({ pageParam }): Promise<NotificationPage> => {
       if (pageParam === null) {
         const { error: refreshError } = await supabase.rpc(
@@ -82,7 +93,10 @@ export function useActionCenterFeed(
 
       let query = supabase
         .from("action_notification_inbox" as never)
-        .select(SELECT_FIELDS as never, { count: notificationPageCountMode(pageParam) })
+        .select(
+          SELECT_FIELDS as never,
+          pageParam === null ? { count: notificationPageCountMode(pageParam)! } : {},
+        )
         .eq("company_id" as never, companyId as never);
 
       if (category !== "all") query = query.eq("category" as never, category as never);
@@ -204,15 +218,27 @@ export function useActionCenterFeed(
         () => {
           void client.invalidateQueries({ queryKey: ["action-center-feed", companyId, userId] });
           void client.invalidateQueries({ queryKey: ["action-center-summary", companyId, userId] });
-          void client.invalidateQueries({ queryKey: ["action-notifications-unread", companyId, userId] });
+          void client.invalidateQueries({
+            queryKey: ["action-notifications-unread", companyId, userId],
+          });
         },
       )
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [client, companyId, userId]);
 
   const changeState = useMutation({
-    mutationFn: async ({ id, read, archive }: { id: string; read?: boolean; archive?: boolean }) => {
+    mutationFn: async ({
+      id,
+      read,
+      archive,
+    }: {
+      id: string;
+      read?: boolean;
+      archive?: boolean;
+    }) => {
       const { data, error } = await supabase.rpc(
         "set_action_notification_state" as never,
         {

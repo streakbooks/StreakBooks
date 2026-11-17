@@ -63,7 +63,7 @@ function SalesOverview() {
           facts={
             overviewQ.data
               ? [{ label: "Draft invoices", value: String(overviewQ.data.draftCount) }]
-              : undefined
+              : []
           }
           links={[
             { label: "Invoices", to: "/sales/invoices", hint: "Customer invoices" },
@@ -96,7 +96,6 @@ function SalesOverview() {
         </>
       }
     >
-
       {overviewQ.isPending ? (
         <LoadingState />
       ) : overviewQ.isError ? (

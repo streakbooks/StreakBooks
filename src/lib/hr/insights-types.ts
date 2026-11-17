@@ -1,3 +1,4 @@
+import type { Json } from "@/integrations/supabase/types";
 export const HR_REPORT_IDS = [
   "headcount_by_department",
   "leave_usage",
@@ -37,7 +38,7 @@ export type HrAutomationRule = {
   name: string;
   triggerKind: string;
   isEnabled: boolean;
-  config: Record<string, unknown>;
+  config: Record<string, Json>;
   lastRunAt: string | null;
   lastRunStatus: string | null;
   lastRunSummary: string | null;

@@ -71,6 +71,9 @@ const modulePermission: Record<string, Permission> = {
   "/fixed-assets": "accounting.view",
   "/tax": "accounting.view",
   "/ai-assistant": "ai.use",
+  "/crm": "crm.view",
+  "/hr": "hr.view",
+  "/payroll": "payroll.view",
 };
 const MODULE_NAV = navItems.map((item) => ({
   destination: item.to,
@@ -236,6 +239,12 @@ export function parseDeterministicCommand(transcript: string, location = ""): Pa
       .replace(/^(the|my|our)\s+/, "")
       .replace(/\s+(?:page|screen|tab|section|list)$/, "")
       .replace(/^(?:all|list of)\s+/, "");
+    // Outside a Sales/Purchases workspace, exact sidebar names identify modules.
+    // In-module section names retain their existing contextual interpretation.
+    if (!location.startsWith("/sales") && !location.startsWith("/purchases")) {
+      const module = MODULE_NAV.find((entry) => entry.phrases.includes(subject));
+      if (module) return { kind: "matched", command: module };
+    }
     const sections = [
       ...PURCHASES_SECTIONS.map((item) => ({
         ...item,

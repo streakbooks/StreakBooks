@@ -30,13 +30,7 @@ describe("billOutstandingMinor", () => {
 });
 
 describe("assessSupplierCreditLimit", () => {
-  const open = (
-    id: string,
-    total: number,
-    paid = 0,
-    credited = 0,
-    currencyCode = "GBP",
-  ) => ({
+  const open = (id: string, total: number, paid = 0, credited = 0, currencyCode = "GBP") => ({
     id,
     currencyCode,
     status: "authorised",

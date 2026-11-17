@@ -106,12 +106,17 @@ async function loadSupplierCreditLimitAssessment(
     .eq("company_id" as never, companyId as never)
     .maybeSingle();
   if (cErr) throw new Error(cErr.message);
-  const c = contact as { credit_limit_minor?: number | null; default_currency?: string | null } | null;
+  const c = contact as {
+    credit_limit_minor?: number | null;
+    default_currency?: string | null;
+  } | null;
   const limitCurrency = String(c?.default_currency || baseCurrency).toUpperCase();
 
   const { data: openRows, error: oErr } = await supabase
     .from("purchase_bills" as never)
-    .select("id, currency_code, status, total_minor, amount_paid_minor, amount_credited_minor" as never)
+    .select(
+      "id, currency_code, status, total_minor, amount_paid_minor, amount_credited_minor" as never,
+    )
     .eq("company_id" as never, companyId as never)
     .eq("contact_id" as never, candidate.contactId as never)
     .in("status" as never, ["authorised", "partly_paid"] as never);
@@ -1936,15 +1941,13 @@ export async function authoriseBillInternal(
 
 export const authoriseBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    billId: string;
-    acknowledgeCreditLimit?: boolean;
-  }) => ({
-    companyId: assertUuid(input.companyId),
-    billId: assertUuid(input.billId, "bill"),
-    acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
-  }))
+  .inputValidator(
+    (input: { companyId: string; billId: string; acknowledgeCreditLimit?: boolean }) => ({
+      companyId: assertUuid(input.companyId),
+      billId: assertUuid(input.billId, "bill"),
+      acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
+    }),
+  )
   .handler(async ({ data, context }) => {
     return authoriseBillInternal(
       context.supabase,

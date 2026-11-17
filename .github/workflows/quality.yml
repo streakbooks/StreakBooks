@@ -72,7 +72,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        script: [test:workflows:postgres, test:platform:postgres]
+        script: [test:workflows:postgres, test:platform:postgres, test:pos:postgres]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

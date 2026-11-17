@@ -1016,8 +1016,8 @@ function BillDocumentWorkspace() {
                   onChange={(e) => setAckCreditLimit(e.target.checked)}
                 />
                 <span>
-                  I acknowledge this bill takes the supplier over their credit limit and
-                  authorise anyway.
+                  I acknowledge this bill takes the supplier over their credit limit and authorise
+                  anyway.
                 </span>
               </label>
             ) : null}

@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -341,7 +342,7 @@ export function HrOnboardingPage() {
                       </TableCell>
                       <TableCell>
                         {canManage ? (
-                          <Select
+                          <RecordLookupSelect
                             value={task.status}
                             onValueChange={(status) => taskMut.mutate({ taskId: task.id, status })}
                           >
@@ -358,7 +359,7 @@ export function HrOnboardingPage() {
                                 </SelectItem>
                               ))}
                             </SelectContent>
-                          </Select>
+                          </RecordLookupSelect>
                         ) : null}
                       </TableCell>
                     </TableRow>
@@ -417,7 +418,7 @@ export function HrOnboardingPage() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Template</Label>
-              <Select
+              <RecordLookupSelect
                 value={templateId || "__none"}
                 onValueChange={(v) => setTemplateId(v === "__none" ? "" : v)}
               >
@@ -432,11 +433,11 @@ export function HrOnboardingPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label>Employee</Label>
-              <Select
+              <RecordLookupSelect
                 value={employeeId || "__none"}
                 onValueChange={(v) => setEmployeeId(v === "__none" ? "" : v)}
               >
@@ -451,7 +452,7 @@ export function HrOnboardingPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="join-date">Target join date</Label>

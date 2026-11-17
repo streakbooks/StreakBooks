@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -258,7 +259,7 @@ export function HrTransfersPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              <Select value={employeeId} onValueChange={setEmployeeId}>
+              <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
@@ -269,11 +270,11 @@ export function HrTransfersPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Change type</Label>
-              <Select value={changeType} onValueChange={setChangeType}>
+              <RecordLookupSelect value={changeType} onValueChange={setChangeType}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -284,7 +285,7 @@ export function HrTransfersPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Effective on</Label>
@@ -296,7 +297,7 @@ export function HrTransfersPage() {
             </div>
             <div className="grid gap-1.5">
               <Label>To department</Label>
-              <Select value={toDepartmentId} onValueChange={setToDepartmentId}>
+              <RecordLookupSelect value={toDepartmentId} onValueChange={setToDepartmentId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
@@ -307,11 +308,11 @@ export function HrTransfersPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>To designation</Label>
-              <Select value={toDesignationId} onValueChange={setToDesignationId}>
+              <RecordLookupSelect value={toDesignationId} onValueChange={setToDesignationId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
@@ -322,11 +323,11 @@ export function HrTransfersPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>To location</Label>
-              <Select value={toLocationId} onValueChange={setToLocationId}>
+              <RecordLookupSelect value={toLocationId} onValueChange={setToLocationId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
@@ -337,11 +338,14 @@ export function HrTransfersPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>To manager</Label>
-              <Select value={toManagerEmployeeId} onValueChange={setToManagerEmployeeId}>
+              <RecordLookupSelect
+                value={toManagerEmployeeId}
+                onValueChange={setToManagerEmployeeId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
@@ -352,7 +356,7 @@ export function HrTransfersPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Reason</Label>

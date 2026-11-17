@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -194,18 +195,18 @@ export function AdvisorsAdminClientsPage() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="client-status-filter">Status</Label>
-            <select
+            <RecordLookupSelect
               id="client-status-filter"
               className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
               value={status}
-              onChange={(event) => setStatus(event.target.value as (typeof STATUSES)[number])}
+              onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
             >
               {STATUSES.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
           </div>
           <Button type="button" variant="outline" onClick={() => setForm(emptyForm)}>
             New client
@@ -301,14 +302,14 @@ export function AdvisorsAdminClientsPage() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="client-status">Status</Label>
-                <select
+                <RecordLookupSelect
                   id="client-status"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={form.status}
-                  onChange={(event) =>
+                  onValueChange={(event) =>
                     setForm((prev) => ({
                       ...prev,
-                      status: event.target.value as AdvisorsClientStatus,
+                      status: event as AdvisorsClientStatus,
                     }))
                   }
                 >
@@ -317,7 +318,7 @@ export function AdvisorsAdminClientsPage() {
                       {item}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="client-service">Primary service</Label>
@@ -339,12 +340,12 @@ export function AdvisorsAdminClientsPage() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="client-advisor">Assigned advisor</Label>
-                <select
+                <RecordLookupSelect
                   id="client-advisor"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={form.assignedAdvisorId}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, assignedAdvisorId: event.target.value }))
+                  onValueChange={(event) =>
+                    setForm((prev) => ({ ...prev, assignedAdvisorId: event }))
                   }
                 >
                   <option value="">Unassigned</option>
@@ -353,7 +354,7 @@ export function AdvisorsAdminClientsPage() {
                       {member.displayName}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <Label htmlFor="client-notes">Notes</Label>

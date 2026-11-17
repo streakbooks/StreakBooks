@@ -1,5 +1,6 @@
 "use client";
 
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { VoiceFields, VoiceSelect } from "@/components/ai-voice/voice-fields";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -871,7 +872,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <div className="space-y-2">
                   <Label htmlFor="sales-price-list">Sales price list (optional)</Label>
-                  <Select
+                  <RecordLookupSelect
                     value={selectedPriceListId || "none"}
                     onValueChange={(value) => {
                       setManualPriceListId(value === "none" ? "" : value);
@@ -898,7 +899,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                           </SelectItem>
                         ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <Button
                   variant="outline"

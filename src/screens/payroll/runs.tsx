@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -237,7 +238,7 @@ export function PayrollRunsPage() {
             <Label htmlFor="run-status-filter" className="sr-only">
               Filter by status
             </Label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <RecordLookupSelect value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger id="run-status-filter" className="w-[180px]">
                 <SelectValue placeholder="All statuses" />
               </SelectTrigger>
@@ -249,7 +250,7 @@ export function PayrollRunsPage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
             <Input
               value={runSearch}
               onChange={(event) => setRunSearch(event.target.value)}
@@ -357,7 +358,7 @@ export function PayrollRunsPage() {
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="run-schedule">Pay schedule</Label>
-              <Select
+              <RecordLookupSelect
                 value={scheduleId}
                 onValueChange={(value) => {
                   setScheduleId(value);
@@ -374,7 +375,7 @@ export function PayrollRunsPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-2">

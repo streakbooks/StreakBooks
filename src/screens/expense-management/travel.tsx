@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -280,7 +281,7 @@ export function ExpenseManagementTravelPage() {
               </div>
               <div className="grid gap-2">
                 <Label>Per diem rate</Label>
-                <Select value={tripRateId} onValueChange={setTripRateId}>
+                <RecordLookupSelect value={tripRateId} onValueChange={setTripRateId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select rate" />
                   </SelectTrigger>
@@ -293,7 +294,7 @@ export function ExpenseManagementTravelPage() {
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="trip-dest">Destination</Label>

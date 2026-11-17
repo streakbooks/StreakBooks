@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -382,7 +383,7 @@ export function HrShiftsPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              <Select value={employeeId} onValueChange={setEmployeeId}>
+              <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
@@ -393,11 +394,11 @@ export function HrShiftsPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Shift template</Label>
-              <Select value={shiftTemplateId} onValueChange={setShiftTemplateId}>
+              <RecordLookupSelect value={shiftTemplateId} onValueChange={setShiftTemplateId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select shift" />
                 </SelectTrigger>
@@ -408,7 +409,7 @@ export function HrShiftsPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">

@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
 import { ReconciliationReviewSignoffPanel } from "@/components/accounting/ReconciliationReviewSignoffPanel";
 import { useMutation } from "@tanstack/react-query";
@@ -183,12 +184,12 @@ export function PersistentReconciliationReviews({
         <div className="grid gap-3 lg:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="exc-track-current">Select an audited exception</Label>
-            <select
+            <RecordLookupSelect
               id="exc-track-current"
               className="w-full rounded-md border bg-background p-2 text-sm"
               value={selectedKey}
-              onChange={(e) => {
-                const key = e.target.value;
+              onValueChange={(e) => {
+                const key = e;
                 setSelectedKey(key);
                 setSelectedSavedId("");
                 setNote("");
@@ -204,7 +205,7 @@ export function PersistentReconciliationReviews({
                   {row.source} · {row.title.slice(0, 90)}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
             <p className="text-xs text-muted-foreground">
               Current findings are from the audits you chose to run. A changed evidence description
               creates a new case identity; previous cases remain visible in the saved queue.
@@ -232,12 +233,12 @@ export function PersistentReconciliationReviews({
           </div>
           <div className="space-y-2">
             <Label htmlFor="exc-saved-review">Saved cases in this organisation</Label>
-            <select
+            <RecordLookupSelect
               id="exc-saved-review"
               className="w-full rounded-md border bg-background p-2 text-sm"
               value={selectedSavedId}
-              onChange={(e) => {
-                setSelectedSavedId(e.target.value);
+              onValueChange={(e) => {
+                setSelectedSavedId(e);
                 setSelectedKey("");
                 setNote("");
               }}
@@ -248,7 +249,7 @@ export function PersistentReconciliationReviews({
                   {row.status} · {row.source_type} · {row.title.slice(0, 75)}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
             {selectedSaved ? (
               <div className="space-y-1 rounded-md border p-2 text-xs">
                 <p>
@@ -321,11 +322,11 @@ export function PersistentReconciliationReviews({
                   Load eligible organisation members
                 </Button>
                 {people.data ? (
-                  <select
+                  <RecordLookupSelect
                     aria-label="Active organisation members"
                     value=""
                     className="w-full rounded-md border bg-background p-2 text-xs"
-                    onChange={(e) => setAssignedTo(e.target.value)}
+                    onValueChange={(e) => setAssignedTo(e)}
                   >
                     <option value="">Choose an active member</option>
                     {people.data.members.map((row) => (
@@ -333,7 +334,7 @@ export function PersistentReconciliationReviews({
                         {row.role} · {row.user_id}
                       </option>
                     ))}
-                  </select>
+                  </RecordLookupSelect>
                 ) : null}
                 {people.data?.hasMore ? (
                   <p className="text-xs text-muted-foreground">

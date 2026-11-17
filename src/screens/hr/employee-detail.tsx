@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -275,7 +276,7 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
             </div>
             <div className="space-y-1">
               <Label htmlFor="workArrangement">Work arrangement</Label>
-              <Select
+              <RecordLookupSelect
                 value={draft.workArrangement}
                 disabled={!canManage}
                 onValueChange={(value) => setDraft((d) => ({ ...d, workArrangement: value }))}
@@ -290,11 +291,11 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="departmentId">Department</Label>
-              <Select
+              <RecordLookupSelect
                 value={draft.departmentId || "__none"}
                 disabled={!canManage}
                 onValueChange={(value) =>
@@ -312,11 +313,11 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="designationId">Designation</Label>
-              <Select
+              <RecordLookupSelect
                 value={draft.designationId || "__none"}
                 disabled={!canManage}
                 onValueChange={(value) =>
@@ -334,11 +335,11 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="locationId">Location</Label>
-              <Select
+              <RecordLookupSelect
                 value={draft.locationId || "__none"}
                 disabled={!canManage}
                 onValueChange={(value) =>
@@ -356,7 +357,7 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="probationEndDate">Probation end</Label>

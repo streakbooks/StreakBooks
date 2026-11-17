@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -258,12 +259,12 @@ export function AiJournalEvidenceExplorer({
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="ai-evidence-source">Journal source</Label>
-                    <select
+                    <RecordLookupSelect
                       id="ai-evidence-source"
                       className="flex h-10 w-60 max-w-full rounded-md border border-input bg-background px-3 text-sm"
                       value={source}
-                      onChange={(event) => {
-                        setSource(event.target.value);
+                      onValueChange={(event) => {
+                        setSource(event);
                         setJournalPage(0);
                       }}
                     >
@@ -273,7 +274,7 @@ export function AiJournalEvidenceExplorer({
                           {label}
                         </option>
                       ))}
-                    </select>
+                    </RecordLookupSelect>
                   </div>
                   <Link
                     className="text-sm font-medium text-primary underline-offset-4 hover:underline"
@@ -455,12 +456,12 @@ export function AiJournalEvidenceExplorer({
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="ai-evidence-account">Ledger account</Label>
-                    <select
+                    <RecordLookupSelect
                       id="ai-evidence-account"
                       className="flex h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
                       value={accountId}
-                      onChange={(event) => {
-                        setAccountId(event.target.value);
+                      onValueChange={(event) => {
+                        setAccountId(event);
                         setAccountPage(0);
                       }}
                     >
@@ -471,7 +472,7 @@ export function AiJournalEvidenceExplorer({
                           {!account.is_active ? " (inactive)" : ""}
                         </option>
                       ))}
-                    </select>
+                    </RecordLookupSelect>
                   </div>
                   {selectedAccount ? (
                     <Link

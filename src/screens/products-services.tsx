@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -594,7 +595,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
             <SelectItem value="non_inventory">Non-inventory</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <RecordLookupSelect value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-44" aria-label="Category filter">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
@@ -607,7 +608,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
               </SelectItem>
             ))}
           </SelectContent>
-        </Select>
+        </RecordLookupSelect>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-40" aria-label="Item status">
             <SelectValue />
@@ -1116,7 +1117,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
             </div>
             <div className="grid gap-1">
               <Label>Category</Label>
-              <Select
+              <RecordLookupSelect
                 value={form.categoryId || "none"}
                 onValueChange={(categoryId) =>
                   setForm((current) => ({
@@ -1139,7 +1140,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                       </SelectItem>
                     ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1">

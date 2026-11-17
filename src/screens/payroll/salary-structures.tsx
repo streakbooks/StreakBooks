@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -320,7 +321,7 @@ export function PayrollSalaryStructuresPage() {
                           >
                             <div className="space-y-1 sm:col-span-2">
                               <Label>Component</Label>
-                              <Select
+                              <RecordLookupSelect
                                 disabled={!canManage}
                                 value={line.componentTypeId || "none"}
                                 onValueChange={(v) => {
@@ -342,7 +343,7 @@ export function PayrollSalaryStructuresPage() {
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
-                              </Select>
+                              </RecordLookupSelect>
                             </div>
                             <div className="space-y-1">
                               <Label>Fixed ({currency})</Label>

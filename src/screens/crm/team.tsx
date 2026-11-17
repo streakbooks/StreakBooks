@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -191,7 +192,7 @@ export function CrmTeamPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Owner</Label>
-                  <Select
+                  <RecordLookupSelect
                     value={ownerUserId || "__none"}
                     onValueChange={(v) => setOwnerUserId(v === "__none" ? "" : v)}
                   >
@@ -208,7 +209,7 @@ export function CrmTeamPage() {
                           </SelectItem>
                         ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="territory-description">Description</Label>

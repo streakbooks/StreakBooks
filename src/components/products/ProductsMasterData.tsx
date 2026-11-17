@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -437,7 +438,7 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
                     setProductId("");
                   }}
                 />
-                <Select
+                <RecordLookupSelect
                   value={productId}
                   onValueChange={(value) => {
                     setProductId(value);
@@ -458,7 +459,7 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
                 {productsQ.isError ? (
                   <p role="alert" className="text-sm text-destructive">
                     {friendlyAuthError(productsQ.error)}

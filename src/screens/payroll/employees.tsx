@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -320,7 +321,7 @@ export function PayrollEmployeesPage() {
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search employees"
             />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <RecordLookupSelect value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" aria-label="Filter by status">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -332,7 +333,7 @@ export function PayrollEmployeesPage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
             <Select value={sort} onValueChange={(value) => setSort(value as typeof sort)}>
               <SelectTrigger className="w-[170px]" aria-label="Sort employees">
                 <SelectValue />
@@ -578,7 +579,7 @@ function EmployeeForm({
         </div>
         <div className="space-y-1">
           <Label htmlFor="emp-status">Status</Label>
-          <Select
+          <RecordLookupSelect
             value={draft.status}
             onValueChange={(v) => patch({ status: v as PayrollEmployeeDraft["status"] })}
           >
@@ -592,7 +593,7 @@ function EmployeeForm({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
       </div>
       {draft.status === "terminated" ? (
@@ -609,7 +610,7 @@ function EmployeeForm({
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="space-y-1">
           <Label htmlFor="emp-type">Employment type</Label>
-          <Select
+          <RecordLookupSelect
             value={draft.employmentType}
             onValueChange={(v) =>
               patch({ employmentType: v as PayrollEmployeeDraft["employmentType"] })
@@ -625,11 +626,11 @@ function EmployeeForm({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="space-y-1">
           <Label htmlFor="emp-pay-method">Payment method</Label>
-          <Select
+          <RecordLookupSelect
             value={draft.paymentMethod}
             onValueChange={(v) =>
               patch({ paymentMethod: v as PayrollEmployeeDraft["paymentMethod"] })
@@ -645,7 +646,7 @@ function EmployeeForm({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
@@ -670,7 +671,7 @@ function EmployeeForm({
       </div>
       <div className="space-y-1">
         <Label htmlFor="emp-schedule">Pay schedule</Label>
-        <Select
+        <RecordLookupSelect
           value={draft.payScheduleId || "none"}
           onValueChange={(v) => patch({ payScheduleId: v === "none" ? "" : v })}
         >
@@ -687,7 +688,7 @@ function EmployeeForm({
                 </SelectItem>
               ))}
           </SelectContent>
-        </Select>
+        </RecordLookupSelect>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="space-y-1">

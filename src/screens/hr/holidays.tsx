@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -314,7 +315,7 @@ export function HrHolidaysPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Calendar</Label>
-              <Select value={calendarId} onValueChange={setCalendarId}>
+              <RecordLookupSelect value={calendarId} onValueChange={setCalendarId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select calendar" />
                 </SelectTrigger>
@@ -325,7 +326,7 @@ export function HrHolidaysPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Date</Label>

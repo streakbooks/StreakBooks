@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
@@ -638,7 +639,7 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label htmlFor="salary-structure">Salary structure</Label>
-                    <Select
+                    <RecordLookupSelect
                       value={salaryDraft.structureId || "none"}
                       onValueChange={(v) => {
                         const structureId = v === "none" ? "" : v;
@@ -662,7 +663,7 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="salary-from">Effective from</Label>
@@ -732,7 +733,7 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
                             <div className="flex items-start justify-between gap-2 sm:col-span-2">
                               <div className="min-w-0 flex-1 space-y-1">
                                 <Label>Pay component</Label>
-                                <Select
+                                <RecordLookupSelect
                                   value={line.componentTypeId || "none"}
                                   onValueChange={(v) => {
                                     const customLines = [...salaryDraft.customLines];
@@ -753,7 +754,7 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
-                                </Select>
+                                </RecordLookupSelect>
                               </div>
                               <Button
                                 type="button"

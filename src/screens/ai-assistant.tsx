@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState, type KeyboardEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -440,7 +441,10 @@ function AiAssistantWorkspace({
                   <label htmlFor="ai-intent" className="text-sm font-medium">
                     Task
                   </label>
-                  <Select value={intent} onValueChange={(value) => setIntent(value as AiIntent)}>
+                  <RecordLookupSelect
+                    value={intent}
+                    onValueChange={(value) => setIntent(value as AiIntent)}
+                  >
                     <SelectTrigger id="ai-intent" className="w-full sm:w-72">
                       <SelectValue />
                     </SelectTrigger>
@@ -451,7 +455,7 @@ function AiAssistantWorkspace({
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="ai-question" className="text-sm font-medium">

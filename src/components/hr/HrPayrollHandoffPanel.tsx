@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -142,7 +143,7 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
                         <TableCell>
                           <div className="grid gap-1.5">
                             <Label className="sr-only">Component</Label>
-                            <Select
+                            <RecordLookupSelect
                               value={componentByChange[row.id] ?? ""}
                               onValueChange={(v) =>
                                 setComponentByChange((prev) => ({ ...prev, [row.id]: v }))
@@ -158,7 +159,7 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
                                   </SelectItem>
                                 ))}
                               </SelectContent>
-                            </Select>
+                            </RecordLookupSelect>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">

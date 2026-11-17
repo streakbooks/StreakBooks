@@ -6,6 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { acceptAdvisorsPortalInvite } from "@/lib/advisors/portal.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 

@@ -33,9 +33,12 @@ export function summarizeDepreciationPreview(
     seen.add(row.asset_id);
     switch (row.status) {
       case "due":
-        if (!Number.isSafeInteger(row.amount_minor) || row.amount_minor <= 0 ||
-            !Number.isSafeInteger(row.accumulated_after_minor) ||
-            row.accumulated_after_minor < row.amount_minor) {
+        if (
+          !Number.isSafeInteger(row.amount_minor) ||
+          row.amount_minor <= 0 ||
+          !Number.isSafeInteger(row.accumulated_after_minor) ||
+          row.accumulated_after_minor < row.amount_minor
+        ) {
           throw new Error("Invalid amount in depreciation preview.");
         }
         result.due++;
@@ -83,30 +86,33 @@ export function planDepreciationMonths(
 ): DepreciationRunPlan {
   const validMonth = (value: string) =>
     /^\d{4}-(0[1-9]|1[0-2])$/.test(value) && Number(value.slice(0, 4)) > 0;
-  if (!validMonth(selectedMonth) ||
-      (outstandingMonth !== null &&
-        (!/^\d{4}-(0[1-9]|1[0-2])-01$/.test(outstandingMonth) ||
-          Number(outstandingMonth.slice(0, 4)) === 0))) {
+  if (
+    !validMonth(selectedMonth) ||
+    (outstandingMonth !== null &&
+      (!/^\d{4}-(0[1-9]|1[0-2])-01$/.test(outstandingMonth) ||
+        Number(outstandingMonth.slice(0, 4)) === 0))
+  ) {
     throw new Error("Choose a valid depreciation month.");
   }
   if (!Number.isInteger(maxMonths) || maxMonths < 1 || maxMonths > 36) {
     throw new Error("The maximum posting batch is 36 months.");
   }
-  const start = outstandingMonth && outstandingMonth.slice(0, 7) <= selectedMonth
-    ? outstandingMonth
-    : selectedMonth + "-01";
+  const start =
+    outstandingMonth && outstandingMonth.slice(0, 7) <= selectedMonth
+      ? outstandingMonth
+      : selectedMonth + "-01";
   const end = selectedMonth + "-01";
   // Calculate months without unbounded iteration.
   const count =
     (Number(end.slice(0, 4)) - Number(start.slice(0, 4))) * 12 +
-    Number(end.slice(5, 7)) - Number(start.slice(5, 7)) + 1;
+    Number(end.slice(5, 7)) -
+    Number(start.slice(5, 7)) +
+    1;
   if (!Number.isSafeInteger(count) || count < 1) {
     throw new Error("Invalid depreciation range.");
   }
   const length = Math.min(count, maxMonths);
-  const periodEnds = Array.from({ length }, (_, index) =>
-    monthEnd(addMonthsIso(start, index)),
-  );
+  const periodEnds = Array.from({ length }, (_, index) => monthEnd(addMonthsIso(start, index)));
   return {
     periodEnds,
     remainingMonths: count - length,

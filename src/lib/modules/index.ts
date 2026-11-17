@@ -5,10 +5,7 @@ export type {
   ModuleSubnavItem,
   ModuleViewMode,
 } from "@/lib/modules/types";
-export {
-  DEFAULT_AUTHENTICATED_EXPERIENCE,
-  DEFAULT_PUBLIC_EXPERIENCE,
-} from "@/lib/modules/types";
+export { DEFAULT_AUTHENTICATED_EXPERIENCE, DEFAULT_PUBLIC_EXPERIENCE } from "@/lib/modules/types";
 export {
   MODULE_REGISTRY,
   assertRegistryMatchesNav,

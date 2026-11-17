@@ -63,10 +63,9 @@ export function AppStoreExplorePage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Explore All Apps" description="App Store"
-    >
-      <EmptyState title="No access" description="Requires appstore.view." />
-    </ListWorkspace>
+      <ListWorkspace title="Explore All Apps" description="App Store">
+        <EmptyState title="No access" description="Requires appstore.view." />
+      </ListWorkspace>
     );
   }
 

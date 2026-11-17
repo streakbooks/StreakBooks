@@ -26,7 +26,10 @@ export function JournalPostedGlEvidence({
     );
   }
   return (
-    <section className="space-y-2 rounded-md border p-3 text-sm" aria-label="Posted GL evidence audit">
+    <section
+      className="space-y-2 rounded-md border p-3 text-sm"
+      aria-label="Posted GL evidence audit"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
@@ -54,7 +57,8 @@ export function JournalPostedGlEvidence({
               : audit.data.status === "not_posted"
                 ? "Journal is not posted — no GL pass claimed"
                 : "GL evidence exceptions require review"}
-            {" · "}{audit.data.lineCount} lines · {audit.data.accountCount} accounts
+            {" · "}
+            {audit.data.lineCount} lines · {audit.data.accountCount} accounts
           </p>
           <p className="text-xs text-muted-foreground">
             Original currency: {audit.data.currencyCode || "missing"} · Debit:{" "}
@@ -67,7 +71,9 @@ export function JournalPostedGlEvidence({
           </p>
           {audit.data.issues.length ? (
             <ul className="list-disc space-y-1 pl-5 text-destructive">
-              {audit.data.issues.map((issue, i) => <li key={i}>{issue}</li>)}
+              {audit.data.issues.map((issue, i) => (
+                <li key={i}>{issue}</li>
+              ))}
             </ul>
           ) : null}
           {audit.data.accounts.length ? (
@@ -75,15 +81,23 @@ export function JournalPostedGlEvidence({
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b">
-                    <th scope="col" className="p-2">Ledger account</th>
-                    <th scope="col" className="p-2 text-right">Debit (minor units)</th>
-                    <th scope="col" className="p-2 text-right">Credit (minor units)</th>
+                    <th scope="col" className="p-2">
+                      Ledger account
+                    </th>
+                    <th scope="col" className="p-2 text-right">
+                      Debit (minor units)
+                    </th>
+                    <th scope="col" className="p-2 text-right">
+                      Credit (minor units)
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {audit.data.accounts.map((account) => (
                     <tr key={account.accountId} className="border-b">
-                      <td className="p-2">{account.code} {account.name}</td>
+                      <td className="p-2">
+                        {account.code} {account.name}
+                      </td>
                       <td className="p-2 text-right font-mono">{account.debitMinor}</td>
                       <td className="p-2 text-right font-mono">{account.creditMinor}</td>
                     </tr>
@@ -93,9 +107,9 @@ export function JournalPostedGlEvidence({
             </div>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            This checks one posted journal's stored GL evidence, not an independently
-            maintained ledger, original source document, full subledger balance or FX valuation.
-            A pass is not a complete financial-statement reconciliation.
+            This checks one posted journal's stored GL evidence, not an independently maintained
+            ledger, original source document, full subledger balance or FX valuation. A pass is not
+            a complete financial-statement reconciliation.
           </p>
         </div>
       ) : null}

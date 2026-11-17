@@ -3,7 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  getTaxGlReview, saveTaxGlReview, type TaxGlReviewStatus,
+  getTaxGlReview,
+  saveTaxGlReview,
+  type TaxGlReviewStatus,
 } from "@/lib/tax/tax-return.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { hasConcurrentTaxReviewChange } from "@/lib/tax/tax-gl-review-state";
@@ -13,7 +15,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ErrorState, LoadingState } from "@/components/common/states";
 
@@ -21,7 +29,13 @@ type Assignment = "keep" | "mine" | "clear";
 
 /** Review state is separate from statutory filing and never posts a journal. */
 export function TaxGlReviewPanel({
-  companyId, periodStart, periodEnd, basis, outputAccountId, inputAccountId, snapshot,
+  companyId,
+  periodStart,
+  periodEnd,
+  basis,
+  outputAccountId,
+  inputAccountId,
+  snapshot,
 }: {
   companyId: string;
   periodStart: string;
@@ -37,14 +51,20 @@ export function TaxGlReviewPanel({
   const fetchReview = useServerFn(getTaxGlReview);
   const saveReview = useServerFn(saveTaxGlReview);
   const key = [
-    "tax-gl-review", companyId, periodStart, periodEnd, basis,
-    outputAccountId, inputAccountId,
+    "tax-gl-review",
+    companyId,
+    periodStart,
+    periodEnd,
+    basis,
+    outputAccountId,
+    inputAccountId,
   ];
   const query = useQuery({
     queryKey: key,
-    queryFn: () => fetchReview({
-      data: { companyId, periodStart, periodEnd, basis, outputAccountId, inputAccountId },
-    }),
+    queryFn: () =>
+      fetchReview({
+        data: { companyId, periodStart, periodEnd, basis, outputAccountId, inputAccountId },
+      }),
   });
 
   const [status, setStatus] = useState<TaxGlReviewStatus>("open");
@@ -72,14 +92,22 @@ export function TaxGlReviewPanel({
 
   const savedSnapshotChanged = Boolean(record && record.comparison_snapshot !== snapshot);
   const mutation = useMutation({
-    mutationFn: () => saveReview({
-      data: {
-        companyId, periodStart, periodEnd, basis, outputAccountId, inputAccountId,
-        status, reviewNote: note, reviewerAssignment: assignment,
-        expectedVersion: editingVersion,
-        expectedSnapshot: snapshot,
-      },
-    }),
+    mutationFn: () =>
+      saveReview({
+        data: {
+          companyId,
+          periodStart,
+          periodEnd,
+          basis,
+          outputAccountId,
+          inputAccountId,
+          status,
+          reviewNote: note,
+          reviewerAssignment: assignment,
+          expectedVersion: editingVersion,
+          expectedSnapshot: snapshot,
+        },
+      }),
     onSuccess: async () => {
       setEdited(false);
       setEditingVersion(null);
@@ -93,23 +121,34 @@ export function TaxGlReviewPanel({
   });
 
   if (query.isPending) return <LoadingState />;
-  if (query.isError) return (
-    <ErrorState title="Could not load tax GL review" description={friendlyAuthError(query.error)}
-      onRetry={() => void query.refetch()} />
-  );
-  if (!query.data?.available) return (
-    <Alert>
-      <AlertTitle>Review workflow not yet available</AlertTitle>
-      <AlertDescription>
-        Apply the reviewed Tax GL review database migration to staging and verify it
-        before enabling reviewer notes and status changes.
-      </AlertDescription>
-    </Alert>
-  );
+  if (query.isError)
+    return (
+      <ErrorState
+        title="Could not load tax GL review"
+        description={friendlyAuthError(query.error)}
+        onRetry={() => void query.refetch()}
+      />
+    );
+  if (!query.data?.available)
+    return (
+      <Alert>
+        <AlertTitle>Review workflow not yet available</AlertTitle>
+        <AlertDescription>
+          Apply the reviewed Tax GL review database migration to staging and verify it before
+          enabling reviewer notes and status changes.
+        </AlertDescription>
+      </Alert>
+    );
 
-  const canSave = canEdit && edited && !concurrentChange && !mutation.isPending &&
-    (status !== "resolved" || (basis === "accrual" && note.trim().length >= 10 &&
-      !(record?.status === "resolved" && savedSnapshotChanged)));
+  const canSave =
+    canEdit &&
+    edited &&
+    !concurrentChange &&
+    !mutation.isPending &&
+    (status !== "resolved" ||
+      (basis === "accrual" &&
+        note.trim().length >= 10 &&
+        !(record?.status === "resolved" && savedSnapshotChanged)));
   return (
     <div className="space-y-4 rounded-md border p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -119,10 +158,22 @@ export function TaxGlReviewPanel({
             Reviewer decisions are versioned. This is an internal review, not a tax filing.
           </p>
         </div>
-        <Badge variant={savedSnapshotChanged ? "destructive" : record?.status === "resolved" ? "default" : "outline"}>
-          {savedSnapshotChanged ? "Stale review evidence" :
-            record?.status === "resolved" ? "Review marked resolved" :
-            record?.status === "in_review" ? "In review" : "Open / not reviewed"}
+        <Badge
+          variant={
+            savedSnapshotChanged
+              ? "destructive"
+              : record?.status === "resolved"
+                ? "default"
+                : "outline"
+          }
+        >
+          {savedSnapshotChanged
+            ? "Stale review evidence"
+            : record?.status === "resolved"
+              ? "Review marked resolved"
+              : record?.status === "in_review"
+                ? "In review"
+                : "Open / not reviewed"}
         </Badge>
       </div>
 
@@ -130,8 +181,8 @@ export function TaxGlReviewPanel({
         <Alert variant="destructive">
           <AlertTitle>Another reviewer updated this review</AlertTitle>
           <AlertDescription>
-            Your unsaved notes are preserved. This draft cannot overwrite the newer review.
-            Copy any notes you need, then discard this draft to reload the latest version.
+            Your unsaved notes are preserved. This draft cannot overwrite the newer review. Copy any
+            notes you need, then discard this draft to reload the latest version.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -140,9 +191,9 @@ export function TaxGlReviewPanel({
         <Alert variant="destructive">
           <AlertTitle>Review requires refresh</AlertTitle>
           <AlertDescription>
-            The current GL comparison differs from the snapshot previously reviewed.
-            Change the review status to In review, document the new evidence, save,
-            then resolve in a separate review action.
+            The current GL comparison differs from the snapshot previously reviewed. Change the
+            review status to In review, document the new evidence, save, then resolve in a separate
+            review action.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -150,21 +201,44 @@ export function TaxGlReviewPanel({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label htmlFor="tax-review-status">Review status</Label>
-          <Select value={status} disabled={!canEdit || mutation.isPending}
-            onValueChange={(v) => { beginEdit(); setStatus(v as TaxGlReviewStatus); }}>
-            <SelectTrigger id="tax-review-status"><SelectValue /></SelectTrigger>
+          <Select
+            value={status}
+            disabled={!canEdit || mutation.isPending}
+            onValueChange={(v) => {
+              beginEdit();
+              setStatus(v as TaxGlReviewStatus);
+            }}
+          >
+            <SelectTrigger id="tax-review-status">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="open">Open</SelectItem>
               <SelectItem value="in_review">In review</SelectItem>
-              <SelectItem value="resolved" disabled={basis === "cash" || (record?.status === "resolved" && savedSnapshotChanged)}>Resolved (internal)</SelectItem>
+              <SelectItem
+                value="resolved"
+                disabled={
+                  basis === "cash" || (record?.status === "resolved" && savedSnapshotChanged)
+                }
+              >
+                Resolved (internal)
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1">
           <Label htmlFor="tax-review-assignee">Reviewer assignment</Label>
-          <Select value={assignment} disabled={!canEdit || mutation.isPending}
-            onValueChange={(v) => { beginEdit(); setAssignment(v as Assignment); }}>
-            <SelectTrigger id="tax-review-assignee"><SelectValue /></SelectTrigger>
+          <Select
+            value={assignment}
+            disabled={!canEdit || mutation.isPending}
+            onValueChange={(v) => {
+              beginEdit();
+              setAssignment(v as Assignment);
+            }}
+          >
+            <SelectTrigger id="tax-review-assignee">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="keep">Keep assigned reviewer</SelectItem>
               <SelectItem value="mine">Assign to me</SelectItem>
@@ -181,15 +255,20 @@ export function TaxGlReviewPanel({
       <div className="space-y-1">
         <Label htmlFor="tax-review-note">Reviewer note / discrepancy explanation</Label>
         <Textarea
-          id="tax-review-note" rows={3} maxLength={4000}
+          id="tax-review-note"
+          rows={3}
+          maxLength={4000}
           disabled={!canEdit || mutation.isPending}
           value={note}
-          onChange={(e) => { beginEdit(); setNote(e.target.value); }}
+          onChange={(e) => {
+            beginEdit();
+            setNote(e.target.value);
+          }}
           placeholder="Describe the affected journal, expected tax treatment and steps taken"
         />
         <p className="text-xs text-muted-foreground">
-          Resolving requires at least 10 characters of explanation and an accrual-basis review.
-          A resolved review can become stale if underlying figures change.
+          Resolving requires at least 10 characters of explanation and an accrual-basis review. A
+          resolved review can become stale if underlying figures change.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
@@ -200,17 +279,24 @@ export function TaxGlReviewPanel({
           Refresh review
         </Button>
         {edited ? (
-          <Button size="sm" variant="ghost" disabled={mutation.isPending} onClick={() => {
-            setEdited(false);
-            setEditingVersion(null);
-            void query.refetch();
-          }}>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={mutation.isPending}
+            onClick={() => {
+              setEdited(false);
+              setEditingVersion(null);
+              void query.refetch();
+            }}
+          >
             Discard unsaved changes
           </Button>
         ) : null}
-        {record ? <span className="text-xs text-muted-foreground">
-          Version {record.version} · updated {f.dateTime(record.updated_at)}
-        </span> : null}
+        {record ? (
+          <span className="text-xs text-muted-foreground">
+            Version {record.version} · updated {f.dateTime(record.updated_at)}
+          </span>
+        ) : null}
         {!canEdit ? <Badge variant="outline">View only</Badge> : null}
       </div>
       <div className="space-y-2">
@@ -222,13 +308,16 @@ export function TaxGlReviewPanel({
             {query.data.events.map((event) => (
               <div key={event.id} className="rounded border p-2 text-xs">
                 <p className="font-medium">
-                  Version {event.version} · {event.event_type} · {event.new_status} · {f.dateTime(event.created_at)}
+                  Version {event.version} · {event.event_type} · {event.new_status} ·{" "}
+                  {f.dateTime(event.created_at)}
                 </p>
                 <p className="text-muted-foreground">
-                  Actor: {event.actor_user_id ?? "Former user"} ·
-                  Reviewer: {event.new_reviewer_id ?? "Unassigned"}
+                  Actor: {event.actor_user_id ?? "Former user"} · Reviewer:{" "}
+                  {event.new_reviewer_id ?? "Unassigned"}
                 </p>
-                {event.review_note ? <p className="whitespace-pre-wrap">{event.review_note}</p> : null}
+                {event.review_note ? (
+                  <p className="whitespace-pre-wrap">{event.review_note}</p>
+                ) : null}
               </div>
             ))}
           </div>

@@ -53,7 +53,9 @@ export function AssetReconciliationPanel({ companyId }: { companyId: string }) {
     try {
       return {
         rows: selectReconciliationReviewRows(currentReport.rows, {
-          status: filter, query: search, order,
+          status: filter,
+          query: search,
+          order,
         }),
         summary: summarizeReconciliationExceptions(currentReport.rows),
         issue: null as string | null,
@@ -312,27 +314,29 @@ export function AssetReconciliationPanel({ companyId }: { companyId: string }) {
                             variant="outline"
                             aria-expanded={expandedAccount === row.accountId}
                             onClick={() =>
-                              setExpandedAccount((id) => id === row.accountId ? null : row.accountId)
+                              setExpandedAccount((id) =>
+                                id === row.accountId ? null : row.accountId,
+                              )
                             }
                           >
                             Explain
                           </Button>
-                        <Button variant="link" size="sm" asChild>
-                          <Link
-                            to="/reports/$reportId"
-                            params={{ reportId: "general-ledger" }}
-                            search={{
-                              account: row.accountId,
-                              // Match the reconciliation's inception-to-date ledger, not the
-                              // reports page's default current fiscal-year range.
-                              from: "0001-01-01",
-                              to: asOf,
-                              basis: "accrual",
-                            }}
-                          >
-                            GL entries
-                          </Link>
-                        </Button>
+                          <Button variant="link" size="sm" asChild>
+                            <Link
+                              to="/reports/$reportId"
+                              params={{ reportId: "general-ledger" }}
+                              search={{
+                                account: row.accountId,
+                                // Match the reconciliation's inception-to-date ledger, not the
+                                // reports page's default current fiscal-year range.
+                                from: "0001-01-01",
+                                to: asOf,
+                                basis: "accrual",
+                              }}
+                            >
+                              GL entries
+                            </Link>
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -347,14 +351,28 @@ export function AssetReconciliationPanel({ companyId }: { companyId: string }) {
                 Page {currentPage + 1} of {pages}, {rows.length} accounts match filters
               </span>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline"
+                <Button
+                  size="sm"
+                  variant="outline"
                   disabled={currentPage === 0}
-                  onClick={() => { setPage(currentPage - 1); setExpandedAccount(null); }}
-                >Previous</Button>
-                <Button size="sm" variant="outline"
+                  onClick={() => {
+                    setPage(currentPage - 1);
+                    setExpandedAccount(null);
+                  }}
+                >
+                  Previous
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
                   disabled={currentPage >= pages - 1}
-                  onClick={() => { setPage(currentPage + 1); setExpandedAccount(null); }}
-                >Next</Button>
+                  onClick={() => {
+                    setPage(currentPage + 1);
+                    setExpandedAccount(null);
+                  }}
+                >
+                  Next
+                </Button>
               </div>
             </div>
           ) : null}
@@ -369,26 +387,27 @@ export function AssetReconciliationPanel({ companyId }: { companyId: string }) {
                     {explainReconciliationDifference(explained.differenceMinor).heading}
                   </p>
                 </div>
-                <Button size="sm" variant="ghost"
-                  onClick={() => setExpandedAccount(null)}>Close explanation</Button>
+                <Button size="sm" variant="ghost" onClick={() => setExpandedAccount(null)}>
+                  Close explanation
+                </Button>
               </div>
               <p className="text-sm text-muted-foreground">
                 {explainReconciliationDifference(explained.differenceMinor).explanation}
               </p>
               <p className="text-xs text-muted-foreground">
-                Difference = posted GL debit minus credit, less register cost minus
-                accumulated depreciation. Review GL entries, linked assets, opening balances,
-                manual adjustments and disposal dates. This is a read-only explanation:
-                there is no automatic journal or recorded approval.
+                Difference = posted GL debit minus credit, less register cost minus accumulated
+                depreciation. Review GL entries, linked assets, opening balances, manual adjustments
+                and disposal dates. This is a read-only explanation: there is no automatic journal
+                or recorded approval.
               </p>
             </section>
           ) : null}
           <p className="text-xs text-muted-foreground">
             Scope: {currentReport.scope}. As-at values reflect the current stored asset mapping,
-            historical purchases, accumulated depreciation and disposal dates. This comparison
-            is not an atomic posting snapshot, does not prove that every capital purchase has a
-            register entry and does not reconcile tax depreciation. Recheck if posting changes
-            occur during the review.
+            historical purchases, accumulated depreciation and disposal dates. This comparison is
+            not an atomic posting snapshot, does not prove that every capital purchase has a
+            register entry and does not reconcile tax depreciation. Recheck if posting changes occur
+            during the review.
           </p>
         </>
       ) : null}

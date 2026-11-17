@@ -22,7 +22,10 @@ test.describe("Banking: linked journal return browsing", () => {
       "/banking/transactions?statusGroup=posted&dateFrom=2026-01-01&dateTo=2026-10-31&pageSize=25",
     );
     const journal = page.locator('a[href*="/banking/journal/"][href*="returnContext="]').first();
-    test.skip((await journal.count()) === 0, "Requires a seeded posted bank transaction with linked journal");
+    test.skip(
+      (await journal.count()) === 0,
+      "Requires a seeded posted bank transaction with linked journal",
+    );
     await journal.click();
     await expect(page).toHaveURL(/\/banking\/journal\/[^/?]+/);
     await page.getByRole("link", { name: "Back to transactions" }).click();
@@ -59,5 +62,4 @@ test.describe("Banking: linked journal return browsing", () => {
     expect(original.get("statusGroup")).toBe("posted");
     expect(original.get("pageSize")).toBe("25");
   });
-
 });

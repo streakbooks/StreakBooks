@@ -176,7 +176,11 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
   if (leadQuery.isError) {
     return (
       <RecordWorkspace title="Lead" description="Lead detail">
-        <ErrorState title="Could not load lead" description={friendlyAuthError(leadQuery.error)} onRetry={() => leadQuery.refetch()} />
+        <ErrorState
+          title="Could not load lead"
+          description={friendlyAuthError(leadQuery.error)}
+          onRetry={() => leadQuery.refetch()}
+        />
       </RecordWorkspace>
     );
   }
@@ -320,7 +324,9 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
               <span className="text-muted-foreground">Score:</span>{" "}
               <span className="font-medium tabular-nums">{lead.score}/100</span>
             </p>
-            {scoreExplainer ? <p className="text-xs text-muted-foreground">{scoreExplainer}</p> : null}
+            {scoreExplainer ? (
+              <p className="text-xs text-muted-foreground">{scoreExplainer}</p>
+            ) : null}
           </CardContent>
         </Card>
 

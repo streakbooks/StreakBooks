@@ -14,7 +14,11 @@ describe("Action Center bulk operation reliability", () => {
     expect(update.mock.calls.map(([id]) => id)).toEqual(["first", "second"]);
     expect(progress).toEqual([1, 2]);
     expect(result).toEqual({
-      attempted: 2, updated: 2, failedIds: [], firstError: null, cancelled: false,
+      attempted: 2,
+      updated: 2,
+      failedIds: [],
+      firstError: null,
+      cancelled: false,
     });
   });
 
@@ -28,7 +32,11 @@ describe("Action Center bulk operation reliability", () => {
       () => undefined,
     );
     expect(result).toEqual({
-      attempted: 3, updated: 2, failedIds: ["b"], firstError: "Access revoked", cancelled: false,
+      attempted: 3,
+      updated: 2,
+      failedIds: ["b"],
+      firstError: "Access revoked",
+      cancelled: false,
     });
   });
 
@@ -38,7 +46,10 @@ describe("Action Center bulk operation reliability", () => {
     const progress = vi.fn();
     const result = await runNotificationBulk(
       ["a", "b", "c"],
-      async (id) => { sent.push(id); active = false; },
+      async (id) => {
+        sent.push(id);
+        active = false;
+      },
       () => active,
       progress,
     );
@@ -50,14 +61,24 @@ describe("Action Center bulk operation reliability", () => {
 
   it("does not send any RPC when the operation is already invalidated", async () => {
     const update = vi.fn(async () => undefined);
-    const result = await runNotificationBulk(["a"], update, () => false, () => undefined);
+    const result = await runNotificationBulk(
+      ["a"],
+      update,
+      () => false,
+      () => undefined,
+    );
     expect(update).not.toHaveBeenCalled();
     expect(result).toMatchObject({ attempted: 0, updated: 0, cancelled: true });
   });
 
   it("handles empty selections without invoking an update", async () => {
     const update = vi.fn(async () => undefined);
-    const result = await runNotificationBulk([], update, () => true, () => undefined);
+    const result = await runNotificationBulk(
+      [],
+      update,
+      () => true,
+      () => undefined,
+    );
     expect(update).not.toHaveBeenCalled();
     expect(result).toMatchObject({ attempted: 0, updated: 0, cancelled: false });
   });

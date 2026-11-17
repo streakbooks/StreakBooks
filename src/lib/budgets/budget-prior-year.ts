@@ -51,7 +51,7 @@ export function preparePriorYearActualsDraft(
     const examples = unavailable.slice(0, 3).join(", ");
     throw new Error(
       `Copy blocked: ${unavailable.length} historical account(s) are no longer editable (${examples}). ` +
-      "Reactivate or remap these accounts before copying. No prior-year amounts were applied.",
+        "Reactivate or remap these accounts before copying. No prior-year amounts were applied.",
     );
   }
   return draft;

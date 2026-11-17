@@ -7,12 +7,7 @@ import { fetchAllPages, type PageResult } from "@/lib/accounting/fetch-all";
  * without a verified historic FX allocation; never assume a match from nominal values.
  */
 export type CapitalisationReviewStatus =
-  | "unlinked"
-  | "partially_linked"
-  | "linked"
-  | "fx_review"
-  | "overlinked"
-  | "non_purchase";
+  "unlinked" | "partially_linked" | "linked" | "fx_review" | "overlinked" | "non_purchase";
 
 export type CapitalisationReviewRow = CapitaliseLine & {
   status: CapitalisationReviewStatus;
@@ -92,11 +87,8 @@ export function selectCapitalisationReviewRows(
   return rows
     .filter((row) => {
       if (filter.status === "attention" && row.status === "linked") return false;
-      if (
-        filter.status !== "all" &&
-        filter.status !== "attention" &&
-        row.status !== filter.status
-      ) return false;
+      if (filter.status !== "all" && filter.status !== "attention" && row.status !== filter.status)
+        return false;
       if (filter.accountId && row.accountId !== filter.accountId) return false;
       if (!needle) return true;
       return [
@@ -106,8 +98,7 @@ export function selectCapitalisationReviewRows(
         row.accountCode,
         row.accountName,
         row.billDate,
-      ]
-        .some((part) => (part ?? "").toLocaleLowerCase().includes(needle));
+      ].some((part) => (part ?? "").toLocaleLowerCase().includes(needle));
     })
     .sort((a, b) => b.billDate.localeCompare(a.billDate) || b.lineId.localeCompare(a.lineId));
 }
@@ -147,24 +138,26 @@ export function capitalisationReviewCsv(
     // Keep negative entries numeric rather than prefixing spreadsheet text guards.
     return value;
   };
-  const lines = rows.map((r) => [
-    escapeCell(asOf),
-    escapeCell(r.billNumber ?? ""),
-    escapeCell(r.billId),
-    escapeCell(r.lineId),
-    escapeCell(r.billDate),
-    escapeCell(r.supplier ?? ""),
-    escapeCell(r.description),
-    escapeCell(r.accountCode),
-    escapeCell(r.accountName),
-    escapeCell(r.currency),
-    numericCell(String(r.netMinor)),
-    numericCell(String(r.taxMinor)),
-    escapeCell(baseCurrency),
-    numericCell(String(r.registeredMinor)),
-    numericCell(r.indicativeUnlinkedMinor),
-    escapeCell(r.status),
-  ].join(","));
+  const lines = rows.map((r) =>
+    [
+      escapeCell(asOf),
+      escapeCell(r.billNumber ?? ""),
+      escapeCell(r.billId),
+      escapeCell(r.lineId),
+      escapeCell(r.billDate),
+      escapeCell(r.supplier ?? ""),
+      escapeCell(r.description),
+      escapeCell(r.accountCode),
+      escapeCell(r.accountName),
+      escapeCell(r.currency),
+      numericCell(String(r.netMinor)),
+      numericCell(String(r.taxMinor)),
+      escapeCell(baseCurrency),
+      numericCell(String(r.registeredMinor)),
+      numericCell(r.indicativeUnlinkedMinor),
+      escapeCell(r.status),
+    ].join(","),
+  );
   return [headers.map(escapeCell).join(","), ...lines].join("\r\n");
 }
 
@@ -200,37 +193,46 @@ export function capitalisationReviewGuidance(status: CapitalisationReviewStatus)
     case "unlinked":
       return {
         reason: "No current fixed-asset record references this posted supplier-bill line.",
-        nextStep: "Confirm the item is depreciable PPE, check recoverable tax and existing manually registered assets, then register only if needed.",
+        nextStep:
+          "Confirm the item is depreciable PPE, check recoverable tax and existing manually registered assets, then register only if needed.",
         canPrepareNewAsset: true,
       };
     case "partially_linked":
       return {
         reason: "The linked base-currency asset cost is lower than the supplier-bill net amount.",
-        nextStep: "Check split acquisitions, non-capitalisable items, discounts, bill adjustments and tax treatment before adding another asset.",
+        nextStep:
+          "Check split acquisitions, non-capitalisable items, discounts, bill adjustments and tax treatment before adding another asset.",
         canPrepareNewAsset: true,
       };
     case "linked":
       return {
-        reason: "Linked asset cost covers the bill's net amount. This is not evidence of correct accounting treatment.",
-        nextStep: "Open the bill and existing asset details if the mapping looks wrong. Avoid creating another asset solely from this line.",
+        reason:
+          "Linked asset cost covers the bill's net amount. This is not evidence of correct accounting treatment.",
+        nextStep:
+          "Open the bill and existing asset details if the mapping looks wrong. Avoid creating another asset solely from this line.",
         canPrepareNewAsset: false,
       };
     case "fx_review":
       return {
-        reason: "The bill is in a foreign currency while registered cost is in the organisation base currency.",
-        nextStep: "Verify the actual transaction-date FX conversion and linked register records. Do not compare nominal currency amounts or create a duplicate.",
+        reason:
+          "The bill is in a foreign currency while registered cost is in the organisation base currency.",
+        nextStep:
+          "Verify the actual transaction-date FX conversion and linked register records. Do not compare nominal currency amounts or create a duplicate.",
         canPrepareNewAsset: false,
       };
     case "overlinked":
       return {
-        reason: "Linked register cost is greater than the supplier-bill gross in the base currency.",
-        nextStep: "Investigate additional acquisition costs, duplicate records, posting corrections and the bill's tax treatment before changing anything.",
+        reason:
+          "Linked register cost is greater than the supplier-bill gross in the base currency.",
+        nextStep:
+          "Investigate additional acquisition costs, duplicate records, posting corrections and the bill's tax treatment before changing anything.",
         canPrepareNewAsset: false,
       };
     case "non_purchase":
       return {
         reason: "The line has a zero or negative gross amount, which is not a positive purchase.",
-        nextStep: "Check the supplier credit or adjustment and related asset disposal/reversal records; do not create a new positive-cost asset here.",
+        nextStep:
+          "Check the supplier credit or adjustment and related asset disposal/reversal records; do not create a new positive-cost asset here.",
         canPrepareNewAsset: false,
       };
   }

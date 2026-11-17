@@ -127,7 +127,9 @@ function Brand({ collapsed }: { collapsed?: boolean }) {
       </span>
       {collapsed ? null : (
         <div className="leading-tight">
-          <div className="text-[15px] font-bold tracking-[-0.03em] text-sidebar-accent-foreground">LinkBooks</div>
+          <div className="text-[15px] font-bold tracking-[-0.03em] text-sidebar-accent-foreground">
+            LinkBooks
+          </div>
           <div className="text-[11px] text-sidebar-foreground/70">Cloud accounting</div>
         </div>
       )}

@@ -117,8 +117,7 @@ export const saveFirmClientProfile = createServerFn({ method: "POST" })
         .insert({ ...payload, firm_id: firmId, company_id: companyId } as never)
         .select(projection as never)
         .single();
-      if (error)
-        throw new Error("Client profile changed. Refresh and try again: " + error.message);
+      if (error) throw new Error("Client profile changed. Refresh and try again: " + error.message);
       return saved as FirmClientProfile;
     }
 
@@ -253,9 +252,7 @@ export type FirmClientProfileAudit = {
 
 export const listFirmClientProfileAudit = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ firmId: z.string().uuid() }).strict().parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
   .handler(async ({ data, context }): Promise<FirmClientProfileAudit[]> => {
     const { data: member, error: memberError } = await context.supabase
       .from("firm_members" as never)

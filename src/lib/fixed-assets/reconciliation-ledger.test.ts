@@ -89,7 +89,9 @@ describe("exact GL reconciliation balances", () => {
         throw new Error("Should not be invoked");
       },
     } as unknown as Sb;
-    expect(await loadExactReconciliationLedgerBalances(sb, "org", "USD", "2026-11-06", [])).toEqual([]);
+    expect(await loadExactReconciliationLedgerBalances(sb, "org", "USD", "2026-11-06", [])).toEqual(
+      [],
+    );
   });
 
   it("fails closed when a successful RPC unexpectedly returns no balance dataset", async () => {
@@ -138,9 +140,7 @@ describe("exact GL reconciliation balances", () => {
       },
     } as unknown as Sb;
     expect(
-      await loadExactReconciliationLedgerBalances(sb, "organisation-1", "USD", "2026-11-06", [
-        "a",
-      ]),
+      await loadExactReconciliationLedgerBalances(sb, "organisation-1", "USD", "2026-11-06", ["a"]),
     ).toEqual([]);
     expect(calls).toContainEqual(["eq", "company_id", "organisation-1"]);
     expect(calls).toContainEqual(["eq", "journals.status", "posted"]);

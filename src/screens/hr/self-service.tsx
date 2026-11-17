@@ -330,7 +330,10 @@ export function HrSelfServicePage() {
             {leaveQ.isPending ? (
               <LoadingState />
             ) : (leaveQ.data?.items.length ?? 0) === 0 ? (
-              <EmptyState title="No leave requests" description="Submit a leave request when needed." />
+              <EmptyState
+                title="No leave requests"
+                description="Submit a leave request when needed."
+              />
             ) : (
               <TableCard>
                 <Table>
@@ -429,7 +432,11 @@ export function HrSelfServicePage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label>Start</Label>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label>End</Label>

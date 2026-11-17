@@ -3,7 +3,9 @@ import { resolvedDraftPriceList, usableCustomerPriceList } from "./customer-pric
 
 describe("customer price-list selection", () => {
   const activeList = {
-    id: "list-a", is_active: true, currency_code: "USD",
+    id: "list-a",
+    is_active: true,
+    currency_code: "USD",
   };
 
   it("allows active same-currency lists only", () => {

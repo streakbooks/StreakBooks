@@ -1,7 +1,4 @@
-import {
-  DeveloperPortalSectionShell,
-  EmptyPortalTable,
-} from "@/screens/developer/portal-section";
+import { DeveloperPortalSectionShell, EmptyPortalTable } from "@/screens/developer/portal-section";
 
 export function DeveloperSandboxPage() {
   return (

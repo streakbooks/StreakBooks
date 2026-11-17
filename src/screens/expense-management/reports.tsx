@@ -30,10 +30,7 @@ import {
   getExpenseManagementReport,
   listExpenseClaimAuditEvents,
 } from "@/lib/expenses/expenses.functions";
-import {
-  buildExpenseClaimsExportCsv,
-  defaultExpenseReportRange,
-} from "@/lib/expenses/reports";
+import { buildExpenseClaimsExportCsv, defaultExpenseReportRange } from "@/lib/expenses/reports";
 import type { Permission } from "@/lib/permissions";
 
 function downloadTextFile(filename: string, contents: string) {
@@ -96,10 +93,7 @@ export function ExpenseManagementReportsPage() {
         fromDate: payload.fromDate,
         toDate: payload.toDate,
       });
-      downloadTextFile(
-        `expense-claims-${payload.fromDate}-to-${payload.toDate}.csv`,
-        csv,
-      );
+      downloadTextFile(`expense-claims-${payload.fromDate}-to-${payload.toDate}.csv`, csv);
       toast.success(`Exported ${payload.rows.length} claim row(s).`);
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -111,14 +105,12 @@ export function ExpenseManagementReportsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Reports"
-      subnav={<ExpenseManagementSubnav current="reports"/>}
-    >
-      <EmptyState
+      <ListWorkspace title="Reports" subnav={<ExpenseManagementSubnav current="reports" />}>
+        <EmptyState
           title="No access"
           description="Ask an administrator for expenses.view, expenses.export, or expenses.audit."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
   if (reportQ.isLoading) {
@@ -127,10 +119,12 @@ export function ExpenseManagementReportsPage() {
   if (reportQ.isError) {
     const message = friendlyAuthError(reportQ.error);
     return (
-      <ListWorkspace title="Reports" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="reports"/>}
-    >
-      {message.includes("20261107147000") ? (
+      <ListWorkspace
+        title="Reports"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="reports" />}
+      >
+        {message.includes("20261107147000") ? (
           <Alert>
             <AlertTitle>Database update required</AlertTitle>
             <AlertDescription>{EXPENSE_REPORTS_MIGRATION}</AlertDescription>
@@ -142,7 +136,7 @@ export function ExpenseManagementReportsPage() {
             onRetry={() => reportQ.refetch()}
           />
         )}
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
@@ -150,20 +144,17 @@ export function ExpenseManagementReportsPage() {
   const currency = company.base_currency ?? "USD";
 
   return (
-      <ListWorkspace title="Reports"
-        description="Claim volumes, open aging, CSV export and recent audit events."
-        actions={
-          canExport ? (
-            <Button
-              size="sm"
-              disabled={exportMut.isPending}
-              onClick={() => exportMut.mutate()}
-            >
-              {exportMut.isPending ? "Exporting…" : "Export claims CSV"}
-            </Button>
-          ) : null
-        }
-      subnav={<ExpenseManagementSubnav current="reports"/>}
+    <ListWorkspace
+      title="Reports"
+      description="Claim volumes, open aging, CSV export and recent audit events."
+      actions={
+        canExport ? (
+          <Button size="sm" disabled={exportMut.isPending} onClick={() => exportMut.mutate()}>
+            {exportMut.isPending ? "Exporting…" : "Export claims CSV"}
+          </Button>
+        ) : null
+      }
+      subnav={<ExpenseManagementSubnav current="reports" />}
     >
       <section className="mb-6 grid max-w-xl gap-3 sm:grid-cols-2">
         <div className="grid gap-2">
@@ -188,9 +179,7 @@ export function ExpenseManagementReportsPage() {
 
       <div className="mb-8 flex flex-wrap gap-2">
         <Badge variant="secondary">{report.totals.claimCount} claims</Badge>
-        <Badge variant="outline">
-          Total {fromMinorUnits(report.totals.totalMinor, currency)}
-        </Badge>
+        <Badge variant="outline">Total {fromMinorUnits(report.totals.totalMinor, currency)}</Badge>
         <Badge variant="outline">
           Reimbursable {fromMinorUnits(report.totals.reimbursableMinor, currency)}
         </Badge>
@@ -265,7 +254,7 @@ export function ExpenseManagementReportsPage() {
         )}
       </section>
     </ListWorkspace>
-    );
+  );
 }
 
 function StatusTable({

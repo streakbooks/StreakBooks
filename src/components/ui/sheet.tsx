@@ -72,13 +72,19 @@ const SheetContent = React.forwardRef<
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col gap-2 border-b border-border/70 pb-3 text-left", className)} {...props} />
+  <div
+    className={cn("flex flex-col gap-2 border-b border-border/70 pb-3 text-left", className)}
+    {...props}
+  />
 );
 SheetHeader.displayName = "SheetHeader";
 
 const SheetFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex flex-col-reverse gap-2 border-t border-border/70 pt-3 sm:flex-row sm:justify-end", className)}
+    className={cn(
+      "flex flex-col-reverse gap-2 border-t border-border/70 pt-3 sm:flex-row sm:justify-end",
+      className,
+    )}
     {...props}
   />
 );

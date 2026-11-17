@@ -9,7 +9,9 @@ import { validateActionCenterDeployment } from "./lib/action-center-release-gate
 
 const [filePath, approvedSha] = process.argv.slice(2);
 if (!filePath || !approvedSha) {
-  console.error("Usage: node scripts/check-action-center-release.mjs <vercel-record.json> <approved-main-sha>");
+  console.error(
+    "Usage: node scripts/check-action-center-release.mjs <vercel-record.json> <approved-main-sha>",
+  );
   process.exitCode = 2;
 } else {
   try {
@@ -17,9 +19,14 @@ if (!filePath || !approvedSha) {
     const deployment = JSON.parse(raw);
     const evidence = validateActionCenterDeployment(deployment, approvedSha);
     console.log(JSON.stringify({ releaseMetadataCheck: "PASS", ...evidence }, null, 2));
-    console.log("A passing metadata check alone does not verify live smoke tests or production readiness.");
+    console.log(
+      "A passing metadata check alone does not verify live smoke tests or production readiness.",
+    );
   } catch (error) {
-    console.error("Action Center deployment verification FAILED:", error instanceof Error ? error.message : String(error));
+    console.error(
+      "Action Center deployment verification FAILED:",
+      error instanceof Error ? error.message : String(error),
+    );
     process.exitCode = 1;
   }
 }

@@ -320,12 +320,20 @@ export function HrShiftsPage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Standard day" />
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Standard day"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label>Start</Label>
-                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                <Input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label>End</Label>
@@ -344,7 +352,11 @@ export function HrShiftsPage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Timezone</Label>
-              <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} placeholder="UTC" />
+              <Input
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                placeholder="UTC"
+              />
             </div>
           </div>
           <DialogFooter>

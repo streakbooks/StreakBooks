@@ -343,11 +343,12 @@ export function HrOnboardingPage() {
                         {canManage ? (
                           <Select
                             value={task.status}
-                            onValueChange={(status) =>
-                              taskMut.mutate({ taskId: task.id, status })
-                            }
+                            onValueChange={(status) => taskMut.mutate({ taskId: task.id, status })}
                           >
-                            <SelectTrigger className="w-[140px]" aria-label={`Update ${task.title}`}>
+                            <SelectTrigger
+                              className="w-[140px]"
+                              aria-label={`Update ${task.title}`}
+                            >
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -416,7 +417,10 @@ export function HrOnboardingPage() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Template</Label>
-              <Select value={templateId || "__none"} onValueChange={(v) => setTemplateId(v === "__none" ? "" : v)}>
+              <Select
+                value={templateId || "__none"}
+                onValueChange={(v) => setTemplateId(v === "__none" ? "" : v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Optional template" />
                 </SelectTrigger>
@@ -463,11 +467,7 @@ export function HrOnboardingPage() {
             <Button type="button" variant="outline" onClick={() => setCaseOpen(false)}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              disabled={caseMut.isPending}
-              onClick={() => caseMut.mutate()}
-            >
+            <Button type="button" disabled={caseMut.isPending} onClick={() => caseMut.mutate()}>
               {caseMut.isPending ? "Creating…" : "Create case"}
             </Button>
           </DialogFooter>

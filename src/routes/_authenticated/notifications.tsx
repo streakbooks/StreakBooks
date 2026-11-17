@@ -264,383 +264,421 @@ function ActionCenterPage() {
   return (
     <div data-action-center-root>
       <ListWorkspace
-      className="space-y-6"
-      title="Smart Action Center"
-      description={`${company?.name ?? "Current organisation"} · ${unreadQuery.data?.toLocaleString() ?? "—"} unread alerts. Review source records before taking action. Archiving an alert never approves or posts a transaction.`}
-      actions={
-        <Button
-          variant="outline"
-          disabled={!companyId || inbox.isFetching}
-          onClick={() => void refresh()}
-        >
-          <RefreshCcw className="mr-2 size-4" />
-          Refresh alerts
-        </Button>
-      }
-    >
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Action Center overview">
-        {(
-          [
-            { label: "Needs action", value: summary?.action, view: "action" as View, detail: "Open alerts" },
-            { label: "Unread", value: summary?.unread, view: "unread" as View, detail: "All accessible unread" },
-            { label: "Critical", value: summary?.critical, view: "critical" as View, detail: "Urgent open alerts" },
-            { label: "Completed", value: summary?.completed, view: "completed" as View, detail: "Resolved alerts" },
-          ]
-        ).map((metric) => (
-          <Link
-            key={metric.view}
-            to="/notifications"
-            search={{ view: metric.view }}
-            onClick={onViewNavigate}
-            className="rounded-xl border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            <span className="text-xs font-medium text-muted-foreground">{metric.label}</span>
-            <span className="mt-2 block text-2xl font-semibold tabular-nums">
-              {metric.value === undefined ? "—" : metric.value.toLocaleString()}
-            </span>
-            <span className="mt-1 block text-xs text-muted-foreground">{metric.detail}</span>
-          </Link>
-        ))}
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Workload counts cover your full accessible inbox. Filters and priority ordering
-        run on the server before alerts are paged.
-      </p>
-      {workload.isError && (
-        <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
-          Could not load complete workload counts.
-          <Button size="sm" variant="outline" onClick={() => void workload.refetch()}>
-            Retry counts
-          </Button>
-        </div>
-      )}
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Notification views">
-        {VIEWS.map((item) => (
+        className="space-y-6"
+        title="Smart Action Center"
+        description={`${company?.name ?? "Current organisation"} · ${unreadQuery.data?.toLocaleString() ?? "—"} unread alerts. Review source records before taking action. Archiving an alert never approves or posts a transaction.`}
+        actions={
           <Button
-            key={item.key}
-            size="sm"
-            variant={view === item.key ? "default" : "outline"}
-            asChild
+            variant="outline"
+            disabled={!companyId || inbox.isFetching}
+            onClick={() => void refresh()}
           >
+            <RefreshCcw className="mr-2 size-4" />
+            Refresh alerts
+          </Button>
+        }
+      >
+        <div
+          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+          aria-label="Action Center overview"
+        >
+          {[
+            {
+              label: "Needs action",
+              value: summary?.action,
+              view: "action" as View,
+              detail: "Open alerts",
+            },
+            {
+              label: "Unread",
+              value: summary?.unread,
+              view: "unread" as View,
+              detail: "All accessible unread",
+            },
+            {
+              label: "Critical",
+              value: summary?.critical,
+              view: "critical" as View,
+              detail: "Urgent open alerts",
+            },
+            {
+              label: "Completed",
+              value: summary?.completed,
+              view: "completed" as View,
+              detail: "Resolved alerts",
+            },
+          ].map((metric) => (
             <Link
+              key={metric.view}
               to="/notifications"
-              search={{ ...query, view: item.key }}
-              aria-current={view === item.key ? "page" : undefined}
+              search={{ view: metric.view }}
               onClick={onViewNavigate}
+              className="rounded-xl border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-ring"
             >
-              {item.label}
+              <span className="text-xs font-medium text-muted-foreground">{metric.label}</span>
+              <span className="mt-2 block text-2xl font-semibold tabular-nums">
+                {metric.value === undefined ? "—" : metric.value.toLocaleString()}
+              </span>
+              <span className="mt-1 block text-xs text-muted-foreground">{metric.detail}</span>
             </Link>
-          </Button>
-        ))}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_160px_170px]">
-        <ActionCenterSearchForm
-          key={search}
-          appliedSearch={search}
-          onSearch={(value) => changeFilters({ q: value || undefined })}
-        />
-        <Select value={category} onValueChange={onCategory}>
-          {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
-          <SelectTrigger aria-label="Filter by module">
-            <SelectValue placeholder="All modules" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All modules</SelectItem>
-            {Object.entries(CATEGORIES).map(([id, title]) => (
-              <SelectItem key={id} value={id}>
-                {title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={priority}
-          onValueChange={(next) =>
-            changeFilters({ priority: next === "all" ? undefined : next })
-          }
-        >
-          {/* lookup-fixed-enum: Notification priority enumeration. */}
-          <SelectTrigger aria-label="Filter by priority">
-            <SelectValue placeholder="All priorities" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All priorities</SelectItem>
-            <SelectItem value="critical">Critical</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={sort}
-          onValueChange={(next) =>
-            changeFilters({ sort: next === "priority" ? undefined : next })
-          }
-        >
-          {/* lookup-fixed-enum: Notification display order enumeration. */}
-          <SelectTrigger aria-label="Sort notifications">
-            <SelectValue placeholder="Sort notifications" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="priority">Priority first</SelectItem>
-            <SelectItem value="newest">Newest first</SelectItem>
-            <SelectItem value="oldest">Oldest first</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      {(search || category !== "all" || priority !== "all" || sort !== "priority") && (
-        <div className="flex items-center justify-between gap-2">
-          <span aria-live="polite" className="text-xs text-muted-foreground">
-            {inbox.isPending ? "Searching…" : totalMatches.toLocaleString() + " matching alerts"}
-          </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() =>
-              changeFilters({
-                q: undefined,
-                category: undefined,
-                priority: undefined,
-                sort: undefined,
-              })
-            }
-          >
-            Clear filters
-          </Button>
+          ))}
         </div>
-      )}
-      {rows.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
-          <div>
-            <Button
-              size="sm"
-              variant={groupByModule ? "secondary" : "outline"}
-              aria-pressed={groupByModule}
-              disabled={bulkBusy}
-              onClick={() => setGroupByModule((current) => !current)}
-            >
-              Group page by module
+        <p className="text-xs text-muted-foreground">
+          Workload counts cover your full accessible inbox. Filters and priority ordering run on the
+          server before alerts are paged.
+        </p>
+        {workload.isError && (
+          <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
+            Could not load complete workload counts.
+            <Button size="sm" variant="outline" onClick={() => void workload.refetch()}>
+              Retry counts
             </Button>
           </div>
-          <span className="text-xs text-muted-foreground">
-            Grouping reorganises only this page ({pageRows.length} alerts)
-          </span>
+        )}
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Notification views">
+          {VIEWS.map((item) => (
+            <Button
+              key={item.key}
+              size="sm"
+              variant={view === item.key ? "default" : "outline"}
+              asChild
+            >
+              <Link
+                to="/notifications"
+                search={{ ...query, view: item.key }}
+                aria-current={view === item.key ? "page" : undefined}
+                onClick={onViewNavigate}
+              >
+                {item.label}
+              </Link>
+            </Button>
+          ))}
         </div>
-      )}
-      {validSelected.length > 0 && (
-        <div role="status" className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm" aria-live="polite">
-          <span>
-            {bulkBusy
-              ? `Updating ${bulkProgress} of ${bulkTotal} selected alerts…`
-              : `${validSelected.length} selected`}
-          </span>
-          <Button size="sm" disabled={bulkBusy || changeState.isPending} onClick={() => void bulkState("read")}>
-            Mark selected read
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={bulkBusy || changeState.isPending}
-            onClick={() => void bulkState("archive")}
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_160px_170px]">
+          <ActionCenterSearchForm
+            key={search}
+            appliedSearch={search}
+            onSearch={(value) => changeFilters({ q: value || undefined })}
+          />
+          <Select value={category} onValueChange={onCategory}>
+            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+            <SelectTrigger aria-label="Filter by module">
+              <SelectValue placeholder="All modules" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All modules</SelectItem>
+              {Object.entries(CATEGORIES).map(([id, title]) => (
+                <SelectItem key={id} value={id}>
+                  {title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={priority}
+            onValueChange={(next) => changeFilters({ priority: next === "all" ? undefined : next })}
           >
-            Archive selected
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={bulkBusy}
-            onClick={() => {
-              setSelected([]);
-              setRetryAction(null);
-              setBulkError(null);
-            }}
+            {/* lookup-fixed-enum: Notification priority enumeration. */}
+            <SelectTrigger aria-label="Filter by priority">
+              <SelectValue placeholder="All priorities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All priorities</SelectItem>
+              <SelectItem value="critical">Critical</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={sort}
+            onValueChange={(next) =>
+              changeFilters({ sort: next === "priority" ? undefined : next })
+            }
           >
-            Clear
-          </Button>
+            {/* lookup-fixed-enum: Notification display order enumeration. */}
+            <SelectTrigger aria-label="Sort notifications">
+              <SelectValue placeholder="Sort notifications" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="priority">Priority first</SelectItem>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      )}
-      {bulkError && (
-        <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
-          <span>{bulkError}</span>
-          {retryAction && validSelected.length > 0 && !bulkBusy && (
+        {(search || category !== "all" || priority !== "all" || sort !== "priority") && (
+          <div className="flex items-center justify-between gap-2">
+            <span aria-live="polite" className="text-xs text-muted-foreground">
+              {inbox.isPending ? "Searching…" : totalMatches.toLocaleString() + " matching alerts"}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() =>
+                changeFilters({
+                  q: undefined,
+                  category: undefined,
+                  priority: undefined,
+                  sort: undefined,
+                })
+              }
+            >
+              Clear filters
+            </Button>
+          </div>
+        )}
+        {rows.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
+            <div>
+              <Button
+                size="sm"
+                variant={groupByModule ? "secondary" : "outline"}
+                aria-pressed={groupByModule}
+                disabled={bulkBusy}
+                onClick={() => setGroupByModule((current) => !current)}
+              >
+                Group page by module
+              </Button>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              Grouping reorganises only this page ({pageRows.length} alerts)
+            </span>
+          </div>
+        )}
+        {validSelected.length > 0 && (
+          <div
+            role="status"
+            className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm"
+            aria-live="polite"
+          >
+            <span>
+              {bulkBusy
+                ? `Updating ${bulkProgress} of ${bulkTotal} selected alerts…`
+                : `${validSelected.length} selected`}
+            </span>
+            <Button
+              size="sm"
+              disabled={bulkBusy || changeState.isPending}
+              onClick={() => void bulkState("read")}
+            >
+              Mark selected read
+            </Button>
             <Button
               size="sm"
               variant="outline"
-              onClick={() => void bulkState(retryAction)}
+              disabled={bulkBusy || changeState.isPending}
+              onClick={() => void bulkState("archive")}
             >
-              Retry failed alerts ({validSelected.length})
+              Archive selected
             </Button>
-          )}
-        </div>
-      )}
-      {inbox.isError && inbox.data && (
-        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
-          Could not refresh the latest notifications. Displayed alerts may be outdated.
-          <Button size="sm" variant="outline" onClick={() => void inbox.refetch()}>
-            Retry refresh
-          </Button>
-        </div>
-      )}
-      {inbox.isPending ? (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" />
-          Loading your actions…
-        </p>
-      ) : inbox.isError && !inbox.data ? (
-        <div role="alert" className="rounded-lg border p-4">
-          <p>
-            Could not load Action Center:{" "}
-            {inbox.error instanceof Error ? inbox.error.message : "Unknown error"}
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={bulkBusy}
+              onClick={() => {
+                setSelected([]);
+                setRetryAction(null);
+                setBulkError(null);
+              }}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
+        {bulkError && (
+          <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
+            <span>{bulkError}</span>
+            {retryAction && validSelected.length > 0 && !bulkBusy && (
+              <Button size="sm" variant="outline" onClick={() => void bulkState(retryAction)}>
+                Retry failed alerts ({validSelected.length})
+              </Button>
+            )}
+          </div>
+        )}
+        {inbox.isError && inbox.data && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm"
+          >
+            Could not refresh the latest notifications. Displayed alerts may be outdated.
+            <Button size="sm" variant="outline" onClick={() => void inbox.refetch()}>
+              Retry refresh
+            </Button>
+          </div>
+        )}
+        {inbox.isPending ? (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
+            Loading your actions…
           </p>
-          <Button variant="outline" className="mt-2" onClick={() => void inbox.refetch()}>
-            Retry
-          </Button>
-        </div>
-      ) : rows.length === 0 ? (
-        <div className="rounded-lg border px-6 py-12 text-center text-muted-foreground">
-          No matching notifications across your accessible history.
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={allPageSelected}
-                ref={(node) => {
-                  if (node) node.indeterminate = selectedPageCount > 0 && !allPageSelected;
-                }}
-                disabled={bulkBusy || changeState.isPending}
-                onChange={(event) => togglePageSelection(event.target.checked)}
-                aria-label="Select all notifications on this page"
-                className="size-4 accent-primary"
-              />
-              Select page ({pageRows.length})
-            </label>
-            <span className="text-xs text-muted-foreground">Selection applies only to notifications you choose</span>
-          </div>
-          {pageGroups.map((group) => {
-            const groupIds = group.rows.map((item) => item.id);
-            const allGroupSelected = groupIds.every((id) => validSelected.includes(id));
-            const modulePath = MODULE_DESTINATIONS[group.category];
-            return (
-              <section
-                key={group.category}
-                aria-label={groupByModule ? `${CATEGORIES[group.category] ?? group.category} alerts on this page` : "Notifications"}
-                className="space-y-2"
-              >
-                {groupByModule && (
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2">
-                    <h2 className="text-sm font-semibold">
-                      {CATEGORIES[group.category] ?? group.category}
-                      <span className="ml-2 font-normal text-muted-foreground">
-                        ({group.rows.length} on this page)
-                      </span>
-                    </h2>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={bulkBusy || changeState.isPending}
-                        onClick={() => toggleIds(groupIds, !allGroupSelected)}
-                        aria-label={`${allGroupSelected ? "Unselect" : "Select"} ${CATEGORIES[group.category] ?? group.category} alerts on this page`}
-                      >
-                        {allGroupSelected ? "Unselect group" : "Select group"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={bulkBusy}
-                        aria-label={`Show only ${CATEGORIES[group.category] ?? group.category} alerts`}
-                        onClick={() => changeFilters({ category: group.category })}
-                      >
-                        Filter module
-                      </Button>
-                      {modulePath && (
-                        <a
-                          href={modulePath}
-                          className="inline-flex min-h-8 items-center gap-1 rounded px-2 text-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-                        >
-                          Open module <ArrowUpRight className="size-3" aria-hidden="true" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                )}
-                {group.rows.map((n) => (
-                  <NotificationRow
-                    key={n.id}
-                    item={n}
-                    selected={validSelected.includes(n.id)}
-                    onSelect={() => toggleSelection(n.id)}
-                    busy={changeState.isPending || bulkBusy}
-                    change={(read, archive) =>
-                      changeState.mutate({
-                        id: n.id,
-                        ...(read !== undefined ? { read } : {}),
-                        ...(archive !== undefined ? { archive } : {}),
-                      })
-                    }
-                  />
-                ))}
-              </section>
-            );
-          })}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 text-sm text-muted-foreground" aria-live="polite">
-            <span>
-              {rows.length.toLocaleString()} of {totalMatches.toLocaleString()} matching loaded ·
-              Page {Math.min(page, pageCount - 1) + 1} of {Math.max(1, Math.ceil(totalMatches / PAGE_SIZE))}
-            </span>
-            <nav aria-label="Notification pages" className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={page === 0}
-                onClick={() => setPage((n) => Math.max(0, n - 1))}
-              >
-                Previous
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={(page + 1 >= pageCount && !inbox.hasNextPage) || inbox.isFetchingNextPage}
-                onClick={() => {
-                  if (page + 1 < pageCount) {
-                    setPage((n) => n + 1);
-                  } else if (inbox.hasNextPage) {
-                    void inbox.fetchNextPage().then((result) => {
-                      if (result.isSuccess) setPage((n) => n + 1);
-                    });
-                  }
-                }}
-              >
-                Next
-              </Button>
-            </nav>
-          </div>
-          {inbox.hasNextPage && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
-              <p className="text-xs text-muted-foreground">
-                All filters and sorting apply across your accessible notification history.
-              </p>
-              <Button
-                variant="outline"
-                disabled={inbox.isFetchingNextPage || bulkBusy}
-                onClick={() => void inbox.fetchNextPage()}
-              >
-                {inbox.isFetchingNextPage ? "Loading more alerts…" : "Load more matching alerts"}
-              </Button>
-            </div>
-          )}
-          {inbox.isFetchNextPageError && (
-            <p role="alert" className="text-sm text-destructive">
-              Could not load more matching alerts. You can retry.
+        ) : inbox.isError && !inbox.data ? (
+          <div role="alert" className="rounded-lg border p-4">
+            <p>
+              Could not load Action Center:{" "}
+              {inbox.error instanceof Error ? inbox.error.message : "Unknown error"}
             </p>
-          )}
-        </div>
-      )}
-      <NotificationPreferences companyId={companyId} userId={user.id} />
-      <DocumentRequests companyId={companyId} userId={user.id} />
+            <Button variant="outline" className="mt-2" onClick={() => void inbox.refetch()}>
+              Retry
+            </Button>
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="rounded-lg border px-6 py-12 text-center text-muted-foreground">
+            No matching notifications across your accessible history.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm">
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={allPageSelected}
+                  ref={(node) => {
+                    if (node) node.indeterminate = selectedPageCount > 0 && !allPageSelected;
+                  }}
+                  disabled={bulkBusy || changeState.isPending}
+                  onChange={(event) => togglePageSelection(event.target.checked)}
+                  aria-label="Select all notifications on this page"
+                  className="size-4 accent-primary"
+                />
+                Select page ({pageRows.length})
+              </label>
+              <span className="text-xs text-muted-foreground">
+                Selection applies only to notifications you choose
+              </span>
+            </div>
+            {pageGroups.map((group) => {
+              const groupIds = group.rows.map((item) => item.id);
+              const allGroupSelected = groupIds.every((id) => validSelected.includes(id));
+              const modulePath = MODULE_DESTINATIONS[group.category];
+              return (
+                <section
+                  key={group.category}
+                  aria-label={
+                    groupByModule
+                      ? `${CATEGORIES[group.category] ?? group.category} alerts on this page`
+                      : "Notifications"
+                  }
+                  className="space-y-2"
+                >
+                  {groupByModule && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2">
+                      <h2 className="text-sm font-semibold">
+                        {CATEGORIES[group.category] ?? group.category}
+                        <span className="ml-2 font-normal text-muted-foreground">
+                          ({group.rows.length} on this page)
+                        </span>
+                      </h2>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={bulkBusy || changeState.isPending}
+                          onClick={() => toggleIds(groupIds, !allGroupSelected)}
+                          aria-label={`${allGroupSelected ? "Unselect" : "Select"} ${CATEGORIES[group.category] ?? group.category} alerts on this page`}
+                        >
+                          {allGroupSelected ? "Unselect group" : "Select group"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={bulkBusy}
+                          aria-label={`Show only ${CATEGORIES[group.category] ?? group.category} alerts`}
+                          onClick={() => changeFilters({ category: group.category })}
+                        >
+                          Filter module
+                        </Button>
+                        {modulePath && (
+                          <a
+                            href={modulePath}
+                            className="inline-flex min-h-8 items-center gap-1 rounded px-2 text-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                          >
+                            Open module <ArrowUpRight className="size-3" aria-hidden="true" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {group.rows.map((n) => (
+                    <NotificationRow
+                      key={n.id}
+                      item={n}
+                      selected={validSelected.includes(n.id)}
+                      onSelect={() => toggleSelection(n.id)}
+                      busy={changeState.isPending || bulkBusy}
+                      change={(read, archive) =>
+                        changeState.mutate({
+                          id: n.id,
+                          ...(read !== undefined ? { read } : {}),
+                          ...(archive !== undefined ? { archive } : {}),
+                        })
+                      }
+                    />
+                  ))}
+                </section>
+              );
+            })}
+            <div
+              className="flex flex-wrap items-center justify-between gap-2 pt-3 text-sm text-muted-foreground"
+              aria-live="polite"
+            >
+              <span>
+                {rows.length.toLocaleString()} of {totalMatches.toLocaleString()} matching loaded ·
+                Page {Math.min(page, pageCount - 1) + 1} of{" "}
+                {Math.max(1, Math.ceil(totalMatches / PAGE_SIZE))}
+              </span>
+              <nav aria-label="Notification pages" className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={page === 0}
+                  onClick={() => setPage((n) => Math.max(0, n - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={
+                    (page + 1 >= pageCount && !inbox.hasNextPage) || inbox.isFetchingNextPage
+                  }
+                  onClick={() => {
+                    if (page + 1 < pageCount) {
+                      setPage((n) => n + 1);
+                    } else if (inbox.hasNextPage) {
+                      void inbox.fetchNextPage().then((result) => {
+                        if (result.isSuccess) setPage((n) => n + 1);
+                      });
+                    }
+                  }}
+                >
+                  Next
+                </Button>
+              </nav>
+            </div>
+            {inbox.hasNextPage && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">
+                  All filters and sorting apply across your accessible notification history.
+                </p>
+                <Button
+                  variant="outline"
+                  disabled={inbox.isFetchingNextPage || bulkBusy}
+                  onClick={() => void inbox.fetchNextPage()}
+                >
+                  {inbox.isFetchingNextPage ? "Loading more alerts…" : "Load more matching alerts"}
+                </Button>
+              </div>
+            )}
+            {inbox.isFetchNextPageError && (
+              <p role="alert" className="text-sm text-destructive">
+                Could not load more matching alerts. You can retry.
+              </p>
+            )}
+          </div>
+        )}
+        <NotificationPreferences companyId={companyId} userId={user.id} />
+        <DocumentRequests companyId={companyId} userId={user.id} />
       </ListWorkspace>
     </div>
   );

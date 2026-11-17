@@ -45,7 +45,13 @@ const onboardingProjection =
 
 export type FirmOnboardingOverviewRow = Pick<
   FirmOnboardingStep,
-  "company_id" | "task_key" | "title" | "completed_at" | "assignee_id" | "due_date" | "depends_on_task_key"
+  | "company_id"
+  | "task_key"
+  | "title"
+  | "completed_at"
+  | "assignee_id"
+  | "due_date"
+  | "depends_on_task_key"
 >;
 
 export type FirmEngagement = {
@@ -127,9 +133,7 @@ export const listFirmOnboardingSteps = createServerFn({ method: "GET" })
     await checkScope(context, data.firmId, data.companyId, false);
     const { data: rows, error } = await context.supabase
       .from("firm_client_onboarding_steps" as never)
-      .select(
-        onboardingProjection as never,
-      )
+      .select(onboardingProjection as never)
       .eq("firm_id" as never, data.firmId as never)
       .eq("company_id" as never, data.companyId as never)
       .order("created_at" as never)
@@ -203,9 +207,7 @@ export const updateFirmOnboardingStep = createServerFn({ method: "POST" })
       .eq("company_id" as never, data.companyId as never)
       .eq("task_key" as never, data.task_key as never)
       .eq("version" as never, data.version as never)
-      .select(
-        onboardingProjection as never,
-      )
+      .select(onboardingProjection as never)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!updated)
@@ -256,9 +258,7 @@ export const saveFirmOnboardingPlan = createServerFn({ method: "POST" })
 
 export const listFirmOnboardingOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ firmId: z.string().uuid() }).strict().parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
   .handler(async ({ data, context }): Promise<FirmOnboardingOverviewRow[]> => {
     const { data: membership, error: memberError } = await context.supabase
       .from("firm_members" as never)

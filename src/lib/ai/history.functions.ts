@@ -35,7 +35,8 @@ export const listAiConversationHistory = createServerFn({ method: "GET" })
       .eq("user_id" as never, context.userId as never)
       .order("created_at" as never, { ascending: false })
       .limit(50);
-    if (error) throw new Error("Conversation history is unavailable. Check the AI history migration.");
+    if (error)
+      throw new Error("Conversation history is unavailable. Check the AI history migration.");
     return (rows ?? []) as AiConversationRow[];
   });
 

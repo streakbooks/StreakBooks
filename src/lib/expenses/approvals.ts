@@ -3,9 +3,7 @@ import { canTransitionApproval } from "./status";
 
 export type ExpenseApprovalAction = "start_review" | "approve" | "return" | "reject";
 
-export function approvalActionTarget(
-  action: ExpenseApprovalAction,
-): ExpenseApprovalStatus {
+export function approvalActionTarget(action: ExpenseApprovalAction): ExpenseApprovalStatus {
   switch (action) {
     case "start_review":
       return "in_review";

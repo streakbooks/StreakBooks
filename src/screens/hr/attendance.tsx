@@ -179,7 +179,10 @@ export function HrAttendancePage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Attendance" breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Attendance" }]}>
+      <ListWorkspace
+        title="Attendance"
+        breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Attendance" }]}
+      >
         <HrSubnav current="attendance" />
         <EmptyState title="No access" description="You need hr.view to open attendance." />
       </ListWorkspace>
@@ -270,8 +273,12 @@ export function HrAttendancePage() {
                     <div className="text-muted-foreground text-xs">{row.employeeNumber}</div>
                   </TableCell>
                   <TableCell>{row.workDate}</TableCell>
-                  <TableCell>{row.checkInAt ? new Date(row.checkInAt).toLocaleString() : "—"}</TableCell>
-                  <TableCell>{row.checkOutAt ? new Date(row.checkOutAt).toLocaleString() : "—"}</TableCell>
+                  <TableCell>
+                    {row.checkInAt ? new Date(row.checkInAt).toLocaleString() : "—"}
+                  </TableCell>
+                  <TableCell>
+                    {row.checkOutAt ? new Date(row.checkOutAt).toLocaleString() : "—"}
+                  </TableCell>
                   <TableCell>
                     <StatusBadge status={row.status} />
                   </TableCell>
@@ -448,11 +455,19 @@ export function HrAttendancePage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Requested check-in</Label>
-              <Input type="datetime-local" value={reqIn} onChange={(e) => setReqIn(e.target.value)} />
+              <Input
+                type="datetime-local"
+                value={reqIn}
+                onChange={(e) => setReqIn(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Requested check-out</Label>
-              <Input type="datetime-local" value={reqOut} onChange={(e) => setReqOut(e.target.value)} />
+              <Input
+                type="datetime-local"
+                value={reqOut}
+                onChange={(e) => setReqOut(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Reason</Label>

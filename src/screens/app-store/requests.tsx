@@ -54,13 +54,12 @@ export function AppStoreRequestsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="App Requests" description="App Store"
-    >
-      <EmptyState
+      <ListWorkspace title="App Requests" description="App Store">
+        <EmptyState
           title="No access"
           description="Requires App Store request or view permission."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
@@ -69,9 +68,10 @@ export function AppStoreRequestsPage() {
   );
 
   return (
-      <ListWorkspace title="App Requests"
-        description="Installation requests and approvals. Approval never bypasses connector authorization."
-      subnav={<AppStoreSubnav current="requests"/>}
+    <ListWorkspace
+      title="App Requests"
+      description="Installation requests and approvals. Approval never bypasses connector authorization."
+      subnav={<AppStoreSubnav current="requests" />}
     >
       <Alert className="mb-6">
         <AlertTitle>Requests foundation</AlertTitle>

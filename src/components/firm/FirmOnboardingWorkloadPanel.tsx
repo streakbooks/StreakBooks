@@ -54,11 +54,8 @@ export function FirmOnboardingWorkloadPanel({
     enabled: Boolean(firmId),
   });
   const capacityM = useMutation({
-    mutationFn: (input: {
-      userId: string;
-      expectedVersion: number;
-      maxOpenSteps: number;
-    }) => saveFn({ data: { firmId, ...input } }),
+    mutationFn: (input: { userId: string; expectedVersion: number; maxOpenSteps: number }) =>
+      saveFn({ data: { firmId, ...input } }),
     onSuccess: async () => {
       setLimitDraft(null);
       await qc.invalidateQueries({ queryKey: ["firm-onboarding-workload-context", firmId] });
@@ -87,26 +84,33 @@ export function FirmOnboardingWorkloadPanel({
     [rows, selectedId, selected?.max_open_steps, today],
   );
   const names = useMemo(
-    () => new Map(
-      clients.filter((client) => Boolean(client.companies))
-        .map((client) => [client.company_id, getFirmClientName(client)]),
-    ),
+    () =>
+      new Map(
+        clients
+          .filter((client) => Boolean(client.companies))
+          .map((client) => [client.company_id, getFirmClientName(client)]),
+      ),
     [clients],
   );
-  const draft = limitDraft?.userId === selectedId
-    ? limitDraft.value : String(selected?.max_open_steps ?? 20);
+  const draft =
+    limitDraft?.userId === selectedId ? limitDraft.value : String(selected?.max_open_steps ?? 20);
   const parsedLimit = Number(draft);
-  const validLimit = /^\d{1,3}$/.test(draft) &&
-    Number.isInteger(parsedLimit) && parsedLimit >= 1 && parsedLimit <= 200;
+  const validLimit =
+    /^\d{1,3}$/.test(draft) &&
+    Number.isInteger(parsedLimit) &&
+    parsedLimit >= 1 &&
+    parsedLimit <= 200;
 
   return (
-    <section className="space-y-4 rounded-lg border bg-card p-4"
-      aria-label="Staff onboarding workload and task queue">
+    <section
+      className="space-y-4 rounded-lg border bg-card p-4"
+      aria-label="Staff onboarding workload and task queue"
+    >
       <div>
         <h3 className="font-semibold">Staff onboarding workload</h3>
         <p className="text-sm text-muted-foreground">
-          Workloads count only checklist steps in clients you can access.
-          Capacity is an advisory target; it never changes staff permissions.
+          Workloads count only checklist steps in clients you can access. Capacity is an advisory
+          target; it never changes staff permissions.
         </p>
       </div>
       {contextQ.isError || overviewQ.isError ? (
@@ -114,22 +118,30 @@ export function FirmOnboardingWorkloadPanel({
           <span className="text-destructive">
             Could not load workload: {friendlyAuthError(contextQ.error ?? overviewQ.error)}
           </span>
-          <Button size="sm" variant="outline" onClick={() => {
-            void contextQ.refetch();
-            void overviewQ.refetch();
-          }}>Retry</Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              void contextQ.refetch();
+              void overviewQ.refetch();
+            }}
+          >
+            Retry
+          </Button>
         </div>
       ) : contextQ.isPending || overviewQ.isPending ? (
         <p className="text-sm text-muted-foreground">Loading staff workload…</p>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {([
-              ["Clients with checklists", report.clientCount],
-              ["Fully completed clients", report.fullyCompletedClients],
-              ["Steps completed", `${report.completedSteps} / ${report.totalSteps}`],
-              ["Completion", `${report.completionPercent}%`],
-            ] as const).map(([label, value]) => (
+            {(
+              [
+                ["Clients with checklists", report.clientCount],
+                ["Fully completed clients", report.fullyCompletedClients],
+                ["Steps completed", `${report.completedSteps} / ${report.totalSteps}`],
+                ["Completion", `${report.completionPercent}%`],
+              ] as const
+            ).map(([label, value]) => (
               <div key={label} className="rounded-md border p-3">
                 <p className="text-xs text-muted-foreground">{label}</p>
                 <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
@@ -149,19 +161,23 @@ export function FirmOnboardingWorkloadPanel({
                 }}
                 options={staff.map((member) => ({
                   id: member.user_id,
-                  name: member.user_id === viewerId
-                    ? `${member.display_name} (me)` : member.display_name,
+                  name:
+                    member.user_id === viewerId
+                      ? `${member.display_name} (me)`
+                      : member.display_name,
                   label: member.display_name,
                 }))}
                 searchPlaceholder="Find a firm colleague"
               />
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {([
-                  ["Open", workload.assignedOpen],
-                  ["Overdue", workload.overdue],
-                  ["Due soon", workload.dueSoon],
-                  ["Blocked", workload.blocked],
-                ] as const).map(([label, value]) => (
+                {(
+                  [
+                    ["Open", workload.assignedOpen],
+                    ["Overdue", workload.overdue],
+                    ["Due soon", workload.dueSoon],
+                    ["Blocked", workload.blocked],
+                  ] as const
+                ).map(([label, value]) => (
                   <div key={label} className="rounded-md border p-2">
                     <p className="text-xs text-muted-foreground">{label}</p>
                     <p className="text-base font-semibold tabular-nums">{value}</p>
@@ -173,41 +189,60 @@ export function FirmOnboardingWorkloadPanel({
                   <p className="text-sm font-medium">
                     Capacity: {workload.assignedOpen} / {workload.capacity} open steps
                   </p>
-                  {workload.overCapacity && (
-                    <Badge variant="destructive">Above capacity</Badge>
-                  )}
+                  {workload.overCapacity && <Badge variant="destructive">Above capacity</Badge>}
                 </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted"
-                  role="progressbar" aria-label="Staff capacity utilization"
-                  aria-valuemin={0} aria-valuemax={100}
-                  aria-valuenow={Math.min(100, workload.utilizationPercent)}>
-                  <div className="h-full bg-primary"
-                    style={{ width: `${Math.min(100, workload.utilizationPercent)}%` }} />
+                <div
+                  className="mt-2 h-2 overflow-hidden rounded-full bg-muted"
+                  role="progressbar"
+                  aria-label="Staff capacity utilization"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.min(100, workload.utilizationPercent)}
+                >
+                  <div
+                    className="h-full bg-primary"
+                    style={{ width: `${Math.min(100, workload.utilizationPercent)}%` }}
+                  />
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {workload.utilizationPercent}% of configured capacity
-                  (based on accessible assigned work).
+                  {workload.utilizationPercent}% of configured capacity (based on accessible
+                  assigned work).
                 </p>
                 {contextQ.data?.canManage && selected && (
                   <div className="mt-3 flex flex-wrap items-end gap-2">
                     <div className="w-40 space-y-1">
                       <Label htmlFor="firm-capacity-limit">Target open steps (1–200)</Label>
-                      <Input id="firm-capacity-limit" type="number" min={1} max={200}
-                        value={draft} disabled={capacityM.isPending}
-                        onChange={(event) => setLimitDraft({
-                          userId: selectedId,
-                          value: event.target.value,
-                        })}
+                      <Input
+                        id="firm-capacity-limit"
+                        type="number"
+                        min={1}
+                        max={200}
+                        value={draft}
+                        disabled={capacityM.isPending}
+                        onChange={(event) =>
+                          setLimitDraft({
+                            userId: selectedId,
+                            value: event.target.value,
+                          })
+                        }
                       />
                     </div>
-                    <Button size="sm" variant="outline" disabled={
-                      capacityM.isPending || !validLimit ||
-                      parsedLimit === selected.max_open_steps
-                    } onClick={() => capacityM.mutate({
-                      userId: selectedId,
-                      expectedVersion: selected.version,
-                      maxOpenSteps: parsedLimit,
-                    })}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={
+                        capacityM.isPending ||
+                        !validLimit ||
+                        parsedLimit === selected.max_open_steps
+                      }
+                      onClick={() =>
+                        capacityM.mutate({
+                          userId: selectedId,
+                          expectedVersion: selected.version,
+                          maxOpenSteps: parsedLimit,
+                        })
+                      }
+                    >
                       {capacityM.isPending ? "Saving…" : "Save capacity"}
                     </Button>
                   </div>
@@ -215,19 +250,18 @@ export function FirmOnboardingWorkloadPanel({
               </div>
             </div>
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold">
-                Assigned task queue ({taskQueue.length})
-              </h4>
+              <h4 className="text-sm font-semibold">Assigned task queue ({taskQueue.length})</h4>
               {taskQueue.length === 0 ? (
                 <p className="rounded-md border p-4 text-sm text-muted-foreground">
-                  No outstanding onboarding tasks assigned to this colleague
-                  in accessible clients.
+                  No outstanding onboarding tasks assigned to this colleague in accessible clients.
                 </p>
               ) : (
                 <div className="max-h-96 space-y-2 overflow-y-auto">
                   {taskQueue.slice(0, 40).map((task) => (
-                    <div key={task.company_id + ":" + task.task_key}
-                      className="flex flex-wrap items-center gap-2 rounded-md border p-3">
+                    <div
+                      key={task.company_id + ":" + task.task_key}
+                      className="flex flex-wrap items-center gap-2 rounded-md border p-3"
+                    >
                       <div className="min-w-44 flex-1">
                         <p className="text-sm font-medium">{task.title}</p>
                         <p className="text-xs text-muted-foreground">
@@ -238,8 +272,11 @@ export function FirmOnboardingWorkloadPanel({
                       <Badge variant={task.status === "overdue" ? "destructive" : "outline"}>
                         {statusLabels[task.status]}
                       </Badge>
-                      <Button size="sm" variant="outline"
-                        onClick={() => onChooseClient(task.company_id)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onChooseClient(task.company_id)}
+                      >
                         Open
                       </Button>
                     </div>

@@ -76,7 +76,9 @@ export function decideEnqueueSyncJob(input: EnqueueSyncRequest): EnqueueSyncDeci
 }
 
 /** Dry-run enqueue is still blocked without E2E — avoids fake success paths. */
-export function decideDryRunEnqueue(input: Pick<EnqueueSyncRequest, "implementationStatus" | "suspended">): EnqueueSyncDecision {
+export function decideDryRunEnqueue(
+  input: Pick<EnqueueSyncRequest, "implementationStatus" | "suspended">,
+): EnqueueSyncDecision {
   if (input.suspended) {
     return { allowed: false, reason: "Application is suspended." };
   }

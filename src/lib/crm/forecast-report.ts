@@ -67,7 +67,7 @@ export function buildForecastReport(input: {
     const probability =
       typeof opp.probabilityPct === "number"
         ? Math.min(100, Math.max(0, Math.trunc(opp.probabilityPct)))
-        : meta?.probabilityPct ?? 0;
+        : (meta?.probabilityPct ?? 0);
     const weighted = Math.round((amount * probability) / 100);
     pipelineValueMinor += amount;
     weightedPipelineValueMinor += weighted;

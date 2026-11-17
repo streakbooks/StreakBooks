@@ -474,8 +474,10 @@ export function parsePayrollEmployeesCsv(
       // formula-like cells. Preserve legitimate names beginning with an apostrophe.
       const value = i >= 0 ? (cells[i] ?? "") : "";
       const marker = value.charAt(1);
-      const escaped = value.startsWith("'") &&
-        (["=", "+", "-", "@"].includes(marker) || marker.charCodeAt(0) === 9 ||
+      const escaped =
+        value.startsWith("'") &&
+        (["=", "+", "-", "@"].includes(marker) ||
+          marker.charCodeAt(0) === 9 ||
           marker.charCodeAt(0) === 13);
       return escaped ? value.slice(1) : value;
     };
@@ -504,7 +506,10 @@ export function parsePayrollEmployeesCsv(
     const number = draft.employeeNumber.trim();
     if (number) {
       if (usedIds.has(number)) {
-        return { ok: false, error: `Line ${row.line}: Employee ID ${number} appears more than once.` };
+        return {
+          ok: false,
+          error: `Line ${row.line}: Employee ID ${number} appears more than once.`,
+        };
       }
       usedIds.add(number);
     }

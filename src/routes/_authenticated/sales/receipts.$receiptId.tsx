@@ -149,9 +149,7 @@ function ReceiptDetail() {
               {
                 label: "Record another receipt",
                 to: "/sales/receipts/new",
-                ...(receipt.contact_id
-                  ? { search: { contactId: receipt.contact_id } }
-                  : {}),
+                ...(receipt.contact_id ? { search: { contactId: receipt.contact_id } } : {}),
                 hint: "Create a new customer receipt",
               },
             ]}
@@ -180,149 +178,149 @@ function ReceiptDetail() {
           </div>
         }
       >
-      <div className="grid max-w-4xl gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              {money(receipt.amount_minor, cur)}
-              <StatusBadge status={receipt.status} />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
-            <div>Date: {receipt.receipt_date}</div>
-            <div>
-              Deposited to:{" "}
-              {receipt.accounts ? `${receipt.accounts.code} — ${receipt.accounts.name}` : "—"}
-            </div>
-            <div>Reference: {receipt.reference ?? "—"}</div>
-            <div>Memo: {receipt.memo ?? "—"}</div>
-            <div>Unallocated: {isPosted ? money(receipt.unallocated_minor, cur) : "—"}</div>
-            {receipt.status === "void" ? (
-              <div className="sm:col-span-2 text-destructive">
-                Voided {receipt.void_date ?? ""}
-                {receipt.void_reason ? ` — ${receipt.void_reason}` : ""}
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Allocated to invoices</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {allocations.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No active allocations.</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Invoice</TableHead>
-                    <TableHead>Allocated on</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {allocations.map((a) => (
-                    <TableRow key={a.id}>
-                      <TableCell>
-                        <Link
-                          className="underline-offset-2 hover:underline"
-                          to="/sales/invoices/$invoiceId"
-                          params={{ invoiceId: a.invoice_id }}
-                        >
-                          {a.sales_invoices?.invoice_number ?? a.invoice_id.slice(0, 8)}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{a.allocated_on ?? "—"}</TableCell>
-                      <TableCell className="text-right">{money(a.amount_minor, cur)}</TableCell>
-                      <TableCell className="text-right">
-                        {isPosted ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              setDialog({ kind: "unallocate", invoiceId: a.invoice_id })
-                            }
-                          >
-                            Unallocate
-                          </Button>
-                        ) : null}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        {reversedAllocations.length > 0 ? (
+        <div className="grid max-w-4xl gap-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Reversed allocations</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-base">
+                {money(receipt.amount_minor, cur)}
+                <StatusBadge status={receipt.status} />
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Invoice</TableHead>
-                    <TableHead>Reversed on</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reversedAllocations.map((a) => (
-                    <TableRow key={a.id}>
-                      <TableCell>
-                        {a.sales_invoices?.invoice_number ?? a.invoice_id.slice(0, 8)}
-                      </TableCell>
-                      <TableCell>{a.reversed_on}</TableCell>
-                      <TableCell>{a.reverse_reason ?? "—"}</TableCell>
-                      <TableCell className="text-right">{money(a.amount_minor, cur)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
+              <div>Date: {receipt.receipt_date}</div>
+              <div>
+                Deposited to:{" "}
+                {receipt.accounts ? `${receipt.accounts.code} — ${receipt.accounts.name}` : "—"}
+              </div>
+              <div>Reference: {receipt.reference ?? "—"}</div>
+              <div>Memo: {receipt.memo ?? "—"}</div>
+              <div>Unallocated: {isPosted ? money(receipt.unallocated_minor, cur) : "—"}</div>
+              {receipt.status === "void" ? (
+                <div className="sm:col-span-2 text-destructive">
+                  Voided {receipt.void_date ?? ""}
+                  {receipt.void_reason ? ` — ${receipt.void_reason}` : ""}
+                </div>
+              ) : null}
             </CardContent>
           </Card>
-        ) : null}
-      </div>
 
-      <ReasonDialog
-        open={dialog?.kind === "void"}
-        onOpenChange={(o) => !o && setDialog(null)}
-        title="Void receipt"
-        description="Reverses the bank / accounts receivable journal and releases every allocation. This cannot be undone."
-        confirmLabel="Void receipt"
-        dateLabel="Void date"
-        minDate={latestAllocation}
-        defaultDate={today < latestAllocation ? latestAllocation : today}
-        pending={voidM.isPending}
-        destructive
-        onConfirm={(v) => voidM.mutate(v)}
-      />
-      <ReasonDialog
-        open={dialog?.kind === "unallocate"}
-        onOpenChange={(o) => !o && setDialog(null)}
-        title="Unallocate receipt"
-        description="Releases the allocation so the invoice shows as outstanding again. The receipt itself stays posted."
-        confirmLabel="Unallocate"
-        dateLabel="Reversal date"
-        minDate={latestAllocation}
-        defaultDate={today < latestAllocation ? latestAllocation : today}
-        pending={unallocM.isPending}
-        onConfirm={(v) =>
-          unallocM.mutate({
-            ...v,
-            invoiceId: dialog?.kind === "unallocate" ? dialog.invoiceId : null,
-          })
-        }
-      />
-      <DocumentActions kind="sales_receipt" id={receiptId} />
-      <DocumentRecordPanel entityType="sales_receipt" entityId={receiptId} audience="customer" />
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Allocated to invoices</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {allocations.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No active allocations.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice</TableHead>
+                      <TableHead>Allocated on</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allocations.map((a) => (
+                      <TableRow key={a.id}>
+                        <TableCell>
+                          <Link
+                            className="underline-offset-2 hover:underline"
+                            to="/sales/invoices/$invoiceId"
+                            params={{ invoiceId: a.invoice_id }}
+                          >
+                            {a.sales_invoices?.invoice_number ?? a.invoice_id.slice(0, 8)}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{a.allocated_on ?? "—"}</TableCell>
+                        <TableCell className="text-right">{money(a.amount_minor, cur)}</TableCell>
+                        <TableCell className="text-right">
+                          {isPosted ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                setDialog({ kind: "unallocate", invoiceId: a.invoice_id })
+                              }
+                            >
+                              Unallocate
+                            </Button>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {reversedAllocations.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Reversed allocations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice</TableHead>
+                      <TableHead>Reversed on</TableHead>
+                      <TableHead>Reason</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reversedAllocations.map((a) => (
+                      <TableRow key={a.id}>
+                        <TableCell>
+                          {a.sales_invoices?.invoice_number ?? a.invoice_id.slice(0, 8)}
+                        </TableCell>
+                        <TableCell>{a.reversed_on}</TableCell>
+                        <TableCell>{a.reverse_reason ?? "—"}</TableCell>
+                        <TableCell className="text-right">{money(a.amount_minor, cur)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
+
+        <ReasonDialog
+          open={dialog?.kind === "void"}
+          onOpenChange={(o) => !o && setDialog(null)}
+          title="Void receipt"
+          description="Reverses the bank / accounts receivable journal and releases every allocation. This cannot be undone."
+          confirmLabel="Void receipt"
+          dateLabel="Void date"
+          minDate={latestAllocation}
+          defaultDate={today < latestAllocation ? latestAllocation : today}
+          pending={voidM.isPending}
+          destructive
+          onConfirm={(v) => voidM.mutate(v)}
+        />
+        <ReasonDialog
+          open={dialog?.kind === "unallocate"}
+          onOpenChange={(o) => !o && setDialog(null)}
+          title="Unallocate receipt"
+          description="Releases the allocation so the invoice shows as outstanding again. The receipt itself stays posted."
+          confirmLabel="Unallocate"
+          dateLabel="Reversal date"
+          minDate={latestAllocation}
+          defaultDate={today < latestAllocation ? latestAllocation : today}
+          pending={unallocM.isPending}
+          onConfirm={(v) =>
+            unallocM.mutate({
+              ...v,
+              invoiceId: dialog?.kind === "unallocate" ? dialog.invoiceId : null,
+            })
+          }
+        />
+        <DocumentActions kind="sales_receipt" id={receiptId} />
+        <DocumentRecordPanel entityType="sales_receipt" entityId={receiptId} audience="customer" />
       </RecordWorkspace>
     </>
   );

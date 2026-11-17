@@ -151,7 +151,10 @@ export function CrmTeamPage() {
       <CrmSubnav current="team" />
 
       {settings.data && !settings.data.enabled ? (
-        <EmptyState title="CRM is disabled" description="Enable CRM before reviewing team workload." />
+        <EmptyState
+          title="CRM is disabled"
+          description="Enable CRM before reviewing team workload."
+        />
       ) : null}
 
       {settings.data?.enabled ? (
@@ -172,11 +175,19 @@ export function CrmTeamPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="territory-name">Name</Label>
-                  <Input id="territory-name" value={name} onChange={(e) => setName(e.target.value)} />
+                  <Input
+                    id="territory-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="territory-code">Code</Label>
-                  <Input id="territory-code" value={code} onChange={(e) => setCode(e.target.value)} />
+                  <Input
+                    id="territory-code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Owner</Label>
@@ -252,7 +263,9 @@ export function CrmTeamPage() {
                           <TableCell>
                             <div className="font-medium">{row.name}</div>
                             {row.code ? (
-                              <div className="font-mono text-xs text-muted-foreground">{row.code}</div>
+                              <div className="font-mono text-xs text-muted-foreground">
+                                {row.code}
+                              </div>
                             ) : null}
                             {row.description ? (
                               <div className="text-sm text-muted-foreground">{row.description}</div>
@@ -314,7 +327,9 @@ export function CrmTeamPage() {
                           </TableCell>
                           <TableCell className="capitalize">{row.role}</TableCell>
                           <TableCell className="capitalize">{row.status}</TableCell>
-                          <TableCell className="text-right tabular-nums">{row.openLeadCount}</TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {row.openLeadCount}
+                          </TableCell>
                           <TableCell className="text-right tabular-nums">
                             {row.openOpportunityCount}
                           </TableCell>

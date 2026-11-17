@@ -32,10 +32,7 @@ const depreciation: ReconciliationDepreciationEntry[] = [
   { asset_id: "a", period_end: "2026-03-31", amount_minor: "500" },
 ];
 
-const balances = (
-  cost: string,
-  accumulated: string,
-): ReconciliationLedgerBalance[] => [
+const balances = (cost: string, accumulated: string): ReconciliationLedgerBalance[] => [
   { account_id: "cost", debit_minor: cost, credit_minor: "0" },
   { account_id: "acc", debit_minor: "0", credit_minor: accumulated },
 ];
@@ -171,7 +168,13 @@ describe("Fixed Assets / GL reconciliation", () => {
       ),
     ).toThrow(/precision/i);
     expect(() =>
-      reconcileFixedAssets([asset("a", { asset_account_id: "missing" })], [], [], accounts, "2026-11-06"),
+      reconcileFixedAssets(
+        [asset("a", { asset_account_id: "missing" })],
+        [],
+        [],
+        accounts,
+        "2026-11-06",
+      ),
     ).toThrow(/missing/i);
     expect(() =>
       reconcileFixedAssets(
@@ -187,11 +190,13 @@ describe("Fixed Assets / GL reconciliation", () => {
   it("flags over-depreciation and depreciation for an unknown asset", () => {
     expect(() =>
       reconcileFixedAssets(
-        [asset("a", {
-          cost_minor: "1000",
-          residual_minor: "0",
-          opening_accumulated_minor: "800",
-        })],
+        [
+          asset("a", {
+            cost_minor: "1000",
+            residual_minor: "0",
+            opening_accumulated_minor: "800",
+          }),
+        ],
         [{ asset_id: "a", period_end: "2026-01-31", amount_minor: "201" }],
         balances("1000", "1001"),
         accounts,
@@ -210,88 +215,140 @@ describe("Fixed Assets / GL reconciliation", () => {
   });
 
   it("fails closed when residual and opening accumulated exceed the asset cost", () => {
-    expect(() => reconcileFixedAssets(
-      [asset("a", { cost_minor: "12000", residual_minor: "9000", opening_accumulated_minor: "4000" })],
-      [], [],
-      accounts, "2026-11-06",
-    )).toThrow(/residual or opening/i);
+    expect(() =>
+      reconcileFixedAssets(
+        [
+          asset("a", {
+            cost_minor: "12000",
+            residual_minor: "9000",
+            opening_accumulated_minor: "4000",
+          }),
+        ],
+        [],
+        [],
+        accounts,
+        "2026-11-06",
+      ),
+    ).toThrow(/residual or opening/i);
   });
 
   it("rejects depreciation above depreciable cost, even when below gross cost", () => {
-    expect(() => reconcileFixedAssets(
-      [asset("a", { cost_minor: "12000", residual_minor: "5000", opening_accumulated_minor: "1000" })],
-      [{ asset_id: "a", period_end: "2026-03-31", amount_minor: "6001" }],
-      balances("12000", "7001"),
-      accounts, "2026-11-06",
-    )).toThrow(/depreciable cost/i);
+    expect(() =>
+      reconcileFixedAssets(
+        [
+          asset("a", {
+            cost_minor: "12000",
+            residual_minor: "5000",
+            opening_accumulated_minor: "1000",
+          }),
+        ],
+        [{ asset_id: "a", period_end: "2026-03-31", amount_minor: "6001" }],
+        balances("12000", "7001"),
+        accounts,
+        "2026-11-06",
+      ),
+    ).toThrow(/depreciable cost/i);
   });
 
   it("allows already posted depreciation for the disposal month (SQL parity)", () => {
     const result = reconcileFixedAssets(
       [asset("a", { status: "disposed", disposal_date: "2026-04-15" })],
       [{ asset_id: "a", period_end: "2026-04-30", amount_minor: "100" }],
-      [], accounts, "2026-11-06",
+      [],
+      accounts,
+      "2026-11-06",
     );
     expect(result.varianceCount).toBe(0);
     expect(result.rows).toHaveLength(2);
   });
 
   it("does not silently ignore depreciation posted in a later month after disposal", () => {
-    expect(() => reconcileFixedAssets(
-      [asset("a", { status: "disposed", disposal_date: "2026-04-15" })],
-      [{ asset_id: "a", period_end: "2026-05-31", amount_minor: "100" }],
-      [], accounts, "2026-11-06",
-    )).toThrow(/after the asset disposal month/i);
+    expect(() =>
+      reconcileFixedAssets(
+        [asset("a", { status: "disposed", disposal_date: "2026-04-15" })],
+        [{ asset_id: "a", period_end: "2026-05-31", amount_minor: "100" }],
+        [],
+        accounts,
+        "2026-11-06",
+      ),
+    ).toThrow(/after the asset disposal month/i);
   });
 
   it("rejects depreciation recorded before an asset's purchase date", () => {
-    expect(() => reconcileFixedAssets(
-      [asset("a", { purchase_date: "2026-05-01" })],
-      [{ asset_id: "a", period_end: "2026-04-30", amount_minor: "100" }],
-      [], accounts, "2026-11-06",
-    )).toThrow(/precedes the asset purchase/i);
+    expect(() =>
+      reconcileFixedAssets(
+        [asset("a", { purchase_date: "2026-05-01" })],
+        [{ asset_id: "a", period_end: "2026-04-30", amount_minor: "100" }],
+        [],
+        accounts,
+        "2026-11-06",
+      ),
+    ).toThrow(/precedes the asset purchase/i);
   });
 
   it("rejects disposed assets without a disposal date or a date before purchase", () => {
-    expect(() => reconcileFixedAssets(
-      [asset("a", { status: "disposed", disposal_date: null })],
-      [], [], accounts, "2026-11-06",
-    )).toThrow(/disposal state/i);
-    expect(() => reconcileFixedAssets(
-      [asset("a", { status: "disposed", disposal_date: "2025-12-31" })],
-      [], [], accounts, "2026-11-06",
-    )).toThrow(/disposal state/i);
-    expect(() => reconcileFixedAssets(
-      [asset("a", { status: "active", disposal_date: "2026-10-01" })],
-      [], [], accounts, "2026-11-06",
-    )).toThrow(/disposal state/i);
+    expect(() =>
+      reconcileFixedAssets(
+        [asset("a", { status: "disposed", disposal_date: null })],
+        [],
+        [],
+        accounts,
+        "2026-11-06",
+      ),
+    ).toThrow(/disposal state/i);
+    expect(() =>
+      reconcileFixedAssets(
+        [asset("a", { status: "disposed", disposal_date: "2025-12-31" })],
+        [],
+        [],
+        accounts,
+        "2026-11-06",
+      ),
+    ).toThrow(/disposal state/i);
+    expect(() =>
+      reconcileFixedAssets(
+        [asset("a", { status: "active", disposal_date: "2026-10-01" })],
+        [],
+        [],
+        accounts,
+        "2026-11-06",
+      ),
+    ).toThrow(/disposal state/i);
   });
 
   it("fails closed if an asset has duplicate depreciation rows for one month", () => {
-    expect(() => reconcileFixedAssets(
-      [asset("a")],
-      [
-        { asset_id: "a", period_end: "2026-03-31", amount_minor: "250" },
-        { asset_id: "a", period_end: "2026-03-31", amount_minor: "250" },
-      ],
-      balances("12000", "1500"),
-      accounts,
-      "2026-11-06",
-    )).toThrow(/duplicate depreciation entry/i);
+    expect(() =>
+      reconcileFixedAssets(
+        [asset("a")],
+        [
+          { asset_id: "a", period_end: "2026-03-31", amount_minor: "250" },
+          { asset_id: "a", period_end: "2026-03-31", amount_minor: "250" },
+        ],
+        balances("12000", "1500"),
+        accounts,
+        "2026-11-06",
+      ),
+    ).toThrow(/duplicate depreciation entry/i);
   });
 
   it("rejects historical depreciation beyond cost for assets disposed before the cutoff", () => {
-    expect(() => reconcileFixedAssets(
-      [asset("a", {
-        status: "disposed",
-        disposal_date: "2026-04-30",
-        cost_minor: "12000",
-        residual_minor: "2000",
-        opening_accumulated_minor: "1000",
-      })],
-      [{ asset_id: "a", period_end: "2026-03-31", amount_minor: "9001" }],
-      [], accounts, "2026-11-06",
-    )).toThrow(/depreciable cost/i);
+    expect(() =>
+      reconcileFixedAssets(
+        [
+          asset("a", {
+            status: "disposed",
+            disposal_date: "2026-04-30",
+            cost_minor: "12000",
+            residual_minor: "2000",
+            opening_accumulated_minor: "1000",
+          }),
+        ],
+        [{ asset_id: "a", period_end: "2026-03-31", amount_minor: "9001" }],
+        [],
+        accounts,
+        "2026-11-06",
+      ),
+    ).toThrow(/depreciable cost/i);
   });
 
   it("exports exact signed amounts and escapes spreadsheet formulas in account names", () => {

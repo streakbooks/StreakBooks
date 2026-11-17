@@ -1,8 +1,4 @@
-import type {
-  AssetAccount,
-  AssetTypeRow,
-  FixedAssetRow,
-} from "./fixed-assets.functions";
+import type { AssetAccount, AssetTypeRow, FixedAssetRow } from "./fixed-assets.functions";
 
 export type AssetRegisterSort = "number" | "name" | "purchase" | "cost";
 
@@ -61,9 +57,7 @@ export function assetStatusAsOf(
   asOf: string,
 ): "not_acquired" | "active" | "disposed" {
   if (asset.purchase_date > asOf) return "not_acquired";
-  return asset.status === "disposed" &&
-    asset.disposal_date !== null &&
-    asset.disposal_date <= asOf
+  return asset.status === "disposed" && asset.disposal_date !== null && asset.disposal_date <= asOf
     ? "disposed"
     : "active";
 }
@@ -81,20 +75,23 @@ export type ActiveAssetSummary = {
  * A missing or contradictory balance must not be substituted with a guess.
  */
 export function validAssetAccumulatedAt(
-  asset: Pick<FixedAssetRow,
-    "cost_minor" | "residual_minor" | "opening_accumulated_minor">,
+  asset: Pick<FixedAssetRow, "cost_minor" | "residual_minor" | "opening_accumulated_minor">,
   amount: number | undefined,
 ): number | null {
   if (
-    !Number.isSafeInteger(asset.cost_minor) || asset.cost_minor <= 0 ||
-    !Number.isSafeInteger(asset.residual_minor) || asset.residual_minor < 0 ||
+    !Number.isSafeInteger(asset.cost_minor) ||
+    asset.cost_minor <= 0 ||
+    !Number.isSafeInteger(asset.residual_minor) ||
+    asset.residual_minor < 0 ||
     !Number.isSafeInteger(asset.opening_accumulated_minor) ||
     asset.opening_accumulated_minor < 0 ||
     asset.residual_minor + asset.opening_accumulated_minor > asset.cost_minor ||
-    amount === undefined || !Number.isSafeInteger(amount) ||
+    amount === undefined ||
+    !Number.isSafeInteger(amount) ||
     amount < asset.opening_accumulated_minor ||
     amount > asset.cost_minor - asset.residual_minor
-  ) return null;
+  )
+    return null;
   return amount;
 }
 
@@ -111,8 +108,10 @@ export function summariseActiveAssets(
   let cost = 0;
   for (const asset of active) {
     if (
-      !Number.isSafeInteger(asset.cost_minor) || asset.cost_minor <= 0 ||
-      !Number.isSafeInteger(asset.residual_minor) || asset.residual_minor < 0 ||
+      !Number.isSafeInteger(asset.cost_minor) ||
+      asset.cost_minor <= 0 ||
+      !Number.isSafeInteger(asset.residual_minor) ||
+      asset.residual_minor < 0 ||
       !Number.isSafeInteger(asset.opening_accumulated_minor) ||
       asset.opening_accumulated_minor < 0 ||
       asset.residual_minor + asset.opening_accumulated_minor > asset.cost_minor

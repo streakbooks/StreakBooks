@@ -133,8 +133,9 @@ describe("firm client bulk selection guards", () => {
       { ...clients[0]!, id: "duplicate" },
     ];
     expect(firstFiftyFirmClientIds(rows)).toEqual(["1", "2"]);
-    expect(selectedVisibleFirmClients(rows, ["1", "1", "3", "2"]).map((row) => row.company_id))
-      .toEqual(["1", "2"]);
+    expect(
+      selectedVisibleFirmClients(rows, ["1", "1", "3", "2"]).map((row) => row.company_id),
+    ).toEqual(["1", "2"]);
   });
 
   it("limits multi-client selection to fifty matching accessible rows", () => {
@@ -145,7 +146,12 @@ describe("firm client bulk selection guards", () => {
       companies: { name: `Client ${index}` },
     }));
     expect(firstFiftyFirmClientIds(rows)).toHaveLength(50);
-    expect(selectedVisibleFirmClients(rows, rows.map((row) => row.company_id))).toHaveLength(50);
+    expect(
+      selectedVisibleFirmClients(
+        rows,
+        rows.map((row) => row.company_id),
+      ),
+    ).toHaveLength(50);
     expect(selectedVisibleFirmClients(rows.slice(0, 10), ["70", "71"])).toEqual([]);
   });
 });

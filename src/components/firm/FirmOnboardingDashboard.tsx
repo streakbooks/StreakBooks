@@ -24,10 +24,12 @@ export function FirmOnboardingDashboard({
   });
   const today = new Date().toISOString().slice(0, 10);
   const clientNames = useMemo(
-    () => new Map(
-      clients.filter((client) => Boolean(client.companies))
-        .map((client) => [client.company_id, getFirmClientName(client)]),
-    ),
+    () =>
+      new Map(
+        clients
+          .filter((client) => Boolean(client.companies))
+          .map((client) => [client.company_id, getFirmClientName(client)]),
+      ),
     [clients],
   );
   const groups = useMemo(() => {
@@ -48,26 +50,39 @@ export function FirmOnboardingDashboard({
 
   const totals = groups.reduce(
     (result, group) => {
-      for (const key of ["total", "completed", "open", "overdue", "dueSoon", "blocked", "unassigned"] as const) {
+      for (const key of [
+        "total",
+        "completed",
+        "open",
+        "overdue",
+        "dueSoon",
+        "blocked",
+        "unassigned",
+      ] as const) {
         result[key] += group.metrics[key];
       }
       return result;
     },
     { total: 0, completed: 0, open: 0, overdue: 0, dueSoon: 0, blocked: 0, unassigned: 0 },
   );
-  const overdue = groups.flatMap((group) =>
-    group.rows
-      .filter((row) => !row.completed_at && row.due_date && row.due_date < today)
-      .map((row) => ({
-        companyId: group.companyId,
-        client: group.name,
-        title: row.title,
-        due: row.due_date!,
-      })),
-  ).sort((a, b) => a.due.localeCompare(b.due) || a.client.localeCompare(b.client));
+  const overdue = groups
+    .flatMap((group) =>
+      group.rows
+        .filter((row) => !row.completed_at && row.due_date && row.due_date < today)
+        .map((row) => ({
+          companyId: group.companyId,
+          client: group.name,
+          title: row.title,
+          due: row.due_date!,
+        })),
+    )
+    .sort((a, b) => a.due.localeCompare(b.due) || a.client.localeCompare(b.client));
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4" aria-label="Onboarding progress dashboard">
+    <section
+      className="space-y-3 rounded-lg border bg-card p-4"
+      aria-label="Onboarding progress dashboard"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-semibold">Onboarding progress across accessible clients</h3>
@@ -75,7 +90,12 @@ export function FirmOnboardingDashboard({
             RLS-scoped practice checklist records. Reminder dates are evaluated in UTC.
           </p>
         </div>
-        <Button size="sm" variant="outline" onClick={() => void query.refetch()} disabled={query.isFetching}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => void query.refetch()}
+          disabled={query.isFetching}
+        >
           {query.isFetching ? "Refreshing…" : "Refresh overview"}
         </Button>
       </div>
@@ -88,14 +108,16 @@ export function FirmOnboardingDashboard({
       ) : (
         <>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            {([
-              ["Completed", totals.completed, ""],
-              ["Open", totals.open, ""],
-              ["Overdue", totals.overdue, "text-destructive"],
-              ["Due in 3 days", totals.dueSoon, ""],
-              ["Blocked", totals.blocked, ""],
-              ["Unassigned", totals.unassigned, ""],
-            ] as const).map(([label, value, cls]) => (
+            {(
+              [
+                ["Completed", totals.completed, ""],
+                ["Open", totals.open, ""],
+                ["Overdue", totals.overdue, "text-destructive"],
+                ["Due in 3 days", totals.dueSoon, ""],
+                ["Blocked", totals.blocked, ""],
+                ["Unassigned", totals.unassigned, ""],
+              ] as const
+            ).map(([label, value, cls]) => (
               <div key={label} className="rounded-md border p-3">
                 <p className="text-xs text-muted-foreground">{label}</p>
                 <p className={`text-xl font-semibold tabular-nums ${cls}`}>{value}</p>
@@ -109,13 +131,21 @@ export function FirmOnboardingDashboard({
             <div className="space-y-2">
               <h4 className="text-sm font-medium">Oldest overdue steps</h4>
               {overdue.slice(0, 8).map((item, index) => (
-                <div key={item.companyId + ":" + item.title + ":" + index}
-                  className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm">
+                <div
+                  key={item.companyId + ":" + item.title + ":" + index}
+                  className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm"
+                >
                   <div className="min-w-44 flex-1">
                     <p className="font-medium">{item.title}</p>
-                    <p className="text-xs text-muted-foreground">{item.client} · Due {item.due}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.client} · Due {item.due}
+                    </p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => onChooseClient(item.companyId)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onChooseClient(item.companyId)}
+                  >
                     Open checklist
                   </Button>
                 </div>

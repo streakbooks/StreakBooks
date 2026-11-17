@@ -13,10 +13,7 @@ describe("splitExpenseAmount", () => {
   });
 
   it("rejects amount splits that do not reconcile", () => {
-    const result = splitExpenseAmount(1100, "amount", [
-      { amountMinor: 700 },
-      { amountMinor: 300 },
-    ]);
+    const result = splitExpenseAmount(1100, "amount", [{ amountMinor: 700 }, { amountMinor: 300 }]);
     expect(result.ok).toBe(false);
   });
 

@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  approvalActionTarget,
-  approvalNoteRequired,
-  canPerformApprovalAction,
-} from "./approvals";
+import { approvalActionTarget, approvalNoteRequired, canPerformApprovalAction } from "./approvals";
 
 describe("expense approval actions", () => {
   it("maps actions onto status targets", () => {

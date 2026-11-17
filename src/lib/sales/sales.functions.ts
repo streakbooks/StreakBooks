@@ -17,7 +17,11 @@ import { addDaysIso, type SalesLineInput } from "@/lib/sales/line-helpers";
 import { postInvoiceAuthorisation } from "@/lib/sales/posting";
 import { resolveArAccount } from "@/lib/sales/ar-accounts";
 import { callSalesRpc, requireRpc, type SalesClient } from "@/lib/sales/rpc";
-import { deleteDraftDocument, saveSalesDocument, type SalesDraftPricing } from "@/lib/sales/doc-save";
+import {
+  deleteDraftDocument,
+  saveSalesDocument,
+  type SalesDraftPricing,
+} from "@/lib/sales/doc-save";
 import type { PriceListLineSnapshot } from "@/lib/products/price-list-provenance";
 import {
   type ListQuery,
@@ -554,8 +558,11 @@ function validatePricingPayload(
       if (!Number.isSafeInteger(trace.unit_price_minor) || trace.unit_price_minor < 0) {
         throw new Error("Invalid price-list unit amount");
       }
-      if (!Number.isInteger(trace.discount_bps) || trace.discount_bps < 0 ||
-        trace.discount_bps > 10000) {
+      if (
+        !Number.isInteger(trace.discount_bps) ||
+        trace.discount_bps < 0 ||
+        trace.discount_bps > 10000
+      ) {
         throw new Error("Invalid pricing discount basis points");
       }
       return {

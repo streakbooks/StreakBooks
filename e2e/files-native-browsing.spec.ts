@@ -17,10 +17,7 @@ test.describe("Files workspace: native URL-backed browsing", () => {
   });
 
   test("filter, sort and workspace selection survive refresh", async ({ page }) => {
-    await signIn(
-      page,
-      "/files?view=all&q=receipt&type=company&sort=name&page=0",
-    );
+    await signIn(page, "/files?view=all&q=receipt&type=company&sort=name&page=0");
     await expect(page.getByRole("textbox", { name: "Search file names" })).toHaveValue("receipt");
     await page.reload();
     await expect(page.getByRole("textbox", { name: "Search file names" })).toHaveValue("receipt");
@@ -42,7 +39,9 @@ test.describe("Files workspace: native URL-backed browsing", () => {
 
   test("folder links preserve current filters and support browser Back", async ({ page }) => {
     await signIn(page, "/files?q=pdf&sort=largest");
-    const folder = page.locator('section[aria-label="Document folders"] a[href*="folder="]').first();
+    const folder = page
+      .locator('section[aria-label="Document folders"] a[href*="folder="]')
+      .first();
     test.skip((await folder.count()) === 0, "Requires an authorised seeded document folder");
     await folder.click();
     expect(new URL(page.url()).searchParams.has("folder")).toBe(true);

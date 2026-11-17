@@ -56,10 +56,7 @@ export function ExpenseManagementMileagePage() {
   const today = new Date().toISOString().slice(0, 10);
   const canSubmit = can("expenses.submit" as Permission);
   const canAdmin = can("expenses.admin" as Permission);
-  const canView =
-    canSubmit ||
-    canAdmin ||
-    can("expenses.view" as Permission);
+  const canView = canSubmit || canAdmin || can("expenses.view" as Permission);
 
   const [rateName, setRateName] = useState("Standard car");
   const [rateUnit, setRateUnit] = useState<"km" | "mi">("km");
@@ -80,8 +77,7 @@ export function ExpenseManagementMileagePage() {
 
   const ratesQ = useQuery({
     queryKey: ["expense-mileage-rates", company?.id],
-    queryFn: () =>
-      fetchRates({ data: { companyId: company!.id, activeOnly: false } }),
+    queryFn: () => fetchRates({ data: { companyId: company!.id, activeOnly: false } }),
     enabled: Boolean(company?.id) && canView,
   });
 
@@ -94,10 +90,7 @@ export function ExpenseManagementMileagePage() {
   const expenseAccounts = useMemo(
     () =>
       (accountsQ.data ?? []).filter(
-        (account) =>
-          account.is_active &&
-          account.is_postable &&
-          account.account_type === "expense",
+        (account) => account.is_active && account.is_postable && account.account_type === "expense",
       ),
     [accountsQ.data],
   );
@@ -198,30 +191,31 @@ export function ExpenseManagementMileagePage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Mileage" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="mileage"/>}
-    >
-      <EmptyState
-          title="No access"
-          description="Your role cannot open mileage rates or trips."
-        />
-    </ListWorkspace>
+      <ListWorkspace
+        title="Mileage"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="mileage" />}
+      >
+        <EmptyState title="No access" description="Your role cannot open mileage rates or trips." />
+      </ListWorkspace>
     );
   }
 
   const migrationMissing =
-    ratesQ.error &&
-    String(ratesQ.error.message ?? "").includes(EXPENSE_MILEAGE_MIGRATION);
+    ratesQ.error && String(ratesQ.error.message ?? "").includes(EXPENSE_MILEAGE_MIGRATION);
 
   return (
-      <ListWorkspace title="Mileage"
-        description="Configure company rates and create mileage claim drafts."
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>My expenses</Link>
-          </Button>
-        }
-      subnav={<ExpenseManagementSubnav current="mileage"/>}
+    <ListWorkspace
+      title="Mileage"
+      description="Configure company rates and create mileage claim drafts."
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
+            My expenses
+          </Link>
+        </Button>
+      }
+      subnav={<ExpenseManagementSubnav current="mileage" />}
     >
       {migrationMissing ? (
         <Alert className="mb-6" variant="destructive">
@@ -242,8 +236,8 @@ export function ExpenseManagementMileagePage() {
         <section className="mb-10 space-y-4 rounded-lg border p-4">
           <h2 className="text-lg font-medium">New mileage trip</h2>
           <p className="text-sm text-muted-foreground">
-            Creates a draft employee-paid claim with one mileage line. Submit and approve it
-            through the normal claim workflow.
+            Creates a draft employee-paid claim with one mileage line. Submit and approve it through
+            the normal claim workflow.
           </p>
           {activeRatesForTrip.length === 0 ? (
             <EmptyState
@@ -296,9 +290,7 @@ export function ExpenseManagementMileagePage() {
               <div className="grid gap-2">
                 <Label>Estimated amount</Label>
                 <p className="flex h-10 items-center text-sm">
-                  {previewNet == null
-                    ? "—"
-                    : fromMinorUnits(previewNet, currency)}
+                  {previewNet == null ? "—" : fromMinorUnits(previewNet, currency)}
                 </p>
               </div>
               <div className="grid gap-2">
@@ -353,10 +345,7 @@ export function ExpenseManagementMileagePage() {
             </div>
             <div className="grid gap-2">
               <Label>Distance unit</Label>
-              <Select
-                value={rateUnit}
-                onValueChange={(v) => setRateUnit(v as "km" | "mi")}
-              >
+              <Select value={rateUnit} onValueChange={(v) => setRateUnit(v as "km" | "mi")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -429,8 +418,7 @@ export function ExpenseManagementMileagePage() {
                     ) : null}
                   </TableCell>
                   <TableCell>
-                    {fromMinorUnits(rate.rateMinorPerUnit, rate.currencyCode)} /{" "}
-                    {rate.distanceUnit}
+                    {fromMinorUnits(rate.rateMinorPerUnit, rate.currencyCode)} / {rate.distanceUnit}
                   </TableCell>
                   <TableCell>
                     {rate.effectiveFrom}
@@ -448,5 +436,5 @@ export function ExpenseManagementMileagePage() {
         )}
       </section>
     </ListWorkspace>
-    );
+  );
 }

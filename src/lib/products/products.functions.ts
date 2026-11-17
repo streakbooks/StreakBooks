@@ -372,7 +372,8 @@ export const upsertProduct = createServerFn({ method: "POST" })
           .from("products" as never)
           .select("category_id" as never)
           .eq("company_id" as never, data.companyId as never)
-          .eq("id" as never, data.id as never).maybeSingle();
+          .eq("id" as never, data.id as never)
+          .maybeSingle();
         if (existingError) throw new Error(existingError.message);
         if ((existing as { category_id: string | null } | null)?.category_id !== data.categoryId) {
           throw new Error("Archived categories cannot be assigned to other items");

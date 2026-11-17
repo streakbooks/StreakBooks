@@ -53,9 +53,7 @@ export function summarizeBudgetGrid(
   }
   const incomeYear = sumMinorNumbers(incomeMonths);
   const expenseYear = sumMinorNumbers(expenseMonths);
-  const netMonths = incomeMonths.map((amount, i) =>
-    sumMinorNumbers([amount, -expenseMonths[i]!]),
-  );
+  const netMonths = incomeMonths.map((amount, i) => sumMinorNumbers([amount, -expenseMonths[i]!]));
   const netYear = sumMinorNumbers([incomeYear, -expenseYear]);
   return { incomeMonths, expenseMonths, netMonths, incomeYear, expenseYear, netYear };
 }

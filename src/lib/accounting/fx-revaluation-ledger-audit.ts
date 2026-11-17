@@ -86,9 +86,7 @@ function units(value: MinorValue): bigint | null {
 }
 
 function isOne(value: MinorValue): boolean {
-  return typeof value === "number"
-    ? value === 1
-    : /^1(?:\.0+)?$/.test(value);
+  return typeof value === "number" ? value === 1 : /^1(?:\.0+)?$/.test(value);
 }
 
 function fxAccountKind(account: FxRunAuditAccount): "gain" | "loss" | null {
@@ -294,11 +292,7 @@ export function auditFxRevaluationRun(
           issues.push("Completed reversal does not match the original journal reference.");
         } else {
           const reversing = journalById.get(queue.reversal_journal_id);
-          if (
-            !reversing ||
-            reversing.status !== "posted" ||
-            reversing.reverses_journal_id !== id
-          ) {
+          if (!reversing || reversing.status !== "posted" || reversing.reverses_journal_id !== id) {
             issues.push("Reversal journal is missing, unposted or references another journal.");
           } else if (!matchesReversal(postedLines, journalLines.get(reversing.id) ?? [])) {
             issues.push("Reversal does not cancel the original journal amounts by account.");

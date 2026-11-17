@@ -105,12 +105,12 @@ export function HrOrganizationPage() {
 
   const rows =
     kind === "location"
-      ? orgQ.data?.locations ?? []
+      ? (orgQ.data?.locations ?? [])
       : kind === "branch"
-        ? orgQ.data?.branches ?? []
+        ? (orgQ.data?.branches ?? [])
         : kind === "department"
-          ? orgQ.data?.departments ?? []
-          : orgQ.data?.designations ?? [];
+          ? (orgQ.data?.departments ?? [])
+          : (orgQ.data?.designations ?? []);
 
   return (
     <ListWorkspace

@@ -17,8 +17,7 @@ export const CRM_STATUS_VARIANTS = {
   archived: "neutral",
 } as const;
 
-export type CrmStatusVariant =
-  | "neutral" | "info" | "success" | "warning" | "complete" | "danger";
+export type CrmStatusVariant = "neutral" | "info" | "success" | "warning" | "complete" | "danger";
 
 export function crmStatusAppearance(status: string): {
   variant: CrmStatusVariant;

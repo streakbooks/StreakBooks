@@ -1,5 +1,9 @@
 import { toMinorUnits } from "@/lib/accounting/money";
-import { findEffectiveTier, validRuleDate, type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
+import {
+  findEffectiveTier,
+  validRuleDate,
+  type DraftTierPriceRule,
+} from "@/lib/products/price-list-tiers";
 import {
   findEffectiveDiscountRule,
   resolveDraftDiscountedUnitPrice,
@@ -32,15 +36,21 @@ export function appliedPriceListSnapshot(input: {
 }): PriceListLineSnapshot | null {
   if (!input.priceListId || !input.productId || !validRuleDate(input.documentDate)) return null;
   const priced = resolveDraftDiscountedUnitPrice(
-    input.productId, input.cataloguePriceMinor, input.quantity, input.documentDate,
-    input.fixedPrices, input.tiers, input.discounts,
+    input.productId,
+    input.cataloguePriceMinor,
+    input.quantity,
+    input.documentDate,
+    input.fixedPrices,
+    input.tiers,
+    input.discounts,
   );
   if (priced === undefined) return null;
-  const tier = findEffectiveTier(
-    input.tiers, input.productId, input.quantity, input.documentDate,
-  );
+  const tier = findEffectiveTier(input.tiers, input.productId, input.quantity, input.documentDate);
   const discount = findEffectiveDiscountRule(
-    input.discounts, input.productId, input.quantity, input.documentDate,
+    input.discounts,
+    input.productId,
+    input.quantity,
+    input.documentDate,
   );
   const fixed = Object.prototype.hasOwnProperty.call(input.fixedPrices, input.productId);
   return {
@@ -61,8 +71,8 @@ export function withManualPricing<T extends { pricingTrace?: PriceListLineSnapsh
   line: T,
   patch: Partial<T>,
 ): T {
-  const invalidates = ["unitPrice", "quantity", "productId"].some(
-    (key) => Object.prototype.hasOwnProperty.call(patch, key),
+  const invalidates = ["unitPrice", "quantity", "productId"].some((key) =>
+    Object.prototype.hasOwnProperty.call(patch, key),
   );
   return { ...line, ...(invalidates ? { pricingTrace: null } : {}), ...patch };
 }

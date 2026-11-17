@@ -5,7 +5,11 @@ import { assertUuid } from "@/lib/company-validation";
 import { isMissingRpc } from "@/lib/accounting/fetch-all";
 import { loadCompanyMeta, loadPostedLines, type Sb } from "@/lib/accounting/ledger-data";
 import { compareTaxReturnWithGl } from "@/lib/tax/tax-gl-comparison";
-import { taxGlReviewSnapshot, taxJournalEvidence, taxGlJournalDigest } from "@/lib/tax/tax-gl-evidence";
+import {
+  taxGlReviewSnapshot,
+  taxJournalEvidence,
+  taxGlJournalDigest,
+} from "@/lib/tax/tax-gl-evidence";
 import { postJournal } from "@/lib/accounting/posting-engine";
 import { requireAccountInCompany } from "@/lib/purchases/accounts";
 import { todayIso } from "@/lib/accounting/fiscal-year";
@@ -173,7 +177,8 @@ async function calculateGlReview(sb: Sb, params: ReviewPeriod) {
   await requireAccountInCompany(sb, params.companyId, settings.inputAccountId);
   const calculated = await computeReturn(sb, params);
   const lines = await loadPostedLines(sb, params.companyId, calculated.meta.baseCurrency, {
-    from: params.periodStart, to: params.periodEnd,
+    from: params.periodStart,
+    to: params.periodEnd,
     accountIds: [settings.outputAccountId, settings.inputAccountId],
   });
   const comparison = compareTaxReturnWithGl({
@@ -185,10 +190,14 @@ async function calculateGlReview(sb: Sb, params: ReviewPeriod) {
     lines,
   });
   const evidence = taxJournalEvidence(
-    lines, settings.outputAccountId, settings.inputAccountId, 100,
+    lines,
+    settings.outputAccountId,
+    settings.inputAccountId,
+    100,
   );
   const snapshot = taxGlReviewSnapshot({
-    periodStart: params.periodStart, periodEnd: params.periodEnd,
+    periodStart: params.periodStart,
+    periodEnd: params.periodEnd,
     basis: params.basis,
     outputAccountId: settings.outputAccountId,
     inputAccountId: settings.inputAccountId,
@@ -248,7 +257,9 @@ export const getTaxGlReview = createServerFn({ method: "GET" })
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: row, error } = await context.supabase
       .from("tax_gl_review_sessions" as never)
-      .select("id, status, review_note, reviewer_id, comparison_snapshot, version, created_at, updated_at, updated_by" as never)
+      .select(
+        "id, status, review_note, reviewer_id, comparison_snapshot, version, created_at, updated_at, updated_by" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .eq("period_start" as never, data.periodStart as never)
       .eq("period_end" as never, data.periodEnd as never)
@@ -258,19 +269,32 @@ export const getTaxGlReview = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) {
       if (error.code === "42P01" || error.code === "PGRST205") {
-        return { available: false as const, reason: "Tax review migration has not been applied.", review: null, events: [] };
+        return {
+          available: false as const,
+          reason: "Tax review migration has not been applied.",
+          review: null,
+          events: [],
+        };
       }
       throw new Error(error.message);
     }
-    const review = row as ({
-      id: string; status: TaxGlReviewStatus; review_note: string;
-      reviewer_id: string | null; comparison_snapshot: string; version: number;
-      created_at: string; updated_at: string; updated_by: string | null;
-    } | null);
+    const review = row as {
+      id: string;
+      status: TaxGlReviewStatus;
+      review_note: string;
+      reviewer_id: string | null;
+      comparison_snapshot: string;
+      version: number;
+      created_at: string;
+      updated_at: string;
+      updated_by: string | null;
+    } | null;
     if (!review) return { available: true as const, review: null, events: [] };
     const { data: events, error: eventsError } = await context.supabase
       .from("tax_gl_review_events" as never)
-      .select("id, actor_user_id, event_type, previous_status, new_status, previous_reviewer_id, new_reviewer_id, review_note, comparison_snapshot, version, created_at" as never)
+      .select(
+        "id, actor_user_id, event_type, previous_status, new_status, previous_reviewer_id, new_reviewer_id, review_note, comparison_snapshot, version, created_at" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .eq("review_id" as never, review.id as never)
       .order("created_at" as never, { ascending: false })
@@ -280,10 +304,17 @@ export const getTaxGlReview = createServerFn({ method: "GET" })
       available: true as const,
       review,
       events: (events ?? []) as Array<{
-        id: string; actor_user_id: string | null; event_type: string;
-        previous_status: string | null; new_status: string;
-        previous_reviewer_id: string | null; new_reviewer_id: string | null;
-        review_note: string; comparison_snapshot: string; version: number; created_at: string;
+        id: string;
+        actor_user_id: string | null;
+        event_type: string;
+        previous_status: string | null;
+        new_status: string;
+        previous_reviewer_id: string | null;
+        new_reviewer_id: string | null;
+        review_note: string;
+        comparison_snapshot: string;
+        version: number;
+        created_at: string;
       }>,
     };
   });
@@ -291,45 +322,59 @@ export const getTaxGlReview = createServerFn({ method: "GET" })
 /** Optimistic version + server-recalculated snapshot protect reviewer decisions. */
 export const saveTaxGlReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: TaxGlReviewScope & {
-    status: TaxGlReviewStatus;
-    reviewNote: string;
-    reviewerAssignment: "keep" | "mine" | "clear";
-    expectedVersion: number | null;
-    expectedSnapshot: string;
-  }) => {
-    const scope = taxGlReviewScope(input);
-    if (!["open", "in_review", "resolved"].includes(input.status)) {
-      throw new Error("Invalid review status");
-    }
-    const reviewNote = (input.reviewNote ?? "").trim();
-    if (reviewNote.length > 4000) throw new Error("Review note cannot exceed 4000 characters");
-    if (input.status === "resolved" && (scope.basis !== "accrual" || reviewNote.length < 10)) {
-      throw new Error("Only accrual reviews with a meaningful resolution note may be resolved");
-    }
-    if (input.expectedVersion !== null &&
-      (!Number.isSafeInteger(input.expectedVersion) || input.expectedVersion < 1)) {
-      throw new Error("Invalid expected review version");
-    }
-    if (typeof input.expectedSnapshot !== "string" || !input.expectedSnapshot ||
-      input.expectedSnapshot.length > 500) throw new Error("Refresh the GL comparison before saving");
-    if (!["keep", "mine", "clear"].includes(input.reviewerAssignment)) {
-      throw new Error("Invalid reviewer assignment");
-    }
-    return { ...scope, status: input.status, reviewNote,
-      reviewerAssignment: input.reviewerAssignment,
-      expectedVersion: input.expectedVersion,
-      expectedSnapshot: input.expectedSnapshot };
-  })
+  .inputValidator(
+    (
+      input: TaxGlReviewScope & {
+        status: TaxGlReviewStatus;
+        reviewNote: string;
+        reviewerAssignment: "keep" | "mine" | "clear";
+        expectedVersion: number | null;
+        expectedSnapshot: string;
+      },
+    ) => {
+      const scope = taxGlReviewScope(input);
+      if (!["open", "in_review", "resolved"].includes(input.status)) {
+        throw new Error("Invalid review status");
+      }
+      const reviewNote = (input.reviewNote ?? "").trim();
+      if (reviewNote.length > 4000) throw new Error("Review note cannot exceed 4000 characters");
+      if (input.status === "resolved" && (scope.basis !== "accrual" || reviewNote.length < 10)) {
+        throw new Error("Only accrual reviews with a meaningful resolution note may be resolved");
+      }
+      if (
+        input.expectedVersion !== null &&
+        (!Number.isSafeInteger(input.expectedVersion) || input.expectedVersion < 1)
+      ) {
+        throw new Error("Invalid expected review version");
+      }
+      if (
+        typeof input.expectedSnapshot !== "string" ||
+        !input.expectedSnapshot ||
+        input.expectedSnapshot.length > 500
+      )
+        throw new Error("Refresh the GL comparison before saving");
+      if (!["keep", "mine", "clear"].includes(input.reviewerAssignment)) {
+        throw new Error("Invalid reviewer assignment");
+      }
+      return {
+        ...scope,
+        status: input.status,
+        reviewNote,
+        reviewerAssignment: input.reviewerAssignment,
+        expectedVersion: input.expectedVersion,
+        expectedSnapshot: input.expectedSnapshot,
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     await assertCompanyPermission(context.supabase, data.companyId, "tax.settings");
-    const current = await calculateGlReview(
-      context.supabase as unknown as Sb, data,
-    );
+    const current = await calculateGlReview(context.supabase as unknown as Sb, data);
     if (!current.available) throw new Error(current.reason);
-    if (current.outputAccountId !== data.outputAccountId ||
-      current.inputAccountId !== data.inputAccountId) {
+    if (
+      current.outputAccountId !== data.outputAccountId ||
+      current.inputAccountId !== data.inputAccountId
+    ) {
       throw new Error("Tax GL mapping has changed; refresh the review.");
     }
     if (current.snapshot !== data.expectedSnapshot) {
@@ -352,7 +397,8 @@ export const saveTaxGlReview = createServerFn({ method: "POST" })
         .eq("input_account_id" as never, data.inputAccountId as never)
         .maybeSingle();
       if (readError) throw new Error(readError.message);
-      assignedTo = ((currentReview ?? null) as { reviewer_id?: string | null } | null)?.reviewer_id ?? null;
+      assignedTo =
+        ((currentReview ?? null) as { reviewer_id?: string | null } | null)?.reviewer_id ?? null;
     }
     const { data: rows, error } = await context.supabase.rpc(
       "save_tax_gl_review" as never,
@@ -371,7 +417,8 @@ export const saveTaxGlReview = createServerFn({ method: "POST" })
       } as never,
     );
     if (error) {
-      if (isMissingRpc(error)) throw new Error("Tax review database migration has not been applied.");
+      if (isMissingRpc(error))
+        throw new Error("Tax review database migration has not been applied.");
       throw new Error(error.message);
     }
     const updated = ((rows ?? []) as Array<{ review_id: string; new_version: number }>)[0];
@@ -449,10 +496,13 @@ export const listTaxReturns = createServerFn({ method: "GET" })
         }
         throw new Error(error.message);
       }
-      return { available: true, returns: ((rows ?? []) as unknown as TaxReturnListItem[]).map((row) => ({
-        ...row,
-        net_tax_minor: safeTaxMinorNumber(row.net_tax_minor, "Saved net tax"),
-      })) };
+      return {
+        available: true,
+        returns: ((rows ?? []) as unknown as TaxReturnListItem[]).map((row) => ({
+          ...row,
+          net_tax_minor: safeTaxMinorNumber(row.net_tax_minor, "Saved net tax"),
+        })),
+      };
     },
   );
 

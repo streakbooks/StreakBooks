@@ -57,8 +57,7 @@ export function mapExpenseClaimTemplate(row: unknown): ExpenseClaimTemplate {
     name: str(r["name"]),
     titleTemplate: str(r["title_template"] ?? r["titleTemplate"]),
     descriptionTemplate: (r["description_template"] ?? r["descriptionTemplate"] ?? null) as
-      | string
-      | null,
+      string | null,
     claimCurrency: (r["claim_currency"] ?? r["claimCurrency"] ?? null) as string | null,
     paymentSource: str(
       r["payment_source"] ?? r["paymentSource"],

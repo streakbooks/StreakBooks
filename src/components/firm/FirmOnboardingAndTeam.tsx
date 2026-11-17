@@ -35,10 +35,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getFirmClientName, type FirmClientRow } from "@/lib/firm/client-portfolio";
 import { FirmCustomOnboardingTemplates } from "@/components/firm/FirmCustomOnboardingTemplates";
 
-type StepPlan = Omit<
-  FirmOnboardingPlanInput,
-  "firmId" | "companyId" | "task_key" | "version"
->;
+type StepPlan = Omit<FirmOnboardingPlanInput, "firmId" | "companyId" | "task_key" | "version">;
 
 function FirmClientPicker({
   clients,
@@ -310,16 +307,19 @@ export function FirmOnboardingPanel({
                           </p>
                         ) : null}
                         {step.due_date && !completed ? (
-                          <p className={
-                            step.due_date < new Date().toISOString().slice(0, 10)
-                              ? "mt-1 text-xs font-medium text-destructive"
-                              : "mt-1 text-xs text-muted-foreground"
-                          }>
+                          <p
+                            className={
+                              step.due_date < new Date().toISOString().slice(0, 10)
+                                ? "mt-1 text-xs font-medium text-destructive"
+                                : "mt-1 text-xs text-muted-foreground"
+                            }
+                          >
                             Due {step.due_date}
                           </p>
                         ) : null}
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Assigned: {step.assignee_id
+                          Assigned:{" "}
+                          {step.assignee_id
                             ? (assigneesQ.data ?? []).find(
                                 (member) => member.user_id === step.assignee_id,
                               )?.full_name ||
@@ -328,10 +328,14 @@ export function FirmOnboardingPanel({
                               )?.email ||
                               "Assigned colleague"
                             : "Unassigned"}
-                          {" · "}{step.reminders_enabled ? "In-app reminders enabled" : "Reminders off"}
+                          {" · "}
+                          {step.reminders_enabled ? "In-app reminders enabled" : "Reminders off"}
                           {step.depends_on_task_key
-                            ? ` · Depends on ${steps.find((candidate) =>
-                                candidate.task_key === step.depends_on_task_key)?.title ?? "another step"}`
+                            ? ` · Depends on ${
+                                steps.find(
+                                  (candidate) => candidate.task_key === step.depends_on_task_key,
+                                )?.title ?? "another step"
+                              }`
                             : ""}
                         </p>
                         {blocked ? (
@@ -358,146 +362,164 @@ export function FirmOnboardingPanel({
                           />
                           {canManage ? (
                             <>
-                            <details className="rounded-md border p-3">
-                              <summary className="cursor-pointer text-sm font-medium">
-                                Edit assignment, due date and prerequisite
-                              </summary>
-                              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                              <div className="space-y-1">
-                                <Label>Assigned staff</Label>
-                                <LookupSelect
-                                  ariaLabel={`Assign ${step.title}`}
-                                  allowClear
-                                  value={plan.assignee_id ?? ""}
-                                  onChange={(value) =>
-                                    changePlan(step.task_key, plan, { assignee_id: value || null })
+                              <details className="rounded-md border p-3">
+                                <summary className="cursor-pointer text-sm font-medium">
+                                  Edit assignment, due date and prerequisite
+                                </summary>
+                                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                  <div className="space-y-1">
+                                    <Label>Assigned staff</Label>
+                                    <LookupSelect
+                                      ariaLabel={`Assign ${step.title}`}
+                                      allowClear
+                                      value={plan.assignee_id ?? ""}
+                                      onChange={(value) =>
+                                        changePlan(step.task_key, plan, {
+                                          assignee_id: value || null,
+                                        })
+                                      }
+                                      searchPlaceholder="Search eligible staff"
+                                      disabled={assigneesQ.isPending || assigneesQ.isError}
+                                      options={(assigneesQ.data ?? []).map((member) => ({
+                                        id: member.user_id,
+                                        name: member.full_name || member.email || "Colleague",
+                                        label: member.full_name || member.email || "Colleague",
+                                      }))}
+                                    />
+                                    {assigneesQ.isError && (
+                                      <p className="text-xs text-destructive">
+                                        Eligible staff unavailable:{" "}
+                                        {friendlyAuthError(assigneesQ.error)}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label htmlFor={"onboarding-due-" + step.task_key}>
+                                      Due date
+                                    </Label>
+                                    <Input
+                                      id={"onboarding-due-" + step.task_key}
+                                      type="date"
+                                      value={plan.due_date ?? ""}
+                                      onChange={(event) =>
+                                        changePlan(step.task_key, plan, {
+                                          due_date: event.target.value || null,
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label>Prerequisite</Label>
+                                    <LookupSelect
+                                      ariaLabel={`Prerequisite for ${step.title}`}
+                                      allowClear
+                                      value={plan.depends_on_task_key ?? ""}
+                                      onChange={(value) =>
+                                        changePlan(step.task_key, plan, {
+                                          depends_on_task_key: value || null,
+                                        })
+                                      }
+                                      searchPlaceholder="Search checklist prerequisites"
+                                      options={onboardingDependencyChoices(step, steps).map(
+                                        (item) => ({
+                                          id: item.task_key,
+                                          name: item.title,
+                                          label: item.title,
+                                        }),
+                                      )}
+                                    />
+                                  </div>
+                                  <div className="flex items-end gap-2 pb-2">
+                                    <Checkbox
+                                      id={"onboarding-reminders-" + step.task_key}
+                                      checked={plan.reminders_enabled}
+                                      onCheckedChange={(checked) =>
+                                        changePlan(step.task_key, plan, {
+                                          reminders_enabled: checked === true,
+                                        })
+                                      }
+                                    />
+                                    <Label htmlFor={"onboarding-reminders-" + step.task_key}>
+                                      In-app due reminders for assignee
+                                    </Label>
+                                  </div>
+                                  <div className="sm:col-span-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={
+                                        !planChanged ||
+                                        planM.isPending ||
+                                        updateM.isPending ||
+                                        assigneesQ.isPending ||
+                                        assigneesQ.isError
+                                      }
+                                      onClick={() =>
+                                        planM.mutate({
+                                          task_key: step.task_key,
+                                          version: step.version,
+                                          ...plan,
+                                        })
+                                      }
+                                    >
+                                      {planM.isPending
+                                        ? "Saving plan…"
+                                        : "Save assignment and schedule"}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </details>
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  size="sm"
+                                  disabled={
+                                    updateM.isPending ||
+                                    planM.isPending ||
+                                    blocked ||
+                                    cannotReopen ||
+                                    planChanged
                                   }
-                                  searchPlaceholder="Search eligible staff"
-                                  disabled={assigneesQ.isPending || assigneesQ.isError}
-                                  options={(assigneesQ.data ?? []).map((member) => ({
-                                    id: member.user_id,
-                                    name: member.full_name || member.email || "Colleague",
-                                    label: member.full_name || member.email || "Colleague",
-                                  }))}
-                                />
-                                {assigneesQ.isError && (
-                                  <p className="text-xs text-destructive">
-                                    Eligible staff unavailable: {friendlyAuthError(assigneesQ.error)}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="space-y-1">
-                                <Label htmlFor={"onboarding-due-" + step.task_key}>Due date</Label>
-                                <Input
-                                  id={"onboarding-due-" + step.task_key}
-                                  type="date"
-                                  value={plan.due_date ?? ""}
-                                  onChange={(event) =>
-                                    changePlan(step.task_key, plan, {
-                                      due_date: event.target.value || null,
+                                  title={
+                                    blocked
+                                      ? "Complete its prerequisite first"
+                                      : cannotReopen
+                                        ? "Reopen dependent steps first"
+                                        : planChanged
+                                          ? "Save the assignment and schedule first"
+                                          : undefined
+                                  }
+                                  onClick={() =>
+                                    updateM.mutate({
+                                      task_key: step.task_key,
+                                      version: step.version,
+                                      complete: !completed,
+                                      note,
                                     })
                                   }
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label>Prerequisite</Label>
-                                <LookupSelect
-                                  ariaLabel={`Prerequisite for ${step.title}`}
-                                  allowClear
-                                  value={plan.depends_on_task_key ?? ""}
-                                  onChange={(value) =>
-                                    changePlan(step.task_key, plan, {
-                                      depends_on_task_key: value || null,
-                                    })
-                                  }
-                                  searchPlaceholder="Search checklist prerequisites"
-                                  options={onboardingDependencyChoices(step, steps).map((item) => ({
-                                    id: item.task_key,
-                                    name: item.title,
-                                    label: item.title,
-                                  }))}
-                                />
-                              </div>
-                              <div className="flex items-end gap-2 pb-2">
-                                <Checkbox
-                                  id={"onboarding-reminders-" + step.task_key}
-                                  checked={plan.reminders_enabled}
-                                  onCheckedChange={(checked) =>
-                                    changePlan(step.task_key, plan, {
-                                      reminders_enabled: checked === true,
-                                    })
-                                  }
-                                />
-                                <Label htmlFor={"onboarding-reminders-" + step.task_key}>
-                                  In-app due reminders for assignee
-                                </Label>
-                              </div>
-                              <div className="sm:col-span-2">
+                                >
+                                  {completed ? "Reopen step" : "Mark complete"}
+                                </Button>
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   disabled={
-                                    !planChanged || planM.isPending ||
-                                    updateM.isPending || assigneesQ.isPending ||
-                                    assigneesQ.isError
+                                    updateM.isPending ||
+                                    planM.isPending ||
+                                    planChanged ||
+                                    note === step.note
                                   }
-                                  onClick={() => planM.mutate({
-                                    task_key: step.task_key,
-                                    version: step.version,
-                                    ...plan,
-                                  })}
+                                  onClick={() =>
+                                    updateM.mutate({
+                                      task_key: step.task_key,
+                                      version: step.version,
+                                      complete: completed,
+                                      note,
+                                    })
+                                  }
                                 >
-                                  {planM.isPending ? "Saving plan…" : "Save assignment and schedule"}
+                                  Save note
                                 </Button>
                               </div>
-                              </div>
-                            </details>
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                size="sm"
-                                disabled={
-                                  updateM.isPending || planM.isPending || blocked ||
-                                  cannotReopen || planChanged
-                                }
-                                title={
-                                  blocked
-                                    ? "Complete its prerequisite first"
-                                    : cannotReopen
-                                      ? "Reopen dependent steps first"
-                                      : planChanged
-                                        ? "Save the assignment and schedule first"
-                                        : undefined
-                                }
-                                onClick={() =>
-                                  updateM.mutate({
-                                    task_key: step.task_key,
-                                    version: step.version,
-                                    complete: !completed,
-                                    note,
-                                  })
-                                }
-                              >
-                                {completed ? "Reopen step" : "Mark complete"}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={
-                                  updateM.isPending || planM.isPending ||
-                                  planChanged || note === step.note
-                                }
-                                onClick={() =>
-                                  updateM.mutate({
-                                    task_key: step.task_key,
-                                    version: step.version,
-                                    complete: completed,
-                                    note,
-                                  })
-                                }
-                              >
-                                Save note
-                              </Button>
-                            </div>
                             </>
                           ) : null}
                         </div>

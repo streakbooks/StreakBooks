@@ -146,10 +146,7 @@ export function listPublicApiCatalog() {
 }
 
 /** Match a documented catalogue path (always /api/v1/...). */
-export function matchPublicApiRoute(
-  method: string,
-  cataloguePath: string,
-): PublicApiRoute | null {
+export function matchPublicApiRoute(method: string, cataloguePath: string): PublicApiRoute | null {
   const normalized = cataloguePath.replace(/\/+$/, "") || "/";
   const upper = method.toUpperCase();
   return (

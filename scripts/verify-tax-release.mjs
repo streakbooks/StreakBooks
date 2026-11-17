@@ -44,8 +44,9 @@ for (const filename of taxMigrations) {
   }
   const version = filename.slice(0, 14);
   if ((byVersion.get(version) ?? []).length !== 1) {
-    throw new Error("Duplicate Tax migration version " + version + ": " +
-      byVersion.get(version).join(", "));
+    throw new Error(
+      "Duplicate Tax migration version " + version + ": " + byVersion.get(version).join(", "),
+    );
   }
 }
 if (taxMigrations[0].slice(0, 14) >= taxMigrations[1].slice(0, 14)) {
@@ -55,8 +56,10 @@ const baselineDuplicates = [...byVersion.entries()]
   .filter(([, files]) => files.length > 1)
   .map(([version, files]) => version + " (" + files.join(", ") + ")");
 if (baselineDuplicates.length) {
-  console.warn("Pre-existing migration collisions require separate repository review:",
-    baselineDuplicates.join("; "));
+  console.warn(
+    "Pre-existing migration collisions require separate repository review:",
+    baselineDuplicates.join("; "),
+  );
 }
 const sources = [
   ...taxMigrations.map((file) => path.join("supabase", "migrations", file)),
@@ -73,8 +76,7 @@ for (const file of sources) {
   const fullPath = path.join(root, file);
   if (!existsSync(fullPath)) throw new Error("Missing Tax SQL source: " + file);
   const data = readFileSync(fullPath, "utf8");
-  if ((data.match(/\$\$/g) ?? []).length % 2 !== 0 ||
-      /(?<!\$)\$(?!\$)/.test(data)) {
+  if ((data.match(/\$\$/g) ?? []).length % 2 !== 0 || /(?<!\$)\$(?!\$)/.test(data)) {
     throw new Error("Potential broken SQL dollar quoting: " + file);
   }
 }
@@ -98,7 +100,8 @@ if (args.has("--static-only")) {
 function step(label, binary, params) {
   console.log("\nRUN: " + label);
   const child = spawnSync(binary, params, {
-    cwd: root, stdio: "inherit",
+    cwd: root,
+    stdio: "inherit",
     shell: process.platform === "win32",
     env: process.env,
   });
@@ -112,16 +115,21 @@ const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 step("TypeScript", npm, ["run", "typecheck"]);
 step("ESLint", npm, ["run", "lint"]);
 step("Tax unit tests", npm, ["test", "--", "src/lib/tax"]);
-step("Tax posting and concurrency in isolated PostgreSQL",
-  process.execPath, ["scripts/test-tax-master-history-postgres.mjs"]);
-step("Tax review RLS and audit in isolated PostgreSQL",
-  process.execPath, ["scripts/test-tax-gl-review-postgres.mjs"]);
+step("Tax posting and concurrency in isolated PostgreSQL", process.execPath, [
+  "scripts/test-tax-master-history-postgres.mjs",
+]);
+step("Tax review RLS and audit in isolated PostgreSQL", process.execPath, [
+  "scripts/test-tax-gl-review-postgres.mjs",
+]);
 step("Production build", npm, ["run", "build"]);
 
 if (args.has("--staging")) {
   for (const name of [
-    "E2E_BASE_URL", "E2E_EXPECTED_STAGING_HOST",
-    "E2E_PRODUCTION_URL", "E2E_EMAIL", "E2E_PASSWORD",
+    "E2E_BASE_URL",
+    "E2E_EXPECTED_STAGING_HOST",
+    "E2E_PRODUCTION_URL",
+    "E2E_EMAIL",
+    "E2E_PASSWORD",
   ]) {
     if (!process.env[name]) {
       throw new Error("Staging browser gate requires " + name);
@@ -130,9 +138,15 @@ if (args.has("--staging")) {
   if (process.env.E2E_STAGING_ENABLED !== "true") {
     throw new Error("Set E2E_STAGING_ENABLED=true for explicitly authorised staging QA.");
   }
-  step("Authenticated read-only Tax staging browser smoke", npm,
-    ["run", "test:e2e", "--", "e2e/tax-release.staging.spec.ts"]);
+  step("Authenticated read-only Tax staging browser smoke", npm, [
+    "run",
+    "test:e2e",
+    "--",
+    "e2e/tax-release.staging.spec.ts",
+  ]);
 }
 console.log("\nPASS: locally executable Tax release gates.");
 console.log("Production release additionally requires reviewed staging migrations,");
-console.log("real posting-RPC integration, browser regression, approval and deployment verification.");
+console.log(
+  "real posting-RPC integration, browser regression, approval and deployment verification.",
+);

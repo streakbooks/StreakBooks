@@ -31,19 +31,20 @@ export function AppStoreCategoriesPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Categories" description="App Store"
-    >
-      <EmptyState title="No access" description="Requires appstore.view." />
-    </ListWorkspace>
+      <ListWorkspace title="Categories" description="App Store">
+        <EmptyState title="No access" description="Requires appstore.view." />
+      </ListWorkspace>
     );
   }
   if (catalogue.isLoading) {
     return (
-      <ListWorkspace title="Categories" description="Browse the marketplace taxonomy."
-      subnav={<AppStoreSubnav current="categories"/>}
-    >
-      <LoadingState />
-    </ListWorkspace>
+      <ListWorkspace
+        title="Categories"
+        description="Browse the marketplace taxonomy."
+        subnav={<AppStoreSubnav current="categories" />}
+      >
+        <LoadingState />
+      </ListWorkspace>
     );
   }
   if (catalogue.isError) {
@@ -59,9 +60,10 @@ export function AppStoreCategoriesPage() {
   const counts = new Map(categoryCounts(catalogue.data?.apps ?? []).map((c) => [c.code, c.count]));
 
   return (
-      <ListWorkspace title="Categories"
-        description="Configurable taxonomy covering e-commerce, payments, document capture and more."
-      subnav={<AppStoreSubnav current="categories"/>}
+    <ListWorkspace
+      title="Categories"
+      description="Configurable taxonomy covering e-commerce, payments, document capture and more."
+      subnav={<AppStoreSubnav current="categories" />}
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {APP_CATEGORIES.map((cat) => {
@@ -85,5 +87,5 @@ export function AppStoreCategoriesPage() {
         })}
       </div>
     </ListWorkspace>
-    );
+  );
 }

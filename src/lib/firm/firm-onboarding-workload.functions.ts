@@ -79,11 +79,13 @@ export const listFirmOnboardingWorkloadContext = createServerFn({ method: "GET" 
     };
   });
 
-export const saveFirmOnboardingCapacityInput = firmInput.extend({
-  userId: z.string().uuid(),
-  expectedVersion: z.number().int().min(0),
-  maxOpenSteps: z.number().int().min(1).max(200),
-}).strict();
+export const saveFirmOnboardingCapacityInput = firmInput
+  .extend({
+    userId: z.string().uuid(),
+    expectedVersion: z.number().int().min(0),
+    maxOpenSteps: z.number().int().min(1).max(200),
+  })
+  .strict();
 
 export const saveFirmOnboardingCapacity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

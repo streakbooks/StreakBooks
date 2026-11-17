@@ -40,8 +40,7 @@ export function ExpenseManagementSpendingRequestsPage() {
   const { can } = useCan();
   const queryClient = useQueryClient();
   const canSubmit = can("expenses.submit" as Permission);
-  const canApprove =
-    can("expenses.approve" as Permission) || can("expenses.admin" as Permission);
+  const canApprove = can("expenses.approve" as Permission) || can("expenses.admin" as Permission);
   const canOpen =
     canSubmit ||
     canApprove ||
@@ -167,32 +166,36 @@ export function ExpenseManagementSpendingRequestsPage() {
   }
   if (!canOpen) {
     return (
-      <ListWorkspace title="Spending Requests"
-      subnav={<ExpenseManagementSubnav current="spending-requests"/>}
-    >
-      <EmptyState
+      <ListWorkspace
+        title="Spending Requests"
+        subnav={<ExpenseManagementSubnav current="spending-requests" />}
+      >
+        <EmptyState
           title="No access"
           description="Ask an administrator for expenses.submit or expenses.approve."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
   if (listQ.isLoading) {
     return (
-      <ListWorkspace title="Spending Requests" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="spending-requests"/>}
-    >
-      <LoadingState />
-    </ListWorkspace>
+      <ListWorkspace
+        title="Spending Requests"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="spending-requests" />}
+      >
+        <LoadingState />
+      </ListWorkspace>
     );
   }
   if (listQ.isError) {
     const message = friendlyAuthError(listQ.error);
     return (
-      <ListWorkspace title="Spending Requests"
-      subnav={<ExpenseManagementSubnav current="spending-requests"/>}
-    >
-      {message.includes("20261107136000") ? (
+      <ListWorkspace
+        title="Spending Requests"
+        subnav={<ExpenseManagementSubnav current="spending-requests" />}
+      >
+        {message.includes("20261107136000") ? (
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
             <AlertDescription>{EXPENSE_SPENDING_REQUEST_MIGRATION}</AlertDescription>
@@ -204,16 +207,17 @@ export function ExpenseManagementSpendingRequestsPage() {
             onRetry={() => listQ.refetch()}
           />
         )}
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
   const requests = listQ.data ?? [];
 
   return (
-      <ListWorkspace title="Spending Requests"
-        description="Pre-spend authorisation before large claims. Does not create accounting journals."
-      subnav={<ExpenseManagementSubnav current="spending-requests"/>}
+    <ListWorkspace
+      title="Spending Requests"
+      description="Pre-spend authorisation before large claims. Does not create accounting journals."
+      subnav={<ExpenseManagementSubnav current="spending-requests" />}
     >
       <Alert className="mb-6">
         <AlertTitle>Policy threshold</AlertTitle>
@@ -303,22 +307,18 @@ export function ExpenseManagementSpendingRequestsPage() {
                 </TableCell>
                 <TableCell>{request.neededBy || "—"}</TableCell>
                 <TableCell>
-                  {fromMinorUnits(request.amountMinor, request.currencyCode)}{" "}
-                  {request.currencyCode}
+                  {fromMinorUnits(request.amountMinor, request.currencyCode)} {request.currencyCode}
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary">{request.status}</Badge>
                 </TableCell>
                 <TableCell>
                   <div className="flex max-w-sm flex-col gap-2">
-                    {canSubmit &&
-                    (request.status === "draft" || request.status === "returned") ? (
+                    {canSubmit && (request.status === "draft" || request.status === "returned") ? (
                       <Button
                         size="sm"
                         disabled={submit.isPending}
-                        onClick={() =>
-                          submit.mutate({ id: request.id, version: request.version })
-                        }
+                        onClick={() => submit.mutate({ id: request.id, version: request.version })}
                       >
                         Submit
                       </Button>
@@ -331,9 +331,7 @@ export function ExpenseManagementSpendingRequestsPage() {
                         size="sm"
                         variant="outline"
                         disabled={cancel.isPending}
-                        onClick={() =>
-                          cancel.mutate({ id: request.id, version: request.version })
-                        }
+                        onClick={() => cancel.mutate({ id: request.id, version: request.version })}
                       >
                         Cancel
                       </Button>
@@ -368,9 +366,7 @@ export function ExpenseManagementSpendingRequestsPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={
-                              decide.isPending || !(decisionNotes[request.id] ?? "").trim()
-                            }
+                            disabled={decide.isPending || !(decisionNotes[request.id] ?? "").trim()}
                             onClick={() =>
                               decide.mutate({
                                 id: request.id,
@@ -384,9 +380,7 @@ export function ExpenseManagementSpendingRequestsPage() {
                           <Button
                             size="sm"
                             variant="destructive"
-                            disabled={
-                              decide.isPending || !(decisionNotes[request.id] ?? "").trim()
-                            }
+                            disabled={decide.isPending || !(decisionNotes[request.id] ?? "").trim()}
                             onClick={() =>
                               decide.mutate({
                                 id: request.id,
@@ -398,8 +392,8 @@ export function ExpenseManagementSpendingRequestsPage() {
                             Reject
                           </Button>
                         </div>
-                        </>
-                          ) : null}
+                      </>
+                    ) : null}
                   </div>
                 </TableCell>
               </TableRow>

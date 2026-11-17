@@ -27,9 +27,7 @@ function mergeOwnerAdminPermissions(
  */
 export function useCan() {
   const { company } = useActiveCompany();
-  const granted = company
-    ? mergeOwnerAdminPermissions(company.role, company.permissions)
-    : [];
+  const granted = company ? mergeOwnerAdminPermissions(company.role, company.permissions) : [];
   const can = (permission: Permission): boolean => granted.includes(permission);
   return { can, role: company?.role ?? null, ready: Boolean(company) };
 }

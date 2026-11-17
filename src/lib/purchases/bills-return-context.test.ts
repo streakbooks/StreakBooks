@@ -20,21 +20,25 @@ describe("Bills list return navigation", () => {
   });
 
   it("does not generate redirects or preserve arbitrary parameters", () => {
-    const result = decodeBillsReturnContext("q=supplies&returnTo=https%3A%2F%2Fevil.example&admin=true");
+    const result = decodeBillsReturnContext(
+      "q=supplies&returnTo=https%3A%2F%2Fevil.example&admin=true",
+    );
     expect(result).toEqual({ q: "supplies" });
     expect(encodeBillsReturnContext(result)).toBe("q=supplies");
   });
 
   it("rejects invalid enum values and bounds pagination", () => {
-    expect(decodeBillsReturnContext(
-      "tab=forged&sortDir=sideways&dateField=wrong&sortBy=javascript&page=9999999",
-    )).toEqual({ page: 1_000_000 });
+    expect(
+      decodeBillsReturnContext(
+        "tab=forged&sortDir=sideways&dateField=wrong&sortBy=javascript&page=9999999",
+      ),
+    ).toEqual({ page: 1_000_000 });
   });
 
   it("rejects invalid dates and overlong text", () => {
-    expect(decodeBillsReturnContext(
-      "from=yesterday&to=2026-10-01x&q=" + "x".repeat(101),
-    )).toEqual({});
+    expect(decodeBillsReturnContext("from=yesterday&to=2026-10-01x&q=" + "x".repeat(101))).toEqual(
+      {},
+    );
   });
 
   it("does not preserve false or empty filters", () => {

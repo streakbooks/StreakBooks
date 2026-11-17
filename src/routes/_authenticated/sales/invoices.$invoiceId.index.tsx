@@ -190,349 +190,345 @@ function InvoiceDetail() {
         </p>
       ) : null}
       <RecordWorkspace
-          title={`Invoice ${inv.invoice_number ?? "(draft)"}`}
-          description={`${customer?.name ?? "Customer"} · ${inv.invoice_date} · due ${inv.due_date}`}
-          meta={<StatusBadge status={inv.status} />}
-          insights={
-            <WorkspaceInsights
-              title="Related"
-              facts={[
-                { label: "Status", value: inv.status.replaceAll("_", " ") },
-                {
-                  label: "Outstanding",
-                  value:
-                    inv.status === "draft" || inv.status === "void"
-                      ? "—"
-                      : money(outstanding, cur),
-                },
-                ...(overdue ? [{ label: "Collection", value: "Past due" as const }] : []),
-              ]}
-              links={[
-                ...(inv.contact_id
-                  ? [
-                      {
-                        label: customer?.name ?? "Customer",
-                        to: "/contacts/$contactId",
-                        params: { contactId: inv.contact_id },
-                        hint: "Open contact record",
+        title={`Invoice ${inv.invoice_number ?? "(draft)"}`}
+        description={`${customer?.name ?? "Customer"} · ${inv.invoice_date} · due ${inv.due_date}`}
+        meta={<StatusBadge status={inv.status} />}
+        insights={
+          <WorkspaceInsights
+            title="Related"
+            facts={[
+              { label: "Status", value: inv.status.replaceAll("_", " ") },
+              {
+                label: "Outstanding",
+                value:
+                  inv.status === "draft" || inv.status === "void" ? "—" : money(outstanding, cur),
+              },
+              ...(overdue ? [{ label: "Collection", value: "Past due" as const }] : []),
+            ]}
+            links={[
+              ...(inv.contact_id
+                ? [
+                    {
+                      label: customer?.name ?? "Customer",
+                      to: "/contacts/$contactId",
+                      params: { contactId: inv.contact_id },
+                      hint: "Open contact record",
+                    },
+                  ]
+                : []),
+              {
+                label: "All invoices",
+                to: "/sales/invoices",
+                hint: "Return to the sales invoice list",
+              },
+              ...(posted
+                ? [
+                    {
+                      label: "Record receipt",
+                      to: "/sales/receipts/new",
+                      search: {
+                        contactId: inv.contact_id,
+                        invoiceId: inv.id,
                       },
-                    ]
-                  : []),
-                {
-                  label: "All invoices",
-                  to: "/sales/invoices",
-                  hint: "Return to the sales invoice list",
-                },
-                ...(posted
-                  ? [
-                      {
-                        label: "Record receipt",
-                        to: "/sales/receipts/new",
-                        search: {
-                          contactId: inv.contact_id,
-                          invoiceId: inv.id,
-                        },
-                        hint: "Apply a payment to this invoice",
-                      },
-                      {
-                        label: "Credit this invoice",
-                        to: "/sales/credit-notes/new",
-                        search: { invoiceId },
-                        hint: "Raise a credit note against this invoice",
-                      },
-                    ]
-                  : []),
-              ]}
-              footer="Links open real records only. Balances come from this invoice’s ledger fields."
-            />
-          }
-          actions={
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/sales/invoices">Back</Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <Link
-                  to="/documents/print/$kind/$id"
-                  params={{ kind: "sales_invoice", id: invoiceId }}
-                >
-                  <Printer className="mr-1 size-4" /> Print / PDF
-                </Link>
-              </Button>
-              {inv.status === "draft" ? (
-                <>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link to="/sales/invoices/$invoiceId/edit" params={{ invoiceId }}>
-                      Edit draft
-                    </Link>
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={authoriseMutation.isPending}
-                    onClick={() => authoriseMutation.mutate()}
-                  >
-                    {authoriseMutation.isPending ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : null}
-                    Authorise & post
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)}>
-                    Delete draft
-                  </Button>
-                </>
-              ) : null}
-              {posted ? (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={sentMutation.isPending}
-                    onClick={() => sentMutation.mutate()}
-                  >
-                    {inv.sent_at ? "Mark as sent again" : "Mark as sent"}
-                  </Button>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link to="/sales/credit-notes/new" search={{ invoiceId }}>
-                      Credit this invoice
-                    </Link>
-                  </Button>
-                </>
-              ) : null}
-              {["authorised", "partly_paid"].includes(inv.status) ? (
-                <Button size="sm" asChild>
-                  <Link
-                    to="/sales/receipts/new"
-                    search={{ contactId: inv.contact_id, invoiceId: inv.id }}
-                  >
-                    Record receipt
+                      hint: "Apply a payment to this invoice",
+                    },
+                    {
+                      label: "Credit this invoice",
+                      to: "/sales/credit-notes/new",
+                      search: { invoiceId },
+                      hint: "Raise a credit note against this invoice",
+                    },
+                  ]
+                : []),
+            ]}
+            footer="Links open real records only. Balances come from this invoice’s ledger fields."
+          />
+        }
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/sales/invoices">Back</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                to="/documents/print/$kind/$id"
+                params={{ kind: "sales_invoice", id: invoiceId }}
+              >
+                <Printer className="mr-1 size-4" /> Print / PDF
+              </Link>
+            </Button>
+            {inv.status === "draft" ? (
+              <>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/sales/invoices/$invoiceId/edit" params={{ invoiceId }}>
+                    Edit draft
                   </Link>
                 </Button>
-              ) : null}
-              {inv.status !== "draft" ? (
+                <Button
+                  size="sm"
+                  disabled={authoriseMutation.isPending}
+                  onClick={() => authoriseMutation.mutate()}
+                >
+                  {authoriseMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                  Authorise & post
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)}>
+                  Delete draft
+                </Button>
+              </>
+            ) : null}
+            {posted ? (
+              <>
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={copyMutation.isPending}
-                  onClick={() => copyMutation.mutate()}
+                  disabled={sentMutation.isPending}
+                  onClick={() => sentMutation.mutate()}
                 >
-                  Copy invoice
+                  {inv.sent_at ? "Mark as sent again" : "Mark as sent"}
                 </Button>
-              ) : null}
-              {(inv.status === "authorised" || inv.status === "partly_paid") && outstanding > 0 ? (
-                <Button size="sm" variant="outline" onClick={() => setWriteOffOpen(true)}>
-                  Write off bad debt
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/sales/credit-notes/new" search={{ invoiceId }}>
+                    Credit this invoice
+                  </Link>
                 </Button>
-              ) : null}
-              {voidable ? (
-                <Button size="sm" variant="destructive" onClick={() => setVoidOpen(true)}>
-                  Void
-                </Button>
-              ) : null}
-            </div>
-          }
-        >
+              </>
+            ) : null}
+            {["authorised", "partly_paid"].includes(inv.status) ? (
+              <Button size="sm" asChild>
+                <Link
+                  to="/sales/receipts/new"
+                  search={{ contactId: inv.contact_id, invoiceId: inv.id }}
+                >
+                  Record receipt
+                </Link>
+              </Button>
+            ) : null}
+            {inv.status !== "draft" ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={copyMutation.isPending}
+                onClick={() => copyMutation.mutate()}
+              >
+                Copy invoice
+              </Button>
+            ) : null}
+            {(inv.status === "authorised" || inv.status === "partly_paid") && outstanding > 0 ? (
+              <Button size="sm" variant="outline" onClick={() => setWriteOffOpen(true)}>
+                Write off bad debt
+              </Button>
+            ) : null}
+            {voidable ? (
+              <Button size="sm" variant="destructive" onClick={() => setVoidOpen(true)}>
+                Void
+              </Button>
+            ) : null}
+          </div>
+        }
+      >
         <div className="print:hidden">
-        {inv.status === "authorised" || inv.status === "partly_paid" || inv.status === "paid" ? (
-          !voidable ? (
-            <p className="mb-3 text-xs text-muted-foreground">
-              {inv.status === "paid" || inv.amount_paid_minor > 0 || inv.amount_credited_minor > 0
-                ? "This invoice has payments or credits applied, so it cannot be voided. Remove them first (receipt or credit note page), or issue a credit note."
-                : null}
-            </p>
-          ) : null
-        ) : null}
-        {inv.status !== "void" ? (
-          <div className="mb-3">
-            <ProjectTagControl kind="sales_invoice" documentId={invoiceId} />
-          </div>
-        ) : null}
-        </div>
-
-      <article className="max-w-4xl space-y-6 rounded-md border border-border bg-card p-6 print:border-0 print:p-0">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">
-              {brand?.trading_name || company_?.name || "Your company"}
-            </h2>
-            {company_?.legal_name && company_.legal_name !== company_.name ? (
-              <p className="text-sm text-muted-foreground">{company_.legal_name}</p>
-            ) : null}
-            {brand?.letterhead_line ? <p className="text-sm">{brand.letterhead_line}</p> : null}
-            {brand?.invoice_email ? (
-              <p className="text-sm text-muted-foreground">{brand.invoice_email}</p>
-            ) : null}
-            {brand?.invoice_phone ? (
-              <p className="text-sm text-muted-foreground">{brand.invoice_phone}</p>
-            ) : null}
-          </div>
-          <div className="text-right">
-            <p className="text-lg font-semibold uppercase tracking-wide">
-              {inv.status === "draft" ? "Draft invoice" : "Tax invoice"}
-            </p>
-            <p className="text-sm">No. {inv.invoice_number ?? "—"}</p>
-            <p className="text-sm text-muted-foreground">Date {inv.invoice_date}</p>
-            <p className="text-sm text-muted-foreground">Due {inv.due_date}</p>
-            <div className="mt-1 flex justify-end gap-2 print:hidden">
-              <StatusBadge status={inv.status} />
-              {overdue ? <Badge variant="destructive">Overdue</Badge> : null}
-              {inv.sent_at ? <Badge variant="secondary">Sent</Badge> : null}
+          {inv.status === "authorised" || inv.status === "partly_paid" || inv.status === "paid" ? (
+            !voidable ? (
+              <p className="mb-3 text-xs text-muted-foreground">
+                {inv.status === "paid" || inv.amount_paid_minor > 0 || inv.amount_credited_minor > 0
+                  ? "This invoice has payments or credits applied, so it cannot be voided. Remove them first (receipt or credit note page), or issue a credit note."
+                  : null}
+              </p>
+            ) : null
+          ) : null}
+          {inv.status !== "void" ? (
+            <div className="mb-3">
+              <ProjectTagControl kind="sales_invoice" documentId={invoiceId} />
             </div>
-          </div>
-        </header>
-
-        <section className="text-sm">
-          <p className="text-xs uppercase text-muted-foreground">Bill to</p>
-          <p className="font-medium">{customer?.name ?? "—"}</p>
-          {customer?.email ? <p>{customer.email}</p> : null}
-          {customer?.phone ? <p>{customer.phone}</p> : null}
-          {customer?.tax_number ? <p>Tax no. {customer.tax_number}</p> : null}
-        </section>
-
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Qty</TableHead>
-              <TableHead className="text-right">Unit price</TableHead>
-              {hasLineDiscount ? <TableHead className="text-right">Discount</TableHead> : null}
-              <TableHead className="text-right">Tax</TableHead>
-              <TableHead className="text-right">Net</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {inv.sales_invoice_lines.map((l) => (
-              <TableRow key={l.id}>
-                <TableCell>
-                  {l.description}
-                  {l.pricing_snapshot?.source === "price_list" ? (
-                    <p className="mt-1 text-xs text-muted-foreground print:hidden">
-                      List pricing: {l.pricing_snapshot.basis.replace("_", " ")}
-                      {l.pricing_snapshot.discount_bps
-                        ? ` · ${(l.pricing_snapshot.discount_bps / 100).toFixed(2)}% rule`
-                        : ""}
-                      {" · "}priced {l.pricing_snapshot.pricing_date}
-                    </p>
-                  ) : null}
-                </TableCell>
-                <TableCell className="text-right">{l.quantity}</TableCell>
-                <TableCell className="text-right">{money(l.unit_price_minor, cur)}</TableCell>
-                {hasLineDiscount ? (
-                  <TableCell className="text-right">
-                    {l.discount_minor > 0 ? money(l.discount_minor, cur) : "—"}
-                  </TableCell>
-                ) : null}
-                <TableCell className="text-right">
-                  {bpsToPercentString(l.tax_rate_bps)}% · {money(l.tax_minor, cur)}
-                </TableCell>
-                <TableCell className="text-right">{money(l.net_minor, cur)}</TableCell>
-                <TableCell className="text-right">{money(l.gross_minor, cur)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        <div className="ml-auto w-full max-w-xs space-y-1 text-sm">
-          <Row label="Subtotal" value={money(inv.subtotal_minor, cur)} />
-          <Row label="Tax" value={money(inv.tax_minor, cur)} />
-          <Row label="Total" value={money(inv.total_minor, cur)} bold />
-          {inv.amount_paid_minor > 0 ? (
-            <Row label="Paid" value={`− ${money(inv.amount_paid_minor, cur)}`} />
-          ) : null}
-          {inv.amount_credited_minor > 0 ? (
-            <Row label="Credited" value={`− ${money(inv.amount_credited_minor, cur)}`} />
-          ) : null}
-          {inv.status !== "draft" && inv.status !== "void" ? (
-            <Row label="Amount due" value={money(outstanding, cur)} bold />
           ) : null}
         </div>
 
-        {inv.memo ? <p className="whitespace-pre-line text-sm">{inv.memo}</p> : null}
-        {company_?.invoice_footer ? (
-          <p className="whitespace-pre-line text-xs text-muted-foreground">
-            {company_.invoice_footer}
-          </p>
-        ) : null}
-        {inv.status === "void" ? (
-          <p className="text-sm text-destructive">
-            Voided{inv.void_reason ? `: ${inv.void_reason}` : ""}
-          </p>
-        ) : null}
-      </article>
+        <article className="max-w-4xl space-y-6 rounded-md border border-border bg-card p-6 print:border-0 print:p-0">
+          <header className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold">
+                {brand?.trading_name || company_?.name || "Your company"}
+              </h2>
+              {company_?.legal_name && company_.legal_name !== company_.name ? (
+                <p className="text-sm text-muted-foreground">{company_.legal_name}</p>
+              ) : null}
+              {brand?.letterhead_line ? <p className="text-sm">{brand.letterhead_line}</p> : null}
+              {brand?.invoice_email ? (
+                <p className="text-sm text-muted-foreground">{brand.invoice_email}</p>
+              ) : null}
+              {brand?.invoice_phone ? (
+                <p className="text-sm text-muted-foreground">{brand.invoice_phone}</p>
+              ) : null}
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-semibold uppercase tracking-wide">
+                {inv.status === "draft" ? "Draft invoice" : "Tax invoice"}
+              </p>
+              <p className="text-sm">No. {inv.invoice_number ?? "—"}</p>
+              <p className="text-sm text-muted-foreground">Date {inv.invoice_date}</p>
+              <p className="text-sm text-muted-foreground">Due {inv.due_date}</p>
+              <div className="mt-1 flex justify-end gap-2 print:hidden">
+                <StatusBadge status={inv.status} />
+                {overdue ? <Badge variant="destructive">Overdue</Badge> : null}
+                {inv.sent_at ? <Badge variant="secondary">Sent</Badge> : null}
+              </div>
+            </div>
+          </header>
 
-      {inv.payments.length + inv.credit_applications.length > 0 ? (
-        <section className="mt-6 max-w-4xl space-y-2 print:break-inside-avoid">
-          <h3 className="text-sm font-semibold">Payment history</h3>
+          <section className="text-sm">
+            <p className="text-xs uppercase text-muted-foreground">Bill to</p>
+            <p className="font-medium">{customer?.name ?? "—"}</p>
+            {customer?.email ? <p>{customer.email}</p> : null}
+            {customer?.phone ? <p>{customer.phone}</p> : null}
+            {customer?.tax_number ? <p>Tax no. {customer.tax_number}</p> : null}
+          </section>
+
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Reference</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead className="text-right">Unit price</TableHead>
+                {hasLineDiscount ? <TableHead className="text-right">Discount</TableHead> : null}
+                <TableHead className="text-right">Tax</TableHead>
+                <TableHead className="text-right">Net</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {inv.payments.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell>{p.sales_receipts?.receipt_date ?? p.allocated_on ?? "—"}</TableCell>
-                  <TableCell>Payment</TableCell>
+              {inv.sales_invoice_lines.map((l) => (
+                <TableRow key={l.id}>
                   <TableCell>
-                    <Link
-                      className="underline"
-                      to="/sales/receipts/$receiptId"
-                      params={{ receiptId: p.receipt_id }}
-                    >
-                      {p.sales_receipts?.reference || "Receipt"}
-                    </Link>
+                    {l.description}
+                    {l.pricing_snapshot?.source === "price_list" ? (
+                      <p className="mt-1 text-xs text-muted-foreground print:hidden">
+                        List pricing: {l.pricing_snapshot.basis.replace("_", " ")}
+                        {l.pricing_snapshot.discount_bps
+                          ? ` · ${(l.pricing_snapshot.discount_bps / 100).toFixed(2)}% rule`
+                          : ""}
+                        {" · "}priced {l.pricing_snapshot.pricing_date}
+                      </p>
+                    ) : null}
                   </TableCell>
-                  <TableCell className="text-right">{money(p.amount_minor, cur)}</TableCell>
-                </TableRow>
-              ))}
-              {inv.credit_applications.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>
-                    {c.allocated_on ?? c.sales_credit_notes?.credit_date ?? "—"}
+                  <TableCell className="text-right">{l.quantity}</TableCell>
+                  <TableCell className="text-right">{money(l.unit_price_minor, cur)}</TableCell>
+                  {hasLineDiscount ? (
+                    <TableCell className="text-right">
+                      {l.discount_minor > 0 ? money(l.discount_minor, cur) : "—"}
+                    </TableCell>
+                  ) : null}
+                  <TableCell className="text-right">
+                    {bpsToPercentString(l.tax_rate_bps)}% · {money(l.tax_minor, cur)}
                   </TableCell>
-                  <TableCell>Credit note</TableCell>
-                  <TableCell>
-                    <Link
-                      className="underline"
-                      to="/sales/credit-notes/$creditNoteId"
-                      params={{ creditNoteId: c.credit_note_id }}
-                    >
-                      {c.sales_credit_notes?.credit_number ?? "Credit note"}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-right">{money(c.amount_minor, cur)}</TableCell>
+                  <TableCell className="text-right">{money(l.net_minor, cur)}</TableCell>
+                  <TableCell className="text-right">{money(l.gross_minor, cur)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </section>
-      ) : null}
 
-      {inv.reversed_payments.length + inv.reversed_credit_applications.length > 0 ? (
-        <section className="mt-4 max-w-4xl space-y-1 text-sm text-muted-foreground print:hidden">
-          <h3 className="text-sm font-semibold text-foreground">Reversed applications</h3>
-          {inv.reversed_payments.map((p) => (
-            <p key={p.id}>
-              Payment {money(p.amount_minor, cur)} unallocated on {p.reversed_on ?? "—"}
-              {p.reverse_reason ? ` — ${p.reverse_reason}` : ""}
-            </p>
-          ))}
-          {inv.reversed_credit_applications.map((c) => (
-            <p key={c.id}>
-              Credit {c.sales_credit_notes?.credit_number ?? ""} {money(c.amount_minor, cur)}{" "}
-              removed on {c.reversed_on ?? "—"}
-              {c.reverse_reason ? ` — ${c.reverse_reason}` : ""}
-            </p>
-          ))}
-        </section>
-      ) : null}
+          <div className="ml-auto w-full max-w-xs space-y-1 text-sm">
+            <Row label="Subtotal" value={money(inv.subtotal_minor, cur)} />
+            <Row label="Tax" value={money(inv.tax_minor, cur)} />
+            <Row label="Total" value={money(inv.total_minor, cur)} bold />
+            {inv.amount_paid_minor > 0 ? (
+              <Row label="Paid" value={`− ${money(inv.amount_paid_minor, cur)}`} />
+            ) : null}
+            {inv.amount_credited_minor > 0 ? (
+              <Row label="Credited" value={`− ${money(inv.amount_credited_minor, cur)}`} />
+            ) : null}
+            {inv.status !== "draft" && inv.status !== "void" ? (
+              <Row label="Amount due" value={money(outstanding, cur)} bold />
+            ) : null}
+          </div>
 
-      <DocumentActions kind="sales_invoice" id={invoiceId} />
-      <DocumentRecordPanel entityType="sales_invoice" entityId={invoiceId} audience="customer" />
+          {inv.memo ? <p className="whitespace-pre-line text-sm">{inv.memo}</p> : null}
+          {company_?.invoice_footer ? (
+            <p className="whitespace-pre-line text-xs text-muted-foreground">
+              {company_.invoice_footer}
+            </p>
+          ) : null}
+          {inv.status === "void" ? (
+            <p className="text-sm text-destructive">
+              Voided{inv.void_reason ? `: ${inv.void_reason}` : ""}
+            </p>
+          ) : null}
+        </article>
+
+        {inv.payments.length + inv.credit_applications.length > 0 ? (
+          <section className="mt-6 max-w-4xl space-y-2 print:break-inside-avoid">
+            <h3 className="text-sm font-semibold">Payment history</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Reference</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {inv.payments.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell>{p.sales_receipts?.receipt_date ?? p.allocated_on ?? "—"}</TableCell>
+                    <TableCell>Payment</TableCell>
+                    <TableCell>
+                      <Link
+                        className="underline"
+                        to="/sales/receipts/$receiptId"
+                        params={{ receiptId: p.receipt_id }}
+                      >
+                        {p.sales_receipts?.reference || "Receipt"}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right">{money(p.amount_minor, cur)}</TableCell>
+                  </TableRow>
+                ))}
+                {inv.credit_applications.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell>
+                      {c.allocated_on ?? c.sales_credit_notes?.credit_date ?? "—"}
+                    </TableCell>
+                    <TableCell>Credit note</TableCell>
+                    <TableCell>
+                      <Link
+                        className="underline"
+                        to="/sales/credit-notes/$creditNoteId"
+                        params={{ creditNoteId: c.credit_note_id }}
+                      >
+                        {c.sales_credit_notes?.credit_number ?? "Credit note"}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right">{money(c.amount_minor, cur)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </section>
+        ) : null}
+
+        {inv.reversed_payments.length + inv.reversed_credit_applications.length > 0 ? (
+          <section className="mt-4 max-w-4xl space-y-1 text-sm text-muted-foreground print:hidden">
+            <h3 className="text-sm font-semibold text-foreground">Reversed applications</h3>
+            {inv.reversed_payments.map((p) => (
+              <p key={p.id}>
+                Payment {money(p.amount_minor, cur)} unallocated on {p.reversed_on ?? "—"}
+                {p.reverse_reason ? ` — ${p.reverse_reason}` : ""}
+              </p>
+            ))}
+            {inv.reversed_credit_applications.map((c) => (
+              <p key={c.id}>
+                Credit {c.sales_credit_notes?.credit_number ?? ""} {money(c.amount_minor, cur)}{" "}
+                removed on {c.reversed_on ?? "—"}
+                {c.reverse_reason ? ` — ${c.reverse_reason}` : ""}
+              </p>
+            ))}
+          </section>
+        ) : null}
+
+        <DocumentActions kind="sales_invoice" id={invoiceId} />
+        <DocumentRecordPanel entityType="sales_invoice" entityId={invoiceId} audience="customer" />
       </RecordWorkspace>
 
       <ReasonDialog

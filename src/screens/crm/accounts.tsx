@@ -61,7 +61,10 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
   }
   if (!canView) {
     return (
-      <ListWorkspace title={current === "contacts" ? "CRM Contacts" : "Accounts"} description="Customer accounts with CRM pipeline context.">
+      <ListWorkspace
+        title={current === "contacts" ? "CRM Contacts" : "Accounts"}
+        description="Customer accounts with CRM pipeline context."
+      >
         <EmptyState title="No CRM access" description="Ask an administrator for crm.view." />
       </ListWorkspace>
     );
@@ -73,9 +76,11 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
   return (
     <ListWorkspace
       title={pageTitle}
-      description={isPeopleView
-        ? "Customer contacts with linked pipeline activity. The full people directory remains in Contacts."
-        : "Contacts remain the customer master. This view attaches open pipeline facts without duplicating records."}
+      description={
+        isPeopleView
+          ? "Customer contacts with linked pipeline activity. The full people directory remains in Contacts."
+          : "Contacts remain the customer master. This view attaches open pipeline facts without duplicating records."
+      }
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: pageTitle }]}
       actions={
         <Button asChild variant="secondary">
@@ -107,14 +112,17 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
           <Alert>
             <AlertTitle>No second customer master</AlertTitle>
             <AlertDescription>
-              CRM rows reuse the existing Contacts master (customers). CRM only shows linked leads and open
-              opportunity totals by their original currencies — accounting postings stay in Sales and Banking.
+              CRM rows reuse the existing Contacts master (customers). CRM only shows linked leads
+              and open opportunity totals by their original currencies — accounting postings stay in
+              Sales and Banking.
             </AlertDescription>
           </Alert>
 
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-2">
-              <Label htmlFor="crm-account-search">{isPeopleView ? "Search customer contacts" : "Search accounts"}</Label>
+              <Label htmlFor="crm-account-search">
+                {isPeopleView ? "Search customer contacts" : "Search accounts"}
+              </Label>
               <Input
                 id="crm-account-search"
                 value={q}
@@ -189,7 +197,9 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
                               </span>
                             ))}
                           </div>
-                        ) : "—"}
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {row.linkedLeadCount}

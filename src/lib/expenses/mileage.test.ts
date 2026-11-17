@@ -28,9 +28,7 @@ describe("isMileageRateEffectiveOn", () => {
     expect(isMileageRateEffectiveOn(rate, "2026-01-01")).toBe(true);
     expect(isMileageRateEffectiveOn(rate, "2026-12-31")).toBe(true);
     expect(isMileageRateEffectiveOn(rate, "2025-12-31")).toBe(false);
-    expect(isMileageRateEffectiveOn({ ...rate, isActive: false }, "2026-06-01")).toBe(
-      false,
-    );
+    expect(isMileageRateEffectiveOn({ ...rate, isActive: false }, "2026-06-01")).toBe(false);
   });
 });
 

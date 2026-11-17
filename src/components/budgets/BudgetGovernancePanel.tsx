@@ -76,8 +76,7 @@ export function BudgetGovernancePanel({
   const selectedRevision = useQuery({
     queryKey: ["budget-revision", companyId, budgetId, selectedRevisionId],
     enabled: Boolean(available && selectedRevisionId),
-    queryFn: () =>
-      revisionFn({ data: { companyId, budgetId, revisionId: selectedRevisionId } }),
+    queryFn: () => revisionFn({ data: { companyId, budgetId, revisionId: selectedRevisionId } }),
   });
   const revision = selectedRevision.data;
   const lines = revision?.snapshot.lines ?? [];
@@ -164,7 +163,9 @@ export function BudgetGovernancePanel({
                   reason.trim().length < 3 ||
                   reason.trim().length > 500
                 }
-                title={dirty ? "Save or discard unsaved edits before changing lock status" : undefined}
+                title={
+                  dirty ? "Save or discard unsaved edits before changing lock status" : undefined
+                }
                 onClick={() => {
                   const action = locked ? "unlock" : "lock";
                   if (window.confirm(`Are you sure you want to ${action} this budget?`)) {
@@ -275,9 +276,7 @@ export function BudgetGovernancePanel({
                             </TableHeader>
                             <TableBody>
                               {visibleLines.map((line, i) => (
-                                <TableRow
-                                  key={`${line.account_id}-${line.period_month}-${i}`}
-                                >
+                                <TableRow key={`${line.account_id}-${line.period_month}-${i}`}>
                                   <TableCell>
                                     {line.account_code || line.account_id}
                                     {line.account_name ? ` · ${line.account_name}` : ""}

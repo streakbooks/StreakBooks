@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
@@ -324,28 +324,32 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
     setRecordOpen(true);
   };
 
-  if (isPending) return <LoadingState />;
+  // Preserve native Payroll navigation during loading, missing-company and error states.
+  const renderPaymentState = (content: ReactNode) => (
+    <>
+      <PageHeader title="Payroll payments" />
+      <PayrollSubnav current="payments" />
+      {content}
+    </>
+  );
+
+  if (isPending) return renderPaymentState(<LoadingState />);
   if (!company) {
-    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+    return renderPaymentState(<CompanyEmptyState title="No organisation" description="Select a company first." />);
   }
   if (!canView) {
-    return (
-      <>
-        <PageHeader title="Payroll payments" />
-        <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
-      </>
-    );
+    return renderPaymentState(<EmptyState title="No payroll access" description="Ask for payroll.view permission." />);
   }
 
   const page = paymentsQ.data;
-  if (paymentsQ.isPending) return <LoadingState />;
+  if (paymentsQ.isPending) return renderPaymentState(<LoadingState />);
   if (paymentsQ.isError) {
-    return (
+    return renderPaymentState(
       <ErrorState
         title="Could not load payments"
         description={friendlyAuthError(paymentsQ.error)}
         onRetry={() => paymentsQ.refetch()}
-      />
+      />,
     );
   }
   if (page && !page.available) {

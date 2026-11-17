@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Runs draft-to-detail return context (2026-11-17)
+
+- `src/screens/payroll/runs.tsx`: use the validated current `searchDraft` instead of potentially stale URL `runSearch` when constructing existing-run detail links; also validate the newly created run return context. Commit `86324ceb768058c7f80357f5ce6b134b31f5245a`. **SOURCE REVIEW ONLY, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Payroll matrix evidence updated in commit `aff3c94bd3fec0f8cbeba24f0d893baf2ad84c0e`. No criterion or workflow marked fully verified.
+- **NOT RUN:** `check:browsing-coverage`, typecheck, lint, unit tests, build, authenticated browser navigation, accessibility, security/RLS, accounting regressions. Documented baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; 0/21 modules, 0/15 supporting routes, 0/12 batches verified. No main, manual CI, production DB or deployment changes.
+
 ### Payroll Runs multiword search composition (2026-11-17)
 
 - `src/screens/payroll/runs.tsx`: retain a local search draft while the user types, so spaces in multiword queries are not removed by the route's normalized URL validator on each keystroke. Apply draft filtering immediately, commit normalized search to URL on blur/Enter, and preserve the draft search in detail return links. Commits `6f85aacd65470997eb2ea080d0555f7f737dd51b` and `73083cca511b12f9b7a7d1842de338137b431a22`. **SOURCE ONLY, NOT RUN.**

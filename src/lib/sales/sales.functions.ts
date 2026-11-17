@@ -1083,6 +1083,89 @@ export const copyInvoice = createServerFn({ method: "POST" })
     return { id: saved.id };
   });
 
+/** Copy a quote into a NEW draft dated today (keeps expiry span when present). */
+export const copyQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; quoteId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    quoteId: assertUuid(input.quoteId, "quote"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "sales.draft");
+    const { data: quote, error } = await supabase
+      .from("sales_quotes" as never)
+      .select(
+        "contact_id, memo, currency_code, fx_rate_to_base, quote_date, expiry_date, sales_quote_lines(*)" as never,
+      )
+      .eq("id" as never, data.quoteId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!quote) throw new Error("Quote not found");
+    const src = quote as unknown as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      fx_rate_to_base?: number | null;
+      quote_date: string;
+      expiry_date: string | null;
+      sales_quote_lines: Array<{
+        line_order: number;
+        description: string;
+        account_id: string;
+        quantity: number;
+        unit_price_minor: number;
+        discount_minor: number;
+        tax_rate_bps: number;
+        tax_code_id: string | null;
+        product_id: string | null;
+      }>;
+    };
+    const defaults = await loadCompanyDefaults(supabase, data.companyId);
+    const today = defaults.today;
+    const { currencyCode, fxRateToBase } = normaliseCurrencyAndFx(
+      src.currency_code,
+      defaults.baseCurrency,
+      src.fx_rate_to_base ?? 1,
+    );
+    const { copiedQuoteExpiryDate } = await import("@/lib/sales/copy-quote");
+    const expiryDate = copiedQuoteExpiryDate(today, src.quote_date, src.expiry_date);
+    const { loadSalesTaxCodes } = await import("@/lib/sales/tax-codes");
+    const available = new Set(
+      (await loadSalesTaxCodes(supabase, data.companyId, today)).map((c) => c.id),
+    );
+    const lines = await prepareSalesLines(
+      supabase,
+      data.companyId,
+      sortLines(src.sales_quote_lines).map((l) => ({
+        description: l.description,
+        accountId: l.account_id,
+        quantity: Number(l.quantity),
+        unitPriceMinor: Number(l.unit_price_minor),
+        discountMinor: Number(l.discount_minor),
+        taxRateBps: Number(l.tax_rate_bps),
+        taxCodeId: l.tax_code_id && available.has(l.tax_code_id) ? l.tax_code_id : null,
+        productId: l.product_id ?? null,
+      })),
+      today,
+    );
+    if (!lines.length) throw new Error("Quote has no lines to copy");
+    const saved = await saveSalesDocument(supabase, {
+      kind: "quote",
+      companyId: data.companyId,
+      userId,
+      contactId: src.contact_id,
+      docDate: today,
+      expiryDate,
+      memo: src.memo,
+      currencyCode,
+      fxRateToBase,
+      lines,
+    });
+    return { id: saved.id };
+  });
+
 // ---- Quotes ----
 
 const QUOTE_SORTS = ["quote_date", "expiry_date", "quote_number", "total_minor", "status"] as const;

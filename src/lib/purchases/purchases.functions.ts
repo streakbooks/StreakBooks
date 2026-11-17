@@ -72,6 +72,7 @@ import {
   type SupplierCreditLimitAssessment,
   type SupplierCreditLimitBill,
 } from "@/lib/purchases/supplier-credit-limit";
+import { assertHeaderMatchesLines } from "@/lib/purchases/authorise-totals";
 
 export const SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED = "SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED";
 
@@ -1825,6 +1826,8 @@ export async function authoriseBillInternal(
     bill_date: string;
     currency_code: string;
     memo: string | null;
+    subtotal_minor: number;
+    tax_minor: number;
     total_minor: number;
     amount_paid_minor?: number;
     amount_credited_minor?: number;
@@ -1841,12 +1844,19 @@ export async function authoriseBillInternal(
   if (b.status !== "draft" && b.status !== "awaiting_approval") {
     throw new Error("Only draft or awaiting-approval bills can be authorised");
   }
+  if (b.posted_journal_id) throw new Error("Bill already posted");
+  assertHeaderMatchesLines({
+    documentLabel: "Bill",
+    subtotalMinor: Number(b.subtotal_minor) || 0,
+    taxMinor: Number(b.tax_minor) || 0,
+    totalMinor: Number(b.total_minor) || 0,
+    lines: b.purchase_bill_lines,
+  });
   const taxCodes = await loadTaxCodeInfo(
     supabase,
     companyId,
     b.purchase_bill_lines.map((l) => l.tax_code_id ?? ""),
   );
-  if (b.posted_journal_id) throw new Error("Bill already posted");
 
   const credit = await loadSupplierCreditLimitAssessment(supabase, companyId, {
     id: b.id,
@@ -2837,7 +2847,7 @@ async function loadCreditNote(supabase: SupabaseDb, companyId: string, creditNot
   const { data, error } = await supabase
     .from("purchase_credit_notes" as never)
     .select(
-      "id, status, contact_id, currency_code, credit_date, credit_number, memo, total_minor, amount_allocated_minor, posted_journal_id, purchase_credit_note_lines(*)" as never,
+      "id, status, contact_id, currency_code, credit_date, credit_number, memo, subtotal_minor, tax_minor, total_minor, amount_allocated_minor, posted_journal_id, purchase_credit_note_lines(*)" as never,
     )
     .eq("id" as never, creditNoteId as never)
     .eq("company_id" as never, companyId as never)
@@ -2852,6 +2862,8 @@ async function loadCreditNote(supabase: SupabaseDb, companyId: string, creditNot
     credit_date: string;
     credit_number: string | null;
     memo: string | null;
+    subtotal_minor: number;
+    tax_minor: number;
     total_minor: number;
     amount_allocated_minor: number;
     posted_journal_id: string | null;
@@ -2875,6 +2887,14 @@ async function authoriseCreditNoteInternal(
   await assertCompanyPermission(supabase, companyId, "purchases.authorise");
   const credit = await loadCreditNote(supabase, companyId, creditNoteId);
   if (credit.status !== "draft") throw new Error("Only draft credit notes can be authorised");
+  if (credit.posted_journal_id) throw new Error("Credit note already posted");
+  assertHeaderMatchesLines({
+    documentLabel: "Supplier credit",
+    subtotalMinor: Number(credit.subtotal_minor) || 0,
+    taxMinor: Number(credit.tax_minor) || 0,
+    totalMinor: Number(credit.total_minor) || 0,
+    lines: credit.purchase_credit_note_lines,
+  });
 
   // Validate the allocations BEFORE posting so a bad request never leaves a half-done credit.
   if (allocations.length) {

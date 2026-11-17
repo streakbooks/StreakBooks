@@ -3970,6 +3970,81 @@ export const savePurchaseOrder = createServerFn({ method: "POST" })
     );
   });
 
+/** Copy a purchase order into a NEW draft dated today (receipt/bill state is not copied). */
+export const copyPurchaseOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; orderId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    orderId: assertUuid(input.orderId, "order"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+    const { data: row, error } = await supabase
+      .from("purchase_orders" as never)
+      .select(
+        "contact_id, memo, currency_code, purchase_order_lines(description, account_id, quantity, unit_price_minor, net_minor, tax_rate_bps, line_no)" as never,
+      )
+      .eq("id" as never, data.orderId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("purchase_order_lines.company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Purchase order not found");
+
+    const src = row as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      purchase_order_lines: Array<{
+        description: string;
+        account_id: string | null;
+        quantity: number;
+        unit_price_minor: number;
+        net_minor: number;
+        tax_rate_bps?: number | null;
+        line_no?: number | null;
+      }>;
+    };
+
+    const { mapPurchaseOrderLinesForCopy } = await import("@/lib/purchases/copy-purchase-order");
+    const mapped = mapPurchaseOrderLinesForCopy(src.purchase_order_lines ?? []);
+    if (!mapped.length) throw new Error("Purchase order has no lines to copy");
+
+    const currencyCode = String(src.currency_code || "")
+      .trim()
+      .toUpperCase();
+    if (!/^[A-Z]{3}$/.test(currencyCode)) throw new Error("Choose a valid currency");
+
+    const lines = validatePurchaseOrderLines(mapped).map(
+      ({ description, accountId, quantity, unitPriceMinor, discountMinor, taxRateBps }) => ({
+        description,
+        accountId,
+        quantity,
+        unitPriceMinor,
+        discountMinor,
+        taxRateBps,
+      }),
+    );
+    const today = new Date().toISOString().slice(0, 10);
+    const payload = {
+      contactId: assertUuid(src.contact_id, "supplier"),
+      orderDate: assertOrderDate(today),
+      currencyCode,
+      memo: (src.memo ?? "").trim().slice(0, 500),
+      lines,
+      requestId: crypto.randomUUID(),
+      orderId: null,
+      version: null,
+    };
+
+    return workflowRpc<{ id: string; orderNumber: string; version: number }>(
+      supabase,
+      "save_purchase_order_atomic",
+      { _company: data.companyId, _payload: payload },
+    );
+  });
+
 /** Convert unbilled received quantities into a draft bill (fail closed if nothing billable). */
 export const convertPurchaseOrderToBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

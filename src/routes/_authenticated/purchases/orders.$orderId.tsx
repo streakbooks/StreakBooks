@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
@@ -9,6 +10,7 @@ import { useFormat } from "@/hooks/use-format";
 import {
   changePurchaseOrderStatus,
   convertPurchaseOrderToBill,
+  copyPurchaseOrder,
   getPurchaseOrder,
   receivePurchaseOrderGoods,
 } from "@/lib/purchases/purchases.functions";
@@ -69,6 +71,7 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
   const changeStatus = useServerFn(changePurchaseOrderStatus);
   const convert = useServerFn(convertPurchaseOrderToBill);
   const receiveGoods = useServerFn(receivePurchaseOrderGoods);
+  const doCopy = useServerFn(copyPurchaseOrder);
   const [cancelOpen, setCancelOpen] = useState(false);
   const query = useQuery({
     queryKey: ["purchase-order", companyId, orderId],
@@ -128,6 +131,15 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
       await refresh();
     },
   });
+  const copyMutation = useMutation({
+    mutationFn: () => doCopy({ data: { companyId, orderId } }),
+    onSuccess: async (result) => {
+      toast.success("Copied to a new draft purchase order");
+      await queryClient.invalidateQueries({ queryKey: ["orders", companyId] });
+      navigate({ to: "/purchases/orders/$orderId", params: { orderId: result.id } });
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
   if (query.isPending) return <LoadingState />;
   if (query.isError)
     return (
@@ -140,7 +152,10 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
   const order = query.data;
   const currency = order.currency_code.trim();
   const pending =
-    statusMutation.isPending || convertMutation.isPending || receiveMutation.isPending;
+    statusMutation.isPending ||
+    convertMutation.isPending ||
+    receiveMutation.isPending ||
+    copyMutation.isPending;
   const editableStatus = order.status !== "billed" && ["draft", "sent"].includes(order.status);
   const canReceive = ["sent", "partially_received"].includes(order.status);
   const outstanding = receiveAllOutstanding(
@@ -271,6 +286,18 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
             <Link to="/purchases/bills/$billId" params={{ billId: order.billed_bill_id }}>
               View bill
             </Link>
+          </Button>
+        ) : null}
+        {can("purchases.draft") ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={copyMutation.isPending}
+            title="Create a new draft with today's date (receipt and bill links are not copied)"
+            onClick={() => copyMutation.mutate()}
+          >
+            {copyMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            Copy order
           </Button>
         ) : null}
       </div>

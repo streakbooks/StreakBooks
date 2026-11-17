@@ -2307,6 +2307,98 @@ export const deleteDraftExpense = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Void a posted direct expense: reverse its journal and mark status void.
+ * Drafts use deleteDraftExpense. Reason + void journal id are stored on the audit event
+ * (purchase_expenses has no void_* columns yet — status enum already includes void).
+ */
+export const voidPurchaseExpense = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; expenseId: string; reason: string; voidDate?: string }) => {
+      const reason = String(input.reason ?? "").trim();
+      if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
+      const voidDate =
+        input.voidDate && String(input.voidDate).trim() ? String(input.voidDate).trim() : null;
+      if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
+        throw new Error("Void date must be YYYY-MM-DD");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        expenseId: assertUuid(input.expenseId, "expense"),
+        reason: reason.slice(0, 500),
+        voidDate,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.authorise");
+    const { data: row, error } = await supabase
+      .from("purchase_expenses" as never)
+      .select("id, status, expense_date, posted_journal_id" as never)
+      .eq("id" as never, data.expenseId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Expense not found");
+    const e = row as {
+      status: string;
+      expense_date: string;
+      posted_journal_id: string | null;
+    };
+    if (e.status === "void") throw new Error("Expense already void");
+    if (e.status === "draft" || !e.posted_journal_id) {
+      throw new Error("Only posted expenses can be voided — delete the draft instead");
+    }
+    if (e.status !== "paid") {
+      throw new Error(`Cannot void an expense in status ${e.status.replace(/_/g, " ")}`);
+    }
+    const { assertExpenseVoidDate } = await import("@/lib/purchases/expense-void");
+    const today = new Date().toISOString().slice(0, 10);
+    const voidDate = assertExpenseVoidDate({
+      expenseDate: e.expense_date,
+      voidDate: data.voidDate ?? today,
+      today,
+    });
+    const voidJournalId = await voidPostedDocument(
+      supabase,
+      e.posted_journal_id,
+      `purchase_expense:${data.expenseId}:void`,
+      voidDate,
+    );
+    const { data: marked, error: upErr } = await supabase
+      .from("purchase_expenses" as never)
+      .update({
+        status: "void",
+        updated_at: new Date().toISOString(),
+      } as never)
+      .eq("id" as never, data.expenseId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("status" as never, "paid" as never)
+      .select("id");
+    if (upErr) throw new Error(upErr.message);
+    if (!marked || (marked as unknown[]).length === 0) {
+      throw new Error(
+        `The reversing journal was posted (${voidJournalId.slice(0, 8)}…) but the expense status could not be marked void. Reload and click Void again — it will not reverse twice.`,
+      );
+    }
+    await recordBillAudit(
+      supabase,
+      data.companyId,
+      "expense.void",
+      data.expenseId,
+      {
+        void_journal_id: voidJournalId,
+        void_date: voidDate,
+        reason: data.reason,
+        posted_journal_id: e.posted_journal_id,
+      },
+      "purchase_expense",
+    );
+    return { voidJournalId, voidDate };
+  });
+
 // ---- Supplier payments ----
 
 export const listPayments = createServerFn({ method: "GET" })

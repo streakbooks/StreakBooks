@@ -132,10 +132,12 @@ function Reconcile() {
       ]
     : [];
   const blockedByUncategorised = (ws?.uncategorisedCount ?? 0) > 0;
+  const blockedByLedgerOnlyTruncated = Boolean(ws?.ledgerOnlyTruncated);
   const canComplete =
     Boolean(summary?.balanced) &&
     clearedAmounts.length > 0 &&
     !blockedByUncategorised &&
+    !blockedByLedgerOnlyTruncated &&
     ws !== undefined;
 
   const completeM = useMutation({
@@ -419,10 +421,12 @@ function Reconcile() {
               every line). Unticked items stay outstanding and are listed in the report.
             </p>
             {ws.ledgerOnlyTruncated ? (
-              <Alert className="mb-2">
+              <Alert className="mb-2" variant="destructive">
+                <AlertTitle>Too many outstanding ledger lines</AlertTitle>
                 <AlertDescription>
-                  Only the first {ws.ledgerOnly.length} items are listed. Narrow the statement date
-                  to see the rest.
+                  Only the first {ws.ledgerOnly.length} of {ws.unmatchedLedgerCount} items are
+                  listed. Completion is blocked until you narrow the statement date so every
+                  outstanding ledger line can be reviewed.
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -496,6 +500,11 @@ function Reconcile() {
             {summary && !summary.balanced ? (
               <span className="text-sm text-destructive">
                 Difference {money(summary.difference)} must be zero.
+              </span>
+            ) : null}
+            {blockedByLedgerOnlyTruncated ? (
+              <span className="text-sm text-destructive">
+                Narrow the statement date — outstanding ledger lines exceed the review limit.
               </span>
             ) : null}
           </div>

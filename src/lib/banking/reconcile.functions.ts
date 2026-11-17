@@ -5,6 +5,11 @@ import { assertUuid } from "@/lib/company-validation";
 import { chunk, fetchAllPages } from "@/lib/banking/fetch-all";
 import { callRpc, isMissingRpc, isMissingSchema, type RpcClient } from "@/lib/banking/rpc";
 import {
+  assertLedgerOnlyReviewable,
+  isLedgerOnlyReviewTruncated,
+  LEDGER_ONLY_REVIEW_CAP,
+} from "@/lib/banking/recon-complete-guards";
+import {
   bankReconciliationReport,
   buildStatementGroups,
   resolveOpeningProposal,
@@ -19,8 +24,6 @@ import {
 function isIsoDate(s: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
-
-const LEDGER_ITEM_CAP = 2000;
 
 type LedgerRow = {
   id: string;
@@ -371,8 +374,9 @@ export const getReconciliationWorkspace = createServerFn({ method: "GET" })
           .map((id) => itemByLine.get(id))
           .filter((x): x is LedgerItem => Boolean(x)),
       })),
-      ledgerOnly: ledgerOnlyAll.slice(0, LEDGER_ITEM_CAP),
-      ledgerOnlyTruncated: ledgerOnlyAll.length > LEDGER_ITEM_CAP,
+      ledgerOnly: ledgerOnlyAll.slice(0, LEDGER_ONLY_REVIEW_CAP),
+      ledgerOnlyTruncated: isLedgerOnlyReviewTruncated(ledgerOnlyAll.length),
+      ledgerOnlyReviewCap: LEDGER_ONLY_REVIEW_CAP,
       // Previous shape, kept for existing callers
       unmatchedLedgerTotalMinor: Number(ledgerOnlyTotal),
       unmatchedLedgerLines: [...ledgerOnlyAll].reverse().slice(0, 100),
@@ -434,6 +438,23 @@ export const completeReconciliation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as AnyClient;
     await assertCompanyPermission(supabase, data.companyId, "banking.reconcile");
+
+    // Fail closed when the workspace would truncate outstanding ledger-only lines: completing
+    // would leave GL activity neither ticked nor intentionally outstanding.
+    const account = await loadBankAccount(supabase, data.companyId, data.bankAccountId);
+    const [ledgerRows, sessions] = await Promise.all([
+      loadLedgerLines(supabase, data.companyId, account.gl_account_id, data.statementDate),
+      selectSessions(supabase, data.companyId, data.bankAccountId, 200),
+    ]);
+    const cleared = await clearedLineIds(supabase, data.companyId, sessions);
+    const linked = await linkedLineIds(
+      supabase,
+      data.companyId,
+      ledgerRows.map((r) => r.id),
+    );
+    const outstandingCount = ledgerRows.filter((r) => !linked.has(r.id) && !cleared.has(r.id)).length;
+    assertLedgerOnlyReviewable(outstandingCount);
+
     const r = await callRpc<{
       session_id: string;
       cleared_total_minor: number;

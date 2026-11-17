@@ -12,8 +12,15 @@ for (const viewport of [
     await page.getByLabel("Name or SKU").press("Enter");
     await page.getByRole("button", { name: "Add Consultation" }).click();
     await expect(page.getByText("110.00", { exact: true })).toBeVisible();
+    const breakdown = page.getByRole("region", { name: "Cart price breakdown" });
+    await expect(breakdown).toContainText("Itemised price preview");
+    await expect(breakdown).toContainText("CONS · 1 × 100.00");
+    await expect(breakdown).toContainText("Line net");
+    await expect(breakdown).toContainText("Line tax");
+
     await page.getByLabel("Quantity", { exact: true }).fill("2");
     await expect(page.getByText("220.00", { exact: true })).toBeVisible();
+    await expect(breakdown).toContainText("CONS · 2 × 100.00");
     await page.getByRole("button", { name: "Refresh prices" }).click();
     await expect(page.getByText("220.00", { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(

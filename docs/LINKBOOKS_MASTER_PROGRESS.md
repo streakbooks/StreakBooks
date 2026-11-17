@@ -37,7 +37,7 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 | Batch | Status | Evidence |
 |-------|--------|----------|
 | B0 — Tracker + IP register + full-coverage gap skeleton | **In progress** | This file; IP register; gap register |
-| B1 — Historical Aged Payables (dated AP allocations) | **Implemented; PR pending merge** | `ap-asat.ts`, `ap-reports.functions.ts`, Reports UI wired; unit 9/9; `check:modules` pass; full `tsc --noEmit` pass after TS4111 bracket fix |
+| B1 — Historical Aged Payables (dated AP allocations) | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 — unit 9/9; `check:modules` pass; tsc clean for batch; staging verify open |
 | B2+ — Next financial-correctness / fail-closed module gaps | Pending | Priority: PO matching, inventory valuation, timesheets, bank feeds (provider), Coding Memory (#225) |
 
 ## Current blockers

@@ -81,7 +81,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Tests** | `ap-asat.test.ts`, updated `payables-integrity.test.ts` |
 | **Acceptance** | Past as-of includes bills paid after that date; unapplied payments/credits as negatives; currencies separate; future dates rejected |
 | **Development status** | Implemented on branch `feature/ap-asat-historical-aged-payables` |
-| **PR reference** | Pending |
+| **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 |
 | **Release verification** | Open — authenticated staging not run |
 
 ## Acceptance questions (programme-wide)

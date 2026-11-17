@@ -325,6 +325,83 @@ export const deleteDraftCreditNote = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Copy a sales credit note into a NEW draft dated today (no allocations / source invoice link). */
+export const copyCreditNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; creditNoteId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    creditNoteId: assertUuid(input.creditNoteId, "credit note"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "sales.draft");
+    const { data: row, error } = await supabase
+      .from("sales_credit_notes" as never)
+      .select(
+        "contact_id, memo, currency_code, fx_rate_to_base, sales_credit_note_lines(*)" as never,
+      )
+      .eq("id" as never, data.creditNoteId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Credit note not found");
+
+    const src = row as unknown as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      fx_rate_to_base?: number | null;
+      sales_credit_note_lines: Array<{
+        line_order: number;
+        description: string;
+        account_id: string | null;
+        quantity: number;
+        unit_price_minor: number;
+        discount_minor: number;
+        tax_rate_bps: number;
+        tax_code_id: string | null;
+        product_id: string | null;
+      }>;
+    };
+
+    const { mapSalesCreditLinesForCopy } = await import("@/lib/sales/copy-credit-note");
+    const mapped = mapSalesCreditLinesForCopy(src.sales_credit_note_lines ?? []);
+    if (!mapped.length) throw new Error("Credit note has no lines to copy");
+
+    const defaults = await loadCompanyDefaults(supabase, data.companyId);
+    const today = defaults.today;
+    const { currencyCode, fxRateToBase } = normaliseCurrencyAndFx(
+      src.currency_code,
+      defaults.baseCurrency,
+      src.fx_rate_to_base ?? 1,
+    );
+    const { loadSalesTaxCodes } = await import("@/lib/sales/tax-codes");
+    const available = new Set(
+      (await loadSalesTaxCodes(supabase, data.companyId, today)).map((c) => c.id),
+    );
+    const lines = await prepareSalesLines(
+      supabase,
+      data.companyId,
+      mapped.map((l) => ({
+        ...l,
+        taxCodeId: l.taxCodeId && available.has(l.taxCodeId) ? l.taxCodeId : null,
+      })),
+      today,
+    );
+    const saved = await saveSalesDocument(supabase, {
+      kind: "credit_note",
+      companyId: data.companyId,
+      userId,
+      contactId: src.contact_id,
+      docDate: today,
+      memo: src.memo,
+      currencyCode,
+      fxRateToBase,
+      lines,
+    });
+    return { id: saved.id };
+  });
+
 export const authoriseCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; creditNoteId: string }) => ({

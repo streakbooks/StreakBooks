@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -11,13 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -340,7 +335,7 @@ export function CrmOpportunitiesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Customer / Account</Label>
-                  <Select
+                  <RecordLookupSelect
                     value={contactId || "__none"}
                     onValueChange={(value) => setContactId(value === "__none" ? "" : value)}
                   >
@@ -356,7 +351,7 @@ export function CrmOpportunitiesPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                   <p className="text-xs text-muted-foreground">
                     Reuses the shared Contacts master. A linked customer and positive value are
                     needed before creating a Sales quote.
@@ -370,7 +365,7 @@ export function CrmOpportunitiesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Stage</Label>
-                  <Select
+                  <RecordLookupSelect
                     value={stageId || "__default"}
                     onValueChange={(v) => setStageId(v === "__default" ? "" : v)}
                   >
@@ -387,7 +382,7 @@ export function CrmOpportunitiesPage() {
                           </SelectItem>
                         ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="sm:col-span-2 space-y-2">
                   {!formValidation.valid ? (
@@ -421,7 +416,7 @@ export function CrmOpportunitiesPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="min-w-40 space-y-1">
               <Label htmlFor="crm-pipeline-picker">Pipeline</Label>
-              <Select
+              <RecordLookupSelect
                 value={selectedPipeline?.id ?? ""}
                 onValueChange={(value) => {
                   setSelectedPipelineId(value);
@@ -441,7 +436,7 @@ export function CrmOpportunitiesPage() {
                       </SelectItem>
                     ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <Label htmlFor="crm-deal-search" className="sr-only">
               Search loaded opportunities
@@ -603,7 +598,7 @@ export function CrmOpportunitiesPage() {
                           {canManage ? (
                             <Label className="mt-3 block space-y-1 text-xs">
                               <span className="text-muted-foreground">Move to (keyboard)</span>
-                              <Select
+                              <RecordLookupSelect
                                 value={opp.stageId}
                                 onValueChange={(next) => {
                                   if (next === opp.stageId) return;
@@ -625,7 +620,7 @@ export function CrmOpportunitiesPage() {
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
-                              </Select>
+                              </RecordLookupSelect>
                             </Label>
                           ) : null}
                         </article>

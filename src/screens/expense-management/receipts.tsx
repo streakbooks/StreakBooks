@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -12,13 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -439,7 +434,7 @@ export function ExpenseManagementReceiptsPage() {
                       >
                         Request OCR
                       </Button>
-                      <Select
+                      <RecordLookupSelect
                         value={matchClaimByEntry[entry.id] ?? ""}
                         onValueChange={(value) =>
                           setMatchClaimByEntry((current) => ({ ...current, [entry.id]: value }))
@@ -458,7 +453,7 @@ export function ExpenseManagementReceiptsPage() {
                             </SelectItem>
                           ))}
                         </SelectContent>
-                      </Select>
+                      </RecordLookupSelect>
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button
                           size="sm"

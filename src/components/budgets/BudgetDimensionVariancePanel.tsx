@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -176,11 +177,11 @@ export function BudgetDimensionVariancePanel({
           <div className="flex flex-wrap items-end gap-2">
             <div className="space-y-1">
               <Label htmlFor="dim-report-through">As of</Label>
-              <select
+              <RecordLookupSelect
                 id="dim-report-through"
-                className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
+                className="flex h-10 border-input px-3"
                 value={throughChoice}
-                onChange={(e) => setThroughChoice(e.target.value)}
+                onValueChange={(nextValue) => setThroughChoice(nextValue)}
               >
                 <option value="">Latest completed month (default)</option>
                 {canShowPartial ? (
@@ -191,15 +192,15 @@ export function BudgetDimensionVariancePanel({
                     Through {monthLabel(m)}
                   </option>
                 ))}
-              </select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="dim-report-view">View</Label>
-              <select
+              <RecordLookupSelect
                 id="dim-report-view"
                 value={viewMonth}
-                onChange={(e) => setViewMonth(e.target.value)}
-                className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
+                onValueChange={(nextValue) => setViewMonth(nextValue)}
+                className="flex h-10 border-input px-3"
               >
                 <option value="ytd">Year to date</option>
                 {(report?.months ?? []).map((m, i) => (
@@ -207,7 +208,7 @@ export function BudgetDimensionVariancePanel({
                     {monthLabel(m)}
                   </option>
                 ))}
-              </select>
+              </RecordLookupSelect>
             </div>
             <Button
               type="button"

@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -13,13 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -542,7 +537,7 @@ export function ExpenseManagementApprovalsPage() {
                 <div className="grid gap-2 md:col-span-2">
                   <Label>Delegate</Label>
                   {canListMembers ? (
-                    <Select value={delegateUserId} onValueChange={setDelegateUserId}>
+                    <RecordLookupSelect value={delegateUserId} onValueChange={setDelegateUserId}>
                       <SelectTrigger aria-label="Choose approval delegate">
                         <SelectValue placeholder="Select member" />
                       </SelectTrigger>
@@ -555,7 +550,7 @@ export function ExpenseManagementApprovalsPage() {
                             </SelectItem>
                           ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       Member picker needs members.view.

@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -18,13 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -261,7 +256,7 @@ export function HrOffboardingPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           {canManage && t.status === "pending" ? (
-                            <Select
+                            <RecordLookupSelect
                               onValueChange={(v) => taskM.mutate({ taskId: t.id, status: v })}
                             >
                               <SelectTrigger className="w-[120px]">
@@ -276,7 +271,7 @@ export function HrOffboardingPage() {
                                   ),
                                 )}
                               </SelectContent>
-                            </Select>
+                            </RecordLookupSelect>
                           ) : null}
                         </TableCell>
                       </TableRow>
@@ -302,7 +297,7 @@ export function HrOffboardingPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              <Select value={employeeId} onValueChange={setEmployeeId}>
+              <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
@@ -313,11 +308,11 @@ export function HrOffboardingPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Exit reason</Label>
-              <Select value={exitReason} onValueChange={setExitReason}>
+              <RecordLookupSelect value={exitReason} onValueChange={setExitReason}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -328,7 +323,7 @@ export function HrOffboardingPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Last working day</Label>

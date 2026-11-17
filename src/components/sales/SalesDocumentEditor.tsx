@@ -1,4 +1,5 @@
-"use client";
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
+("use client");
 
 import { VoiceFields, VoiceSelect } from "@/components/ai-voice/voice-fields";
 
@@ -60,13 +61,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -871,7 +866,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <div className="space-y-2">
                   <Label htmlFor="sales-price-list">Sales price list (optional)</Label>
-                  <Select
+                  <RecordLookupSelect
                     value={selectedPriceListId || "none"}
                     onValueChange={(value) => {
                       setManualPriceListId(value === "none" ? "" : value);
@@ -898,7 +893,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                           </SelectItem>
                         ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <Button
                   variant="outline"

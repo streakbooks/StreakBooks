@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -204,18 +205,18 @@ export function AdvisorsAdminEngagementsPage() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="engagement-status">Status</Label>
-            <select
+            <RecordLookupSelect
               id="engagement-status"
-              className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
+              className="flex h-10 border-input px-3"
               value={status}
-              onChange={(event) => setStatus(event.target.value as (typeof STATUSES)[number])}
+              onValueChange={(nextValue) => setStatus(nextValue as (typeof STATUSES)[number])}
             >
               {STATUSES.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
           </div>
           <div className="min-w-[16rem] flex-1 space-y-1">
             <Label htmlFor="engagement-reason">Change reason</Label>
@@ -273,12 +274,12 @@ export function AdvisorsAdminEngagementsPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1 sm:col-span-2">
                   <Label htmlFor="eng-client">Client</Label>
-                  <select
+                  <RecordLookupSelect
                     id="eng-client"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className="flex h-10 w-full border-input px-3"
                     value={form.clientId}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, clientId: event.target.value }))
+                    onValueChange={(nextValue) =>
+                      setForm((prev) => ({ ...prev, clientId: nextValue }))
                     }
                   >
                     <option value="">Select client</option>
@@ -287,7 +288,7 @@ export function AdvisorsAdminEngagementsPage() {
                         {client.name || client.email} ({client.email})
                       </option>
                     ))}
-                  </select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="eng-title">Title</Label>
@@ -301,12 +302,12 @@ export function AdvisorsAdminEngagementsPage() {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="eng-advisor">Advisor</Label>
-                  <select
+                  <RecordLookupSelect
                     id="eng-advisor"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className="flex h-10 w-full border-input px-3"
                     value={form.assignedAdvisorId}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, assignedAdvisorId: event.target.value }))
+                    onValueChange={(nextValue) =>
+                      setForm((prev) => ({ ...prev, assignedAdvisorId: nextValue }))
                     }
                   >
                     <option value="">Unassigned</option>
@@ -315,7 +316,7 @@ export function AdvisorsAdminEngagementsPage() {
                         {member.displayName}
                       </option>
                     ))}
-                  </select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="eng-service">Service</Label>

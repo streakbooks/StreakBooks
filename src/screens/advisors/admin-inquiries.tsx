@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -141,18 +142,18 @@ export function AdvisorsAdminInquiriesPage() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="inquiry-status">Status</Label>
-            <select
+            <RecordLookupSelect
               id="inquiry-status"
-              className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
+              className="flex h-10 border-input px-3"
               value={status}
-              onChange={(event) => setStatus(event.target.value as (typeof STATUSES)[number])}
+              onValueChange={(nextValue) => setStatus(nextValue as (typeof STATUSES)[number])}
             >
               {STATUSES.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
           </div>
           <div className="min-w-[16rem] flex-1 space-y-1">
             <Label htmlFor="inquiry-reason">Change reason</Label>
@@ -229,14 +230,14 @@ export function AdvisorsAdminInquiriesPage() {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="assign-advisor">Assigned advisor</Label>
-                  <select
+                  <RecordLookupSelect
                     id="assign-advisor"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className="flex h-10 w-full border-input px-3"
                     value={selected.assignedAdvisorId ?? ""}
-                    onChange={(event) =>
+                    onValueChange={(nextValue) =>
                       updateM.mutate({
                         inquiryId: selected.id,
-                        assignedAdvisorId: event.target.value || null,
+                        assignedAdvisorId: nextValue || null,
                       })
                     }
                   >
@@ -247,7 +248,7 @@ export function AdvisorsAdminInquiriesPage() {
                         {member.isActive ? "" : " (inactive)"}
                       </option>
                     ))}
-                  </select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {(["contacted", "qualified", "closed"] as const).map((next) => (

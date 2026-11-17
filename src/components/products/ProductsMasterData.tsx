@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -30,13 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type WorkspaceProps = { companyId: string; currency: string };
 
@@ -437,7 +432,7 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
                     setProductId("");
                   }}
                 />
-                <Select
+                <RecordLookupSelect
                   value={productId}
                   onValueChange={(value) => {
                     setProductId(value);
@@ -458,7 +453,7 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
                 {productsQ.isError ? (
                   <p role="alert" className="text-sm text-destructive">
                     {friendlyAuthError(productsQ.error)}

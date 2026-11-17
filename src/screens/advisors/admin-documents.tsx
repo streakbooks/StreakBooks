@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -85,18 +86,18 @@ export function AdvisorsAdminDocumentsPage() {
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
             <Label htmlFor="doc-status">Status</Label>
-            <select
+            <RecordLookupSelect
               id="doc-status"
-              className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
+              className="flex h-10 border-input px-3"
               value={status}
-              onChange={(event) => setStatus(event.target.value as (typeof STATUSES)[number])}
+              onValueChange={(nextValue) => setStatus(nextValue as (typeof STATUSES)[number])}
             >
               {STATUSES.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
           </div>
           <div className="min-w-[16rem] flex-1 space-y-1">
             <Label htmlFor="doc-reason">Change reason</Label>

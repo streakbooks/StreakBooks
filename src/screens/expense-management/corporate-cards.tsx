@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -12,13 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -474,7 +469,7 @@ export function ExpenseManagementCorporateCardsPage() {
 
           <section className="mb-6 grid max-w-lg gap-2">
             <Label>Claim for matching</Label>
-            <Select value={matchClaimId} onValueChange={setMatchClaimId}>
+            <RecordLookupSelect value={matchClaimId} onValueChange={setMatchClaimId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select corporate-card claim" />
               </SelectTrigger>
@@ -485,7 +480,7 @@ export function ExpenseManagementCorporateCardsPage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
           </section>
 
           <section className="space-y-3">

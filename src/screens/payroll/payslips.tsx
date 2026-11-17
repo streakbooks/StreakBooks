@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -217,7 +218,7 @@ export function PayrollPayslipsPage({
           {employeeOptions.length > 1 || employeeIdFilter ? (
             <div className="grid gap-1.5">
               <Label htmlFor="payslip-employee-filter">Employee</Label>
-              <Select
+              <RecordLookupSelect
                 value={employeeIdFilter ?? "all"}
                 onValueChange={(value) =>
                   setSearchFilters({ employeeId: value === "all" ? null : value })
@@ -234,7 +235,7 @@ export function PayrollPayslipsPage({
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
           ) : null}
           <div className="grid gap-1.5">

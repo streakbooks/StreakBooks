@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -375,7 +376,7 @@ export function CrmActivitiesPage({
                 {relatedType === "lead" ? (
                   <div className="space-y-2">
                     <Label>Lead</Label>
-                    <Select
+                    <RecordLookupSelect
                       value={leadId || "__none"}
                       onValueChange={(v) => setLeadId(v === "__none" ? "" : v)}
                     >
@@ -390,7 +391,7 @@ export function CrmActivitiesPage({
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                     {leads.isError ? (
                       <p role="alert" className="text-xs text-destructive">
                         Could not load leads. Retry the form.
@@ -400,7 +401,7 @@ export function CrmActivitiesPage({
                 ) : relatedType === "opportunity" ? (
                   <div className="space-y-2">
                     <Label>Opportunity</Label>
-                    <Select
+                    <RecordLookupSelect
                       value={opportunityId || "__none"}
                       onValueChange={(v) => setOpportunityId(v === "__none" ? "" : v)}
                     >
@@ -415,7 +416,7 @@ export function CrmActivitiesPage({
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                     {opportunities.isError ? (
                       <p role="alert" className="text-xs text-destructive">
                         Could not load opportunities. Retry the form.
@@ -425,7 +426,7 @@ export function CrmActivitiesPage({
                 ) : (
                   <div className="space-y-2">
                     <Label>Customer / Contact</Label>
-                    <Select
+                    <RecordLookupSelect
                       value={contactId || "__none"}
                       onValueChange={(v) => setContactId(v === "__none" ? "" : v)}
                     >
@@ -440,7 +441,7 @@ export function CrmActivitiesPage({
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                     {accounts.isError ? (
                       <p role="alert" className="text-xs text-destructive">
                         Could not load Contacts. Retry the form.

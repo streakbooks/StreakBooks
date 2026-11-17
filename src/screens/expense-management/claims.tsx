@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -575,13 +576,12 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
             {(templatesQ.data?.length ?? 0) > 0 ? (
               <div className="grid gap-1">
                 <Label htmlFor="em-template">Load template</Label>
-                <select
+                <RecordLookupSelect
                   id="em-template"
-                  className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
-                  defaultValue=""
-                  onChange={(event) => {
-                    if (event.target.value) applyTemplate(event.target.value);
-                    event.target.value = "";
+                  className="flex h-10 border-input px-3"
+                  value=""
+                  onValueChange={(nextValue) => {
+                    if (nextValue) applyTemplate(nextValue);
                   }}
                 >
                   <option value="">Select template</option>
@@ -590,7 +590,7 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                       {template.name}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
             ) : null}
           </div>
@@ -636,11 +636,11 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
             {paymentSource === "cash_advance" ? (
               <div className="grid gap-2">
                 <Label htmlFor="em-claim-advance">Cash advance</Label>
-                <select
+                <RecordLookupSelect
                   id="em-claim-advance"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-10 w-full border-input px-3 py-2"
                   value={cashAdvanceId}
-                  onChange={(event) => setCashAdvanceId(event.target.value)}
+                  onValueChange={(nextValue) => setCashAdvanceId(nextValue)}
                 >
                   <option value="">Select issued advance</option>
                   {openAdvances.map((adv) => (
@@ -649,17 +649,17 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                       {fromMinorUnits(adv.remainingMinor, adv.currencyCode)}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
             ) : null}
             {paymentSource === "company_paid" ? (
               <div className="grid gap-2">
                 <Label htmlFor="em-claim-petty">Petty cash float</Label>
-                <select
+                <RecordLookupSelect
                   id="em-claim-petty"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-10 w-full border-input px-3 py-2"
                   value={pettyCashFloatId}
-                  onChange={(event) => setPettyCashFloatId(event.target.value)}
+                  onValueChange={(nextValue) => setPettyCashFloatId(nextValue)}
                 >
                   <option value="">Select float with balance</option>
                   {openPettyFloats.map((float) => (
@@ -668,17 +668,17 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                       {fromMinorUnits(float.balanceMinor, float.currencyCode)})
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
             ) : null}
             {paymentSource === "corporate_card" ? (
               <div className="grid gap-2">
                 <Label htmlFor="em-claim-card">Corporate card</Label>
-                <select
+                <RecordLookupSelect
                   id="em-claim-card"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-10 w-full border-input px-3 py-2"
                   value={corporateCardId}
-                  onChange={(event) => setCorporateCardId(event.target.value)}
+                  onValueChange={(nextValue) => setCorporateCardId(nextValue)}
                 >
                   <option value="">Select card</option>
                   {openCards.map((card) => (
@@ -686,7 +686,7 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                       {card.label} ****{card.last4}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
             ) : null}
           </div>

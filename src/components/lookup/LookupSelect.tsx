@@ -54,6 +54,7 @@ export type LookupSelectProps = {
   describedBy?: string | undefined;
   labelledBy?: string | undefined;
   className?: string | undefined;
+  triggerClassName?: string | undefined;
   /** When false, options are already filtered (server search). Grouping still applies. */
   clientFilter?: boolean | undefined;
   search?: string | undefined;
@@ -93,6 +94,7 @@ export function LookupSelect({
   describedBy,
   labelledBy,
   className,
+  triggerClassName,
   clientFilter = true,
   search: controlledSearch,
   onSearchChange,
@@ -262,7 +264,10 @@ export function LookupSelect({
             aria-labelledby={labelledBy}
             disabled={disabled}
             onKeyDown={onKeyDown}
-            className="h-9 min-w-0 flex-1 shrink justify-between bg-background px-2.5 text-sm font-normal"
+            className={cn(
+              "h-9 min-w-0 flex-1 shrink justify-between bg-background px-2.5 text-sm font-normal",
+              triggerClassName,
+            )}
           >
             <span className={cn("truncate text-left", !selected && "text-muted-foreground")}>
               {selected ? formatLookupLabel(selected) : placeholder}

@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -20,13 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Props = {
   companyId: string;
@@ -158,7 +153,7 @@ export function PriceListDiscountRules({
                 setProductId("");
               }}
             />
-            <Select value={productId} onValueChange={setProductId}>
+            <RecordLookupSelect value={productId} onValueChange={setProductId}>
               <SelectTrigger aria-label="Product for percentage discount rule">
                 <SelectValue placeholder="Choose product" />
               </SelectTrigger>
@@ -173,7 +168,7 @@ export function PriceListDiscountRules({
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
             {productsQ.isError ? (
               <p role="alert" className="text-sm text-destructive">
                 {friendlyAuthError(productsQ.error)}

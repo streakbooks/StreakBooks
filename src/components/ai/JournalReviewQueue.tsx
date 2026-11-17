@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { Link, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -219,12 +220,12 @@ export function AiJournalReviewQueue({
             <div className="flex flex-wrap items-end gap-3">
               <div className="space-y-1">
                 <Label htmlFor="ai-review-status">Status</Label>
-                <select
+                <RecordLookupSelect
                   id="ai-review-status"
-                  className="flex h-10 w-44 rounded-md border border-input bg-background px-3 text-sm"
+                  className="flex h-10 w-44 border-input px-3"
                   value={status}
-                  onChange={(e) => {
-                    setStatus(e.target.value as ReviewStatus);
+                  onValueChange={(nextValue) => {
+                    setStatus(nextValue as ReviewStatus);
                     setPage(0);
                     setSelectedId(null);
                   }}
@@ -234,7 +235,7 @@ export function AiJournalReviewQueue({
                       {label}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
               <div className="flex items-center gap-2 pb-2">
                 <Checkbox
@@ -411,12 +412,12 @@ export function AiJournalReviewQueue({
                 {canAssign && selected.status !== "reviewed" ? (
                   <div className="space-y-2">
                     <Label htmlFor="ai-review-assignee">Assign independent reviewer</Label>
-                    <select
+                    <RecordLookupSelect
                       id="ai-review-assignee"
-                      className="flex h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
+                      className="flex h-10 w-full max-w-md border-input px-3"
                       value={assignee}
                       disabled={mutate.isPending || reviewersQ.isPending}
-                      onChange={(e) => setAssignee(e.target.value)}
+                      onValueChange={(nextValue) => setAssignee(nextValue)}
                     >
                       <option value="">Choose active colleague</option>
                       {(reviewersQ.data ?? [])
@@ -426,7 +427,7 @@ export function AiJournalReviewQueue({
                             {r.label} · {r.role}
                           </option>
                         ))}
-                    </select>
+                    </RecordLookupSelect>
                     {reviewersQ.isError ? (
                       <p className="text-xs text-destructive">
                         {friendlyAuthError(reviewersQ.error)}

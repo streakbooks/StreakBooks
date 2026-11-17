@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -252,7 +253,7 @@ export function FirmOnboardingReportingPanel({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1">
           <Label>Client</Label>
-          <Select value={effectiveCompany} onValueChange={setSelectedCompany}>
+          <RecordLookupSelect value={effectiveCompany} onValueChange={setSelectedCompany}>
             <SelectTrigger aria-label="Filter onboarding report by client">
               <SelectValue placeholder="All accessible clients" />
             </SelectTrigger>
@@ -264,11 +265,11 @@ export function FirmOnboardingReportingPanel({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="space-y-1">
           <Label>Assigned staff</Label>
-          <Select value={effectiveAssignee} onValueChange={setSelectedAssignee}>
+          <RecordLookupSelect value={effectiveAssignee} onValueChange={setSelectedAssignee}>
             <SelectTrigger aria-label="Filter onboarding report by staff">
               <SelectValue />
             </SelectTrigger>
@@ -281,11 +282,14 @@ export function FirmOnboardingReportingPanel({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="space-y-1">
           <Label>Overdue age</Label>
-          <Select value={age} onValueChange={(value) => setAge(value as OnboardingAgeFilter)}>
+          <RecordLookupSelect
+            value={age}
+            onValueChange={(value) => setAge(value as OnboardingAgeFilter)}
+          >
             <SelectTrigger aria-label="Filter overdue ageing">
               <SelectValue />
             </SelectTrigger>
@@ -296,7 +300,7 @@ export function FirmOnboardingReportingPanel({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="space-y-1">
           <Label>Completion</Label>

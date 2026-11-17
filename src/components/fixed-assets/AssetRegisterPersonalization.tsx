@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useState } from "react";
 import { Columns3, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -215,12 +216,12 @@ export function FixedAssetSavedFilterViews({
       >
         <Save className="mr-2 size-4" /> Save view
       </Button>
-      <select
-        className="h-9 min-w-36 max-w-full rounded-md border bg-background px-3 text-sm"
+      <RecordLookupSelect
+        className="h-9 min-w-36 max-w-full px-3"
         aria-label="Select a saved fixed assets filter view"
         value={selected}
         disabled={!storageKey || loading || views.length === 0}
-        onChange={(event) => setSelected(event.target.value)}
+        onValueChange={(nextValue) => setSelected(nextValue)}
       >
         <option value="">Saved views ({views.length})</option>
         {views.map((view) => (
@@ -228,7 +229,7 @@ export function FixedAssetSavedFilterViews({
             {view.name}
           </option>
         ))}
-      </select>
+      </RecordLookupSelect>
       <Button
         size="sm"
         variant="outline"

@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { PersistentReconciliationReviews } from "@/components/accounting/PersistentReconciliationReviews";
 import { Link } from "@tanstack/react-router";
@@ -312,12 +313,12 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                 {recentSchedules.isPending ? "Loading schedules…" : "Load recent schedules"}
               </Button>
               {recentSchedules.data ? (
-                <select
+                <RecordLookupSelect
                   aria-label="Recent deferral schedules"
                   value=""
-                  className="w-full rounded-md border bg-background p-2 text-xs"
-                  onChange={(e) => {
-                    setScheduleId(e.target.value);
+                  className="w-full"
+                  onValueChange={(nextValue) => {
+                    setScheduleId(nextValue);
                     deferrals.reset();
                     clearReviews();
                   }}
@@ -328,7 +329,7 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                       {row.name} · {row.reference}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               ) : null}
               {recentSchedules.isError ? (
                 <p role="alert" className="text-xs text-destructive">
@@ -385,12 +386,12 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                 {recentRevaluations.isPending ? "Loading FX runs…" : "Load recent FX runs"}
               </Button>
               {recentRevaluations.data?.available ? (
-                <select
+                <RecordLookupSelect
                   aria-label="Recent FX revaluation runs"
                   value=""
-                  className="w-full rounded-md border bg-background p-2 text-xs"
-                  onChange={(e) => {
-                    setRevalId(e.target.value);
+                  className="w-full"
+                  onValueChange={(nextValue) => {
+                    setRevalId(nextValue);
                     revaluation.reset();
                     clearReviews();
                   }}
@@ -401,7 +402,7 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                       {row.as_of_date} · Run {row.seq}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               ) : null}
               {recentRevaluations.isError || recentRevaluations.data?.unavailableReason ? (
                 <p role="alert" className="text-xs text-destructive">
@@ -469,12 +470,12 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                     }}
                   />
                   {fixedTargets.data ? (
-                    <select
+                    <RecordLookupSelect
                       aria-label="Recent depreciation runs"
                       value=""
-                      className="w-full rounded-md border bg-background p-2 text-xs"
-                      onChange={(e) => {
-                        setSelectedDepreciationId(e.target.value);
+                      className="w-full"
+                      onValueChange={(nextValue) => {
+                        setSelectedDepreciationId(nextValue);
                         setFixedAuditKind(null);
                         depreciation.reset();
                         clearReviews();
@@ -487,7 +488,7 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                           {run.journal_id ? "" : " · no linked journal"}
                         </option>
                       ))}
-                    </select>
+                    </RecordLookupSelect>
                   ) : null}
                   <Button
                     type="button"
@@ -525,12 +526,12 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                     }}
                   />
                   {fixedTargets.data ? (
-                    <select
+                    <RecordLookupSelect
                       aria-label="Recent disposed fixed assets"
                       value=""
-                      className="w-full rounded-md border bg-background p-2 text-xs"
-                      onChange={(e) => {
-                        setSelectedDisposalId(e.target.value);
+                      className="w-full"
+                      onValueChange={(nextValue) => {
+                        setSelectedDisposalId(nextValue);
                         setFixedAuditKind(null);
                         disposal.reset();
                         clearReviews();
@@ -543,7 +544,7 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                           {asset.disposal_journal_id ? "" : " · no journal"}
                         </option>
                       ))}
-                    </select>
+                    </RecordLookupSelect>
                   ) : null}
                   <Button
                     type="button"
@@ -650,11 +651,11 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
             </div>
             <div className="space-y-1">
               <Label htmlFor="exc-source">Source</Label>
-              <select
+              <RecordLookupSelect
                 id="exc-source"
-                className="h-9 rounded-md border bg-background px-2 text-sm"
+                className="h-9 px-2"
                 value={source}
-                onChange={(e) => setSource(e.target.value as ExceptionFilter["source"])}
+                onValueChange={(nextValue) => setSource(nextValue as ExceptionFilter["source"])}
               >
                 <option value="all">All modules</option>
                 {SOURCES.map((x) => (
@@ -662,7 +663,7 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                     {x.name}
                   </option>
                 ))}
-              </select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="exc-severity">Severity</Label>

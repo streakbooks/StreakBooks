@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -10,13 +11,7 @@ import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -187,7 +182,7 @@ export function HrReportsPage() {
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <div className="grid gap-1.5">
           <Label>Report</Label>
-          <Select value={reportId} onValueChange={(v) => setReportId(v as HrReportId)}>
+          <RecordLookupSelect value={reportId} onValueChange={(v) => setReportId(v as HrReportId)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -198,7 +193,7 @@ export function HrReportsPage() {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="grid gap-1.5">
           <Label>From</Label>

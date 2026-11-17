@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -306,7 +307,7 @@ export function CrmLeadsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Source</Label>
-                  <Select
+                  <RecordLookupSelect
                     value={sourceId || "__none"}
                     onValueChange={(v) => setSourceId(v === "__none" ? "" : v)}
                   >
@@ -321,7 +322,7 @@ export function CrmLeadsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lead-value">Estimated value ({company.base_currency})</Label>

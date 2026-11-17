@@ -188,3 +188,11 @@ export async function importContactsCsv() {
 export function useCan() {
   return { can: useCanDo, role: "owner", ready: true };
 }
+
+// New unified portal messaging stays non-operational in this isolated UI fixture.
+export async function portalOpenInvoiceDiscussion() {
+  throw new Error("Fixture prevents portal messaging writes");
+}
+export async function portalSendMessagingMessage() {
+  throw new Error("Fixture prevents portal messaging writes");
+}

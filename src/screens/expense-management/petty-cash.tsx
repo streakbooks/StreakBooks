@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -12,13 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -252,7 +247,7 @@ export function ExpenseManagementPettyCashPage() {
           <section className="mb-6 grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
               <Label>Bank account for funding</Label>
-              <Select value={bankGlAccountId} onValueChange={setBankGlAccountId}>
+              <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select bank / cash account" />
                 </SelectTrigger>
@@ -263,7 +258,7 @@ export function ExpenseManagementPettyCashPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="pc-fund-amt">Custom fund amount ({currency})</Label>

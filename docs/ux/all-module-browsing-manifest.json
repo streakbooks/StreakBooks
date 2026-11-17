@@ -388,7 +388,8 @@
         "2026-11-17: src/screens/payroll/runs.tsx uses normalizePayrollRunSearch(searchDraft) for both existing and newly created run detail return links, avoiding stale URL search context and rejecting invalid draft text; commit 86324ceb768058c7f80357f5ce6b134b31f5245a; SOURCE REVIEW ONLY, NOT RUN.",
         "2026-11-17: src/screens/payroll/runs.tsx — native keyboard-focusable links added for Payment, Status and Net pay cells, preserving validated draft search, status and sort return context; commit 71c3752c02ecf46cac2df35f3d1d3f819cb149db; SOURCE ONLY, NOT RUN.",
         "2026-11-17: src/screens/payroll/payments.tsx preserves PayrollSubnav and PageHeader during workspace loading, missing company, payroll.view denial, payment loading and payment query failure; source commit 6bcddb2452f1852343067ba672e5b8d62797bb09; SOURCE REVIEW ONLY, NOT RUN.",
-        "2026-11-17: src/screens/payroll/payments.tsx — Clear run filter is now a native TanStack Link to /payroll/payments with runId omitted, supporting browser new-tab and keyboard semantics; commit 9e5ab9a4a9583a4ad62829108d7f327773b75c52; SOURCE ONLY, NOT RUN."
+        "2026-11-17: src/screens/payroll/payments.tsx — Clear run filter is now a native TanStack Link to /payroll/payments with runId omitted, supporting browser new-tab and keyboard semantics; commit 9e5ab9a4a9583a4ad62829108d7f327773b75c52; SOURCE ONLY, NOT RUN.",
+        "2026-11-17: src/screens/payroll/payments.tsx adds native View payroll run link in filtered payment alert, opening the run's payments tab; source commit 8e8308d00427e37c6f7eb5698125a4201a8cd8db; SOURCE ONLY, NOT RUN."
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
@@ -420,7 +421,8 @@
         "Execute authenticated multiword-search draft -> detail -> return navigation, including blur/click and create-run flows; inventory guard, typecheck, Vitest, build, RLS/accounting regression NOT RUN.",
         "Execute authenticated keyboard/new-tab/deep-link/Back-Forward verification of all six Payroll Runs table columns; guard, typecheck, lint, unit, build, accessibility, security/RLS and accounting regressions NOT RUN.",
         "Verify Payroll Payments navigation in pending/missing-company/denied/payment-loading/payment-error states using authenticated browser and keyboard; coverage guard, typecheck, lint, unit, build, RLS/accounting regressions NOT RUN.",
-        "Verify Payroll Payments clear-run-filter native link with Back/Forward, new-tab, refresh, and permission states; local guard, typecheck, lint, unit, build, browser and RLS/accounting tests NOT RUN."
+        "Verify Payroll Payments clear-run-filter native link with Back/Forward, new-tab, refresh, and permission states; local guard, typecheck, lint, unit, build, browser and RLS/accounting tests NOT RUN.",
+        "Verify filtered Payments → payroll run payments tab, native new-tab/back/refresh, permission behavior and accounting regression; NOT RUN."
       ]
     },
     {

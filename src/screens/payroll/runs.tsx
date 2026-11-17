@@ -10,6 +10,7 @@ import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
 import { suggestNextRunPeriod } from "@/lib/payroll/suggest-run-period";
+import { normalizePayrollRunSearch } from "@/lib/payroll/run-search";
 import { createPayrollRun, listPayrollRuns } from "@/lib/payroll/runs.functions";
 import { PAYROLL_RUN_STATUSES, type PayrollRunStatus } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
@@ -126,7 +127,7 @@ export function PayrollRunsPage() {
       toast.success(`Payroll run ${run.run_number} created`);
       setCreateOpen(false);
       queryClient.invalidateQueries({ queryKey: ["payroll-runs"] });
-      navigate({ to: "/payroll/runs/$runId", params: { runId: run.id }, search: { tab: "employees", returnStatus: statusFilter, returnQ: searchDraft.trim(), returnSort: runSort } });
+      navigate({ to: "/payroll/runs/$runId", params: { runId: run.id }, search: { tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort } });
     },
     onError: (err) => toast.error(friendlyAuthError(err)),
   });
@@ -347,7 +348,7 @@ export function PayrollRunsPage() {
                         <Link
                           to="/payroll/runs/$runId"
                           params={{ runId: run.id }}
-                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: runSearch, returnSort: runSort }}
+                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
                           className="font-medium text-primary hover:underline"
                         >
                           {run.run_number}

@@ -6,13 +6,20 @@ import { requireAccountInCompany } from "@/lib/purchases/accounts";
 import { postBankTransfer, voidPostedDocument } from "@/lib/sales/posting";
 import { codeBankTransactionOnce } from "@/lib/banking/coding-server";
 import { chunk } from "@/lib/banking/fetch-all";
-import { DB_UPDATE_MESSAGE, isMissingSchema, recordAudit, tryRpc } from "@/lib/banking/rpc";
+import {
+  callRpc,
+  DB_UPDATE_MESSAGE,
+  isMissingSchema,
+  recordAudit,
+  tryRpc,
+} from "@/lib/banking/rpc";
 import {
   ledgerBalanceAsOf,
   loadBankAccount,
   loadBankTxn,
   type AnyClient,
 } from "@/lib/banking/server-helpers";
+import { resolveTransferMatchSide } from "@/lib/banking/transfer-match";
 import {
   directionFromAmount,
   normalizePayee,
@@ -475,6 +482,8 @@ export const createTransfer = createServerFn({ method: "POST" })
       /** Amount received in the destination account's currency (required when the currencies differ). */
       toAmountMinor?: number | null;
       memo?: string;
+      /** When set (Create transfer from this line), match that uncategorised statement line after posting. */
+      matchBankTransactionId?: string | null;
     }) => {
       if (!isIsoDate(input.transferDate)) throw new Error("Transfer date must be YYYY-MM-DD");
       const amount = Math.round(Number(input.amountMinor));
@@ -492,6 +501,9 @@ export const createTransfer = createServerFn({ method: "POST" })
         amountMinor: amount,
         currencyCode: (input.currencyCode ?? "").toUpperCase(),
         memo: (input.memo ?? "").trim().slice(0, 500) || null,
+        matchBankTransactionId: input.matchBankTransactionId
+          ? assertUuid(input.matchBankTransactionId, "bank transaction")
+          : null,
       };
     },
   )
@@ -507,6 +519,66 @@ export const createTransfer = createServerFn({ method: "POST" })
     if (from.currency_code !== data.currencyCode) {
       throw new Error("Transfer currency must be the source account's currency");
     }
+
+    const toAmountForMatch = data.toAmountMinor ?? data.amountMinor;
+    let matchSide: ReturnType<typeof resolveTransferMatchSide> | null = null;
+    if (data.matchBankTransactionId) {
+      const txn = await loadBankTxn(supabase, data.companyId, data.matchBankTransactionId);
+      if (txn.status !== "uncategorised") {
+        throw new Error("Only an uncategorised statement line can be auto-matched to a new transfer");
+      }
+      matchSide = resolveTransferMatchSide({
+        statementBankAccountId: txn.bank_account_id,
+        statementAmountMinor: txn.amount_minor,
+        fromBankAccountId: data.fromBankAccountId,
+        toBankAccountId: data.toBankAccountId,
+        fromAmountMinor: data.amountMinor,
+        toAmountMinor: toAmountForMatch,
+      });
+    }
+
+    const finish = async (posted: { id: string; journalId: string }) => {
+      if (!data.matchBankTransactionId || !matchSide) {
+        return { ...posted, matched: false as const, matchError: null as string | null };
+      }
+      try {
+        const sideAccount = await loadBankAccount(supabase, data.companyId, matchSide.bankAccountId);
+        const { data: lines, error: lineErr } = await supabase
+          .from("journal_lines" as never)
+          .select("id, debit_minor, credit_minor" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("journal_id" as never, posted.journalId as never)
+          .eq("account_id" as never, sideAccount.gl_account_id as never);
+        if (lineErr) throw new Error(lineErr.message);
+        const matches = (
+          (lines ?? []) as unknown as Array<{
+            id: string;
+            debit_minor: number;
+            credit_minor: number;
+          }>
+        ).filter(
+          (l) => Number(l.debit_minor) - Number(l.credit_minor) === matchSide.expectedLineAmountMinor,
+        );
+        if (matches.length !== 1) {
+          throw new Error(
+            "Could not identify the transfer journal line on this bank account to match",
+          );
+        }
+        await callRpc(supabase, "match_bank_transaction", {
+          _company_id: data.companyId,
+          _bank_transaction_id: data.matchBankTransactionId,
+          _journal_line_ids: [matches[0]!.id],
+        });
+        return { ...posted, matched: true as const, matchError: null as string | null };
+      } catch (e) {
+        return {
+          ...posted,
+          matched: false as const,
+          matchError: e instanceof Error ? e.message : "Auto-match failed",
+        };
+      }
+    };
+
     if (from.currency_code !== to.currency_code) {
       // BK-10: two currencies, an amount on each side, and the difference posted to FX gain/loss.
       if (data.toAmountMinor === null) {
@@ -532,7 +604,7 @@ export const createTransfer = createServerFn({ method: "POST" })
           `${DB_UPDATE_MESSAGE} (create_bank_transfer_fx). Cross-currency transfers need it.`,
         );
       }
-      return { id: fx.data.id, journalId: fx.data.journal_id };
+      return finish({ id: fx.data.id, journalId: fx.data.journal_id });
     }
 
     // Preferred: one database transaction creates the journal and the transfer row together.
@@ -545,7 +617,7 @@ export const createTransfer = createServerFn({ method: "POST" })
       _currency_code: data.currencyCode,
       _memo: data.memo,
     });
-    if (rpc.available) return { id: rpc.data.id, journalId: rpc.data.journal_id };
+    if (rpc.available) return finish({ id: rpc.data.id, journalId: rpc.data.journal_id });
 
     // Fallback until the RPC is installed: row first (it supplies the journal's source id), then post.
     // If posting fails the row is removed so no transfer exists without a journal.
@@ -590,7 +662,7 @@ export const createTransfer = createServerFn({ method: "POST" })
       .from("bank_transfers" as never)
       .update({ posted_journal_id: journalId } as never)
       .eq("id" as never, transferId as never);
-    return { id: transferId, journalId };
+    return finish({ id: transferId, journalId });
   });
 
 export const listStatementImports = createServerFn({ method: "GET" })

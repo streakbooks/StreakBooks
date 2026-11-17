@@ -792,8 +792,8 @@ function BillDocumentWorkspace() {
               <AlertDescription>
                 Historical read-only
                 {bill.void_date ? ` from ${bill.void_date}` : ""}
-                {bill.void_reason ? `: ${bill.void_reason}` : ""}. Posted journals were reversed when
-                present.
+                {bill.void_reason ? `: ${bill.void_reason}` : ""}. Posted journals were reversed
+                when present.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -851,17 +851,17 @@ function BillDocumentWorkspace() {
             <Printer className="mr-1 size-4" />
             Print / PDF
           </Button>
-            {bill.status !== "draft" && can("purchases.draft") ? (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={copyMutation.isPending}
-                onClick={() => copyMutation.mutate()}
-              >
-                {copyMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                Copy bill
-              </Button>
-            ) : null}
+          {bill.status !== "draft" && can("purchases.draft") ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={copyMutation.isPending}
+              onClick={() => copyMutation.mutate()}
+            >
+              {copyMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Copy bill
+            </Button>
+          ) : null}
           <BillAttachmentsButton
             count={bill.attachments?.length ?? 0}
             onClick={() => setFilesOpen(true)}
@@ -899,23 +899,23 @@ function BillDocumentWorkspace() {
               ) : null}
               <Button
                 size="sm"
-                  disabled={
-                    authoriseMutation.isPending ||
-                    !can("purchases.authorise") ||
-                    Boolean(
-                      poMatchQ.data?.required &&
-                        poMatchQ.data.match.applicable &&
-                        poMatchQ.data.match.status !== "pass",
-                    )
-                  }
+                disabled={
+                  authoriseMutation.isPending ||
+                  !can("purchases.authorise") ||
+                  Boolean(
+                    poMatchQ.data?.required &&
+                    poMatchQ.data.match.applicable &&
+                    poMatchQ.data.match.status !== "pass",
+                  )
+                }
                 title={
-                    !can("purchases.authorise")
-                      ? "You do not have permission to authorise bills"
-                      : poMatchQ.data?.required &&
-                          poMatchQ.data.match.applicable &&
-                          poMatchQ.data.match.status !== "pass"
-                        ? "Three-way matching must pass before authorising"
-                        : undefined
+                  !can("purchases.authorise")
+                    ? "You do not have permission to authorise bills"
+                    : poMatchQ.data?.required &&
+                        poMatchQ.data.match.applicable &&
+                        poMatchQ.data.match.status !== "pass"
+                      ? "Three-way matching must pass before authorising"
+                      : undefined
                 }
                 onClick={() => authoriseMutation.mutate()}
               >
@@ -960,7 +960,7 @@ function BillDocumentWorkspace() {
                   size="sm"
                   variant="destructive"
                   disabled={voidMutation.isPending}
-                    onClick={() => setVoidOpen(true)}
+                  onClick={() => setVoidOpen(true)}
                 >
                   Void
                 </Button>
@@ -1016,8 +1016,8 @@ function BillDocumentWorkspace() {
                   onChange={(e) => setAckCreditLimit(e.target.checked)}
                 />
                 <span>
-                  I acknowledge this bill takes the supplier over their credit limit and
-                  authorise anyway.
+                  I acknowledge this bill takes the supplier over their credit limit and authorise
+                  anyway.
                 </span>
               </label>
             ) : null}
@@ -1046,8 +1046,7 @@ function BillDocumentWorkspace() {
           <AlertDescription>
             {poMatchQ.data.match.status === "pass"
               ? "Order, goods receipt and bill quantities/amounts agree."
-              : (poMatchQ.data.match.issues[0] ??
-                "Order, receipt and bill do not yet agree.")}
+              : (poMatchQ.data.match.issues[0] ?? "Order, receipt and bill do not yet agree.")}
             {poMatchQ.data.required
               ? " Authorisation is blocked until matching passes."
               : " Enable purchases three-way matching in Settings to enforce this at authorise."}

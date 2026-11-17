@@ -13,7 +13,10 @@ function write(file, text) {
 write("src/screens/folder/index.tsx", "export const Screen = () => <Button>Save</Button>;");
 write("src/screens/plain.tsx", "export const Plain = () => <EmptyState />;");
 write("src/screens/helper/index.ts", "export const helper = 1;");
-write("src/routes/_authenticated/example.tsx", 'import { Screen } from "@/screens/folder";\nimport { Screen as Again } from "@/screens/folder";\nexport const Route = Screen;');
+write(
+  "src/routes/_authenticated/example.tsx",
+  'import { Screen } from "@/screens/folder";\nimport { Screen as Again } from "@/screens/folder";\nexport const Route = Screen;',
+);
 test("directory index screens participate in UI audits once", () => {
   const result = readUiSource("src/routes/_authenticated/example.tsx", { rootDir });
   assert.deepEqual(result.screens, ["src/screens/folder/index.tsx"]);

@@ -61,10 +61,10 @@ describe("buildSupplierStatement", () => {
   });
 
   it("omits legacy voids without a void date", () => {
-    const res = buildSupplierStatement(
-      [bill({ id: "b1", status: "void", voidDate: null })],
-      { from: null, to: null },
-    );
+    const res = buildSupplierStatement([bill({ id: "b1", status: "void", voidDate: null })], {
+      from: null,
+      to: null,
+    });
     expect(res).toHaveLength(0);
   });
 

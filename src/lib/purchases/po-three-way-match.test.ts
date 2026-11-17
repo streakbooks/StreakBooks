@@ -74,7 +74,14 @@ describe("evaluateThreeWayMatch", () => {
   it("marks unmatched bill lines as fail", () => {
     const result = evaluateThreeWayMatch({
       orderLines: [order],
-      billLines: [{ ...bill, lineNo: 9, description: "Other", accountId: "22222222-2222-4222-8222-222222222222" }],
+      billLines: [
+        {
+          ...bill,
+          lineNo: 9,
+          description: "Other",
+          accountId: "22222222-2222-4222-8222-222222222222",
+        },
+      ],
       receiptQuantitiesAvailable: true,
     });
     expect(result.status).toBe("fail");

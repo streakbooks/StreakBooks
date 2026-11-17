@@ -415,17 +415,17 @@ function CreditNoteDetail() {
           </div>
         }
       >
-      {cn.status === "void" ? (
-        <Alert className="mb-4">
-          <AlertTitle>Voided</AlertTitle>
-          <AlertDescription>
-            Historical read-only
-            {cn.void_date ? ` from ${cn.void_date}` : ""}
-            {cn.void_reason ? `: ${cn.void_reason}` : ""}. Allocations were removed and the journal
-            was reversed when present.
-          </AlertDescription>
-        </Alert>
-      ) : null}
+        {cn.status === "void" ? (
+          <Alert className="mb-4">
+            <AlertTitle>Voided</AlertTitle>
+            <AlertDescription>
+              Historical read-only
+              {cn.void_date ? ` from ${cn.void_date}` : ""}
+              {cn.void_reason ? `: ${cn.void_reason}` : ""}. Allocations were removed and the
+              journal was reversed when present.
+            </AlertDescription>
+          </Alert>
+        ) : null}
         <div className="mb-4 flex flex-wrap gap-3 text-sm">
           <StatusBadge status={cn.status} />
           <span>#{cn.credit_number ?? "—"}</span>
@@ -705,18 +705,18 @@ function CreditNoteDetail() {
           entityId={creditNoteId}
           audience="supplier"
         />
-      <ReasonDialog
-        open={voidOpen}
-        onOpenChange={setVoidOpen}
-        title="Void this supplier credit?"
-        description="Its journal is reversed and any bill allocations are removed. A void date is required so historical Aged Payables can treat the credit correctly as at that date."
-        confirmLabel="Void credit note"
-        dateLabel="Void date"
-        minDate={cn.credit_date}
-        defaultDate={new Date().toISOString().slice(0, 10)}
-        pending={voidM.isPending}
-        onConfirm={(v) => voidM.mutate(v)}
-      />
+        <ReasonDialog
+          open={voidOpen}
+          onOpenChange={setVoidOpen}
+          title="Void this supplier credit?"
+          description="Its journal is reversed and any bill allocations are removed. A void date is required so historical Aged Payables can treat the credit correctly as at that date."
+          confirmLabel="Void credit note"
+          dateLabel="Void date"
+          minDate={cn.credit_date}
+          defaultDate={new Date().toISOString().slice(0, 10)}
+          pending={voidM.isPending}
+          onConfirm={(v) => voidM.mutate(v)}
+        />
       </RecordWorkspace>
     </>
   );

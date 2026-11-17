@@ -106,12 +106,17 @@ async function loadSupplierCreditLimitAssessment(
     .eq("company_id" as never, companyId as never)
     .maybeSingle();
   if (cErr) throw new Error(cErr.message);
-  const c = contact as { credit_limit_minor?: number | null; default_currency?: string | null } | null;
+  const c = contact as {
+    credit_limit_minor?: number | null;
+    default_currency?: string | null;
+  } | null;
   const limitCurrency = String(c?.default_currency || baseCurrency).toUpperCase();
 
   const { data: openRows, error: oErr } = await supabase
     .from("purchase_bills" as never)
-    .select("id, currency_code, status, total_minor, amount_paid_minor, amount_credited_minor" as never)
+    .select(
+      "id, currency_code, status, total_minor, amount_paid_minor, amount_credited_minor" as never,
+    )
     .eq("company_id" as never, companyId as never)
     .eq("contact_id" as never, candidate.contactId as never)
     .in("status" as never, ["authorised", "partly_paid"] as never);
@@ -1936,15 +1941,13 @@ export async function authoriseBillInternal(
 
 export const authoriseBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    billId: string;
-    acknowledgeCreditLimit?: boolean;
-  }) => ({
-    companyId: assertUuid(input.companyId),
-    billId: assertUuid(input.billId, "bill"),
-    acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
-  }))
+  .inputValidator(
+    (input: { companyId: string; billId: string; acknowledgeCreditLimit?: boolean }) => ({
+      companyId: assertUuid(input.companyId),
+      billId: assertUuid(input.billId, "bill"),
+      acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
+    }),
+  )
   .handler(async ({ data, context }) => {
     return authoriseBillInternal(
       context.supabase,
@@ -1966,7 +1969,9 @@ export const getBillPurchaseOrderMatch = createServerFn({ method: "GET" })
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
     const { data: bill, error } = await context.supabase
       .from("purchase_bills" as never)
-      .select("purchase_order_id, purchase_bill_lines(line_no, description, account_id, quantity, net_minor)" as never)
+      .select(
+        "purchase_order_id, purchase_bill_lines(line_no, description, account_id, quantity, net_minor)" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.billId as never)
       .maybeSingle();
@@ -1997,9 +2002,7 @@ export const voidBill = createServerFn({ method: "POST" })
       const reason = String(input.reason ?? "").trim();
       if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
       const voidDate =
-        input.voidDate && String(input.voidDate).trim()
-          ? String(input.voidDate).trim()
-          : null;
+        input.voidDate && String(input.voidDate).trim() ? String(input.voidDate).trim() : null;
       if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
         throw new Error("Void date must be YYYY-MM-DD");
       }
@@ -2615,9 +2618,7 @@ export const reverseSupplierPayment = createServerFn({ method: "POST" })
       const reason = String(input.reason ?? "").trim();
       if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
       const voidDate =
-        input.voidDate && String(input.voidDate).trim()
-          ? String(input.voidDate).trim()
-          : null;
+        input.voidDate && String(input.voidDate).trim() ? String(input.voidDate).trim() : null;
       if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
         throw new Error("Void date must be YYYY-MM-DD");
       }
@@ -3596,9 +3597,7 @@ export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
       const reason = String(input.reason ?? "").trim();
       if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
       const voidDate =
-        input.voidDate && String(input.voidDate).trim()
-          ? String(input.voidDate).trim()
-          : null;
+        input.voidDate && String(input.voidDate).trim() ? String(input.voidDate).trim() : null;
       if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
         throw new Error("Void date must be YYYY-MM-DD");
       }
@@ -3972,7 +3971,9 @@ export const receivePurchaseOrderGoods = createServerFn({ method: "POST" })
             receiveQuantity > 1e9 ||
             receiveQuantity !== Number(receiveQuantity.toFixed(6))
           ) {
-            throw new Error(`Line ${i + 1}: enter a positive quantity with up to six decimal places`);
+            throw new Error(
+              `Line ${i + 1}: enter a positive quantity with up to six decimal places`,
+            );
           }
           return { lineId, receiveQuantity };
         }),
@@ -4676,45 +4677,39 @@ export const getSupplierStatement = createServerFn({ method: "GET" })
     const cur = (c: string | null | undefined) => (c ?? baseCur).toUpperCase();
 
     const docs: SupplierStatementDoc[] = [
-      ...billsAll.map(
-        (b): SupplierStatementDoc => ({
-          kind: "bill",
-          id: b.id,
-          date: b.bill_date,
-          currencyCode: cur(b.currency_code),
-          amountMinor: Number(b.total_minor),
-          reference: b.supplier_invoice_number ?? b.bill_number,
-          status: b.status === "paid" || b.status === "partly_paid" ? "authorised" : b.status,
-          voidDate: b.void_date ?? null,
-          dueDate: b.due_date,
-        }),
-      ),
+      ...billsAll.map((b): SupplierStatementDoc => ({
+        kind: "bill",
+        id: b.id,
+        date: b.bill_date,
+        currencyCode: cur(b.currency_code),
+        amountMinor: Number(b.total_minor),
+        reference: b.supplier_invoice_number ?? b.bill_number,
+        status: b.status === "paid" || b.status === "partly_paid" ? "authorised" : b.status,
+        voidDate: b.void_date ?? null,
+        dueDate: b.due_date,
+      })),
       ...paymentsAll
         .filter((p) => p.status === "paid" || p.status === "void")
-        .map(
-          (p): SupplierStatementDoc => ({
-            kind: "payment",
-            id: p.id,
-            date: p.payment_date,
-            currencyCode: cur(p.currency_code),
-            amountMinor: Number(p.amount_minor),
-            reference: p.reference,
-            status: p.status === "paid" ? "posted" : p.status,
-            voidDate: p.void_date ?? null,
-          }),
-        ),
-      ...creditNotesAll.map(
-        (c): SupplierStatementDoc => ({
-          kind: "credit_note",
-          id: c.id,
-          date: c.credit_date,
-          currencyCode: cur(c.currency_code),
-          amountMinor: Number(c.total_minor),
-          reference: c.credit_number,
-          status: c.status === "partly_paid" ? "authorised" : c.status,
-          voidDate: c.void_date ?? null,
-        }),
-      ),
+        .map((p): SupplierStatementDoc => ({
+          kind: "payment",
+          id: p.id,
+          date: p.payment_date,
+          currencyCode: cur(p.currency_code),
+          amountMinor: Number(p.amount_minor),
+          reference: p.reference,
+          status: p.status === "paid" ? "posted" : p.status,
+          voidDate: p.void_date ?? null,
+        })),
+      ...creditNotesAll.map((c): SupplierStatementDoc => ({
+        kind: "credit_note",
+        id: c.id,
+        date: c.credit_date,
+        currencyCode: cur(c.currency_code),
+        amountMinor: Number(c.total_minor),
+        reference: c.credit_number,
+        status: c.status === "partly_paid" ? "authorised" : c.status,
+        voidDate: c.void_date ?? null,
+      })),
     ];
 
     // Cap activity at asOf (defaults to today) when no explicit To date is provided.

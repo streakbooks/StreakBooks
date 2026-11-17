@@ -70,7 +70,10 @@ export function assessCreditLimit(input: {
     (inv) => OPEN.has(inv.status) && inv.currencyCode.toUpperCase() !== currencyCode,
   );
 
-  const existingExposureMinor = sameCurrency.reduce((s, inv) => s + invoiceOutstandingMinor(inv), 0);
+  const existingExposureMinor = sameCurrency.reduce(
+    (s, inv) => s + invoiceOutstandingMinor(inv),
+    0,
+  );
 
   let proposedInvoiceMinor = 0;
   if (input.candidate) {

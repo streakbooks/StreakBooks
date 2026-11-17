@@ -369,35 +369,30 @@ function InvoiceDetail() {
               <ProjectTagControl kind="sales_invoice" documentId={invoiceId} />
             </div>
           ) : null}
-        {credit && credit.status !== "no_limit" && credit.status !== "ok" ? (
-          <Alert
-            className="mb-3"
-            variant={credit.overLimit ? "destructive" : "default"}
-          >
-            <AlertTitle>
-              {credit.overLimit
-                ? "Credit limit exceeded"
-                : "Credit exposure review"}
-            </AlertTitle>
-            <AlertDescription className="space-y-2">
-              <p>{credit.message}</p>
-              {inv.status === "draft" && credit.overLimit ? (
-                <label className="flex items-start gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="mt-1"
-                    checked={ackCreditLimit}
-                    onChange={(e) => setAckCreditLimit(e.target.checked)}
-                  />
-                  <span>
-                    I acknowledge this invoice takes the customer over their credit limit and
-                    authorise anyway.
-                  </span>
-                </label>
-              ) : null}
-            </AlertDescription>
-          </Alert>
-        ) : null}
+          {credit && credit.status !== "no_limit" && credit.status !== "ok" ? (
+            <Alert className="mb-3" variant={credit.overLimit ? "destructive" : "default"}>
+              <AlertTitle>
+                {credit.overLimit ? "Credit limit exceeded" : "Credit exposure review"}
+              </AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>{credit.message}</p>
+                {inv.status === "draft" && credit.overLimit ? (
+                  <label className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={ackCreditLimit}
+                      onChange={(e) => setAckCreditLimit(e.target.checked)}
+                    />
+                    <span>
+                      I acknowledge this invoice takes the customer over their credit limit and
+                      authorise anyway.
+                    </span>
+                  </label>
+                ) : null}
+              </AlertDescription>
+            </Alert>
+          ) : null}
         </div>
 
         <article className="max-w-4xl space-y-6 rounded-md border border-border bg-card p-6 print:border-0 print:p-0">

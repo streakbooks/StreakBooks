@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import {
   authoriseInvoice,
+  CREDIT_LIMIT_ACK_REQUIRED,
   copyInvoice,
   deleteDraftInvoice,
   getInvoice,
@@ -29,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
 import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,6 +72,7 @@ function InvoiceDetail() {
   const [voidOpen, setVoidOpen] = useState(false);
   const [writeOffOpen, setWriteOffOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [ackCreditLimit, setAckCreditLimit] = useState(false);
 
   const query = useQuery({
     queryKey: ["sales-invoice", companyId, invoiceId],
@@ -88,12 +91,27 @@ function InvoiceDetail() {
   };
 
   const authoriseMutation = useMutation({
-    mutationFn: () => doAuthorise({ data: { companyId: companyId!, invoiceId } }),
+    mutationFn: () =>
+      doAuthorise({
+        data: {
+          companyId: companyId!,
+          invoiceId,
+          acknowledgeCreditLimit: ackCreditLimit,
+        },
+      }),
     onSuccess: async () => {
       await refresh();
+      setAckCreditLimit(false);
       toast.success("Invoice authorised — journal posted");
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: (e) => {
+      const msg = friendlyAuthError(e);
+      if (msg.includes(CREDIT_LIMIT_ACK_REQUIRED)) {
+        toast.error("Credit limit exceeded — tick the acknowledgement to authorise anyway.");
+        return;
+      }
+      toast.error(msg);
+    },
   });
 
   const voidMutation = useMutation({
@@ -180,6 +198,7 @@ function InvoiceDetail() {
   const company_ = inv.company;
   const brand = inv.branding;
   const customer = inv.contacts;
+  const credit = inv.creditLimitAssessment;
 
   return (
     <>
@@ -353,6 +372,35 @@ function InvoiceDetail() {
           <div className="mb-3">
             <ProjectTagControl kind="sales_invoice" documentId={invoiceId} />
           </div>
+        ) : null}
+        {credit && credit.status !== "no_limit" && credit.status !== "ok" ? (
+          <Alert
+            className="mb-3"
+            variant={credit.overLimit ? "destructive" : "default"}
+          >
+            <AlertTitle>
+              {credit.overLimit
+                ? "Credit limit exceeded"
+                : "Credit exposure review"}
+            </AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>{credit.message}</p>
+              {inv.status === "draft" && credit.overLimit ? (
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={ackCreditLimit}
+                    onChange={(e) => setAckCreditLimit(e.target.checked)}
+                  />
+                  <span>
+                    I acknowledge this invoice takes the customer over their credit limit and
+                    authorise anyway.
+                  </span>
+                </label>
+              ) : null}
+            </AlertDescription>
+          </Alert>
         ) : null}
         </div>
 

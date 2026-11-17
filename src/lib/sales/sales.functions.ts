@@ -48,6 +48,86 @@ import {
   isQuoteStatus,
   quoteTimestampColumns,
 } from "@/lib/sales/quote-status";
+import {
+  assessCreditLimit,
+  type CreditLimitAssessment,
+  type CreditLimitInvoice,
+} from "@/lib/sales/credit-limit";
+
+export const CREDIT_LIMIT_ACK_REQUIRED = "CREDIT_LIMIT_ACK_REQUIRED";
+
+async function loadCreditLimitAssessment(
+  supabase: SalesClient,
+  companyId: string,
+  candidate: {
+    id: string;
+    contactId: string;
+    currencyCode: string;
+    status: string;
+    totalMinor: number;
+    amountPaidMinor: number;
+    amountCreditedMinor: number;
+  },
+): Promise<CreditLimitAssessment> {
+  const { data: company } = await supabase
+    .from("companies" as never)
+    .select("base_currency" as never)
+    .eq("id" as never, companyId as never)
+    .maybeSingle();
+  const baseCurrency = String(
+    (company as { base_currency?: string } | null)?.base_currency ?? "USD",
+  ).toUpperCase();
+
+  const { data: contact, error: cErr } = await supabase
+    .from("contacts" as never)
+    .select("credit_limit_minor, default_currency" as never)
+    .eq("id" as never, candidate.contactId as never)
+    .eq("company_id" as never, companyId as never)
+    .maybeSingle();
+  if (cErr) throw new Error(cErr.message);
+  const c = contact as { credit_limit_minor?: number | null; default_currency?: string | null } | null;
+  const limitCurrency = String(c?.default_currency || baseCurrency).toUpperCase();
+
+  const { data: openRows, error: oErr } = await supabase
+    .from("sales_invoices" as never)
+    .select("id, currency_code, status, total_minor, amount_paid_minor, amount_credited_minor" as never)
+    .eq("company_id" as never, companyId as never)
+    .eq("contact_id" as never, candidate.contactId as never)
+    .in("status" as never, ["authorised", "partly_paid"] as never);
+  if (oErr) throw new Error(oErr.message);
+
+  const openInvoices: CreditLimitInvoice[] = (
+    (openRows ?? []) as Array<{
+      id: string;
+      currency_code: string;
+      status: string;
+      total_minor: number;
+      amount_paid_minor: number;
+      amount_credited_minor: number;
+    }>
+  ).map((r) => ({
+    id: r.id,
+    currencyCode: String(r.currency_code || baseCurrency).toUpperCase(),
+    status: r.status,
+    totalMinor: Number(r.total_minor) || 0,
+    amountPaidMinor: Number(r.amount_paid_minor) || 0,
+    amountCreditedMinor: Number(r.amount_credited_minor) || 0,
+  }));
+
+  return assessCreditLimit({
+    creditLimitMinor: c?.credit_limit_minor ?? null,
+    limitCurrencyCode: limitCurrency,
+    openInvoices,
+    candidate: {
+      id: candidate.id,
+      currencyCode: candidate.currencyCode.toUpperCase(),
+      status: candidate.status,
+      totalMinor: candidate.totalMinor,
+      amountPaidMinor: candidate.amountPaidMinor,
+      amountCreditedMinor: candidate.amountCreditedMinor,
+    },
+  });
+}
 
 // Re-exported for the recurring generator and other modules that import it from here.
 export { loadTaxTreatment } from "@/lib/sales/sales-common";
@@ -430,6 +510,7 @@ export type InvoiceDetail = {
     invoice_phone: string | null;
     logo_url: string | null;
   } | null;
+  creditLimitAssessment: CreditLimitAssessment | null;
 };
 
 export const getInvoice = createServerFn({ method: "GET" })
@@ -506,8 +587,29 @@ export const getInvoice = createServerFn({ method: "GET" })
     const pay = split((payRes.data ?? []) as unknown as Array<{ reversed_on?: string | null }>);
     const cr = split((crRes.data ?? []) as unknown as Array<{ reversed_on?: string | null }>);
     const invoiceRow = row as unknown as {
+      id: string;
+      contact_id: string;
+      currency_code: string;
+      status: string;
+      total_minor: number;
+      amount_paid_minor: number;
+      amount_credited_minor: number;
       sales_invoice_lines: Array<{ line_order: number; id: string }>;
     };
+    let creditLimitAssessment: CreditLimitAssessment | null = null;
+    try {
+      creditLimitAssessment = await loadCreditLimitAssessment(supabase as SalesClient, data.companyId, {
+        id: invoiceRow.id,
+        contactId: invoiceRow.contact_id,
+        currencyCode: invoiceRow.currency_code,
+        status: invoiceRow.status,
+        totalMinor: Number(invoiceRow.total_minor) || 0,
+        amountPaidMinor: Number(invoiceRow.amount_paid_minor) || 0,
+        amountCreditedMinor: Number(invoiceRow.amount_credited_minor) || 0,
+      });
+    } catch {
+      creditLimitAssessment = null;
+    }
     return {
       ...(row as unknown as Record<string, unknown>),
       sales_invoice_lines: sortLines(invoiceRow.sales_invoice_lines ?? []),
@@ -517,6 +619,7 @@ export const getInvoice = createServerFn({ method: "GET" })
       reversed_credit_applications: cr.reversed,
       company: company ?? null,
       branding: branding ?? null,
+      creditLimitAssessment,
     } as unknown as InvoiceDetail;
   });
 
@@ -628,6 +731,7 @@ async function authoriseInvoiceCore(
   { supabase, userId }: ServerCtx,
   companyId: string,
   invoiceId: string,
+  acknowledgeCreditLimit = false,
 ) {
   await assertCompanyPermission(supabase, companyId, "sales.authorise");
   const { data: inv, error } = await supabase
@@ -639,6 +743,8 @@ async function authoriseInvoiceCore(
   if (error) throw new Error(error.message);
   if (!inv) throw new Error("Invoice not found");
   const b = inv as unknown as {
+    id: string;
+    contact_id: string;
     status: string;
     invoice_date: string;
     invoice_number: string | null;
@@ -648,6 +754,8 @@ async function authoriseInvoiceCore(
     total_minor: number;
     subtotal_minor: number;
     tax_minor: number;
+    amount_paid_minor?: number;
+    amount_credited_minor?: number;
     posted_journal_id: string | null;
     sales_invoice_lines: Array<{
       account_id: string;
@@ -665,6 +773,19 @@ async function authoriseInvoiceCore(
     throw new Error("Invoice totals do not match its lines — re-save the draft before authorising");
   }
   if (!(Number(b.total_minor) > 0)) throw new Error("Invoice total must be greater than zero");
+
+  const credit = await loadCreditLimitAssessment(supabase as SalesClient, companyId, {
+    id: b.id,
+    contactId: b.contact_id,
+    currencyCode: b.currency_code,
+    status: b.status,
+    totalMinor: Number(b.total_minor) || 0,
+    amountPaidMinor: Number(b.amount_paid_minor) || 0,
+    amountCreditedMinor: Number(b.amount_credited_minor) || 0,
+  });
+  if (credit.overLimit && !acknowledgeCreditLimit) {
+    throw new Error(`${CREDIT_LIMIT_ACK_REQUIRED}: ${credit.message}`);
+  }
 
   let number = b.invoice_number;
   if (!number) {
@@ -717,12 +838,17 @@ async function authoriseInvoiceCore(
 
 export const authoriseInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; invoiceId: string }) => ({
+  .inputValidator((input: {
+    companyId: string;
+    invoiceId: string;
+    acknowledgeCreditLimit?: boolean;
+  }) => ({
     companyId: assertUuid(input.companyId),
     invoiceId: assertUuid(input.invoiceId, "invoice"),
+    acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
   }))
   .handler(async ({ data, context }) =>
-    authoriseInvoiceCore(context, data.companyId, data.invoiceId),
+    authoriseInvoiceCore(context, data.companyId, data.invoiceId, data.acknowledgeCreditLimit),
   );
 
 /**

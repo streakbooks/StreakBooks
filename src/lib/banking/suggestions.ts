@@ -1,4 +1,5 @@
-/** Local, tenant-scoped coding suggestions — never cross-org. */
+/** Local suggestions. Callers must load permissioned, company-scoped inputs. */
+import { ruleMatchesTransaction, type BankRuleDef } from "./rules";
 
 export type CodingHistoryRow = {
   payee_normalized: string;
@@ -9,7 +10,7 @@ export type CodingHistoryRow = {
   account_name: string | null;
 };
 
-export type BankRuleRow = {
+export type BankRuleRow = Partial<BankRuleDef> & {
   id: string;
   name: string;
   match_field: string;
@@ -26,7 +27,10 @@ export type Suggestion = {
   offsetAccountId: string;
   accountCode: string | null;
   accountName: string | null;
+  /** Heuristic ranking weight, never a calibrated probability. */
   confidence: number;
+  matchStrength: "exact history" | "similar history" | "explicit rule";
+  conflictingHistory: boolean;
   reason: string;
   source: "history" | "rule" | "none";
   ruleId: string | null;
@@ -46,23 +50,6 @@ export function directionFromAmount(amountMinor: number | bigint): "in" | "out" 
   return n >= 0n ? "in" : "out";
 }
 
-function ruleMatches(rule: BankRuleRow, description: string, amountMinor: number): boolean {
-  const field = (rule.match_field || "description").toLowerCase();
-  const hay = field === "amount" ? String(Math.abs(amountMinor)) : description.toLowerCase();
-  const needle = (rule.match_pattern ?? "").toLowerCase();
-  if (!needle) return false;
-  switch ((rule.match_type || "contains").toLowerCase()) {
-    case "equals":
-      return hay === needle;
-    case "starts_with":
-      return hay.startsWith(needle);
-    case "ends_with":
-      return hay.endsWith(needle);
-    default:
-      return hay.includes(needle);
-  }
-}
-
 /**
  * Rank suggestions: exact history for payee+direction, then bank rules by priority.
  */
@@ -71,21 +58,39 @@ export function rankCodingSuggestions(opts: {
   amountMinor: number;
   history: CodingHistoryRow[];
   rules: BankRuleRow[];
+  bankAccountId?: string;
+  reference?: string | null;
+  payee?: string | null;
+  limit?: number;
 }): Suggestion[] {
   const payee = normalizePayee(opts.description);
   const direction = directionFromAmount(opts.amountMinor);
   const out: Suggestion[] = [];
 
+  const limit = Math.max(
+    1,
+    Math.min(10, Number.isFinite(opts.limit) ? Math.trunc(opts.limit!) : 4),
+  );
   const hist = opts.history
     .filter(
       (h) =>
         h.direction === direction &&
+        Number.isSafeInteger(h.times_used) &&
+        h.times_used > 0 &&
+        Boolean(payee && h.payee_normalized) &&
         (h.payee_normalized === payee ||
-          (payee && h.payee_normalized && payee.includes(h.payee_normalized))),
+          (payee && h.payee_normalized && ` ${payee} `.includes(` ${h.payee_normalized} `))),
     )
-    .sort((a, b) => b.times_used - a.times_used);
+    .sort(
+      (a, b) =>
+        Number(b.payee_normalized === payee) - Number(a.payee_normalized === payee) ||
+        b.times_used - a.times_used ||
+        a.offset_account_id.localeCompare(b.offset_account_id),
+    );
+  const conflictingHistory = new Set(hist.map((h) => h.offset_account_id)).size > 1;
 
-  for (const h of hist.slice(0, 3)) {
+  for (const h of hist) {
+    if (out.some((s) => s.offsetAccountId === h.offset_account_id)) continue;
     const exact = h.payee_normalized === payee;
     out.push({
       offsetAccountId: h.offset_account_id,
@@ -95,17 +100,39 @@ export function rankCodingSuggestions(opts: {
       reason: exact
         ? `Previously coded “${h.payee_normalized}” ${h.times_used} time(s) to this account`
         : `Similar payee history (“${h.payee_normalized}”)`,
+      matchStrength: exact ? "exact history" : "similar history",
+      conflictingHistory,
       source: "history",
       ruleId: null,
     });
   }
 
-  const desc = (opts.description ?? "").toLowerCase();
   const matchingRules = opts.rules
-    .filter((r) => r.is_active && ruleMatches(r, desc, opts.amountMinor))
-    .sort((a, b) => a.priority - b.priority);
+    .filter((r) =>
+      ruleMatchesTransaction(
+        {
+          direction: "any",
+          min_amount_minor: null,
+          max_amount_minor: null,
+          bank_account_id: null,
+          tax_code_id: null,
+          contact_id: null,
+          ...r,
+        },
+        {
+          bankAccountId: opts.bankAccountId ?? "",
+          amountMinor: opts.amountMinor,
+          description: opts.description,
+          reference: opts.reference ?? null,
+          payee: opts.payee ?? null,
+        },
+      ),
+    )
+    .sort(
+      (a, b) => a.priority - b.priority || a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+    );
 
-  for (const r of matchingRules.slice(0, 3)) {
+  for (const r of matchingRules) {
     if (out.some((s) => s.offsetAccountId === r.offset_account_id)) continue;
     out.push({
       offsetAccountId: r.offset_account_id,
@@ -113,10 +140,12 @@ export function rankCodingSuggestions(opts: {
       accountName: r.account_name,
       confidence: 0.7,
       reason: `Bank rule “${r.name}” (${r.match_type} ${r.match_pattern})`,
+      matchStrength: "explicit rule",
+      conflictingHistory,
       source: "rule",
       ruleId: r.id,
     });
   }
 
-  return out.sort((a, b) => b.confidence - a.confidence);
+  return out.sort((a, b) => b.confidence - a.confidence).slice(0, limit);
 }

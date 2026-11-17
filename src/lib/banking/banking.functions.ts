@@ -877,34 +877,59 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
     bankTransactionId: assertUuid(input.bankTransactionId),
   }))
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "banking.view");
     const { data: txn, error } = await context.supabase
       .from("bank_transactions" as never)
-      .select("id, description, amount_minor, status" as never)
+      .select("id, bank_account_id, reference, payee, description, amount_minor, status" as never)
       .eq("id" as never, data.bankTransactionId as never)
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!txn) throw new Error("Transaction not found");
-    const t = txn as { description: string | null; amount_minor: number; status: string };
+    const t = txn as {
+      bank_account_id: string;
+      reference: string | null;
+      payee: string | null;
+      description: string | null;
+      amount_minor: number;
+      status: string;
+    };
 
-    const { data: history } = await context.supabase
+    const { data: history, error: historyError } = await context.supabase
       .from("bank_coding_history" as never)
       .select(
-        "payee_normalized, offset_account_id, direction, times_used, accounts(code, name)" as never,
+        "payee_normalized, offset_account_id, direction, times_used, accounts!inner(code, name)" as never,
       )
       .eq("company_id" as never, data.companyId as never)
-      .limit(100);
-    const { data: rules } = await context.supabase
+      .eq("direction" as never, directionFromAmount(t.amount_minor) as never)
+      .eq("accounts.company_id" as never, data.companyId as never)
+      .eq("accounts.is_active" as never, true as never)
+      .eq("accounts.is_postable" as never, true as never)
+      .eq("accounts.is_control" as never, false as never)
+      .is("accounts.archived_at" as never, null as never)
+      .order("times_used" as never, { ascending: false })
+      .limit(101);
+    const { data: rules, error: rulesError } = await context.supabase
       .from("bank_rules" as never)
       .select(
-        "id, name, match_field, match_pattern, match_type, offset_account_id, priority, is_active, accounts(code, name)" as never,
+        "id, name, match_field, match_pattern, match_type, offset_account_id, priority, is_active, direction, min_amount_minor, max_amount_minor, bank_account_id, tax_code_id, contact_id, accounts!inner(code, name)" as never,
       )
       .eq("company_id" as never, data.companyId as never)
-      .eq("is_active" as never, true as never);
+      .eq("is_active" as never, true as never)
+      .eq("accounts.company_id" as never, data.companyId as never)
+      .eq("accounts.is_active" as never, true as never)
+      .eq("accounts.is_postable" as never, true as never)
+      .eq("accounts.is_control" as never, false as never)
+      .is("accounts.archived_at" as never, null as never);
+
+    if (historyError) throw new Error(historyError.message);
+    if (rulesError) throw new Error(rulesError.message);
 
     const suggestions = rankCodingSuggestions({
       description: t.description,
+      bankAccountId: t.bank_account_id,
+      reference: t.reference,
+      payee: t.payee,
       amountMinor: t.amount_minor,
       history: (
         (history ?? []) as Array<{
@@ -914,14 +939,16 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
           times_used: number;
           accounts: { code: string; name: string } | null;
         }>
-      ).map((h) => ({
-        payee_normalized: h.payee_normalized,
-        offset_account_id: h.offset_account_id,
-        direction: h.direction,
-        times_used: h.times_used,
-        account_code: h.accounts?.code ?? null,
-        account_name: h.accounts?.name ?? null,
-      })),
+      )
+        .slice(0, 100)
+        .map((h) => ({
+          payee_normalized: h.payee_normalized,
+          offset_account_id: h.offset_account_id,
+          direction: h.direction,
+          times_used: h.times_used,
+          account_code: h.accounts?.code ?? null,
+          account_name: h.accounts?.name ?? null,
+        })),
       rules: (
         (rules ?? []) as Array<{
           id: string;
@@ -930,6 +957,12 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
           match_pattern: string;
           match_type: string;
           offset_account_id: string;
+          direction: string;
+          min_amount_minor: number | null;
+          max_amount_minor: number | null;
+          bank_account_id: string | null;
+          tax_code_id: string | null;
+          contact_id: string | null;
           priority: number;
           is_active: boolean;
           accounts: { code: string; name: string } | null;
@@ -941,6 +974,12 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
         match_pattern: r.match_pattern,
         match_type: r.match_type,
         offset_account_id: r.offset_account_id,
+        direction: r.direction,
+        min_amount_minor: r.min_amount_minor,
+        max_amount_minor: r.max_amount_minor,
+        bank_account_id: r.bank_account_id,
+        tax_code_id: r.tax_code_id,
+        contact_id: r.contact_id,
         priority: r.priority,
         is_active: r.is_active,
         account_code: r.accounts?.code ?? null,
@@ -951,9 +990,13 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
     return {
       status: t.status,
       payeeNormalized: normalizePayee(t.description),
+      historyCoverage: {
+        checked: Math.min((history ?? []).length, 100),
+        limited: (history ?? []).length > 100,
+      },
       externalResearchAvailable: false,
       externalResearchNote:
-        "No external search/AI provider is configured. Suggestions use this organisation’s coding history and bank rules only.",
+        "No matching suggestion was found in this organisation’s available coding history and bank rules.",
       suggestions,
     };
   });

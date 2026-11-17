@@ -106,3 +106,7 @@ There is no authenticated staging session established, no isolated Supabase proj
 ## Executed validation
 
 See [the exact commands, outcomes, revision and manual review instructions](VERIFICATION.md). Final focused suite: 201 passed / 0 failed / 0 skipped. Local build, changed-file lint, UI/navigation/module contracts and isolated PostgreSQL platform runner passed. Typecheck failed identically on main and this branch with 107 diagnostics and zero introduced. No authenticated financial E2E, performance baseline or release certification was performed.
+
+## Batch 02 continuation
+
+[Approved event learning, durable feedback and preference controls](BATCH-02-CODING-MEMORY.md) now replace the initial aggregate-history loader. New migration is verified only in isolated PostgreSQL fixtures; no Supabase/production application. Current focused evidence: 208 unit/mocked tests, 59 PostgreSQL assertions, 5 isolated browser scenarios. Full acceptance remains 0/53; baseline TypeScript and staging/schema/security gates remain open. The earlier matrix describes the original audit baseline; Batch 02 supersedes its implemented Coding Memory details.

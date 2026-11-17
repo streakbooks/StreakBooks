@@ -62,3 +62,7 @@ Remaining: the entire programme's acceptance and Gates A–H remain open as desc
 - Main and code-commit CI lookup returned no statuses/workflow runs. No CI evidence exists to certify this batch.
 - Final `npm run build` executed successfully at committed runtime revision `743c73fc` (exit 0); final UI, native navigation and module checks also passed. Existing `inputValidator` deprecation/build warnings remain. This is local build evidence, not deployed verification.
 - Vercel branch-filtered lookup returned zero deployments for this implementation branch. No preview or production deployment for this batch was verified.
+
+## Batch 02
+
+See [the current batch report](BATCH-02-CODING-MEMORY.md) for the new event migration, controls, 208-test unit suite, 59 SQL assertions, 5 isolated browser tests and final commit/check outcomes. Batch 01 counts above remain historical evidence.

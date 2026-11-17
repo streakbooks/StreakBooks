@@ -1,5 +1,6 @@
+"use client";
+
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-("use client");
 
 import { VoiceFields, VoiceSelect } from "@/components/ai-voice/voice-fields";
 

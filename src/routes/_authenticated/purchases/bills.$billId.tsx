@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, ChevronLeft, ChevronRight, Loader2, Paperclip, Printer } from "lucide-react";
@@ -10,6 +10,7 @@ import {
   addBillNote,
   authoriseBill,
   checkDuplicateSupplierBill,
+  copyBill,
   listPaymentTerms,
   deleteDraftBill,
   downloadBillAttachment,
@@ -183,6 +184,7 @@ type BillPayload = {
 function BillDocumentWorkspace() {
   const { billId } = Route.useParams();
   const search = Route.useSearch();
+  const navigate = useNavigate();
   const { company } = useActiveCompany();
   const fetchBill = useServerFn(getBill);
   const fetchNeighbors = useServerFn(getBillNeighbors);
@@ -204,6 +206,7 @@ function BillDocumentWorkspace() {
   const doSubmit = useServerFn(submitBillForApproval);
   const doReject = useServerFn(rejectBillApproval);
   const doDelete = useServerFn(deleteDraftBill);
+  const doCopy = useServerFn(copyBill);
   const doAddNote = useServerFn(addBillNote);
   const doDownload = useServerFn(downloadBillAttachment);
   const queryClient = useQueryClient();
@@ -456,6 +459,15 @@ function BillDocumentWorkspace() {
       setVoidOpen(false);
       await invalidate();
       toast.success("Bill voided — reversing journal posted when applicable");
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
+  const copyMutation = useMutation({
+    mutationFn: () => doCopy({ data: { companyId: companyId!, billId } }),
+    onSuccess: async (r) => {
+      toast.success("Copied to a new draft bill");
+      await navigate({ to: "/purchases/bills/$billId", params: { billId: r.id } });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -823,6 +835,17 @@ function BillDocumentWorkspace() {
               <Printer className="mr-1 size-4" />
               Print / PDF
             </Button>
+            {bill.status !== "draft" && can("purchases.draft") ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={copyMutation.isPending}
+                onClick={() => copyMutation.mutate()}
+              >
+                {copyMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                Copy bill
+              </Button>
+            ) : null}
             <BillAttachmentsButton
               count={bill.attachments?.length ?? 0}
               onClick={() => setFilesOpen(true)}

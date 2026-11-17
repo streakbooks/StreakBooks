@@ -1,4 +1,3 @@
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";

@@ -12,7 +12,7 @@ export type OnboardingStepSummary = {
 
 type RelevantStep = Pick<
   FirmOnboardingStep,
-  "task_key" | "title" | "completed_at" | "due_date" | "assignee_id" | "depends_on_task_key"
+  "task_key" | "completed_at" | "due_date" | "assignee_id" | "depends_on_task_key"
 >;
 
 export function onboardingBlocked(step: RelevantStep, steps: RelevantStep[]): boolean {

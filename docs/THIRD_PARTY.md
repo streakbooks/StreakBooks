@@ -26,3 +26,6 @@ PR #26, #27 and #28 add **zero new npm packages** and make no package-lock chang
 
 ## FX posting and historical ledger reporting, 4 November 2026
 PR #32 and #33 added **no new npm dependencies**, no external libraries, no migrations, no imported source/brand assets, and no lockfile changes. Both extend the existing TypeScript posting and reporting helpers. Transitive dependency license/security checks remain a separate release requirement.
+
+## Historical Aged Payables as-at, 17 November 2026
+Feature branch `feature/ap-asat-historical-aged-payables` adds **no new npm packages** and no lockfile changes. Implementation reuses existing React, TanStack, Vitest and Supabase client stacks. Public aged-payables capabilities were consulted for concepts only. See [IP_AND_DEPENDENCY_COMPLIANCE.md](./IP_AND_DEPENDENCY_COMPLIANCE.md).

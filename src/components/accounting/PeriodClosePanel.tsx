@@ -13,7 +13,9 @@ import {
   summariseChecklist,
   type CloseCheckStatus,
 } from "@/lib/accounting/period-close";
-import { getAgedPayables, getAgedReceivables } from "@/lib/reports/report.functions";
+import { getAgedReceivablesAsAt } from "@/lib/sales/ar-reports.functions";
+import { getAgedPayablesAsAt } from "@/lib/purchases/ap-reports.functions";
+import { closeTieFromAsAt } from "@/lib/accounting/period-close-subledger";
 import { postYearEndClose, previewYearEndClose } from "@/lib/reports/year-end.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
@@ -67,8 +69,8 @@ export function PeriodClosePanel({
   const f = useFormat();
   const fetchPeriods = useServerFn(listPeriods);
   const fetchFacts = useServerFn(getPeriodCloseFacts);
-  const fetchAr = useServerFn(getAgedReceivables);
-  const fetchAp = useServerFn(getAgedPayables);
+  const fetchAr = useServerFn(getAgedReceivablesAsAt);
+  const fetchAp = useServerFn(getAgedPayablesAsAt);
   const doLock = useServerFn(lockPeriod);
   const doPreview = useServerFn(previewYearEndClose);
   const doClose = useServerFn(postYearEndClose);
@@ -114,14 +116,14 @@ export function PeriodClosePanel({
 
   const items = useMemo(() => {
     if (!facts.data || !ar.data || !ap.data || !end) return null;
-    const a = ar.data as { controlAccountFound: boolean; varianceMinor: number };
-    const p = ap.data as { controlAccountFound: boolean; varianceMinor: number };
+    const a = closeTieFromAsAt(ar.data);
+    const p = closeTieFromAsAt(ap.data);
     return buildCloseChecklist({
       periodEnd: end,
       unreconciledBankLines: facts.data.unreconciledBankLines,
       draftDocuments: facts.data.draftDocuments,
-      ar: { found: a.controlAccountFound, variance: a.varianceMinor },
-      ap: { found: p.controlAccountFound, variance: p.varianceMinor },
+      ar: { found: a.found, variance: a.variance },
+      ap: { found: p.found, variance: p.variance },
       openingBalanceMinor: facts.data.openingBalanceMinor,
       taxReturn: facts.data.taxReturn,
       yearEnd: facts.data.yearEnd ? { closed: facts.data.yearEnd.closed } : null,
@@ -158,18 +160,14 @@ export function PeriodClosePanel({
         fetchAr({ data: { companyId, asOf: selectedEnd } }),
         fetchAp({ data: { companyId, asOf: selectedEnd } }),
       ]);
+      const liveAr = closeTieFromAsAt(latestAr);
+      const liveAp = closeTieFromAsAt(latestAp);
       const liveChecklist = buildCloseChecklist({
         periodEnd: selectedEnd,
         unreconciledBankLines: latestFacts.unreconciledBankLines,
         draftDocuments: latestFacts.draftDocuments,
-        ar: {
-          found: latestAr.controlAccountFound,
-          variance: latestAr.varianceMinor,
-        },
-        ap: {
-          found: latestAp.controlAccountFound,
-          variance: latestAp.varianceMinor,
-        },
+        ar: { found: liveAr.found, variance: liveAr.variance },
+        ap: { found: liveAp.found, variance: liveAp.variance },
         openingBalanceMinor: latestFacts.openingBalanceMinor,
         taxReturn: latestFacts.taxReturn,
         yearEnd: latestFacts.yearEnd ? { closed: latestFacts.yearEnd.closed } : null,

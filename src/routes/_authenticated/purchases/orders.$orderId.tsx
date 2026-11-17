@@ -10,9 +10,12 @@ import {
   changePurchaseOrderStatus,
   convertPurchaseOrderToBill,
   getPurchaseOrder,
+  receivePurchaseOrderGoods,
 } from "@/lib/purchases/purchases.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { impliedDiscountMinor } from "@/lib/purchases/po-convert";
+import { receiveAllOutstanding, remainingToReceive } from "@/lib/purchases/po-receipt";
+import { billableQuantity } from "@/lib/purchases/po-partial-bill";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
@@ -65,6 +68,7 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
   const fetchOrder = useServerFn(getPurchaseOrder);
   const changeStatus = useServerFn(changePurchaseOrderStatus);
   const convert = useServerFn(convertPurchaseOrderToBill);
+  const receiveGoods = useServerFn(receivePurchaseOrderGoods);
   const [cancelOpen, setCancelOpen] = useState(false);
   const query = useQuery({
     queryKey: ["purchase-order", companyId, orderId],
@@ -100,8 +104,24 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
     onSuccess: async (result) => {
       await refresh();
       await queryClient.invalidateQueries({ queryKey: ["bills", companyId] });
-      toast.success("Draft bill created");
+      toast.success(
+        result.fullyBilled
+          ? "Draft bill created from received goods. Order is fully billed."
+          : "Draft bill created from received goods. Order remains open for further receipts.",
+      );
       navigate({ to: "/purchases/bills/$billId", params: { billId: result.billId } });
+    },
+    onError: async (e) => {
+      toast.error(friendlyAuthError(e));
+      await refresh();
+    },
+  });
+  const receiveMutation = useMutation({
+    mutationFn: (lines: Array<{ lineId: string; receiveQuantity: number }>) =>
+      receiveGoods({ data: { companyId, orderId, lines } }),
+    onSuccess: async () => {
+      await refresh();
+      toast.success("Goods receipt recorded. No ledger entry was posted.");
     },
     onError: async (e) => {
       toast.error(friendlyAuthError(e));
@@ -119,8 +139,25 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
     );
   const order = query.data;
   const currency = order.currency_code.trim();
-  const pending = statusMutation.isPending || convertMutation.isPending;
-  const editableStatus = !order.billed_bill_id && ["draft", "sent"].includes(order.status);
+  const pending =
+    statusMutation.isPending || convertMutation.isPending || receiveMutation.isPending;
+  const editableStatus = order.status !== "billed" && ["draft", "sent"].includes(order.status);
+  const canReceive = ["sent", "partially_received"].includes(order.status);
+  const outstanding = receiveAllOutstanding(
+    order.purchase_order_lines.map((line) => ({
+      lineId: line.id,
+      orderedQuantity: Number(line.quantity),
+      quantityReceived: Number(line.quantity_received ?? 0),
+    })),
+  );
+  const billableLines = order.purchase_order_lines.filter(
+    (line) =>
+      billableQuantity({
+        orderedQuantity: Number(line.quantity),
+        quantityReceived: Number(line.quantity_received ?? 0),
+        quantityBilled: Number(line.quantity_billed ?? 0),
+      }) > 0,
+  );
   return (
     <>
       <RecordWorkspace
@@ -183,76 +220,99 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
           </div>
         }
       >
-        <div className="mb-5 flex flex-wrap items-center gap-2">
-          <StatusBadge status={order.status} />
-          {editableStatus && can("purchases.draft") ? (
-            <>
-              {order.status === "draft" ? (
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/purchases/orders/new" search={{ edit: orderId }}>
-                    Edit draft
-                  </Link>
-                </Button>
-              ) : null}
-              {order.status === "draft" ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={pending}
-                  onClick={() => statusMutation.mutate("sent")}
-                >
-                  Mark as sent
-                </Button>
-              ) : null}
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <StatusBadge status={order.status} />
+        {editableStatus && can("purchases.draft") ? (
+          <>
+            {order.status === "draft" ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/purchases/orders/new" search={{ edit: orderId }}>
+                  Edit draft
+                </Link>
+              </Button>
+            ) : null}
+            {order.status === "draft" ? (
               <Button
                 size="sm"
                 variant="outline"
                 disabled={pending}
-                onClick={() => setCancelOpen(true)}
+                onClick={() => statusMutation.mutate("sent")}
               >
-                Cancel order
+                Mark as sent
               </Button>
-            </>
-          ) : null}
-          {!order.billed_bill_id && order.status !== "cancelled" && can("purchases.draft") ? (
-            <Button size="sm" disabled={pending} onClick={() => convertMutation.mutate()}>
-              Convert to draft bill
+            ) : null}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={pending}
+              onClick={() => setCancelOpen(true)}
+            >
+              Cancel order
             </Button>
-          ) : null}
-          {order.billed_bill_id ? (
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/purchases/bills/$billId" params={{ billId: order.billed_bill_id }}>
-                View bill
-              </Link>
-            </Button>
-          ) : null}
-        </div>
-        <p className="mb-4 text-sm text-muted-foreground">
-          This order has no ledger impact. A converted bill affects the ledger only when authorised.
-          Mark as sent records delivery made outside LinkBooks; email delivery is recorded
-          separately below.
-        </p>
-        <TableCard>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead className="text-right">Unit price</TableHead>
-                <TableHead className="text-right">Discount</TableHead>
-                <TableHead className="text-right">Net</TableHead>
-                <TableHead className="text-right">Tax</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {[...order.purchase_order_lines]
-                .sort((a, b) => a.line_no - b.line_no)
-                .map((line) => (
+          </>
+        ) : null}
+        {canReceive && can("purchases.draft") && outstanding.length > 0 ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={pending}
+            onClick={() => receiveMutation.mutate(outstanding)}
+          >
+            Receive remaining goods
+          </Button>
+        ) : null}
+        {canReceive && can("purchases.draft") && billableLines.length > 0 ? (
+          <Button size="sm" disabled={pending} onClick={() => convertMutation.mutate()}>
+            Bill received goods
+          </Button>
+        ) : null}
+        {order.billed_bill_id ? (
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/purchases/bills/$billId" params={{ billId: order.billed_bill_id }}>
+              View bill
+            </Link>
+          </Button>
+        ) : null}
+      </div>
+      <p className="mb-4 text-sm text-muted-foreground">
+        This order has no ledger impact. Receiving updates quantities only. Bill received goods
+        creates a draft bill for unbilled received quantities; the ledger posts only when that bill
+        is authorised. Inventory/COGS valuation is not claimed by this flow.
+      </p>
+      <TableCard>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Ordered</TableHead>
+              <TableHead className="text-right">Received</TableHead>
+              <TableHead className="text-right">Billed</TableHead>
+              <TableHead className="text-right">Outstanding</TableHead>
+              <TableHead className="text-right">Unit price</TableHead>
+              <TableHead className="text-right">Discount</TableHead>
+              <TableHead className="text-right">Net</TableHead>
+              <TableHead className="text-right">Tax</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...order.purchase_order_lines]
+              .sort((a, b) => a.line_no - b.line_no)
+              .map((line) => {
+                const state = {
+                  lineId: line.id,
+                  orderedQuantity: Number(line.quantity),
+                  quantityReceived: Number(line.quantity_received ?? 0),
+                };
+                const billedQty = Number(line.quantity_billed ?? 0);
+                return (
                   <TableRow key={line.id}>
                     <TableCell>{line.description}</TableCell>
+                    <TableCell className="text-right">{fmt.number(state.orderedQuantity)}</TableCell>
+                    <TableCell className="text-right">{fmt.number(state.quantityReceived)}</TableCell>
+                    <TableCell className="text-right">{fmt.number(billedQty)}</TableCell>
                     <TableCell className="text-right">
-                      {fmt.number(Number(line.quantity))}
+                      {fmt.number(remainingToReceive(state))}
                     </TableCell>
                     <TableCell className="money">
                       {fmt.money(line.unit_price_minor, currency)}
@@ -271,26 +331,27 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
                       {fmt.money(BigInt(line.net_minor) + BigInt(line.tax_minor), currency)}
                     </TableCell>
                   </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </TableCard>
-        <dl className="my-5 ml-auto grid max-w-sm grid-cols-2 gap-2 text-sm">
-          <dt>Subtotal</dt>
-          <dd className="text-right">{fmt.money(order.subtotal_minor, currency)}</dd>
-          <dt>Tax</dt>
-          <dd className="text-right">{fmt.money(order.tax_minor, currency)}</dd>
-          <dt className="font-semibold">Total ({currency})</dt>
-          <dd className="text-right font-semibold">{fmt.money(order.total_minor, currency)}</dd>
-        </dl>
-        {order.memo ? (
-          <section className="my-4 rounded-md border p-4">
-            <h2 className="mb-2 font-medium">Supplier instructions / memo</h2>
-            <p className="whitespace-pre-wrap text-sm">{order.memo}</p>
-          </section>
-        ) : null}
-        <DocumentActions kind="purchase_order" id={orderId} />
-        <DocumentRecordPanel entityType="purchase_order" entityId={orderId} audience="supplier" />
+                );
+              })}
+          </TableBody>
+        </Table>
+      </TableCard>
+      <dl className="my-5 ml-auto grid max-w-sm grid-cols-2 gap-2 text-sm">
+        <dt>Subtotal</dt>
+        <dd className="text-right">{fmt.money(order.subtotal_minor, currency)}</dd>
+        <dt>Tax</dt>
+        <dd className="text-right">{fmt.money(order.tax_minor, currency)}</dd>
+        <dt className="font-semibold">Total ({currency})</dt>
+        <dd className="text-right font-semibold">{fmt.money(order.total_minor, currency)}</dd>
+      </dl>
+      {order.memo ? (
+        <section className="my-4 rounded-md border p-4">
+          <h2 className="mb-2 font-medium">Supplier instructions / memo</h2>
+          <p className="whitespace-pre-wrap text-sm">{order.memo}</p>
+        </section>
+      ) : null}
+      <DocumentActions kind="purchase_order" id={orderId} />
+      <DocumentRecordPanel entityType="purchase_order" entityId={orderId} audience="supplier" />
       </RecordWorkspace>
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent>

@@ -31,6 +31,11 @@ import {
 import { buildIlikeOr, escapeLikeTerm, ilikePattern } from "@/lib/purchases/search-terms";
 import { isBankOrCashAccount, type AccountCandidate } from "@/lib/purchases/bank-account-rules";
 import { dueDateFromBillDate, impliedDiscountMinor } from "@/lib/purchases/po-convert";
+import {
+  loadBillThreeWayMatch,
+  loadThreeWayMatchingRequired,
+} from "@/lib/purchases/po-three-way-match.load";
+import { assertThreeWayMatchForAuthorise } from "@/lib/purchases/po-three-way-match";
 import { describeBillEdits, type BillEditSnapshot } from "@/lib/purchases/bill-history";
 import { type RecurringTemplateDocument } from "@/lib/purchases/recurring-template";
 import {
@@ -62,6 +67,88 @@ import {
 } from "@/lib/purchases/posting";
 import { applyReverseChargeToLines, loadTaxCodeInfo } from "@/lib/purchases/reverse-charge-lines";
 import { parseScheduleOptions } from "@/lib/recurring/recurring-schedule-options";
+import {
+  assessSupplierCreditLimit,
+  type SupplierCreditLimitAssessment,
+  type SupplierCreditLimitBill,
+} from "@/lib/purchases/supplier-credit-limit";
+
+export const SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED = "SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED";
+
+type PurchasesClient = Parameters<typeof assertCompanyPermission>[0];
+
+async function loadSupplierCreditLimitAssessment(
+  supabase: PurchasesClient,
+  companyId: string,
+  candidate: {
+    id: string;
+    contactId: string;
+    currencyCode: string;
+    status: string;
+    totalMinor: number;
+    amountPaidMinor: number;
+    amountCreditedMinor: number;
+  },
+): Promise<SupplierCreditLimitAssessment> {
+  const { data: company } = await supabase
+    .from("companies" as never)
+    .select("base_currency" as never)
+    .eq("id" as never, companyId as never)
+    .maybeSingle();
+  const baseCurrency = String(
+    (company as { base_currency?: string } | null)?.base_currency ?? "USD",
+  ).toUpperCase();
+
+  const { data: contact, error: cErr } = await supabase
+    .from("contacts" as never)
+    .select("credit_limit_minor, default_currency" as never)
+    .eq("id" as never, candidate.contactId as never)
+    .eq("company_id" as never, companyId as never)
+    .maybeSingle();
+  if (cErr) throw new Error(cErr.message);
+  const c = contact as { credit_limit_minor?: number | null; default_currency?: string | null } | null;
+  const limitCurrency = String(c?.default_currency || baseCurrency).toUpperCase();
+
+  const { data: openRows, error: oErr } = await supabase
+    .from("purchase_bills" as never)
+    .select("id, currency_code, status, total_minor, amount_paid_minor, amount_credited_minor" as never)
+    .eq("company_id" as never, companyId as never)
+    .eq("contact_id" as never, candidate.contactId as never)
+    .in("status" as never, ["authorised", "partly_paid"] as never);
+  if (oErr) throw new Error(oErr.message);
+
+  const openBills: SupplierCreditLimitBill[] = (
+    (openRows ?? []) as Array<{
+      id: string;
+      currency_code: string;
+      status: string;
+      total_minor: number;
+      amount_paid_minor: number;
+      amount_credited_minor: number;
+    }>
+  ).map((r) => ({
+    id: r.id,
+    currencyCode: String(r.currency_code || baseCurrency).toUpperCase(),
+    status: r.status,
+    totalMinor: Number(r.total_minor) || 0,
+    amountPaidMinor: Number(r.amount_paid_minor) || 0,
+    amountCreditedMinor: Number(r.amount_credited_minor) || 0,
+  }));
+
+  return assessSupplierCreditLimit({
+    creditLimitMinor: c?.credit_limit_minor ?? null,
+    limitCurrencyCode: limitCurrency,
+    openBills,
+    candidate: {
+      id: candidate.id,
+      currencyCode: candidate.currencyCode.toUpperCase(),
+      status: candidate.status,
+      totalMinor: candidate.totalMinor,
+      amountPaidMinor: candidate.amountPaidMinor,
+      amountCreditedMinor: candidate.amountCreditedMinor,
+    },
+  });
+}
 
 async function recordBillAudit(
   supabase: unknown,
@@ -1062,6 +1149,25 @@ export const getBill = createServerFn({ method: "GET" })
     const credited = Number(b.amount_credited_minor ?? 0);
     const balance = Math.max(0, total - paid - credited);
 
+    let supplierCreditLimitAssessment: SupplierCreditLimitAssessment | null = null;
+    try {
+      supplierCreditLimitAssessment = await loadSupplierCreditLimitAssessment(
+        context.supabase,
+        data.companyId,
+        {
+          id: b.id,
+          contactId: b.contact_id,
+          currencyCode: String(b.currency_code || "USD"),
+          status: b.status,
+          totalMinor: total,
+          amountPaidMinor: paid,
+          amountCreditedMinor: credited,
+        },
+      );
+    } catch {
+      supplierCreditLimitAssessment = null;
+    }
+
     return {
       id: b.id,
       status: b.status,
@@ -1120,6 +1226,7 @@ export const getBill = createServerFn({ method: "GET" })
       balance_due_minor: status === "draft" || status === "awaiting_approval" ? 0 : balance,
       document_total_minor: total,
       display_reference: b.supplier_invoice_number?.trim() || b.bill_number?.trim() || null,
+      supplierCreditLimitAssessment,
     };
   });
 
@@ -1585,11 +1692,117 @@ export const saveBillDraft = createServerFn({ method: "POST" })
   .inputValidator(parseBillDraftInput)
   .handler(async ({ data, context }) => saveBillDraftCore(data, context));
 
+/** Copy a bill into a NEW draft dated today with the supplier's payment terms. */
+export const copyBill = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; billId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    billId: assertUuid(input.billId, "bill"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+    const { data: row, error } = await supabase
+      .from("purchase_bills" as never)
+      .select(
+        "contact_id, memo, currency_code, fx_rate_to_base, tax_calculation, payment_terms_days, payment_term_id, supplier_address_line1, supplier_address_line2, supplier_address_city, supplier_address_region, supplier_address_postal, supplier_address_country, purchase_bill_lines(*)" as never,
+      )
+      .eq("id" as never, data.billId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Bill not found");
+
+    const src = row as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      fx_rate_to_base: number | null;
+      tax_calculation: string | null;
+      payment_terms_days: number | null;
+      payment_term_id: string | null;
+      supplier_address_line1: string | null;
+      supplier_address_line2: string | null;
+      supplier_address_city: string | null;
+      supplier_address_region: string | null;
+      supplier_address_postal: string | null;
+      supplier_address_country: string | null;
+      purchase_bill_lines: Array<{
+        description: string;
+        account_id: string | null;
+        quantity: number;
+        unit_price_minor: number;
+        discount_minor?: number | null;
+        tax_rate_bps?: number | null;
+        product_id?: string | null;
+        tax_code_id?: string | null;
+        class_option_id?: string | null;
+        location_option_id?: string | null;
+        project_option_id?: string | null;
+        customer_contact_id?: string | null;
+        is_billable?: boolean | null;
+        line_no?: number | null;
+      }>;
+    };
+
+    const { mapBillLinesForCopy } = await import("@/lib/purchases/copy-bill");
+    const { calculateDueDate } = await import("@/lib/purchases/bill-form-helpers");
+    const lines = mapBillLinesForCopy(src.purchase_bill_lines ?? []);
+    if (!lines.length) throw new Error("Bill has no lines to copy");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const termsDays =
+      src.payment_terms_days == null ? 30 : Math.max(0, Math.floor(Number(src.payment_terms_days)));
+    const dueDate = calculateDueDate(today, {
+      days: termsDays,
+      calculation_method: "days_after_bill_date",
+    });
+    const taxCalculation =
+      src.tax_calculation === "inclusive" || src.tax_calculation === "none"
+        ? src.tax_calculation
+        : "exclusive";
+
+    const supplierAddress: {
+      line1?: string;
+      line2?: string;
+      city?: string;
+      region?: string;
+      postal?: string;
+      country?: string;
+    } = {};
+    if (src.supplier_address_line1) supplierAddress.line1 = src.supplier_address_line1;
+    if (src.supplier_address_line2) supplierAddress.line2 = src.supplier_address_line2;
+    if (src.supplier_address_city) supplierAddress.city = src.supplier_address_city;
+    if (src.supplier_address_region) supplierAddress.region = src.supplier_address_region;
+    if (src.supplier_address_postal) supplierAddress.postal = src.supplier_address_postal;
+    if (src.supplier_address_country) supplierAddress.country = src.supplier_address_country;
+
+    return saveBillDraftCore(
+      parseBillDraftInput({
+        companyId: data.companyId,
+        contactId: src.contact_id,
+        billDate: today,
+        dueDate,
+        ...(src.memo ? { memo: src.memo } : {}),
+        currencyCode: src.currency_code,
+        taxCalculation,
+        paymentTermId: src.payment_term_id,
+        paymentTermsDays: termsDays,
+        dueDateManualOverride: false,
+        fxRateToBase: src.fx_rate_to_base,
+        supplierAddress,
+        lines,
+      }),
+      context,
+    );
+  });
+
 export async function authoriseBillInternal(
   supabase: Parameters<typeof assertCompanyPermission>[0],
   userId: string,
   companyId: string,
   billId: string,
+  acknowledgeCreditLimit = false,
 ): Promise<{ journalId: string }> {
   await assertCompanyPermission(supabase, companyId, "purchases.authorise");
   const { data: bill, error } = await supabase
@@ -1601,10 +1814,15 @@ export async function authoriseBillInternal(
   if (error) throw new Error(error.message);
   if (!bill) throw new Error("Bill not found");
   const b = bill as {
+    id: string;
+    contact_id: string;
     status: string;
     bill_date: string;
     currency_code: string;
     memo: string | null;
+    total_minor: number;
+    amount_paid_minor?: number;
+    amount_credited_minor?: number;
     posted_journal_id: string | null;
     purchase_bill_lines: Array<{
       account_id: string;
@@ -1624,6 +1842,39 @@ export async function authoriseBillInternal(
     b.purchase_bill_lines.map((l) => l.tax_code_id ?? ""),
   );
   if (b.posted_journal_id) throw new Error("Bill already posted");
+
+  const credit = await loadSupplierCreditLimitAssessment(supabase, companyId, {
+    id: b.id,
+    contactId: b.contact_id,
+    currencyCode: b.currency_code,
+    status: b.status,
+    totalMinor: Number(b.total_minor) || 0,
+    amountPaidMinor: Number(b.amount_paid_minor) || 0,
+    amountCreditedMinor: Number(b.amount_credited_minor) || 0,
+  });
+  if (credit.overLimit && !acknowledgeCreditLimit) {
+    throw new Error(`${SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED}: ${credit.message}`);
+  }
+
+  // Fail closed when purchases.three_way_matching is enabled for PO-linked bills.
+  const billWithPo = bill as {
+    purchase_order_id?: string | null;
+    purchase_bill_lines: Array<{
+      line_no?: number | null;
+      description: string;
+      account_id: string | null;
+      quantity: number;
+      net_minor: number;
+      tax_code_id?: string | null;
+      tax_rate_bps?: number | null;
+    }>;
+  };
+  const threeWayRequired = await loadThreeWayMatchingRequired(supabase, companyId);
+  const threeWay = await loadBillThreeWayMatch(supabase, companyId, {
+    purchase_order_id: billWithPo.purchase_order_id,
+    purchase_bill_lines: billWithPo.purchase_bill_lines,
+  });
+  assertThreeWayMatchForAuthorise(threeWay, threeWayRequired);
 
   const billFx = bill as { fx_rate_to_base?: number | string | null };
   const fxRate =
@@ -1685,26 +1936,89 @@ export async function authoriseBillInternal(
 
 export const authoriseBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string }) => ({
+  .inputValidator((input: {
+    companyId: string;
+    billId: string;
+    acknowledgeCreditLimit?: boolean;
+  }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
+    acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
   }))
   .handler(async ({ data, context }) => {
-    return authoriseBillInternal(context.supabase, context.userId, data.companyId, data.billId);
+    return authoriseBillInternal(
+      context.supabase,
+      context.userId,
+      data.companyId,
+      data.billId,
+      data.acknowledgeCreditLimit,
+    );
   });
 
-export const voidBill = createServerFn({ method: "POST" })
+/** Order × received × bill match for a purchase-order-linked bill (advisory + authorise gate). */
+export const getBillPurchaseOrderMatch = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; billId: string }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
   }))
   .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
+    const { data: bill, error } = await context.supabase
+      .from("purchase_bills" as never)
+      .select("purchase_order_id, purchase_bill_lines(line_no, description, account_id, quantity, net_minor)" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.billId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!bill) throw new Error("Bill not found");
+    const required = await loadThreeWayMatchingRequired(context.supabase, data.companyId);
+    const match = await loadBillThreeWayMatch(
+      context.supabase,
+      data.companyId,
+      bill as {
+        purchase_order_id: string | null;
+        purchase_bill_lines: Array<{
+          line_no?: number | null;
+          description: string;
+          account_id: string | null;
+          quantity: number;
+          net_minor: number;
+        }>;
+      },
+    );
+    return { required, match };
+  });
+
+export const voidBill = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; billId: string; reason: string; voidDate?: string }) => {
+      const reason = String(input.reason ?? "").trim();
+      if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
+      const voidDate =
+        input.voidDate && String(input.voidDate).trim()
+          ? String(input.voidDate).trim()
+          : null;
+      if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
+        throw new Error("Void date must be YYYY-MM-DD");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        billId: assertUuid(input.billId, "bill"),
+        reason: reason.slice(0, 500),
+        voidDate,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "purchases.authorise");
     const { data: bill, error } = await supabase
       .from("purchase_bills" as never)
-      .select("id, status, posted_journal_id, amount_paid_minor, amount_credited_minor" as never)
+      .select(
+        "id, status, bill_date, posted_journal_id, amount_paid_minor, amount_credited_minor" as never,
+      )
       .eq("id" as never, data.billId as never)
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
@@ -1712,6 +2026,7 @@ export const voidBill = createServerFn({ method: "POST" })
     if (!bill) throw new Error("Bill not found");
     const b = bill as {
       status: string;
+      bill_date: string;
       posted_journal_id: string | null;
       amount_paid_minor: number;
       amount_credited_minor: number;
@@ -1720,12 +2035,20 @@ export const voidBill = createServerFn({ method: "POST" })
     if (b.amount_paid_minor > 0 || b.amount_credited_minor > 0) {
       throw new Error("Cannot void a bill with payments or credits; reverse those first");
     }
+    const { assertBillVoidDate } = await import("@/lib/purchases/bill-void");
+    const today = new Date().toISOString().slice(0, 10);
+    const voidDate = assertBillVoidDate({
+      billDate: b.bill_date,
+      voidDate: data.voidDate ?? today,
+      today,
+    });
     let voidJournalId: string | null = null;
     if (b.posted_journal_id) {
       voidJournalId = await voidPostedDocument(
         supabase,
         b.posted_journal_id,
         `purchase_bill:${data.billId}:void`,
+        voidDate,
       );
     }
     const { error: upErr } = await supabase
@@ -1733,14 +2056,27 @@ export const voidBill = createServerFn({ method: "POST" })
       .update({
         status: "void",
         void_journal_id: voidJournalId,
+        void_date: voidDate,
+        void_reason: data.reason,
         updated_at: new Date().toISOString(),
       } as never)
-      .eq("id" as never, data.billId as never);
-    if (upErr) throw new Error(upErr.message);
+      .eq("id" as never, data.billId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .neq("status" as never, "void" as never);
+    if (upErr) {
+      if (/void_date|42703|PGRST204/i.test(upErr.message)) {
+        throw new Error(
+          "The purchase bill void-date migration must be applied before voiding with a dated as-at history.",
+        );
+      }
+      throw new Error(upErr.message);
+    }
     await recordBillAudit(supabase, data.companyId, "bill.void", data.billId, {
       void_journal_id: voidJournalId,
+      void_date: voidDate,
+      reason: data.reason,
     });
-    return { voidJournalId };
+    return { voidJournalId, voidDate };
   });
 
 // ---- Direct expenses ----
@@ -1986,15 +2322,33 @@ export const getSupplierPayment = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
-    const { data: payment, error } = await context.supabase
-      .from("supplier_payments" as never)
-      .select(
-        "id, payment_date, amount_minor, unallocated_minor, status, reference, memo, currency_code, contact_id, bank_account_id, posted_journal_id, created_at, created_by" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .eq("id" as never, data.paymentId as never)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
+    let payment: unknown = null;
+    {
+      const first = await context.supabase
+        .from("supplier_payments" as never)
+        .select(
+          "id, payment_date, amount_minor, unallocated_minor, status, reference, memo, currency_code, contact_id, bank_account_id, posted_journal_id, void_date, void_reason, created_at, created_by" as never,
+        )
+        .eq("company_id" as never, data.companyId as never)
+        .eq("id" as never, data.paymentId as never)
+        .maybeSingle();
+      if (first.error && /void_date|42703|PGRST204/i.test(first.error.message)) {
+        const retry = await context.supabase
+          .from("supplier_payments" as never)
+          .select(
+            "id, payment_date, amount_minor, unallocated_minor, status, reference, memo, currency_code, contact_id, bank_account_id, posted_journal_id, void_reason, created_at, created_by" as never,
+          )
+          .eq("company_id" as never, data.companyId as never)
+          .eq("id" as never, data.paymentId as never)
+          .maybeSingle();
+        if (retry.error) throw new Error(retry.error.message);
+        payment = retry.data ? { ...(retry.data as object), void_date: null } : null;
+      } else if (first.error) {
+        throw new Error(first.error.message);
+      } else {
+        payment = first.data;
+      }
+    }
     if (!payment) throw new Error("Payment not found");
     const row = payment as {
       id: string;
@@ -2008,6 +2362,8 @@ export const getSupplierPayment = createServerFn({ method: "GET" })
       contact_id: string;
       bank_account_id: string;
       posted_journal_id: string | null;
+      void_date?: string | null;
+      void_reason?: string | null;
       created_at: string;
       created_by: string | null;
     };
@@ -2255,29 +2611,60 @@ export const createBatchPayment = createServerFn({ method: "POST" })
 export const reverseSupplierPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { companyId: string; paymentId: string; reason?: string; voidDate?: string }) => ({
-      companyId: assertUuid(input.companyId),
-      paymentId: assertUuid(input.paymentId, "payment"),
-      reason: (input.reason ?? "").trim().slice(0, 300) || null,
-      voidDate:
-        input.voidDate && /^\d{4}-\d{2}-\d{2}$/.test(input.voidDate) ? input.voidDate : null,
-    }),
+    (input: { companyId: string; paymentId: string; reason: string; voidDate?: string }) => {
+      const reason = String(input.reason ?? "").trim();
+      if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
+      const voidDate =
+        input.voidDate && String(input.voidDate).trim()
+          ? String(input.voidDate).trim()
+          : null;
+      if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
+        throw new Error("Void date must be YYYY-MM-DD");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        paymentId: assertUuid(input.paymentId, "payment"),
+        reason: reason.slice(0, 500),
+        voidDate,
+      };
+    },
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "purchases.payment");
-    const rpc = await callSalesRpc<{ id: string; void_journal_id: string }>(
+    const { data: payment, error } = await supabase
+      .from("supplier_payments" as never)
+      .select("id, payment_date, status" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.paymentId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!payment) throw new Error("Payment not found");
+    const row = payment as { payment_date: string; status: string };
+    if (row.status === "void") throw new Error("Payment is already voided");
+    const { assertSupplierPaymentVoidDate } = await import("@/lib/purchases/bill-void");
+    const today = new Date().toISOString().slice(0, 10);
+    const voidDate = assertSupplierPaymentVoidDate({
+      paymentDate: row.payment_date,
+      voidDate: data.voidDate ?? today,
+      today,
+    });
+    const rpc = await callSalesRpc<{ id: string; void_journal_id: string; void_date?: string }>(
       supabase,
       "reverse_supplier_payment",
       {
         company_id: data.companyId,
         payment_id: data.paymentId,
         reason: data.reason,
-        void_date: data.voidDate,
+        void_date: voidDate,
       },
     );
     const done = requireRpc(rpc, "reverse_supplier_payment", SUPPLIER_PAYMENT_MIGRATION);
-    return { ok: true, voidJournalId: done.void_journal_id };
+    return {
+      ok: true,
+      voidJournalId: done.void_journal_id,
+      voidDate: done.void_date ?? voidDate,
+    };
   });
 
 // ---- Credit notes (core) ----
@@ -2721,6 +3108,143 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
     }
   });
 
+/** Copy a supplier credit note into a NEW draft dated today (no allocations). */
+export const copyCreditNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; creditNoteId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    creditNoteId: assertUuid(input.creditNoteId, "credit note"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+    const { data: row, error } = await supabase
+      .from("purchase_credit_notes" as never)
+      .select(
+        "contact_id, memo, currency_code, fx_rate_to_base, purchase_credit_note_lines(*)" as never,
+      )
+      .eq("id" as never, data.creditNoteId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Credit note not found");
+
+    const src = row as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      fx_rate_to_base?: number | null;
+      purchase_credit_note_lines: Array<{
+        description: string;
+        account_id: string | null;
+        net_minor: number;
+        tax_minor?: number | null;
+        line_no?: number | null;
+      }>;
+    };
+
+    const { mapCreditNoteLinesForCopy } = await import("@/lib/purchases/copy-credit-note");
+    const mapped = mapCreditNoteLinesForCopy(src.purchase_credit_note_lines ?? []);
+    if (!mapped.length) throw new Error("Credit note has no lines to copy");
+    const lines = normaliseCreditLines(mapped);
+
+    for (const accountId of new Set(lines.map((l) => l.accountId))) {
+      await requireAccountInCompany(supabase, data.companyId, accountId);
+    }
+
+    const currencyCode = String(src.currency_code || "").toUpperCase();
+    if (!/^[A-Z]{3}$/.test(currencyCode)) throw new Error("Currency code required");
+
+    const subtotal = lines.reduce((s, l) => s + l.netMinor, 0);
+    const tax = lines.reduce((s, l) => s + l.taxMinor, 0);
+    const total = subtotal + tax;
+    if (total <= 0) throw new Error("Credit total must be greater than zero");
+
+    const { data: supplier, error: supplierErr } = await supabase
+      .from("contacts" as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, src.contact_id as never)
+      .maybeSingle();
+    if (supplierErr) throw new Error(supplierErr.message);
+    if (!supplier) throw new Error("Supplier not found in this organisation");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const fxRaw = src.fx_rate_to_base == null ? null : Number(src.fx_rate_to_base);
+    const fxRateToBase =
+      fxRaw != null && Number.isFinite(fxRaw) && fxRaw > 0 && fxRaw !== 1 ? fxRaw : null;
+
+    const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
+    const creditNumber = await allocateDocumentNumber(
+      supabase as never,
+      data.companyId,
+      "purchase_credit_note",
+    );
+
+    const { data: cn, error: insertErr } = await supabase
+      .from("purchase_credit_notes" as never)
+      .insert({
+        company_id: data.companyId,
+        contact_id: src.contact_id,
+        credit_number: creditNumber,
+        credit_date: today,
+        currency_code: currencyCode,
+        memo: src.memo,
+        subtotal_minor: subtotal,
+        tax_minor: tax,
+        total_minor: total,
+        status: "draft",
+        created_by: userId,
+        ...(fxRateToBase != null ? { fx_rate_to_base: fxRateToBase } : {}),
+      } as never)
+      .select("id")
+      .single();
+    if (insertErr) {
+      if (fxRateToBase != null && /fx_rate_to_base|schema cache/i.test(insertErr.message)) {
+        throw new Error(
+          "Foreign-currency credit notes need a database update that has not been applied yet.",
+        );
+      }
+      throw new Error(insertErr.message);
+    }
+    const creditId = (cn as { id: string }).id;
+    const { error: lineErr } = await supabase.from("purchase_credit_note_lines" as never).insert(
+      lines.map((l, i) => ({
+        company_id: data.companyId,
+        credit_note_id: creditId,
+        line_no: i + 1,
+        description: l.description,
+        account_id: l.accountId,
+        net_minor: l.netMinor,
+        tax_minor: l.taxMinor,
+      })) as never,
+    );
+    if (lineErr) {
+      await supabase
+        .from("purchase_credit_notes" as never)
+        .delete()
+        .eq("company_id" as never, data.companyId as never)
+        .eq("id" as never, creditId as never)
+        .eq("status" as never, "draft" as never);
+      throw new Error(`Could not save credit note lines: ${lineErr.message}`);
+    }
+
+    await recordBillAudit(
+      supabase,
+      data.companyId,
+      "credit_note.draft.copy",
+      creditId,
+      {
+        source_credit_note_id: data.creditNoteId,
+        credit_number: creditNumber,
+        total_minor: total,
+        line_count: lines.length,
+      },
+      "purchase_credit_note",
+    );
+    return { id: creditId };
+  });
+
 export const authoriseCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -2877,6 +3401,8 @@ export type CreditNoteDetail = {
   tax_minor: number;
   amount_allocated_minor: number;
   posted_journal_id: string | null;
+  void_date?: string | null;
+  void_reason?: string | null;
   contacts: { id: string; name: string; email: string | null } | null;
   purchase_credit_note_lines: Array<{
     id: string;
@@ -3065,11 +3591,25 @@ export const unallocatePurchaseCredit = createServerFn({ method: "POST" })
 
 export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; creditNoteId: string; reason?: string }) => ({
-    companyId: assertUuid(input.companyId),
-    creditNoteId: assertUuid(input.creditNoteId, "credit note"),
-    reason: (input.reason ?? "").trim().slice(0, 500) || null,
-  }))
+  .inputValidator(
+    (input: { companyId: string; creditNoteId: string; reason: string; voidDate?: string }) => {
+      const reason = String(input.reason ?? "").trim();
+      if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
+      const voidDate =
+        input.voidDate && String(input.voidDate).trim()
+          ? String(input.voidDate).trim()
+          : null;
+      if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
+        throw new Error("Void date must be YYYY-MM-DD");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        creditNoteId: assertUuid(input.creditNoteId, "credit note"),
+        reason: reason.slice(0, 500),
+        voidDate,
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "purchases.authorise");
@@ -3078,6 +3618,13 @@ export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
     if (credit.status === "draft" || !credit.posted_journal_id) {
       throw new Error("Draft credit notes have no ledger entry - delete the draft instead");
     }
+    const { assertCreditNoteVoidDate } = await import("@/lib/purchases/bill-void");
+    const today = new Date().toISOString().slice(0, 10);
+    const voidDate = assertCreditNoteVoidDate({
+      creditDate: credit.credit_date,
+      voidDate: data.voidDate ?? today,
+      today,
+    });
     const { data: allocRows, error: allocErr } = await supabase
       .from("purchase_credit_allocations" as never)
       .select("amount_minor" as never)
@@ -3100,17 +3647,26 @@ export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
       supabase as never,
       credit.posted_journal_id,
       `purchase_credit_note:${data.creditNoteId}:void`,
+      voidDate,
     );
     const { error: upErr } = await supabase
       .from("purchase_credit_notes" as never)
       .update({
         status: "void",
         amount_allocated_minor: 0,
+        void_date: voidDate,
+        void_reason: data.reason,
         updated_at: new Date().toISOString(),
       } as never)
       .eq("company_id" as never, data.companyId as never)
-      .eq("id" as never, data.creditNoteId as never);
+      .eq("id" as never, data.creditNoteId as never)
+      .neq("status" as never, "void" as never);
     if (upErr) {
+      if (/void_date|42703|PGRST204/i.test(upErr.message)) {
+        throw new Error(
+          "The supplier credit void-date migration must be applied before voiding with a dated as-at history.",
+        );
+      }
       throw new Error(
         `The credit note was reversed in the ledger but could not be marked void (${upErr.message}). Reload and click Void again - it will not post twice.`,
       );
@@ -3120,10 +3676,15 @@ export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
       data.companyId,
       "credit_note.void",
       data.creditNoteId,
-      { void_journal_id: voidJournalId, reason: data.reason, unallocated_minor: onBills },
+      {
+        void_journal_id: voidJournalId,
+        void_date: voidDate,
+        reason: data.reason,
+        unallocated_minor: onBills,
+      },
       "purchase_credit_note",
     );
-    return { voidJournalId };
+    return { voidJournalId, voidDate };
   });
 
 /**
@@ -3365,6 +3926,7 @@ export const savePurchaseOrder = createServerFn({ method: "POST" })
     );
   });
 
+/** Convert unbilled received quantities into a draft bill (fail closed if nothing billable). */
 export const convertPurchaseOrderToBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; orderId: string }) => ({
@@ -3373,10 +3935,61 @@ export const convertPurchaseOrderToBill = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.draft");
-    return workflowRpc<{ billId: string }>(context.supabase, "convert_purchase_order_atomic", {
-      _company: data.companyId,
-      _order: data.orderId,
-    });
+    return workflowRpc<{ billId: string; fullyBilled?: boolean; status?: string }>(
+      context.supabase,
+      "convert_purchase_order_atomic",
+      {
+        _company: data.companyId,
+        _order: data.orderId,
+      },
+    );
+  });
+
+/** Non-posting goods receipt against a sent / partially received purchase order. */
+export const receivePurchaseOrderGoods = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      orderId: string;
+      lines: Array<{ lineId: string; receiveQuantity: number }>;
+    }) => {
+      if (!Array.isArray(input.lines) || input.lines.length < 1) {
+        throw new Error("Add at least one receipt quantity");
+      }
+      const seen = new Set<string>();
+      return {
+        companyId: assertUuid(input.companyId),
+        orderId: assertUuid(input.orderId, "order"),
+        lines: input.lines.map((line, i) => {
+          const lineId = assertUuid(line.lineId, `Line ${i + 1}`);
+          if (seen.has(lineId)) throw new Error("Each order line can appear once in a receipt");
+          seen.add(lineId);
+          const receiveQuantity = Number(line.receiveQuantity);
+          if (
+            !Number.isFinite(receiveQuantity) ||
+            receiveQuantity <= 0 ||
+            receiveQuantity > 1e9 ||
+            receiveQuantity !== Number(receiveQuantity.toFixed(6))
+          ) {
+            throw new Error(`Line ${i + 1}: enter a positive quantity with up to six decimal places`);
+          }
+          return { lineId, receiveQuantity };
+        }),
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "purchases.draft");
+    return workflowRpc<{ id: string; status: string; updated: number }>(
+      context.supabase,
+      "receive_purchase_order_goods",
+      {
+        _company: data.companyId,
+        _order: data.orderId,
+        _payload: { lines: data.lines },
+      },
+    );
   });
 
 // ---- Recurring bills ----
@@ -3944,70 +4557,114 @@ export const getSupplierStatement = createServerFn({ method: "GET" })
       to?: string;
       asOf?: string;
       currencyCode?: string;
-    }) => ({
-      currencyCode: /^[A-Za-z]{3}$/.test(input.currencyCode ?? "")
-        ? (input.currencyCode as string).toUpperCase()
-        : null,
-      companyId: assertUuid(input.companyId),
-      contactId: assertUuid(input.contactId, "supplier"),
-      from: input.from && /^\d{4}-\d{2}-\d{2}$/.test(input.from) ? input.from : null,
-      to: input.to && /^\d{4}-\d{2}-\d{2}$/.test(input.to) ? input.to : null,
-      asOf:
-        input.asOf && /^\d{4}-\d{2}-\d{2}$/.test(input.asOf)
-          ? input.asOf
-          : new Date().toISOString().slice(0, 10),
-    }),
+    }) => {
+      const from = input.from && /^\d{4}-\d{2}-\d{2}$/.test(input.from) ? input.from : null;
+      const to = input.to && /^\d{4}-\d{2}-\d{2}$/.test(input.to) ? input.to : null;
+      if (from && to && from > to) {
+        throw new Error("Statement From date cannot be after the To date");
+      }
+      return {
+        currencyCode: /^[A-Za-z]{3}$/.test(input.currencyCode ?? "")
+          ? (input.currencyCode as string).toUpperCase()
+          : null,
+        companyId: assertUuid(input.companyId),
+        contactId: assertUuid(input.contactId, "supplier"),
+        from,
+        to,
+        asOf:
+          input.asOf && /^\d{4}-\d{2}-\d{2}$/.test(input.asOf)
+            ? input.asOf
+            : new Date().toISOString().slice(0, 10),
+      };
+    },
   )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
-    let billQ = context.supabase
-      .from("purchase_bills" as never)
-      .select(
-        "id, bill_date, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, supplier_invoice_number, bill_number, currency_code" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .eq("contact_id" as never, data.contactId as never)
-      .neq("status" as never, "void" as never)
-      .neq("status" as never, "draft" as never)
-      .lte("bill_date" as never, data.asOf as never)
-      .order("bill_date" as never);
-    if (data.from) billQ = billQ.gte("bill_date" as never, data.from as never);
-    if (data.to) billQ = billQ.lte("bill_date" as never, data.to as never);
-    const { data: billsAll, error } = await billQ;
-    if (error) throw new Error(error.message);
+    const { buildSupplierStatement } = await import("@/lib/purchases/supplier-statement");
+    type SupplierStatementDoc = import("@/lib/purchases/supplier-statement").SupplierStatementDoc;
 
-    let payQ = context.supabase
-      .from("supplier_payments" as never)
-      .select(
-        "id, payment_date, amount_minor, unallocated_minor, reference, status, currency_code" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .eq("contact_id" as never, data.contactId as never)
-      .eq("status" as never, "paid" as never)
-      .lte("payment_date" as never, data.asOf as never)
-      .order("payment_date" as never);
-    if (data.from) payQ = payQ.gte("payment_date" as never, data.from as never);
-    if (data.to) payQ = payQ.lte("payment_date" as never, data.to as never);
-    const { data: paymentsAll, error: pErr } = await payQ;
-    if (pErr) throw new Error(pErr.message);
+    const loadRows = async <T>(
+      table: string,
+      rich: string,
+      basic: string,
+      orderCol: string,
+    ): Promise<T[]> => {
+      const run = async (cols: string) => {
+        const { data: rows, error } = await context.supabase
+          .from(table as never)
+          .select(cols as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("contact_id" as never, data.contactId as never)
+          .neq("status" as never, "draft" as never)
+          .order(orderCol as never);
+        return { rows: (rows ?? []) as T[], error };
+      };
+      const first = await run(rich);
+      if (!first.error) return first.rows;
+      if (/void_date|42703|PGRST204/i.test(first.error.message)) {
+        const second = await run(basic);
+        if (second.error) throw new Error(second.error.message);
+        return second.rows;
+      }
+      throw new Error(first.error.message);
+    };
 
-    let cnQ = context.supabase
-      .from("purchase_credit_notes" as never)
-      .select(
-        "id, credit_date, credit_number, status, total_minor, amount_allocated_minor, currency_code" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .eq("contact_id" as never, data.contactId as never)
-      .neq("status" as never, "void" as never)
-      .neq("status" as never, "draft" as never)
-      .lte("credit_date" as never, data.asOf as never)
-      .order("credit_date" as never);
-    if (data.from) cnQ = cnQ.gte("credit_date" as never, data.from as never);
-    if (data.to) cnQ = cnQ.lte("credit_date" as never, data.to as never);
-    const { data: creditNotesAll, error: cErr } = await cnQ;
-    if (cErr) throw new Error(cErr.message);
+    type BillRow = {
+      id: string;
+      bill_date: string;
+      due_date: string;
+      status: string;
+      total_minor: number;
+      amount_paid_minor: number;
+      amount_credited_minor: number;
+      supplier_invoice_number: string | null;
+      bill_number: string | null;
+      currency_code: string | null;
+      void_date?: string | null;
+    };
+    type PayRow = {
+      id: string;
+      payment_date: string;
+      amount_minor: number;
+      unallocated_minor: number;
+      reference: string | null;
+      status: string;
+      currency_code: string | null;
+      void_date?: string | null;
+    };
+    type CreditRow = {
+      id: string;
+      credit_date: string;
+      credit_number: string | null;
+      status: string;
+      total_minor: number;
+      amount_allocated_minor: number;
+      currency_code: string | null;
+      void_date?: string | null;
+    };
 
-    // A statement is in ONE currency: amounts in different currencies are never netted together.
+    // Load full history (including voids) so opening balance and void lines match AR honesty.
+    const [billsAll, paymentsAll, creditNotesAll] = await Promise.all([
+      loadRows<BillRow>(
+        "purchase_bills",
+        "id, bill_date, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, supplier_invoice_number, bill_number, currency_code, void_date",
+        "id, bill_date, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, supplier_invoice_number, bill_number, currency_code",
+        "bill_date",
+      ),
+      loadRows<PayRow>(
+        "supplier_payments",
+        "id, payment_date, amount_minor, unallocated_minor, reference, status, currency_code, void_date",
+        "id, payment_date, amount_minor, unallocated_minor, reference, status, currency_code",
+        "payment_date",
+      ),
+      loadRows<CreditRow>(
+        "purchase_credit_notes",
+        "id, credit_date, credit_number, status, total_minor, amount_allocated_minor, currency_code, void_date",
+        "id, credit_date, credit_number, status, total_minor, amount_allocated_minor, currency_code",
+        "credit_date",
+      ),
+    ]);
+
     const baseCur = await (async () => {
       const { data: co } = await context.supabase
         .from("companies")
@@ -4017,181 +4674,108 @@ export const getSupplierStatement = createServerFn({ method: "GET" })
       return (co?.base_currency ?? "GBP").toUpperCase();
     })();
     const cur = (c: string | null | undefined) => (c ?? baseCur).toUpperCase();
-    const availableCurrencies = [
-      ...new Set([
-        ...((billsAll ?? []) as Array<{ currency_code: string | null }>).map((r) =>
-          cur(r.currency_code),
+
+    const docs: SupplierStatementDoc[] = [
+      ...billsAll.map(
+        (b): SupplierStatementDoc => ({
+          kind: "bill",
+          id: b.id,
+          date: b.bill_date,
+          currencyCode: cur(b.currency_code),
+          amountMinor: Number(b.total_minor),
+          reference: b.supplier_invoice_number ?? b.bill_number,
+          status: b.status === "paid" || b.status === "partly_paid" ? "authorised" : b.status,
+          voidDate: b.void_date ?? null,
+          dueDate: b.due_date,
+        }),
+      ),
+      ...paymentsAll
+        .filter((p) => p.status === "paid" || p.status === "void")
+        .map(
+          (p): SupplierStatementDoc => ({
+            kind: "payment",
+            id: p.id,
+            date: p.payment_date,
+            currencyCode: cur(p.currency_code),
+            amountMinor: Number(p.amount_minor),
+            reference: p.reference,
+            status: p.status === "paid" ? "posted" : p.status,
+            voidDate: p.void_date ?? null,
+          }),
         ),
-        ...((paymentsAll ?? []) as Array<{ currency_code: string | null }>).map((r) =>
-          cur(r.currency_code),
-        ),
-        ...((creditNotesAll ?? []) as Array<{ currency_code: string | null }>).map((r) =>
-          cur(r.currency_code),
-        ),
-      ]),
+      ...creditNotesAll.map(
+        (c): SupplierStatementDoc => ({
+          kind: "credit_note",
+          id: c.id,
+          date: c.credit_date,
+          currencyCode: cur(c.currency_code),
+          amountMinor: Number(c.total_minor),
+          reference: c.credit_number,
+          status: c.status === "partly_paid" ? "authorised" : c.status,
+          voidDate: c.void_date ?? null,
+        }),
+      ),
     ];
+
+    // Cap activity at asOf (defaults to today) when no explicit To date is provided.
+    const currencies = buildSupplierStatement(docs, {
+      from: data.from,
+      to: data.to ?? data.asOf,
+    });
+    const availableCurrencies = currencies.map((c) => c.currency_code);
     const statementCurrency =
       data.currencyCode ??
       (availableCurrencies.includes(baseCur) ? baseCur : (availableCurrencies[0] ?? baseCur));
-    const bills = ((billsAll ?? []) as Array<{ currency_code: string | null }>).filter(
-      (r) => cur(r.currency_code) === statementCurrency,
-    ) as typeof billsAll;
-    const payments = ((paymentsAll ?? []) as Array<{ currency_code: string | null }>).filter(
-      (r) => cur(r.currency_code) === statementCurrency,
-    ) as typeof paymentsAll;
-    const creditNotes = ((creditNotesAll ?? []) as Array<{ currency_code: string | null }>).filter(
-      (r) => cur(r.currency_code) === statementCurrency,
-    ) as typeof creditNotesAll;
+    const selected =
+      currencies.find((c) => c.currency_code === statementCurrency) ??
+      ({
+        currency_code: statementCurrency,
+        opening_balance_minor: 0,
+        lines: [],
+        closing_balance_minor: 0,
+        total_debits_minor: 0,
+        total_credits_minor: 0,
+      } as const);
 
-    // Opening balance: everything dated before the statement period starts (P-24).
-    let openingBalanceMinor = 0;
-    if (data.from) {
-      const sumCol = (rows: unknown, col: string) =>
-        ((rows ?? []) as Array<Record<string, number | string | null>>)
-          .filter((r) => cur(r["currency_code"] as string | null) === statementCurrency)
-          .reduce((n, r) => n + Number(r[col] ?? 0), 0);
-      const [priorBills, priorPays, priorCns] = await Promise.all([
-        context.supabase
-          .from("purchase_bills" as never)
-          .select("total_minor, currency_code" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq("contact_id" as never, data.contactId as never)
-          .not("status" as never, "in" as never, "(void,draft)" as never)
-          .lt("bill_date" as never, data.from as never),
-        context.supabase
-          .from("supplier_payments" as never)
-          .select("amount_minor, currency_code" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq("contact_id" as never, data.contactId as never)
-          .eq("status" as never, "paid" as never)
-          .lt("payment_date" as never, data.from as never),
-        context.supabase
-          .from("purchase_credit_notes" as never)
-          .select("total_minor, currency_code" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq("contact_id" as never, data.contactId as never)
-          .not("status" as never, "in" as never, "(void,draft)" as never)
-          .lt("credit_date" as never, data.from as never),
-      ]);
-      if (priorBills.error) throw new Error(priorBills.error.message);
-      if (priorPays.error) throw new Error(priorPays.error.message);
-      if (priorCns.error) throw new Error(priorCns.error.message);
-      openingBalanceMinor =
-        sumCol(priorBills.data, "total_minor") -
-        sumCol(priorPays.data, "amount_minor") -
-        sumCol(priorCns.data, "total_minor");
-    }
+    const billsInCurrency = billsAll.filter((b) => cur(b.currency_code) === statementCurrency);
+    const paymentsInCurrency = paymentsAll.filter(
+      (p) => cur(p.currency_code) === statementCurrency && p.status === "paid",
+    );
+    const creditsInCurrency = creditNotesAll.filter(
+      (c) => cur(c.currency_code) === statementCurrency,
+    );
 
-    type TimelineRow = {
-      date: string;
-      type: "bill" | "payment" | "credit_note";
-      id: string;
-      reference: string | null;
-      debit_minor: number;
-      credit_minor: number;
-      status: string;
-    };
-    const timeline: TimelineRow[] = [];
-    for (const b of (bills ?? []) as Array<{
-      id: string;
-      bill_date: string;
-      total_minor: number;
-      supplier_invoice_number: string | null;
-      bill_number: string | null;
-      status: string;
-    }>) {
-      timeline.push({
-        date: b.bill_date,
-        type: "bill",
-        id: b.id,
-        reference: b.supplier_invoice_number ?? b.bill_number,
-        debit_minor: b.total_minor,
-        credit_minor: 0,
-        status: b.status,
-      });
-    }
-    for (const p of (payments ?? []) as Array<{
-      id: string;
-      payment_date: string;
-      amount_minor: number;
-      reference: string | null;
-      status: string;
-    }>) {
-      timeline.push({
-        date: p.payment_date,
-        type: "payment",
-        id: p.id,
-        reference: p.reference,
-        debit_minor: 0,
-        credit_minor: p.amount_minor,
-        status: p.status,
-      });
-    }
-    for (const cn of (creditNotes ?? []) as Array<{
-      id: string;
-      credit_date: string;
-      credit_number: string | null;
-      total_minor: number;
-      status: string;
-    }>) {
-      timeline.push({
-        date: cn.credit_date,
-        type: "credit_note",
-        id: cn.id,
-        reference: cn.credit_number,
-        debit_minor: 0,
-        credit_minor: cn.total_minor,
-        status: cn.status,
-      });
-    }
-    timeline.sort((a, b) => a.date.localeCompare(b.date) || a.type.localeCompare(b.type));
-    let running = openingBalanceMinor;
-    const lines = timeline.map((t) => {
-      running += t.debit_minor - t.credit_minor;
-      return { ...t, balance_minor: running };
-    });
-
-    const rows = (
-      (bills ?? []) as Array<{
-        id: string;
-        bill_date: string;
-        due_date: string;
-        status: string;
-        total_minor: number;
-        amount_paid_minor: number;
-        amount_credited_minor: number;
-        supplier_invoice_number: string | null;
-        currency_code: string;
-      }>
-    ).map((b) => ({
-      ...b,
-      outstanding_minor: b.total_minor - b.amount_paid_minor - b.amount_credited_minor,
-    }));
-    const open = rows.filter((r) => r.outstanding_minor > 0 && r.status !== "draft");
-    const unappliedCredits = (
-      (creditNotes ?? []) as Array<{
-        total_minor: number;
-        amount_allocated_minor: number;
-        status: string;
-      }>
-    )
+    const rows = billsInCurrency
+      .filter((b) => b.status !== "void")
+      .map((b) => ({
+        ...b,
+        currency_code: cur(b.currency_code),
+        outstanding_minor:
+          Number(b.total_minor) - Number(b.amount_paid_minor) - Number(b.amount_credited_minor),
+      }));
+    const open = rows.filter((r) => r.outstanding_minor > 0);
+    const unappliedCredits = creditsInCurrency
       .filter((c) => ["authorised", "partly_paid"].includes(c.status))
-      .reduce((s, c) => s + (c.total_minor - c.amount_allocated_minor), 0);
-    const unappliedPayments = ((payments ?? []) as Array<{ unallocated_minor: number }>).reduce(
-      (s, p) => s + (p.unallocated_minor ?? 0),
+      .reduce((s, c) => s + (Number(c.total_minor) - Number(c.amount_allocated_minor)), 0);
+    const unappliedPayments = paymentsInCurrency.reduce(
+      (s, p) => s + Number(p.unallocated_minor ?? 0),
       0,
     );
 
     return {
       asOf: data.asOf,
+      from: data.from,
+      to: data.to,
       currencyCode: statementCurrency,
-      availableCurrencies,
+      availableCurrencies:
+        availableCurrencies.length > 0 ? availableCurrencies : [statementCurrency],
+      currencies,
       bills: rows,
-      payments: payments ?? [],
-      creditNotes: creditNotes ?? [],
-      lines,
-      openingBalanceMinor,
-      closingBalanceMinor: running,
+      payments: paymentsInCurrency,
+      creditNotes: creditsInCurrency.filter((c) => c.status !== "void"),
+      lines: selected.lines,
+      openingBalanceMinor: selected.opening_balance_minor,
+      closingBalanceMinor: selected.closing_balance_minor,
       openBalanceMinor: open.reduce((s, r) => s + r.outstanding_minor, 0),
       unappliedCreditMinor: unappliedCredits,
       unappliedPaymentMinor: unappliedPayments,

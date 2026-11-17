@@ -291,7 +291,23 @@ export async function voidPostedDocument(
   supabase: Client,
   postedJournalId: string,
   idempotencyKey: string,
+  reversalDate?: string,
 ): Promise<string> {
+  if (reversalDate) {
+    const { data, error } = await supabase.rpc(
+      "reverse_journal_on" as never,
+      {
+        _journal_id: postedJournalId,
+        _reversal_date: reversalDate,
+        _idempotency_key: idempotencyKey,
+      } as never,
+    );
+    if (!error && typeof data === "string") return data;
+    // Missing RPC: fall back to original-date reversal; void_date is still stored on the document.
+    if (error && !/42883|PGRST202/i.test(error.message) && error.code !== "PGRST202") {
+      throw new Error(error.message);
+    }
+  }
   const { journalId } = await reverseJournal(supabase, postedJournalId, idempotencyKey);
   return journalId;
 }

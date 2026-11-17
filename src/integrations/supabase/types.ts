@@ -8058,7 +8058,9 @@ export type Database = {
           tax_minor: number;
           total_minor: number;
           updated_at: string;
+          void_date: string | null;
           void_journal_id: string | null;
+          void_reason: string | null;
         };
         Insert: {
           amount_credited_minor?: number;
@@ -8104,7 +8106,9 @@ export type Database = {
           tax_minor?: number;
           total_minor?: number;
           updated_at?: string;
+          void_date?: string | null;
           void_journal_id?: string | null;
+          void_reason?: string | null;
         };
         Update: {
           amount_credited_minor?: number;
@@ -8150,7 +8154,9 @@ export type Database = {
           tax_minor?: number;
           total_minor?: number;
           updated_at?: string;
+          void_date?: string | null;
           void_journal_id?: string | null;
+          void_reason?: string | null;
         };
         Relationships: [
           {
@@ -8327,6 +8333,8 @@ export type Database = {
           tax_minor: number;
           total_minor: number;
           updated_at: string;
+          void_date: string | null;
+          void_reason: string | null;
         };
         Insert: {
           amount_allocated_minor?: number;
@@ -8346,6 +8354,8 @@ export type Database = {
           tax_minor?: number;
           total_minor?: number;
           updated_at?: string;
+          void_date?: string | null;
+          void_reason?: string | null;
         };
         Update: {
           amount_allocated_minor?: number;
@@ -8365,6 +8375,8 @@ export type Database = {
           tax_minor?: number;
           total_minor?: number;
           updated_at?: string;
+          void_date?: string | null;
+          void_reason?: string | null;
         };
         Relationships: [
           {
@@ -11112,6 +11124,7 @@ export type Database = {
           status: Database["public"]["Enums"]["purchase_doc_status"];
           unallocated_minor: number;
           updated_at: string;
+          void_date: string | null;
           void_journal_id: string | null;
           void_reason: string | null;
           voided_at: string | null;
@@ -11136,6 +11149,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["purchase_doc_status"];
           unallocated_minor?: number;
           updated_at?: string;
+          void_date?: string | null;
           void_journal_id?: string | null;
           void_reason?: string | null;
           voided_at?: string | null;
@@ -11160,6 +11174,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["purchase_doc_status"];
           unallocated_minor?: number;
           updated_at?: string;
+          void_date?: string | null;
           void_journal_id?: string | null;
           void_reason?: string | null;
           voided_at?: string | null;

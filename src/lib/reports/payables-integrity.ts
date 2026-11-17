@@ -1,11 +1,23 @@
 import { convertMinorToBase } from "@/lib/accounting/fx";
 
-/** Current paid/credited counters cannot reconstruct deleted or reversed past allocations. */
-export function assertCurrentPayablesDate(asOf: string, companyToday: string): void {
-  if (asOf !== companyToday)
+/**
+ * Aged Payables as-at dates may be historical when dated allocation history is available.
+ * Future dates remain unsupported because outstanding cannot be projected forward.
+ */
+export function assertPayablesAsOfNotFuture(asOf: string, companyToday: string): void {
+  if (asOf > companyToday) {
     throw new Error(
-      `Historical Aged Payables is unavailable because dated payment and credit allocation history is not retained. Choose ${companyToday} for the current outstanding snapshot. Future dates are also unsupported.`,
+      `Aged Payables cannot use a future as-at date. Choose ${companyToday} or an earlier date.`,
     );
+  }
+}
+
+/**
+ * @deprecated Prefer assertPayablesAsOfNotFuture. Historical dates are supported by
+ * getAgedPayablesAsAt; this helper remains only for callers that still use current counters.
+ */
+export function assertCurrentPayablesDate(asOf: string, companyToday: string): void {
+  assertPayablesAsOfNotFuture(asOf, companyToday);
 }
 
 export function payableOutstandingInBase(

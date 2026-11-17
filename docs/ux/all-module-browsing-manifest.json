@@ -393,7 +393,8 @@
         "2026-11-17: src/screens/payroll/payments.tsx — payment-date cells expose a keyboard-focusable detail-dialog action, preserving existing payment details and reversal behavior; commit a2e79503e64719873887c2836c2c602159ea073a; SOURCE ONLY, NOT RUN.",
         "2026-11-17: src/screens/payroll/payments.tsx method, amount, reference and status cells now have keyboard-focusable detail-dialog buttons; source commit 41c9b5c5a9abadcf780350e5c19ceca7f25c5cb7. SOURCE ONLY; NOT RUN; not URL-deep-linkable.",
         "2026-11-17: src/screens/payroll/payments.tsx — payment-detail query failure now renders existing ErrorState with retry calling paymentDetailQ.refetch(); source commit 4d072d4432d5da94ac09bd0772dc6589df691433. SOURCE ONLY; NOT RUN.",
-        "2026-11-17: src/screens/payroll/payments.tsx — settlement form settings, outstanding payslips and clearing-account query error messages each provide an inline retry button using their existing refetch methods; source commit 771e402b4175f28f55135ab488c517ce4e4903e8. SOURCE ONLY; NOT RUN."
+        "2026-11-17: src/screens/payroll/payments.tsx — settlement form settings, outstanding payslips and clearing-account query error messages each provide an inline retry button using their existing refetch methods; source commit 771e402b4175f28f55135ab488c517ce4e4903e8. SOURCE ONLY; NOT RUN.",
+        "2026-11-18: src/screens/payroll/payments.tsx adds Refresh details control inside loaded payment dialog, refetching payment detail while retaining open dialog and disabling duplicate refresh during fetch; source commit 918f1cab1384b6bf9eecded2b31ddb7c3ace420f; SOURCE ONLY, NOT RUN."
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
@@ -430,7 +431,8 @@
         "Verify payment-date detail action with keyboard and screen reader, then run coverage guard, TypeScript, lint, tests, build and authenticated browser checks; NOT RUN.",
         "Verify payment table keyboard, screen-reader, dialog focus and history behavior; implement native payment-detail deep link; inventory guard, typecheck, lint, tests, build and RLS/accounting regression NOT RUN.",
         "Verify payment detail query error/retry with authenticated fixture and accessible dialog focus; inventory guard, TypeScript, lint, unit/browser tests, RLS/accounting regression NOT RUN.",
-        "Verify all three settlement form retry actions with injected query failures and accessible keyboard focus; local guard, typecheck, lint, unit, build, authenticated browser, RLS and accounting tests NOT RUN."
+        "Verify all three settlement form retry actions with injected query failures and accessible keyboard focus; local guard, typecheck, lint, unit, build, authenticated browser, RLS and accounting tests NOT RUN.",
+        "Verify in-dialog payment detail refresh (loading state, retry, keyboard focus, RLS and accounting invariants) with authenticated browser; NOT RUN."
       ]
     },
     {

@@ -124,11 +124,11 @@ describe("POS quote server boundary (mocked database)", () => {
     await expect(run()).rejects.toThrow("Database unavailable");
   });
   it("does not silently default a missing company currency", async () => {
-    tables.companies = null;
+    tables["companies"] = null;
     await expect(run()).rejects.toThrow(/currency/);
   });
   it("rejects a removed product rather than silently omitting its line", async () => {
-    tables.products = [];
+    tables["products"] = [];
     await expect(run()).rejects.toThrow(/unavailable/);
   });
   it("rejects malformed requests before any database access", () => {

@@ -104,7 +104,7 @@ describe("POS catalogue preview", () => {
     const result = parsePosQuote({
       companyId,
       lines: [{ productId, quantity: 1, unitPriceMinor: 1, taxRateBps: 0 }],
-    } as typeof input);
+    } as unknown as typeof input);
     expect(result).toEqual(input);
   });
   it("rejects absent currency and unknown tax treatment", () => {

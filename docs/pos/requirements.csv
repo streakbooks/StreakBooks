@@ -16,14 +16,14 @@ POS-014,4. COMPLETE POS FEATURE SCOPE,A. POS Overview and Mission Control,Low-st
 POS-015,4. COMPLETE POS FEATURE SCOPE,A. POS Overview and Mission Control,Suspicious refunds and discounts,NOT STARTED,,
 POS-016,4. COMPLETE POS FEATURE SCOPE,A. POS Overview and Mission Control,Settlement exceptions,NOT STARTED,,
 POS-017,4. COMPLETE POS FEATURE SCOPE,A. POS Overview and Mission Control,Reconciliation status,NOT STARTED,,
-POS-018,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,"Search products by name, SKU and barcode",NOT STARTED,,
+POS-018,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,"Search products by name, SKU and barcode",IN PROGRESS,Batch 1 catalogue preview only; no checkout acceptance,Authenticated staging and transactional POS acceptance pending
 POS-019,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,Scan products using compatible barcode readers,NOT STARTED,,
 POS-020,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,Product grid with images and configurable favourites,NOT STARTED,,
 POS-021,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,"Categories, variants, modifiers and bundles",NOT STARTED,,
-POS-022,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,Add products and services to cart,NOT STARTED,,
-POS-023,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,Change quantity and unit of measure,NOT STARTED,,
+POS-022,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,Add products and services to cart,IN PROGRESS,Batch 1 catalogue preview only; no checkout acceptance,Authenticated staging and transactional POS acceptance pending
+POS-023,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,Change quantity and unit of measure,IN PROGRESS,Batch 1 catalogue preview only; no checkout acceptance,Authenticated staging and transactional POS acceptance pending
 POS-024,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,Apply authorized prices and discounts,NOT STARTED,,
-POS-025,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,Tax-inclusive and tax-exclusive calculations,NOT STARTED,,
+POS-025,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,Tax-inclusive and tax-exclusive calculations,IN PROGRESS,Batch 1 catalogue preview only; no checkout acceptance,Authenticated staging and transactional POS acceptance pending
 POS-026,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,Tax exemption with authorization and evidence,NOT STARTED,,
 POS-027,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,"Hold, suspend, resume and cancel orders",NOT STARTED,,
 POS-028,4. COMPLETE POS FEATURE SCOPE,B. POS Register and Checkout,Park and recall carts across authorized devices,NOT STARTED,,
@@ -245,7 +245,7 @@ POS-243,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Multiple businesses under a
 POS-244,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Multiple stores per company,NOT STARTED,,
 POS-245,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Multiple registers per store,NOT STARTED,,
 POS-246,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Store-specific employees and permissions,NOT STARTED,,
-POS-247,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Company-specific taxes and currencies,NOT STARTED,,
+POS-247,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Company-specific taxes and currencies,IN PROGRESS,Batch 1 catalogue preview only; no checkout acceptance,Authenticated staging and transactional POS acceptance pending
 POS-248,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Location-specific stock and prices,NOT STARTED,,
 POS-249,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Independent cash and settlement reconciliation,NOT STARTED,,
 POS-250,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Consolidated reporting only where appropriately authorized,NOT STARTED,,

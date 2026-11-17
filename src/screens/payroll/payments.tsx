@@ -775,7 +775,10 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </DialogDescription>
           </DialogHeader>
           {detailPaymentId !== null && paymentDetailQ.isSuccess ? (
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-3">
+              <span role="status" aria-live="polite" className="text-xs text-muted-foreground">
+                {paymentDetailQ.isFetching ? "Updating payment details…" : ""}
+              </span>
               <Button
                 type="button"
                 size="sm"

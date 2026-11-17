@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Updated** | 2026-11-17 |
-| **Baseline** | GitHub `main` @ `ddaff917` |
+| **Baseline** | GitHub `main` @ `c24ac11a` |
 | **IP policy** | Originality-first — see [IP_AND_DEPENDENCY_COMPLIANCE.md](./IP_AND_DEPENDENCY_COMPLIANCE.md) |
 | **Classification** | Complete and Verified / Partial / UI Only / Backend Only / Missing / Blocked / Intentionally Deferred |
 
@@ -17,13 +17,13 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 |--------|--------|--------|----------|---------|-------------------------|-------------|
 | M-01 | Dashboard | Partial | P1 | Ledger-backed KPIs exist; multi-currency/permission tie-out not certified | Xero/QBO dashboard overview | Fixture golden vs reports |
 | M-02 | Banking & reconciliation | Partial | P0 | CSV/QIF/rules/match/unmatch/recon; first-session opening #248; ledger-only truncate #249; transfer auto-match #250; live bank feeds blocked | Xero bank feed (paid), Odoo sync (Enterprise) | Provider selection; E2E recon proof |
-| M-03 | Sales & receivables | Partial | P0 | Invoice/quote/credit/receipt/statement/as-at AR; credit-limit #242; **copy credit note on main (`b090bfc8`)** | Xero/QBO AR | Gateway + authenticated lifecycle matrix |
-| M-04 | Purchases & payables | Partial | P0 | Bills/PO/payments/credits; AP as-at #229; receipt #230; 3-way #231; partial bill #232; void_date #233/#234; statement #235; payment void #236; copy-bill #243; supplier credit-limit #244; **copy credit note in PR** | Xero/Odoo AP / receiving / matching | Authenticated lifecycle + inventory COGS only with real layers |
+| M-03 | Sales & receivables | Partial | P0 | Invoice/quote/credit/receipt/statement/as-at AR; credit-limit #242; copy credit/quote; authorise totals + save-authorise honesty #257/#258 | Xero/QBO AR | Gateway + authenticated lifecycle matrix |
+| M-04 | Purchases & payables | Partial | P0 | Bills/PO/payments/credits; AP as-at #229; receipt #230; 3-way #231; partial bill #232; void_date #233/#234; statement #235; payment void #236; copy-bill #243; supplier credit-limit #244; AP totals #255; save-authorise honesty #258 | Xero/Odoo AP / receiving / matching | Authenticated lifecycle + inventory COGS only with real layers |
 | M-05 | Expenses & reimbursements | Partial | P1 | EM module + claims; OCR/payout provider gaps | Expensify/Xero expenses | Provider + approval depth |
 | M-06 | Contacts | Partial | P1 | CRUD/duplicates/portals partial | Xero contacts | Portal isolation proof |
 | M-07 | Products & Services | Partial | P1 | Non-inventory catalogue ready | QBO products | — |
 | M-08 | Inventory & stock | **Missing layers / Intentionally Deferred** | P2 | No stock cost-layer tables; COA cogs subtypes + unused valuation setting only — **do not claim COGS** | Odoo Inventory, QBO Advanced | Build movement ledger before valuation |
-| M-09 | Accounting / GL | Partial | P0 | Posting engine, periods, journals, health | All majors | Race/lock live proof |
+| M-09 | Accounting / GL | Partial | P0 | Posting engine, periods, journals, health; journal reverse company/source gate #257 | All majors | Race/lock live proof |
 | M-10 | Budgets & forecasting | Partial | P1 | Budgets + variance runners | Xero budgets | Fixture acceptance |
 | M-11 | Fixed assets | Partial | P1 | Register/depreciation batches shipped | Xero assets, Odoo assets | GL recon certification |
 | M-12 | Projects / timesheets / job costing | Partial | P1 | Projects + profitability + tagging; **timesheets Missing** | Xero Projects, Odoo timesheets | Timesheet billing |

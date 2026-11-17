@@ -1,6 +1,6 @@
-import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-("use client");
+"use client";
 
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { VoiceFields, VoiceSelect } from "@/components/ai-voice/voice-fields";
 
 import { useEffect, useMemo, useRef, useState } from "react";

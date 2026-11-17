@@ -32,7 +32,7 @@ END $$;
 
 -- A sales.draft user may create a contact but cannot directly rewrite numbering.
 SELECT set_config('request.jwt.claims',
-  '{"sub":"00000000-0000-4000-8000-000000000002"}', false);
+  '{"sub":"00000000-0000-4000-8000-000000000003"}', false);
 INSERT INTO public.contacts(company_id,name,kind) VALUES (
  '10000000-0000-4000-8000-000000000001','Numbering Sales Draft','customer'
 );
@@ -53,6 +53,9 @@ DO $$
 DECLARE
   other_company uuid := '10000000-0000-4000-8000-000000000002';
 BEGIN
+  IF public.is_company_member(other_company) THEN
+    RAISE EXCEPTION 'Cross-tenant test actor unexpectedly belongs to the other company';
+  END IF;
   BEGIN
     INSERT INTO public.contacts(company_id,name,kind)
     VALUES (other_company,'Numbering Cross Tenant','customer');

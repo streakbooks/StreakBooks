@@ -38,9 +38,12 @@ CREATE POLICY contact_settings_manage_test ON public.company_contact_settings FO
 CREATE POLICY contact_settings_read_test ON public.company_contact_settings FOR SELECT TO authenticated
   USING (public.is_company_member(company_id));
 
+-- Use a distinct cashier: user 2 already has company B permissions from prior suites.
+INSERT INTO auth.users(id) VALUES ('00000000-0000-4000-8000-000000000003')
+ON CONFLICT DO NOTHING;
 INSERT INTO public.test_permissions(company_id,user_id,permission) VALUES
  ('10000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000001','contacts.manage'),
- ('10000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','sales.draft');
+ ('10000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000003','sales.draft');
 
 -- Test rollback of the counter if a later insert trigger or constraint fails.
 CREATE FUNCTION public.test_contact_insert_failure()

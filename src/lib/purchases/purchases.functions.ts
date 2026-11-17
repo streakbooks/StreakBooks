@@ -73,6 +73,7 @@ import {
   type SupplierCreditLimitBill,
 } from "@/lib/purchases/supplier-credit-limit";
 import { assertHeaderMatchesLines } from "@/lib/purchases/authorise-totals";
+import { JournalPostedUnlinkedError } from "@/lib/accounting/journal-posted-unlinked";
 
 export const SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED = "SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED";
 
@@ -1936,7 +1937,8 @@ export async function authoriseBillInternal(
     if (!upErr) linkError = { message: "The bill changed while it was being authorised" };
   }
   if (linkError) {
-    throw new Error(
+    throw new JournalPostedUnlinkedError(
+      journalId,
       `The journal was posted but the bill could not be marked authorised (${linkError.message}). Open the bill and click Authorise again - it will not post twice.`,
     );
   }
@@ -2954,7 +2956,8 @@ async function authoriseCreditNoteInternal(
     .eq("status" as never, "draft" as never)
     .select("id");
   if (markErr || !marked || (marked as unknown[]).length === 0) {
-    throw new Error(
+    throw new JournalPostedUnlinkedError(
+      journalId,
       `The journal was posted but the credit note could not be marked authorised (${markErr?.message ?? "it changed while saving"}). Open it and click Authorise again - it will not post twice.`,
     );
   }
@@ -3111,6 +3114,8 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
         id: creditId,
         journalId: null as string | null,
         allocationError: null as string | null,
+        authoriseError: null as string | null,
+        statusHint: null as "posted_unauthorised" | null,
       };
 
     try {
@@ -3120,11 +3125,30 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
         creditId,
         data.allocations,
       );
-      return { id: creditId, journalId: result.journalId, allocationError: result.allocationError };
+      return {
+        id: creditId,
+        journalId: result.journalId,
+        allocationError: result.allocationError,
+        authoriseError: null as string | null,
+        statusHint: null as "posted_unauthorised" | null,
+      };
     } catch (authoriseError) {
-      throw new Error(
-        `The credit note was saved as draft ${creditNumber} but could not be authorised: ${(authoriseError as Error).message}`,
-      );
+      if (authoriseError instanceof JournalPostedUnlinkedError) {
+        return {
+          id: creditId,
+          journalId: authoriseError.journalId,
+          allocationError: null as string | null,
+          authoriseError: authoriseError.message,
+          statusHint: authoriseError.statusHint,
+        };
+      }
+      return {
+        id: creditId,
+        journalId: null as string | null,
+        allocationError: null as string | null,
+        authoriseError: `The credit note was saved as draft ${creditNumber} but could not be authorised: ${(authoriseError as Error).message}`,
+        statusHint: null as "posted_unauthorised" | null,
+      };
     }
   });
 

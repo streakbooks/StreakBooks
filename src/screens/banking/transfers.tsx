@@ -131,7 +131,7 @@ export function Transfers({
           `Transfer posted, but the statement line was not matched: ${result.matchError}`,
         );
       } else {
-      toast.success("Transfer posted. One journal only.");
+        toast.success("Transfer posted. One journal only.");
       }
       setAmount("");
       setReceived("");

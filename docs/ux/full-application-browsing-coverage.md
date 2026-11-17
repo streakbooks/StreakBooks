@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll Payments detail query retry (2026-11-17)
+
+- `src/screens/payroll/payments.tsx`: payment detail query errors now use the shared `ErrorState` with an explicit retry action (`paymentDetailQ.refetch()`), rather than an error message with no recovery control. Source commit `4d072d4432d5da94ac09bd0772dc6589df691433`. **SOURCE ONLY; NOT RUN.** No payment posting, reversal or journal logic changed.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll partial evidence updated in commit `7cf56b525a16f2997cc526e683af1688db93e1db`.
+- **NOT RUN:** local inventory guard, TypeScript, lint, unit/integration tests, build, authenticated browser error/retry/accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows; fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No main, manual CI, production DB or deployment changes.
+
+
 ### Payroll Payments linked data-cell detail actions (2026-11-17)
 
 - `src/screens/payroll/payments.tsx`: method, amount, reference and status cells now expose keyboard-focusable buttons opening the existing payment details dialog, in addition to the previously linked date cell. Source commit `41c9b5c5a9abadcf780350e5c19ceca7f25c5cb7`. **SOURCE ONLY; NOT RUN.** This does **not** create a native URL-backed payment detail route or guarantee browser Back/Forward/new-tab behavior.

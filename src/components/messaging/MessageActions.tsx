@@ -19,10 +19,12 @@ export function MessageActions({
   companyId,
   message,
   canEdit,
+  onReply,
 }: {
   companyId: string;
   message: MessagingMessage;
   canEdit: boolean;
+  onReply?: (message: MessagingMessage) => void;
 }) {
   const client = useQueryClient();
   const edit = useServerFn(editMessagingMessage);
@@ -101,6 +103,17 @@ export function MessageActions({
             {emoji}
           </Button>
         ))}
+        {onReply ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-7"
+            onClick={() => onReply(message)}
+          >
+            Reply
+          </Button>
+        ) : null}
         <Button
           type="button"
           size="sm"

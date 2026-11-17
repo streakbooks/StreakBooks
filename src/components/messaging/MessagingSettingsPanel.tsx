@@ -6,24 +6,52 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { LoadingState, ErrorState } from "@/components/common/states";
 import { useMessagingSettings } from "@/hooks/use-messaging";
-import { setMessagingEnabled } from "@/lib/messaging/messaging.functions";
+import {
+  previewMessagingDigest,
+  setMessagingCollaborationFlags,
+  setMessagingEnabled,
+} from "@/lib/messaging/messaging.functions";
 import { notify } from "@/lib/notify";
 import { useCanDo } from "@/hooks/use-can";
+import { useState } from "react";
 
 /** Organisation messaging administration. Authorization remains server-side. */
 export function MessagingSettingsPanel({ companyId }: { companyId: string | null }) {
   const settings = useMessagingSettings(companyId);
   const canManage = useCanDo("messaging.manage_settings");
   const setEnabled = useServerFn(setMessagingEnabled);
+  const setFlags = useServerFn(setMessagingCollaborationFlags);
+  const previewDigest = useServerFn(previewMessagingDigest);
   const client = useQueryClient();
-  const mutation = useMutation({
+  const [digestPreview, setDigestPreview] = useState<string | null>(null);
+
+  const invalidate = () => {
+    void client.invalidateQueries({ queryKey: ["messaging-settings", companyId] });
+  };
+
+  const enabledMutation = useMutation({
     mutationFn: (enabled: boolean) =>
       setEnabled({ data: { companyId: companyId!, enabled } }),
     onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ["messaging-settings", companyId] });
+      invalidate();
       notify.success("Messaging settings updated");
     },
     onError: (error) => notify.error(error, "Could not update messaging settings"),
+  });
+
+  const flagsMutation = useMutation({
+    mutationFn: (flags: {
+      allowAiAssist?: boolean;
+      allowFileShare?: boolean;
+      allowCustomer?: boolean;
+      allowVendor?: boolean;
+      allowGroupCreate?: boolean;
+    }) => setFlags({ data: { companyId: companyId!, ...flags } }),
+    onSuccess: () => {
+      invalidate();
+      notify.success("Collaboration flags updated");
+    },
+    onError: (error) => notify.error(error, "Could not update collaboration flags"),
   });
 
   if (!companyId) return null;
@@ -39,6 +67,7 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
   }
 
   const enabled = settings.data?.enabled ?? false;
+  const busy = enabledMutation.isPending || flagsMutation.isPending;
 
   return (
     <div className="space-y-6 rounded-lg border bg-card p-4">
@@ -59,36 +88,95 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
         <Switch
           id="messaging-enabled"
           checked={enabled}
-          disabled={!canManage || mutation.isPending}
-          onCheckedChange={(value) => mutation.mutate(value)}
+          disabled={!canManage || busy}
+          onCheckedChange={(value) => enabledMutation.mutate(value)}
         />
       </div>
-      <dl className="grid gap-2 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="text-muted-foreground">Internal chat</dt>
-          <dd>{settings.data?.allow_internal ? "Allowed" : "Blocked"}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Groups</dt>
-          <dd>{settings.data?.allow_group_create ? "Allowed" : "Blocked"}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Customer messaging</dt>
-          <dd>{settings.data?.allow_customer ? "Allowed" : "Blocked"}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Vendor messaging</dt>
-          <dd>{settings.data?.allow_vendor ? "Allowed" : "Blocked"}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">AI assist</dt>
-          <dd>{settings.data?.allow_ai_assist ? "Opt-in available" : "Off"}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Voice / video</dt>
-          <dd>{settings.data?.allow_voice_video ? "Configurable" : "Off"}</dd>
-        </div>
-      </dl>
+
+      <div className="space-y-3 border-t pt-4">
+        <h4 className="text-sm font-medium">Collaboration flags</h4>
+        {(
+          [
+            {
+              id: "allow-groups",
+              label: "Allow group create",
+              checked: Boolean(settings.data?.allow_group_create),
+              key: "allowGroupCreate" as const,
+            },
+            {
+              id: "allow-files",
+              label: "Allow file share",
+              checked: Boolean(settings.data?.allow_file_share),
+              key: "allowFileShare" as const,
+            },
+            {
+              id: "allow-customer",
+              label: "Customer portal messaging",
+              checked: Boolean(settings.data?.allow_customer),
+              key: "allowCustomer" as const,
+            },
+            {
+              id: "allow-vendor",
+              label: "Vendor portal messaging",
+              checked: Boolean(settings.data?.allow_vendor),
+              key: "allowVendor" as const,
+            },
+            {
+              id: "allow-ai",
+              label: "AI assist (opt-in)",
+              checked: Boolean(settings.data?.allow_ai_assist),
+              key: "allowAiAssist" as const,
+            },
+          ] as const
+        ).map((flag) => (
+          <div key={flag.id} className="flex items-center justify-between gap-4">
+            <Label htmlFor={flag.id}>{flag.label}</Label>
+            <Switch
+              id={flag.id}
+              checked={flag.checked}
+              disabled={!canManage || busy || !enabled}
+              onCheckedChange={(value) => flagsMutation.mutate({ [flag.key]: value })}
+            />
+          </div>
+        ))}
+        <p className="text-xs text-muted-foreground">
+          Customer/vendor messaging stays off until RLS and portal isolation are verified on
+          staging.
+        </p>
+      </div>
+
+      <div className="space-y-2 border-t pt-4">
+        <h4 className="text-sm font-medium">Digest preview</h4>
+        <p className="text-xs text-muted-foreground">
+          Builds a safe unread digest locally. HR/private and sensitive previews are omitted.
+          Sending email still requires a configured worker.
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            void previewDigest({ data: { companyId, frequency: "daily" } })
+              .then((preview) => {
+                const lines = preview.items
+                  .map((item) => `• ${item.title}: ${item.summary}`)
+                  .join("\n");
+                setDigestPreview(
+                  `${preview.subject}\n${lines || "(no unread items)"}\nOmitted sensitive: ${preview.omittedSensitive}`,
+                );
+              })
+              .catch((error) => notify.error(error, "Could not preview digest"));
+          }}
+        >
+          Preview daily digest
+        </Button>
+        {digestPreview ? (
+          <pre className="max-h-40 overflow-auto rounded border bg-muted/30 p-3 text-xs whitespace-pre-wrap">
+            {digestPreview}
+          </pre>
+        ) : null}
+      </div>
+
       {!canManage && (
         <p className="text-xs text-muted-foreground">
           You can view these settings. Changing them requires messaging.manage_settings.

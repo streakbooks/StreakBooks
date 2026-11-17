@@ -6,25 +6,28 @@ Compared delivered branch work to the master directive, Phase 0 PRD and competit
 
 - Unified `messaging_*` schema, RLS, durable outbox, DM/group/record/portal RPCs  
 - Permissions, access catalogue, feature catalogue key, demo settings enablement  
-- Messages workspace, header panel, settings panel, invoice/PO Discuss  
+- Messages workspace, header panel, settings panel, invoice/PO/bill/claim/quote/contact/leave Discuss  
 - Membership revoke on company_member status change  
 - Action Center fan-out on send  
 - Approval handoff helpers that refuse informal “approved” text  
-- AI assist fail-closed stub  
-- Unit tests for validation/approvals; structural security SQL  
+- AI assist fail-closed stub + UI panel  
+- Attachment upload/shared-files UI  
+- Portal Message Business + purchasing discuss bridges  
+- Presence/typing, reactions/edit/redact, reply, leave, mentions insert, connection health  
+- Notification preferences + safe digest preview (no send worker yet)  
+- Collaboration flags RPC (AI/files/customer/vendor/groups)  
+- Unit tests for validation/approvals/adapters/digests/mentions; structural security SQL  
+- Gated two-browser + portal E2E scaffolds  
 
 ## Essential gaps before production claim
 
 | Gap | Severity | Notes |
 | --- | -------- | ----- |
-| Migrations not applied to staging/prod | Blocker | SQL only on branch |
-| Two-browser realtime E2E | Blocker for Phase 1 acceptance | Not authored/run |
+| Migrations not applied to staging/prod | Blocker | SQL only on branch (6 files) |
+| Two-browser realtime E2E | Blocker for Phase 1 acceptance | Scaffolded; not run live |
 | Live cross-tenant RLS harness | Blocker for security verified | Structural script only |
-| Attachment upload UI | High | Bucket created; UI missing |
-| Portal “Message Business” UI wire-up | High | RPC exists; portal screens still use `portal_messages` |
-| Firm multi-client isolation E2E | High | Adapter path incomplete |
-| Typing/presence/reactions/edit/redact UI | Medium | Schema partial; UI incomplete |
-| Push/email digests | Medium | Prefs table only |
+| Firm multi-client isolation E2E | High | Accountant open UI present; live isolation unproven |
+| Push/email digest delivery worker | Medium | Safe preview only; no outbound mailer |
 | Voice/video provider | Low | Explicitly optional / evaluated |
 | Performance budgets | Medium | Not measured |
 

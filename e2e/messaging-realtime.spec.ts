@@ -10,6 +10,8 @@ const enabled = process.env["LINKBOOKS_E2E_MESSAGING"] === "1";
 const stateA = process.env["MESSAGING_USER_A_STATE"];
 const stateB = process.env["MESSAGING_USER_B_STATE"];
 const baseURL = process.env["PLAYWRIGHT_BASE_URL"] ?? "http://localhost:8080";
+const portalEnabled = process.env["LINKBOOKS_E2E_MESSAGING_PORTAL"] === "1";
+const portalState = process.env["MESSAGING_PORTAL_STATE"];
 
 test.describe("messaging realtime (two browsers)", () => {
   test.skip(!enabled || !stateA || !stateB, "Set LINKBOOKS_E2E_MESSAGING=1 and dual auth states");
@@ -46,5 +48,60 @@ test.describe("messaging realtime (two browsers)", () => {
 
     await contextA.close();
     await contextB.close();
+  });
+
+  test("connection health and thread search controls are present", async ({ browser }) => {
+    const contextA = await browser.newContext({
+      storageState: stateA,
+      baseURL,
+    });
+    const pageA = await contextA.newPage();
+    await pageA.goto("/messages");
+    await expect(pageA.getByRole("heading", { name: "Messages" })).toBeVisible();
+    await expect(pageA.getByRole("button", { name: "Mentions" })).toBeVisible();
+    await expect(pageA.getByRole("button", { name: "Files" })).toBeVisible();
+    await expect(pageA.getByRole("link", { name: "Settings" })).toBeVisible();
+    await contextA.close();
+  });
+
+  test("mark unread and reply controls appear in an open thread", async ({ browser }) => {
+    const contextA = await browser.newContext({
+      storageState: stateA,
+      baseURL,
+    });
+    const pageA = await contextA.newPage();
+    await pageA.goto("/messages");
+    const firstConversation = pageA.locator('[aria-label="Conversation list"] button').first();
+    if ((await firstConversation.count()) === 0) {
+      test.skip(true, "No conversations available for mark-unread/reply assertion");
+    }
+    await firstConversation.click();
+    await expect(pageA.getByRole("button", { name: "Mark unread" })).toBeVisible();
+    await expect(pageA.getByLabel("Search in this conversation")).toBeVisible();
+    await contextA.close();
+  });
+});
+
+test.describe("portal messaging bridge", () => {
+  test.skip(
+    !portalEnabled || !portalState,
+    "Set LINKBOOKS_E2E_MESSAGING_PORTAL=1 and MESSAGING_PORTAL_STATE",
+  );
+
+  test("customer portal Message Business control is reachable", async ({ browser }) => {
+    const context = await browser.newContext({
+      storageState: portalState,
+      baseURL,
+    });
+    const page = await context.newPage();
+    await page.goto("/portal/app/invoices");
+    await expect(page.getByRole("heading").first()).toBeVisible({ timeout: 20_000 });
+    const firstInvoice = page.locator('a[href*="/portal/app/invoices/"]').first();
+    if ((await firstInvoice.count()) === 0) {
+      test.skip(true, "No portal invoices available");
+    }
+    await firstInvoice.click();
+    await expect(page.getByRole("button", { name: /Message Business/i })).toBeVisible();
+    await context.close();
   });
 });

@@ -29,14 +29,17 @@ import {
 import { useMessagingPresence } from "@/hooks/use-messaging-presence";
 import type { MessagingInboxFilter, MessagingParticipant } from "@/lib/messaging/types";
 import {
+  openAccountantClientConversation,
   openAdvisorEngagementConversation,
   openHrPrivateConversation,
   registerMessagingAttachment,
   requestMessagingFormalApproval,
 } from "@/lib/messaging/messaging.functions";
+import { insertMentionToken } from "@/lib/messaging/mentions";
 import { uploadMessagingAttachment } from "@/lib/messaging/upload-client";
 import { notify } from "@/lib/notify";
 import { looksLikeInformalApproval } from "@/lib/messaging/approvals";
+import type { MessagingMessage } from "@/lib/messaging/types";
 
 const FILTERS: { id: MessagingInboxFilter; label: string }[] = [
   { id: "inbox", label: "Inbox" },
@@ -94,17 +97,22 @@ export function MessagesScreen({
   const [peers, setPeers] = useState<MessagingParticipant[]>([]);
   const [groupTitle, setGroupTitle] = useState("");
   const [selectedPeers, setSelectedPeers] = useState<string[]>([]);
-  const [showNew, setShowNew] = useState<"dm" | "group" | "hr" | "advisor" | null>(null);
+  const [showNew, setShowNew] = useState<"dm" | "group" | "hr" | "advisor" | "accountant" | null>(
+    null,
+  );
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [approvalPeer, setApprovalPeer] = useState("");
   const [showFiles, setShowFiles] = useState(false);
   const [showAi, setShowAi] = useState(false);
+  const [showMentionPicker, setShowMentionPicker] = useState(false);
+  const [replyTo, setReplyTo] = useState<MessagingMessage | null>(null);
   const queryClient = useQueryClient();
   const registerAttachment = useServerFn(registerMessagingAttachment);
   const requestApproval = useServerFn(requestMessagingFormalApproval);
   const openHr = useServerFn(openHrPrivateConversation);
   const openAdvisor = useServerFn(openAdvisorEngagementConversation);
+  const openAccountant = useServerFn(openAccountantClientConversation);
   const threadHits = useMessagingThreadSearch(
     companyId,
     conversationId ?? null,
@@ -132,8 +140,10 @@ export function MessagesScreen({
         conversationId,
         body: composer,
         idempotencyKey,
+        ...(replyTo ? { replyToMessageId: replyTo.id } : {}),
       });
       setComposer("");
+      setReplyTo(null);
     } finally {
       setSending(false);
     }
@@ -200,6 +210,9 @@ export function MessagesScreen({
           </Button>
           <Button type="button" variant="outline" onClick={() => setShowNew("hr")}>
             Private HR
+          </Button>
+          <Button type="button" variant="outline" onClick={() => setShowNew("accountant")}>
+            Accountant chat
           </Button>
           <Button type="button" onClick={() => setShowNew("advisor")}>
             Advisor chat
@@ -395,6 +408,29 @@ export function MessagesScreen({
                     type="button"
                     size="sm"
                     variant="outline"
+                    className="text-destructive"
+                    disabled={actions.membershipMutation.isPending}
+                    onClick={() => {
+                      actions.membershipMutation.mutate(
+                        { conversationId, action: "leave" },
+                        {
+                          onSuccess: () => {
+                            notify.success("Left conversation");
+                            void navigate({
+                              to: "/messages",
+                              search: messagesSearch({ filter }),
+                            });
+                          },
+                        },
+                      );
+                    }}
+                  >
+                    Leave
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
                     onClick={() => setShowFiles((value) => !value)}
                   >
                     {showFiles ? "Hide files" : "Shared files"}
@@ -488,12 +524,18 @@ export function MessagesScreen({
                         {new Date(message.created_at).toLocaleString()}
                       </time>
                     </div>
+                    {message.reply_to_message_id ? (
+                      <p className="mb-1 truncate rounded bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
+                        Replying to message {message.reply_to_message_id.slice(0, 8)}…
+                      </p>
+                    ) : null}
                     <p className="whitespace-pre-wrap text-sm">{message.body}</p>
                     {companyId ? (
                       <MessageActions
                         companyId={companyId}
                         message={message}
                         canEdit={Boolean(user?.id && message.author_user_id === user.id)}
+                        onReply={(target) => setReplyTo(target)}
                       />
                     ) : null}
                   </article>
@@ -515,6 +557,19 @@ export function MessagesScreen({
                   void handleSend();
                 }}
               >
+                {replyTo ? (
+                  <div className="mb-2 flex items-start justify-between gap-2 rounded border bg-muted/30 px-3 py-2 text-xs">
+                    <div className="min-w-0">
+                      <p className="font-medium">
+                        Replying to {replyTo.author_name ?? "member"}
+                      </p>
+                      <p className="truncate text-muted-foreground">{replyTo.body}</p>
+                    </div>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setReplyTo(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                ) : null}
                 <Label htmlFor="message-composer" className="sr-only">
                   Message
                 </Label>
@@ -525,12 +580,23 @@ export function MessagesScreen({
                     setComposer(e.target.value);
                     void presence.signalTyping();
                   }}
-                  placeholder="Write a message"
+                  placeholder="Write a message. Use @ to mention people."
                   rows={3}
                   maxLength={8000}
                 />
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setShowMentionPicker((value) => !value);
+                        if (!peers.length) void loadPeers("");
+                      }}
+                    >
+                      @ Mention
+                    </Button>
                     <Label htmlFor="message-file" className="text-xs text-muted-foreground">
                       Attach file
                     </Label>
@@ -567,6 +633,31 @@ export function MessagesScreen({
                     {sending ? "Sending…" : "Send"}
                   </Button>
                 </div>
+                {showMentionPicker ? (
+                  <div className="mt-2 max-h-36 overflow-y-auto rounded border">
+                    {peers.length === 0 ? (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        No eligible people found.
+                      </p>
+                    ) : (
+                      peers.slice(0, 12).map((peer) => (
+                        <button
+                          key={peer.user_id}
+                          type="button"
+                          className="block w-full px-3 py-2 text-left text-sm hover:bg-muted/50"
+                          onClick={() => {
+                            setComposer((prev) =>
+                              insertMentionToken(prev, peer.full_name || peer.email || peer.user_id),
+                            );
+                            setShowMentionPicker(false);
+                          }}
+                        >
+                          {peer.full_name || peer.email || peer.user_id}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                ) : null}
                 <div className="mt-3 flex flex-wrap items-end gap-2 border-t pt-3">
                   <div className="min-w-[200px] flex-1">
                     <Label htmlFor="approval-peer">Request formal review (assignee user id)</Label>
@@ -628,7 +719,9 @@ export function MessagesScreen({
                 ? "New group"
                 : showNew === "hr"
                   ? "Private HR discussion"
-                  : "Advisor engagement"
+                  : showNew === "accountant"
+                    ? "Accountant discussion"
+                    : "Advisor engagement"
           }
           className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4"
         >
@@ -640,9 +733,14 @@ export function MessagesScreen({
                   ? "New group"
                   : showNew === "hr"
                     ? "Private HR discussion"
-                    : "Advisor engagement"}
+                    : showNew === "accountant"
+                      ? "Accountant discussion"
+                      : "Advisor engagement"}
             </h3>
-            {(showNew === "group" || showNew === "hr" || showNew === "advisor") && (
+            {(showNew === "group" ||
+              showNew === "hr" ||
+              showNew === "advisor" ||
+              showNew === "accountant") && (
               <div className="mt-3 space-y-2">
                 <Label htmlFor="group-title">Title</Label>
                 <Input
@@ -655,7 +753,9 @@ export function MessagesScreen({
                       ? "Leave / payroll query"
                       : showNew === "advisor"
                         ? "Engagement discussion"
-                        : "Group name"
+                        : showNew === "accountant"
+                          ? "Client discussion"
+                          : "Group name"
                   }
                 />
               </div>
@@ -664,6 +764,12 @@ export function MessagesScreen({
               <p className="mt-3 text-xs text-muted-foreground">
                 HR-private visibility. Payroll and sensitive personal data stay out of general
                 channels.
+              </p>
+            ) : null}
+            {showNew === "accountant" ? (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Accountant–client visibility. Firm multi-client isolation remains enforced by
+                membership and RLS.
               </p>
             ) : null}
             <div className="mt-3 space-y-2">
@@ -739,6 +845,30 @@ export function MessagesScreen({
                             })
                             .catch((error) =>
                               notify.error(error, "Could not open advisor conversation"),
+                            );
+                          return;
+                        }
+                        if (showNew === "accountant" && companyId) {
+                          void openAccountant({
+                            data: {
+                              companyId,
+                              title: groupTitle || "Accountant discussion",
+                              peerUserId: peer.user_id,
+                            },
+                          })
+                            .then((result) => {
+                              setShowNew(null);
+                              setGroupTitle("");
+                              void navigate({
+                                to: "/messages",
+                                search: messagesSearch({
+                                  filter: "transactions",
+                                  conversation: result.conversationId,
+                                }),
+                              });
+                            })
+                            .catch((error) =>
+                              notify.error(error, "Could not open accountant conversation"),
                             );
                           return;
                         }

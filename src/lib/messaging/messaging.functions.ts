@@ -78,6 +78,110 @@ export const setMessagingEnabled = createServerFn({ method: "POST" })
     return row as MessagingSettings;
   });
 
+export const setMessagingCollaborationFlags = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      allowAiAssist?: boolean;
+      allowFileShare?: boolean;
+      allowCustomer?: boolean;
+      allowVendor?: boolean;
+      allowGroupCreate?: boolean;
+    }) => ({
+      companyId: assertUuid(input?.companyId),
+      allowAiAssist: typeof input?.allowAiAssist === "boolean" ? input.allowAiAssist : null,
+      allowFileShare: typeof input?.allowFileShare === "boolean" ? input.allowFileShare : null,
+      allowCustomer: typeof input?.allowCustomer === "boolean" ? input.allowCustomer : null,
+      allowVendor: typeof input?.allowVendor === "boolean" ? input.allowVendor : null,
+      allowGroupCreate: typeof input?.allowGroupCreate === "boolean" ? input.allowGroupCreate : null,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<MessagingSettings> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.manage_settings");
+    const { data: row, error } = await supabase.rpc(
+      "messaging_set_collaboration_flags" as never,
+      {
+        _company_id: data.companyId,
+        _allow_ai_assist: data.allowAiAssist,
+        _allow_file_share: data.allowFileShare,
+        _allow_customer: data.allowCustomer,
+        _allow_vendor: data.allowVendor,
+        _allow_group_create: data.allowGroupCreate,
+      } as never,
+    );
+    if (error) asError(error);
+    return row as MessagingSettings;
+  });
+
+export const previewMessagingDigest = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; frequency?: "daily" | "weekly" }) => ({
+      companyId: assertUuid(input?.companyId),
+      frequency: input?.frequency === "weekly" ? ("weekly" as const) : ("daily" as const),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { buildMessagingDigestPreview } = await import("@/lib/messaging/digests");
+
+    const { data: memberships } = await supabase
+      .from("messaging_conversation_members" as never)
+      .select("conversation_id, last_read_seq, status" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("user_id" as never, context.userId as never)
+      .eq("status" as never, "active" as never);
+    const memRows = (memberships ?? []) as Array<{
+      conversation_id: string;
+      last_read_seq: number;
+    }>;
+    const ids = memRows.map((m) => m.conversation_id);
+    if (!ids.length) {
+      return buildMessagingDigestPreview({
+        companyName: "Organisation",
+        frequency: data.frequency,
+        candidates: [],
+      });
+    }
+    const { data: rows } = await supabase
+      .from("messaging_conversations" as never)
+      .select("id,title,visibility,last_message_preview,last_message_at" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .in("id" as never, ids as never);
+    const memById = new Map(memRows.map((m) => [m.conversation_id, m]));
+    const { data: seqRows } = await supabase
+      .from("messaging_messages" as never)
+      .select("conversation_id, seq" as never)
+      .in("conversation_id" as never, ids as never)
+      .order("seq" as never, { ascending: false });
+    const maxSeq = new Map<string, number>();
+    for (const row of (seqRows ?? []) as Array<{ conversation_id: string; seq: number }>) {
+      if (!maxSeq.has(row.conversation_id)) maxSeq.set(row.conversation_id, Number(row.seq));
+    }
+    const candidates = ((rows ?? []) as Array<Record<string, unknown>>).map((c) => {
+      const id = String(c["id"]);
+      const mem = memById.get(id);
+      const max = maxSeq.get(id) ?? 0;
+      const unreadCount = Math.max(0, max - Number(mem?.last_read_seq ?? 0));
+      return {
+        conversationId: id,
+        title: (c["title"] as string | null) ?? null,
+        preview: (c["last_message_preview"] as string | null) ?? null,
+        unreadCount,
+        visibility: String(c["visibility"] ?? "internal"),
+        lastMessageAt: (c["last_message_at"] as string | null) ?? null,
+      };
+    });
+    return buildMessagingDigestPreview({
+      companyName: "Organisation",
+      frequency: data.frequency,
+      candidates,
+    });
+  });
+
 export const getMessagingUnreadCount = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string }) => ({

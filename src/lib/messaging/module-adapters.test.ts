@@ -15,6 +15,9 @@ describe("messaging module adapters", () => {
     expect(getMessagingRecordAdapter("supplier_payment")?.buildDeepLink("abc")).toBe(
       "/purchases/payments/abc",
     );
+    expect(getMessagingRecordAdapter("sales_receipt")?.buildDeepLink("abc")).toBe(
+      "/sales/receipts/abc",
+    );
     expect(getMessagingRecordAdapter("hr_leave_request")?.defaultVisibility).toBe("hr_private");
     expect(getMessagingRecordAdapter("advisor_engagement")?.defaultVisibility).toBe("advisor");
   });

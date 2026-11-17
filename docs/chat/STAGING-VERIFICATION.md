@@ -37,7 +37,11 @@ Keep `allow_customer` / `allow_vendor` off until portal isolation passes.
 13. Enable push prefs + browser permission; background the tab; confirm desktop notification on inbound activity.  
 14. Quiet hours suppress desktop notifications; Mark all read clears unread badges.  
 15. Open `/messages?conversation=<id>&message=<id>` highlights the target message.  
-16. Supplier payment Discuss opens a linked record thread with Open record.
+16. Supplier payment Discuss opens a linked record thread with Open record.  
+17. Drag or paste an allowed file onto the composer; confirm Shared files updates.  
+18. Copy link opens the same conversation (and message highlight when present).  
+19. Leave prompts for confirmation and removes the thread from inbox.  
+20. Sales receipt Discuss creates a linked record conversation.
 
 ## Rollback
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { formatMessagingRelativeTime } from "@/lib/messaging/format-relative";
 import { ConversationFiles } from "@/components/messaging/ConversationFiles";
 import { ConversationMembers } from "@/components/messaging/ConversationMembers";
 import { ConversationPinned } from "@/components/messaging/ConversationPinned";
@@ -130,6 +131,8 @@ export function MessagesScreen({
   );
   const [liveAnnounce, setLiveAnnounce] = useState("");
   const [showJumpLatest, setShowJumpLatest] = useState(false);
+  const [dragOverComposer, setDragOverComposer] = useState(false);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const [peerSearch, setPeerSearch] = useState("");
   const [peers, setPeers] = useState<MessagingParticipant[]>([]);
   const [groupTitle, setGroupTitle] = useState("");
@@ -166,6 +169,10 @@ export function MessagesScreen({
     setReplyTo(null);
     setShowRename(false);
     setRenameTitle("");
+    setDragOverComposer(false);
+    if (conversationId) {
+      window.setTimeout(() => composerRef.current?.focus(), 0);
+    }
   }, [companyId, conversationId]);
 
   useEffect(() => {
@@ -256,6 +263,49 @@ export function MessagesScreen({
     } finally {
       setSending(false);
     }
+  }
+
+  async function shareFile(file: File) {
+    if (!companyId || !conversationId || uploading) return;
+    if (!settings.data?.allow_file_share) {
+      notify.warning("File sharing is disabled for this organisation");
+      return;
+    }
+    setUploading(true);
+    try {
+      await uploadMessagingAttachment({
+        file,
+        companyId,
+        conversationId,
+        ...(typeof settings.data?.max_attachment_bytes === "number"
+          ? { maxBytes: settings.data.max_attachment_bytes }
+          : {}),
+        register: registerAttachment,
+      });
+      notify.success("File shared securely");
+      setShowFiles(true);
+      void queryClient.invalidateQueries({
+        queryKey: ["messaging-attachments", companyId, conversationId],
+      });
+    } catch (error) {
+      notify.error(error, "Could not share file");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function copyConversationLink() {
+    if (!conversationId || typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.pathname = "/messages";
+    url.search = "";
+    url.searchParams.set("filter", filter);
+    url.searchParams.set("conversation", conversationId);
+    if (highlightMessageId) url.searchParams.set("message", highlightMessageId);
+    void navigator.clipboard
+      .writeText(url.toString())
+      .then(() => notify.success("Conversation link copied"))
+      .catch(() => notify.error(new Error("Clipboard unavailable"), "Could not copy link"));
   }
 
   if (!companyId) {
@@ -502,9 +552,19 @@ export function MessagesScreen({
                       </Badge>
                     ) : null}
                   </div>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {conversation.last_message_preview || "No messages yet"}
-                  </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-xs text-muted-foreground">
+                      {conversation.last_message_preview || "No messages yet"}
+                    </span>
+                    {conversation.last_message_at ? (
+                      <time
+                        className="shrink-0 text-[10px] text-muted-foreground"
+                        dateTime={conversation.last_message_at}
+                      >
+                        {formatMessagingRelativeTime(conversation.last_message_at)}
+                      </time>
+                    ) : null}
+                  </div>
                 </button>
               </li>
             ))}
@@ -557,6 +617,9 @@ export function MessagesScreen({
                       <a href={recordHref}>Open record</a>
                     </Button>
                   ) : null}
+                  <Button type="button" size="sm" variant="outline" onClick={copyConversationLink}>
+                    Copy link
+                  </Button>
                   <Button
                     type="button"
                     size="sm"
@@ -674,6 +737,13 @@ export function MessagesScreen({
                     className="text-destructive"
                     disabled={actions.membershipMutation.isPending}
                     onClick={() => {
+                      if (
+                        !confirm(
+                          "Leave this conversation? You will stop receiving new messages until invited again.",
+                        )
+                      ) {
+                        return;
+                      }
                       actions.membershipMutation.mutate(
                         { conversationId, action: "leave" },
                         {
@@ -904,8 +974,8 @@ export function MessagesScreen({
                         {message.is_edited ? " · edited" : ""}
                         {message.is_pinned ? " · pinned" : ""}
                       </span>
-                      <time dateTime={message.created_at}>
-                        {new Date(message.created_at).toLocaleString()}
+                      <time dateTime={message.created_at} title={new Date(message.created_at).toLocaleString()}>
+                        {formatMessagingRelativeTime(message.created_at)}
                       </time>
                     </div>
                     {message.reply_to_message_id ? (
@@ -950,7 +1020,10 @@ export function MessagesScreen({
                 )}
               </div>
               <form
-                className="border-t p-3"
+                className={cn(
+                  "border-t p-3",
+                  dragOverComposer && "bg-muted/40 ring-2 ring-inset ring-primary/40",
+                )}
                 onSubmit={(event) => {
                   event.preventDefault();
                   if (looksLikeInformalApproval(composer)) {
@@ -960,6 +1033,26 @@ export function MessagesScreen({
                     );
                   }
                   void handleSend();
+                }}
+                onDragEnter={(event) => {
+                  if (!event.dataTransfer.types.includes("Files")) return;
+                  event.preventDefault();
+                  setDragOverComposer(true);
+                }}
+                onDragOver={(event) => {
+                  if (!event.dataTransfer.types.includes("Files")) return;
+                  event.preventDefault();
+                  setDragOverComposer(true);
+                }}
+                onDragLeave={(event) => {
+                  if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+                  setDragOverComposer(false);
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setDragOverComposer(false);
+                  const file = event.dataTransfer.files?.[0];
+                  if (file) void shareFile(file);
                 }}
               >
                 {replyTo ? (
@@ -978,12 +1071,30 @@ export function MessagesScreen({
                 <Label htmlFor="message-composer" className="sr-only">
                   Message
                 </Label>
+                {dragOverComposer ? (
+                  <p className="mb-2 text-xs font-medium text-primary" role="status">
+                    Drop file to share securely
+                  </p>
+                ) : null}
                 <Textarea
                   id="message-composer"
+                  ref={composerRef}
                   value={composer}
                   onChange={(e) => {
                     setComposer(e.target.value);
                     void presence.signalTyping();
+                  }}
+                  onPaste={(event) => {
+                    const items = event.clipboardData?.items;
+                    if (!items) return;
+                    for (const item of items) {
+                      if (item.kind !== "file") continue;
+                      const file = item.getAsFile();
+                      if (!file) continue;
+                      event.preventDefault();
+                      void shareFile(file);
+                      return;
+                    }
                   }}
                   onKeyDown={(event) => {
                     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
@@ -991,10 +1102,14 @@ export function MessagesScreen({
                       void handleSend();
                     }
                   }}
-                  placeholder="Write a message. Use @ to mention people. Ctrl/⌘+Enter to send."
+                  placeholder="Write a message. Use @ to mention people. Ctrl/⌘+Enter to send. Drop or paste files here."
                   rows={3}
                   maxLength={8000}
                 />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Shortcuts: Ctrl/⌘+Enter send · Esc dismiss overlays · Drop/paste file to attach
+                  {uploading ? " · Uploading…" : ""}
+                </p>
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
@@ -1019,28 +1134,12 @@ export function MessagesScreen({
                       onChange={(event) => {
                         const file = event.target.files?.[0];
                         event.target.value = "";
-                        if (!file || !companyId || !conversationId) return;
-                        setUploading(true);
-                        void uploadMessagingAttachment({
-                          file,
-                          companyId,
-                          conversationId,
-                          maxBytes: settings.data?.max_attachment_bytes,
-                          register: registerAttachment,
-                        })
-                          .then(() => {
-                            notify.success("File shared securely");
-                            setShowFiles(true);
-                            void queryClient.invalidateQueries({
-                              queryKey: ["messaging-attachments", companyId, conversationId],
-                            });
-                          })
-                          .catch((error) => notify.error(error, "Could not share file"))
-                          .finally(() => setUploading(false));
+                        if (!file) return;
+                        void shareFile(file);
                       }}
                     />
                   </div>
-                  <Button type="submit" disabled={sending || !composer.trim()}>
+                  <Button type="submit" disabled={sending || uploading || !composer.trim()}>
                     {sending ? "Sending…" : "Send"}
                   </Button>
                 </div>

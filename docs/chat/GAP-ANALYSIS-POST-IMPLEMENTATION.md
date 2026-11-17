@@ -16,6 +16,7 @@ Compared delivered branch work to the master directive, Phase 0 PRD and competit
 - Latest-window pagination + load-older; membership-scoped global message search  
 - Desktop notify (hidden tab + push opt-in + quiet hours); demo messaging banner; aria-live  
 - Mark all read; message deep links; Open record; supplier payment Discuss; typing channel fix  
+- Drag/drop + paste attachments; copy link; leave confirm; relative times; sales receipt Discuss  
 - Analytics, performance budgets, rate limits  
 - Unit/integration scaffolds and gated E2E  
 

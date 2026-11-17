@@ -67,6 +67,24 @@ test.describe("messaging realtime (two browsers)", () => {
     await contextA.close();
   });
 
+  test("open thread exposes copy link and leave confirmation affordances", async ({ browser }) => {
+    const contextA = await browser.newContext({
+      storageState: stateA,
+      baseURL,
+    });
+    const pageA = await contextA.newPage();
+    await pageA.goto("/messages");
+    const firstConversation = pageA.locator('[aria-label="Conversation list"] button').first();
+    if ((await firstConversation.count()) === 0) {
+      test.skip(true, "No conversations available for copy-link assertion");
+    }
+    await firstConversation.click();
+    await expect(pageA.getByRole("button", { name: "Copy link" })).toBeVisible();
+    await expect(pageA.getByRole("button", { name: "Leave" })).toBeVisible();
+    await expect(pageA.getByText(/Drop\/paste file to attach/i)).toBeVisible();
+    await contextA.close();
+  });
+
   test("mark unread and reply controls appear in an open thread", async ({ browser }) => {
     const contextA = await browser.newContext({
       storageState: stateA,

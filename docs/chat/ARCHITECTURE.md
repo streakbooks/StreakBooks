@@ -65,9 +65,11 @@ A customer linked to an invoice does **not** make an internal record thread exte
 | `createGroupConversation` | Group create |
 | `addMessagingInternalMembers` | Invite internal members |
 | `sendMessagingMessage` | Idempotent send (rate-limited) |
-| `listMessagingMessages` / `searchMessagingMessages` | Cursor/seq + thread search |
-| `markMessagingRead` / `markMessagingUnread` | Receipts + unread |
+| `listMessagingMessages` / `searchMessagingMessages` | Latest window, `beforeSeq` older pages, thread search |
+| `markMessagingRead` / `markMessagingUnread` / `markAllMessagingRead` | Receipts + unread |
 | `listMessagingMessageReceipts` | Read receipts |
+| `searchMessagingAcrossConversations` | Membership-scoped global search |
+| `getMessagingConversationRecordLink` | Open linked record |
 | `updateMessagingMembership` | Mute/archive/leave/star |
 | `blockMessagingUser` / `unblockMessagingUser` | Peer blocks |
 | `openRecordDiscussion` / portal open helpers | Record + portal discuss |

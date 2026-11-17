@@ -44,6 +44,15 @@ export const MESSAGING_RECORD_ADAPTERS: readonly MessagingRecordAdapter[] = [
     retentionClass: "standard",
   },
   {
+    recordType: "sales_receipt",
+    label: "Sales receipt",
+    defaultVisibility: "internal",
+    allowExternal: false,
+    requiredViewPermission: "sales.view",
+    buildDeepLink: (id) => `/sales/receipts/${id}`,
+    retentionClass: "standard",
+  },
+  {
     recordType: "journal",
     label: "Journal",
     defaultVisibility: "internal",

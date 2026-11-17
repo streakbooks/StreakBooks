@@ -86,6 +86,7 @@ import {
 } from "@/components/ui/select";
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ReasonDialog } from "@/components/sales/ReasonDialog";
 
 type BillSearch = { fromTab?: string; files?: boolean };
 
@@ -130,7 +131,8 @@ type BillPayload = {
   balance_due_minor: number;
   document_total_minor: number;
   posted_journal_id: string | null;
-  purchase_order_id?: string | null;
+  void_date?: string | null;
+  void_reason?: string | null;
   contact_id: string;
   approval_comment: string | null;
   rejection_reason: string | null;
@@ -212,6 +214,7 @@ function BillDocumentWorkspace() {
   const [approvalComment, setApprovalComment] = useState("");
   const [filesOpen, setFilesOpen] = useState(Boolean(search.files));
   const [formError, setFormError] = useState<string | null>(null);
+  const [voidOpen, setVoidOpen] = useState(false);
 
   const [contactId, setContactId] = useState("");
   const [billDate, setBillDate] = useState("");
@@ -439,10 +442,19 @@ function BillDocumentWorkspace() {
   });
 
   const voidMutation = useMutation({
-    mutationFn: () => doVoid({ data: { companyId: companyId!, billId } }),
+    mutationFn: (v: { reason: string; date: string }) =>
+      doVoid({
+        data: {
+          companyId: companyId!,
+          billId,
+          reason: v.reason,
+          voidDate: v.date,
+        },
+      }),
     onSuccess: async () => {
+      setVoidOpen(false);
       await invalidate();
-      toast.success("Bill voided (reversing journal if posted)");
+      toast.success("Bill voided — reversing journal posted when applicable");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -749,7 +761,10 @@ function BillDocumentWorkspace() {
             <Alert>
               <AlertTitle>Voided</AlertTitle>
               <AlertDescription>
-                Historical read-only. Posted journals were reversed.
+                Historical read-only
+                {bill.void_date ? ` from ${bill.void_date}` : ""}
+                {bill.void_reason ? `: ${bill.void_reason}` : ""}. Posted journals were reversed when
+                present.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -905,11 +920,7 @@ function BillDocumentWorkspace() {
                     size="sm"
                     variant="destructive"
                     disabled={voidMutation.isPending}
-                    onClick={() => {
-                      if (confirm("Void this bill? Posted journals will be reversed.")) {
-                        voidMutation.mutate();
-                      }
-                    }}
+                    onClick={() => setVoidOpen(true)}
                   >
                     Void
                   </Button>
@@ -1471,6 +1482,19 @@ function BillDocumentWorkspace() {
         billId={billId}
         attachments={bill.attachments ?? []}
         canUpload={canEdit}
+      />
+
+      <ReasonDialog
+        open={voidOpen}
+        onOpenChange={setVoidOpen}
+        title="Void this bill?"
+        description="Posted journals will be reversed. A void date is required so historical Aged Payables can exclude this bill from the correct as-at date."
+        confirmLabel="Void bill"
+        dateLabel="Void date"
+        minDate={bill.bill_date}
+        defaultDate={new Date().toISOString().slice(0, 10)}
+        pending={voidMutation.isPending}
+        onConfirm={(v) => voidMutation.mutate(v)}
       />
     </RecordWorkspace>
   );

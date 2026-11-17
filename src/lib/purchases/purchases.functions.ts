@@ -1755,16 +1755,33 @@ export const getBillPurchaseOrderMatch = createServerFn({ method: "GET" })
 
 export const voidBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string }) => ({
-    companyId: assertUuid(input.companyId),
-    billId: assertUuid(input.billId, "bill"),
-  }))
+  .inputValidator(
+    (input: { companyId: string; billId: string; reason: string; voidDate?: string }) => {
+      const reason = String(input.reason ?? "").trim();
+      if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
+      const voidDate =
+        input.voidDate && String(input.voidDate).trim()
+          ? String(input.voidDate).trim()
+          : null;
+      if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
+        throw new Error("Void date must be YYYY-MM-DD");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        billId: assertUuid(input.billId, "bill"),
+        reason: reason.slice(0, 500),
+        voidDate,
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "purchases.authorise");
     const { data: bill, error } = await supabase
       .from("purchase_bills" as never)
-      .select("id, status, posted_journal_id, amount_paid_minor, amount_credited_minor" as never)
+      .select(
+        "id, status, bill_date, posted_journal_id, amount_paid_minor, amount_credited_minor" as never,
+      )
       .eq("id" as never, data.billId as never)
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
@@ -1772,6 +1789,7 @@ export const voidBill = createServerFn({ method: "POST" })
     if (!bill) throw new Error("Bill not found");
     const b = bill as {
       status: string;
+      bill_date: string;
       posted_journal_id: string | null;
       amount_paid_minor: number;
       amount_credited_minor: number;
@@ -1780,12 +1798,20 @@ export const voidBill = createServerFn({ method: "POST" })
     if (b.amount_paid_minor > 0 || b.amount_credited_minor > 0) {
       throw new Error("Cannot void a bill with payments or credits; reverse those first");
     }
+    const { assertBillVoidDate } = await import("@/lib/purchases/bill-void");
+    const today = new Date().toISOString().slice(0, 10);
+    const voidDate = assertBillVoidDate({
+      billDate: b.bill_date,
+      voidDate: data.voidDate ?? today,
+      today,
+    });
     let voidJournalId: string | null = null;
     if (b.posted_journal_id) {
       voidJournalId = await voidPostedDocument(
         supabase,
         b.posted_journal_id,
         `purchase_bill:${data.billId}:void`,
+        voidDate,
       );
     }
     const { error: upErr } = await supabase
@@ -1793,14 +1819,27 @@ export const voidBill = createServerFn({ method: "POST" })
       .update({
         status: "void",
         void_journal_id: voidJournalId,
+        void_date: voidDate,
+        void_reason: data.reason,
         updated_at: new Date().toISOString(),
       } as never)
-      .eq("id" as never, data.billId as never);
-    if (upErr) throw new Error(upErr.message);
+      .eq("id" as never, data.billId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .neq("status" as never, "void" as never);
+    if (upErr) {
+      if (/void_date|42703|PGRST204/i.test(upErr.message)) {
+        throw new Error(
+          "The purchase bill void-date migration must be applied before voiding with a dated as-at history.",
+        );
+      }
+      throw new Error(upErr.message);
+    }
     await recordBillAudit(supabase, data.companyId, "bill.void", data.billId, {
       void_journal_id: voidJournalId,
+      void_date: voidDate,
+      reason: data.reason,
     });
-    return { voidJournalId };
+    return { voidJournalId, voidDate };
   });
 
 // ---- Direct expenses ----

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Updated** | 2026-11-17 |
-| **Baseline commit** | `edeeb092` (GitHub `main` after #229 + #230) |
+| **Baseline commit** | `ddaff917` (GitHub `main` at session start) |
 | **Programme** | Complete module coverage & zero-gap execution (with originality-first IP policy) |
 | **Authoritative repo** | https://github.com/linkbusinessadvisory/LinkBooks |
 
@@ -22,10 +22,15 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Requirements marked Complete and Verified | **0** | Staging/production gates not certified |
-| Merged this integration wave | #229, #230 | Historical AP as-at; PO goods receipt foundation |
-| Open product PRs | #225 (draft), #227 (draft/conflict), #231–#236, #237 CI | Stack being rebased onto main |
-| Migrations applied to staging/prod | **Not authorized / not applied** | SQL present in repo only |
+| Modules in `MODULE_REGISTRY` | 28 | Sidebar + hidden operational surfaces |
+| Authenticated route files | ~151 | Includes nested sales/purchases/banking/CRM/HR |
+| Migrations on disk | 347 | Application to staging/prod is separate |
+| Gap register rows (this refresh) | See [FULL_COVERAGE_GAP_REGISTER.md](./FULL_COVERAGE_GAP_REGISTER.md) | Classifications are evidence-based |
+| Requirements marked Complete and Verified | **0** | No module has passed full acceptance + staging + production gates in this tracker |
+| Requirements Partial / in progress | Majority of core bookkeeping | Real code exists; live acceptance incomplete |
+| Open product PRs (non-draft blockers) | #225 Coding Memory (draft), #227 release gates (draft, conflicting) | Recheck before duplicating work |
+
+**Do not claim 100% completion** until every in-scope requirement has passed its defined acceptance and release gates.
 
 ## Execution batches
 
@@ -36,7 +41,8 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 | B1.1 — Period close uses dated AR/AP as-at | **Pushed on #229** | `30238d5a` — PeriodClosePanel + `period-close-subledger` |
 | B2 — PO goods receipt foundation | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/230 — migration pending authorized apply |
 | B3 — PO three-way match (order×receipt×bill) | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/231 — stacked on #230 |
-| B4 — Partial bill-from-received | **In progress** | Branch `feature/po-partial-bill-from-received-20261117` stacked on #231; bills only unbilled received qty; no inventory/COGS claim |
+| B4 — Partial bill-from-received | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/232 — stacked on #231; migrations not applied live |
+| B5 — Purchase bill void_date | **In progress** | Branch `feature/bill-void-date-20261117` from main; records void date/reason for AP as-at honesty |
 
 ### B1 typecheck remediation (2026-11-17)
 
@@ -48,13 +54,22 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 
 ## Current blockers
 
-1. GitHub Actions hosted jobs fail instantly with empty steps (infra/billing) — local verification used for merges.
-2. #227 remains conflicting draft; lean CI is #237.
-3. Staging/production migration apply requires explicit authorization.
-4. Coding Memory #225 remains draft — coordinate, do not duplicate.
+1. Authenticated staging E2E and production verification not run in this session.
+2. PR #227 conflicts with main after #228; release-gate repair needs rebase/decision.
+3. External providers (bank feeds, email delivery, payroll filing) remain fail-closed / unavailable until configured and verified.
+4. Pre-archive deleted AP allocations cannot be reconstructed (documented limitation).
+5. PR #229 CI: Actions runs conclude **failure** with **0 jobs** because `.github/workflows/quality.yml` is entirely commented out on `main`. Restoring gates is owned by conflicting PR #227 — do not duplicate that restore on #229. Do not merge without green checks + review once gates exist.
+
+## Inventory / COGS inspection (2026-11-17)
+
+| Check | Result |
+|-------|--------|
+| Stock cost layers / movement ledger tables | **Missing** — no `stock_layer` / inventory movement entities in `src/lib` or migrations beyond cash evidence index |
+| COGS posting from layers | **Not present** — COA `cogs` subtypes only; settings `valuation_method` unused for posting |
+| Classification | **Partial / Intentionally Deferred (M-08)** — do **not** claim inventory valuation or automatic COGS |
 
 ## Next executable step
 
-1. Open/review B4 partial bill-from-received PR (depends on #230/#231).
-2. Keep #229–#231 unmerged until reviews; do not apply live migrations without authorization; quality.yml restore remains #227.
-3. After B4: honest inventory valuation/COGS only if stock layers exist; else next P0 bookkeeping gap. Avoid Coding Memory (#225).
+1. Open/review B5 bill void_date PR (independent of PO stack).
+2. Keep #229–#232 unmerged until reviews; no live migrations without authorization; CI restore remains #227.
+3. Next P0/P1 after B5: supplier statement depth / AP credit void_date parity / banking recon acceptance — avoid #225; still no inventory COGS without layers.

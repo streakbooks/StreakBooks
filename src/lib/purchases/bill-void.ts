@@ -47,3 +47,16 @@ export function assertCreditNoteVoidDate(input: {
     today: input.today,
   });
 }
+
+export function assertSupplierPaymentVoidDate(input: {
+  paymentDate: string;
+  voidDate: string;
+  today: string;
+}): string {
+  return assertPurchaseDocVoidDate({
+    documentDate: input.paymentDate,
+    documentLabel: "payment",
+    voidDate: input.voidDate,
+    today: input.today,
+  });
+}

@@ -18,7 +18,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | M-01 | Dashboard | Partial | P1 | Ledger-backed KPIs exist; multi-currency/permission tie-out not certified | Xero/QBO dashboard overview | Fixture golden vs reports |
 | M-02 | Banking & reconciliation | Partial | P0 | CSV/QIF/rules/match/unmatch/recon sessions present; live bank feeds blocked | Xero bank feed (paid), Odoo sync (Enterprise) | Provider selection; E2E recon proof |
 | M-03 | Sales & receivables | Partial | P0 | Invoice/quote/credit/receipt/statement/as-at AR present | Xero/QBO AR | Gateway + authenticated lifecycle matrix |
-| M-04 | Purchases & payables | Partial | P0 | Bills/PO/payments/credits; AP as-at #229; receipt #230; 3-way #231; **partial bill-from-received B4 in progress** | Xero/Odoo AP / receiving / matching | Merge B1–B4; inventory COGS only with real layers |
+| M-04 | Purchases & payables | Partial | P0 | Bills/PO/payments/credits; AP as-at #229; receipt #230; 3-way #231; partial bill #232; void_date #233/#234; statement #235; **payment void_date B8 in PR** | Xero/Odoo AP / receiving / matching | Merge B1–B8 after review; inventory COGS only with real layers |
 | M-05 | Expenses & reimbursements | Partial | P1 | EM module + claims; OCR/payout provider gaps | Expensify/Xero expenses | Provider + approval depth |
 | M-06 | Contacts | Partial | P1 | CRUD/duplicates/portals partial | Xero contacts | Portal isolation proof |
 | M-07 | Products & Services | Partial | P1 | Non-inventory catalogue ready | QBO products | — |
@@ -179,9 +179,22 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Missing/incomplete** | Opening balance existed but voids excluded; not shared with AR statement engine; no BBF line |
 | **Priority** | P0 |
 | **Development status** | Implemented on `feature/supplier-statement-opening-20261117` |
-| **PR reference** | Pending |
+| **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/235 |
 | **Originality** | Reuses LinkBooks AR `buildCustomerStatement` with supplier nouns; no competitor code |
 | **Release verification** | Open — unit tests; void_date columns improve void honesty when #233/#234 applied |
+
+## Detailed finding — Supplier payment void_date + reason (B8)
+
+| Field | Value |
+|-------|-------|
+| **Gap ID** | GAP-AP-PAY-VOID-001 |
+| **Module** | Purchases / Supplier payments |
+| **Missing/incomplete** | `reverse_supplier_payment` used void_date for journal reverse but did not persist `void_date`; UI hardcoded reason via `confirm()` (sales receipts already collect reason+date) |
+| **Priority** | P0 (historical AP / supplier statement honesty; unlocks #235 void lines) |
+| **Development status** | Implemented on `feature/supplier-payment-void-date-20261117` |
+| **PR reference** | Pending open from this batch |
+| **Originality** | Shared `assertPurchaseDocVoidDate` / ReasonDialog; extends existing RPC; no competitor code |
+| **Release verification** | Open — migration not applied live |
 
 ## Acceptance questions (programme-wide)
 

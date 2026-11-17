@@ -3,6 +3,7 @@ import {
   assertBillVoidDate,
   assertCreditNoteVoidDate,
   assertPurchaseDocVoidDate,
+  assertSupplierPaymentVoidDate,
 } from "./bill-void";
 
 describe("assertPurchaseDocVoidDate", () => {
@@ -35,5 +36,19 @@ describe("assertPurchaseDocVoidDate", () => {
         today: "2026-11-17",
       }),
     ).toThrow(/before the credit note date/);
+    expect(() =>
+      assertSupplierPaymentVoidDate({
+        paymentDate: "2026-03-01",
+        voidDate: "2026-02-28",
+        today: "2026-11-17",
+      }),
+    ).toThrow(/before the payment date/);
+    expect(
+      assertSupplierPaymentVoidDate({
+        paymentDate: "2026-03-01",
+        voidDate: "2026-03-15",
+        today: "2026-11-17",
+      }),
+    ).toBe("2026-03-15");
   });
 });

@@ -2085,15 +2085,33 @@ export const getSupplierPayment = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
-    const { data: payment, error } = await context.supabase
-      .from("supplier_payments" as never)
-      .select(
-        "id, payment_date, amount_minor, unallocated_minor, status, reference, memo, currency_code, contact_id, bank_account_id, posted_journal_id, created_at, created_by" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .eq("id" as never, data.paymentId as never)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
+    let payment: unknown = null;
+    {
+      const first = await context.supabase
+        .from("supplier_payments" as never)
+        .select(
+          "id, payment_date, amount_minor, unallocated_minor, status, reference, memo, currency_code, contact_id, bank_account_id, posted_journal_id, void_date, void_reason, created_at, created_by" as never,
+        )
+        .eq("company_id" as never, data.companyId as never)
+        .eq("id" as never, data.paymentId as never)
+        .maybeSingle();
+      if (first.error && /void_date|42703|PGRST204/i.test(first.error.message)) {
+        const retry = await context.supabase
+          .from("supplier_payments" as never)
+          .select(
+            "id, payment_date, amount_minor, unallocated_minor, status, reference, memo, currency_code, contact_id, bank_account_id, posted_journal_id, void_reason, created_at, created_by" as never,
+          )
+          .eq("company_id" as never, data.companyId as never)
+          .eq("id" as never, data.paymentId as never)
+          .maybeSingle();
+        if (retry.error) throw new Error(retry.error.message);
+        payment = retry.data ? { ...(retry.data as object), void_date: null } : null;
+      } else if (first.error) {
+        throw new Error(first.error.message);
+      } else {
+        payment = first.data;
+      }
+    }
     if (!payment) throw new Error("Payment not found");
     const row = payment as {
       id: string;
@@ -2107,6 +2125,8 @@ export const getSupplierPayment = createServerFn({ method: "GET" })
       contact_id: string;
       bank_account_id: string;
       posted_journal_id: string | null;
+      void_date?: string | null;
+      void_reason?: string | null;
       created_at: string;
       created_by: string | null;
     };
@@ -2354,29 +2374,60 @@ export const createBatchPayment = createServerFn({ method: "POST" })
 export const reverseSupplierPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { companyId: string; paymentId: string; reason?: string; voidDate?: string }) => ({
-      companyId: assertUuid(input.companyId),
-      paymentId: assertUuid(input.paymentId, "payment"),
-      reason: (input.reason ?? "").trim().slice(0, 300) || null,
-      voidDate:
-        input.voidDate && /^\d{4}-\d{2}-\d{2}$/.test(input.voidDate) ? input.voidDate : null,
-    }),
+    (input: { companyId: string; paymentId: string; reason: string; voidDate?: string }) => {
+      const reason = String(input.reason ?? "").trim();
+      if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
+      const voidDate =
+        input.voidDate && String(input.voidDate).trim()
+          ? String(input.voidDate).trim()
+          : null;
+      if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
+        throw new Error("Void date must be YYYY-MM-DD");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        paymentId: assertUuid(input.paymentId, "payment"),
+        reason: reason.slice(0, 500),
+        voidDate,
+      };
+    },
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "purchases.payment");
-    const rpc = await callSalesRpc<{ id: string; void_journal_id: string }>(
+    const { data: payment, error } = await supabase
+      .from("supplier_payments" as never)
+      .select("id, payment_date, status" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.paymentId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!payment) throw new Error("Payment not found");
+    const row = payment as { payment_date: string; status: string };
+    if (row.status === "void") throw new Error("Payment is already voided");
+    const { assertSupplierPaymentVoidDate } = await import("@/lib/purchases/bill-void");
+    const today = new Date().toISOString().slice(0, 10);
+    const voidDate = assertSupplierPaymentVoidDate({
+      paymentDate: row.payment_date,
+      voidDate: data.voidDate ?? today,
+      today,
+    });
+    const rpc = await callSalesRpc<{ id: string; void_journal_id: string; void_date?: string }>(
       supabase,
       "reverse_supplier_payment",
       {
         company_id: data.companyId,
         payment_id: data.paymentId,
         reason: data.reason,
-        void_date: data.voidDate,
+        void_date: voidDate,
       },
     );
     const done = requireRpc(rpc, "reverse_supplier_payment", SUPPLIER_PAYMENT_MIGRATION);
-    return { ok: true, voidJournalId: done.void_journal_id };
+    return {
+      ok: true,
+      voidJournalId: done.void_journal_id,
+      voidDate: done.void_date ?? voidDate,
+    };
   });
 
 // ---- Credit notes (core) ----

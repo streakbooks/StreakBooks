@@ -18,6 +18,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
+import { ReasonDialog } from "@/components/sales/ReasonDialog";
 import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
@@ -55,6 +56,7 @@ function PaymentDocument() {
   const doAllocate = useServerFn(allocateSupplierPayment);
   const { can } = useCan();
   const [allocs, setAllocs] = useState<Record<string, string>>({});
+  const [voidOpen, setVoidOpen] = useState(false);
   const companyId = company?.id;
 
   const query = useQuery({
@@ -137,13 +139,19 @@ function PaymentDocument() {
   });
 
   const reverseM = useMutation({
-    mutationFn: () =>
+    mutationFn: (v: { reason: string; date: string }) =>
       reversePayment({
-        data: { companyId: companyId!, paymentId, reason: "Reversed from the payment screen" },
+        data: {
+          companyId: companyId!,
+          paymentId,
+          reason: v.reason,
+          voidDate: v.date,
+        },
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["supplier-payment", companyId, paymentId] });
       await queryClient.invalidateQueries({ queryKey: ["payments", companyId] });
+      setVoidOpen(false);
       toast.success("Payment reversed. The bill balance was restored.");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -161,10 +169,16 @@ function PaymentDocument() {
     );
   }
 
-  const payment = query.data;
+  const payment = query.data as typeof query.data & {
+    void_date?: string | null;
+    void_reason?: string | null;
+  };
   const currency = payment.currency_code || company?.base_currency || "GBP";
+  const today = new Date().toISOString().slice(0, 10);
+  const voidDefaultDate = today < payment.payment_date ? payment.payment_date : today;
 
   return (
+    <>
     <RecordWorkspace
       title={payment.supplier_name ?? "Supplier payment"}
       description={`${formatHistoryDay(payment.payment_date)} · ${fromMinorUnits(BigInt(payment.amount_minor), currency)} ${currency}`}
@@ -232,15 +246,7 @@ function PaymentDocument() {
               variant="outline"
               className="text-destructive"
               disabled={reverseM.isPending}
-              onClick={() => {
-                if (
-                  confirm(
-                    "Reverse this payment? The bank and accounts payable journal will be voided and the bill balance restored.",
-                  )
-                ) {
-                  reverseM.mutate();
-                }
-              }}
+              onClick={() => setVoidOpen(true)}
             >
               Reverse payment
             </Button>
@@ -291,6 +297,12 @@ function PaymentDocument() {
             <dt className="text-muted-foreground">Notes</dt>
             <dd>{payment.memo ?? "—"}</dd>
           </div>
+          {payment.status === "void" ? (
+            <div className="sm:col-span-2 text-destructive">
+              Voided {payment.void_date ?? ""}
+              {payment.void_reason ? ` — ${payment.void_reason}` : ""}
+            </div>
+          ) : null}
         </dl>
       </section>
 
@@ -426,5 +438,19 @@ function PaymentDocument() {
       ) : null}
       <DocumentActions kind="supplier_remittance" id={paymentId} />
     </RecordWorkspace>
+    <ReasonDialog
+      open={voidOpen}
+      onOpenChange={setVoidOpen}
+      title="Reverse this payment?"
+      description="The bank and accounts payable journal will be voided and bill balances restored. A void date is required so supplier statements and AP as-at history stay honest."
+      confirmLabel="Reverse payment"
+      dateLabel="Void date"
+      minDate={payment.payment_date}
+      defaultDate={voidDefaultDate}
+      pending={reverseM.isPending}
+      destructive
+      onConfirm={(v) => reverseM.mutate(v)}
+    />
+    </>
   );
 }

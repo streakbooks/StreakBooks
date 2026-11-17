@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Runs payment, status and net-pay native links (2026-11-17)
+
+- `src/screens/payroll/runs.tsx`: Payment, Status and Net pay cells now link natively to the payroll run detail, retaining status, normalized search draft and sort return context. Keyboard focus and new-tab semantics are supported by native links. Source commit `71c3752c02ecf46cac2df35f3d1d3f819cb149db`. **SOURCE REVIEW ONLY, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Payroll partial source evidence updated in commit `e9c49acf83ff00e74a039979563e52b0744102cd`. No acceptance criterion or module is fully verified.
+- **NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit tests, build, authenticated browser Back/Forward/new-tab/refresh, accessibility, RLS/accounting regressions. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. Fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No changes to `main`, manual CI, production DB or deployment.
+
 ### Payroll Runs native schedule and period links (2026-11-17)
 
 - `src/screens/payroll/runs.tsx`: schedule and period table cells now provide keyboard-focusable native links to run detail, preserving current status, validated search draft and sort return context. Source commit `06fc1e49c6adbb6d8062247445c94da904de79cb`. **SOURCE REVIEW ONLY, NOT RUN.**

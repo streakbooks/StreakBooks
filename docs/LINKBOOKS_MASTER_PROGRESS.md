@@ -45,6 +45,7 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 | B5 — Purchase bill void_date | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/233 — from main; migration not applied live |
 | B6 — Supplier credit void_date | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/234 — from main; migration not applied live |
 | B7 — Supplier statement opening balance | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/235 @ `783b9977` — from main; statement tests 11/11 |
+| B8 — Supplier payment void_date + reason | **PR open** | Branch `feature/supplier-payment-void-date-20261117` — from main; migration not applied live |
 
 ### B1 typecheck remediation (2026-11-17)
 
@@ -72,6 +73,6 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 
 ## Next executable step
 
-1. Review #233–#235 (void dates + supplier statement); keep #229–#232 unmerged until reviews; no live migrations without authorization; CI restore remains #227.
-2. Next P0/P1: banking recon acceptance / AP aged browser E2E / payment void_date if still incomplete.
+1. Review #233–#236 (void dates + supplier statement + payment void); keep #229–#232 unmerged until reviews; no live migrations without authorization; CI restore remains #227.
+2. Next P0/P1: banking reconciliation acceptance hardening (M-02) and/or customer receipt void parity already complete — prefer recon acceptance next.
 3. Inventory/COGS remains deferred until stock cost layers exist. Avoid Coding Memory (#225).

@@ -31,7 +31,7 @@ Notes on “Implemented”: code and migrations exist in branch. Verified counts
 | Item | Status |
 | ---- | ------ |
 | Current branch | `feature/chat-collaboration-platform` |
-| Relevant commits | Pending first commit on this branch |
+| Relevant commits | `681059ee` feat(messaging): add unified collaboration platform foundation |
 | Migration status | SQL present; **not applied** to remote Supabase in this session |
 | Security tests | Structural SQL script present; live cross-tenant not executed |
 | Unit tests | Messaging validation/approvals tests added; run pending |

@@ -3,6 +3,7 @@ import {
   bankReconciliationReport,
   buildStatementGroups,
   proposeOpeningBalance,
+  resolveOpeningProposal,
   summariseReconciliation,
 } from "./recon-math";
 
@@ -148,5 +149,32 @@ describe("proposeOpeningBalance", () => {
         { status: "void", statement_date: "2026-01-31", statement_balance_minor: 1 },
       ]),
     ).toBeNull();
+  });
+});
+
+describe("resolveOpeningProposal", () => {
+  it("uses stored Account Details opening when there is no completed session", () => {
+    expect(
+      resolveOpeningProposal({
+        sessions: [{ status: "void", statement_date: "2026-01-31", statement_balance_minor: 1 }],
+        storedOpeningMinor: 12_500,
+      }),
+    ).toEqual({ minor: 12_500n, source: "account_details" });
+  });
+
+  it("lets a completed session win over a stored opening", () => {
+    expect(
+      resolveOpeningProposal({
+        sessions: [
+          { status: "completed", statement_date: "2026-02-28", statement_balance_minor: 900 },
+        ],
+        storedOpeningMinor: 12_500,
+      }),
+    ).toEqual({ minor: 900n, source: "session" });
+  });
+
+  it("returns null when neither session nor stored opening is available", () => {
+    expect(resolveOpeningProposal({ sessions: [], storedOpeningMinor: null })).toBeNull();
+    expect(resolveOpeningProposal({ sessions: [] })).toBeNull();
   });
 });

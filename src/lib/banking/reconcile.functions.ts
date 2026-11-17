@@ -3,11 +3,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { chunk, fetchAllPages } from "@/lib/banking/fetch-all";
-import { callRpc, isMissingSchema } from "@/lib/banking/rpc";
+import { callRpc, isMissingRpc, isMissingSchema, type RpcClient } from "@/lib/banking/rpc";
 import {
   bankReconciliationReport,
   buildStatementGroups,
-  proposeOpeningBalance,
+  resolveOpeningProposal,
 } from "@/lib/banking/recon-math";
 import {
   ledgerBalanceAsOf,
@@ -205,7 +205,7 @@ async function clearedLineIds(
  * - ledger balance via SQL SUM (no 1000-row cap)
  * - matched statement lines grouped with their ledger lines (tick a group to clear it)
  * - bank-ledger lines with no statement line ("ledger only") that can be ticked or left outstanding
- * - opening balance proposal from the last completed session
+ * - opening balance proposal from the last completed session, else Account Details opening
  */
 export const getReconciliationWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -223,10 +223,28 @@ export const getReconciliationWorkspace = createServerFn({ method: "GET" })
     const account = await loadBankAccount(supabase, data.companyId, data.bankAccountId);
     const glId = account.gl_account_id;
 
-    const [ledgerBalance, ledgerRows, sessions] = await Promise.all([
+    const loadStoredOpening = async (): Promise<number | null> => {
+      const { data: rows, error } = await (supabase as unknown as RpcClient).rpc(
+        "list_bank_account_details" as never,
+        { _company_id: data.companyId } as never,
+      );
+      if (error) {
+        if (isMissingRpc(error)) return null;
+        throw new Error(error.message);
+      }
+      const match = ((rows ?? []) as Array<Record<string, unknown>>).find(
+        (r) => String(r["bank_account_id"]) === data.bankAccountId,
+      );
+      if (!match || match["opening_statement_balance_minor"] == null) return null;
+      const n = Number(match["opening_statement_balance_minor"]);
+      return Number.isSafeInteger(n) ? n : null;
+    };
+
+    const [ledgerBalance, ledgerRows, sessions, storedOpeningMinor] = await Promise.all([
       ledgerBalanceAsOf(supabase, data.companyId, glId, data.statementDate),
       loadLedgerLines(supabase, data.companyId, glId, data.statementDate),
       selectSessions(supabase, data.companyId, data.bankAccountId, 200),
+      loadStoredOpening(),
     ]);
 
     const cleared = await clearedLineIds(supabase, data.companyId, sessions);
@@ -322,13 +340,17 @@ export const getReconciliationWorkspace = createServerFn({ method: "GET" })
       .lte("txn_date" as never, data.statementDate as never);
 
     const lastCompleted = sessions.find((s) => s.status === "completed") ?? null;
-    const proposal = proposeOpeningBalance(sessions);
+    const proposal = resolveOpeningProposal({
+      sessions,
+      storedOpeningMinor,
+    });
 
     return {
       bankAccountName: account.name,
       currencyCode: account.currency_code,
       ledgerBalanceMinor: Number(ledgerBalance),
-      openingProposalMinor: proposal === null ? null : Number(proposal),
+      openingProposalMinor: proposal === null ? null : Number(proposal.minor),
+      openingProposalSource: proposal?.source ?? null,
       lastSession: lastCompleted
         ? {
             id: lastCompleted.id,

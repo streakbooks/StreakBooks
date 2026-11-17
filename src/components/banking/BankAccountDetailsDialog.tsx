@@ -149,6 +149,9 @@ export function BankAccountDetailsDialog({
                 }
                 onChange={setBalance}
               />
+              <p className="text-xs text-muted-foreground">
+                Seeds the opening balance on the first bank reconciliation for this account.
+              </p>
             </div>
             <div className="space-y-1">
               <Label htmlFor="bd-date">As at</Label>

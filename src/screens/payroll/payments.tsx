@@ -774,7 +774,11 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           {paymentDetailQ.isPending ? (
             <LoadingState />
           ) : paymentDetailQ.isError ? (
-            <p className="text-sm text-destructive">{friendlyAuthError(paymentDetailQ.error)}</p>
+            <ErrorState
+              title="Could not load payment details"
+              description={friendlyAuthError(paymentDetailQ.error)}
+              onRetry={() => paymentDetailQ.refetch()}
+            />
           ) : paymentDetailQ.data ? (
             (() => {
               const detail = paymentDetailQ.data as PayrollPaymentDetailPage;

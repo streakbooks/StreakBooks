@@ -4,12 +4,16 @@ import { activeNavItem, activeNavLabel } from "./nav-active";
 
 /** These are all distinct, user-facing sidebar modules; aliases are not separate entries. */
 const REQUIRED_MODULES = [
+  ["Point of Sale", "/pos"],
   ["Dashboard", "/"],
   ["Banking", "/banking"],
   ["Sales", "/sales"],
   ["Purchases", "/purchases"],
   ["Expenses", "/expense-management"],
   ["Contacts", "/contacts"],
+  ["CRM", "/crm"],
+  ["HR", "/hr"],
+  ["Messages", "/messages"],
   ["Products & Services", "/products-services"],
   ["Files", "/files"],
   ["Accounting", "/accounting"],

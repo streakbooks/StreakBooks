@@ -32,6 +32,43 @@ export type AccessArea = {
 
 export const ACCESS_AREAS: readonly AccessArea[] = [
   {
+    id: "pos",
+    label: "Point of Sale",
+    description: "Location-scoped registers and physical cash counts.",
+    items: [
+      {
+        permission: "pos.view",
+        label: "View POS",
+        detail: "Catalogue preview and assigned registers.",
+      },
+      {
+        permission: "pos.settings.manage",
+        label: "Manage POS setup",
+        detail: "Cash mappings and cashier location access.",
+      },
+      {
+        permission: "pos.register.open",
+        label: "Open register",
+        detail: "Declare a physical opening float.",
+      },
+      {
+        permission: "pos.register.close",
+        label: "Close register",
+        detail: "Close own sessions; supervisors with setup access can close others.",
+      },
+      {
+        permission: "pos.cash.count",
+        label: "Count cash",
+        detail: "Required together with close-register permission.",
+      },
+      {
+        permission: "pos.audit.view",
+        label: "Review POS audit",
+        detail: "Reserved for the POS audit-review workflow.",
+      },
+    ],
+  },
+  {
     id: "organisation",
     label: "Organisation",
     description: "The company record, subscription and demo tools.",

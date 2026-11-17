@@ -18,6 +18,7 @@ function read(rel) {
 
 /** Sidebar module id → permission namespace prefix (without trailing dot). */
 const MODULE_NAMESPACES = {
+  pos: "pos",
   hr: "hr",
   crm: "crm",
   expenses: "expenses",

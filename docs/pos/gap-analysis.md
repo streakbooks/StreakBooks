@@ -25,3 +25,11 @@ Concurrent PR audit on 2026-11-17: #225 financial intelligence, #227 production 
 Next executable batch: store/location ownership audit and dedicated permission/configuration migration with isolated PostgreSQL RLS tests; then register/session lifecycle. Retail stock remains blocked on separate inventory design. Provider work requires a named provider, supported region/device and test merchant credentials.
 
 Supabase guidance review: fetched current changelog and RLS documentation. The April 2026 Data API exposure change is relevant to future table grants; this batch adds no tables and retains existing product grants/RLS. No schema mutation or new privileged function was needed. Postgres best practices informed bounded tenant-scoped queries and the proposed locking/index design.
+
+## Batch 2 re-audit
+
+Physical locations are authoritative in `hr_locations`; reporting locations in `tracking_options` are dimensions, not a second physical-store master. Register configuration reuses existing accounts and physical locations. New company/location/cashier access grants scope session operations. No duplicate store/customer/product master was created. Purchase goods receipts are not a valuation ledger and do not establish correct COGS.
+
+Read-only connected-database inspection confirmed required columns on HR locations, accounts, company members and profiles, latest recorded migration `20261117220000`, and absence of the pending POS tables. Hosted security advisor summary: 92 INFO (RLS without policies), 21 mutable-search-path warnings, 26 anonymous-definer-execution warnings, 726 authenticated-definer-execution warnings and one leaked-password-protection warning. Some may be intentional guarded or deny-all designs; review them individually. No hosted schema/data changes were made.
+
+Eight-vendor research now has official source evidence; Lightspeed/Clover retrieval gaps were resolved through current vendor documentation. No interface was copied and no device/provider support was inferred for LinkBooks.

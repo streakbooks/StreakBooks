@@ -89,13 +89,9 @@ beforeEach(() => {
   };
 });
 describe("POS quote server boundary (mocked database)", () => {
-  it("checks Sales view permission and tenant-scopes all catalogue reads", async () => {
+  it("checks POS view permission and tenant-scopes all catalogue reads", async () => {
     await expect(run()).resolves.toMatchObject({ grossMinor: "11000" });
-    expect(assertCompanyPermission).toHaveBeenCalledWith(
-      expect.anything(),
-      companyId,
-      "sales.view",
-    );
+    expect(assertCompanyPermission).toHaveBeenCalledWith(expect.anything(), companyId, "pos.view");
     expect(filters).toHaveBeenCalledWith("companies", "id", companyId);
     expect(filters).toHaveBeenCalledWith("products", "company_id", companyId);
     expect(filters).toHaveBeenCalledWith("products", "id", [productId]);

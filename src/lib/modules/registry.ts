@@ -113,16 +113,17 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
   {
     id: "pos",
     label: "Point of Sale",
-    description: "Catalogue cart preview; checkout is not available yet",
+    description: "Catalogue preview, register setup and cash-float sessions",
     path: "/pos",
     group: "money",
-    inSidebar: false,
+    inSidebar: true,
     pageKind: "list",
     viewModes: ["list", "mobile-card"],
     screenRoot: "src/screens/pos",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
     premiumStatus: "in-progress",
-    notes: "Read-only foundation behind Sales view permission. No financial mutations.",
+    notes:
+      "POS view permission, location-scoped register sessions; checkout and cash movements remain unavailable.",
   },
   {
     id: "sales",
@@ -473,7 +474,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     screenRoot: "src/screens/messages",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
     premiumStatus: "in-progress",
-    notes: "Unified messaging platform; feature-flagged via messaging_collaboration / messaging_settings.",
+    notes:
+      "Unified messaging platform; feature-flagged via messaging_collaboration / messaging_settings.",
   },
   {
     id: "ai-assistant",
@@ -584,9 +586,7 @@ export function assertRegistryMatchesNav(): string[] {
     }
   }
   if (sidebar.length !== navItems.length) {
-    failures.push(
-      `Sidebar registry count ${sidebar.length} !== navItems count ${navItems.length}`,
-    );
+    failures.push(`Sidebar registry count ${sidebar.length} !== navItems count ${navItems.length}`);
   }
   const ids = new Set<string>();
   for (const module of MODULE_REGISTRY) {

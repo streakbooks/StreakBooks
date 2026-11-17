@@ -1,18 +1,19 @@
-# Permissions and threat model
+# Permissions and security evidence
 
-| Action                                          | Batch 1                            | Target permission / enforcement                                            |
-| ----------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------- |
-| Catalogue lookup and preview                    | `sales.view` plus auth, tenant RLS | Dedicated `pos.view` after migration                                       |
-| Open/close register                             | Unavailable                        | `pos.register.open/close`, register/location ownership, atomic command     |
-| Create/cancel sale                              | Unavailable                        | `pos.sale.create/cancel`, active cashier/session, audited state transition |
-| Discount / price override                       | Unavailable                        | `pos.discount.apply/override`, `pos.price.override`, threshold step-up     |
-| Refund                                          | Unavailable                        | `pos.refund.create/approve`, independent approver, original-origin limits  |
-| Cash movements/count                            | Unavailable                        | `pos.cash.adjust/count`, reason and classification                         |
-| Reports/export/audit                            | Unavailable                        | `pos.orders.view/export`, `pos.reports.view`, `pos.audit.view`             |
-| Inventory/settlements/payments/devices/settings | Unavailable                        | Corresponding `pos.*` permission, company/location checks                  |
+| Operation                                | Required permission / boundary                                                                               |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Catalogue preview and register workspace | `pos.view`, authenticated company access                                                                     |
+| Create register / assign location access | `pos.settings.manage`; active tenant location/account/member validation                                      |
+| Open register session                    | `pos.register.open` plus POS view and assigned location (setup managers have company-wide location access)   |
+| Count and close session                  | `pos.register.close` AND `pos.cash.count`; opening cashier or setup supervisor, with current location access |
+| Select cashier names/emails              | Setup permission AND existing `members.view`; active company members only                                    |
+| POS audit review                         | `pos.audit.view` is registered, but a dedicated review workflow remains unimplemented                        |
+| Sales/refunds/payments/stock/adjustments | Unavailable; no controls or financial RPCs exist                                                             |
 
-Dedicated role grants remain unimplemented; do not assume existing Sales roles are cashier roles. All mutations need database validation and default-deny policies, not just UI checks.
+Role seeds mirror TypeScript and the existing access-adjustment catalogue: owners/admins receive setup and session duties; staff/bookkeepers receive view/open/close/count but still need location grants; accountants receive view/audit; read-only receives view. Existing database role permissions and per-member denials remain authoritative. UI flags never replace command checks.
 
-Threats: cross-company IDs (scoped query plus RLS; explicit product-company assertion); price tampering (ignore caller prices); unsafe arithmetic (safe integer inputs/bigint totals); SQL/PostgREST filter injection (existing escaped lookup helper); replay (preview has no mutation; future operation and webhook uniqueness); cached company leakage (keyed cart, query keys, no persistent cache; server reauthorizes every call); stale permissions (server checks every call); raw card exposure (no card input/storage); privileged function escalation (no new definer functions).
+Local tests verify anonymous/private RPC denial, absent direct-write privileges, tenant and location RLS, malicious IDs/accounts, replay conflicts, exact bigint values, rollback when audits fail and competing open/close operations. Public POS functions are invokers; private elevation pins search_path and checks auth.uid(), membership and current permissions. No user_metadata authorization, service-role browser client, provider secret or card data is introduced.
 
-Remaining threat work: location/cashier scope, revocation and rate limits, offline local purge, kiosk step-up, provider signature replay windows, reconciliation fraud, maker-checker. Authenticated staging tenant attacks and DB RLS tests are release gates, not satisfied by mocked tests. No live security audit was run.
+Read-only hosted security advisor snapshot (2026-11-17): 92 INFO findings for RLS-without-policy, 21 mutable-search-path warnings, 26 anonymous-executable definer warnings, 726 authenticated-executable definer warnings and 1 leaked-password-protection warning. These are existing platform-wide findings, not confirmed exploits; intentional deny-all tables and guarded RPCs need individual review. No live remediation was attempted. New POS objects are not deployed and therefore were not evaluated by that hosted scan. Local Supabase CLI advisors could not connect because a full local Supabase stack is absent; real PostgreSQL catalogue/privilege tests were used locally instead. Production security is not certified.
+
+Remaining gates: hosted advisor triage, full-schema upgrade, authenticated staging tenant/revocation testing, role-change browser journeys, device controls, step-up approvals, offline retention and provider verification. No production-readiness claim.

@@ -47,7 +47,8 @@
     "test:public-ui": "playwright test --config playwright.public-ui.config.ts",
     "test:create-panels": "playwright test --config playwright.create-panels.config.ts",
     "openapi:billing": "UPDATE_OPENAPI=1 vitest run src/lib/billing/api/v1/router.test.ts",
-    "test:billing:e2e": "playwright test --config playwright.billing.config.ts"
+    "test:billing:e2e": "playwright test --config playwright.billing.config.ts",
+    "test:pos:postgres": "node scripts/test-pos-postgres.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"

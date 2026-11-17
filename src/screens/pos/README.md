@@ -1,19 +1,7 @@
-# Point of Sale review surface
+# Point of Sale
 
-Module `pos`, route `/pos`, shared `ListWorkspace`, registered outside the sidebar.
-The scaffold has been replaced with a working read-only catalogue cart preview.
-See `docs/pos/README.md` for scope and release gates.
+Module `pos`, routes `/pos` and `/pos/registers`, shared ListWorkspace and shared searchable lookups. Sidebar registration is enabled; dedicated `pos.view` is required. The migration must be reviewed/applied before register actions are usable.
 
-Acceptance contract status:
+Implemented: catalogue cart preview; register creation using existing physical locations/cash accounts; cashier location grants; audited, idempotent opening and unchanged-float closing; bounded closed-session history; company-scoped state, loading/empty/error/retry states and blank physical closing counts. Backend checks enforce permissions and tenant/location isolation.
 
-- Shared chrome, themes/tokens, labels, loading/empty/error/retry states: implemented.
-- Real authenticated server reads and company-scoped query/cache keys: implemented.
-- Search, Add, quantity, Remove, Clear and Refresh prices: connected.
-- Company switch: keyed cart unmount, no persistent browser cart storage.
-- Dedicated POS permissions, sale/payment/stock mutation: unavailable, no controls offered.
-- Native route/deep link: registered; no reusable screen export in route file.
-- Isolated desktop/tablet/mobile and tenant-change browser fixtures: see test evidence.
-- Authenticated staging, actual RLS, accessibility and production: pending verification.
-
-This does not meet the complete new-module definition of done; `premiumStatus` remains
-`in-progress`. Do not enable sale/payment actions until transactional release gates pass.
+Unimplemented: checkout, payments, cash movements, variance postings, shifts/handover, Z-reports, stock/COGS, refunds, offline and devices. No controls pretend to perform these actions. This remains `in-progress`, not a complete POS release. See `docs/pos/batch-2-review.md` and tracker for verification and release gates.

@@ -11,4 +11,4 @@ This folder records implementation evidence, not a production-readiness claim.
 - [Offline design](offline.md), [hardware](hardware.md)
 - [Screen inventory and guide](workflows.md), [test plan](testing.md), [rollout](rollout.md)
 
-Only the read-only catalogue cart preview is implemented in batch 1. No sale, register session, payment, inventory movement or journal is created by this batch. Access the isolated review route `/pos`; sidebar exposure waits for the transactional POS foundation.
+Batch 2 adds dedicated POS permissions, physical-location grants, register configuration and audited cash-float session opening/closing. Access `/pos` and `/pos/registers` from the sidebar. Checkout, payments, cash movements, variance posting, inventory and journals remain unavailable. Database migration is pending explicit live-application approval. See [batch 2 review](batch-2-review.md) for current evidence and limits.

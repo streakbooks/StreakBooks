@@ -96,6 +96,7 @@ for (const tab of tabs)
 
 // Comprehensive top-level source/route coverage; not a claim of live functionality.
 const EXPECTED_TOP_LEVEL = new Map([
+  ["Point of Sale", "/pos"],
   [
     "Dashboard",
     "/"

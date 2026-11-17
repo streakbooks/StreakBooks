@@ -21,3 +21,9 @@ Provider calls and hardware operations cannot join the DB transaction. Use durab
 ## ADR-005: deployment gate (accepted)
 
 Migration application, merge and deployment need separate explicit authorization. Local implementation and PR creation are authorized. No live mutation belongs to this batch.
+
+## ADR-006: reuse physical locations and guarded session commands (implemented locally)
+
+Reuse `hr_locations` rather than create a second store master. POS access is additive: location grants plus dedicated company permissions. Public invoker wrappers delegate to private definer commands that recheck the actor and tenant, lock register/session rows and write audit events in the same transaction. Client-supplied operation IDs bind retries to their original payload. UI mutations retain the operation ID across a failed retry; database uniqueness still protects refreshes. Switching company unmounts all POS forms and carts, with company-scoped query keys and no persistent browser storage.
+
+The Registers page uses shared workspace and lookup components. An opening declaration does not post funds. A new closing form starts blank; it never pre-fills the expected count. Only zero-variance, no-movement sessions can close in this batch. Online cash checkout, cash adjustment journals, shifts/handover and Z-reports require the next reviewed transactional batch.

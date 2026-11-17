@@ -65,9 +65,9 @@ POS-063,4. COMPLETE POS FEATURE SCOPE,"D. Returns, Refunds and Exchanges",Damage
 POS-064,4. COMPLETE POS FEATURE SCOPE,"D. Returns, Refunds and Exchanges",Tax adjustments,NOT STARTED,,
 POS-065,4. COMPLETE POS FEATURE SCOPE,"D. Returns, Refunds and Exchanges",Accounting reversals,NOT STARTED,,
 POS-066,4. COMPLETE POS FEATURE SCOPE,"D. Returns, Refunds and Exchanges",Duplicate-refund protection,NOT STARTED,,
-POS-067,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Open register,NOT STARTED,,
-POS-068,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Opening float,NOT STARTED,,
-POS-069,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Cashier shift assignment,NOT STARTED,,
+POS-067,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Open register,IN PROGRESS,Batch 2 guarded register/float sessions; advanced cash/shift/accounting acceptance pending,Full-schema upgrade and authenticated staging acceptance pending
+POS-068,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Opening float,IN PROGRESS,Batch 2 guarded register/float sessions; advanced cash/shift/accounting acceptance pending,Full-schema upgrade and authenticated staging acceptance pending
+POS-069,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Cashier shift assignment,IN PROGRESS,Batch 2 guarded register/float sessions; advanced cash/shift/accounting acceptance pending,Full-schema upgrade and authenticated staging acceptance pending
 POS-070,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Cash in and cash out,NOT STARTED,,
 POS-071,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Petty cash and expense withdrawals,NOT STARTED,,
 POS-072,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Paid-outs with expense classification,NOT STARTED,,
@@ -75,11 +75,11 @@ POS-073,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Cash drops 
 POS-074,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Mid-shift cash count,NOT STARTED,,
 POS-075,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Shift handover,NOT STARTED,,
 POS-076,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Z-report/end-of-day summary,NOT STARTED,,
-POS-077,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Expected versus actual cash,NOT STARTED,,
+POS-077,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Expected versus actual cash,IN PROGRESS,Batch 2 guarded register/float sessions; advanced cash/shift/accounting acceptance pending,Full-schema upgrade and authenticated staging acceptance pending
 POS-078,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Over/short variance calculation,NOT STARTED,,
 POS-079,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Variance reason and approval,NOT STARTED,,
-POS-080,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Register closing,NOT STARTED,,
-POS-081,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Locked historical sessions,NOT STARTED,,
+POS-080,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Register closing,IN PROGRESS,Batch 2 guarded register/float sessions; advanced cash/shift/accounting acceptance pending,Full-schema upgrade and authenticated staging acceptance pending
+POS-081,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Locked historical sessions,IN PROGRESS,Batch 2 guarded register/float sessions; advanced cash/shift/accounting acceptance pending,Full-schema upgrade and authenticated staging acceptance pending
 POS-082,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Reopening only through controlled correction procedures,NOT STARTED,,
 POS-083,4. COMPLETE POS FEATURE SCOPE,E. Cash Registers and Sessions,Shift and cashier reports,NOT STARTED,,
 POS-084,4. COMPLETE POS FEATURE SCOPE,"F. Products, Pricing and Promotions",SKUs and barcodes,NOT STARTED,,
@@ -244,8 +244,8 @@ POS-242,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,One user accessing authoriz
 POS-243,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Multiple businesses under a firm,NOT STARTED,,
 POS-244,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Multiple stores per company,NOT STARTED,,
 POS-245,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Multiple registers per store,NOT STARTED,,
-POS-246,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Store-specific employees and permissions,NOT STARTED,,
-POS-247,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Company-specific taxes and currencies,IN PROGRESS,Batch 1 catalogue preview only; no checkout acceptance,Authenticated staging and transactional POS acceptance pending
+POS-246,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Store-specific employees and permissions,IN PROGRESS,Batch 2 guarded register/float sessions; advanced cash/shift/accounting acceptance pending,Full-schema upgrade and authenticated staging acceptance pending
+POS-247,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Company-specific taxes and currencies,IN PROGRESS,Batch 2 guarded register/float sessions; advanced cash/shift/accounting acceptance pending,Full-schema upgrade and authenticated staging acceptance pending
 POS-248,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Location-specific stock and prices,NOT STARTED,,
 POS-249,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Independent cash and settlement reconciliation,NOT STARTED,,
 POS-250,6. MULTI-COMPANY AND MULTI-LOCATION SUPPORT,,Consolidated reporting only where appropriately authorized,NOT STARTED,,

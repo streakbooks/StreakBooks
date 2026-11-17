@@ -16,8 +16,7 @@ export const previewPosCatalogueCart = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: PosQuoteInput) => parsePosQuote(input))
   .handler(async ({ data, context }) => {
-    // Reuse existing Sales permission until the dedicated POS permission migration is reviewed.
-    await assertCompanyPermission(context.supabase, data.companyId, "sales.view");
+    await assertCompanyPermission(context.supabase, data.companyId, "pos.view");
     const { data: company, error: companyError } = await context.supabase
       .from("companies")
       .select("base_currency")
@@ -52,7 +51,7 @@ export const searchPosCatalogue = createServerFn({ method: "GET" })
     q: typeof input.q === "string" ? input.q.trim().slice(0, 100) : "",
   }))
   .handler(async ({ data, context }): Promise<PosCatalogueItem[]> => {
-    await assertCompanyPermission(context.supabase, data.companyId, "sales.view");
+    await assertCompanyPermission(context.supabase, data.companyId, "pos.view");
     let query = context.supabase
       .from("products" as never)
       .select(

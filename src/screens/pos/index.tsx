@@ -1,3 +1,4 @@
+import { PosNavigation } from "@/components/pos/PosNavigation";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -16,7 +17,7 @@ import { previewPosCatalogueCart, searchPosCatalogue } from "@/lib/pos/catalogue
 type CartLine = { productId: string; name: string; quantity: number };
 export function PosScreen() {
   const context = useActiveCompany();
-  const canView = useCanDo("sales.view");
+  const canView = useCanDo("pos.view");
   if (context.isError) return <QueryErrorState queries={[context]} />;
   if (context.isPending) return <LoadingState />;
   if (!context.company)
@@ -29,8 +30,8 @@ export function PosScreen() {
   if (!canView)
     return (
       <EmptyState
-        title="Sales access required"
-        description="Ask your administrator for Sales view permission."
+        title="POS access required"
+        description="Ask your administrator for POS view permission."
       />
     );
   return <CatalogueCart key={context.company.id} companyId={context.company.id} />;
@@ -73,6 +74,7 @@ function CatalogueCart({ companyId }: { companyId: string }) {
   return (
     <ListWorkspace
       title="Point of Sale"
+      subnav={<PosNavigation />}
       description="Catalogue cart preview"
       breadcrumbs={[{ label: "Point of Sale" }]}
     >

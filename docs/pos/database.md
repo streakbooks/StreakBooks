@@ -1,16 +1,13 @@
-# Database and migration plan
+# Database and migration design
 
-Batch 1 adds no schema, grants or migrations. Existing `products` has company/active indexes and company-membership SELECT RLS (`20261019240000_products_search_settings.sql`); server adds Sales permission and company predicates. Review Data API table privileges separately from RLS when adding tables. No service-role client is used.
+Batch 2 migration: `20261117220001_pos_register_session_foundation.sql`, created with Supabase CLI 3.2.0 then sequenced after main's existing future-dated `20261117220000` migration. It has been applied only to disposable PostgreSQL, never the hosted database.
 
-Proposed minimal phase-1 entities, pending location audit:
+Implemented entities: `pos_registers`, `pos_register_sessions`, `pos_location_access`. Existing `hr_locations` is the physical-location master; existing `accounts`, `company_members`, `profiles`, companies and audit events are reused. Composite tenant FKs link locations, cash accounts and registers. RLS plus explicit Data API SELECT privileges govern reads; clients receive no direct DML grants. Only guarded private commands elevate, with pinned empty search paths, authentication, membership, permission and location checks. Public RPC wrappers use SECURITY INVOKER.
 
-- register references company, existing location and configured cash account; unique company/register code.
-- session references register with composite company ownership, opening cashier/time/float; partial unique index allows one open session per register; row locking serializes close and sale writes.
-- immutable cash movements carry session, actor, reason, amount, GL origin and unique operation key.
-- immutable audit events capture actor/company/location/entity/event and redacted before/after metadata.
+One-open-session partial uniqueness plus row locks serialize competing opens. Company operation UUIDs bind opening and closing requests to immutable payloads; replays return the original durable ID and conflicting replays fail. Counts use bigint and serialize as strings. Existing asset-account mappings must be active/postable and in company currency. Managers configure registers and location grants; ordinary cashiers need a location grant. Active membership is checked again server-side. Closed session commands cannot rewrite history. Audit failure rolls back creation/opening/closing.
 
-Later sale/line/payment tables require composite tenant FKs, check constraints on monetary/state values, source uniqueness and immutable posting links. No cascading delete of posted sales. Refund lines reference original lines with row-locked cumulative quantity/refund limits. Accounts must belong to company and match mapping types. Server timestamps govern business day through company timezone. Closed sessions cannot receive movements.
+Opening float is a physical declaration of cash already held, not a transfer or new revenue/asset posting. Current close accepts only the original float, because sales and cash movements are not implemented. A variance fails and leaves the session open. No variance is silently expensed or posted. Future checkout must extend expected cash before it can be enabled; the current equality constraint is intentional and must be replaced through a separately tested accounting batch.
 
-Currency amounts: integer minor units; currency precision comes from existing money helpers. Snapshot currency, tax version, pricing basis, dimensions and line rates. Never silently coerce unsafe JavaScript numbers. Index company/session/status/time access paths and FK columns based on real query plans. Set retention for statutory financial records per jurisdiction; do not purge journals for a contact deletion request.
+Workspace reads are bounded: 100 accessible registers/locations/members, their open sessions, latest 50 closed sessions, 500 eligible accounts and 1,000 grants. Member names/emails additionally require existing `members.view`. No HR employee/payroll records are returned. UI labels truncated lists explicitly.
 
-Create migrations with the installed Supabase CLI after command discovery. Validate in an isolated local database, run security advisors and migration order checks. Do not alter old migrations or apply a live migration as part of development.
+Future sale/payment/line/stock entities remain proposed, with origin uniqueness, tenant FKs, immutable posting links and line-level tax/pricing snapshots. No duplicate Contacts, Products, locations or ledger entities are introduced. Rollout needs an approved full-schema migration rehearsal and authenticated staging tests; isolated master fixtures are not a full-schema upgrade proof.

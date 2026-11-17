@@ -106,6 +106,7 @@ import { Route as AuthenticatedPlatformAutomationRouteImport } from './routes/_a
 import { Route as AuthenticatedPlatformBillingRouteImport } from './routes/_authenticated/platform.billing'
 import { Route as AuthenticatedPlatformOperationsRouteImport } from './routes/_authenticated/platform.operations'
 import { Route as AuthenticatedPosIndexRouteImport } from './routes/_authenticated/pos/index'
+import { Route as AuthenticatedPosRegistersRouteImport } from './routes/_authenticated/pos/registers'
 import { Route as AuthenticatedPurchasesIndexRouteImport } from './routes/_authenticated/purchases/index'
 import { Route as AuthenticatedPurchasesEmployeeExpensesRouteImport } from './routes/_authenticated/purchases/employee-expenses'
 import { Route as AuthenticatedPurchasesPortalInboxRouteImport } from './routes/_authenticated/purchases/portal-inbox'
@@ -743,6 +744,12 @@ const AuthenticatedPosIndexRoute = AuthenticatedPosIndexRouteImport.update({
   path: '/pos/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPosRegistersRoute =
+  AuthenticatedPosRegistersRouteImport.update({
+    id: '/pos/registers',
+    path: '/pos/registers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPurchasesIndexRoute =
   AuthenticatedPurchasesIndexRouteImport.update({
     id: '/',
@@ -1349,6 +1356,7 @@ export interface FileRoutesByFullPath {
   '/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/platform/operations': typeof AuthenticatedPlatformOperationsRoute
+  '/pos/registers': typeof AuthenticatedPosRegistersRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
@@ -1529,6 +1537,7 @@ export interface FileRoutesByTo {
   '/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/platform/operations': typeof AuthenticatedPlatformOperationsRoute
+  '/pos/registers': typeof AuthenticatedPosRegistersRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
@@ -1716,6 +1725,7 @@ export interface FileRoutesById {
   '/_authenticated/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/_authenticated/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/_authenticated/platform/operations': typeof AuthenticatedPlatformOperationsRoute
+  '/_authenticated/pos/registers': typeof AuthenticatedPosRegistersRoute
   '/_authenticated/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/_authenticated/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/_authenticated/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
@@ -1906,6 +1916,7 @@ export interface FileRouteTypes {
     | '/platform/automation'
     | '/platform/billing'
     | '/platform/operations'
+    | '/pos/registers'
     | '/purchases/employee-expenses'
     | '/purchases/portal-inbox'
     | '/purchases/recurring'
@@ -2086,6 +2097,7 @@ export interface FileRouteTypes {
     | '/platform/automation'
     | '/platform/billing'
     | '/platform/operations'
+    | '/pos/registers'
     | '/purchases/employee-expenses'
     | '/purchases/portal-inbox'
     | '/purchases/recurring'
@@ -2272,6 +2284,7 @@ export interface FileRouteTypes {
     | '/_authenticated/platform/automation'
     | '/_authenticated/platform/billing'
     | '/_authenticated/platform/operations'
+    | '/_authenticated/pos/registers'
     | '/_authenticated/purchases/employee-expenses'
     | '/_authenticated/purchases/portal-inbox'
     | '/_authenticated/purchases/recurring'
@@ -3078,6 +3091,13 @@ declare module '@tanstack/react-router' {
       path: '/pos'
       fullPath: '/pos/'
       preLoaderRoute: typeof AuthenticatedPosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pos/registers': {
+      id: '/_authenticated/pos/registers'
+      path: '/pos/registers'
+      fullPath: '/pos/registers'
+      preLoaderRoute: typeof AuthenticatedPosRegistersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/purchases/': {
@@ -4109,6 +4129,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHrSectionRoute: typeof AuthenticatedHrSectionRoute
   AuthenticatedInviteTokenRoute: typeof AuthenticatedInviteTokenRoute
   AuthenticatedMessagesSettingsRoute: typeof AuthenticatedMessagesSettingsRoute
+  AuthenticatedPosRegistersRoute: typeof AuthenticatedPosRegistersRoute
   AuthenticatedReportsReportIdRoute: typeof AuthenticatedReportsReportIdRoute
   AuthenticatedAdvisorsPortalIndexRoute: typeof AuthenticatedAdvisorsPortalIndexRoute
   AuthenticatedAppStoreIndexRoute: typeof AuthenticatedAppStoreIndexRoute
@@ -4179,6 +4200,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHrSectionRoute: AuthenticatedHrSectionRoute,
   AuthenticatedInviteTokenRoute: AuthenticatedInviteTokenRoute,
   AuthenticatedMessagesSettingsRoute: AuthenticatedMessagesSettingsRoute,
+  AuthenticatedPosRegistersRoute: AuthenticatedPosRegistersRoute,
   AuthenticatedReportsReportIdRoute: AuthenticatedReportsReportIdRoute,
   AuthenticatedAdvisorsPortalIndexRoute: AuthenticatedAdvisorsPortalIndexRoute,
   AuthenticatedAppStoreIndexRoute: AuthenticatedAppStoreIndexRoute,

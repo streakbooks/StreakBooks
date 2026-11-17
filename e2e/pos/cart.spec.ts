@@ -36,7 +36,7 @@ test("company switch clears the cart", async ({ page }) => {
 });
 test("denied permission hides catalogue", async ({ page }) => {
   await page.goto("/?denied=true");
-  await expect(page.getByRole("heading", { name: "Sales access required" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "POS access required" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Consultation" })).toHaveCount(0);
 });
 test("quote failure shows retry without a total", async ({ page }) => {

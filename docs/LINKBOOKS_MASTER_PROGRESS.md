@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Updated** | 2026-11-17 |
-| **Baseline commit** | `d2ba900a` (GitHub `main` after #229–#236 + hotfix #239) |
+| **Baseline commit** | `5d2fc838` (GitHub `main` after #229–#241) |
 | **Programme** | Complete module coverage & zero-gap execution (with originality-first IP policy) |
 | **Authoritative repo** | https://github.com/linkbusinessadvisory/LinkBooks |
 
@@ -38,10 +38,19 @@ LinkBooks is built as an **independent original product**. Competitors are funct
 | Local typecheck on `d2ba900a` | **Passed** |
 | Focused purchases unit tests | **35 passed** |
 
+## B9 — Sales credit-limit gate (in progress)
+
+| Item | Status |
+|------|--------|
+| Pure assessment (`credit-limit.ts`) | Implemented — same-currency exposure; mixed-currency honest review |
+| Authorise fail-closed without acknowledgement | Implemented |
+| Invoice detail Alert + checkbox | Implemented |
+| Tests | 6 unit |
+| Originality | Independent LinkBooks control; no competitor UI/code |
+
 ## Next executable step
 
-1. Fix GitHub Actions hosted runner/billing so #237 jobs execute (not empty-step failures).
-2. Rebase #225 onto `d2ba900a`; keep draft until review.
-3. Rebase remaining useful bits of #227 after #237, or close as superseded for CI.
+1. Open/review B9 PR; merge when gates allow.
+2. Fix GitHub Actions hosted runner/billing so #237 jobs execute.
+3. Rebase #225 onto latest main; keep draft until review.
 4. Apply purchase migrations only with explicit DB authorization.
-5. Resume new feature work after CI recovery.

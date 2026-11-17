@@ -15,6 +15,7 @@ import {
   downloadBillAttachment,
   getBill,
   getBillNeighbors,
+  getBillPurchaseOrderMatch,
   listBillActivity,
   listBillNotes,
   listSuppliers,
@@ -129,6 +130,7 @@ type BillPayload = {
   balance_due_minor: number;
   document_total_minor: number;
   posted_journal_id: string | null;
+  purchase_order_id?: string | null;
   contact_id: string;
   approval_comment: string | null;
   rejection_reason: string | null;
@@ -194,6 +196,7 @@ function BillDocumentWorkspace() {
   const { can } = useCan();
   const saveDraft = useServerFn(saveBillDraft);
   const doAuthorise = useServerFn(authoriseBill);
+  const fetchPoMatch = useServerFn(getBillPurchaseOrderMatch);
   const doVoid = useServerFn(voidBill);
   const doSubmit = useServerFn(submitBillForApproval);
   const doReject = useServerFn(rejectBillApproval);
@@ -251,6 +254,12 @@ function BillDocumentWorkspace() {
     queryKey: ["bill-neighbors", companyId, billId],
     enabled: Boolean(companyId),
     queryFn: () => fetchNeighbors({ data: { companyId: companyId!, billId } }),
+  });
+
+  const poMatchQ = useQuery({
+    queryKey: ["bill-po-match", companyId, billId],
+    enabled: Boolean(companyId),
+    queryFn: () => fetchPoMatch({ data: { companyId: companyId!, billId } }),
   });
 
   const notesQ = useQuery({
@@ -359,6 +368,7 @@ function BillDocumentWorkspace() {
     await queryClient.invalidateQueries({ queryKey: ["bills-workspace-summary", companyId] });
     await queryClient.invalidateQueries({ queryKey: ["bill-notes", companyId, billId] });
     await queryClient.invalidateQueries({ queryKey: ["bill-activity", companyId, billId] });
+    await queryClient.invalidateQueries({ queryKey: ["bill-po-match", companyId, billId] });
   };
 
   const editorState: BillEditorState = {
@@ -834,11 +844,23 @@ function BillDocumentWorkspace() {
                 ) : null}
                 <Button
                   size="sm"
-                  disabled={authoriseMutation.isPending || !can("purchases.authorise")}
+                  disabled={
+                    authoriseMutation.isPending ||
+                    !can("purchases.authorise") ||
+                    Boolean(
+                      poMatchQ.data?.required &&
+                        poMatchQ.data.match.applicable &&
+                        poMatchQ.data.match.status !== "pass",
+                    )
+                  }
                   title={
-                    can("purchases.authorise")
-                      ? undefined
-                      : "You do not have permission to authorise bills"
+                    !can("purchases.authorise")
+                      ? "You do not have permission to authorise bills"
+                      : poMatchQ.data?.required &&
+                          poMatchQ.data.match.applicable &&
+                          poMatchQ.data.match.status !== "pass"
+                        ? "Three-way matching must pass before authorising"
+                        : undefined
                   }
                   onClick={() => authoriseMutation.mutate()}
                 >
@@ -917,6 +939,48 @@ function BillDocumentWorkspace() {
         <Alert variant="destructive">
           <AlertTitle>Could not save</AlertTitle>
           <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {poMatchQ.data?.match.applicable ? (
+        <Alert
+          variant={
+            poMatchQ.data.match.status === "pass"
+              ? "default"
+              : poMatchQ.data.required
+                ? "destructive"
+                : "default"
+          }
+          className="mb-4"
+        >
+          <AlertTitle>
+            {poMatchQ.data.match.status === "pass"
+              ? "Three-way match passed"
+              : poMatchQ.data.required
+                ? "Three-way match blocked"
+                : "Three-way match warning"}
+          </AlertTitle>
+          <AlertDescription>
+            {poMatchQ.data.match.status === "pass"
+              ? "Order, goods receipt and bill quantities/amounts agree."
+              : (poMatchQ.data.match.issues[0] ??
+                "Order, receipt and bill do not yet agree.")}
+            {poMatchQ.data.required
+              ? " Authorisation is blocked until matching passes."
+              : " Enable purchases three-way matching in Settings to enforce this at authorise."}
+            {bill.purchase_order_id ? (
+              <>
+                {" "}
+                <Link
+                  to="/purchases/orders/$orderId"
+                  params={{ orderId: bill.purchase_order_id }}
+                  className="underline"
+                >
+                  Open purchase order
+                </Link>
+              </>
+            ) : null}
+          </AlertDescription>
         </Alert>
       ) : null}
 

@@ -220,6 +220,18 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
       }
       await queryClient.invalidateQueries({ queryKey: ["credits", companyId] });
       await queryClient.invalidateQueries({ queryKey: ["bills", companyId] });
+      if (r.authoriseError) {
+        if (r.statusHint === "posted_unauthorised") {
+          toast.error("Journal posted — retry Authorise to link status");
+        } else {
+          toast.error("Saved as draft — authorise failed");
+        }
+        navigate({
+          to: "/purchases/credit-notes/$creditNoteId",
+          params: { creditNoteId: r.id },
+        });
+        return;
+      }
       toast.success(r.journalId ? "Credit note authorised and posted" : "Draft credit note saved");
       if (r.allocationError) toast.error(`Not applied to the bill: ${r.allocationError}`);
       navigate({

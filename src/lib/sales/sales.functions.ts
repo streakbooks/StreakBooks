@@ -43,6 +43,7 @@ import {
 import { fetchAllPages } from "@/lib/sales/fetch-all";
 import { minorToDecimalString, toCsv } from "@/lib/sales/csv";
 import { assertHeaderMatchesLines } from "@/lib/purchases/authorise-totals";
+import { JournalPostedUnlinkedError } from "@/lib/accounting/journal-posted-unlinked";
 import {
   assertQuoteTransition,
   isQuoteConvertible,
@@ -838,16 +839,7 @@ async function authoriseInvoiceCore(
   return { journalId, invoiceNumber: number, alreadyAuthorised: false };
 }
 
-/** Journal exists but the document status link failed — caller must surface retry, not "draft only". */
-export class JournalPostedUnlinkedError extends Error {
-  readonly journalId: string;
-  readonly statusHint = "posted_unauthorised" as const;
-  constructor(journalId: string, message: string) {
-    super(message);
-    this.name = "JournalPostedUnlinkedError";
-    this.journalId = journalId;
-  }
-}
+export { JournalPostedUnlinkedError } from "@/lib/accounting/journal-posted-unlinked";
 
 export const authoriseInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

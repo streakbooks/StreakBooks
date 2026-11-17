@@ -28,6 +28,7 @@ import {
 import { fetchAllPages } from "@/lib/sales/fetch-all";
 import { minorToDecimalString, toCsv } from "@/lib/sales/csv";
 import { assertHeaderMatchesLines } from "@/lib/purchases/authorise-totals";
+import { JournalPostedUnlinkedError } from "@/lib/accounting/journal-posted-unlinked";
 
 const CN_SORTS = ["credit_date", "credit_number", "total_minor", "status"] as const;
 const CN_STATUSES = ["draft", "authorised", "partly_paid", "paid", "void"] as const;
@@ -484,7 +485,8 @@ export const authoriseCreditNote = createServerFn({ method: "POST" })
       .eq("company_id" as never, data.companyId as never)
       .eq("status" as never, "draft" as never);
     if (upErr) {
-      throw new Error(
+      throw new JournalPostedUnlinkedError(
+        journalId,
         `The journal was posted but the credit note could not be marked authorised (${upErr.message}). Retry authorise — it is safe to repeat.`,
       );
     }

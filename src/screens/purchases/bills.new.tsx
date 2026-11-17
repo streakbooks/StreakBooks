@@ -1086,13 +1086,40 @@ export function NewBill({
       try {
         if (isTemplate) {
           const id = await persistTemplate(mode === "authorise");
-          return { id, mode };
+          return {
+            id,
+            mode,
+            authoriseError: null as string | null,
+            statusHint: null as "posted_unauthorised" | null,
+          };
         }
         const id = await persistDraft(mode === "authorise");
         if (mode === "authorise") {
-          await authorise({ data: { companyId: companyId!, billId: id } });
+          try {
+            await authorise({ data: { companyId: companyId!, billId: id } });
+            return {
+              id,
+              mode,
+              authoriseError: null as string | null,
+              statusHint: null as "posted_unauthorised" | null,
+            };
+          } catch (e) {
+            const msg = friendlyAuthError(e);
+            const posted = /journal was posted but/i.test(msg);
+            return {
+              id,
+              mode,
+              authoriseError: msg,
+              statusHint: posted ? ("posted_unauthorised" as const) : null,
+            };
+          }
         }
-        return { id, mode };
+        return {
+          id,
+          mode,
+          authoriseError: null as string | null,
+          statusHint: null as "posted_unauthorised" | null,
+        };
       } finally {
         savingRef.current = false;
       }
@@ -1111,6 +1138,20 @@ export function NewBill({
           return;
         }
         setBaseline(snapshot());
+        return;
+      }
+      if (result.authoriseError) {
+        if (result.statusHint === "posted_unauthorised") {
+          setFormError(
+            `The journal was posted but the bill status was not linked. Open the bill and click Authorise again — it will not post twice. ${result.authoriseError}`,
+          );
+          toast.error("Journal posted — retry Authorise to link status");
+        } else {
+          setFormError(`Saved as a draft, but it could not be authorised: ${result.authoriseError}`);
+          toast.error("Saved as draft — authorise failed");
+        }
+        setBaseline(snapshot());
+        navigate({ to: "/purchases/bills/$billId", params: { billId: result.id } });
         return;
       }
       toast.success(

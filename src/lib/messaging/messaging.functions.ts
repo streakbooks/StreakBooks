@@ -16,6 +16,7 @@ import type {
   MessagingVisibility,
 } from "@/lib/messaging/types";
 import { getMessagingRecordAdapter } from "@/lib/messaging/module-adapters";
+import { assertMessagingExternalPortalsAllowed, messagingExternalPortalsUnlocked } from "@/lib/messaging/external-portals";
 
 function asError(error: { message: string } | null): never {
   throw new Error(error?.message ?? "Messaging request failed");
@@ -50,6 +51,7 @@ export const getMessagingSettings = createServerFn({ method: "GET" })
           allow_voice_video: false,
           max_attachment_bytes: 5_242_880,
           retention_days: null,
+          external_portals_unlockable: false,
         };
       }
       throw error;
@@ -77,35 +79,40 @@ export const getMessagingSettings = createServerFn({ method: "GET" })
           allow_voice_video: false,
           max_attachment_bytes: 5_242_880,
           retention_days: null,
+          external_portals_unlockable: false,
         };
       }
       asError(ensureError);
     }
+    const unlockable = messagingExternalPortalsUnlocked();
     const row = (ensured ?? null) as MessagingSettings | null;
-    if (row) return row;
+    if (row) return { ...row, external_portals_unlockable: unlockable };
     const { data: settings, error } = await supabase
       .from("messaging_settings" as never)
       .select("*")
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
     if (error) asError(error);
-    return (settings ?? {
-      company_id: data.companyId,
-      enabled: false,
-      allow_internal: true,
-      allow_employee: true,
-      allow_customer: false,
-      allow_vendor: false,
-      allow_accountant: true,
-      allow_advisor: true,
-      allow_group_create: true,
-      allow_external_invite: false,
-      allow_file_share: true,
-      allow_ai_assist: false,
-      allow_voice_video: false,
-      max_attachment_bytes: 5_242_880,
-      retention_days: null,
-    }) as MessagingSettings;
+    return {
+      ...((settings ?? {
+        company_id: data.companyId,
+        enabled: false,
+        allow_internal: true,
+        allow_employee: true,
+        allow_customer: false,
+        allow_vendor: false,
+        allow_accountant: true,
+        allow_advisor: true,
+        allow_group_create: true,
+        allow_external_invite: false,
+        allow_file_share: true,
+        allow_ai_assist: false,
+        allow_voice_video: false,
+        max_attachment_bytes: 5_242_880,
+        retention_days: null,
+      }) as MessagingSettings),
+      external_portals_unlockable: unlockable,
+    };
   });
 
 export const setMessagingEnabled = createServerFn({ method: "POST" })
@@ -122,7 +129,10 @@ export const setMessagingEnabled = createServerFn({ method: "POST" })
       _enabled: data.enabled,
     } as never);
     if (error) asError(error);
-    return row as MessagingSettings;
+    return {
+      ...(row as MessagingSettings),
+      external_portals_unlockable: messagingExternalPortalsUnlocked(),
+    };
   });
 
 export const setMessagingCollaborationFlags = createServerFn({ method: "POST" })
@@ -147,6 +157,10 @@ export const setMessagingCollaborationFlags = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<MessagingSettings> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.manage_settings");
+    assertMessagingExternalPortalsAllowed({
+      allowCustomer: data.allowCustomer,
+      allowVendor: data.allowVendor,
+    });
     const { data: row, error } = await supabase.rpc(
       "messaging_set_collaboration_flags" as never,
       {
@@ -159,7 +173,10 @@ export const setMessagingCollaborationFlags = createServerFn({ method: "POST" })
       } as never,
     );
     if (error) asError(error);
-    return row as MessagingSettings;
+    return {
+      ...(row as MessagingSettings),
+      external_portals_unlockable: messagingExternalPortalsUnlocked(),
+    };
   });
 
 export const previewMessagingDigest = createServerFn({ method: "GET" })

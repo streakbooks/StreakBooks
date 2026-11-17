@@ -97,4 +97,6 @@ export type MessagingSettings = {
   allow_voice_video: boolean;
   max_attachment_bytes: number;
   retention_days: number | null;
+  /** Server-only unlock flag for customer/vendor portal messaging. */
+  external_portals_unlockable?: boolean;
 };

@@ -188,3 +188,11 @@ export async function importContactsCsv() {
 export function useCan() {
   return { can: useCanDo, role: "owner", ready: true };
 }
+
+// Unconfigured messaging mutations must fail rather than reaching a real backend.
+export async function portalOpenInvoiceDiscussion() {
+  throw new Error("Messaging discussion is not configured in this browser fixture");
+}
+export async function portalSendMessagingMessage() {
+  throw new Error("Messaging send is not configured in this browser fixture");
+}

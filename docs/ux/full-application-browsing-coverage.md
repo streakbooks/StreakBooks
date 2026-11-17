@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Payments native return-to-run link (2026-11-17)
+
+- `src/screens/payroll/payments.tsx`: filtered payments alert now provides a native, keyboard-focusable **View payroll run** link to `/payroll/runs/$runId` with the `payments` tab selected. Source commit `8e8308d00427e37c6f7eb5698125a4201a8cd8db`. **SOURCE ONLY; NOT RUN.** Existing settlement posting, reversal, permissions and journals unchanged.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll partial evidence updated in commit `d4ce201ba143d0a735ece2afe4ff89db5100b2bd`.
+- **NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser Back/Forward/new-tab/refresh, accessibility and RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No changes to `main`, manually triggered CI, production database or deployment.
+
 ### Payroll Payments native run-filter clearing (2026-11-17)
 
 - `src/screens/payroll/payments.tsx`: replace imperative Clear run filter button navigation with a native, keyboard-focusable TanStack Link to `/payroll/payments`, omitting `runId`. This supports normal browser link/new-tab semantics without touching payroll payment or journal logic. Source commit `9e5ab9a4a9583a4ad62829108d7f327773b75c52`. **SOURCE REVIEW ONLY; NOT RUN.**

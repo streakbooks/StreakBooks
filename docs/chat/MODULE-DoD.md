@@ -12,11 +12,11 @@ Copy of `docs/engineering/NEW-MODULE-DEFINITION-OF-DONE.md` for Messages.
 | e1 | Permissions in `permissions.ts` | Done |
 | e2 | `role_permissions` seed migration | Done on branch |
 | e3 | Access catalogue entries | Done |
-| e4 | `check:modules` | Previously green on branch; re-run before merge |
-| f | Migration/rollback documented | In progress (`docs/chat/ARCHITECTURE.md`) |
+| e4 | `check:modules` | Re-run on each batch before merge |
+| f | Migration/rollback documented | Done (`ARCHITECTURE.md`, `MIGRATION-INVENTORY.md`, `STAGING-VERIFICATION.md`) |
 | g | Honest copy | Done |
 | h | Responsive + a11y | Partial (controls labelled; full audit pending) |
 | i | Tests + screenshots | Unit suite + gated E2E; screenshots pending |
 | j | Originality review | Pending |
-| k | Docs under `docs/chat/` | In progress |
+| k | Docs under `docs/chat/` | Done on branch (keep current) |
 | l | Merge evidence | Pending (draft PR #224) |

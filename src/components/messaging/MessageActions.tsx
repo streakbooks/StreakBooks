@@ -21,11 +21,13 @@ export function MessageActions({
   message,
   canEdit,
   onReply,
+  onForward,
 }: {
   companyId: string;
   message: MessagingMessage;
   canEdit: boolean;
   onReply?: (message: MessagingMessage) => void;
+  onForward?: (message: MessagingMessage) => void;
 }) {
   const client = useQueryClient();
   const edit = useServerFn(editMessagingMessage);
@@ -127,6 +129,17 @@ export function MessageActions({
             onClick={() => onReply(message)}
           >
             Reply
+          </Button>
+        ) : null}
+        {onForward ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-7"
+            onClick={() => onForward(message)}
+          >
+            Forward
           </Button>
         ) : null}
         <Button

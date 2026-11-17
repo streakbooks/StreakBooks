@@ -20,7 +20,7 @@ Compared delivered branch work to the master directive, Phase 0 PRD and competit
 
 | Gap | Severity | Notes |
 | --- | -------- | ----- |
-| Migrations not applied to staging/prod | Blocker | SQL only on branch (10 files) |
+| Migrations not applied to staging/prod | Blocker | SQL only on branch (11 files) |
 | Two-browser realtime E2E | Blocker for Phase 1 acceptance | Scaffolded; not run live |
 | Live cross-tenant RLS harness | Blocker for security verified | Structural script only |
 | Firm multi-client isolation E2E | High | Gated scaffold; live isolation unproven |

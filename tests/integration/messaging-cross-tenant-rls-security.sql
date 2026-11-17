@@ -78,6 +78,12 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
+    SELECT 1 FROM pg_proc WHERE proname = 'messaging_create_channel'
+  ) THEN
+    RAISE EXCEPTION 'messaging_create_channel RPC missing';
+  END IF;
+
+  IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
     WHERE conname = 'communication_send_claims_kind_check'

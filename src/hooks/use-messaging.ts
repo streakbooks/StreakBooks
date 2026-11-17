@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 import {
+  createChannelConversation,
   createDirectConversation,
   createGroupConversation,
   getMessagingSettings,
@@ -172,6 +173,7 @@ export function useMessagingActions(companyId: string | null) {
   const send = useServerFn(sendMessagingMessage);
   const createDm = useServerFn(createDirectConversation);
   const createGroup = useServerFn(createGroupConversation);
+  const createChannel = useServerFn(createChannelConversation);
   const updateMembership = useServerFn(updateMessagingMembership);
   const markUnread = useServerFn(markMessagingUnread);
   const listParticipants = useServerFn(listEligibleMessagingParticipants);
@@ -223,6 +225,20 @@ export function useMessagingActions(companyId: string | null) {
     onError: (error) => notify.error(error, "Could not create group"),
   });
 
+  const channelMutation = useMutation({
+    mutationFn: (input: { title: string; description?: string; memberUserIds?: string[] }) =>
+      createChannel({
+        data: {
+          companyId: companyId!,
+          title: input.title,
+          ...(input.description ? { description: input.description } : {}),
+          ...(input.memberUserIds ? { memberUserIds: input.memberUserIds } : {}),
+        },
+      }),
+    onSuccess: invalidate,
+    onError: (error) => notify.error(error, "Could not create channel"),
+  });
+
   const membershipMutation = useMutation({
     mutationFn: (input: {
       conversationId: string;
@@ -255,6 +271,7 @@ export function useMessagingActions(companyId: string | null) {
     sendMutation,
     dmMutation,
     groupMutation,
+    channelMutation,
     membershipMutation,
     markUnreadMutation,
     listParticipants: (search?: string) =>

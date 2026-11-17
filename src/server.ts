@@ -129,6 +129,20 @@ export default {
           return Response.json({ error: "Messaging retention purge failed" }, { status: 503 });
         }
       }
+      if (pathname === "/api/messaging/outbox-cron") {
+        if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
+        const { authenticateCronRequest } = await import("./integrations/supabase/cron-auth");
+        const authFailure = await authenticateCronRequest(request);
+        if (authFailure) return authFailure;
+        const { runMessagingOutboxDrain } = await import("./lib/messaging/outbox-drain.server");
+        try {
+          const result = await runMessagingOutboxDrain();
+          return Response.json(result, { headers: { "cache-control": "no-store" } });
+        } catch (error) {
+          console.error("Messaging outbox drain error", error);
+          return Response.json({ error: "Messaging outbox drain failed" }, { status: 503 });
+        }
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

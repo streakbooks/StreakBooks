@@ -500,6 +500,73 @@ export const createGroupConversation = createServerFn({ method: "POST" })
     return { conversationId: String(id) };
   });
 
+export const createChannelConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      title: string;
+      description?: string;
+      memberUserIds?: string[];
+    }) => ({
+      companyId: assertUuid(input?.companyId),
+      title: normaliseGroupTitle(input?.title),
+      description:
+        typeof input?.description === "string" ? input.description.trim().slice(0, 2000) : "",
+      memberUserIds: Array.isArray(input?.memberUserIds)
+        ? input.memberUserIds.filter((id) => isFiniteUuid(id)).slice(0, 50)
+        : [],
+    }),
+  )
+  .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.create_group");
+    const { data: id, error } = await supabase.rpc("messaging_create_channel" as never, {
+      _company_id: data.companyId,
+      _title: data.title,
+      _description: data.description || null,
+      _member_user_ids: data.memberUserIds,
+    } as never);
+    if (error) asError(error);
+    return { conversationId: String(id) };
+  });
+
+export const listStarredMessagingMessages = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+  }))
+  .handler(async ({ data, context }): Promise<MessagingMessage[]> => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: stars, error } = await supabase
+      .from("messaging_starred_messages" as never)
+      .select("message_id, created_at" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("user_id" as never, userId as never)
+      .order("created_at" as never, { ascending: false })
+      .limit(50);
+    if (error) asError(error);
+    const ids = ((stars ?? []) as Array<{ message_id: string }>).map((row) => row.message_id);
+    if (!ids.length) return [];
+    const { data: rows, error: messageError } = await supabase
+      .from("messaging_messages" as never)
+      .select(
+        "id,company_id,conversation_id,seq,author_user_id,author_kind,body,body_format,reply_to_message_id,idempotency_key,is_edited,is_redacted,is_pinned,created_at,edited_at" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .in("id" as never, ids as never);
+    if (messageError) asError(messageError);
+    const byId = new Map(((rows ?? []) as MessagingMessage[]).map((row) => [row.id, row] as const));
+    return ids
+      .map((id) => byId.get(id))
+      .filter((row): row is MessagingMessage => Boolean(row))
+      .map((row) => ({
+        ...row,
+        body: row.is_redacted ? "[Message removed]" : row.body,
+      }));
+  });
+
 function isFiniteUuid(value: unknown): value is string {
   return typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value);
 }

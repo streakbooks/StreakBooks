@@ -1,27 +1,32 @@
-import { extractMentionTokens } from "@/lib/messaging/mentions";
+import { segmentMessagingBody } from "@/lib/messaging/linkify";
 
-/** Renders plain message text safely in React, highlighting @mentions. */
+/** Renders plain message text safely in React, with mentions and http(s) links. */
 export function SafeMessageBody({ body }: { body: string }) {
-  const tokens = new Set(extractMentionTokens(body));
-  if (!tokens.size) {
-    return <p className="whitespace-pre-wrap text-sm">{body}</p>;
-  }
-
-  const parts = body.split(/(@[^\s@]+)/g);
+  const segments = segmentMessagingBody(body);
   return (
     <p className="whitespace-pre-wrap text-sm">
-      {parts.map((part, index) => {
-        if (part.startsWith("@")) {
-          const token = part.slice(1).replace(/[.,;:!?)]+$/g, "").toLowerCase();
-          if (tokens.has(token) || tokens.has("everyone")) {
-            return (
-              <span key={`${part}-${index}`} className="font-medium text-primary">
-                {part}
-              </span>
-            );
-          }
+      {segments.map((segment, index) => {
+        if (segment.type === "mention") {
+          return (
+            <span key={`${segment.value}-${index}`} className="font-medium text-primary">
+              {segment.value}
+            </span>
+          );
         }
-        return <span key={`${part}-${index}`}>{part}</span>;
+        if (segment.type === "url") {
+          return (
+            <a
+              key={`${segment.href}-${index}`}
+              href={segment.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary underline underline-offset-2"
+            >
+              {segment.value}
+            </a>
+          );
+        }
+        return <span key={`text-${index}`}>{segment.value}</span>;
       })}
     </p>
   );

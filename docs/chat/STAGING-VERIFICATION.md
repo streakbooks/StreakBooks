@@ -10,7 +10,7 @@
 
 1. Confirm the linked project is an **authorized isolated staging** environment.  
 2. `npx supabase db push` (or project-approved migration pipeline) only after confirmation.  
-3. Apply all `20261117*_messaging_*.sql` migrations in timestamp order (10 files on branch).  
+3. Apply all `20261117*_messaging_*.sql` migrations in timestamp order (11 files; see `MIGRATION-INVENTORY.md`).  
 4. Run `tests/integration/messaging-cross-tenant-rls-security.sql` and `tests/integration/messaging-rls-scenarios.sql`.  
 5. Do **not** apply to production until staging RLS + two-browser E2E pass and deployment is authorised.
 
@@ -28,8 +28,10 @@ Keep `allow_customer` / `allow_vendor` off until portal isolation passes.
 4. Firm user: accountant chat under client A is absent under client B.  
 5. Mute 8h / archive / unarchive / rename group / remove member.  
 6. Retention preview dry-run; cron `/api/messaging/retention-cron` returns `mode: dry_run`.  
-7. Digest cron returns messaging summary without demo companies.  
-8. Formal review from chat creates Action Center item; invoice status unchanged.
+7. Outbox cron `/api/messaging/outbox-cron` marks aged events processed.  
+8. Digest cron returns messaging summary without demo companies.  
+9. Formal review from chat creates Action Center item; invoice status unchanged.  
+10. Create channel + forward message between authorised threads.
 
 ## Rollback
 

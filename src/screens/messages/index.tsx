@@ -17,6 +17,7 @@ import { MessageReceipts } from "@/components/messaging/MessageReceipts";
 import { MessagingAiAssistPanel } from "@/components/messaging/MessagingAiAssistPanel";
 import { MessagingVoiceVideoPanel } from "@/components/messaging/MessagingVoiceVideoPanel";
 import { SafeMessageBody } from "@/components/messaging/SafeMessageBody";
+import { StarredMessages } from "@/components/messaging/StarredMessages";
 import { cn } from "@/lib/utils";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import {
@@ -118,9 +119,10 @@ export function MessagesScreen({
   const [peers, setPeers] = useState<MessagingParticipant[]>([]);
   const [groupTitle, setGroupTitle] = useState("");
   const [selectedPeers, setSelectedPeers] = useState<string[]>([]);
-  const [showNew, setShowNew] = useState<"dm" | "group" | "hr" | "advisor" | "accountant" | null>(
-    null,
-  );
+  const [showNew, setShowNew] = useState<
+    "dm" | "group" | "channel" | "hr" | "advisor" | "accountant" | null
+  >(null);
+  const [forwardMessage, setForwardMessage] = useState<MessagingMessage | null>(null);
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [approvalPeer, setApprovalPeer] = useState("");
@@ -256,6 +258,9 @@ export function MessagesScreen({
           <Button type="button" variant="outline" onClick={() => setShowNew("group")}>
             New group
           </Button>
+          <Button type="button" variant="outline" onClick={() => setShowNew("channel")}>
+            New channel
+          </Button>
           <Button type="button" variant="outline" onClick={() => setShowNew("hr")}>
             Private HR
           </Button>
@@ -318,6 +323,20 @@ export function MessagesScreen({
         </nav>
 
         <section aria-label="Conversation list" className="rounded-lg border bg-card">
+          {filter === "starred" && companyId ? (
+            <div className="border-b p-3">
+              <h3 className="mb-2 text-sm font-semibold">Starred messages</h3>
+              <StarredMessages
+                companyId={companyId}
+                onOpenConversation={(id) =>
+                  void navigate({
+                    to: "/messages",
+                    search: messagesSearch({ filter: "starred", conversation: id }),
+                  })
+                }
+              />
+            </div>
+          ) : null}
           {conversations.isPending && <LoadingState />}
           {conversations.isError && (
             <ErrorState
@@ -723,6 +742,7 @@ export function MessagesScreen({
                         message={message}
                         canEdit={Boolean(user?.id && message.author_user_id === user.id)}
                         onReply={(target) => setReplyTo(target)}
+                        onForward={(target) => setForwardMessage(target)}
                       />
                     ) : null}
                     {companyId && user?.id && message.author_user_id === user.id ? (
@@ -921,6 +941,63 @@ export function MessagesScreen({
         </section>
       </div>
 
+      {forwardMessage && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Forward message"
+          className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4"
+        >
+          <div className="w-full max-w-md rounded-lg border bg-card p-4 shadow-lg">
+            <h3 className="text-base font-semibold">Forward message</h3>
+            <p className="mt-1 truncate text-xs text-muted-foreground">{forwardMessage.body}</p>
+            <ul className="mt-3 max-h-56 overflow-y-auto rounded border">
+              {(conversations.data ?? [])
+                .filter((c) => c.id !== conversationId)
+                .slice(0, 20)
+                .map((conversation) => (
+                  <li key={conversation.id}>
+                    <button
+                      type="button"
+                      className="block w-full px-3 py-2 text-left text-sm hover:bg-muted/50"
+                      onClick={() => {
+                        void actions.sendMutation
+                          .mutateAsync({
+                            conversationId: conversation.id,
+                            body: `Forwarded message:\n${forwardMessage.body}`,
+                            idempotencyKey: crypto.randomUUID(),
+                          })
+                          .then(() => {
+                            notify.success("Message forwarded");
+                            setForwardMessage(null);
+                            void navigate({
+                              to: "/messages",
+                              search: messagesSearch({
+                                filter,
+                                conversation: conversation.id,
+                              }),
+                            });
+                          })
+                          .catch((error) => notify.error(error, "Could not forward message"));
+                      }}
+                    >
+                      {conversation.title ||
+                        (conversation.conversation_type === "dm"
+                          ? "Direct message"
+                          : conversation.conversation_type)}
+                    </button>
+                  </li>
+                ))}
+            </ul>
+            <div className="mt-4 flex justify-end">
+              <Button type="button" variant="ghost" onClick={() => setForwardMessage(null)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showRename && conversationId && (
         <div
           role="dialog"
@@ -1044,11 +1121,13 @@ export function MessagesScreen({
               ? "New direct message"
               : showNew === "group"
                 ? "New group"
-                : showNew === "hr"
-                  ? "Private HR discussion"
-                  : showNew === "accountant"
-                    ? "Accountant discussion"
-                    : "Advisor engagement"
+                : showNew === "channel"
+                  ? "New channel"
+                  : showNew === "hr"
+                    ? "Private HR discussion"
+                    : showNew === "accountant"
+                      ? "Accountant discussion"
+                      : "Advisor engagement"
           }
           className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4"
         >
@@ -1058,13 +1137,16 @@ export function MessagesScreen({
                 ? "New direct message"
                 : showNew === "group"
                   ? "New group"
-                  : showNew === "hr"
-                    ? "Private HR discussion"
-                    : showNew === "accountant"
-                      ? "Accountant discussion"
-                      : "Advisor engagement"}
+                  : showNew === "channel"
+                    ? "New channel"
+                    : showNew === "hr"
+                      ? "Private HR discussion"
+                      : showNew === "accountant"
+                        ? "Accountant discussion"
+                        : "Advisor engagement"}
             </h3>
             {(showNew === "group" ||
+              showNew === "channel" ||
               showNew === "hr" ||
               showNew === "advisor" ||
               showNew === "accountant") && (
@@ -1082,11 +1164,19 @@ export function MessagesScreen({
                         ? "Engagement discussion"
                         : showNew === "accountant"
                           ? "Client discussion"
-                          : "Group name"
+                          : showNew === "channel"
+                            ? "Channel name"
+                            : "Group name"
                   }
                 />
               </div>
             )}
+            {showNew === "channel" ? (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Channels are internal announcement-style spaces. Membership is still required to
+                read and post.
+              </p>
+            ) : null}
             {showNew === "hr" ? (
               <p className="mt-3 text-xs text-muted-foreground">
                 HR-private visibility. Payroll and sensitive personal data stay out of general
@@ -1210,9 +1300,8 @@ export function MessagesScreen({
                         {peer.full_name || peer.email || peer.user_id}
                         <span className="block text-xs text-muted-foreground">{peer.email}</span>
                       </span>
-                      {showNew === "group" && selectedPeers.includes(peer.user_id) && (
-                        <Badge>Selected</Badge>
-                      )}
+                      {(showNew === "group" || showNew === "channel") &&
+                        selectedPeers.includes(peer.user_id) && <Badge>Selected</Badge>}
                     </button>
                   </li>
                 ))}
@@ -1247,6 +1336,33 @@ export function MessagesScreen({
                   }
                 >
                   Create group
+                </Button>
+              )}
+              {showNew === "channel" && (
+                <Button
+                  type="button"
+                  disabled={!groupTitle.trim() || actions.channelMutation.isPending}
+                  onClick={() =>
+                    actions.channelMutation.mutate(
+                      { title: groupTitle, memberUserIds: selectedPeers },
+                      {
+                        onSuccess: (result) => {
+                          setShowNew(null);
+                          setGroupTitle("");
+                          setSelectedPeers([]);
+                          void navigate({
+                            to: "/messages",
+                            search: messagesSearch({
+                              filter: "groups",
+                              conversation: result.conversationId,
+                            }),
+                          });
+                        },
+                      },
+                    )
+                  }
+                >
+                  Create channel
                 </Button>
               )}
             </div>

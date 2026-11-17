@@ -386,7 +386,8 @@
         "2026-11-17: src/lib/payroll/run-search.test.ts covers whitespace, length boundaries, Unicode controls and multilingual text; commit f6ab24aa9bbc44b883dd207ab8cc2bdae23ee72e; WRITTEN, NOT RUN.",
         "2026-11-17: src/screens/payroll/runs.tsx retains whitespace while composing multiword searches, filters immediately using draft, commits URL search on blur/Enter, and carries draft query to run detail; commits 6f85aacd65470997eb2ea080d0555f7f737dd51b and 73083cca511b12f9b7a7d1842de338137b431a22. SOURCE ONLY; NOT RUN.",
         "2026-11-17: src/screens/payroll/runs.tsx uses normalizePayrollRunSearch(searchDraft) for both existing and newly created run detail return links, avoiding stale URL search context and rejecting invalid draft text; commit 86324ceb768058c7f80357f5ce6b134b31f5245a; SOURCE REVIEW ONLY, NOT RUN.",
-        "2026-11-17: src/screens/payroll/runs.tsx — native keyboard-focusable links added for Payment, Status and Net pay cells, preserving validated draft search, status and sort return context; commit 71c3752c02ecf46cac2df35f3d1d3f819cb149db; SOURCE ONLY, NOT RUN."
+        "2026-11-17: src/screens/payroll/runs.tsx — native keyboard-focusable links added for Payment, Status and Net pay cells, preserving validated draft search, status and sort return context; commit 71c3752c02ecf46cac2df35f3d1d3f819cb149db; SOURCE ONLY, NOT RUN.",
+        "2026-11-17: src/screens/payroll/payments.tsx preserves PayrollSubnav and PageHeader during workspace loading, missing company, payroll.view denial, payment loading and payment query failure; source commit 6bcddb2452f1852343067ba672e5b8d62797bb09; SOURCE REVIEW ONLY, NOT RUN."
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
@@ -416,7 +417,8 @@
         "Execute Payroll runs URL-search regression, local browsing guard, typecheck, lint, build, authenticated browser, permission/RLS and accounting regression; NOT RUN.",
         "Verify Payroll Runs draft search, URL commit, browser Back/Forward and detail-return context with authenticated browser; TypeScript, lint, unit, build and accounting/RLS tests NOT RUN.",
         "Execute authenticated multiword-search draft -> detail -> return navigation, including blur/click and create-run flows; inventory guard, typecheck, Vitest, build, RLS/accounting regression NOT RUN.",
-        "Execute authenticated keyboard/new-tab/deep-link/Back-Forward verification of all six Payroll Runs table columns; guard, typecheck, lint, unit, build, accessibility, security/RLS and accounting regressions NOT RUN."
+        "Execute authenticated keyboard/new-tab/deep-link/Back-Forward verification of all six Payroll Runs table columns; guard, typecheck, lint, unit, build, accessibility, security/RLS and accounting regressions NOT RUN.",
+        "Verify Payroll Payments navigation in pending/missing-company/denied/payment-loading/payment-error states using authenticated browser and keyboard; coverage guard, typecheck, lint, unit, build, RLS/accounting regressions NOT RUN."
       ]
     },
     {

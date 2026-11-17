@@ -8,11 +8,13 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import {
   allocateCreditNote,
   authoriseCreditNote,
+  copyCreditNote,
   deleteDraftCreditNote,
   getCreditNote,
   removeCreditAllocation,
   voidCreditNote,
 } from "@/lib/sales/sales-credits.functions";
+import { useCan } from "@/hooks/use-can";
 import { listOpenInvoicesForCustomer } from "@/lib/sales/sales-receipts.functions";
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { canVoidCreditNote, creditNoteStatusLabel } from "@/lib/sales/allocation-rules";
@@ -73,11 +75,25 @@ function CreditNoteDetail() {
   const doVoid = useServerFn(voidCreditNote);
   const doRemove = useServerFn(removeCreditAllocation);
   const doDelete = useServerFn(deleteDraftCreditNote);
+  const doCopy = useServerFn(copyCreditNote);
+  const { can } = useCan();
 
   const [allocs, setAllocs] = useState<Record<string, string>>({});
   const [allocDate, setAllocDate] = useState("");
   const [dialog, setDialog] = useState<Dialog>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const copyM = useMutation({
+    mutationFn: () => doCopy({ data: { companyId: companyId!, creditNoteId } }),
+    onSuccess: async (r) => {
+      toast.success("Copied to a new draft credit note");
+      await navigate({
+        to: "/sales/credit-notes/$creditNoteId",
+        params: { creditNoteId: r.id },
+      });
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
 
   const query = useQuery({
     queryKey: ["sales-credit", companyId, creditNoteId],
@@ -305,6 +321,20 @@ function CreditNoteDetail() {
                 Void credit note
               </Button>
             ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={copyM.isPending || !can("sales.draft")}
+              title={
+                can("sales.draft")
+                  ? "Create a new draft with today's date (allocations are not copied)"
+                  : "You do not have permission to create drafts"
+              }
+              onClick={() => copyM.mutate()}
+            >
+              {copyM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Copy credit
+            </Button>
           </div>
         }
       >

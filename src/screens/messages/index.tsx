@@ -325,11 +325,15 @@ export function MessagesScreen({
   }
 
   if (settings.isError) {
+    const detail =
+      settings.error instanceof Error && settings.error.message
+        ? settings.error.message
+        : "Could not load messaging settings.";
     return (
       <ListWorkspace title="Messages" description="Organisation messaging">
         <ErrorState
           title="Messaging unavailable"
-          description="Could not load messaging settings."
+          description={detail}
           onRetry={() => void settings.refetch()}
         />
       </ListWorkspace>

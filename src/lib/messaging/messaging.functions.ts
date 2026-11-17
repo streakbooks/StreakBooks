@@ -28,12 +28,59 @@ export const getMessagingSettings = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data, context }): Promise<MessagingSettings> => {
     const { supabase } = context;
-    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    try {
+      await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      // Pre-migration / unsynced permission catalogue: fail closed as disabled, not a crash.
+      if (/messaging\.view|permission|does not exist|Could not find/i.test(message)) {
+        return {
+          company_id: data.companyId,
+          enabled: false,
+          allow_internal: true,
+          allow_employee: true,
+          allow_customer: false,
+          allow_vendor: false,
+          allow_accountant: true,
+          allow_advisor: true,
+          allow_group_create: true,
+          allow_external_invite: false,
+          allow_file_share: true,
+          allow_ai_assist: false,
+          allow_voice_video: false,
+          max_attachment_bytes: 5_242_880,
+          retention_days: null,
+        };
+      }
+      throw error;
+    }
     const { data: ensured, error: ensureError } = await supabase.rpc(
       "messaging_ensure_settings" as never,
       { _company_id: data.companyId } as never,
     );
-    if (ensureError) asError(ensureError);
+    if (ensureError) {
+      const message = ensureError.message ?? "";
+      if (/does not exist|Could not find the function|schema cache/i.test(message)) {
+        return {
+          company_id: data.companyId,
+          enabled: false,
+          allow_internal: true,
+          allow_employee: true,
+          allow_customer: false,
+          allow_vendor: false,
+          allow_accountant: true,
+          allow_advisor: true,
+          allow_group_create: true,
+          allow_external_invite: false,
+          allow_file_share: true,
+          allow_ai_assist: false,
+          allow_voice_video: false,
+          max_attachment_bytes: 5_242_880,
+          retention_days: null,
+        };
+      }
+      asError(ensureError);
+    }
     const row = (ensured ?? null) as MessagingSettings | null;
     if (row) return row;
     const { data: settings, error } = await supabase

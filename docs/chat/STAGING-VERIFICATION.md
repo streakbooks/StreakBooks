@@ -8,11 +8,15 @@
 
 ## Migration apply policy
 
-1. Confirm the linked project is an **authorized isolated staging** environment.  
-2. `npx supabase db push` (or project-approved migration pipeline) only after confirmation.  
-3. Apply all `20261117*_messaging_*.sql` migrations in timestamp order (11 files; see `MIGRATION-INVENTORY.md`).  
-4. Run `tests/integration/messaging-cross-tenant-rls-security.sql` and `tests/integration/messaging-rls-scenarios.sql`.  
-5. Do **not** apply to production until staging RLS + two-browser E2E pass and deployment is authorised.
+1. Confirm the linked project is authorised (staging or production with explicit approval).  
+2. **Do not** use blind `supabase db push` on this project (history drift).  
+3. Apply with `db query --remote --yes -f` + `migration repair --status applied` (see `MESSAGING-FINAL-SUPABASE-CI-COMMANDS.md`).  
+4. Run `tests/integration/messaging-cross-tenant-rls-security.sql` and `tests/integration/messaging-rls-scenarios.sql` when a live harness is available.  
+5. Keep `allow_customer` / `allow_vendor` off until portal isolation E2E passes.
+
+## Applied (2026-11-17)
+
+All 11 `20261117*_messaging_*.sql` files applied to linked project `ipxflpzfcqwtenodbxwc` (linkbook). Smoke query confirmed tables/RPCs, 46 `messaging.*` permissions, and demo companies enabled.
 
 ## Feature flag
 

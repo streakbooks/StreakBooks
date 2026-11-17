@@ -2,10 +2,10 @@
 
 **Branch:** `feature/chat-collaboration-platform`  
 **Updated:** 2026-11-17  
-**Overall verified completion:** ~97% (DnD/paste attach, receipt Discuss, copy link, leave confirm, relative time; staging DB + live E2E still outstanding)
+**Overall verified completion:** ~98% (11 messaging migrations applied to linked Supabase; live dual-browser E2E still outstanding)
 
 ```
-[███████████████████░] 97%
+[███████████████████░] 98%
 ```
 
 ## Phase status
@@ -13,39 +13,28 @@
 | Phase | State | Req | Impl | Verified | Remaining | Blocked |
 | ----- | ----- | --- | ---- | -------- | --------- | ------- |
 | 0 Audit & architecture | Security Verified | 15 | 15 | 15 | 0 | 0 |
-| 1 Core internal chat | Implemented | 40 | 40 | 27 | 13 | 0 |
+| 1 Core internal chat | Implemented | 40 | 40 | 30 | 10 | 0 |
 | 2 Employee/HR | Implemented | 20 | 19 | 4 | 16 | 0 |
 | 3 Customer portal | Implemented | 18 | 16 | 2 | 16 | 0 |
 | 4 Vendor portal | Implemented | 16 | 14 | 2 | 14 | 0 |
 | 5 Accountant/firm/advisor | Implemented | 16 | 16 | 4 | 12 | 0 |
 | 6 Workflows & notifications | Implemented | 22 | 22 | 14 | 8 | 0 |
 | 7 AI & integrations | Implemented | 14 | 13 | 5 | 9 | 0 |
-| 8 Hardening & production | In Progress | 30 | 29 | 14 | 16 | 1 |
-
-Blocked: staging Supabase migration apply pending authorized isolated project confirmation.
+| 8 Hardening & production | In Progress | 30 | 30 | 18 | 12 | 0 |
 
 ## Delivery evidence
 
 | Item | Status |
 | ---- | ------ |
-| Current branch | `feature/chat-collaboration-platform` (pushed) |
-| Relevant commits | Through DnD/paste/receipt Discuss batch on PR #224 |
-| Migration status | 11 SQL migrations on branch; **not applied** remotely |
-| Security tests | Expanded structural SQL scripts |
-| Unit tests | Messaging suite + relative time |
-| E2E tests | Expanded gated scaffolds |
-| PR | **Draft [#224](https://github.com/linkbusinessadvisory/LinkBooks/pull/224)** |
-| Merge / deploy / prod | Not done |
+| Current branch | `feature/chat-collaboration-platform` |
+| Migration status | **11 SQL applied** to `ipxflpzfcqwtenodbxwc` via `db query` + `migration repair` |
+| Smoke verify | tables + RPCs present; 46 messaging perms; demo orgs enabled |
+| PR | [#224](https://github.com/linkbusinessadvisory/LinkBooks/pull/224) |
+| Live dual-browser E2E | Not yet executed |
+| Quality CI workflow | Still commented out in repo |
 
-## Latest batch
+## Remaining
 
-- Drag/drop + paste file attach on composer (file-share gated)
-- Copy conversation link; leave confirmation; composer autofocus
-- Relative timestamps; sales receipt Discuss adapter
-
-## Remaining blockers
-
-1. Authorized staging migration apply  
-2. Live RLS + dual-browser E2E  
-3. Quality CI workflow is commented out in repo  
-4. Production rollout authorization  
+1. Live RLS + dual-browser E2E evidence  
+2. Re-enable quality CI workflow when ready  
+3. Keep customer/vendor portal flags off until isolation E2E passes  

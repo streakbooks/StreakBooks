@@ -354,9 +354,27 @@ export function PayrollRunsPage() {
                           {run.run_number}
                         </Link>
                       </TableCell>
-                      <TableCell>{scheduleName(run.pay_schedule_id)}</TableCell>
                       <TableCell>
-                        {fmt.date(run.period_start)} – {fmt.date(run.period_end)}
+                        <Link
+                          to="/payroll/runs/$runId"
+                          params={{ runId: run.id }}
+                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
+                          className="block rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          aria-label={`Open payroll run ${run.run_number} for ${scheduleName(run.pay_schedule_id)}`}
+                        >
+                          {scheduleName(run.pay_schedule_id)}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          to="/payroll/runs/$runId"
+                          params={{ runId: run.id }}
+                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
+                          className="block rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          aria-label={`Open payroll run ${run.run_number} for period ${run.period_start} to ${run.period_end}`}
+                        >
+                          {fmt.date(run.period_start)} – {fmt.date(run.period_end)}
+                        </Link>
                       </TableCell>
                       <TableCell>{fmt.date(run.payment_date)}</TableCell>
                       <TableCell>

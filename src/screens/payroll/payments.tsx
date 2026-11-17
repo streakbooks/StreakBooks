@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useRef, useState, type ReactNode } from "react";
@@ -81,7 +81,6 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const canView = useCanDo("payroll.view");
   const canPay = useCanDo("payroll.pay");
   const canAccountingView = useCanDo("accounting.view");
-  const navigate = useNavigate({ from: "/payroll/payments/" });
   const fmt = useFormat();
   const queryClient = useQueryClient();
   const fetchPayments = useServerFn(listPayrollPayments);
@@ -412,12 +411,10 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
         <Alert className="mb-4">
           <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
             <span>Showing payments linked to this payroll run.</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => void navigate({ search: { runId: undefined } })}
-            >
-              Clear run filter
+            <Button asChild size="sm" variant="outline">
+              <Link to="/payroll/payments" search={{ runId: undefined }}>
+                Clear run filter
+              </Link>
             </Button>
           </AlertDescription>
         </Alert>

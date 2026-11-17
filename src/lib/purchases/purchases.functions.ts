@@ -31,6 +31,11 @@ import {
 import { buildIlikeOr, escapeLikeTerm, ilikePattern } from "@/lib/purchases/search-terms";
 import { isBankOrCashAccount, type AccountCandidate } from "@/lib/purchases/bank-account-rules";
 import { dueDateFromBillDate, impliedDiscountMinor } from "@/lib/purchases/po-convert";
+import {
+  loadBillThreeWayMatch,
+  loadThreeWayMatchingRequired,
+} from "@/lib/purchases/po-three-way-match.load";
+import { assertThreeWayMatchForAuthorise } from "@/lib/purchases/po-three-way-match";
 import { describeBillEdits, type BillEditSnapshot } from "@/lib/purchases/bill-history";
 import { type RecurringTemplateDocument } from "@/lib/purchases/recurring-template";
 import {
@@ -1625,6 +1630,26 @@ export async function authoriseBillInternal(
   );
   if (b.posted_journal_id) throw new Error("Bill already posted");
 
+  // Fail closed when purchases.three_way_matching is enabled for PO-linked bills.
+  const billWithPo = bill as {
+    purchase_order_id?: string | null;
+    purchase_bill_lines: Array<{
+      line_no?: number | null;
+      description: string;
+      account_id: string | null;
+      quantity: number;
+      net_minor: number;
+      tax_code_id?: string | null;
+      tax_rate_bps?: number | null;
+    }>;
+  };
+  const threeWayRequired = await loadThreeWayMatchingRequired(supabase, companyId);
+  const threeWay = await loadBillThreeWayMatch(supabase, companyId, {
+    purchase_order_id: billWithPo.purchase_order_id,
+    purchase_bill_lines: billWithPo.purchase_bill_lines,
+  });
+  assertThreeWayMatchForAuthorise(threeWay, threeWayRequired);
+
   const billFx = bill as { fx_rate_to_base?: number | string | null };
   const fxRate =
     billFx.fx_rate_to_base != null && Number(billFx.fx_rate_to_base) > 0
@@ -1691,6 +1716,41 @@ export const authoriseBill = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     return authoriseBillInternal(context.supabase, context.userId, data.companyId, data.billId);
+  });
+
+/** Order × received × bill match for a purchase-order-linked bill (advisory + authorise gate). */
+export const getBillPurchaseOrderMatch = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; billId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    billId: assertUuid(input.billId, "bill"),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
+    const { data: bill, error } = await context.supabase
+      .from("purchase_bills" as never)
+      .select("purchase_order_id, purchase_bill_lines(line_no, description, account_id, quantity, net_minor)" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.billId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!bill) throw new Error("Bill not found");
+    const required = await loadThreeWayMatchingRequired(context.supabase, data.companyId);
+    const match = await loadBillThreeWayMatch(
+      context.supabase,
+      data.companyId,
+      bill as {
+        purchase_order_id: string | null;
+        purchase_bill_lines: Array<{
+          line_no?: number | null;
+          description: string;
+          account_id: string | null;
+          quantity: number;
+          net_minor: number;
+        }>;
+      },
+    );
+    return { required, match };
   });
 
 export const voidBill = createServerFn({ method: "POST" })

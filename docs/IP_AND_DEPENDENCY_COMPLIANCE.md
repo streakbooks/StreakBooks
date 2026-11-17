@@ -34,6 +34,7 @@
 | 2026-11-04 | Accounting FX / reporting / QIF batches | No new deps; clean-room recorded in CLEAN_ROOM.md |
 | 2026-11-17 | Historical Aged Payables (as-at) | No new npm packages; original `ap-asat` maths mirroring LinkBooks AR as-at contract; competitors referenced only as public aged-payables capability |
 | 2026-11-17 | PO goods receipt foundation | No new npm packages; original `po-receipt` maths + RPC; public PO receiving concepts only; no competitor UI/code |
+| 2026-11-17 | PO three-way match | No new npm packages; original `po-three-way-match` maths; uses existing `purchases.three_way_matching` setting; public 3-way match concepts only |
 
 ## Open compliance items
 

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Updated** | 2026-11-17 |
-| **Baseline** | GitHub `main` @ `62e971ed` (after #229) |
+| **Baseline** | GitHub `main` @ `edeeb092` (after #229+#230) |
 | **IP policy** | Originality-first — see [IP_AND_DEPENDENCY_COMPLIANCE.md](./IP_AND_DEPENDENCY_COMPLIANCE.md) |
 | **Classification** | Complete and Verified / Partial / UI Only / Backend Only / Missing / Blocked / Intentionally Deferred |
 
@@ -18,7 +18,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | M-01 | Dashboard | Partial | P1 | Ledger-backed KPIs exist; multi-currency/permission tie-out not certified | Xero/QBO dashboard overview | Fixture golden vs reports |
 | M-02 | Banking & reconciliation | Partial | P0 | CSV/QIF/rules/match/unmatch/recon sessions present; live bank feeds blocked | Xero bank feed (paid), Odoo sync (Enterprise) | Provider selection; E2E recon proof |
 | M-03 | Sales & receivables | Partial | P0 | Invoice/quote/credit/receipt/statement/as-at AR present | Xero/QBO AR | Gateway + authenticated lifecycle matrix |
-| M-04 | Purchases & payables | Partial | P0 | Bills/PO/payments/credits; historical AP as-at **merged (#229)**; **PO goods receipt B2 integrating (#230)** | Xero/Odoo AP ageing / receiving | Merge #230–#232; then voids/statements |
+| M-04 | Purchases & payables | Partial | P0 | Bills/PO/payments/credits; AP as-at **merged**; goods receipt **merged**; **3-way match B3 integrating** | Xero/Odoo AP / receiving / matching | Merge #231–#232; then void/statement PRs |
 | M-05 | Expenses & reimbursements | Partial | P1 | EM module + claims; OCR/payout provider gaps | Expensify/Xero expenses | Provider + approval depth |
 | M-06 | Contacts | Partial | P1 | CRUD/duplicates/portals partial | Xero contacts | Portal isolation proof |
 | M-07 | Products & Services | Partial | P1 | Non-inventory catalogue ready | QBO products | — |
@@ -112,9 +112,23 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Database** | `quantity_received` + `receive_purchase_order_goods` RPC; convert allows `partially_received` |
 | **Frontend** | Received/outstanding columns; Receive remaining goods |
 | **Tests** | `po-receipt.test.ts` |
-| **Development status** | Integrating via PR #230 (rebased onto main after #229) |
+| **Development status** | Implemented on `feature/po-goods-receipt-foundation-20261117` |
 | **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/230 |
 | **Release verification** | Open — migration not applied to staging/prod in this session |
+
+## Detailed finding — PO three-way match (B3)
+
+| Field | Value |
+|-------|-------|
+| **Gap ID** | GAP-PO-3WAY-001 |
+| **Module** | Purchases / Bills linked to PO |
+| **Missing/incomplete** | `purchases.three_way_matching` setting existed but was unused; no order×receipt×bill check at authorise |
+| **Competitor reference** | Public three-way matching capability (order/receipt/invoice) — concepts only |
+| **Priority** | P0 |
+| **Development status** | Implemented on `feature/po-three-way-match-20261117` (stacked on #230) |
+| **PR reference** | Pending |
+| **Originality** | Independent `po-three-way-match` maths; existing Settings registry key; no competitor UI/code |
+| **Release verification** | Open — depends on #230 migration for receipt quantities; fail-closed when required and receipt data missing |
 
 ## Acceptance questions (programme-wide)
 

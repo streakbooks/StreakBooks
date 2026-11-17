@@ -2,6 +2,7 @@
 import { ruleMatchesTransaction, type BankRuleDef } from "./rules";
 
 export type CodingHistoryRow = {
+  history_id?: string;
   payee_normalized: string;
   offset_account_id: string;
   direction: "in" | "out";
@@ -34,6 +35,7 @@ export type Suggestion = {
   reason: string;
   source: "history" | "rule" | "none";
   ruleId: string | null;
+  historyId: string | null;
 };
 
 export function normalizePayee(description: string | null | undefined): string {
@@ -104,6 +106,7 @@ export function rankCodingSuggestions(opts: {
       conflictingHistory,
       source: "history",
       ruleId: null,
+      historyId: h.history_id ?? null,
     });
   }
 
@@ -144,6 +147,7 @@ export function rankCodingSuggestions(opts: {
       conflictingHistory,
       source: "rule",
       ruleId: r.id,
+      historyId: null,
     });
   }
 

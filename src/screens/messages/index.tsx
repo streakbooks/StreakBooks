@@ -23,8 +23,10 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import {
   useMessagingActions,
   useMessagingConversations,
+  useMessagingGlobalSearch,
   useMessagingMessages,
   useMessagingMissedRecovery,
+  useMessagingNotificationPrefsWarm,
   useMessagingSettings,
   useMessagingThreadSearch,
 } from "@/hooks/use-messaging";
@@ -111,10 +113,13 @@ export function MessagesScreen({
   const presence = useMessagingPresence(conversationId ?? null, user?.id ?? null);
   const connection = useMessagingConnection(companyId);
   useMessagingMissedRecovery(companyId, conversationId ?? null, connection.state);
+  useMessagingNotificationPrefsWarm(companyId);
 
   const [composer, setComposer] = useState("");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchQuery);
   const [threadSearch, setThreadSearch] = useState("");
+  const [highlightMessageId, setHighlightMessageId] = useState<string | null>(null);
+  const [liveAnnounce, setLiveAnnounce] = useState("");
   const [peerSearch, setPeerSearch] = useState("");
   const [peers, setPeers] = useState<MessagingParticipant[]>([]);
   const [groupTitle, setGroupTitle] = useState("");
@@ -161,11 +166,29 @@ export function MessagesScreen({
     conversationId ?? null,
     threadSearch,
   );
+  const globalHits = useMessagingGlobalSearch(
+    companyId,
+    filter === "search" ? searchQuery || search : "",
+  );
 
   const selected = useMemo(
     () => conversations.data?.find((c) => c.id === conversationId) ?? null,
     [conversations.data, conversationId],
   );
+
+  useEffect(() => {
+    const rows = messages.data;
+    if (!rows?.length) return;
+    const last = rows[rows.length - 1];
+    if (!last || last.author_user_id === user?.id) return;
+    setLiveAnnounce(`New message from ${last.author_name ?? "member"}: ${last.body.slice(0, 80)}`);
+  }, [messages.data, user?.id]);
+
+  useEffect(() => {
+    if (!highlightMessageId || !messages.data?.some((m) => m.id === highlightMessageId)) return;
+    const el = document.getElementById(`msg-${highlightMessageId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightMessageId, messages.data]);
 
   async function loadPeers(q: string) {
     setPeerSearch(q);
@@ -273,6 +296,18 @@ export function MessagesScreen({
         </div>
       }
     >
+      {company?.is_demo ? (
+        <div
+          role="status"
+          className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100"
+        >
+          Demo company: messaging uses the same engine as live organisations. Reset and destructive
+          demo tools remain gated; posting and validation are not.
+        </div>
+      ) : null}
+      <div aria-live="polite" className="sr-only">
+        {liveAnnounce}
+      </div>
       <div className="grid min-h-[70vh] gap-4 lg:grid-cols-[240px_minmax(0,1fr)_minmax(0,1.4fr)]">
         <nav aria-label="Message folders" className="flex flex-col gap-1">
           {FILTERS.map((item) => (
@@ -335,6 +370,43 @@ export function MessagesScreen({
                   })
                 }
               />
+            </div>
+          ) : null}
+          {filter === "search" && (searchQuery || search).trim().length >= 2 ? (
+            <div className="border-b p-3">
+              <h3 className="mb-2 text-sm font-semibold">Message matches</h3>
+              {globalHits.isPending ? (
+                <p className="text-xs text-muted-foreground">Searching messages…</p>
+              ) : null}
+              {globalHits.data?.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No message matches</p>
+              ) : null}
+              <ul className="max-h-48 space-y-1 overflow-y-auto">
+                {globalHits.data?.map((hit) => (
+                  <li key={hit.id}>
+                    <button
+                      type="button"
+                      className="block w-full truncate rounded px-2 py-1 text-left text-xs hover:bg-muted/50"
+                      onClick={() => {
+                        setHighlightMessageId(hit.id);
+                        void navigate({
+                          to: "/messages",
+                          search: messagesSearch({
+                            filter: "search",
+                            q: searchQuery || search,
+                            conversation: hit.conversation_id,
+                          }),
+                        });
+                      }}
+                    >
+                      <span className="font-medium">
+                        {hit.conversation_title || hit.conversation_type}
+                      </span>{" "}
+                      · {hit.body}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : null}
           {conversations.isPending && <LoadingState />}
@@ -713,11 +785,27 @@ export function MessagesScreen({
                     onRetry={() => void messages.refetch()}
                   />
                 )}
+                {!messages.isPending && messages.hasMoreOlder ? (
+                  <div className="flex justify-center">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={messages.loadingOlder}
+                      onClick={() => void messages.loadOlder()}
+                    >
+                      {messages.loadingOlder ? "Loading…" : "Load older messages"}
+                    </Button>
+                  </div>
+                ) : null}
                 {messages.data?.map((message) => (
                   <article
                     key={message.id}
                     id={`msg-${message.id}`}
-                    className="rounded-md border bg-background px-3 py-2"
+                    className={cn(
+                      "rounded-md border bg-background px-3 py-2",
+                      highlightMessageId === message.id && "ring-2 ring-primary",
+                    )}
                     aria-label={`Message from ${message.author_name ?? "member"}`}
                   >
                     <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">

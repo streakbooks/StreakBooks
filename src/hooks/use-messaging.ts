@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
+import { showMessagingDesktopNotification } from "@/lib/messaging/desktop-notify";
 import {
   createChannelConversation,
   createDirectConversation,
   createGroupConversation,
+  getMessagingNotificationPreferences,
   getMessagingSettings,
   getMessagingUnreadCount,
   listEligibleMessagingParticipants,
@@ -14,11 +16,12 @@ import {
   listMessagingMessages,
   markMessagingRead,
   markMessagingUnread,
+  searchMessagingAcrossConversations,
   searchMessagingMessages,
   sendMessagingMessage,
   updateMessagingMembership,
 } from "@/lib/messaging/messaging.functions";
-import type { MessagingInboxFilter } from "@/lib/messaging/types";
+import type { MessagingInboxFilter, MessagingMessage } from "@/lib/messaging/types";
 
 let messagingChannelSequence = 0;
 
@@ -71,6 +74,19 @@ export function useMessagingConversations(
           void client.invalidateQueries({ queryKey: ["messaging-conversations", companyId] });
           void client.invalidateQueries({ queryKey: ["messaging-unread", companyId] });
           void client.invalidateQueries({ queryKey: ["messaging-messages", companyId] });
+          const prefs = client.getQueryData<{ push_enabled?: boolean }>([
+            "messaging-notification-prefs",
+            companyId,
+          ]);
+          showMessagingDesktopNotification(
+            {
+              title: "New LinkBooks message",
+              body: "You have new activity in Messages.",
+              tag: `messaging-${companyId}`,
+              href: "/messages",
+            },
+            { pushEnabled: prefs?.push_enabled === true },
+          );
         },
       )
       .subscribe();
@@ -82,18 +98,85 @@ export function useMessagingConversations(
   return query;
 }
 
+/** Prefetch notification prefs so desktop notify can honour push_enabled. */
+export function useMessagingNotificationPrefsWarm(companyId: string | null) {
+  const fetchPrefs = useServerFn(getMessagingNotificationPreferences);
+  return useQuery({
+    queryKey: ["messaging-notification-prefs", companyId],
+    enabled: Boolean(companyId),
+    staleTime: 60_000,
+    queryFn: () => fetchPrefs({ data: { companyId: companyId! } }),
+  });
+}
+
+const MESSAGING_PAGE_SIZE = 200;
+const MESSAGING_OLDER_PAGE_SIZE = 50;
+
 export function useMessagingMessages(companyId: string | null, conversationId: string | null) {
   const list = useServerFn(listMessagingMessages);
   const markRead = useServerFn(markMessagingRead);
   const client = useQueryClient();
+  const [hasMoreOlder, setHasMoreOlder] = useState(true);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const conversationRef = useRef(conversationId);
+
+  useEffect(() => {
+    if (conversationRef.current !== conversationId) {
+      conversationRef.current = conversationId;
+      setHasMoreOlder(true);
+      setLoadingOlder(false);
+    }
+  }, [conversationId]);
+
   const query = useQuery({
     queryKey: ["messaging-messages", companyId, conversationId],
     enabled: Boolean(companyId && conversationId),
-    queryFn: () =>
-      list({
-        data: { companyId: companyId!, conversationId: conversationId! },
-      }),
+    queryFn: async () => {
+      const rows = await list({
+        data: {
+          companyId: companyId!,
+          conversationId: conversationId!,
+          limit: MESSAGING_PAGE_SIZE,
+        },
+      });
+      setHasMoreOlder(rows.length >= MESSAGING_PAGE_SIZE);
+      return rows;
+    },
   });
+
+  async function loadOlder() {
+    if (!companyId || !conversationId || loadingOlder || !hasMoreOlder) return;
+    const cached =
+      client.getQueryData<MessagingMessage[]>(["messaging-messages", companyId, conversationId]) ??
+      [];
+    const firstSeq = cached[0]?.seq;
+    if (!firstSeq) {
+      setHasMoreOlder(false);
+      return;
+    }
+    setLoadingOlder(true);
+    try {
+      const older = await list({
+        data: {
+          companyId,
+          conversationId,
+          beforeSeq: firstSeq,
+          limit: MESSAGING_OLDER_PAGE_SIZE,
+        },
+      });
+      if (!older.length) {
+        setHasMoreOlder(false);
+        return;
+      }
+      setHasMoreOlder(older.length >= MESSAGING_OLDER_PAGE_SIZE);
+      const byId = new Map<string, MessagingMessage>();
+      for (const row of [...older, ...cached]) byId.set(row.id, row);
+      const merged = [...byId.values()].sort((a, b) => a.seq - b.seq);
+      client.setQueryData(["messaging-messages", companyId, conversationId], merged);
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
 
   useEffect(() => {
     if (!companyId || !conversationId || !query.data?.length) return;
@@ -107,7 +190,7 @@ export function useMessagingMessages(companyId: string | null, conversationId: s
     });
   }, [client, companyId, conversationId, markRead, query.data]);
 
-  return query;
+  return { ...query, hasMoreOlder, loadingOlder, loadOlder };
 }
 
 /** Recover messages after a reconnect gap using afterSeq. */
@@ -162,6 +245,21 @@ export function useMessagingThreadSearch(
         data: {
           companyId: companyId!,
           conversationId: conversationId!,
+          q: q.trim(),
+        },
+      }),
+  });
+}
+
+export function useMessagingGlobalSearch(companyId: string | null, q: string) {
+  const search = useServerFn(searchMessagingAcrossConversations);
+  return useQuery({
+    queryKey: ["messaging-global-search", companyId, q],
+    enabled: Boolean(companyId && q.trim().length >= 2),
+    queryFn: () =>
+      search({
+        data: {
+          companyId: companyId!,
           q: q.trim(),
         },
       }),

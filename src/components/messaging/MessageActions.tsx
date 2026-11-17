@@ -82,10 +82,17 @@ export function MessageActions({
     onError: (error) => notify.error(error, "Could not update pin"),
   });
 
+  const [starred, setStarred] = useState(Boolean(message.is_starred));
+
   const starMutation = useMutation({
-    mutationFn: () => star({ data: { companyId, messageId: message.id, starred: true } }),
-    onSuccess: () => notify.success("Message starred"),
-    onError: (error) => notify.error(error, "Could not star message"),
+    mutationFn: () =>
+      star({ data: { companyId, messageId: message.id, starred: !starred } }),
+    onSuccess: () => {
+      setStarred((value) => !value);
+      void client.invalidateQueries({ queryKey: ["messaging-starred-messages", companyId] });
+      notify.success(starred ? "Message unstarred" : "Message starred");
+    },
+    onError: (error) => notify.error(error, "Could not update star"),
   });
 
   const reportMutation = useMutation({
@@ -174,7 +181,7 @@ export function MessageActions({
           disabled={starMutation.isPending}
           onClick={() => starMutation.mutate()}
         >
-          Star
+          {starred ? "Unstar" : "Star"}
         </Button>
         <Button
           type="button"

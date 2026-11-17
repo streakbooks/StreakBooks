@@ -68,6 +68,8 @@ export type MessagingMessage = {
   created_at: string;
   edited_at: string | null;
   author_name?: string;
+  /** Present when the current user has starred this message (optional enrichment). */
+  is_starred?: boolean;
 };
 
 export type MessagingParticipant = {

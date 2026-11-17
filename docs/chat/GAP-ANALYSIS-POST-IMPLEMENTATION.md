@@ -13,6 +13,8 @@ Compared delivered branch work to the master directive, Phase 0 PRD and competit
 - AI/voice fail-closed; attachments; pins; SafeMessageBody  
 - Portal Message Business bridges; presence/typing/reactions/edit/redact/reply  
 - Notification prefs + browser permission helper + digest/retention cron workers  
+- Latest-window pagination + load-older; membership-scoped global message search  
+- Desktop notify (hidden tab + push opt-in); demo messaging banner; aria-live  
 - Analytics, performance budgets, rate limits  
 - Unit/integration scaffolds and gated E2E  
 

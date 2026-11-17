@@ -381,11 +381,27 @@ export const listMessagingConversations = createServerFn({ method: "GET" })
 
 export const listMessagingMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; conversationId: string; afterSeq?: number }) => ({
-    companyId: assertUuid(input?.companyId),
-    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
-    afterSeq: typeof input?.afterSeq === "number" && input.afterSeq >= 0 ? input.afterSeq : 0,
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      conversationId: string;
+      afterSeq?: number;
+      beforeSeq?: number;
+      limit?: number;
+    }) => ({
+      companyId: assertUuid(input?.companyId),
+      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+      afterSeq: typeof input?.afterSeq === "number" && input.afterSeq >= 0 ? input.afterSeq : 0,
+      beforeSeq:
+        typeof input?.beforeSeq === "number" && input.beforeSeq > 0
+          ? Math.floor(input.beforeSeq)
+          : 0,
+      limit:
+        typeof input?.limit === "number" && input.limit > 0 && input.limit <= 200
+          ? Math.floor(input.limit)
+          : 200,
+    }),
+  )
   .handler(async ({ data, context }): Promise<MessagingMessage[]> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.view");
@@ -396,14 +412,27 @@ export const listMessagingMessages = createServerFn({ method: "GET" })
       )
       .eq("company_id" as never, data.companyId as never)
       .eq("conversation_id" as never, data.conversationId as never)
-      .order("seq" as never, { ascending: true })
-      .limit(200);
-    if (data.afterSeq > 0) {
-      query = query.gt("seq" as never, data.afterSeq as never);
+      .limit(data.limit);
+
+    // beforeSeq: page older history; afterSeq: catch-up; else latest window.
+    if (data.beforeSeq > 0) {
+      query = query
+        .lt("seq" as never, data.beforeSeq as never)
+        .order("seq" as never, { ascending: false });
+    } else if (data.afterSeq > 0) {
+      query = query
+        .gt("seq" as never, data.afterSeq as never)
+        .order("seq" as never, { ascending: true });
+    } else {
+      query = query.order("seq" as never, { ascending: false });
     }
+
     const { data: rows, error } = await query;
     if (error) asError(error);
-    const messages = (rows ?? []) as MessagingMessage[];
+    let messages = (rows ?? []) as MessagingMessage[];
+    if (data.beforeSeq > 0 || data.afterSeq === 0) {
+      messages = [...messages].sort((a, b) => a.seq - b.seq);
+    }
     const authorIds = [...new Set(messages.map((m) => m.author_user_id).filter(Boolean))] as string[];
     const { data: profiles } = authorIds.length
       ? await supabase.from("profiles").select("id, full_name").in("id", authorIds)
@@ -450,6 +479,81 @@ export const searchMessagingMessages = createServerFn({ method: "GET" })
       ...m,
       body: m.is_redacted ? "[Message removed]" : m.body,
     }));
+  });
+
+export type MessagingGlobalSearchHit = MessagingMessage & {
+  conversation_title: string | null;
+  conversation_type: string;
+};
+
+/** Cross-conversation search limited to the caller's active memberships. */
+export const searchMessagingAcrossConversations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; q: string; limit?: number }) => ({
+    companyId: assertUuid(input?.companyId),
+    q: typeof input?.q === "string" ? input.q.trim().slice(0, 120) : "",
+    limit:
+      typeof input?.limit === "number" && input.limit > 0 && input.limit <= 50
+        ? Math.floor(input.limit)
+        : 25,
+  }))
+  .handler(async ({ data, context }): Promise<MessagingGlobalSearchHit[]> => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    if (!data.q || data.q.length < 2) return [];
+
+    const { data: memberships, error: memError } = await supabase
+      .from("messaging_conversation_members" as never)
+      .select("conversation_id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("user_id" as never, userId as never)
+      .eq("status" as never, "active" as never);
+    if (memError) asError(memError);
+    const conversationIds = [
+      ...new Set(
+        ((memberships ?? []) as Array<{ conversation_id: string }>).map((row) => row.conversation_id),
+      ),
+    ];
+    if (!conversationIds.length) return [];
+
+    const safeQ = data.q.replace(/[%_]/g, "");
+    const { data: rows, error } = await supabase
+      .from("messaging_messages" as never)
+      .select(
+        "id,company_id,conversation_id,seq,author_user_id,author_kind,body,body_format,reply_to_message_id,idempotency_key,is_edited,is_redacted,is_pinned,created_at,edited_at" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .in("conversation_id" as never, conversationIds as never)
+      .eq("is_redacted" as never, false as never)
+      .ilike("body" as never, `%${safeQ}%` as never)
+      .order("created_at" as never, { ascending: false })
+      .limit(data.limit);
+    if (error) asError(error);
+    const messages = (rows ?? []) as MessagingMessage[];
+    if (!messages.length) return [];
+
+    const hitConversationIds = [...new Set(messages.map((m) => m.conversation_id))];
+    const { data: conversations, error: conversationError } = await supabase
+      .from("messaging_conversations" as never)
+      .select("id, title, conversation_type" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .in("id" as never, hitConversationIds as never);
+    if (conversationError) asError(conversationError);
+    const meta = new Map(
+      ((conversations ?? []) as Array<{ id: string; title: string | null; conversation_type: string }>).map(
+        (row) => [row.id, row] as const,
+      ),
+    );
+
+    return messages.map((m) => {
+      const conversation = meta.get(m.conversation_id);
+      return {
+        ...m,
+        body: m.is_redacted ? "[Message removed]" : m.body,
+        conversation_title: conversation?.title ?? null,
+        conversation_type: conversation?.conversation_type ?? "group",
+      };
+    });
   });
 
 export const createDirectConversation = createServerFn({ method: "POST" })

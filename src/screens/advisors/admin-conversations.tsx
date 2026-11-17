@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -117,18 +118,18 @@ export function AdvisorsAdminConversationsPage() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="conversation-status">Status</Label>
-            <select
+            <RecordLookupSelect
               id="conversation-status"
               className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
               value={status}
-              onChange={(event) => setStatus(event.target.value as (typeof STATUSES)[number])}
+              onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
             >
               {STATUSES.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
           </div>
           <div className="min-w-[16rem] flex-1 space-y-1">
             <Label htmlFor="conversation-reason">Change reason</Label>
@@ -216,14 +217,14 @@ export function AdvisorsAdminConversationsPage() {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="conversation-assign">Assigned advisor</Label>
-                  <select
+                  <RecordLookupSelect
                     id="conversation-assign"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={detail.assignedAdvisorId ?? ""}
-                    onChange={(event) =>
+                    onValueChange={(event) =>
                       updateM.mutate({
                         conversationId: detail.id,
-                        assignedAdvisorId: event.target.value || null,
+                        assignedAdvisorId: event || null,
                       })
                     }
                   >
@@ -233,7 +234,7 @@ export function AdvisorsAdminConversationsPage() {
                         {member.displayName}
                       </option>
                     ))}
-                  </select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {(["open", "handed_off", "closed"] as const).map((next) => (

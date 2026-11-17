@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -234,7 +235,10 @@ export function PayrollReportsPage() {
               <div className="grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-2 lg:col-span-3">
                   <Label htmlFor="payroll-report-type">Report</Label>
-                  <Select value={reportId} onValueChange={(v) => setReportId(v as PayrollReportId)}>
+                  <RecordLookupSelect
+                    value={reportId}
+                    onValueChange={(v) => setReportId(v as PayrollReportId)}
+                  >
                     <SelectTrigger id="payroll-report-type">
                       <SelectValue />
                     </SelectTrigger>
@@ -245,7 +249,7 @@ export function PayrollReportsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                   {selectedDef ? (
                     <p className="text-sm text-muted-foreground">{selectedDef.description}</p>
                   ) : null}
@@ -270,7 +274,7 @@ export function PayrollReportsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="payroll-report-schedule">Pay schedule</Label>
-                  <Select value={payScheduleId} onValueChange={setPayScheduleId}>
+                  <RecordLookupSelect value={payScheduleId} onValueChange={setPayScheduleId}>
                     <SelectTrigger id="payroll-report-schedule">
                       <SelectValue placeholder="All schedules" />
                     </SelectTrigger>
@@ -282,11 +286,11 @@ export function PayrollReportsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="payroll-report-employee">Employee</Label>
-                  <Select value={employeeId} onValueChange={setEmployeeId}>
+                  <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                     <SelectTrigger id="payroll-report-employee">
                       <SelectValue placeholder="All employees" />
                     </SelectTrigger>
@@ -298,11 +302,11 @@ export function PayrollReportsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="payroll-report-department">Department</Label>
-                  <Select
+                  <RecordLookupSelect
                     value={department || "all"}
                     onValueChange={(v) => setDepartment(v === "all" ? "" : v)}
                   >
@@ -317,7 +321,7 @@ export function PayrollReportsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
               </div>
             </TableCard>

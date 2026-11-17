@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -597,7 +598,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </div>
             <div className="grid gap-2">
               <Label>Method</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <RecordLookupSelect value={paymentMethod} onValueChange={setPaymentMethod}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -608,7 +609,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-2">
               <Label>Clearing account</Label>

@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -328,7 +329,7 @@ export function ExpenseManagementReimbursementsPage() {
       <div className="mb-6 grid max-w-xl gap-3 rounded-lg border p-4">
         <div className="grid gap-2">
           <Label>Bank account</Label>
-          <Select value={bankGlAccountId} onValueChange={setBankGlAccountId}>
+          <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
             <SelectTrigger aria-label="Bank account for reimbursement">
               <SelectValue placeholder="Select bank account" />
             </SelectTrigger>
@@ -340,7 +341,7 @@ export function ExpenseManagementReimbursementsPage() {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="grid gap-2">
           <Label htmlFor="em-reimburse-date">Payment date</Label>

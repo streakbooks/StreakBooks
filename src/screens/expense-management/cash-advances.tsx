@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -295,7 +296,7 @@ export function ExpenseManagementCashAdvancesPage() {
       {canManage ? (
         <section className="mb-6 grid max-w-md gap-2">
           <Label>Bank account for issuing / reclaim</Label>
-          <Select value={bankGlAccountId} onValueChange={setBankGlAccountId}>
+          <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
             <SelectTrigger>
               <SelectValue placeholder="Select bank / cash account" />
             </SelectTrigger>
@@ -306,7 +307,7 @@ export function ExpenseManagementCashAdvancesPage() {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </section>
       ) : null}
 

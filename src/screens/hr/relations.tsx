@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -192,7 +193,7 @@ export function HrRelationsPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              <Select value={employeeId} onValueChange={setEmployeeId}>
+              <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
@@ -203,11 +204,11 @@ export function HrRelationsPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Type</Label>
-              <Select value={caseType} onValueChange={setCaseType}>
+              <RecordLookupSelect value={caseType} onValueChange={setCaseType}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -218,7 +219,7 @@ export function HrRelationsPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Title</Label>
@@ -227,7 +228,7 @@ export function HrRelationsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label>Severity</Label>
-                <Select value={severity} onValueChange={setSeverity}>
+                <RecordLookupSelect value={severity} onValueChange={setSeverity}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -238,11 +239,11 @@ export function HrRelationsPage() {
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
               <div className="grid gap-1.5">
                 <Label>Status</Label>
-                <Select value={status} onValueChange={setStatus}>
+                <RecordLookupSelect value={status} onValueChange={setStatus}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -253,7 +254,7 @@ export function HrRelationsPage() {
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
             </div>
             <div className="grid gap-1.5">

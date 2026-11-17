@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -95,7 +96,7 @@ export function AppStoreExplorePage() {
               placeholder="Search name, description, capabilities"
               aria-label="Filter apps"
             />
-            <Select value={category} onValueChange={setCategory}>
+            <RecordLookupSelect value={category} onValueChange={setCategory}>
               <SelectTrigger aria-label="Category">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
@@ -107,8 +108,8 @@ export function AppStoreExplorePage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
-            <Select value={country} onValueChange={setCountry}>
+            </RecordLookupSelect>
+            <RecordLookupSelect value={country} onValueChange={setCountry}>
               <SelectTrigger aria-label="Country">
                 <SelectValue placeholder="Country" />
               </SelectTrigger>
@@ -120,7 +121,7 @@ export function AppStoreExplorePage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
             <Select value={pricing} onValueChange={setPricing}>
               <SelectTrigger aria-label="Pricing">
                 <SelectValue placeholder="Pricing" />

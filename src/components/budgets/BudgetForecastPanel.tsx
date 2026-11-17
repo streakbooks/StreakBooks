@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -362,13 +363,11 @@ export function BudgetForecastPanel({
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <div className="space-y-1">
                 <Label htmlFor="forecast-cutoff">Actuals through</Label>
-                <select
+                <RecordLookupSelect
                   id="forecast-cutoff"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={cutoff === null ? "latest" : String(cutoff)}
-                  onChange={(e) =>
-                    setCutoff(e.target.value === "latest" ? null : Number(e.target.value))
-                  }
+                  onValueChange={(e) => setCutoff(e === "latest" ? null : Number(e))}
                 >
                   <option value="latest">Latest completed month</option>
                   <option value="-1">No completed months</option>
@@ -377,7 +376,7 @@ export function BudgetForecastPanel({
                       {monthLabel(month)}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="forecast-method">Forecast future months from</Label>

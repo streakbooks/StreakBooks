@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -192,7 +193,10 @@ export function CrmCampaignsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <Select value={status} onValueChange={(v) => setStatus(v as CrmCampaignStatus)}>
+                  <RecordLookupSelect
+                    value={status}
+                    onValueChange={(v) => setStatus(v as CrmCampaignStatus)}
+                  >
                     <SelectTrigger aria-label="Campaign status">
                       <SelectValue />
                     </SelectTrigger>
@@ -203,7 +207,7 @@ export function CrmCampaignsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="campaign-channel">Channel</Label>
@@ -216,7 +220,7 @@ export function CrmCampaignsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Lead source</Label>
-                  <Select
+                  <RecordLookupSelect
                     value={sourceId || "__none"}
                     onValueChange={(v) => setSourceId(v === "__none" ? "" : v)}
                   >
@@ -231,7 +235,7 @@ export function CrmCampaignsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="campaign-budget">Budget ({currency})</Label>

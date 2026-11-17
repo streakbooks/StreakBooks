@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -103,7 +104,7 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
               placeholder="Search active customers"
               onChange={(event) => setSearch(event.target.value)}
             />
-            <Select
+            <RecordLookupSelect
               value={contactId}
               onValueChange={selectCustomer}
               disabled={defaultsQ.isPending || defaultsQ.isError}
@@ -121,7 +122,7 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
             {(customersQ.data?.length ?? 0) >= 100 ? (
               <p className="text-xs text-muted-foreground">
                 Showing up to 100 customers. Search to narrow the list.
@@ -135,7 +136,7 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
           </div>
           <div className="space-y-2">
             <Label>Customer default sales prices ({currency})</Label>
-            <Select value={priceListId} onValueChange={setPriceListId}>
+            <RecordLookupSelect value={priceListId} onValueChange={setPriceListId}>
               <SelectTrigger aria-label="Customer default price list">
                 <SelectValue />
               </SelectTrigger>
@@ -152,7 +153,7 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
           </div>
           <Button
             disabled={

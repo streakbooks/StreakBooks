@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll settlement form query retry (2026-11-17)
+
+- `src/screens/payroll/payments.tsx`: add inline Retry settings, Retry payslips and Retry accounts buttons for three failed settlement-form queries, invoking their existing React Query refetch methods. Source commit `771e402b4175f28f55135ab488c517ce4e4903e8`. **SOURCE ONLY; NOT RUN.** Posting, reversal and accounting calculations unchanged.
+- `docs/ux/all-module-browsing-manifest.json`: record partial source evidence and outstanding verification; commit `be2998740c89f46a1d9b8200fe5d25c1a44f2252`.
+- **NOT RUN:** inventory guard, TypeScript, lint, unit/integration, build, authenticated browser retry/keyboard/accessibility, RLS/accounting regression. Documented baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No `main`, manual CI, production DB or deployment changes.
+
 ### Payroll Payments detail query retry (2026-11-17)
 
 - `src/screens/payroll/payments.tsx`: payment detail query errors now use the shared `ErrorState` with an explicit retry action (`paymentDetailQ.refetch()`), rather than an error message with no recovery control. Source commit `4d072d4432d5da94ac09bd0772dc6589df691433`. **SOURCE ONLY; NOT RUN.** No payment posting, reversal or journal logic changed.

@@ -56,3 +56,12 @@ begin
  update public.bank_transactions set status='matched' where id=md5(tag||'-txn')::uuid;
 end $$;
 grant execute on function public.test_assert(boolean,text),public.test_link(text) to authenticated;
+create or replace function public.reset_demo_company(_company_id uuid) returns void language plpgsql security definer set search_path='' as $$
+begin
+ if current_setting('test.fail_reset',true)='on' then raise exception 'Injected reset failure'; end if;
+ delete from public.reconciliation_links where company_id=_company_id;
+ delete from public.bank_transactions where company_id=_company_id;
+ delete from public.journal_lines where company_id=_company_id;
+ delete from public.journals where company_id=_company_id;
+end;
+$$;

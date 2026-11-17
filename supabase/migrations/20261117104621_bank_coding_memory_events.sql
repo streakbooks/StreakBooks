@@ -199,6 +199,10 @@ begin
       and j.status::text='posted' and j.source_type::text='bank_transaction' and j.source_id=t.id
       and j.currency_code::text=e.currency_code and jl.account_id=b.gl_account_id and (jl.debit_minor-jl.credit_minor)=e.amount_minor
       and j.reversed_by_journal_id is null and j.reverses_journal_id is null
+      -- Single-account hints must not flatten an approved multi-account split.
+      and (select count(distinct split.account_id) from public.journal_lines split
+        join public.accounts sa on sa.id=split.account_id and sa.company_id=e.company_id
+        where split.journal_id=j.id and split.account_id<>b.gl_account_id and not coalesce(sa.is_control,false))=1
       and t.status::text in ('matched','reconciled') and t.amount_minor=e.amount_minor
       and a.is_active and a.is_postable and not coalesce(a.is_control,false) and a.archived_at is null
       and h.direction=case when _txn.amount_minor>=0 then 'in' else 'out' end
@@ -259,3 +263,32 @@ end;
 $$;
 revoke all on function public.set_bank_coding_memory_preference(uuid,uuid,uuid,boolean) from public,anon;
 grant execute on function public.set_bank_coding_memory_preference(uuid,uuid,uuid,boolean) to authenticated;
+
+-- Preserve the established authorised demo-reset workflow without cascading deletion
+-- of production evidence through ordinary source-record deletion.
+alter function public.reset_demo_company(uuid) set schema private;
+alter function private.reset_demo_company(uuid) rename to reset_demo_company_before_coding_memory;
+revoke all on function private.reset_demo_company_before_coding_memory(uuid) from public,anon,authenticated,service_role;
+create function private.reset_demo_company_with_coding_memory(_company uuid)
+returns void language plpgsql security definer set search_path='' as $$
+begin
+  if auth.uid() is null or not private.mfa_requirement_met() or not public.is_company_member(_company)
+    or not public.has_company_permission(_company,'demo.reset') then
+    raise exception 'Demo reset access denied' using errcode='42501';
+  end if;
+  perform pg_advisory_xact_lock(hashtextextended(_company::text||':workflow-reset',0));
+  if not exists(select 1 from public.companies where id=_company and is_demo) then
+    raise exception 'Reset denied: company is not a demo company';
+  end if;
+  delete from public.bank_coding_feedback where company_id=_company;
+  delete from public.bank_coding_memory_preferences where company_id=_company;
+  delete from public.bank_coding_events where company_id=_company;
+  perform private.reset_demo_company_before_coding_memory(_company);
+end;
+$$;
+create function public.reset_demo_company(_company_id uuid) returns void language sql security invoker set search_path='' as $$
+  select private.reset_demo_company_with_coding_memory(_company_id)
+$$;
+revoke all on function private.reset_demo_company_with_coding_memory(uuid),public.reset_demo_company(uuid) from public,anon;
+grant execute on function private.reset_demo_company_with_coding_memory(uuid),public.reset_demo_company(uuid) to authenticated;
+notify pgrst,'reload schema';

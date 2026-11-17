@@ -490,9 +490,7 @@ export function HrRecruitmentPage() {
             </Button>
             <Button
               type="button"
-              disabled={
-                !selectedReqId || !firstName.trim() || !lastName.trim() || appMut.isPending
-              }
+              disabled={!selectedReqId || !firstName.trim() || !lastName.trim() || appMut.isPending}
               onClick={() => appMut.mutate()}
             >
               {appMut.isPending ? "Saving…" : "Save"}

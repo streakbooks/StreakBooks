@@ -36,7 +36,9 @@ const STATUS_LABEL: Record<ReviewStatus, string> = {
 };
 
 function DateStamp({ value }: { value: string }) {
-  return <span className="text-xs text-muted-foreground">{value.slice(0, 16).replace("T", " ")}</span>;
+  return (
+    <span className="text-xs text-muted-foreground">{value.slice(0, 16).replace("T", " ")}</span>
+  );
 }
 
 /**
@@ -110,7 +112,9 @@ export function AiJournalReviewQueue({
     mutationFn: (caseId: string) => fetchAudit({ data: { companyId, caseId } }),
     onSuccess: (result) => {
       const csv = buildAiReviewAuditCsv(result);
-      const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+      const url = URL.createObjectURL(
+        new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
+      );
       const anchor = document.createElement("a");
       anchor.href = url;
       anchor.download = "linkbooks-ai-journal-review-" + result.review.id.slice(0, 8) + ".csv";
@@ -173,10 +177,19 @@ export function AiJournalReviewQueue({
       toast.error("Enter a comment of at least two characters.");
       return;
     }
-    if (action === "sign_off" && !window.confirm(
-      "Record your independent AI review sign-off? This does NOT authorise or post the journal.",
-    )) return;
-    mutate.mutate({ item: selected, action, comment: note.trim(), reviewer: action === "assign" ? assignee : null });
+    if (
+      action === "sign_off" &&
+      !window.confirm(
+        "Record your independent AI review sign-off? This does NOT authorise or post the journal.",
+      )
+    )
+      return;
+    mutate.mutate({
+      item: selected,
+      action,
+      comment: note.trim(),
+      reviewer: action === "assign" ? assignee : null,
+    });
   };
 
   return (
@@ -187,9 +200,9 @@ export function AiJournalReviewQueue({
           <Badge variant="secondary">Persistent · human-reviewed</Badge>
         </CardTitle>
         <CardDescription>
-          Track the review of posted-journal evidence across your organisation. Reviewers,
-          comments, decisions and changes are retained with an audit trail. This is
-          separate from journal posting, accountant approvals and period locking.
+          Track the review of posted-journal evidence across your organisation. Reviewers, comments,
+          decisions and changes are retained with an audit trail. This is separate from journal
+          posting, accountant approvals and period locking.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -197,7 +210,9 @@ export function AiJournalReviewQueue({
           <Alert>
             <ShieldCheck className="size-4" />
             <AlertTitle>Reports View access required</AlertTitle>
-            <AlertDescription>AI reviews of journal evidence require both AI and reporting permissions.</AlertDescription>
+            <AlertDescription>
+              AI reviews of journal evidence require both AI and reporting permissions.
+            </AlertDescription>
           </Alert>
         ) : (
           <>
@@ -215,7 +230,9 @@ export function AiJournalReviewQueue({
                   }}
                 >
                   {Object.entries(STATUS_LABEL).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -229,32 +246,43 @@ export function AiJournalReviewQueue({
                     setSelectedId(null);
                   }}
                 />
-                <Label htmlFor="ai-review-mine" className="font-normal">Assigned to me</Label>
+                <Label htmlFor="ai-review-mine" className="font-normal">
+                  Assigned to me
+                </Label>
               </div>
               <Button
                 type="button"
                 variant="outline"
                 disabled={casesQ.isFetching}
-                onClick={() => void client.invalidateQueries({ queryKey: ["ai-journal-review-cases", companyId] })}
+                onClick={() =>
+                  void client.invalidateQueries({
+                    queryKey: ["ai-journal-review-cases", companyId],
+                  })
+                }
               >
                 <RefreshCw className="size-4" /> Refresh
               </Button>
             </div>
             {casesQ.isPending ? (
-              <p role="status" className="text-sm text-muted-foreground">Loading persistent AI reviews…</p>
+              <p role="status" className="text-sm text-muted-foreground">
+                Loading persistent AI reviews…
+              </p>
             ) : casesQ.isError ? (
               <Alert variant="destructive">
                 <AlertTitle>AI review queue unavailable</AlertTitle>
                 <AlertDescription>
                   {friendlyAuthError(casesQ.error)}{" "}
-                  <Button variant="outline" size="sm" onClick={() => void casesQ.refetch()}>Retry</Button>
+                  <Button variant="outline" size="sm" onClick={() => void casesQ.refetch()}>
+                    Retry
+                  </Button>
                 </AlertDescription>
               </Alert>
             ) : casesQ.data ? (
               <>
                 <p className="text-xs text-muted-foreground">
-                  {casesQ.data.total} matching review case(s); {casesQ.data.rows.length} on this page.
-                  Create a case from a posted journal's <strong>Add to review queue</strong> action in the evidence explorer above.
+                  {casesQ.data.total} matching review case(s); {casesQ.data.rows.length} on this
+                  page. Create a case from a posted journal's <strong>Add to review queue</strong>{" "}
+                  action in the evidence explorer above.
                 </p>
                 {casesQ.data.rows.length === 0 ? (
                   <p className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
@@ -263,12 +291,19 @@ export function AiJournalReviewQueue({
                 ) : (
                   <div className="grid gap-2">
                     {casesQ.data.rows.map((item) => (
-                      <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
+                      <div
+                        key={item.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
+                      >
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <StatusBadge status={item.status} label={STATUS_LABEL[item.status]} />
-                            {item.is_assigned_to_me ? <Badge variant="outline">Assigned to you</Badge> : null}
-                            {item.is_my_case ? <Badge variant="outline">You prepared this</Badge> : null}
+                            {item.is_assigned_to_me ? (
+                              <Badge variant="outline">Assigned to you</Badge>
+                            ) : null}
+                            {item.is_my_case ? (
+                              <Badge variant="outline">You prepared this</Badge>
+                            ) : null}
                           </div>
                           <Link
                             to="/accounting"
@@ -299,8 +334,28 @@ export function AiJournalReviewQueue({
                     Page {page + 1} of {Math.max(1, Math.ceil(casesQ.data.total / PAGE_SIZE))}
                   </span>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" disabled={page === 0 || casesQ.isFetching} onClick={() => { setPage((v) => Math.max(0, v - 1)); setSelectedId(null); }}>Previous</Button>
-                    <Button variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= casesQ.data.total || casesQ.isFetching} onClick={() => { setPage((v) => v + 1); setSelectedId(null); }}>Next</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page === 0 || casesQ.isFetching}
+                      onClick={() => {
+                        setPage((v) => Math.max(0, v - 1));
+                        setSelectedId(null);
+                      }}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={(page + 1) * PAGE_SIZE >= casesQ.data.total || casesQ.isFetching}
+                      onClick={() => {
+                        setPage((v) => v + 1);
+                        setSelectedId(null);
+                      }}
+                    >
+                      Next
+                    </Button>
                   </div>
                 </div>
               </>
@@ -310,7 +365,9 @@ export function AiJournalReviewQueue({
                 <AlertTitle>Requested AI review case unavailable</AlertTitle>
                 <AlertDescription>
                   {friendlyAuthError(caseQ.error)}{" "}
-                  <Button size="sm" variant="outline" onClick={() => void caseQ.refetch()}>Retry</Button>
+                  <Button size="sm" variant="outline" onClick={() => void caseQ.refetch()}>
+                    Retry
+                  </Button>
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -324,23 +381,24 @@ export function AiJournalReviewQueue({
                     </p>
                     {selected.reviewed_by ? (
                       <p className="text-xs text-muted-foreground">
-                        Signed off by {selected.reviewed_by.slice(0, 8)} on {selected.reviewed_at?.slice(0, 16)}
+                        Signed off by {selected.reviewed_by.slice(0, 8)} on{" "}
+                        {selected.reviewed_at?.slice(0, 16)}
                       </p>
                     ) : null}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">AI evidence review only</Badge>
-                  {canExportAudit ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={auditM.isPending}
-                      onClick={() => auditM.mutate(selected.id)}
-                    >
-                      {auditM.isPending ? "Preparing CSV…" : "Export complete audit CSV"}
-                    </Button>
-                  ) : null}
+                    {canExportAudit ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={auditM.isPending}
+                        onClick={() => auditM.mutate(selected.id)}
+                      >
+                        {auditM.isPending ? "Preparing CSV…" : "Export complete audit CSV"}
+                      </Button>
+                    ) : null}
                     {canAccountant ? (
                       <Button variant="outline" size="sm" asChild>
                         <Link to="/accountant" search={{ tab: "workpapers" }}>
@@ -361,18 +419,31 @@ export function AiJournalReviewQueue({
                       onChange={(e) => setAssignee(e.target.value)}
                     >
                       <option value="">Choose active colleague</option>
-                      {(reviewersQ.data ?? []).filter((r) => r.user_id !== selected.created_by).map((r) => (
-                        <option key={r.user_id} value={r.user_id}>{r.label} · {r.role}</option>
-                      ))}
+                      {(reviewersQ.data ?? [])
+                        .filter((r) => r.user_id !== selected.created_by)
+                        .map((r) => (
+                          <option key={r.user_id} value={r.user_id}>
+                            {r.label} · {r.role}
+                          </option>
+                        ))}
                     </select>
                     {reviewersQ.isError ? (
-                      <p className="text-xs text-destructive">{friendlyAuthError(reviewersQ.error)}</p>
+                      <p className="text-xs text-destructive">
+                        {friendlyAuthError(reviewersQ.error)}
+                      </p>
                     ) : null}
-                    <Button type="button" size="sm" variant="outline" disabled={!assignee || mutate.isPending} onClick={() => submit("assign")}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!assignee || mutate.isPending}
+                      onClick={() => submit("assign")}
+                    >
                       Assign reviewer
                     </Button>
                     <p className="text-xs text-muted-foreground">
-                      The database checks active membership and effective reviewer permission. A creator cannot review their own case.
+                      The database checks active membership and effective reviewer permission. A
+                      creator cannot review their own case.
                     </p>
                   </div>
                 ) : null}
@@ -390,24 +461,44 @@ export function AiJournalReviewQueue({
                   />
                   <p className="text-xs text-muted-foreground">{note.length}/2000 characters</p>
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" size="sm" disabled={mutate.isPending || note.trim().length < 2} onClick={() => submit("comment")}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={mutate.isPending || note.trim().length < 2}
+                      onClick={() => submit("comment")}
+                    >
                       Add comment
                     </Button>
-                    {selected.status !== "reviewed" && canManage && selected.is_assigned_to_me && !selected.is_my_case ? (
-                      <Button type="button" size="sm" disabled={mutate.isPending || note.trim().length < 10} onClick={() => submit("sign_off")}>
+                    {selected.status !== "reviewed" &&
+                    canManage &&
+                    selected.is_assigned_to_me &&
+                    !selected.is_my_case ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={mutate.isPending || note.trim().length < 10}
+                        onClick={() => submit("sign_off")}
+                      >
                         Sign off AI review
                       </Button>
                     ) : null}
                     {selected.status === "reviewed" && canManage ? (
-                      <Button type="button" size="sm" variant="outline" disabled={mutate.isPending || note.trim().length < 10} onClick={() => submit("reopen")}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={mutate.isPending || note.trim().length < 10}
+                        onClick={() => submit("reopen")}
+                      >
                         Reopen review
                       </Button>
                     ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Sign-off acknowledges an evidence review, not the accuracy of every ledger posting and
-                    not the authorisation of an accounting entry. Posting and accountant exceptions
-                    retain their existing permissions, workflows and audit trail.
+                    Sign-off acknowledges an evidence review, not the accuracy of every ledger
+                    posting and not the authorisation of an accounting entry. Posting and accountant
+                    exceptions retain their existing permissions, workflows and audit trail.
                   </p>
                 </div>
 
@@ -423,20 +514,31 @@ export function AiJournalReviewQueue({
                   ) : eventsQ.data?.length ? (
                     <div className="max-h-80 space-y-2 overflow-y-auto">
                       {eventsQ.data.map((event) => (
-                        <div key={event.id} className="space-y-1 rounded-md bg-muted/40 p-3 text-xs">
+                        <div
+                          key={event.id}
+                          className="space-y-1 rounded-md bg-muted/40 p-3 text-xs"
+                        >
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline">{event.action.replaceAll("_", " ")}</Badge>
                             <DateStamp value={event.created_at} />
-                            <span className="text-muted-foreground">By {event.actor_id.slice(0, 8)}</span>
+                            <span className="text-muted-foreground">
+                              By {event.actor_id.slice(0, 8)}
+                            </span>
                           </div>
-                          {event.note ? <p className="whitespace-pre-wrap break-words">{event.note}</p> : null}
+                          {event.note ? (
+                            <p className="whitespace-pre-wrap break-words">{event.note}</p>
+                          ) : null}
                           {event.previous_status ? (
-                            <p className="text-muted-foreground">{event.previous_status} → {event.new_status}</p>
+                            <p className="text-muted-foreground">
+                              {event.previous_status} → {event.new_status}
+                            </p>
                           ) : null}
                         </div>
                       ))}
                       {eventsQ.data.length === 100 ? (
-                        <p className="text-xs text-muted-foreground">Showing the latest 100 events only.</p>
+                        <p className="text-xs text-muted-foreground">
+                          Showing the latest 100 events only.
+                        </p>
                       ) : null}
                     </div>
                   ) : (
@@ -447,9 +549,9 @@ export function AiJournalReviewQueue({
             ) : null}
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="mt-0.5 size-4 shrink-0" />
-              Read and write actions are checked against your current company permissions on
-              the server and in the database. Review records persist; no underlying journal
-              or formal posting/approval status is changed by this queue.
+              Read and write actions are checked against your current company permissions on the
+              server and in the database. Review records persist; no underlying journal or formal
+              posting/approval status is changed by this queue.
             </p>
           </>
         )}

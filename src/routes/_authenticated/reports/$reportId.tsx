@@ -118,10 +118,7 @@ function ReportPage() {
 
   if (!report) {
     return (
-      <ListWorkspace
-        title="Report not found"
-        description={`No catalogue entry for “${reportId}”.`}
-      >
+      <ListWorkspace title="Report not found" description={`No catalogue entry for “${reportId}”.`}>
         <Button asChild variant="outline">
           <Link to="/reports">Back to Reports Centre</Link>
         </Button>

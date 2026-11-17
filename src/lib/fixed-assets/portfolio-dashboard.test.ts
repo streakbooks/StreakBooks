@@ -2,33 +2,39 @@ import { describe, expect, it } from "vitest";
 import { buildAssetPortfolioSnapshot } from "./portfolio-dashboard";
 import type { FixedAssetRow } from "./fixed-assets.functions";
 
-const asset = (
-  id: string,
-  patch: Partial<FixedAssetRow> = {},
-): FixedAssetRow => ({
-  id,
-  asset_number: "FA-" + id,
-  asset_type_id: "computers",
-  purchase_date: "2026-01-14",
-  depreciation_start_date: "2026-01-14",
-  depreciation_method: "straight_line",
-  cost_minor: 12000,
-  residual_minor: 1000,
-  opening_accumulated_minor: 0,
-  depreciated_through: "2026-09-30",
-  status: "active",
-  disposal_date: null,
-  ...patch,
-} as FixedAssetRow);
+const asset = (id: string, patch: Partial<FixedAssetRow> = {}): FixedAssetRow =>
+  ({
+    id,
+    asset_number: "FA-" + id,
+    asset_type_id: "computers",
+    purchase_date: "2026-01-14",
+    depreciation_start_date: "2026-01-14",
+    depreciation_method: "straight_line",
+    cost_minor: 12000,
+    residual_minor: 1000,
+    opening_accumulated_minor: 0,
+    depreciated_through: "2026-09-30",
+    status: "active",
+    disposal_date: null,
+    ...patch,
+  }) as FixedAssetRow;
 
-const types = [{ id: "computers", name: "Computers" }, { id: "vehicles", name: "Vehicles" }];
+const types = [
+  { id: "computers", name: "Computers" },
+  { id: "vehicles", name: "Vehicles" },
+];
 
 describe("fixed assets portfolio dashboard", () => {
   it("shows whole-company active portfolio totals and excludes disposed/future assets", () => {
     const result = buildAssetPortfolioSnapshot(
       [
         asset("active"),
-        asset("disposed", { status: "disposed", purchase_date: "2026-11-01", disposal_date: "2026-11-01", cost_minor: 3000 }),
+        asset("disposed", {
+          status: "disposed",
+          purchase_date: "2026-11-01",
+          disposal_date: "2026-11-01",
+          cost_minor: 3000,
+        }),
         asset("future", { purchase_date: "2026-11-25" }),
       ],
       types,
@@ -73,7 +79,11 @@ describe("fixed assets portfolio dashboard", () => {
       ],
       types,
       "2026-11-06",
-      new Map([["land", 0], ["full", 10000], ["new", 0]]),
+      new Map([
+        ["land", 0],
+        ["full", 10000],
+        ["new", 0],
+      ]),
     );
     expect(result.possibleDepreciationOverdue).toBe(0);
   });
@@ -97,37 +107,47 @@ describe("fixed assets portfolio dashboard", () => {
   });
 
   it("refuses inconsistent register financial terms rather than showing misleading KPIs", () => {
-    expect(() => buildAssetPortfolioSnapshot(
-      [asset("invalid-residual", { residual_minor: 15000 })],
-      types,
-      "2026-11-06",
-      new Map([["invalid-residual", 0]]),
-    )).toThrow(/residual or opening/i);
-    expect(() => buildAssetPortfolioSnapshot(
-      [asset("invalid-opening", { opening_accumulated_minor: -10 })],
-      types,
-      "2026-11-06",
-      new Map([["invalid-opening", 0]]),
-    )).toThrow(/residual or opening/i);
-    expect(() => buildAssetPortfolioSnapshot(
-      [asset("imprecise-opening", { opening_accumulated_minor: Number.MAX_SAFE_INTEGER + 1 })],
-      types,
-      "2026-11-06",
-      new Map([["imprecise-opening", 0]]),
-    )).toThrow(/residual or opening/i);
+    expect(() =>
+      buildAssetPortfolioSnapshot(
+        [asset("invalid-residual", { residual_minor: 15000 })],
+        types,
+        "2026-11-06",
+        new Map([["invalid-residual", 0]]),
+      ),
+    ).toThrow(/residual or opening/i);
+    expect(() =>
+      buildAssetPortfolioSnapshot(
+        [asset("invalid-opening", { opening_accumulated_minor: -10 })],
+        types,
+        "2026-11-06",
+        new Map([["invalid-opening", 0]]),
+      ),
+    ).toThrow(/residual or opening/i);
+    expect(() =>
+      buildAssetPortfolioSnapshot(
+        [asset("imprecise-opening", { opening_accumulated_minor: Number.MAX_SAFE_INTEGER + 1 })],
+        types,
+        "2026-11-06",
+        new Map([["imprecise-opening", 0]]),
+      ),
+    ).toThrow(/residual or opening/i);
   });
 
   it("fails closed when opening depreciation plus residual exceeds cost", () => {
-    expect(() => buildAssetPortfolioSnapshot(
-      [asset("impossible", {
-        cost_minor: 12000,
-        residual_minor: 8000,
-        opening_accumulated_minor: 5000,
-      })],
-      types,
-      "2026-11-06",
-      new Map([["impossible", 5000]]),
-    )).toThrow(/residual or opening/i);
+    expect(() =>
+      buildAssetPortfolioSnapshot(
+        [
+          asset("impossible", {
+            cost_minor: 12000,
+            residual_minor: 8000,
+            opening_accumulated_minor: 5000,
+          }),
+        ],
+        types,
+        "2026-11-06",
+        new Map([["impossible", 5000]]),
+      ),
+    ).toThrow(/residual or opening/i);
   });
 
   it("suppresses book values when an as-at balance contradicts opening depreciation", () => {
@@ -155,9 +175,13 @@ describe("fixed assets portfolio dashboard", () => {
 
   it("uses bigint across safe numeric asset costs to avoid portfolio precision loss", () => {
     const result = buildAssetPortfolioSnapshot(
-      [asset("a", { cost_minor: 900_000_000_000_000 }),
-       asset("b", { cost_minor: 900_000_000_000_000 })],
-      types, "2026-11-06", null,
+      [
+        asset("a", { cost_minor: 900_000_000_000_000 }),
+        asset("b", { cost_minor: 900_000_000_000_000 }),
+      ],
+      types,
+      "2026-11-06",
+      null,
     );
     expect(result.costMinor).toBe("1800000000000000");
     expect(result.netBookValueMinor).toBeNull();

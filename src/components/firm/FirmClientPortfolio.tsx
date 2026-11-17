@@ -82,10 +82,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type Draft = Omit<
-  FirmClientProfileInput,
-  "firmId" | "companyId" | "tags" | "expectedVersion"
-> & {
+type Draft = Omit<FirmClientProfileInput, "firmId" | "companyId" | "tags" | "expectedVersion"> & {
   tags: string;
 };
 const emptyDraft: Draft = {
@@ -158,7 +155,7 @@ export function FirmClientPortfolio({
   });
   const preferenceBusy = cloudPreferencesQ.isPending || preferenceM.isPending;
   const savedViews =
-    localViews?.firmId === firmId ? localViews.views : cloudPreferencesQ.data?.views ?? [];
+    localViews?.firmId === firmId ? localViews.views : (cloudPreferencesQ.data?.views ?? []);
   useEffect(() => {
     if (!cloudPreferencesQ.data) return;
     if (cloudPreferencesQ.data.columns !== null) {
@@ -386,9 +383,7 @@ export function FirmClientPortfolio({
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Active in practice</p>
-          <p className="text-2xl font-semibold tabular-nums">
-            {profileUnavailable ? "—" : active}
-          </p>
+          <p className="text-2xl font-semibold tabular-nums">{profileUnavailable ? "—" : active}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Onboarding / Reviews due</p>
@@ -663,9 +658,7 @@ export function FirmClientPortfolio({
                       checked={allFirstFiftySelected}
                       disabled={profileUnavailable || busy || !firstFiftyIds.length}
                       onCheckedChange={(checked) =>
-                        setSelectedIds(
-                          checked === true ? firstFiftyIds : [],
-                        )
+                        setSelectedIds(checked === true ? firstFiftyIds : [])
                       }
                     />
                   </TableHead>
@@ -720,19 +713,15 @@ export function FirmClientPortfolio({
                             >
                               {profile.primary_contact_email}
                             </a>
-                          ) : "—"
+                          ) : (
+                            "—"
+                          )
                         ) : column === "service" ? (
-                          <span className="block truncate">
-                            {profile?.service_line || "—"}
-                          </span>
+                          <span className="block truncate">{profile?.service_line || "—"}</span>
                         ) : column === "industry" ? (
-                          <span className="block truncate">
-                            {profile?.industry || "—"}
-                          </span>
+                          <span className="block truncate">{profile?.industry || "—"}</span>
                         ) : column === "tags" ? (
-                          <span className="block truncate">
-                            {profile?.tags.join(", ") || "—"}
-                          </span>
+                          <span className="block truncate">{profile?.tags.join(", ") || "—"}</span>
                         ) : column === "access" ? (
                           client.access_level
                         ) : column === "review" ? (

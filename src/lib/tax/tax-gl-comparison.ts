@@ -6,7 +6,11 @@ import type { PostedLine } from "@/lib/accounting/reporting";
  * Reversals are shown separately from original document postings.
  */
 const DOCUMENT_TYPES = new Set([
-  "sales_invoice", "sales_credit_note", "purchase_bill", "purchase_credit_note", "expense",
+  "sales_invoice",
+  "sales_credit_note",
+  "purchase_bill",
+  "purchase_credit_note",
+  "expense",
 ]);
 
 export type ComparisonBasis = "accrual" | "cash";
@@ -41,14 +45,19 @@ export function compareTaxReturnWithGl(args: {
   inputReturnMinor: number;
   lines: readonly Pick<PostedLine, "account_id" | "debit_minor" | "credit_minor" | "source_type">[];
 }): TaxGlComparison {
-  if (!args.outputAccountId || !args.inputAccountId || args.outputAccountId === args.inputAccountId) {
+  if (
+    !args.outputAccountId ||
+    !args.inputAccountId ||
+    args.outputAccountId === args.inputAccountId
+  ) {
     throw new Error("Choose two distinct tax control accounts for GL comparison.");
   }
   for (const [label, value] of [
     ["Output tax", args.outputReturnMinor],
     ["Input tax", args.inputReturnMinor],
   ] as const) {
-    if (!Number.isSafeInteger(value)) throw new Error(`${label} is not a safe integer minor-unit amount.`);
+    if (!Number.isSafeInteger(value))
+      throw new Error(`${label} is not a safe integer minor-unit amount.`);
   }
 
   type Group = { document: bigint; reversal: bigint; other: bigint; count: number };
@@ -56,15 +65,22 @@ export function compareTaxReturnWithGl(args: {
   const inc: Group = { document: 0n, reversal: 0n, other: 0n, count: 0 };
 
   for (const line of args.lines) {
-    const group = line.account_id === args.outputAccountId
-      ? out
-      : line.account_id === args.inputAccountId ? inc : null;
+    const group =
+      line.account_id === args.outputAccountId
+        ? out
+        : line.account_id === args.inputAccountId
+          ? inc
+          : null;
     if (!group) continue;
     const d = BigInt(line.debit_minor);
     const c = BigInt(line.credit_minor);
     const movement = group === out ? c - d : d - c;
-    const bucket = line.source_type === "reversal"
-      ? "reversal" : DOCUMENT_TYPES.has(line.source_type ?? "") ? "document" : "other";
+    const bucket =
+      line.source_type === "reversal"
+        ? "reversal"
+        : DOCUMENT_TYPES.has(line.source_type ?? "")
+          ? "document"
+          : "other";
     group[bucket] += movement;
     group.count += 1;
   }
@@ -90,14 +106,16 @@ export function compareTaxReturnWithGl(args: {
     "Reversals are shown separately and included in the diagnostic variance.",
   ];
   if (args.basis === "cash") {
-    warnings.unshift("Cash-basis return amounts cannot be directly reconciled to accrual-dated GL postings. Any variance shown is informational only.");
+    warnings.unshift(
+      "Cash-basis return amounts cannot be directly reconciled to accrual-dated GL postings. Any variance shown is informational only.",
+    );
   }
   const output = build(out, args.outputReturnMinor);
   const input = build(inc, args.inputReturnMinor);
   const netReturn = BigInt(args.outputReturnMinor) - BigInt(args.inputReturnMinor);
   const netDocuments = out.document + out.reversal - inc.document - inc.reversal;
-  const netAllGl = out.document + out.reversal + out.other -
-    inc.document - inc.reversal - inc.other;
+  const netAllGl =
+    out.document + out.reversal + out.other - inc.document - inc.reversal - inc.other;
   return {
     basis: args.basis,
     output,

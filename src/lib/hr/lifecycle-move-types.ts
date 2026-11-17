@@ -1,20 +1,37 @@
 export const HR_TRANSFER_CHANGE_TYPES = [
-  "transfer", "promotion", "demotion", "location_change", "manager_change", "other",
+  "transfer",
+  "promotion",
+  "demotion",
+  "location_change",
+  "manager_change",
+  "other",
 ] as const;
 export type HrTransferChangeType = (typeof HR_TRANSFER_CHANGE_TYPES)[number];
 
 export const HR_TRANSFER_STATUSES = [
-  "draft", "submitted", "approved", "rejected", "cancelled", "applied",
+  "draft",
+  "submitted",
+  "approved",
+  "rejected",
+  "cancelled",
+  "applied",
 ] as const;
 export type HrTransferStatus = (typeof HR_TRANSFER_STATUSES)[number];
 
 export const HR_EXIT_REASONS = [
-  "resignation", "termination", "end_of_contract", "retirement", "other",
+  "resignation",
+  "termination",
+  "end_of_contract",
+  "retirement",
+  "other",
 ] as const;
 export type HrExitReason = (typeof HR_EXIT_REASONS)[number];
 
 export const HR_OFFBOARDING_CASE_STATUSES = [
-  "planned", "in_progress", "completed", "cancelled",
+  "planned",
+  "in_progress",
+  "completed",
+  "cancelled",
 ] as const;
 export type HrOffboardingCaseStatus = (typeof HR_OFFBOARDING_CASE_STATUSES)[number];
 

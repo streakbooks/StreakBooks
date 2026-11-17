@@ -125,7 +125,10 @@ export function FirmServiceCatalogPanel({
                       size="sm"
                       variant="ghost"
                       disabled={saveM.isPending}
-                      onClick={() => { setEditing(category); setName(category.name); }}
+                      onClick={() => {
+                        setEditing(category);
+                        setName(category.name);
+                      }}
                     >
                       Rename
                     </Button>
@@ -133,13 +136,15 @@ export function FirmServiceCatalogPanel({
                       size="sm"
                       variant="outline"
                       disabled={saveM.isPending}
-                      onClick={() => saveM.mutate({
-                        firmId,
-                        id: category.id,
-                        version: category.version,
-                        name: category.name,
-                        is_active: !category.is_active,
-                      })}
+                      onClick={() =>
+                        saveM.mutate({
+                          firmId,
+                          id: category.id,
+                          version: category.version,
+                          name: category.name,
+                          is_active: !category.is_active,
+                        })
+                      }
                     >
                       {category.is_active ? "Archive" : "Reactivate"}
                     </Button>

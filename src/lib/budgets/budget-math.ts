@@ -9,8 +9,7 @@ export type BudgetAccountKind = "income" | "expense";
 
 /** Convert only exact minor-unit integers; reject overflow before Number conversion. */
 export function checkedBudgetMinor(value: bigint, label: string): number {
-  if (value < BigInt(Number.MIN_SAFE_INTEGER) ||
-      value > BigInt(Number.MAX_SAFE_INTEGER)) {
+  if (value < BigInt(Number.MIN_SAFE_INTEGER) || value > BigInt(Number.MAX_SAFE_INTEGER)) {
     throw new Error(label + " exceeds the supported safe minor-unit range.");
   }
   return Number(value);
@@ -112,8 +111,10 @@ export function computeVariance(kind: BudgetAccountKind, budget: number, actual:
   const difference = kind === "income" ? a - b : b - a;
   const varianceMinor = checkedBudgetMinor(difference, "Budget variance");
   const base = b < 0n ? -b : b;
-  const variancePctBps = base === 0n ? null :
-    checkedBudgetMinor(roundDiv(difference * 10_000n, base), "Budget variance percentage");
+  const variancePctBps =
+    base === 0n
+      ? null
+      : checkedBudgetMinor(roundDiv(difference * 10_000n, base), "Budget variance percentage");
   const status: VarianceStatus =
     difference > 0n ? "favourable" : difference < 0n ? "unfavourable" : "on_budget";
   return { varianceMinor, variancePctBps, status };

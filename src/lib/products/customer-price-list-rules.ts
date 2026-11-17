@@ -22,5 +22,5 @@ export function resolvedDraftPriceList(
   manualSelection: string | null,
   customerDefaultId: string | null | undefined,
 ): string {
-  return manualSelection === null ? customerDefaultId ?? "" : manualSelection;
+  return manualSelection === null ? (customerDefaultId ?? "") : manualSelection;
 }

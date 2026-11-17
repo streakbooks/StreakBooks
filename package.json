@@ -49,7 +49,8 @@
     "openapi:billing": "UPDATE_OPENAPI=1 vitest run src/lib/billing/api/v1/router.test.ts",
     "test:billing:e2e": "playwright test --config playwright.billing.config.ts",
     "test:banking:postgres": "node scripts/test-coding-memory-postgres.mjs",
-    "test:banking:ui": "playwright test --config playwright.coding-memory.config.ts"
+    "test:banking:ui": "playwright test --config playwright.coding-memory.config.ts",
+    "check:migrations": "node scripts/check-migration-identities.mjs && node --test scripts/check-migration-identities.test.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"

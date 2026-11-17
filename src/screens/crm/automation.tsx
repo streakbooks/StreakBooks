@@ -15,8 +15,7 @@ import type { Permission } from "@/lib/permissions";
 export function CrmAutomationPage() {
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
-  const canManage =
-    can("crm.automation.manage" as Permission) || can("crm.admin" as Permission);
+  const canManage = can("crm.automation.manage" as Permission) || can("crm.admin" as Permission);
   const fetchSettings = useServerFn(getCrmSettings);
   const fetchPolicy = useServerFn(getCrmAutomationPolicy);
 
@@ -74,9 +73,7 @@ export function CrmAutomationPage() {
           {policy.data ? (
             <>
               <Alert>
-                <AlertTitle>
-                  Engine {policy.data.engineEnabled ? "enabled" : "disabled"}
-                </AlertTitle>
+                <AlertTitle>Engine {policy.data.engineEnabled ? "enabled" : "disabled"}</AlertTitle>
                 <AlertDescription>{policy.data.reason}</AlertDescription>
               </Alert>
               <EmptyState

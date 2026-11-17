@@ -100,7 +100,10 @@ export function StatCard({
     </CardContent>
   );
   return href ? (
-    <Card data-slot="stat-card" className="relative overflow-hidden transition-[box-shadow,border-color] hover:border-primary/30 hover:shadow-raised">
+    <Card
+      data-slot="stat-card"
+      className="relative overflow-hidden transition-[box-shadow,border-color] hover:border-primary/30 hover:shadow-raised"
+    >
       <Link
         to={href as never}
         className="block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -109,7 +112,9 @@ export function StatCard({
       </Link>
     </Card>
   ) : (
-    <Card data-slot="stat-card" className="relative overflow-hidden">{body}</Card>
+    <Card data-slot="stat-card" className="relative overflow-hidden">
+      {body}
+    </Card>
   );
 }
 

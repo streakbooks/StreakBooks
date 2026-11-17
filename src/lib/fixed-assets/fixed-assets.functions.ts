@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { prepareFixedAssetsCsv } from "@/lib/imports/fixed-assets-import";
 import { pageCapitalisationBillLines } from "@/lib/fixed-assets/capitalisation-review";
-import { safeAssetMinorNumber, nullableAssetMinorNumber } from "@/lib/fixed-assets/amount-normalisation";
+import {
+  safeAssetMinorNumber,
+  nullableAssetMinorNumber,
+} from "@/lib/fixed-assets/amount-normalisation";
 import {
   exactDepreciationTotalMinor,
   safeDepreciationTotalMinor,
@@ -85,8 +88,14 @@ function normaliseAsset(r: Record<string, unknown>): FixedAssetRow {
     ...row,
     cost_minor: safeAssetMinorNumber(row.cost_minor, "Asset cost", { minimum: 1 }),
     residual_minor: safeAssetMinorNumber(row.residual_minor, "Asset residual value"),
-    opening_accumulated_minor: safeAssetMinorNumber(row.opening_accumulated_minor, "Opening accumulated depreciation"),
-    disposal_proceeds_minor: nullableAssetMinorNumber(row.disposal_proceeds_minor, "Disposal proceeds"),
+    opening_accumulated_minor: safeAssetMinorNumber(
+      row.opening_accumulated_minor,
+      "Opening accumulated depreciation",
+    ),
+    disposal_proceeds_minor: nullableAssetMinorNumber(
+      row.disposal_proceeds_minor,
+      "Disposal proceeds",
+    ),
   };
 }
 
@@ -161,9 +170,7 @@ export const getAssetRegisterPage = createServerFn({ method: "GET" })
       available: true as const,
       currency: meta.baseCurrency,
       assets: assets.map(normaliseAsset),
-      types: [...types].sort(
-        (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
-      ),
+      types: [...types].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
       accounts: metas
         .filter((a) => a.is_active && a.is_postable)
         .map((a) => ({ id: a.id, code: a.code, name: a.name, accountType: a.account_type }))
@@ -228,7 +235,10 @@ export const getFixedAsset = createServerFn({ method: "GET" })
           );
     return {
       asset,
-      entries: entries.map((e) => ({ ...e, amount_minor: safeAssetMinorNumber(e.amount_minor, "Posted depreciation", { minimum: 1 }) })),
+      entries: entries.map((e) => ({
+        ...e,
+        amount_minor: safeAssetMinorNumber(e.amount_minor, "Posted depreciation", { minimum: 1 }),
+      })),
       schedule,
     };
   });
@@ -562,7 +572,10 @@ function normaliseRunRows(rows: unknown): DepreciationRunRow[] {
   return ((rows ?? []) as DepreciationRunRow[]).map((r) => ({
     ...r,
     amount_minor: safeAssetMinorNumber(r.amount_minor, "Depreciation charge"),
-    accumulated_after_minor: safeAssetMinorNumber(r.accumulated_after_minor, "Accumulated depreciation after run"),
+    accumulated_after_minor: safeAssetMinorNumber(
+      r.accumulated_after_minor,
+      "Accumulated depreciation after run",
+    ),
   }));
 }
 
@@ -789,8 +802,12 @@ export const listCapitalisableBillLines = createServerFn({ method: "GET" })
             .not("source_bill_line_id" as never, "is" as never, null as never)
             .order("id" as never)
             .range(from, to) as unknown as PromiseLike<
-              PageResult<{ id: string; source_bill_line_id: string | null; cost_minor: number | string }>
-            >,
+            PageResult<{
+              id: string;
+              source_bill_line_id: string | null;
+              cost_minor: number | string;
+            }>
+          >,
       );
       for (const asset of linked) {
         const id = asset.source_bill_line_id;
@@ -876,8 +893,14 @@ export const getFixedAssetRegister = createServerFn({ method: "GET" })
         ...r,
         cost_minor: safeAssetMinorNumber(r.cost_minor, "Register cost", { minimum: 1 }),
         residual_minor: safeAssetMinorNumber(r.residual_minor, "Register residual value"),
-        accumulated_minor: safeAssetMinorNumber(r.accumulated_minor, "Register accumulated depreciation"),
-        disposal_proceeds_minor: nullableAssetMinorNumber(r.disposal_proceeds_minor, "Register disposal proceeds"),
+        accumulated_minor: safeAssetMinorNumber(
+          r.accumulated_minor,
+          "Register accumulated depreciation",
+        ),
+        disposal_proceeds_minor: nullableAssetMinorNumber(
+          r.disposal_proceeds_minor,
+          "Register disposal proceeds",
+        ),
       })),
     };
   });
@@ -920,9 +943,15 @@ export const getDepreciationSchedule = createServerFn({ method: "GET" })
       rows: (rows ?? []).map((r) => ({
         ...r,
         cost_minor: safeAssetMinorNumber(r.cost_minor, "Schedule cost", { minimum: 1 }),
-        opening_accumulated_minor: safeAssetMinorNumber(r.opening_accumulated_minor, "Schedule opening depreciation"),
+        opening_accumulated_minor: safeAssetMinorNumber(
+          r.opening_accumulated_minor,
+          "Schedule opening depreciation",
+        ),
         charge_minor: safeAssetMinorNumber(r.charge_minor, "Schedule depreciation charge"),
-        closing_accumulated_minor: safeAssetMinorNumber(r.closing_accumulated_minor, "Schedule accumulated depreciation"),
+        closing_accumulated_minor: safeAssetMinorNumber(
+          r.closing_accumulated_minor,
+          "Schedule accumulated depreciation",
+        ),
       })),
     };
   });

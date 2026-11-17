@@ -71,5 +71,4 @@ export type HrApprovalItem = {
   updatedAt: string;
 };
 
-export const HR07_MIGRATION =
-  "HR ESS/manager/approvals needs database update 20261109194000.";
+export const HR07_MIGRATION = "HR ESS/manager/approvals needs database update 20261109194000.";

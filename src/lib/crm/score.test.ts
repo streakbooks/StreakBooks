@@ -14,7 +14,15 @@ describe("computeCrmLeadScore", () => {
     });
     expect(result.score).toBe(100);
     expect(result.reasons.map((r) => r.code)).toEqual(
-      expect.arrayContaining(["email", "phone", "organization", "source", "value_high", "owner", "qualified"]),
+      expect.arrayContaining([
+        "email",
+        "phone",
+        "organization",
+        "source",
+        "value_high",
+        "owner",
+        "qualified",
+      ]),
     );
   });
 

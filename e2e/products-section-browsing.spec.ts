@@ -80,5 +80,4 @@ test.describe("Products & Services native browsing", () => {
     expect(new URL(page.url()).searchParams.get("sort")).toBe("name");
     await expect(sort).toContainText("Name: A–Z");
   });
-
 });

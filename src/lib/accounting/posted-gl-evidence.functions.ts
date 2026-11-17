@@ -82,17 +82,17 @@ export const auditPostedGlEvidence = createServerFn({ method: "GET" })
     }
 
     const relatedIds = [
-      ...new Set([journal.reverses_journal_id, journal.reversed_by_journal_id].filter(
-        (id): id is string => Boolean(id),
-      )),
+      ...new Set(
+        [journal.reverses_journal_id, journal.reversed_by_journal_id].filter((id): id is string =>
+          Boolean(id),
+        ),
+      ),
     ];
     let reversals: GlAuditReversal[] = [];
     if (relatedIds.length) {
       const { data: rawRelated, error: reversalError } = await context.supabase
         .from("journals" as never)
-        .select(
-          "id, company_id, status, reverses_journal_id, reversed_by_journal_id" as never,
-        )
+        .select("id, company_id, status, reverses_journal_id, reversed_by_journal_id" as never)
         .eq("company_id" as never, data.companyId as never)
         .in("id" as never, relatedIds as never)
         .limit(3);

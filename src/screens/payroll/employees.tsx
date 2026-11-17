@@ -182,10 +182,7 @@ export function PayrollEmployeesPage() {
   };
 
   const exportCsv = () => {
-    downloadCsv(
-      "linkbooks-payroll-employees.csv",
-      payrollEmployeesToCsv(displayedEmployees),
-    );
+    downloadCsv("linkbooks-payroll-employees.csv", payrollEmployeesToCsv(displayedEmployees));
     toast.success(`Exported ${displayedEmployees.length} employees in displayed order`);
   };
 
@@ -204,7 +201,8 @@ export function PayrollEmployeesPage() {
       // Compare against the full organisation list, not the current search subset.
       // CSV lacks salary/bank fields, so existing employee IDs are never overwritten.
       const current = await fetchList({ data: { companyId: company.id, status: null, q: null } });
-      if (!current.available) throw new Error(current.migrationMessage ?? "Employee data unavailable.");
+      if (!current.available)
+        throw new Error(current.migrationMessage ?? "Employee data unavailable.");
       const existing = new Set(current.employees.map((employee) => employee.employee_number));
       const { toCreate: drafts, skipped } = planPayrollEmployeeImport(parsed.drafts, existing);
       setImportDone(0);
@@ -225,7 +223,14 @@ export function PayrollEmployeesPage() {
   };
 
   const confirmImport = async () => {
-    if (!importPreview || !company || importPreview.companyId !== company.id || !canManage || importBusyRef.current) return;
+    if (
+      !importPreview ||
+      !company ||
+      importPreview.companyId !== company.id ||
+      !canManage ||
+      importBusyRef.current
+    )
+      return;
     importBusyRef.current = true;
     setImporting(true);
     let created = 0;
@@ -234,7 +239,8 @@ export function PayrollEmployeesPage() {
       // Recheck on confirmation: another session may have created an employee
       // during CSV review. Never overwrite those employee records.
       const current = await fetchList({ data: { companyId: company.id, status: null, q: null } });
-      if (!current.available) throw new Error(current.migrationMessage ?? "Employee data unavailable.");
+      if (!current.available)
+        throw new Error(current.migrationMessage ?? "Employee data unavailable.");
       const existing = new Set(current.employees.map((employee) => employee.employee_number));
       const plan = planPayrollEmployeeImport(importPreview.drafts, existing);
       newlySkipped = plan.skipped;
@@ -244,7 +250,9 @@ export function PayrollEmployeesPage() {
         created += 1;
         setImportDone(created + newlySkipped);
       }
-      toast.success(`Imported ${created} employees; skipped ${importPreview.skipped + newlySkipped} existing IDs.`);
+      toast.success(
+        `Imported ${created} employees; skipped ${importPreview.skipped + newlySkipped} existing IDs.`,
+      );
     } catch (error) {
       toast.error(`Import stopped after ${created} saved and ${newlySkipped} newly skipped rows.`, {
         description: `Earlier rows were saved; later rows were not attempted. ${friendlyAuthError(error)}`,
@@ -276,25 +284,25 @@ export function PayrollEmployeesPage() {
                 type="file"
                 accept=".csv,text/csv"
                 className="hidden"
-                  onChange={(e) => void importCsv(e.target.files?.[0] ?? null)}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!list.available || importing}
-                  onClick={() => importInputRef.current?.click()}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  {importing ? "Preparing…" : "Import CSV"}
-                </Button>
-                <Button size="sm" onClick={openAdd} disabled={!list.available}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add employee
-                </Button>
-              </>
-            ) : null}
-          </div>
-        }
+                onChange={(e) => void importCsv(e.target.files?.[0] ?? null)}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!list.available || importing}
+                onClick={() => importInputRef.current?.click()}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {importing ? "Preparing…" : "Import CSV"}
+              </Button>
+              <Button size="sm" onClick={openAdd} disabled={!list.available}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add employee
+              </Button>
+            </>
+          ) : null}
+        </div>
+      }
       subnav={<PayrollSubnav current="employees" />}
     >
       {!list.available ? (
@@ -430,7 +438,9 @@ export function PayrollEmployeesPage() {
                 </div>
                 <div>
                   <dt className="text-muted-foreground">New</dt>
-                  <dd className="text-lg font-semibold tabular-nums">{importPreview.drafts.length}</dd>
+                  <dd className="text-lg font-semibold tabular-nums">
+                    {importPreview.drafts.length}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Skipped</dt>
@@ -458,10 +468,14 @@ export function PayrollEmployeesPage() {
               Cancel
             </Button>
             <Button
-              disabled={importing || !importPreview?.drafts.length || importPreview.companyId !== company.id}
+              disabled={
+                importing || !importPreview?.drafts.length || importPreview.companyId !== company.id
+              }
               onClick={() => void confirmImport()}
             >
-              {importing ? "Importing…" : `Import ${importPreview?.drafts.length ?? 0} new employees`}
+              {importing
+                ? "Importing…"
+                : `Import ${importPreview?.drafts.length ?? 0} new employees`}
             </Button>
           </DialogFooter>
         </DialogContent>

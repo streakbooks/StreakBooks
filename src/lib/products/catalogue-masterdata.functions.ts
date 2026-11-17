@@ -3,7 +3,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { validateRuleInput, type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
-import { validateDiscountRuleInput, type DraftDiscountRule } from "@/lib/products/price-list-discounts";
+import {
+  validateDiscountRuleInput,
+  type DraftDiscountRule,
+} from "@/lib/products/price-list-discounts";
 import {
   assertMatchingCatalogueCurrency,
   validateCatalogueName,
@@ -58,19 +61,27 @@ export const listProductCategories = createServerFn({ method: "GET" })
 
 export const saveProductCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string; id?: string; name: string; description?: string; isActive?: boolean;
-  }) => ({
-    companyId: assertUuid(input.companyId),
-    id: input.id ? assertUuid(input.id) : null,
-    name: validateCatalogueName(input.name),
-    description: validateCatalogueDescription(input.description),
-    isActive: input.isActive !== false,
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      id?: string;
+      name: string;
+      description?: string;
+      isActive?: boolean;
+    }) => ({
+      companyId: assertUuid(input.companyId),
+      id: input.id ? assertUuid(input.id) : null,
+      name: validateCatalogueName(input.name),
+      description: validateCatalogueDescription(input.description),
+      isActive: input.isActive !== false,
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "products.manage");
     const payload = {
-      name: data.name, description: data.description, is_active: data.isActive,
+      name: data.name,
+      description: data.description,
+      is_active: data.isActive,
       updated_at: new Date().toISOString(),
     };
     const query = context.supabase.from("product_categories" as never);
@@ -86,7 +97,8 @@ export const saveProductCategory = createServerFn({ method: "POST" })
     }
     const { data: saved, error } = await query
       .insert({ company_id: data.companyId, ...payload } as never)
-      .select("id" as never).single();
+      .select("id" as never)
+      .single();
     if (error) throw new Error(uniqueNameError(error));
     return { id: (saved as { id: string }).id };
   });
@@ -110,15 +122,21 @@ export const listProductPriceLists = createServerFn({ method: "GET" })
 
 export const saveProductPriceList = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string; id?: string; name: string; description?: string; isActive?: boolean;
-  }) => ({
-    companyId: assertUuid(input.companyId),
-    id: input.id ? assertUuid(input.id) : null,
-    name: validateCatalogueName(input.name),
-    description: validateCatalogueDescription(input.description),
-    isActive: input.isActive !== false,
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      id?: string;
+      name: string;
+      description?: string;
+      isActive?: boolean;
+    }) => ({
+      companyId: assertUuid(input.companyId),
+      id: input.id ? assertUuid(input.id) : null,
+      name: validateCatalogueName(input.name),
+      description: validateCatalogueDescription(input.description),
+      isActive: input.isActive !== false,
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "products.manage");
     const { data: org, error: orgError } = await context.supabase
@@ -129,21 +147,30 @@ export const saveProductPriceList = createServerFn({ method: "POST" })
     if (orgError) throw new Error(orgError.message);
     const currency = (org as { base_currency: string }).base_currency;
     const payload = {
-      name: data.name, description: data.description, is_active: data.isActive,
+      name: data.name,
+      description: data.description,
+      is_active: data.isActive,
       updated_at: new Date().toISOString(),
     };
     const query = context.supabase.from("product_price_lists" as never);
     if (data.id) {
-      const { data: saved, error } = await query.update(payload as never)
+      const { data: saved, error } = await query
+        .update(payload as never)
         .eq("company_id" as never, data.companyId as never)
         .eq("id" as never, data.id as never)
-        .select("id" as never).single();
+        .select("id" as never)
+        .single();
       if (error) throw new Error(uniqueNameError(error));
       return { id: (saved as { id: string }).id };
     }
-    const { data: saved, error } = await query.insert({
-      company_id: data.companyId, currency_code: currency, ...payload,
-    } as never).select("id" as never).single();
+    const { data: saved, error } = await query
+      .insert({
+        company_id: data.companyId,
+        currency_code: currency,
+        ...payload,
+      } as never)
+      .select("id" as never)
+      .single();
     if (error) throw new Error(uniqueNameError(error));
     return { id: (saved as { id: string }).id };
   });
@@ -165,7 +192,9 @@ export const listProductPriceOverrides = createServerFn({ method: "GET" })
       .limit(500);
     if (error) throw new Error(error.message);
     const overrides = (rows ?? []) as Array<{
-      id: string; product_id: string; unit_price_minor: number;
+      id: string;
+      product_id: string;
+      unit_price_minor: number;
     }>;
     if (!overrides.length) return [];
     const { data: products, error: productsError } = await context.supabase
@@ -175,9 +204,14 @@ export const listProductPriceOverrides = createServerFn({ method: "GET" })
       .in("id" as never, overrides.map((item) => item.product_id) as never);
     if (productsError) throw new Error(productsError.message);
     const productsById = new Map(
-      ((products ?? []) as Array<{
-        id: string; name: string; code: string | null; sales_price_minor: number;
-      }>).map((product) => [product.id, product]),
+      (
+        (products ?? []) as Array<{
+          id: string;
+          name: string;
+          code: string | null;
+          sales_price_minor: number;
+        }>
+      ).map((product) => [product.id, product]),
     );
     return overrides.map((item) => {
       const product = productsById.get(item.product_id);
@@ -192,27 +226,36 @@ export const listProductPriceOverrides = createServerFn({ method: "GET" })
 
 export const saveProductPriceOverride = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string; priceListId: string; productId: string; unitPriceMinor: number;
-  }) => {
-    return {
-      companyId: assertUuid(input.companyId),
-      priceListId: assertUuid(input.priceListId),
-      productId: assertUuid(input.productId),
-      unitPriceMinor: validateCataloguePriceMinor(input.unitPriceMinor),
-    };
-  })
+  .inputValidator(
+    (input: {
+      companyId: string;
+      priceListId: string;
+      productId: string;
+      unitPriceMinor: number;
+    }) => {
+      return {
+        companyId: assertUuid(input.companyId),
+        priceListId: assertUuid(input.priceListId),
+        productId: assertUuid(input.productId),
+        unitPriceMinor: validateCataloguePriceMinor(input.unitPriceMinor),
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "products.manage");
     const [list, product] = await Promise.all([
-      context.supabase.from("product_price_lists" as never)
+      context.supabase
+        .from("product_price_lists" as never)
         .select("id, currency_code, is_active" as never)
         .eq("company_id" as never, data.companyId as never)
-        .eq("id" as never, data.priceListId as never).maybeSingle(),
-      context.supabase.from("products" as never)
+        .eq("id" as never, data.priceListId as never)
+        .maybeSingle(),
+      context.supabase
+        .from("products" as never)
         .select("id, is_active" as never)
         .eq("company_id" as never, data.companyId as never)
-        .eq("id" as never, data.productId as never).maybeSingle(),
+        .eq("id" as never, data.productId as never)
+        .maybeSingle(),
     ]);
     if (list.error) throw new Error(list.error.message);
     if (product.error) throw new Error(product.error.message);
@@ -234,12 +277,18 @@ export const saveProductPriceOverride = createServerFn({ method: "POST" })
     );
     const { data: saved, error } = await context.supabase
       .from("product_price_list_items" as never)
-      .upsert({
-        company_id: data.companyId, price_list_id: data.priceListId,
-        product_id: data.productId, unit_price_minor: data.unitPriceMinor,
-        updated_at: new Date().toISOString(),
-      } as never, { onConflict: "price_list_id,product_id" })
-      .select("id" as never).single();
+      .upsert(
+        {
+          company_id: data.companyId,
+          price_list_id: data.priceListId,
+          product_id: data.productId,
+          unit_price_minor: data.unitPriceMinor,
+          updated_at: new Date().toISOString(),
+        } as never,
+        { onConflict: "price_list_id,product_id" },
+      )
+      .select("id" as never)
+      .single();
     if (error) throw new Error(error.message);
     return { id: (saved as { id: string }).id };
   });
@@ -257,7 +306,8 @@ export const deleteProductPriceOverride = createServerFn({ method: "POST" })
       .delete()
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.priceListItemId as never)
-      .select("id" as never).maybeSingle();
+      .select("id" as never)
+      .maybeSingle();
     if (error) throw new Error(error.message);
     if (!deleted) throw new Error("Price override no longer exists");
     return { ok: true };
@@ -269,26 +319,30 @@ export const deleteProductPriceOverride = createServerFn({ method: "POST" })
  */
 export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    priceListId: string;
-    documentCurrency: string;
-    productIds: string[];
-  }) => {
-    if (!Array.isArray(input.productIds) || input.productIds.length > 250) {
-      throw new Error("Too many products for one price-list lookup");
-    }
-    if (typeof input.documentCurrency !== "string" ||
-      !/^[A-Z]{3}$/.test(input.documentCurrency)) {
-      throw new Error("Invalid document currency");
-    }
-    return {
-      companyId: assertUuid(input.companyId),
-      priceListId: assertUuid(input.priceListId),
-      documentCurrency: input.documentCurrency,
-      productIds: [...new Set(input.productIds.map((id) => assertUuid(id, "product")))],
-    };
-  })
+  .inputValidator(
+    (input: {
+      companyId: string;
+      priceListId: string;
+      documentCurrency: string;
+      productIds: string[];
+    }) => {
+      if (!Array.isArray(input.productIds) || input.productIds.length > 250) {
+        throw new Error("Too many products for one price-list lookup");
+      }
+      if (
+        typeof input.documentCurrency !== "string" ||
+        !/^[A-Z]{3}$/.test(input.documentCurrency)
+      ) {
+        throw new Error("Invalid document currency");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        priceListId: assertUuid(input.priceListId),
+        documentCurrency: input.documentCurrency,
+        productIds: [...new Set(input.productIds.map((id) => assertUuid(id, "product")))],
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: list, error: listError } = await context.supabase
@@ -327,7 +381,11 @@ export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
 
     // The query deliberately fetches ALL candidate rules for these products.
     // Filtering by quantity and document date is performed for each draft line.
-    const { data: tiers, error: tiersError, count: tierCount } = await context.supabase
+    const {
+      data: tiers,
+      error: tiersError,
+      count: tierCount,
+    } = await context.supabase
       .from("product_price_list_rules" as never)
       .select(
         "id, product_id, min_quantity, effective_from, effective_to, unit_price_minor" as never,
@@ -341,10 +399,16 @@ export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
     if ((tierCount ?? 0) > 1000 || (tiers ?? []).length > 1000) {
       throw new Error("The selected price list has too many matching rules (maximum 1,000)");
     }
-    const rules: DraftTierPriceRule[] = ((tiers ?? []) as Array<{
-      id: string; product_id: string; min_quantity: string | number;
-      effective_from: string; effective_to: string | null; unit_price_minor: number;
-    }>).map((r) => {
+    const rules: DraftTierPriceRule[] = (
+      (tiers ?? []) as Array<{
+        id: string;
+        product_id: string;
+        min_quantity: string | number;
+        effective_from: string;
+        effective_to: string | null;
+        unit_price_minor: number;
+      }>
+    ).map((r) => {
       const checked = validateRuleInput({
         minQuantity: String(r.min_quantity),
         effectiveFrom: r.effective_from,
@@ -352,31 +416,41 @@ export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
         unitPriceMinor: r.unit_price_minor,
       });
       return {
-        id: r.id, product_id: r.product_id,
+        id: r.id,
+        product_id: r.product_id,
         min_quantity: checked.minQuantity,
         effective_from: checked.effectiveFrom,
         effective_to: checked.effectiveTo,
         unit_price_minor: checked.unitPriceMinor,
       };
     });
-    const { data: discountsRaw, error: discountError, count: discountCount } =
-      await context.supabase.from("product_price_list_discount_rules" as never)
-        .select(
-          "id, product_id, min_quantity, effective_from, effective_to, discount_bps" as never,
-          { count: "exact" },
-        )
-        .eq("company_id" as never, data.companyId as never)
-        .eq("price_list_id" as never, data.priceListId as never)
-        .in("product_id" as never, data.productIds as never)
-        .limit(1001);
+    const {
+      data: discountsRaw,
+      error: discountError,
+      count: discountCount,
+    } = await context.supabase
+      .from("product_price_list_discount_rules" as never)
+      .select("id, product_id, min_quantity, effective_from, effective_to, discount_bps" as never, {
+        count: "exact",
+      })
+      .eq("company_id" as never, data.companyId as never)
+      .eq("price_list_id" as never, data.priceListId as never)
+      .in("product_id" as never, data.productIds as never)
+      .limit(1001);
     if (discountError) throw new Error(discountError.message);
     if ((discountCount ?? 0) > 1000 || (discountsRaw ?? []).length > 1000) {
       throw new Error("The selected list has too many matching discount rules (maximum 1,000)");
     }
-    const discounts: DraftDiscountRule[] = ((discountsRaw ?? []) as Array<{
-      id: string; product_id: string; min_quantity: string | number;
-      effective_from: string; effective_to: string | null; discount_bps: number;
-    }>).map((r) => {
+    const discounts: DraftDiscountRule[] = (
+      (discountsRaw ?? []) as Array<{
+        id: string;
+        product_id: string;
+        min_quantity: string | number;
+        effective_from: string;
+        effective_to: string | null;
+        discount_bps: number;
+      }>
+    ).map((r) => {
       const checked = validateDiscountRuleInput({
         minQuantity: String(r.min_quantity),
         effectiveFrom: r.effective_from,
@@ -384,7 +458,8 @@ export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
         discountBps: r.discount_bps,
       });
       return {
-        id: r.id, product_id: r.product_id,
+        id: r.id,
+        product_id: r.product_id,
         min_quantity: checked.minQuantity,
         effective_from: checked.effectiveFrom,
         effective_to: checked.effectiveTo,
@@ -401,9 +476,12 @@ export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
       .in("id" as never, data.productIds as never)
       .limit(250);
     if (catalogueError) throw new Error(catalogueError.message);
-    const basePrices = ((catalogue ?? []) as Array<{
-      id: string; sales_price_minor: number;
-    }>).map((p) => {
+    const basePrices = (
+      (catalogue ?? []) as Array<{
+        id: string;
+        sales_price_minor: number;
+      }>
+    ).map((p) => {
       validateCataloguePriceMinor(p.sales_price_minor);
       return { product_id: p.id, unit_price_minor: p.sales_price_minor };
     });

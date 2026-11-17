@@ -186,8 +186,7 @@ export const categoryMeta: CategoryMeta[] = [
   {
     id: "integrations",
     label: "Integrations & API",
-    description:
-      "Platform connection health. Browse and manage marketplace apps in the App Store.",
+    description: "Platform connection health. Browse and manage marketplace apps in the App Store.",
     synonyms: ["api", "webhook", "oauth", "bank feed", "gateway", "app store", "marketplace"],
     legacyTab: "integrations",
     availability: "partial",

@@ -1,8 +1,14 @@
 /** Payroll source-to-posted-GL accrual audit. Read-only; mirrors SQL post_payroll_run. */
 export type PayrollAuditRun = {
-  id: string; company_id: string; run_number: string; status: string;
-  currency: string; payment_date: string; net_minor: number | string;
-  accrual_journal_id: string | null; posting_idempotency_key: string | null;
+  id: string;
+  company_id: string;
+  run_number: string;
+  status: string;
+  currency: string;
+  payment_date: string;
+  net_minor: number | string;
+  accrual_journal_id: string | null;
+  posting_idempotency_key: string | null;
 };
 export type PayrollAuditSettings = {
   company_id: string;
@@ -13,39 +19,65 @@ export type PayrollAuditSettings = {
   net_pay_liability_account_id: string | null;
 };
 export type PayrollAuditEmployee = {
-  id: string; company_id: string; run_id: string; status: string;
+  id: string;
+  company_id: string;
+  run_id: string;
+  status: string;
 };
 export type PayrollAuditSourceLine = {
-  id: string; company_id: string; run_employee_id: string;
+  id: string;
+  company_id: string;
+  run_employee_id: string;
   component_type_id: string | null;
-  kind: string; amount_minor: number | string;
+  kind: string;
+  amount_minor: number | string;
 };
 export type PayrollAuditComponent = {
-  id: string; company_id: string; expense_account_id: string | null;
+  id: string;
+  company_id: string;
+  expense_account_id: string | null;
   liability_account_id: string | null;
 };
 export type PayrollAuditJournal = {
-  id: string; company_id: string; status: string; source_type: string;
-  source_id: string | null; idempotency_key: string | null;
-  currency_code: string; journal_date: string;
+  id: string;
+  company_id: string;
+  status: string;
+  source_type: string;
+  source_id: string | null;
+  idempotency_key: string | null;
+  currency_code: string;
+  journal_date: string;
   reversed_by_journal_id: string | null;
 };
 export type PayrollAuditGlLine = {
-  id: string; company_id: string; journal_id: string;
-  account_id: string; line_no: number;
-  debit_minor: number | string; credit_minor: number | string;
+  id: string;
+  company_id: string;
+  journal_id: string;
+  account_id: string;
+  line_no: number;
+  debit_minor: number | string;
+  credit_minor: number | string;
 };
 export type PayrollAuditAccountRow = {
-  accountId: string; side: "debit" | "credit";
-  expectedMinor: string; postedMinor: string; matched: boolean;
-  accountCode?: string | undefined; accountName?: string | undefined;
+  accountId: string;
+  side: "debit" | "credit";
+  expectedMinor: string;
+  postedMinor: string;
+  matched: boolean;
+  accountCode?: string | undefined;
+  accountName?: string | undefined;
 };
 export type PayrollAccrualTieOutResult = {
   status: "matched" | "exceptions";
-  runId: string; journalId: string; currency: string;
-  sourceLineCount: number; ledgerLineCount: number;
-  expectedDebitMinor: string; expectedCreditMinor: string;
-  postedDebitMinor: string; postedCreditMinor: string;
+  runId: string;
+  journalId: string;
+  currency: string;
+  sourceLineCount: number;
+  ledgerLineCount: number;
+  expectedDebitMinor: string;
+  expectedCreditMinor: string;
+  postedDebitMinor: string;
+  postedCreditMinor: string;
   accounts: PayrollAuditAccountRow[];
   issues: string[];
 };
@@ -85,7 +117,11 @@ export function auditPayrollAccrualTieOut(
   glLines: readonly PayrollAuditGlLine[],
 ): PayrollAccrualTieOutResult {
   const issues: string[] = [];
-  if (run.company_id !== companyId || journal.company_id !== companyId || settings.company_id !== companyId) {
+  if (
+    run.company_id !== companyId ||
+    journal.company_id !== companyId ||
+    settings.company_id !== companyId
+  ) {
     issues.push("Payroll run, settings or journal belongs to a different organisation.");
   }
   if (!["posted", "paid", "complete"].includes(run.status)) {
@@ -130,8 +166,12 @@ export function auditPayrollAccrualTieOut(
   const includedIds = new Set<string>();
   const employeeIds = new Set<string>();
   for (const employee of employees) {
-    if (!employee.id || employeeIds.has(employee.id) ||
-        employee.company_id !== companyId || employee.run_id !== run.id) {
+    if (
+      !employee.id ||
+      employeeIds.has(employee.id) ||
+      employee.company_id !== companyId ||
+      employee.run_id !== run.id
+    ) {
       issues.push("Payroll employee evidence is duplicated or belongs to a different run.");
     }
     employeeIds.add(employee.id);
@@ -146,12 +186,18 @@ export function auditPayrollAccrualTieOut(
   const seenSources = new Set<string>();
   for (const [index, line] of sourceLines.entries()) {
     const label = "Payroll component line " + (index + 1);
-    if (!line.id || seenSources.has(line.id) || line.company_id !== companyId ||
-        !includedIds.has(line.run_employee_id)) {
+    if (
+      !line.id ||
+      seenSources.has(line.id) ||
+      line.company_id !== companyId ||
+      !includedIds.has(line.run_employee_id)
+    ) {
       issues.push(label + " is duplicated or does not belong to an included payroll employee.");
     }
     seenSources.add(line.id);
-    const component = line.component_type_id ? componentsById.get(line.component_type_id) : undefined;
+    const component = line.component_type_id
+      ? componentsById.get(line.component_type_id)
+      : undefined;
     if (line.component_type_id && !component) {
       issues.push(label + " refers to an unavailable component mapping.");
     }
@@ -169,7 +215,8 @@ export function auditPayrollAccrualTieOut(
       } else if (line.kind === "employer_contribution") {
         const expense = component?.expense_account_id ?? settings.employer_expense_account_id;
         const liability = component?.liability_account_id ?? settings.employer_liability_account_id;
-        if (!expense || !liability) issues.push(label + " is missing employer contribution account mapping.");
+        if (!expense || !liability)
+          issues.push(label + " is missing employer contribution account mapping.");
         add(expected, expense ?? "", "debit", minor);
         add(expected, liability ?? "", "credit", minor);
       } else {
@@ -194,8 +241,12 @@ export function auditPayrollAccrualTieOut(
   const seenNumbers = new Set<number>();
   for (const [index, line] of glLines.entries()) {
     const label = "Payroll ledger line " + (index + 1);
-    if (!line.id || seenGl.has(line.id) || line.company_id !== companyId ||
-        line.journal_id !== journal.id) {
+    if (
+      !line.id ||
+      seenGl.has(line.id) ||
+      line.company_id !== companyId ||
+      line.journal_id !== journal.id
+    ) {
       issues.push(label + " is duplicated or belongs to another journal or organisation.");
     }
     seenGl.add(line.id);
@@ -234,7 +285,13 @@ export function auditPayrollAccrualTieOut(
       const expectedMinor = expected.get(entry) ?? 0n;
       const postedMinor = posted.get(entry) ?? 0n;
       if (expectedMinor !== postedMinor) {
-        issues.push("Payroll GL discrepancy for account " + entry.slice(0, i) + " " + entry.slice(i + 1) + ".");
+        issues.push(
+          "Payroll GL discrepancy for account " +
+            entry.slice(0, i) +
+            " " +
+            entry.slice(i + 1) +
+            ".",
+        );
       }
       return {
         accountId: entry.slice(0, i),
@@ -244,15 +301,20 @@ export function auditPayrollAccrualTieOut(
         matched: expectedMinor === postedMinor,
       };
     });
-  if (rows.length < 2 || expected.size === 0) issues.push("Payroll accrual account evidence is incomplete.");
+  if (rows.length < 2 || expected.size === 0)
+    issues.push("Payroll accrual account evidence is incomplete.");
   return {
     status: issues.length ? "exceptions" : "matched",
-    runId: run.id, journalId: journal.id, currency: run.currency,
-    sourceLineCount: sourceLines.length, ledgerLineCount: glLines.length,
+    runId: run.id,
+    journalId: journal.id,
+    currency: run.currency,
+    sourceLineCount: sourceLines.length,
+    ledgerLineCount: glLines.length,
     expectedDebitMinor: expectedTotals.debit.toString(),
     expectedCreditMinor: expectedTotals.credit.toString(),
     postedDebitMinor: postedTotals.debit.toString(),
     postedCreditMinor: postedTotals.credit.toString(),
-    accounts: rows, issues,
+    accounts: rows,
+    issues,
   };
 }

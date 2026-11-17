@@ -20,10 +20,7 @@ export function validatePipelineStageDraft(draft: PipelineStageDraft): string | 
   return null;
 }
 
-export function validatePipelineDraft(input: {
-  name: string;
-  sortOrder: number;
-}): string | null {
+export function validatePipelineDraft(input: { name: string; sortOrder: number }): string | null {
   const name = input.name.trim();
   if (!name || name.length > 120) return "Pipeline name is required (1-120 characters)";
   if (input.sortOrder < 0 || input.sortOrder > 100000) return "Sort order out of range";

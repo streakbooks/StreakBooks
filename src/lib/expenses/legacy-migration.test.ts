@@ -27,12 +27,12 @@ describe("legacy expense migration helpers", () => {
   });
 
   it("formats import summaries", () => {
-    expect(
-      formatLegacyImportSummary({ importedCount: 3, skippedCount: 1, limit: 50 }),
-    ).toContain("Imported 3");
-    expect(
-      formatLegacyImportSummary({ importedCount: 0, skippedCount: 0, limit: 50 }),
-    ).toMatch(/No legacy/i);
+    expect(formatLegacyImportSummary({ importedCount: 3, skippedCount: 1, limit: 50 })).toContain(
+      "Imported 3",
+    );
+    expect(formatLegacyImportSummary({ importedCount: 0, skippedCount: 0, limit: 50 })).toMatch(
+      /No legacy/i,
+    );
   });
 
   it("maps import results", () => {

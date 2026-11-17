@@ -57,9 +57,7 @@ function scan(file) {
   for (const attrs of openingTags(source, "ErrorState")) {
     if (attrs.includes("data-error-static")) continue;
     if (attrs.includes("onRetry") || /(^|[\s{])retry[=:]/.test(attrs)) continue;
-    failures.push(
-      `${rel}: ErrorState without onRetry/retry (add recovery or data-error-static)`,
-    );
+    failures.push(`${rel}: ErrorState without onRetry/retry (add recovery or data-error-static)`);
   }
 }
 

@@ -41,16 +41,26 @@ describe("Fixed Assets saved filter views", () => {
 
   it("limits view names, search text and number of saved views", () => {
     expect(normalizeAssetFilterView({ name: "a".repeat(49), filters })).toBeNull();
-    expect(normalizeAssetFilterView({
-      name: "Long query",
-      filters: { ...filters, search: "a".repeat(121) },
-    })).toBeNull();
+    expect(
+      normalizeAssetFilterView({
+        name: "Long query",
+        filters: { ...filters, search: "a".repeat(121) },
+      }),
+    ).toBeNull();
     let saved: ReturnType<typeof saveAssetFilterView> = [];
     for (let i = 0; i < 10; i++) saved = saveAssetFilterView(saved, "View " + i, filters);
     expect(() => saveAssetFilterView(saved, "Eleventh", filters)).toThrow(/up to 10/i);
-    expect(parseSavedAssetFilterViews(JSON.stringify([...saved, {
-      name: "Extra", filters,
-    }]))).toHaveLength(10);
+    expect(
+      parseSavedAssetFilterViews(
+        JSON.stringify([
+          ...saved,
+          {
+            name: "Extra",
+            filters,
+          },
+        ]),
+      ),
+    ).toHaveLength(10);
   });
 
   it("preserves all filter values in a valid round-trip", () => {

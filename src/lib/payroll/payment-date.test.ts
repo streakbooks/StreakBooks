@@ -8,12 +8,23 @@ describe("Payroll settlement calendar dates", () => {
   });
 
   it("rejects impossible calendar days", () => {
-    expect(() => assertPayrollSettlementDateOnly("2026-02-29", "Payment")).toThrow(/valid YYYY-MM-DD/);
-    expect(() => assertPayrollSettlementDateOnly("2026-04-31", "Reversal")).toThrow(/valid YYYY-MM-DD/);
+    expect(() => assertPayrollSettlementDateOnly("2026-02-29", "Payment")).toThrow(
+      /valid YYYY-MM-DD/,
+    );
+    expect(() => assertPayrollSettlementDateOnly("2026-04-31", "Reversal")).toThrow(
+      /valid YYYY-MM-DD/,
+    );
   });
 
   it("rejects invalid or non-ISO representations", () => {
-    for (const date of ["0000-01-01", "2026-1-1", "2026-13-01", "", "2026-02-30", "2026-11-06T00:00:00Z"]) {
+    for (const date of [
+      "0000-01-01",
+      "2026-1-1",
+      "2026-13-01",
+      "",
+      "2026-02-30",
+      "2026-11-06T00:00:00Z",
+    ]) {
       expect(() => assertPayrollSettlementDateOnly(date, "Payment")).toThrow(/Payment date/);
     }
   });

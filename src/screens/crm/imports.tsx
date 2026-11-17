@@ -83,11 +83,7 @@ export function CrmImportsPage() {
                 <Button
                   type="button"
                   disabled={!policy.data.canImport}
-                  title={
-                    policy.data.canImport
-                      ? undefined
-                      : "Blocked until import backend exists"
-                  }
+                  title={policy.data.canImport ? undefined : "Blocked until import backend exists"}
                 >
                   Import leads
                 </Button>
@@ -95,11 +91,7 @@ export function CrmImportsPage() {
                   type="button"
                   variant="secondary"
                   disabled={!policy.data.canExport}
-                  title={
-                    policy.data.canExport
-                      ? undefined
-                      : "Blocked until export backend exists"
-                  }
+                  title={policy.data.canExport ? undefined : "Blocked until export backend exists"}
                 >
                   Export opportunities
                 </Button>

@@ -459,7 +459,10 @@ function FilesPage() {
             : "Files available to your organisation."}
         </div>
       </div>
-      <section aria-label="Document folders" className="mb-5 rounded-2xl border border-border/85 bg-card p-4 shadow-card sm:p-5">
+      <section
+        aria-label="Document folders"
+        className="mb-5 rounded-2xl border border-border/85 bg-card p-4 shadow-card sm:p-5"
+      >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Folder className="size-4" />
@@ -589,8 +592,8 @@ function FilesPage() {
                   <DialogHeader>
                     <DialogTitle>Rename folder</DialogTitle>
                     <DialogDescription>
-                      Update the name of “{activeFolder.name}”. Files and subfolders remain
-                      attached to the same folder.
+                      Update the name of “{activeFolder.name}”. Files and subfolders remain attached
+                      to the same folder.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-2">
@@ -608,13 +611,22 @@ function FilesPage() {
                     />
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setRenameFolderOpen(false)}
-                      disabled={renameFolderM.isPending}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setRenameFolderOpen(false)}
+                      disabled={renameFolderM.isPending}
+                    >
                       Cancel
                     </Button>
-                    <Button type="submit"
-                      disabled={renameFolderM.isPending || !renameFolderName.trim() ||
-                        renameFolderName.trim() === activeFolder.name}>
+                    <Button
+                      type="submit"
+                      disabled={
+                        renameFolderM.isPending ||
+                        !renameFolderName.trim() ||
+                        renameFolderName.trim() === activeFolder.name
+                      }
+                    >
                       {renameFolderM.isPending ? "Saving…" : "Save folder name"}
                     </Button>
                   </DialogFooter>
@@ -663,8 +675,8 @@ function FilesPage() {
                     This moves the folder and everything inside it to{" "}
                     {pendingFolderMove?.parentId
                       ? `“${folders.find((folder) => folder.id === pendingFolderMove?.parentId)?.name ?? "selected folder"}”`
-                      : "the root folder"}.
-                    Existing files remain attached to the same documents.
+                      : "the root folder"}
+                    . Existing files remain attached to the same documents.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -694,9 +706,8 @@ function FilesPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete folder “{activeFolder.name}”?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This removes the empty folder from the current organisation. Folders
-                    containing files or child folders cannot be deleted. This action cannot
-                    be undone.
+                    This removes the empty folder from the current organisation. Folders containing
+                    files or child folders cannot be deleted. This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -715,7 +726,10 @@ function FilesPage() {
           </div>
         ) : null}
       </section>
-      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-muted/25 p-2" aria-label="Files workspace views">
+      <div
+        className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-muted/25 p-2"
+        aria-label="Files workspace views"
+      >
         <Button
           size="sm"
           variant={activeView === "all" ? "default" : "outline"}
@@ -793,12 +807,17 @@ function FilesPage() {
       </div>
 
       {selected ? (
-        <section aria-label="Selected file details" className="mb-5 rounded-2xl border border-primary/20 bg-card p-5 shadow-card">
+        <section
+          aria-label="Selected file details"
+          className="mb-5 rounded-2xl border border-primary/20 bg-card p-5 shadow-card"
+        >
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
               <FileText className="mt-1 size-5 shrink-0 text-muted-foreground" />
               <div className="min-w-0 space-y-1">
-                <h2 className="break-all text-base font-bold tracking-[-0.02em]">{selected.file_name}</h2>
+                <h2 className="break-all text-base font-bold tracking-[-0.02em]">
+                  {selected.file_name}
+                </h2>
                 <p className="text-sm text-muted-foreground">
                   Attached to: {selected.entityLabel}
                   {selected.entityRef ? ` · ${selected.entityRef}` : ""}

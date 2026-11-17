@@ -539,9 +539,7 @@ export function assertRegistryMatchesNav(): string[] {
     }
   }
   if (sidebar.length !== navItems.length) {
-    failures.push(
-      `Sidebar registry count ${sidebar.length} !== navItems count ${navItems.length}`,
-    );
+    failures.push(`Sidebar registry count ${sidebar.length} !== navItems count ${navItems.length}`);
   }
   const ids = new Set<string>();
   for (const module of MODULE_REGISTRY) {

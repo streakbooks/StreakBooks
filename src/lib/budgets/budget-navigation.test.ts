@@ -20,9 +20,9 @@ describe("Budgets list browsing and return navigation", () => {
   });
 
   it("rejects unsafe redirects and arbitrary list fields", () => {
-    expect(decodeBudgetListReturnContext(
-      "q=budget&returnTo=https%3A%2F%2Fevil.example&admin=true",
-    )).toEqual({ q: "budget" });
+    expect(
+      decodeBudgetListReturnContext("q=budget&returnTo=https%3A%2F%2Fevil.example&admin=true"),
+    ).toEqual({ q: "budget" });
   });
 
   it("bounds query length and rejects malformed inputs", () => {
@@ -32,10 +32,12 @@ describe("Budgets list browsing and return navigation", () => {
   });
 
   it("does not retain any detail route or company identifiers", () => {
-    expect(parseBudgetListSearch({
-      q: "budget",
-      budgetId: "other-budget",
-      companyId: "other-organisation",
-    })).toEqual({ q: "budget" });
+    expect(
+      parseBudgetListSearch({
+        q: "budget",
+        budgetId: "other-budget",
+        companyId: "other-organisation",
+      }),
+    ).toEqual({ q: "budget" });
   });
 });

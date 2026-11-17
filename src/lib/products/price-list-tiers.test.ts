@@ -8,10 +8,18 @@ import {
 import type { DraftTierPriceRule } from "./price-list-tiers";
 
 const rule = (
-  id: string, quantity: string, start: string, end: string | null, price: number,
+  id: string,
+  quantity: string,
+  start: string,
+  end: string | null,
+  price: number,
 ): DraftTierPriceRule => ({
-  id, product_id: "p1", min_quantity: quantity,
-  effective_from: start, effective_to: end, unit_price_minor: price,
+  id,
+  product_id: "p1",
+  min_quantity: quantity,
+  effective_from: start,
+  effective_to: end,
+  unit_price_minor: price,
 });
 
 describe("date-effective quantity pricing", () => {
@@ -34,10 +42,8 @@ describe("date-effective quantity pricing", () => {
 
   it("compares fractional document quantities exactly without rounding to the tier precision", () => {
     const rules = [rule("tier10", "10", "2026-01-01", null, 500)];
-    expect(resolveTierUnitPrice("p1", "9.99999999", "2026-11-06", { p1: 900 }, rules))
-      .toBe(900);
-    expect(resolveTierUnitPrice("p1", "10.00000001", "2026-11-06", { p1: 900 }, rules))
-      .toBe(500);
+    expect(resolveTierUnitPrice("p1", "9.99999999", "2026-11-06", { p1: 900 }, rules)).toBe(900);
+    expect(resolveTierUnitPrice("p1", "10.00000001", "2026-11-06", { p1: 900 }, rules)).toBe(500);
   });
 
   it("applies inclusive effective dates and falls back when no tier is effective", () => {
@@ -59,28 +65,44 @@ describe("date-effective quantity pricing", () => {
   });
 
   it("normalizes safe decimal quantities, validates exact prices and dates", () => {
-    expect(validateRuleInput({
-      minQuantity: "01.2000", effectiveFrom: "2026-11-01", effectiveTo: "2026-11-30",
-      unitPriceMinor: 0,
-    }).minQuantity).toBe("1.2");
+    expect(
+      validateRuleInput({
+        minQuantity: "01.2000",
+        effectiveFrom: "2026-11-01",
+        effectiveTo: "2026-11-30",
+        unitPriceMinor: 0,
+      }).minQuantity,
+    ).toBe("1.2");
     for (const value of ["0", "-1", "1.00001", "x", "999999999999999"]) {
-      expect(() => validateRuleInput({
-        minQuantity: value, effectiveFrom: "2026-11-01", unitPriceMinor: 100,
-      })).toThrow(/Minimum quantity/);
+      expect(() =>
+        validateRuleInput({
+          minQuantity: value,
+          effectiveFrom: "2026-11-01",
+          unitPriceMinor: 100,
+        }),
+      ).toThrow(/Minimum quantity/);
     }
     expect(validRuleDate("2026-02-30")).toBe(false);
     expect(validRuleDate("2028-02-29")).toBe(true);
-    expect(() => validateRuleInput({
-      minQuantity: "1", effectiveFrom: "2026-12-31", effectiveTo: "2026-01-01",
-      unitPriceMinor: 100,
-    })).toThrow(/Effective-to/);
+    expect(() =>
+      validateRuleInput({
+        minQuantity: "1",
+        effectiveFrom: "2026-12-31",
+        effectiveTo: "2026-01-01",
+        unitPriceMinor: 100,
+      }),
+    ).toThrow(/Effective-to/);
   });
 
   it("rejects fractional, unsafe and negative unit-price minor amounts", () => {
     for (const value of [-1, 1.2, Number.MAX_SAFE_INTEGER + 1, NaN]) {
-      expect(() => validateRuleInput({
-        minQuantity: "1", effectiveFrom: "2026-01-01", unitPriceMinor: value,
-      })).toThrow(/safe integer/);
+      expect(() =>
+        validateRuleInput({
+          minQuantity: "1",
+          effectiveFrom: "2026-01-01",
+          unitPriceMinor: value,
+        }),
+      ).toThrow(/safe integer/);
     }
   });
 });

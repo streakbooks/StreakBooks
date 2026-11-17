@@ -30,7 +30,7 @@ describe("buildGenericPayrollBankCsv", () => {
       run_number: "R-1",
       payslip_number: "P-1",
       employee_number: "EMP-1",
-      employee_name: "=HYPERLINK(\"https://example.invalid\",\"click\")",
+      employee_name: '=HYPERLINK("https://example.invalid","click")',
       payment_date: "2026-11-06",
       currency: "GBP",
       amount_minor: 12_345,
@@ -75,24 +75,27 @@ describe("buildGenericPayrollBankCsv", () => {
   });
 
   it("does not alter safe account details or headers", () => {
-    const csv = buildGenericPayrollBankCsv([{
-      run_number: "RUN-1",
-      payslip_number: "PS-1",
-      employee_number: "EMP-1",
-      employee_name: "Ada Lovelace",
-      payment_date: "2026-11-06",
-      currency: "GBP",
-      amount_minor: 1000,
-      account_name: "Ada",
-      bank_name: "National Bank",
-      account_number: "000123",
-      sort_code: "010203",
-      iban: "GB123",
-      bic: "ABCGB",
-      reference: "Payroll November",
-    }]);
+    const csv = buildGenericPayrollBankCsv([
+      {
+        run_number: "RUN-1",
+        payslip_number: "PS-1",
+        employee_number: "EMP-1",
+        employee_name: "Ada Lovelace",
+        payment_date: "2026-11-06",
+        currency: "GBP",
+        amount_minor: 1000,
+        account_name: "Ada",
+        bank_name: "National Bank",
+        account_number: "000123",
+        sort_code: "010203",
+        iban: "GB123",
+        bic: "ABCGB",
+        reference: "Payroll November",
+      },
+    ]);
     expect(csv.split("\n")[0]).toContain("amount_minor");
-    expect(csv).toContain(",Ada Lovelace,2026-11-06,GBP,1000,Ada,National Bank,000123,010203,GB123,ABCGB,Payroll November");
+    expect(csv).toContain(
+      ",Ada Lovelace,2026-11-06,GBP,1000,Ada,National Bank,000123,010203,GB123,ABCGB,Payroll November",
+    );
   });
-
 });

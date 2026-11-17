@@ -8,9 +8,9 @@ const goodLines = [
 
 describe("AI proposal kind metadata", () => {
   it("classifies new journal drafts explicitly", () => {
-    expect(
-      getAiSuggestionKind("draft", { _ai_type: "journal_draft", lines: goodLines }),
-    ).toBe("journal_draft");
+    expect(getAiSuggestionKind("draft", { _ai_type: "journal_draft", lines: goodLines })).toBe(
+      "journal_draft",
+    );
   });
 
   it("keeps invoice/bill/category drafts non-posting even with lines", () => {

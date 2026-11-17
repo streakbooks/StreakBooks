@@ -56,7 +56,10 @@ export function HrManagerPage() {
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Manager Workspace" }]}
       >
         <HrSubnav current="manager" />
-        <EmptyState title="No access" description="You need manager or leave approval permission." />
+        <EmptyState
+          title="No access"
+          description="You need manager or leave approval permission."
+        />
       </ListWorkspace>
     );
   }
@@ -147,7 +150,10 @@ export function HrManagerPage() {
         {inboxQ.isPending ? (
           <LoadingState />
         ) : leave.length === 0 ? (
-          <EmptyState title="No pending leave" description="Team leave approvals will appear here." />
+          <EmptyState
+            title="No pending leave"
+            description="Team leave approvals will appear here."
+          />
         ) : (
           <TableCard>
             <Table>

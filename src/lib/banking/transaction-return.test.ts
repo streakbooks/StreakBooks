@@ -20,30 +20,36 @@ describe("Bank transaction to journal browsing context", () => {
       page: 4,
       pageSize: 100,
     };
-    expect(decodeBankTransactionReturnContext(
-      encodeBankTransactionReturnContext(original),
-    )).toEqual(original);
+    expect(
+      decodeBankTransactionReturnContext(encodeBankTransactionReturnContext(original)),
+    ).toEqual(original);
   });
 
   it("preserves page zero for filtered transaction workspaces", () => {
-    expect(decodeBankTransactionReturnContext(
-      encodeBankTransactionReturnContext({ page: 0, status: "reconciled" }),
-    )).toEqual({ status: "reconciled", page: 0 });
+    expect(
+      decodeBankTransactionReturnContext(
+        encodeBankTransactionReturnContext({ page: 0, status: "reconciled" }),
+      ),
+    ).toEqual({ status: "reconciled", page: 0 });
   });
 
   it("does not permit returnTo URLs or arbitrary query flags", () => {
-    expect(decodeBankTransactionReturnContext(
-      "returnTo=https%3A%2F%2Fevil.example&admin=true&status=matched",
-    )).toEqual({ status: "matched" });
+    expect(
+      decodeBankTransactionReturnContext(
+        "returnTo=https%3A%2F%2Fevil.example&admin=true&status=matched",
+      ),
+    ).toEqual({ status: "matched" });
   });
 
   it("rejects unknown statuses and unsafe IDs", () => {
-    expect(parseBankTransactionReturnSearch({
-      status: "admin",
-      statusGroup: "superuser",
-      bankAccountId: "../other-tenant",
-      direction: "both",
-    })).toEqual({});
+    expect(
+      parseBankTransactionReturnSearch({
+        status: "admin",
+        statusGroup: "superuser",
+        bankAccountId: "../other-tenant",
+        direction: "both",
+      }),
+    ).toEqual({});
   });
 
   it("rejects excessively long search terms and context tokens", () => {
@@ -60,9 +66,13 @@ describe("Bank transaction to journal browsing context", () => {
   });
 
   it("rejects malformed dates and unsupported input types", () => {
-    expect(parseBankTransactionReturnSearch({
-      dateFrom: "yesterday", dateTo: "2026-10-31T00:00:00Z", q: ["test"],
-    })).toEqual({});
+    expect(
+      parseBankTransactionReturnSearch({
+        dateFrom: "yesterday",
+        dateTo: "2026-10-31T00:00:00Z",
+        q: ["test"],
+      }),
+    ).toEqual({});
     expect(decodeBankTransactionReturnContext(null)).toEqual({});
   });
 

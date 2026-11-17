@@ -71,5 +71,3 @@ describe("globalSearch company isolation", () => {
     expect(companyEqCalls.every((args) => args[1] === companyId)).toBe(true);
   });
 });
-
-

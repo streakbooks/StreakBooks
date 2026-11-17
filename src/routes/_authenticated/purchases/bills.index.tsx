@@ -614,10 +614,7 @@ function BillsWorkspace() {
             facts={[
               {
                 label: "Outstanding AP",
-                value: fromMinorUnits(
-                  BigInt(summaryQ.data?.outstandingMinor ?? 0),
-                  baseCurrency,
-                ),
+                value: fromMinorUnits(BigInt(summaryQ.data?.outstandingMinor ?? 0), baseCurrency),
               },
               {
                 label: "Overdue",

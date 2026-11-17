@@ -1,7 +1,6 @@
 export const EXPENSE_PETTY_CASH_FLOAT_STATUSES = ["active", "closed"] as const;
 
-export type ExpensePettyCashFloatStatus =
-  (typeof EXPENSE_PETTY_CASH_FLOAT_STATUSES)[number];
+export type ExpensePettyCashFloatStatus = (typeof EXPENSE_PETTY_CASH_FLOAT_STATUSES)[number];
 
 export type ExpensePettyCashFloat = {
   id: string;
@@ -74,10 +73,7 @@ export function toExpensePettyCashFloatPayload(
 }
 
 /** Amount needed to top the float back up to its target. */
-export function replenishAmountMinor(input: {
-  targetMinor: number;
-  balanceMinor: number;
-}): number {
+export function replenishAmountMinor(input: { targetMinor: number; balanceMinor: number }): number {
   return Math.max(0, input.targetMinor - input.balanceMinor);
 }
 

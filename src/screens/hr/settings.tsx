@@ -75,7 +75,9 @@ export function HrSettingsPage() {
     mutationFn: () => seedDemo({ data: { companyId: company!.id } }),
     onSuccess: async (res) => {
       if (res.skipped) {
-        toast.message(res.reason === "not_demo" ? "Only demo companies can be seeded" : "Seed skipped");
+        toast.message(
+          res.reason === "not_demo" ? "Only demo companies can be seeded" : "Seed skipped",
+        );
         return;
       }
       toast.success(`Demo workforce linked (${res.profilesUpserted} profiles)`);
@@ -194,10 +196,16 @@ export function HrSettingsPage() {
               <div>
                 <p className="font-medium">Seed demo HR workforce</p>
                 <p className="text-sm text-muted-foreground">
-                  Links existing Payroll demo employees into HR org units and profiles. Demo companies only.
+                  Links existing Payroll demo employees into HR org units and profiles. Demo
+                  companies only.
                 </p>
               </div>
-              <Button type="button" variant="outline" disabled={seedMut.isPending} onClick={() => seedMut.mutate()}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={seedMut.isPending}
+                onClick={() => seedMut.mutate()}
+              >
                 {seedMut.isPending ? "Seeding…" : "Seed from Payroll employees"}
               </Button>
             </div>

@@ -48,7 +48,12 @@ export const EXPENSE_MANAGEMENT_SECTIONS = [
     key: "mileage",
     label: "Mileage",
     path: `${EXPENSE_MANAGEMENT_BASE}/mileage`,
-    anyOf: ["expenses.submit", "expenses.view", "expenses.manage_policies", "expenses.admin"] as const,
+    anyOf: [
+      "expenses.submit",
+      "expenses.view",
+      "expenses.manage_policies",
+      "expenses.admin",
+    ] as const,
     batch: "EM-08",
   },
   {

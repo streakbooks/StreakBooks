@@ -31,8 +31,12 @@ describe("AI journal evidence, read-only and source-linked", () => {
   });
 
   it("requires a manual review for unequal or zero posted totals", () => {
-    expect(assessJournalEvidence(posted({ total_credit_minor: 12000 })).status).toBe("review_totals");
-    expect(assessJournalEvidence(posted({ total_debit_minor: 0, total_credit_minor: 0 })).status).toBe("review_totals");
+    expect(assessJournalEvidence(posted({ total_credit_minor: 12000 })).status).toBe(
+      "review_totals",
+    );
+    expect(
+      assessJournalEvidence(posted({ total_debit_minor: 0, total_credit_minor: 0 })).status,
+    ).toBe("review_totals");
   });
 
   it("does not interpret draft journals as posted ledger evidence", () => {
@@ -43,10 +47,12 @@ describe("AI journal evidence, read-only and source-linked", () => {
   });
 
   it("never converts unsafe JavaScript numbers to exact ledger integers", () => {
-    const check = assessJournalEvidence(posted({
-      total_debit_minor: Number.MAX_SAFE_INTEGER + 5,
-      total_credit_minor: Number.MAX_SAFE_INTEGER + 5,
-    }));
+    const check = assessJournalEvidence(
+      posted({
+        total_debit_minor: Number.MAX_SAFE_INTEGER + 5,
+        total_credit_minor: Number.MAX_SAFE_INTEGER + 5,
+      }),
+    );
     expect(check.status).toBe("unavailable");
     expect(check.debit).toBeNull();
   });

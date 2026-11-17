@@ -1,9 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import {
-  DeveloperPortalSectionShell,
-  EmptyPortalTable,
-} from "@/screens/developer/portal-section";
+import { DeveloperPortalSectionShell, EmptyPortalTable } from "@/screens/developer/portal-section";
 
 export function DeveloperApplicationsPage() {
   return (

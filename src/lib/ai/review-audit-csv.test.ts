@@ -13,20 +13,40 @@ const journal = "33333333-3333-4333-8333-333333333333";
 function fixture(): AiJournalReviewAuditExport {
   return {
     review: {
-      id, company_id: company, journal_id: journal,
-      created_by: company, assigned_to: id, reviewed_by: id, reviewed_at: "2026-11-06T10:00:00Z",
-      status: "reviewed", version: 3,
-      created_at: "2026-11-05T10:00:00Z", updated_at: "2026-11-06T10:00:00Z",
-      is_assigned_to_me: true, is_my_case: false,
+      id,
+      company_id: company,
+      journal_id: journal,
+      created_by: company,
+      assigned_to: id,
+      reviewed_by: id,
+      reviewed_at: "2026-11-06T10:00:00Z",
+      status: "reviewed",
+      version: 3,
+      created_at: "2026-11-05T10:00:00Z",
+      updated_at: "2026-11-06T10:00:00Z",
+      is_assigned_to_me: true,
+      is_my_case: false,
     },
     events: [
       {
-        id: company, actor_id: id, action: "comment", note: "Reviewed supplier invoices",
-        previous_status: "assigned", new_status: "assigned", assigned_to: id, created_at: "2026-11-06T09:00:00Z",
+        id: company,
+        actor_id: id,
+        action: "comment",
+        note: "Reviewed supplier invoices",
+        previous_status: "assigned",
+        new_status: "assigned",
+        assigned_to: id,
+        created_at: "2026-11-06T09:00:00Z",
       },
       {
-        id, actor_id: id, action: "sign_off", note: "All evidence inspected",
-        previous_status: "assigned", new_status: "reviewed", assigned_to: id, created_at: "2026-11-06T10:00:00Z",
+        id,
+        actor_id: id,
+        action: "sign_off",
+        note: "All evidence inspected",
+        previous_status: "assigned",
+        new_status: "reviewed",
+        assigned_to: id,
+        created_at: "2026-11-06T10:00:00Z",
       },
     ],
   };
@@ -38,7 +58,9 @@ describe("AI review case audit CSV security and completeness", () => {
     expect(csv.split("\r\n").filter(Boolean)).toHaveLength(3);
     for (const key of AI_REVIEW_AUDIT_CSV_COLUMNS)
       expect(csv.split("\r\n")[0]).toContain('"' + key + '"');
-    expect(csv.indexOf("Reviewed supplier invoices")).toBeLessThan(csv.indexOf("All evidence inspected"));
+    expect(csv.indexOf("Reviewed supplier invoices")).toBeLessThan(
+      csv.indexOf("All evidence inspected"),
+    );
   });
 
   it("encodes commas and quoted comments as one CSV field", () => {
@@ -46,7 +68,14 @@ describe("AI review case audit CSV security and completeness", () => {
   });
 
   it("prefixes dangerous spreadsheet formulas, including leading whitespace", () => {
-    for (const value of ["=HYPERLINK(\"test\")", "+3", "-2", "@cmd", "  =SUM(A1:A2)", "\t+SUM(A1:A2)"]) {
+    for (const value of [
+      '=HYPERLINK("test")',
+      "+3",
+      "-2",
+      "@cmd",
+      "  =SUM(A1:A2)",
+      "\t+SUM(A1:A2)",
+    ]) {
       expect(auditCsvField(value)).toBe('"' + "'" + value.replaceAll('"', '""') + '"');
     }
   });
@@ -70,6 +99,8 @@ describe("AI review case audit CSV security and completeness", () => {
   });
 
   it("does not add financial posting or approval columns", () => {
-    expect(AI_REVIEW_AUDIT_CSV_COLUMNS.join(",")).not.toMatch(/post_journal|authorise_payment|workpaper_approve/);
+    expect(AI_REVIEW_AUDIT_CSV_COLUMNS.join(",")).not.toMatch(
+      /post_journal|authorise_payment|workpaper_approve/,
+    );
   });
 });

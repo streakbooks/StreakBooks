@@ -30,11 +30,7 @@ import {
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import {
-  getHrEmployee,
-  listHrOrgUnits,
-  upsertHrEmployeeProfile,
-} from "@/lib/hr/hr.functions";
+import { getHrEmployee, listHrOrgUnits, upsertHrEmployeeProfile } from "@/lib/hr/hr.functions";
 import { HR_WORK_ARRANGEMENTS } from "@/lib/hr/types";
 
 type ProfileDraft = {
@@ -187,7 +183,10 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
   if (!detailQ.data) {
     return (
       <RecordWorkspace title="Employee" description="HR profile">
-        <EmptyState title="Employee not found" description="Return to the directory and try again." />
+        <EmptyState
+          title="Employee not found"
+          description="Return to the directory and try again."
+        />
       </RecordWorkspace>
     );
   }
@@ -212,11 +211,7 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
             </Link>
           </Button>
           {canManage ? (
-            <Button
-              type="button"
-              onClick={() => saveMut.mutate()}
-              disabled={saveMut.isPending}
-            >
+            <Button type="button" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
               {saveMut.isPending ? "Saving…" : "Save HR profile"}
             </Button>
           ) : null}

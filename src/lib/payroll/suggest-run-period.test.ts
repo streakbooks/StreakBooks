@@ -91,8 +91,18 @@ describe("suggestNextRunPeriod", () => {
       schedule,
       payrollStartDate: "2026-01-01",
       priorRuns: [
-        { pay_schedule_id: "sched-1", period_start: "2026-05-01", period_end: "2026-05-31", status: "void" },
-        { pay_schedule_id: "sched-1", period_start: "2026-03-01", period_end: "2026-03-31", status: "posted" },
+        {
+          pay_schedule_id: "sched-1",
+          period_start: "2026-05-01",
+          period_end: "2026-05-31",
+          status: "void",
+        },
+        {
+          pay_schedule_id: "sched-1",
+          period_start: "2026-03-01",
+          period_end: "2026-03-31",
+          status: "posted",
+        },
       ],
     });
     expect(result?.periodStart).toBe("2026-04-01");
@@ -100,23 +110,26 @@ describe("suggestNextRunPeriod", () => {
 
   it("rejects impossible start dates instead of rolling them into the next month", () => {
     for (const invalid of ["2026-02-30", "2026-13-01", "0000-01-01"]) {
-      expect(suggestNextRunPeriod({
-        schedule,
-        payrollStartDate: invalid,
-        priorRuns: [],
-      })).toBeNull();
+      expect(
+        suggestNextRunPeriod({
+          schedule,
+          payrollStartDate: invalid,
+          priorRuns: [],
+        }),
+      ).toBeNull();
     }
   });
 
   it("preserves early years without Date.UTC remapping", () => {
-    expect(suggestNextRunPeriod({
-      schedule: { ...schedule, frequency: "weekly", payment_offset_days: 0 },
-      payrollStartDate: "0099-01-01",
-      priorRuns: [],
-    })).toMatchObject({
+    expect(
+      suggestNextRunPeriod({
+        schedule: { ...schedule, frequency: "weekly", payment_offset_days: 0 },
+        payrollStartDate: "0099-01-01",
+        priorRuns: [],
+      }),
+    ).toMatchObject({
       periodStart: "0099-01-01",
       periodEnd: "0099-01-07",
     });
   });
-
 });

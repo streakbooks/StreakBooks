@@ -3,12 +3,13 @@
 export type CrmQueryError = { message: string; code?: string } | null;
 
 export type CrmFilterBuilder = {
-  eq: (column: string, value: string) => CrmFilterBuilder;
+  select: (columns: string) => CrmFilterBuilder;
+  eq: (column: string, value: string | number | boolean) => CrmFilterBuilder;
   is: (column: string, value: null) => CrmFilterBuilder;
   not: (column: string, op: string, value: string | null) => CrmFilterBuilder;
   or: (filters: string) => CrmFilterBuilder;
-  gte: (column: string, value: string) => CrmFilterBuilder;
-  lt: (column: string, value: string) => CrmFilterBuilder;
+  gte: (column: string, value: string | number | boolean) => CrmFilterBuilder;
+  lt: (column: string, value: string | number | boolean) => CrmFilterBuilder;
   in: (column: string, values: string[]) => CrmFilterBuilder;
   order: (column: string, opts?: { ascending?: boolean }) => CrmFilterBuilder;
   limit: (n: number) => PromiseLike<{ data: unknown; error: CrmQueryError }>;
@@ -20,6 +21,7 @@ export type CrmFilterBuilder = {
 
 export type CrmTableClient = {
   from: (table: string) => {
+    update: (values: Record<string, unknown>) => CrmFilterBuilder;
     select: (columns: string) => CrmFilterBuilder;
   };
 };

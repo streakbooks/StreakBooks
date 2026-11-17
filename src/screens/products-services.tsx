@@ -122,7 +122,11 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
-    "code", "kind", "salesPrice", "purchaseCost", "status",
+    "code",
+    "kind",
+    "salesPrice",
+    "purchaseCost",
+    "status",
   ]);
 
   const [q, setQ] = useState("");
@@ -165,13 +169,26 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
 
   const productsQ = useQuery({
     queryKey: [
-      "products-page", companyId, debouncedQ, kind,
-      categoryFilter, status, sort, page, pageSize,
+      "products-page",
+      companyId,
+      debouncedQ,
+      kind,
+      categoryFilter,
+      status,
+      sort,
+      page,
+      pageSize,
     ],
     queryFn: () =>
       fetchProducts({
         data: {
-          companyId, q: debouncedQ, kind, status, sort, page, pageSize,
+          companyId,
+          q: debouncedQ,
+          kind,
+          status,
+          sort,
+          page,
+          pageSize,
           ...(categoryFilter !== "all" ? { categoryId: categoryFilter } : {}),
         },
       }),
@@ -205,9 +222,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
     queryKey: ["product-categories", companyId],
     queryFn: () => fetchCategories({ data: { companyId } }),
   });
-  const categoryNameById = new Map(
-    (categoriesQ.data ?? []).map((item) => [item.id, item.name]),
-  );
+  const categoryNameById = new Map((categoriesQ.data ?? []).map((item) => [item.id, item.name]));
 
   const taxCodesQ = useQuery({
     queryKey: ["tax-codes", companyId],
@@ -270,9 +285,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
           is_active: boolean;
           is_postable: boolean;
         }>
-      ).filter((a) =>
-        a.is_active && a.is_postable && a.account_type === "expense",
-      ),
+      ).filter((a) => a.is_active && a.is_postable && a.account_type === "expense"),
     [accountsQ.data],
   );
 
@@ -326,12 +339,17 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   });
 
   const exportMut = useMutation({
-    mutationFn: () => exportProducts({
-      data: {
-        companyId, q, kind, status, sort,
-        ...(categoryFilter !== "all" ? { categoryId: categoryFilter } : {}),
-      },
-    }),
+    mutationFn: () =>
+      exportProducts({
+        data: {
+          companyId,
+          q,
+          kind,
+          status,
+          sort,
+          ...(categoryFilter !== "all" ? { categoryId: categoryFilter } : {}),
+        },
+      }),
     onSuccess: (file) => {
       downloadCsv(file.filename, file.csv);
       toast.success(`Exported ${file.count} catalogue item(s) in ${file.currency}`);
@@ -373,7 +391,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const bulkMut = useMutation({
     mutationFn: (action: "archive" | "restore") => {
       const productIds = selectedRows
-        .filter((item) => action === "archive" ? item.is_active : !item.is_active)
+        .filter((item) => (action === "archive" ? item.is_active : !item.is_active))
         .map((item) => item.id);
       if (!productIds.length) throw new Error("No eligible items selected");
       return updateMany({ data: { companyId, productIds, isActive: action === "restore" } });
@@ -584,7 +602,8 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
             <SelectItem value="all">All categories</SelectItem>
             {(categoriesQ.data ?? []).map((category) => (
               <SelectItem value={category.id} key={category.id}>
-                {category.name}{category.is_active ? "" : " (archived)"}
+                {category.name}
+                {category.is_active ? "" : " (archived)"}
               </SelectItem>
             ))}
           </SelectContent>
@@ -713,9 +732,11 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
           <EmptyState
             icon={Package}
             title={hasFilters ? "No matching items" : "No products yet"}
-            description={hasFilters
-              ? "Try another search, kind or status filter."
-              : "Create services and non-inventory items with default accounts and tax rates."}
+            description={
+              hasFilters
+                ? "Try another search, kind or status filter."
+                : "Create services and non-inventory items with default accounts and tax rates."
+            }
           />
           <div className="flex justify-center">
             {hasFilters ? (
@@ -813,9 +834,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                       ) : null}
                       {showColumn("category") ? (
                         <TableCell>
-                          {p.category_id
-                            ? categoryNameById.get(p.category_id) ?? "Unknown"
-                            : "—"}
+                          {p.category_id ? (categoryNameById.get(p.category_id) ?? "Unknown") : "—"}
                         </TableCell>
                       ) : null}
                       {showColumn("salesPrice") ? (
@@ -946,8 +965,8 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
             <DialogTitle>Set a fixed price for selected items</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            This replaces one catalogue price field on {selectedRows.length} selected items.
-            It does not adjust prices by a percentage or change existing invoices, bills or journals.
+            This replaces one catalogue price field on {selectedRows.length} selected items. It does
+            not adjust prices by a percentage or change existing invoices, bills or journals.
           </p>
           <div className="grid gap-2">
             <Label>Price to replace</Label>
@@ -1115,7 +1134,8 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                     .filter((category) => category.is_active || category.id === form.categoryId)
                     .map((category) => (
                       <SelectItem value={category.id} key={category.id}>
-                        {category.name}{category.is_active ? "" : " (archived)"}
+                        {category.name}
+                        {category.is_active ? "" : " (archived)"}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -1256,11 +1276,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
             />
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              disabled={saveMut.isPending}
-              onClick={() => setOpen(false)}
-            >
+            <Button variant="outline" disabled={saveMut.isPending} onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button

@@ -12,16 +12,22 @@ import path from "node:path";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const name = "linkbooks-tax-gl-review-" + process.pid;
 const dockerEnv = { ...process.env };
-for (const key of ["DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS",
-  "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH"]) {
+for (const key of [
+  "DOCKER_HOST",
+  "DOCKER_CONTEXT",
+  "DOCKER_TLS",
+  "DOCKER_TLS_VERIFY",
+  "DOCKER_CERT_PATH",
+]) {
   delete dockerEnv[key];
 }
 
 function docker(args, input) {
   // Force a local Docker daemon: Unix socket on Linux/macOS, Docker pipe on Windows.
-  const localHost = process.platform === "win32"
-    ? "--host=npipe:////./pipe/docker_engine"
-    : "--host=unix:///var/run/docker.sock";
+  const localHost =
+    process.platform === "win32"
+      ? "--host=npipe:////./pipe/docker_engine"
+      : "--host=unix:///var/run/docker.sock";
   return execFileSync("docker", [localHost, ...args], {
     env: dockerEnv,
     input,
@@ -31,19 +37,45 @@ function docker(args, input) {
 }
 
 function sql(text) {
-  return docker([
-    "exec", "-i", name, "psql", "-h", "127.0.0.1", "-X", "-q",
-    "-A", "-t", "-U", "postgres", "-v", "ON_ERROR_STOP=1",
-  ], text);
+  return docker(
+    [
+      "exec",
+      "-i",
+      name,
+      "psql",
+      "-h",
+      "127.0.0.1",
+      "-X",
+      "-q",
+      "-A",
+      "-t",
+      "-U",
+      "postgres",
+      "-v",
+      "ON_ERROR_STOP=1",
+    ],
+    text,
+  );
 }
 
 const read = (p) => readFileSync(path.join(root, p), "utf8");
 let started = false;
 try {
   docker([
-    "run", "--detach", "--rm", "--name", name, "--network", "none",
-    "--cpus", "2", "--memory", "768m",
-    "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "postgres:17",
+    "run",
+    "--detach",
+    "--rm",
+    "--name",
+    name,
+    "--network",
+    "none",
+    "--cpus",
+    "2",
+    "--memory",
+    "768m",
+    "-e",
+    "POSTGRES_HOST_AUTH_METHOD=trust",
+    "postgres:17",
   ]);
   started = true;
   let ready = false;

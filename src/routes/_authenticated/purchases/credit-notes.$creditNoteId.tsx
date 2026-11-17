@@ -383,281 +383,285 @@ function CreditNoteDetail() {
           </div>
         }
       >
-      <div className="mb-4 flex flex-wrap gap-3 text-sm">
-        <StatusBadge status={cn.status} />
-        <span>#{cn.credit_number ?? "—"}</span>
-        <span>
-          Total {fromMinorUnits(cn.total_minor, currency)} {currency}
-        </span>
-        <span>Allocated {fromMinorUnits(cn.amount_allocated_minor, currency)}</span>
-        <span>Remaining {fromMinorUnits(remaining, currency)}</span>
-      </div>
-
-      {editing ? (
-        <div className="mb-6 max-w-3xl space-y-3 rounded-md border p-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Memo</Label>
-              <Input value={editMemo} onChange={(e) => setEditMemo(e.target.value)} />
-            </div>
-          </div>
-          {editLines.map((l, i) => (
-            <div
-              key={i}
-              className="grid gap-2 rounded border p-2 sm:grid-cols-[2fr_2fr_1fr_1fr_auto]"
-            >
-              <Input
-                placeholder="Description"
-                value={l.description}
-                onChange={(e) =>
-                  setEditLines((rows) =>
-                    rows.map((r, j) => (j === i ? { ...r, description: e.target.value } : r)),
-                  )
-                }
-              />
-              <AccountLookup
-                ariaLabel={`Line ${i + 1} account`}
-                purpose="expense"
-                productKind="product"
-                accounts={accounts}
-                value={l.accountId}
-                onChange={(v) =>
-                  setEditLines((rows) => rows.map((r, j) => (j === i ? { ...r, accountId: v } : r)))
-                }
-                companyId={companyId}
-                placeholder="Account"
-                allowClear={false}
-              />
-              <Input
-                placeholder="Net"
-                inputMode="decimal"
-                aria-invalid={tryParseMinor(l.net || "0", currency) === null}
-                value={l.net}
-                onChange={(e) =>
-                  setEditLines((rows) =>
-                    rows.map((r, j) => (j === i ? { ...r, net: e.target.value } : r)),
-                  )
-                }
-              />
-              <Input
-                placeholder="Tax"
-                inputMode="decimal"
-                aria-invalid={tryParseMinor(l.tax || "0", currency) === null}
-                value={l.tax}
-                onChange={(e) =>
-                  setEditLines((rows) =>
-                    rows.map((r, j) => (j === i ? { ...r, tax: e.target.value } : r)),
-                  )
-                }
-              />
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={editLines.length <= 1}
-                onClick={() => setEditLines((rows) => rows.filter((_, j) => j !== i))}
-              >
-                Remove
-              </Button>
-            </div>
-          ))}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                setEditLines((rows) => [
-                  ...rows,
-                  { description: "", accountId: "", net: "0.00", tax: "0.00" },
-                ])
-              }
-            >
-              Add line
-            </Button>
-            <Button
-              size="sm"
-              disabled={
-                saveEditM.isPending ||
-                editLines.some(
-                  (l) =>
-                    tryParseMinor(l.net || "0", currency) === null ||
-                    tryParseMinor(l.tax || "0", currency) === null ||
-                    !l.accountId,
-                )
-              }
-              onClick={() => saveEditM.mutate()}
-            >
-              {saveEditM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Save draft
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-              Cancel
-            </Button>
-          </div>
+        <div className="mb-4 flex flex-wrap gap-3 text-sm">
+          <StatusBadge status={cn.status} />
+          <span>#{cn.credit_number ?? "—"}</span>
+          <span>
+            Total {fromMinorUnits(cn.total_minor, currency)} {currency}
+          </span>
+          <span>Allocated {fromMinorUnits(cn.amount_allocated_minor, currency)}</span>
+          <span>Remaining {fromMinorUnits(remaining, currency)}</span>
         </div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Net</TableHead>
-              <TableHead className="text-right">Tax</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cn.purchase_credit_note_lines.map((l) => (
-              <TableRow key={l.id}>
-                <TableCell>{l.description}</TableCell>
-                <TableCell className="text-right">
-                  {fromMinorUnits(l.net_minor, currency)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {fromMinorUnits(l.tax_minor, currency)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
 
-      {cn.purchase_credit_allocations.length > 0 ? (
-        <div className="mt-6 space-y-2 rounded-md border p-4">
-          <div className="flex items-center justify-between gap-2">
-            <Label>Allocated to bills</Label>
-            {can("purchases.payment") && cn.status !== "void" ? (
+        {editing ? (
+          <div className="mb-6 max-w-3xl space-y-3 rounded-md border p-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Memo</Label>
+                <Input value={editMemo} onChange={(e) => setEditMemo(e.target.value)} />
+              </div>
+            </div>
+            {editLines.map((l, i) => (
+              <div
+                key={i}
+                className="grid gap-2 rounded border p-2 sm:grid-cols-[2fr_2fr_1fr_1fr_auto]"
+              >
+                <Input
+                  placeholder="Description"
+                  value={l.description}
+                  onChange={(e) =>
+                    setEditLines((rows) =>
+                      rows.map((r, j) => (j === i ? { ...r, description: e.target.value } : r)),
+                    )
+                  }
+                />
+                <AccountLookup
+                  ariaLabel={`Line ${i + 1} account`}
+                  purpose="expense"
+                  productKind="product"
+                  accounts={accounts}
+                  value={l.accountId}
+                  onChange={(v) =>
+                    setEditLines((rows) =>
+                      rows.map((r, j) => (j === i ? { ...r, accountId: v } : r)),
+                    )
+                  }
+                  companyId={companyId}
+                  placeholder="Account"
+                  allowClear={false}
+                />
+                <Input
+                  placeholder="Net"
+                  inputMode="decimal"
+                  aria-invalid={tryParseMinor(l.net || "0", currency) === null}
+                  value={l.net}
+                  onChange={(e) =>
+                    setEditLines((rows) =>
+                      rows.map((r, j) => (j === i ? { ...r, net: e.target.value } : r)),
+                    )
+                  }
+                />
+                <Input
+                  placeholder="Tax"
+                  inputMode="decimal"
+                  aria-invalid={tryParseMinor(l.tax || "0", currency) === null}
+                  value={l.tax}
+                  onChange={(e) =>
+                    setEditLines((rows) =>
+                      rows.map((r, j) => (j === i ? { ...r, tax: e.target.value } : r)),
+                    )
+                  }
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={editLines.length <= 1}
+                  onClick={() => setEditLines((rows) => rows.filter((_, j) => j !== i))}
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+            <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
                 variant="outline"
-                disabled={unallocateM.isPending}
-                onClick={() => {
-                  if (confirm("Remove every allocation from this credit note?")) {
-                    unallocateM.mutate(undefined);
-                  }
-                }}
+                onClick={() =>
+                  setEditLines((rows) => [
+                    ...rows,
+                    { description: "", accountId: "", net: "0.00", tax: "0.00" },
+                  ])
+                }
               >
-                Remove all allocations
+                Add line
               </Button>
-            ) : null}
-          </div>
-          <ul className="space-y-1 text-sm">
-            {cn.purchase_credit_allocations.map((a) => (
-              <li
-                key={a.id}
-                className="flex items-center justify-between gap-2 rounded border px-3 py-2"
+              <Button
+                size="sm"
+                disabled={
+                  saveEditM.isPending ||
+                  editLines.some(
+                    (l) =>
+                      tryParseMinor(l.net || "0", currency) === null ||
+                      tryParseMinor(l.tax || "0", currency) === null ||
+                      !l.accountId,
+                  )
+                }
+                onClick={() => saveEditM.mutate()}
               >
-                <Link
-                  to="/purchases/bills/$billId"
-                  params={{ billId: a.bill_id }}
-                  className="underline-offset-2 hover:underline"
-                >
-                  {billLabel(a)}
-                </Link>
-                <span className="tabular-nums">{fromMinorUnits(a.amount_minor, currency)}</span>
-                {can("purchases.payment") && cn.status !== "void" ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={unallocateM.isPending}
-                    onClick={() => unallocateM.mutate(a.bill_id)}
-                  >
-                    Remove
-                  </Button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+                {saveEditM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                Save draft
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Description</TableHead>
+                <TableHead className="text-right">Net</TableHead>
+                <TableHead className="text-right">Tax</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {cn.purchase_credit_note_lines.map((l) => (
+                <TableRow key={l.id}>
+                  <TableCell>{l.description}</TableCell>
+                  <TableCell className="text-right">
+                    {fromMinorUnits(l.net_minor, currency)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {fromMinorUnits(l.tax_minor, currency)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
 
-      {canAllocate && can("purchases.payment") ? (
-        <div className="mt-8 space-y-3 rounded-md border p-4">
-          <Label>
-            Allocate remaining credit ({fromMinorUnits(remaining, currency)} {currency})
-          </Label>
-          {openBills.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No open {currency} bills for this supplier.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {openBills.map((b) => {
-                const checked = b.id in allocs;
-                return (
-                  <li
-                    key={b.id}
-                    className="flex flex-wrap items-center gap-3 rounded border px-3 py-2"
+        {cn.purchase_credit_allocations.length > 0 ? (
+          <div className="mt-6 space-y-2 rounded-md border p-4">
+            <div className="flex items-center justify-between gap-2">
+              <Label>Allocated to bills</Label>
+              {can("purchases.payment") && cn.status !== "void" ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={unallocateM.isPending}
+                  onClick={() => {
+                    if (confirm("Remove every allocation from this credit note?")) {
+                      unallocateM.mutate(undefined);
+                    }
+                  }}
+                >
+                  Remove all allocations
+                </Button>
+              ) : null}
+            </div>
+            <ul className="space-y-1 text-sm">
+              {cn.purchase_credit_allocations.map((a) => (
+                <li
+                  key={a.id}
+                  className="flex items-center justify-between gap-2 rounded border px-3 py-2"
+                >
+                  <Link
+                    to="/purchases/bills/$billId"
+                    params={{ billId: a.bill_id }}
+                    className="underline-offset-2 hover:underline"
                   >
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(v) => {
-                        setAllocs((prev) => {
-                          const next = { ...prev };
-                          if (!v) {
-                            delete next[b.id];
-                            return next;
-                          }
-                          const already = Object.entries(prev).reduce(
-                            (s, [id, amt]) =>
-                              id === b.id ? s : s + Number(minorOrZero(amt || "0", currency)),
-                            0,
-                          );
-                          next[b.id] = fromMinorUnits(
-                            Math.max(0, Math.min(b.outstanding, remaining - already)),
-                            currency,
-                          );
-                          return next;
-                        });
-                      }}
-                    />
-                    <div className="min-w-0 flex-1 text-sm">
-                      <p>
-                        {b.supplier_invoice_number ?? b.bill_number ?? b.id.slice(0, 8)} ·{" "}
-                        {b.bill_date}
-                      </p>
-                      <p className="text-muted-foreground">
-                        Due {b.due_date} · Outstanding {fromMinorUnits(b.outstanding, currency)}
-                      </p>
-                    </div>
-                    {checked ? (
-                      <Input
-                        className="w-28"
-                        inputMode="decimal"
-                        value={allocs[b.id] ?? ""}
-                        onChange={(e) => setAllocs((prev) => ({ ...prev, [b.id]: e.target.value }))}
-                      />
-                    ) : null}
-                  </li>
-                );
-              })}
+                    {billLabel(a)}
+                  </Link>
+                  <span className="tabular-nums">{fromMinorUnits(a.amount_minor, currency)}</span>
+                  {can("purchases.payment") && cn.status !== "void" ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={unallocateM.isPending}
+                      onClick={() => unallocateM.mutate(a.bill_id)}
+                    >
+                      Remove
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
             </ul>
-          )}
-          {allocTotal > remaining ? (
-            <p className="text-xs text-destructive">
-              Allocations exceed the remaining credit by{" "}
-              {fromMinorUnits(allocTotal - remaining, currency)}.
-            </p>
-          ) : null}
-          <Button
-            size="sm"
-            disabled={
-              allocateM.isPending || allocInvalid || allocTotal > remaining || allocTotal <= 0
-            }
-            onClick={() => allocateM.mutate()}
-          >
-            {allocateM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            Allocate credit
-          </Button>
-        </div>
-      ) : null}
-      <DocumentActions kind="purchase_credit_note" id={creditNoteId} />
-      <DocumentRecordPanel
-        entityType="purchase_credit_note"
-        entityId={creditNoteId}
-        audience="supplier"
-      />
+          </div>
+        ) : null}
+
+        {canAllocate && can("purchases.payment") ? (
+          <div className="mt-8 space-y-3 rounded-md border p-4">
+            <Label>
+              Allocate remaining credit ({fromMinorUnits(remaining, currency)} {currency})
+            </Label>
+            {openBills.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No open {currency} bills for this supplier.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {openBills.map((b) => {
+                  const checked = b.id in allocs;
+                  return (
+                    <li
+                      key={b.id}
+                      className="flex flex-wrap items-center gap-3 rounded border px-3 py-2"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => {
+                          setAllocs((prev) => {
+                            const next = { ...prev };
+                            if (!v) {
+                              delete next[b.id];
+                              return next;
+                            }
+                            const already = Object.entries(prev).reduce(
+                              (s, [id, amt]) =>
+                                id === b.id ? s : s + Number(minorOrZero(amt || "0", currency)),
+                              0,
+                            );
+                            next[b.id] = fromMinorUnits(
+                              Math.max(0, Math.min(b.outstanding, remaining - already)),
+                              currency,
+                            );
+                            return next;
+                          });
+                        }}
+                      />
+                      <div className="min-w-0 flex-1 text-sm">
+                        <p>
+                          {b.supplier_invoice_number ?? b.bill_number ?? b.id.slice(0, 8)} ·{" "}
+                          {b.bill_date}
+                        </p>
+                        <p className="text-muted-foreground">
+                          Due {b.due_date} · Outstanding {fromMinorUnits(b.outstanding, currency)}
+                        </p>
+                      </div>
+                      {checked ? (
+                        <Input
+                          className="w-28"
+                          inputMode="decimal"
+                          value={allocs[b.id] ?? ""}
+                          onChange={(e) =>
+                            setAllocs((prev) => ({ ...prev, [b.id]: e.target.value }))
+                          }
+                        />
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {allocTotal > remaining ? (
+              <p className="text-xs text-destructive">
+                Allocations exceed the remaining credit by{" "}
+                {fromMinorUnits(allocTotal - remaining, currency)}.
+              </p>
+            ) : null}
+            <Button
+              size="sm"
+              disabled={
+                allocateM.isPending || allocInvalid || allocTotal > remaining || allocTotal <= 0
+              }
+              onClick={() => allocateM.mutate()}
+            >
+              {allocateM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Allocate credit
+            </Button>
+          </div>
+        ) : null}
+        <DocumentActions kind="purchase_credit_note" id={creditNoteId} />
+        <DocumentRecordPanel
+          entityType="purchase_credit_note"
+          entityId={creditNoteId}
+          audience="supplier"
+        />
       </RecordWorkspace>
     </>
   );

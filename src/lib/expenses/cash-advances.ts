@@ -161,7 +161,9 @@ export function buildCashAdvanceSettlementCredit(input: {
   advanceAccountId: string;
   amountMinor: number;
   advanceNumber: string;
-}): { ok: true; accountId: string; creditMinor: number; description: string } | { ok: false; error: string } {
+}):
+  | { ok: true; accountId: string; creditMinor: number; description: string }
+  | { ok: false; error: string } {
   if (!input.advanceAccountId) {
     return { ok: false, error: "Employee advance account is required." };
   }

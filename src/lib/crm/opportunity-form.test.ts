@@ -4,11 +4,17 @@ import { validateOpportunityForm } from "@/lib/crm/opportunity-form";
 describe("validateOpportunityForm", () => {
   it("converts valid input to minor units", () => {
     expect(validateOpportunityForm("New renewal", "340.25")).toEqual({
-      valid: true, amountMinor: 34025, message: null,
+      valid: true,
+      amountMinor: 34025,
+      message: null,
     });
-    expect(validateOpportunityForm("New renewal", ".50")).toMatchObject({ valid: true, amountMinor: 50 });
+    expect(validateOpportunityForm("New renewal", ".50")).toMatchObject({
+      valid: true,
+      amountMinor: 50,
+    });
     expect(validateOpportunityForm("New renewal", "")).toMatchObject({
-      valid: true, amountMinor: 0,
+      valid: true,
+      amountMinor: 0,
     });
   });
 

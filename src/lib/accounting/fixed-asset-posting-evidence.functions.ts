@@ -26,10 +26,8 @@ const ASSET_COLUMNS =
   "id, company_id, cost_minor, opening_accumulated_minor, asset_account_id, accumulated_account_id, expense_account_id, status, purchase_date, disposal_date, disposal_proceeds_minor, disposal_journal_id";
 const JOURNAL_COLUMNS =
   "id, company_id, journal_date, currency_code, status, source_type, source_id, idempotency_key, reversed_by_journal_id";
-const LINE_COLUMNS =
-  "id, company_id, journal_id, line_no, account_id, debit_minor, credit_minor";
-const ENTRY_COLUMNS =
-  "id, company_id, asset_id, run_id, period_end, journal_id, amount_minor";
+const LINE_COLUMNS = "id, company_id, journal_id, line_no, account_id, debit_minor, credit_minor";
+const ENTRY_COLUMNS = "id, company_id, asset_id, run_id, period_end, journal_id, amount_minor";
 
 // Use <= 500 so the database default 1000-row REST cap cannot silently
 // return an incomplete set. Reaching the sentinel throws, never "passes".
@@ -42,7 +40,9 @@ type ServerSb = Parameters<typeof assertCompanyPermission>[0];
 type Evidence = { journal: AssetPostingJournal; lines: AssetPostingLine[] };
 
 async function readJournalEvidence(
-  sb: ServerSb, companyId: string, journalId: string,
+  sb: ServerSb,
+  companyId: string,
+  journalId: string,
   requiredAccountIds: readonly string[],
 ): Promise<Evidence> {
   const { data: rawJournal, error: journalError } = await sb
@@ -73,10 +73,13 @@ async function readJournalEvidence(
 
   // Audit even a posted journal's actual account ownership. Checking only
   // journal_lines.account_id would rely on a potentially stale source mapping.
-  const accountIds = [...new Set([
-    ...requiredAccountIds,
-    ...lines.map((line) => line.account_id),
-  ].filter((id): id is string => typeof id === "string" && id.length > 0))];
+  const accountIds = [
+    ...new Set(
+      [...requiredAccountIds, ...lines.map((line) => line.account_id)].filter(
+        (id): id is string => typeof id === "string" && id.length > 0,
+      ),
+    ),
+  ];
   if (accountIds.length > ACCOUNT_LIMIT) {
     throw new Error("Fixed Asset posting account evidence exceeds the safe review boundary.");
   }
@@ -89,12 +92,16 @@ async function readJournalEvidence(
       .limit(ACCOUNT_LIMIT + 1);
     if (accountsError) throw new Error(accountsError.message);
     const accounts = (rawAccounts ?? []) as unknown as Array<{
-      id: string; company_id: string;
+      id: string;
+      company_id: string;
     }>;
-    if (accounts.length !== accountIds.length ||
-        new Set(accounts.map((a) => a.id)).size !== accountIds.length ||
-        accounts.some((account) => account.company_id !== companyId ||
-          !accountIds.includes(account.id))) {
+    if (
+      accounts.length !== accountIds.length ||
+      new Set(accounts.map((a) => a.id)).size !== accountIds.length ||
+      accounts.some(
+        (account) => account.company_id !== companyId || !accountIds.includes(account.id),
+      )
+    ) {
       throw new Error("Fixed Asset posting refers to missing, duplicated or foreign GL accounts.");
     }
   }
@@ -129,7 +136,9 @@ export const auditAssetDepreciationPosting = createServerFn({ method: "GET" })
       throw new Error("Depreciation run organisation or identity mismatch.");
     }
     if (!run.journal_id) {
-      throw new Error("Selected depreciation run has no linked journal; no posting audit can pass.");
+      throw new Error(
+        "Selected depreciation run has no linked journal; no posting audit can pass.",
+      );
     }
     // One SQL run writes <= 2 GL lines per positive entry; >200 rows must
     // be split into a future paged evidence API, never silently truncated.
@@ -158,20 +167,31 @@ export const auditAssetDepreciationPosting = createServerFn({ method: "GET" })
       if (assetError) throw new Error(assetError.message);
       assets = (rawAssets ?? []) as unknown as AssetPostingAsset[];
       // Explicitly fail closed on an incomplete or cross-company read.
-      if (assets.length !== assetIds.length ||
-          new Set(assets.map((asset) => asset.id)).size !== assetIds.length ||
-          assets.some((asset) => asset.company_id !== data.companyId ||
-            !assetIds.includes(asset.id))) {
+      if (
+        assets.length !== assetIds.length ||
+        new Set(assets.map((asset) => asset.id)).size !== assetIds.length ||
+        assets.some((asset) => asset.company_id !== data.companyId || !assetIds.includes(asset.id))
+      ) {
         throw new Error("Depreciation source assets are missing, duplicated or foreign.");
       }
     }
 
     const { journal, lines } = await readJournalEvidence(sb, data.companyId, run.journal_id, [
-      ...assets.flatMap((asset) => [asset.expense_account_id, asset.accumulated_account_id]),
+      ...assets.flatMap((asset) => [
+        asset.asset_account_id,
+        asset.expense_account_id,
+        asset.accumulated_account_id,
+      ]),
     ]);
     const company = await loadCompanyMeta(sb as unknown as Sb, data.companyId);
     return reviewAssetDepreciationPosting(
-      data.companyId, company.baseCurrency, run, entries, assets, journal, lines,
+      data.companyId,
+      company.baseCurrency,
+      run,
+      entries,
+      assets,
+      journal,
+      lines,
     );
   });
 
@@ -202,7 +222,9 @@ export const auditAssetDisposalPosting = createServerFn({ method: "GET" })
       throw new Error("Disposal source identity or organisation mismatch.");
     }
     if (!asset.disposal_journal_id) {
-      throw new Error("Selected asset has no disposal journal; there is no posting evidence to audit.");
+      throw new Error(
+        "Selected asset has no disposal journal; there is no posting evidence to audit.",
+      );
     }
 
     const { data: rawEntries, error: entryError } = await sb
@@ -215,15 +237,24 @@ export const auditAssetDisposalPosting = createServerFn({ method: "GET" })
     if (entryError) throw new Error(entryError.message);
     const entries = (rawEntries ?? []) as unknown as AssetDepreciationEntryEvidence[];
     if (entries.length > DISPOSAL_HISTORY_LIMIT) {
-      throw new Error("Disposal depreciation history exceeds 500 entries; no incomplete audit returned.");
+      throw new Error(
+        "Disposal depreciation history exceeds 500 entries; no incomplete audit returned.",
+      );
     }
 
     const { journal, lines } = await readJournalEvidence(
-      sb, data.companyId, asset.disposal_journal_id,
+      sb,
+      data.companyId,
+      asset.disposal_journal_id,
       [asset.asset_account_id, asset.accumulated_account_id],
     );
     const company = await loadCompanyMeta(sb as unknown as Sb, data.companyId);
     return reviewAssetDisposalPosting(
-      data.companyId, company.baseCurrency, asset, entries, journal, lines,
+      data.companyId,
+      company.baseCurrency,
+      asset,
+      entries,
+      journal,
+      lines,
     );
   });

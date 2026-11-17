@@ -101,17 +101,22 @@ export function CrmOpportunitiesPage() {
 
   const opps = useQuery({
     queryKey: ["crm-opportunities", company?.id, "open", effectivePipelineId, appliedSearch, page],
-    queryFn: () => fetchOpps({
-      data: {
-        companyId: company!.id,
-        status: "open",
-        pipelineId: effectivePipelineId,
-        q: appliedSearch,
-        limit: OPPORTUNITY_PAGE_SIZE + 1,
-        offset: page * OPPORTUNITY_PAGE_SIZE,
-      },
-    }),
-    enabled: Boolean(company?.id) && canView && settings.data?.enabled === true && Boolean(effectivePipelineId),
+    queryFn: () =>
+      fetchOpps({
+        data: {
+          companyId: company!.id,
+          status: "open",
+          ...(effectivePipelineId ? { pipelineId: effectivePipelineId } : {}),
+          q: appliedSearch,
+          limit: OPPORTUNITY_PAGE_SIZE + 1,
+          offset: page * OPPORTUNITY_PAGE_SIZE,
+        },
+      }),
+    enabled:
+      Boolean(company?.id) &&
+      canView &&
+      settings.data?.enabled === true &&
+      Boolean(effectivePipelineId),
     retry: false,
   });
 
@@ -119,12 +124,28 @@ export function CrmOpportunitiesPage() {
     queryKey: ["crm-opportunities", company?.id, "closed", effectivePipelineId],
     queryFn: async () => {
       const [won, lost] = await Promise.all([
-        fetchOpps({ data: { companyId: company!.id, status: "won", pipelineId: effectivePipelineId } }),
-        fetchOpps({ data: { companyId: company!.id, status: "lost", pipelineId: effectivePipelineId } }),
+        fetchOpps({
+          data: {
+            companyId: company!.id,
+            status: "won",
+            ...(effectivePipelineId ? { pipelineId: effectivePipelineId } : {}),
+          },
+        }),
+        fetchOpps({
+          data: {
+            companyId: company!.id,
+            status: "lost",
+            ...(effectivePipelineId ? { pipelineId: effectivePipelineId } : {}),
+          },
+        }),
       ]);
       return [...won, ...lost];
     },
-    enabled: Boolean(company?.id) && canView && settings.data?.enabled === true && Boolean(effectivePipelineId),
+    enabled:
+      Boolean(company?.id) &&
+      canView &&
+      settings.data?.enabled === true &&
+      Boolean(effectivePipelineId),
     retry: false,
   });
 
@@ -162,7 +183,9 @@ export function CrmOpportunitiesPage() {
       if (!checked.valid) throw new Error(checked.message);
       const initialStageId = stageId || stages.find((s) => !s.isWon && !s.isLost)?.id;
       if (!selectedPipeline || !initialStageId) {
-        throw new Error("Configure at least one active sales pipeline stage before creating an opportunity.");
+        throw new Error(
+          "Configure at least one active sales pipeline stage before creating an opportunity.",
+        );
       }
       return createOpp({
         data: {
@@ -285,7 +308,9 @@ export function CrmOpportunitiesPage() {
           action={
             can("crm.admin" as Permission) ? (
               <Button asChild>
-                <Link to="/crm/$section" params={{ section: "settings" }}>CRM Settings</Link>
+                <Link to="/crm/$section" params={{ section: "settings" }}>
+                  CRM Settings
+                </Link>
               </Button>
             ) : undefined
           }
@@ -315,7 +340,10 @@ export function CrmOpportunitiesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Customer / Account</Label>
-                  <Select value={contactId || "__none"} onValueChange={(value) => setContactId(value === "__none" ? "" : value)}>
+                  <Select
+                    value={contactId || "__none"}
+                    onValueChange={(value) => setContactId(value === "__none" ? "" : value)}
+                  >
                     <SelectTrigger aria-label="Customer linked to opportunity">
                       <SelectValue placeholder="Link existing customer" />
                     </SelectTrigger>
@@ -323,23 +351,29 @@ export function CrmOpportunitiesPage() {
                       <SelectItem value="__none">No customer linked</SelectItem>
                       {(accounts.data ?? []).map((account) => (
                         <SelectItem key={account.contactId} value={account.contactId}>
-                          {account.name}{account.email ? ` · ${account.email}` : ""}
+                          {account.name}
+                          {account.email ? ` · ${account.email}` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Reuses the shared Contacts master. A linked customer and positive value are needed before creating a Sales quote.
+                    Reuses the shared Contacts master. A linked customer and positive value are
+                    needed before creating a Sales quote.
                   </p>
                   {accounts.isError ? (
                     <p role="alert" className="text-xs text-destructive">
-                      Customer list unavailable. An unlinked deal can be saved, but quote creation will remain blocked.
+                      Customer list unavailable. An unlinked deal can be saved, but quote creation
+                      will remain blocked.
                     </p>
                   ) : null}
                 </div>
                 <div className="space-y-2">
                   <Label>Stage</Label>
-                  <Select value={stageId || "__default"} onValueChange={(v) => setStageId(v === "__default" ? "" : v)}>
+                  <Select
+                    value={stageId || "__default"}
+                    onValueChange={(v) => setStageId(v === "__default" ? "" : v)}
+                  >
                     <SelectTrigger aria-label="Opportunity stage">
                       <SelectValue placeholder="Default first stage" />
                     </SelectTrigger>
@@ -357,14 +391,24 @@ export function CrmOpportunitiesPage() {
                 </div>
                 <div className="sm:col-span-2 space-y-2">
                   {!formValidation.valid ? (
-                    <p className="text-sm text-destructive" role="alert">{formValidation.message}</p>
+                    <p className="text-sm text-destructive" role="alert">
+                      {formValidation.message}
+                    </p>
                   ) : null}
                   {pipelines.isError ? (
-                    <p role="alert" className="text-sm text-destructive">Could not load pipelines. Retry before creating a deal.</p>
+                    <p role="alert" className="text-sm text-destructive">
+                      Could not load pipelines. Retry before creating a deal.
+                    </p>
                   ) : null}
                   <Button
                     type="button"
-                    disabled={createMutation.isPending || !formValidation.valid || !selectedPipeline || pipelines.isLoading || pipelines.isError}
+                    disabled={
+                      createMutation.isPending ||
+                      !formValidation.valid ||
+                      !selectedPipeline ||
+                      pipelines.isLoading ||
+                      pipelines.isError
+                    }
                     onClick={() => createMutation.mutate()}
                   >
                     {createMutation.isPending ? "Saving…" : "Create opportunity"}
@@ -377,18 +421,31 @@ export function CrmOpportunitiesPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="min-w-40 space-y-1">
               <Label htmlFor="crm-pipeline-picker">Pipeline</Label>
-              <Select value={selectedPipeline?.id ?? ""} onValueChange={(value) => { setSelectedPipelineId(value); setStageId(""); setPage(0); }}>
+              <Select
+                value={selectedPipeline?.id ?? ""}
+                onValueChange={(value) => {
+                  setSelectedPipelineId(value);
+                  setStageId("");
+                  setPage(0);
+                }}
+              >
                 <SelectTrigger id="crm-pipeline-picker" aria-label="Select CRM pipeline">
                   <SelectValue placeholder="Choose pipeline" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(pipelines.data?.pipelines ?? []).filter((pipeline) => pipeline.isActive).map((pipeline) => (
-                    <SelectItem value={pipeline.id} key={pipeline.id}>{pipeline.name}</SelectItem>
-                  ))}
+                  {(pipelines.data?.pipelines ?? [])
+                    .filter((pipeline) => pipeline.isActive)
+                    .map((pipeline) => (
+                      <SelectItem value={pipeline.id} key={pipeline.id}>
+                        {pipeline.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
-            <Label htmlFor="crm-deal-search" className="sr-only">Search loaded opportunities</Label>
+            <Label htmlFor="crm-deal-search" className="sr-only">
+              Search loaded opportunities
+            </Label>
             <Input
               id="crm-deal-search"
               type="search"
@@ -398,7 +455,8 @@ export function CrmOpportunitiesPage() {
               onChange={(event) => setSearchTerm(event.target.value)}
             />
             <p className="text-xs text-muted-foreground" role="status">
-              Showing {filteredOpenDeals.length} deals on page {page + 1}. Pipeline and search filters run on the server.
+              Showing {filteredOpenDeals.length} deals on page {page + 1}. Pipeline and search
+              filters run on the server.
             </p>
           </div>
           {opps.isLoading || pipelines.isLoading ? <LoadingState /> : null}
@@ -427,7 +485,9 @@ export function CrmOpportunitiesPage() {
           {opps.isSuccess && filteredOpenDeals.length === 0 ? (
             <EmptyState
               title={searchTerm ? "No matching loaded opportunities" : "No open opportunities"}
-              description={searchTerm ? "Try another search term." : "Create a deal or convert a lead."}
+              description={
+                searchTerm ? "Try another search term." : "Create a deal or convert a lead."
+              }
             />
           ) : null}
 
@@ -450,7 +510,9 @@ export function CrmOpportunitiesPage() {
                       <TableRow key={opp.id}>
                         <TableCell>{opp.opportunityNumber}</TableCell>
                         <TableCell>{opp.name}</TableCell>
-                        <TableCell><CrmStatusBadge status={stage?.name ?? "Open"} /></TableCell>
+                        <TableCell>
+                          <CrmStatusBadge status={stage?.name ?? "Open"} />
+                        </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {formatCrmMinor(opp.amountMinor, opp.currencyCode)}
                         </TableCell>
@@ -579,11 +641,30 @@ export function CrmOpportunitiesPage() {
           ) : null}
 
           {opps.isSuccess && (page > 0 || hasNextPage) ? (
-            <nav aria-label="Opportunity pages" className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">Page {page + 1} · {filteredOpenDeals.length} deals</p>
+            <nav
+              aria-label="Opportunity pages"
+              className="flex flex-wrap items-center justify-between gap-3"
+            >
+              <p className="text-sm text-muted-foreground">
+                Page {page + 1} · {filteredOpenDeals.length} deals
+              </p>
               <div className="flex gap-2">
-                <Button type="button" variant="secondary" disabled={page === 0 || opps.isFetching} onClick={() => setPage((value) => Math.max(0, value - 1))}>Previous</Button>
-                <Button type="button" variant="secondary" disabled={!hasNextPage || opps.isFetching} onClick={() => setPage((value) => value + 1)}>Next</Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={page === 0 || opps.isFetching}
+                  onClick={() => setPage((value) => Math.max(0, value - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!hasNextPage || opps.isFetching}
+                  onClick={() => setPage((value) => value + 1)}
+                >
+                  Next
+                </Button>
               </div>
             </nav>
           ) : null}
@@ -594,31 +675,35 @@ export function CrmOpportunitiesPage() {
                 <CardTitle>Closed deals</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {(closedOpps.data ?? []).filter((opp) => opp.pipelineId === selectedPipeline?.id).map((opp) => (
-                  <div
-                    key={opp.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
-                  >
-                    <div>
-                      <p className="font-medium">{opp.name}</p>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{opp.opportunityNumber}</span>
-                        <CrmStatusBadge status={opp.status} />
+                {(closedOpps.data ?? [])
+                  .filter((opp) => opp.pipelineId === selectedPipeline?.id)
+                  .map((opp) => (
+                    <div
+                      key={opp.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
+                    >
+                      <div>
+                        <p className="font-medium">{opp.name}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {opp.opportunityNumber}
+                          </span>
+                          <CrmStatusBadge status={opp.status} />
+                        </div>
                       </div>
+                      {canManage ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          disabled={reopenMutation.isPending}
+                          onClick={() => reopenMutation.mutate(opp.id)}
+                        >
+                          Reopen
+                        </Button>
+                      ) : null}
                     </div>
-                    {canManage ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        disabled={reopenMutation.isPending}
-                        onClick={() => reopenMutation.mutate(opp.id)}
-                      >
-                        Reopen
-                      </Button>
-                    ) : null}
-                  </div>
-                ))}
+                  ))}
               </CardContent>
             </Card>
           ) : null}

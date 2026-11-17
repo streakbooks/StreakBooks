@@ -128,13 +128,13 @@ export function AdvisorsAdminAppointmentsPage() {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <ListWorkspace title="Appointments" description="Advisor calendar and booking controls.">
-        <ErrorState
-          title="Booking admin unavailable"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
-          </ListWorkspace>
-  </main>
+          <ErrorState
+            title="Booking admin unavailable"
+            description={friendlyAuthError(query.error)}
+            onRetry={() => void query.refetch()}
+          />
+        </ListWorkspace>
+      </main>
     );
   }
 
@@ -145,163 +145,163 @@ export function AdvisorsAdminAppointmentsPage() {
       <ListWorkspace
         title="Appointments"
         description="Configure working hours, buffers and manage consultation bookings. Availability is computed from real calendar rules."
-       subnav={<AdvisorsSubnav />}>
+        subnav={<AdvisorsSubnav />}
+      >
+        <section className="grid gap-3 rounded-xl border border-border/70 p-4 sm:grid-cols-2">
+          <div className="space-y-1 sm:col-span-2">
+            <Label htmlFor="booking-reason">Change reason</Label>
+            <Input
+              id="booking-reason"
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Why are you changing availability?"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="advisor-tz">Advisor timezone</Label>
+            <Input id="advisor-tz" value={timezone} onChange={(e) => setTimezone(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="consult-mins">Consultation minutes</Label>
+            <Input
+              id="consult-mins"
+              type="number"
+              value={consultationMinutes}
+              onChange={(e) => setConsultationMinutes(Number(e.target.value) || 30)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="buffer-mins">Buffer minutes</Label>
+            <Input
+              id="buffer-mins"
+              type="number"
+              value={bufferMinutes}
+              onChange={(e) => setBufferMinutes(Number(e.target.value) || 0)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="notice-hours">Booking notice (hours)</Label>
+            <Input
+              id="notice-hours"
+              type="number"
+              value={noticeHours}
+              onChange={(e) => setNoticeHours(Number(e.target.value) || 0)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="max-daily">Maximum daily appointments</Label>
+            <Input
+              id="max-daily"
+              type="number"
+              value={maxDaily}
+              onChange={(e) => setMaxDaily(Number(e.target.value) || 1)}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Button
+              type="button"
+              disabled={saveM.isPending || reason.trim().length < 3}
+              onClick={() => saveM.mutate()}
+            >
+              Save availability settings
+            </Button>
+          </div>
+        </section>
 
-      <section className="grid gap-3 rounded-xl border border-border/70 p-4 sm:grid-cols-2">
-        <div className="space-y-1 sm:col-span-2">
-          <Label htmlFor="booking-reason">Change reason</Label>
-          <Input
-            id="booking-reason"
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder="Why are you changing availability?"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="advisor-tz">Advisor timezone</Label>
-          <Input id="advisor-tz" value={timezone} onChange={(e) => setTimezone(e.target.value)} />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="consult-mins">Consultation minutes</Label>
-          <Input
-            id="consult-mins"
-            type="number"
-            value={consultationMinutes}
-            onChange={(e) => setConsultationMinutes(Number(e.target.value) || 30)}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="buffer-mins">Buffer minutes</Label>
-          <Input
-            id="buffer-mins"
-            type="number"
-            value={bufferMinutes}
-            onChange={(e) => setBufferMinutes(Number(e.target.value) || 0)}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="notice-hours">Booking notice (hours)</Label>
-          <Input
-            id="notice-hours"
-            type="number"
-            value={noticeHours}
-            onChange={(e) => setNoticeHours(Number(e.target.value) || 0)}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="max-daily">Maximum daily appointments</Label>
-          <Input
-            id="max-daily"
-            type="number"
-            value={maxDaily}
-            onChange={(e) => setMaxDaily(Number(e.target.value) || 1)}
-          />
-        </div>
-        <div className="sm:col-span-2">
+        <section className="space-y-3 rounded-xl border border-border/70 p-4">
+          <h2 className="text-lg font-semibold">Add unavailable period</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="ex-start">Starts at</Label>
+              <Input
+                id="ex-start"
+                type="datetime-local"
+                value={exceptionStart}
+                onChange={(e) => setExceptionStart(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="ex-end">Ends at</Label>
+              <Input
+                id="ex-end"
+                type="datetime-local"
+                value={exceptionEnd}
+                onChange={(e) => setExceptionEnd(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label htmlFor="ex-label">Label</Label>
+              <Input
+                id="ex-label"
+                value={exceptionLabel}
+                onChange={(e) => setExceptionLabel(e.target.value)}
+              />
+            </div>
+          </div>
           <Button
             type="button"
-            disabled={saveM.isPending || reason.trim().length < 3}
-            onClick={() => saveM.mutate()}
+            variant="outline"
+            disabled={
+              exceptionM.isPending || reason.trim().length < 3 || !exceptionStart || !exceptionEnd
+            }
+            onClick={() => exceptionM.mutate()}
           >
-            Save availability settings
+            Add exception
           </Button>
-        </div>
-      </section>
+        </section>
 
-      <section className="space-y-3 rounded-xl border border-border/70 p-4">
-        <h2 className="text-lg font-semibold">Add unavailable period</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label htmlFor="ex-start">Starts at</Label>
-            <Input
-              id="ex-start"
-              type="datetime-local"
-              value={exceptionStart}
-              onChange={(e) => setExceptionStart(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="ex-end">Ends at</Label>
-            <Input
-              id="ex-end"
-              type="datetime-local"
-              value={exceptionEnd}
-              onChange={(e) => setExceptionEnd(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1 sm:col-span-2">
-            <Label htmlFor="ex-label">Label</Label>
-            <Input
-              id="ex-label"
-              value={exceptionLabel}
-              onChange={(e) => setExceptionLabel(e.target.value)}
-            />
-          </div>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={
-            exceptionM.isPending || reason.trim().length < 3 || !exceptionStart || !exceptionEnd
-          }
-          onClick={() => exceptionM.mutate()}
-        >
-          Add exception
-        </Button>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Upcoming and recent appointments</h2>
-        {appointments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No appointments yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {appointments.map((appointment) => (
-              <li
-                key={appointment.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 px-3 py-2"
-              >
-                <div>
-                  <p className="text-sm font-medium">
-                    {appointment.customerName} · {appointment.status}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(appointment.startsAt).toISOString()} · {appointment.customerEmail}
-                    {appointment.serviceCode ? ` · ${appointment.serviceCode}` : ""}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => statusM.mutate({ id: appointment.id, status: "completed" })}
-                  >
-                    Completed
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => statusM.mutate({ id: appointment.id, status: "no_show" })}
-                  >
-                    No-show
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => statusM.mutate({ id: appointment.id, status: "cancelled" })}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-        </ListWorkspace>
-  </main>
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Upcoming and recent appointments</h2>
+          {appointments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No appointments yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {appointments.map((appointment) => (
+                <li
+                  key={appointment.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm font-medium">
+                      {appointment.customerName} · {appointment.status}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(appointment.startsAt).toISOString()} · {appointment.customerEmail}
+                      {appointment.serviceCode ? ` · ${appointment.serviceCode}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => statusM.mutate({ id: appointment.id, status: "completed" })}
+                    >
+                      Completed
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => statusM.mutate({ id: appointment.id, status: "no_show" })}
+                    >
+                      No-show
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => statusM.mutate({ id: appointment.id, status: "cancelled" })}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </ListWorkspace>
+    </main>
   );
 }

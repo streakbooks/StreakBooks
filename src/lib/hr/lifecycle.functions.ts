@@ -289,18 +289,20 @@ export const listHrOnboardingTemplates = createServerFn({ method: "GET" })
       { _company_id: data.companyId },
       HR04_MIGRATION,
     );
-    const templates = asUnknownArray(pick(asRecord(raw), "templates")).map((item): HrOnboardingTemplate => {
-      const row = asRecord(item);
-      return {
-        id: str(pick(row, "id")),
-        code: str(pick(row, "code")),
-        name: str(pick(row, "name")),
-        description: strOrNull(pick(row, "description")),
-        isActive: bool(pick(row, "isActive"), true),
-        sortOrder: num(pick(row, "sortOrder"), 100),
-        taskCount: num(pick(row, "taskCount")),
-      };
-    });
+    const templates = asUnknownArray(pick(asRecord(raw), "templates")).map(
+      (item): HrOnboardingTemplate => {
+        const row = asRecord(item);
+        return {
+          id: str(pick(row, "id")),
+          code: str(pick(row, "code")),
+          name: str(pick(row, "name")),
+          description: strOrNull(pick(row, "description")),
+          isActive: bool(pick(row, "isActive"), true),
+          sortOrder: num(pick(row, "sortOrder"), 100),
+          taskCount: num(pick(row, "taskCount")),
+        };
+      },
+    );
     return { templates };
   });
 
@@ -358,23 +360,25 @@ export const listHrOnboardingCases = createServerFn({ method: "GET" })
       { _company_id: data.companyId, _status: data.status },
       HR04_MIGRATION,
     );
-    const items = asUnknownArray(pick(asRecord(raw), "items")).map((item): HrOnboardingCaseListItem => {
-      const row = asRecord(item);
-      return {
-        id: str(pick(row, "id")),
-        caseNumber: str(pick(row, "caseNumber")),
-        employeeId: strOrNull(pick(row, "employeeId")),
-        applicationId: strOrNull(pick(row, "applicationId")),
-        templateId: strOrNull(pick(row, "templateId")),
-        status: str(pick(row, "status")) as HrOnboardingCaseListItem["status"],
-        startDate: strOrNull(pick(row, "startDate")),
-        targetJoinDate: strOrNull(pick(row, "targetJoinDate")),
-        completedAt: strOrNull(pick(row, "completedAt")),
-        employeeName: strOrNull(pick(row, "employeeName")),
-        pendingTasks: num(pick(row, "pendingTasks")),
-        updatedAt: str(pick(row, "updatedAt")),
-      };
-    });
+    const items = asUnknownArray(pick(asRecord(raw), "items")).map(
+      (item): HrOnboardingCaseListItem => {
+        const row = asRecord(item);
+        return {
+          id: str(pick(row, "id")),
+          caseNumber: str(pick(row, "caseNumber")),
+          employeeId: strOrNull(pick(row, "employeeId")),
+          applicationId: strOrNull(pick(row, "applicationId")),
+          templateId: strOrNull(pick(row, "templateId")),
+          status: str(pick(row, "status")) as HrOnboardingCaseListItem["status"],
+          startDate: strOrNull(pick(row, "startDate")),
+          targetJoinDate: strOrNull(pick(row, "targetJoinDate")),
+          completedAt: strOrNull(pick(row, "completedAt")),
+          employeeName: strOrNull(pick(row, "employeeName")),
+          pendingTasks: num(pick(row, "pendingTasks")),
+          updatedAt: str(pick(row, "updatedAt")),
+        };
+      },
+    );
     return { items };
   });
 
@@ -431,25 +435,27 @@ export const getHrOnboardingCase = createServerFn({ method: "GET" })
 
 export const createHrOnboardingCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    payload: {
-      templateId: string | null;
-      employeeId: string | null;
-      applicationId: string | null;
-      targetJoinDate: string | null;
-      notes: string | null;
-    };
-  }) => ({
-    companyId: companyIdOf(input),
-    payload: {
-      templateId: input.payload.templateId,
-      employeeId: input.payload.employeeId,
-      applicationId: input.payload.applicationId,
-      targetJoinDate: input.payload.targetJoinDate,
-      notes: input.payload.notes,
-    },
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      payload: {
+        templateId: string | null;
+        employeeId: string | null;
+        applicationId: string | null;
+        targetJoinDate: string | null;
+        notes: string | null;
+      };
+    }) => ({
+      companyId: companyIdOf(input),
+      payload: {
+        templateId: input.payload.templateId,
+        employeeId: input.payload.employeeId,
+        applicationId: input.payload.applicationId,
+        targetJoinDate: input.payload.targetJoinDate,
+        notes: input.payload.notes,
+      },
+    }),
+  )
   .handler(async ({ data, context }): Promise<HrOnboardingCaseDetail> => {
     await requireHr(context.supabase, data.companyId, "hr.onboarding.manage");
     const raw = await callRpc(
@@ -463,12 +469,14 @@ export const createHrOnboardingCase = createServerFn({ method: "POST" })
 
 export const updateHrOnboardingTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; taskId: string; status: string; notes: string | null }) => ({
-    companyId: companyIdOf(input),
-    taskId: input.taskId,
-    status: input.status,
-    notes: input.notes,
-  }))
+  .inputValidator(
+    (input: { companyId: string; taskId: string; status: string; notes: string | null }) => ({
+      companyId: companyIdOf(input),
+      taskId: input.taskId,
+      status: input.status,
+      notes: input.notes,
+    }),
+  )
   .handler(async ({ data, context }): Promise<HrOnboardingCaseDetail> => {
     await requireHr(context.supabase, data.companyId, "hr.onboarding.manage");
     const raw = await callRpc(

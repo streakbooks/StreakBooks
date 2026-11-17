@@ -91,17 +91,24 @@ export function TaxCodesPanel({
     queryKey: ["tax-rates", companyId],
     queryFn: () => fetchRates({ data: { companyId } }),
   });
-  const rows = (codesQ.data ?? []) as unknown as CodeRow[];
+  const rows = useMemo(() => (codesQ.data ?? []) as unknown as CodeRow[], [codesQ.data]);
   const rates = (ratesQ.data ?? []) as Array<{ id: string; name: string; is_active: boolean }>;
   const pickable = useMemo(() => filterTaxAccountPicker(accounts, "code_account"), [accounts]);
-  const visibleRows = useMemo(() => rows.filter((code) => {
-    const term = search.trim().toLocaleLowerCase();
-    const matches = !term || [code.code, code.name, code.tax_rates?.name ?? ""]
-      .some((value) => value.toLocaleLowerCase().includes(term));
-    const matchesStatus = statusFilter === "all" ||
-      (statusFilter === "active" ? code.is_active : !code.is_active);
-    return matches && matchesStatus;
-  }), [rows, search, statusFilter]);
+  const visibleRows = useMemo(
+    () =>
+      rows.filter((code) => {
+        const term = search.trim().toLocaleLowerCase();
+        const matches =
+          !term ||
+          [code.code, code.name, code.tax_rates?.name ?? ""].some((value) =>
+            value.toLocaleLowerCase().includes(term),
+          );
+        const matchesStatus =
+          statusFilter === "all" || (statusFilter === "active" ? code.is_active : !code.is_active);
+        return matches && matchesStatus;
+      }),
+    [rows, search, statusFilter],
+  );
 
   const save = useMutation({
     mutationFn: (d: Draft) =>
@@ -171,7 +178,10 @@ export function TaxCodesPanel({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as "all" | "active" | "inactive")}>
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as "all" | "active" | "inactive")}
+        >
           <SelectTrigger aria-label="Filter tax code status" className="w-full sm:w-40">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
@@ -182,7 +192,11 @@ export function TaxCodesPanel({
           </SelectContent>
         </Select>
         {!canTax ? <Badge variant="outline">View only</Badge> : null}
-        {!codesQ.isPending && !codesQ.isError ? <span className="text-xs text-muted-foreground">{visibleRows.length} of {rows.length} codes</span> : null}
+        {!codesQ.isPending && !codesQ.isError ? (
+          <span className="text-xs text-muted-foreground">
+            {visibleRows.length} of {rows.length} codes
+          </span>
+        ) : null}
       </div>
 
       {codesQ.isPending ? (
@@ -196,7 +210,10 @@ export function TaxCodesPanel({
       ) : rows.length === 0 ? (
         <EmptyState title="No tax codes" description="Add a rate, then a code, or apply a pack." />
       ) : visibleRows.length === 0 ? (
-        <EmptyState title="No matching tax codes" description="Change the search or status filter." />
+        <EmptyState
+          title="No matching tax codes"
+          description="Change the search or status filter."
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -226,7 +243,12 @@ export function TaxCodesPanel({
                   </Badge>
                 </TableCell>
                 <TableCell className="space-x-1 text-right">
-                  <Button size="sm" variant="ghost" disabled={!canTax || save.isPending} onClick={() => setDraft(fromRow(c))}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={!canTax || save.isPending}
+                    onClick={() => setDraft(fromRow(c))}
+                  >
                     Edit
                   </Button>
                   <Button
@@ -251,8 +273,8 @@ export function TaxCodesPanel({
             <DialogDescription>
               The tax account is optional. When empty, the organisation&apos;s output or input tax
               account from GL mappings is used. After a code is used on posted invoices or bills,
-              its treatment, recoverability, rate and posting classifications are protected by
-              the new database migration. Create a replacement code for future treatment changes.
+              its treatment, recoverability, rate and posting classifications are protected by the
+              new database migration. Create a replacement code for future treatment changes.
             </DialogDescription>
           </DialogHeader>
           {draft ? (
@@ -354,7 +376,13 @@ export function TaxCodesPanel({
               Cancel
             </Button>
             <Button
-              disabled={!canTax || save.isPending || !draft?.code.trim() || !draft?.name.trim() || !draft?.rateId}
+              disabled={
+                !canTax ||
+                save.isPending ||
+                !draft?.code.trim() ||
+                !draft?.name.trim() ||
+                !draft?.rateId
+              }
               onClick={() => draft && save.mutate(draft)}
             >
               Save code

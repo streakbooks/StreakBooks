@@ -27,7 +27,10 @@ describe("LinkBooks responsive workflow contract", () => {
       </form>,
     );
     expect(markup).toContain("Export CSV");
-    const exportButtonOpening = markup.slice(markup.lastIndexOf("<button", markup.indexOf("Export CSV")), markup.indexOf("Export CSV"));
+    const exportButtonOpening = markup.slice(
+      markup.lastIndexOf("<button", markup.indexOf("Export CSV")),
+      markup.indexOf("Export CSV"),
+    );
     expect(exportButtonOpening).toContain('type="button"');
   });
 
@@ -47,9 +50,7 @@ describe("LinkBooks responsive workflow contract", () => {
   });
 
   it("does not invent actions or an active selection for an empty batch", () => {
-    expect(renderToStaticMarkup(
-      <SelectionActionBar count={0} onClear={() => {}} />,
-    )).toBe("");
+    expect(renderToStaticMarkup(<SelectionActionBar count={0} onClear={() => {}} />)).toBe("");
   });
 
   it("retains selected record count, clear action and responsive wrapping", () => {
@@ -102,4 +103,3 @@ describe("LinkBooks responsive workflow contract", () => {
     expect(record).toContain("Bill detail");
   });
 });
-

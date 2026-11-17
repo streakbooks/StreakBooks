@@ -182,7 +182,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           | undefined
       )?.payslips ?? [];
     return items
-.filter(
+      .filter(
         (row) =>
           ["posted", "paid", "complete"].includes(row.run.status) &&
           row.run.currency.toUpperCase() === payCurrency,
@@ -567,8 +567,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <Alert variant="destructive">
                 <AlertDescription>
                   Payroll currency {payCurrency} differs from organisation base currency{" "}
-                  {company.base_currency.toUpperCase()}. Payment posting is unavailable until
-                  an approved FX accounting workflow is configured, to avoid an incorrect GL entry.
+                  {company.base_currency.toUpperCase()}. Payment posting is unavailable until an
+                  approved FX accounting workflow is configured, to avoid an incorrect GL entry.
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -857,7 +857,9 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={reverseMut.isPending || reversalSubmitLock.current}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={reverseMut.isPending || reversalSubmitLock.current}>
+              Cancel
+            </AlertDialogCancel>
             <Button
               variant="destructive"
               disabled={reverseMut.isPending || reversalSubmitLock.current || !reversalDate}

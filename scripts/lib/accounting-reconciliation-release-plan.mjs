@@ -4,16 +4,20 @@
 export const REVIEW_MIGRATIONS = Object.freeze([
   {
     path: "supabase/migrations/20261106233000_reconciliation_review_cases.sql",
-    required: ["create table public.reconciliation_review_cases",
+    required: [
+      "create table public.reconciliation_review_cases",
       "create table public.reconciliation_review_events",
       "create function public.save_reconciliation_review_case",
-      "alter table public.reconciliation_review_cases enable row level security"],
+      "alter table public.reconciliation_review_cases enable row level security",
+    ],
   },
   {
     path: "supabase/migrations/20261106234500_reconciliation_review_signoff.sql",
-    required: ["create function public.progress_reconciliation_review_case",
+    required: [
+      "create function public.progress_reconciliation_review_case",
       "create trigger reconciliation_review_stage_guard",
-      "alter table public.reconciliation_review_cases"],
+      "alter table public.reconciliation_review_cases",
+    ],
   },
 ]);
 
@@ -61,7 +65,7 @@ export function parseVitestSummary(output) {
   const text = String(output).replace(/\u001b\[[0-9;]*m/g, "");
   const lines = text.split(/\r?\n/);
   const parse = (label) => {
-    const line = [...lines].reverse().find(x => new RegExp("^\\s*" + label + "\\s+").test(x));
+    const line = [...lines].reverse().find((x) => new RegExp("^\\s*" + label + "\\s+").test(x));
     if (!line) return null;
     const counts = { passed: 0, failed: 0, skipped: 0 };
     for (const match of line.matchAll(/\b(\d+)\s+(passed|failed|skipped)\b/g)) {
@@ -73,10 +77,16 @@ export function parseVitestSummary(output) {
 }
 export function verifyVitestStep({ exitCode, output, expectedFiles = null }) {
   const counts = parseVitestSummary(output);
-  const good = exitCode === 0 && counts.files !== null && counts.tests !== null &&
-    counts.files.failed === 0 && counts.files.skipped === 0 &&
-    counts.tests.failed === 0 && counts.tests.skipped === 0 &&
-    counts.files.passed > 0 && counts.tests.passed > 0 &&
+  const good =
+    exitCode === 0 &&
+    counts.files !== null &&
+    counts.tests !== null &&
+    counts.files.failed === 0 &&
+    counts.files.skipped === 0 &&
+    counts.tests.failed === 0 &&
+    counts.tests.skipped === 0 &&
+    counts.files.passed > 0 &&
+    counts.tests.passed > 0 &&
     (expectedFiles === null || counts.files.passed === expectedFiles);
   return { passed: Boolean(good), counts };
 }
@@ -90,7 +100,7 @@ export function migrationSourceCheck(sources) {
       errors.push("Missing migration source: " + m.path);
       continue;
     }
-    const absent = m.required.filter(piece => !content.toLowerCase().includes(piece));
+    const absent = m.required.filter((piece) => !content.toLowerCase().includes(piece));
     if (absent.length) errors.push("Migration missing required contracts: " + m.path);
     files.push(m.path);
   }
@@ -106,8 +116,7 @@ export function accountingReleasePreflight(git, migrations, testFilesPresent) {
   if (git?.branch !== "main") blockers.push("Local checkout must be main.");
   if (!git?.originMatchesRepo) blockers.push("Origin must be the authorised LinkBooks repository.");
   if (!git?.remoteRefFresh) blockers.push("Cannot verify current origin/main by live fetch.");
-  if (!git?.commit || !git?.originMainCommit ||
-      git.commit !== git.originMainCommit) {
+  if (!git?.commit || !git?.originMainCommit || git.commit !== git.originMainCommit) {
     blockers.push("Local HEAD differs from fetched origin/main.");
   }
   if (!migrations?.passed) blockers.push("Required review migration source contracts missing.");
@@ -115,14 +124,15 @@ export function accountingReleasePreflight(git, migrations, testFilesPresent) {
   return { passed: blockers.length === 0, blockers };
 }
 
-export function accountingReleaseDecision({
-  preflight, postflight, steps, plan, dryRun = false,
-}) {
-  const missing = plan.filter(step => !steps.some(x => x.id === step.id));
-  const allLocalChecksPassed = !dryRun && preflight?.passed === true &&
-    postflight?.passed === true && missing.length === 0 &&
+export function accountingReleaseDecision({ preflight, postflight, steps, plan, dryRun = false }) {
+  const missing = plan.filter((step) => !steps.some((x) => x.id === step.id));
+  const allLocalChecksPassed =
+    !dryRun &&
+    preflight?.passed === true &&
+    postflight?.passed === true &&
+    missing.length === 0 &&
     steps.length === plan.length &&
-    steps.every(x => x.status === "passed");
+    steps.every((x) => x.status === "passed");
   // Migration presence / process exits cannot prove actual RLS or deployment.
   // Intentionally do not accept a user-editable "staging passed" boolean here.
   const blockers = [];

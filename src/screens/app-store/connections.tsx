@@ -176,10 +176,10 @@ export function AppStoreConnectionsPage() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Revoke {row.appCode} access?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This revokes {row.appCode} access for the entire current organisation,
-                                including every linked account for this app. It is not limited to
-                                the account shown in this row. Existing accounting records are not
-                                deleted. Reconnecting requires new authorisation.
+                                This revokes {row.appCode} access for the entire current
+                                organisation, including every linked account for this app. It is not
+                                limited to the account shown in this row. Existing accounting
+                                records are not deleted. Reconnecting requires new authorisation.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

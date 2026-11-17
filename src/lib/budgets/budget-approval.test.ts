@@ -15,7 +15,9 @@ const base = {
 
 describe("budget approval commands", () => {
   it("trims approval notes", () => {
-    expect(validateBudgetApprovalAction({ action: "approve", note: "  Reviewed and valid  " })).toEqual({
+    expect(
+      validateBudgetApprovalAction({ action: "approve", note: "  Reviewed and valid  " }),
+    ).toEqual({
       action: "approve",
       note: "Reviewed and valid",
     });

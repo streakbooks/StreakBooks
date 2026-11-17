@@ -99,7 +99,14 @@ export function FirmBulkClientActions({
     enabled: auditOpen && Boolean(firmId),
   });
 
-  const tags = [...new Set(tagsText.split(",").map((tag) => tag.trim()).filter(Boolean))];
+  const tags = [
+    ...new Set(
+      tagsText
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    ),
+  ];
   const value =
     field === "status" ? status : field === "service_line" ? service.trim() : reviewDate || null;
   const tagActionLabel =
@@ -271,10 +278,13 @@ export function FirmBulkClientActions({
           )}
           <Button
             disabled={
-              disabled || mutation.isPending || !selectedClients.length ||
-              (field === "tags" && (tags.length > 12 ||
-                (tagOperation !== "replace" && !tags.length) ||
-                tags.some((tag) => tag.length > 40)))
+              disabled ||
+              mutation.isPending ||
+              !selectedClients.length ||
+              (field === "tags" &&
+                (tags.length > 12 ||
+                  (tagOperation !== "replace" && !tags.length) ||
+                  tags.some((tag) => tag.length > 40)))
             }
             onClick={() => setConfirmOpen(true)}
           >
@@ -289,8 +299,8 @@ export function FirmBulkClientActions({
             <AlertDialogTitle>Confirm bulk client profile update</AlertDialogTitle>
             <AlertDialogDescription>
               Set {AUDIT_LABELS[field]} to “{fieldDescription}” for {selectedClients.length}
-              selected clients. This is a single transaction: if any client has changed access
-              or revision, all updates will roll back.
+              selected clients. This is a single transaction: if any client has changed access or
+              revision, all updates will roll back.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="max-h-40 overflow-y-auto rounded-md border p-3 text-sm">

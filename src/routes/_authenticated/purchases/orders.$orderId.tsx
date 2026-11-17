@@ -173,112 +173,114 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
           </Button>
         }
       >
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        <StatusBadge status={order.status} />
-        {editableStatus && can("purchases.draft") ? (
-          <>
-            {order.status === "draft" ? (
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/purchases/orders/new" search={{ edit: orderId }}>
-                  Edit draft
-                </Link>
-              </Button>
-            ) : null}
-            {order.status === "draft" ? (
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          <StatusBadge status={order.status} />
+          {editableStatus && can("purchases.draft") ? (
+            <>
+              {order.status === "draft" ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/purchases/orders/new" search={{ edit: orderId }}>
+                    Edit draft
+                  </Link>
+                </Button>
+              ) : null}
+              {order.status === "draft" ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() => statusMutation.mutate("sent")}
+                >
+                  Mark as sent
+                </Button>
+              ) : null}
               <Button
                 size="sm"
                 variant="outline"
                 disabled={pending}
-                onClick={() => statusMutation.mutate("sent")}
+                onClick={() => setCancelOpen(true)}
               >
-                Mark as sent
+                Cancel order
               </Button>
-            ) : null}
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={pending}
-              onClick={() => setCancelOpen(true)}
-            >
-              Cancel order
+            </>
+          ) : null}
+          {!order.billed_bill_id && order.status !== "cancelled" && can("purchases.draft") ? (
+            <Button size="sm" disabled={pending} onClick={() => convertMutation.mutate()}>
+              Convert to draft bill
             </Button>
-          </>
+          ) : null}
+          {order.billed_bill_id ? (
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/purchases/bills/$billId" params={{ billId: order.billed_bill_id }}>
+                View bill
+              </Link>
+            </Button>
+          ) : null}
+        </div>
+        <p className="mb-4 text-sm text-muted-foreground">
+          This order has no ledger impact. A converted bill affects the ledger only when authorised.
+          Mark as sent records delivery made outside LinkBooks; email delivery is recorded
+          separately below.
+        </p>
+        <TableCard>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Description</TableHead>
+                <TableHead className="text-right">Quantity</TableHead>
+                <TableHead className="text-right">Unit price</TableHead>
+                <TableHead className="text-right">Discount</TableHead>
+                <TableHead className="text-right">Net</TableHead>
+                <TableHead className="text-right">Tax</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...order.purchase_order_lines]
+                .sort((a, b) => a.line_no - b.line_no)
+                .map((line) => (
+                  <TableRow key={line.id}>
+                    <TableCell>{line.description}</TableCell>
+                    <TableCell className="text-right">
+                      {fmt.number(Number(line.quantity))}
+                    </TableCell>
+                    <TableCell className="money">
+                      {fmt.money(line.unit_price_minor, currency)}
+                    </TableCell>
+                    <TableCell className="money">
+                      {fmt.money(impliedDiscountMinor(line), currency)}
+                    </TableCell>
+                    <TableCell className="money">{fmt.money(line.net_minor, currency)}</TableCell>
+                    <TableCell className="money">
+                      {fmt.money(line.tax_minor, currency)}{" "}
+                      <span className="text-xs text-muted-foreground">
+                        ({fmt.percentBps(line.tax_rate_bps)})
+                      </span>
+                    </TableCell>
+                    <TableCell className="money">
+                      {fmt.money(BigInt(line.net_minor) + BigInt(line.tax_minor), currency)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </TableCard>
+        <dl className="my-5 ml-auto grid max-w-sm grid-cols-2 gap-2 text-sm">
+          <dt>Subtotal</dt>
+          <dd className="text-right">{fmt.money(order.subtotal_minor, currency)}</dd>
+          <dt>Tax</dt>
+          <dd className="text-right">{fmt.money(order.tax_minor, currency)}</dd>
+          <dt className="font-semibold">Total ({currency})</dt>
+          <dd className="text-right font-semibold">{fmt.money(order.total_minor, currency)}</dd>
+        </dl>
+        {order.memo ? (
+          <section className="my-4 rounded-md border p-4">
+            <h2 className="mb-2 font-medium">Supplier instructions / memo</h2>
+            <p className="whitespace-pre-wrap text-sm">{order.memo}</p>
+          </section>
         ) : null}
-        {!order.billed_bill_id && order.status !== "cancelled" && can("purchases.draft") ? (
-          <Button size="sm" disabled={pending} onClick={() => convertMutation.mutate()}>
-            Convert to draft bill
-          </Button>
-        ) : null}
-        {order.billed_bill_id ? (
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/purchases/bills/$billId" params={{ billId: order.billed_bill_id }}>
-              View bill
-            </Link>
-          </Button>
-        ) : null}
-      </div>
-      <p className="mb-4 text-sm text-muted-foreground">
-        This order has no ledger impact. A converted bill affects the ledger only when authorised.
-        Mark as sent records delivery made outside LinkBooks; email delivery is recorded separately
-        below.
-      </p>
-      <TableCard>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Quantity</TableHead>
-              <TableHead className="text-right">Unit price</TableHead>
-              <TableHead className="text-right">Discount</TableHead>
-              <TableHead className="text-right">Net</TableHead>
-              <TableHead className="text-right">Tax</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {[...order.purchase_order_lines]
-              .sort((a, b) => a.line_no - b.line_no)
-              .map((line) => (
-                <TableRow key={line.id}>
-                  <TableCell>{line.description}</TableCell>
-                  <TableCell className="text-right">{fmt.number(Number(line.quantity))}</TableCell>
-                  <TableCell className="money">
-                    {fmt.money(line.unit_price_minor, currency)}
-                  </TableCell>
-                  <TableCell className="money">
-                    {fmt.money(impliedDiscountMinor(line), currency)}
-                  </TableCell>
-                  <TableCell className="money">{fmt.money(line.net_minor, currency)}</TableCell>
-                  <TableCell className="money">
-                    {fmt.money(line.tax_minor, currency)}{" "}
-                    <span className="text-xs text-muted-foreground">
-                      ({fmt.percentBps(line.tax_rate_bps)})
-                    </span>
-                  </TableCell>
-                  <TableCell className="money">
-                    {fmt.money(BigInt(line.net_minor) + BigInt(line.tax_minor), currency)}
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </TableCard>
-      <dl className="my-5 ml-auto grid max-w-sm grid-cols-2 gap-2 text-sm">
-        <dt>Subtotal</dt>
-        <dd className="text-right">{fmt.money(order.subtotal_minor, currency)}</dd>
-        <dt>Tax</dt>
-        <dd className="text-right">{fmt.money(order.tax_minor, currency)}</dd>
-        <dt className="font-semibold">Total ({currency})</dt>
-        <dd className="text-right font-semibold">{fmt.money(order.total_minor, currency)}</dd>
-      </dl>
-      {order.memo ? (
-        <section className="my-4 rounded-md border p-4">
-          <h2 className="mb-2 font-medium">Supplier instructions / memo</h2>
-          <p className="whitespace-pre-wrap text-sm">{order.memo}</p>
-        </section>
-      ) : null}
-      <DocumentActions kind="purchase_order" id={orderId} />
-      <DocumentRecordPanel entityType="purchase_order" entityId={orderId} audience="supplier" />
+        <DocumentActions kind="purchase_order" id={orderId} />
+        <DocumentRecordPanel entityType="purchase_order" entityId={orderId} audience="supplier" />
       </RecordWorkspace>
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent>

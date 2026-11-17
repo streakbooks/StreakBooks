@@ -119,5 +119,4 @@ export type HrOnboardingCaseDetail = {
   tasks: HrOnboardingTask[];
 };
 
-export const HR04_MIGRATION =
-  "HR recruitment/onboarding needs database update 20261109191000.";
+export const HR04_MIGRATION = "HR recruitment/onboarding needs database update 20261109191000.";

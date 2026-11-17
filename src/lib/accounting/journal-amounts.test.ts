@@ -8,17 +8,19 @@ describe("journal list exact amount totals", () => {
   });
 
   it("preserves the maximum safe integer without rounding", () => {
-    expect(sumJournalDebits([{ debit_minor: "9007199254740990" }, { debit_minor: 1 }]))
-      .toBe(Number.MAX_SAFE_INTEGER);
+    expect(sumJournalDebits([{ debit_minor: "9007199254740990" }, { debit_minor: 1 }])).toBe(
+      Number.MAX_SAFE_INTEGER,
+    );
   });
 
   it("rejects overflow and unsafe JSON numbers instead of silent rounding", () => {
     expect(() => sumJournalDebits([{ debit_minor: "9007199254740992" }])).toThrow("precision");
-    expect(() => sumJournalDebits([{ debit_minor: Number.MAX_SAFE_INTEGER + 1 }])).toThrow("unsafe");
-    expect(() => sumJournalDebits([
-      { debit_minor: Number.MAX_SAFE_INTEGER },
-      { debit_minor: 1 },
-    ])).toThrow("precision");
+    expect(() => sumJournalDebits([{ debit_minor: Number.MAX_SAFE_INTEGER + 1 }])).toThrow(
+      "unsafe",
+    );
+    expect(() =>
+      sumJournalDebits([{ debit_minor: Number.MAX_SAFE_INTEGER }, { debit_minor: 1 }]),
+    ).toThrow("precision");
   });
 
   it("rejects negative, fractional, malformed, or missing minor units", () => {

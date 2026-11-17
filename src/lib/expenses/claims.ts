@@ -63,11 +63,7 @@ export type ExpenseClaimSummary = {
 };
 
 export type ExpenseRebillingStatus =
-  | "not_applicable"
-  | "ready"
-  | "invoiced"
-  | "partially_invoiced"
-  | "cancelled";
+  "not_applicable" | "ready" | "invoiced" | "partially_invoiced" | "cancelled";
 
 export type ExpenseClaimDetail = ExpenseClaimSummary & {
   description: string | null;
@@ -165,7 +161,10 @@ export function mapExpenseClaimDetail(row: unknown): ExpenseClaimDetail {
   return {
     ...summary,
     description: (r["description"] as string | null | undefined) ?? null,
-    paymentSource: str(r["payment_source"] ?? r["paymentSource"], "employee_paid") as ExpensePaymentSource,
+    paymentSource: str(
+      r["payment_source"] ?? r["paymentSource"],
+      "employee_paid",
+    ) as ExpensePaymentSource,
     reimbursementCurrency: str(
       r["reimbursement_currency"] ?? r["reimbursementCurrency"],
       summary.claimCurrency,
@@ -177,12 +176,10 @@ export function mapExpenseClaimDetail(row: unknown): ExpenseClaimDetail {
       r["reimbursementJournalId"] ??
       null) as string | null,
     customerContactId: (r["customer_contact_id"] ?? r["customerContactId"] ?? null) as
-      | string
-      | null,
+      string | null,
     rebillingStatus: asRebillingStatus(r["rebilling_status"] ?? r["rebillingStatus"]),
     rebillingInvoiceId: (r["rebilling_invoice_id"] ?? r["rebillingInvoiceId"] ?? null) as
-      | string
-      | null,
+      string | null,
     lines: linesRaw.map((line) => {
       const l = asRecord(line);
       const unitRaw = str(l["distance_unit"] ?? l["distanceUnit"]);
@@ -210,17 +207,13 @@ export function mapExpenseClaimDetail(row: unknown): ExpenseClaimDetail {
             : num(l["distance_value"] ?? l["distanceValue"]),
         distanceUnit: unitRaw === "mi" || unitRaw === "km" ? unitRaw : null,
         tripOrigin: (l["trip_origin"] ?? l["tripOrigin"] ?? null) as string | null,
-        tripDestination: (l["trip_destination"] ?? l["tripDestination"] ?? null) as
-          | string
-          | null,
+        tripDestination: (l["trip_destination"] ?? l["tripDestination"] ?? null) as string | null,
         isPerDiem: Boolean(l["is_per_diem"] ?? l["isPerDiem"] ?? false),
         travelDayCount:
           l["travel_day_count"] == null && l["travelDayCount"] == null
             ? null
             : num(l["travel_day_count"] ?? l["travelDayCount"]),
-        travelStartDate: (l["travel_start_date"] ?? l["travelStartDate"] ?? null) as
-          | string
-          | null,
+        travelStartDate: (l["travel_start_date"] ?? l["travelStartDate"] ?? null) as string | null,
         travelEndDate: (l["travel_end_date"] ?? l["travelEndDate"] ?? null) as string | null,
       };
     }),

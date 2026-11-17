@@ -1282,6 +1282,100 @@ export const setMessagingRetentionDays = createServerFn({ method: "POST" })
     return row as MessagingSettings;
   });
 
+export const reportMessagingMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; messageId: string; reason?: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    messageId: assertMessagingUuid(input?.messageId, "messageId"),
+    reason: typeof input?.reason === "string" ? input.reason.trim().slice(0, 500) : "reported",
+  }))
+  .handler(async ({ data, context }): Promise<{ reportId: string }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: id, error } = await supabase.rpc("messaging_report_message" as never, {
+      _company_id: data.companyId,
+      _message_id: data.messageId,
+      _reason: data.reason,
+    } as never);
+    if (error) asError(error);
+    return { reportId: String(id) };
+  });
+
+export const listBlockedMessagingUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+  }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<Array<{ blocked_user_id: string; full_name: string; email: string; reason: string | null; created_at: string }>> => {
+      const { supabase, userId } = context;
+      await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+      const { data: rows, error } = await supabase
+        .from("messaging_user_blocks" as never)
+        .select("blocked_user_id, reason, created_at" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("blocker_user_id" as never, userId as never)
+        .order("created_at" as never, { ascending: false });
+      if (error) asError(error);
+      const blocks = (rows ?? []) as Array<{
+        blocked_user_id: string;
+        reason: string | null;
+        created_at: string;
+      }>;
+      const ids = blocks.map((row) => row.blocked_user_id);
+      if (!ids.length) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", ids);
+      const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+      return blocks.map((row) => {
+        const profile = byId.get(row.blocked_user_id);
+        return {
+          blocked_user_id: row.blocked_user_id,
+          full_name: profile?.full_name ?? "Member",
+          email: profile?.email ?? "",
+          reason: row.reason,
+          created_at: row.created_at,
+        };
+      });
+    },
+  );
+
+export const previewMessagingRetentionPurge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.manage_retention");
+    const { data: settings, error } = await supabase
+      .from("messaging_settings" as never)
+      .select("retention_days" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) asError(error);
+    const retentionDays =
+      (settings as { retention_days: number | null } | null)?.retention_days ?? null;
+    if (retentionDays == null) {
+      return { retentionDays: null, candidateCount: 0 };
+    }
+    const cutoff = new Date();
+    cutoff.setUTCDate(cutoff.getUTCDate() - retentionDays);
+    const { count, error: countError } = await supabase
+      .from("messaging_messages" as never)
+      .select("id" as never, { count: "exact", head: true })
+      .eq("company_id" as never, data.companyId as never)
+      .eq("is_redacted" as never, false as never)
+      .lt("created_at" as never, cutoff.toISOString() as never);
+    if (countError) asError(countError);
+    return { retentionDays, candidateCount: count ?? 0 };
+  });
+
 export const getMessagingAnalyticsSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; days?: number }) => ({

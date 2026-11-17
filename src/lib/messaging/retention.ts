@@ -5,6 +5,16 @@ export function isValidMessagingRetentionDays(value: number | null): boolean {
   return Number.isInteger(value) && value >= 30 && value <= 3650;
 }
 
+export function resolveMessagingRetentionPurgeMode(input?: {
+  execute?: boolean;
+  envExecuteFlag?: string | undefined;
+}): "dry_run" | "execute" {
+  const executeRequested = Boolean(input?.execute);
+  const executeAllowed =
+    (input?.envExecuteFlag ?? process.env["MESSAGING_RETENTION_PURGE_EXECUTE"]) === "1";
+  return executeRequested && executeAllowed ? "execute" : "dry_run";
+}
+
 export function messagingRetentionLabel(days: number | null): string {
   if (days == null) return "Keep indefinitely (manual purge only)";
   return `Retain for ${days} days`;

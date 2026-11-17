@@ -3,6 +3,7 @@ import {
   isValidMessagingRetentionDays,
   messagesPastRetention,
   messagingRetentionLabel,
+  resolveMessagingRetentionPurgeMode,
 } from "./retention";
 
 describe("messaging retention", () => {
@@ -10,6 +11,10 @@ describe("messaging retention", () => {
     expect(isValidMessagingRetentionDays(null)).toBe(true);
     expect(isValidMessagingRetentionDays(30)).toBe(true);
     expect(isValidMessagingRetentionDays(29)).toBe(false);
+  });
+
+  it("keeps purge execute fail-closed", () => {
+    expect(resolveMessagingRetentionPurgeMode({ execute: true })).toBe("dry_run");
   });
 
   it("labels and detects expired messages without deleting", () => {

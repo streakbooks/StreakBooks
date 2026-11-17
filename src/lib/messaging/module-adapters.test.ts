@@ -7,6 +7,9 @@ describe("messaging module adapters", () => {
     expect(getMessagingRecordAdapter("sales_quote")?.buildDeepLink("abc")).toBe(
       "/sales/quotes/abc",
     );
+    expect(getMessagingRecordAdapter("sales_credit_note")?.buildDeepLink("abc")).toBe(
+      "/sales/credit-notes/abc",
+    );
     expect(getMessagingRecordAdapter("expense_claim")?.allowExternal).toBe(false);
     expect(getMessagingRecordAdapter("hr_leave_request")?.defaultVisibility).toBe("hr_private");
     expect(getMessagingRecordAdapter("advisor_engagement")?.defaultVisibility).toBe("advisor");

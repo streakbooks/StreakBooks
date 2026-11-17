@@ -35,6 +35,15 @@ export const MESSAGING_RECORD_ADAPTERS: readonly MessagingRecordAdapter[] = [
     retentionClass: "standard",
   },
   {
+    recordType: "sales_credit_note",
+    label: "Sales credit note",
+    defaultVisibility: "internal",
+    allowExternal: true,
+    requiredViewPermission: "sales.view",
+    buildDeepLink: (id) => `/sales/credit-notes/${id}`,
+    retentionClass: "standard",
+  },
+  {
     recordType: "purchase_order",
     label: "Purchase order",
     defaultVisibility: "internal",

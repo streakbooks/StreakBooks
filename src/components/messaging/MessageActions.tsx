@@ -8,6 +8,7 @@ import {
   pinMessagingMessage,
   reactMessagingMessage,
   redactMessagingMessage,
+  reportMessagingMessage,
   starMessagingMessage,
 } from "@/lib/messaging/messaging.functions";
 import { notify } from "@/lib/notify";
@@ -32,6 +33,7 @@ export function MessageActions({
   const react = useServerFn(reactMessagingMessage);
   const pin = useServerFn(pinMessagingMessage);
   const star = useServerFn(starMessagingMessage);
+  const report = useServerFn(reportMessagingMessage);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.body);
 
@@ -82,6 +84,19 @@ export function MessageActions({
     mutationFn: () => star({ data: { companyId, messageId: message.id, starred: true } }),
     onSuccess: () => notify.success("Message starred"),
     onError: (error) => notify.error(error, "Could not star message"),
+  });
+
+  const reportMutation = useMutation({
+    mutationFn: () =>
+      report({
+        data: {
+          companyId,
+          messageId: message.id,
+          reason: "Reported from Messages workspace",
+        },
+      }),
+    onSuccess: () => notify.success("Report submitted", "Moderation will review this message."),
+    onError: (error) => notify.error(error, "Could not report message"),
   });
 
   if (message.is_redacted) return null;
@@ -147,6 +162,16 @@ export function MessageActions({
           onClick={() => starMutation.mutate()}
         >
           Star
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-7"
+          disabled={reportMutation.isPending}
+          onClick={() => reportMutation.mutate()}
+        >
+          Report
         </Button>
         {canEdit ? (
           <>

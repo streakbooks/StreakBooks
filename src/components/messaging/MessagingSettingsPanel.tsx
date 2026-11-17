@@ -8,6 +8,7 @@ import { LoadingState, ErrorState } from "@/components/common/states";
 import { useMessagingSettings } from "@/hooks/use-messaging";
 import {
   previewMessagingDigest,
+  previewMessagingRetentionPurge,
   setMessagingCollaborationFlags,
   setMessagingEnabled,
   setMessagingRetentionDays,
@@ -27,9 +28,11 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
   const setFlags = useServerFn(setMessagingCollaborationFlags);
   const setRetention = useServerFn(setMessagingRetentionDays);
   const previewDigest = useServerFn(previewMessagingDigest);
+  const previewPurge = useServerFn(previewMessagingRetentionPurge);
   const client = useQueryClient();
   const [digestPreview, setDigestPreview] = useState<string | null>(null);
   const [retentionDraft, setRetentionDraft] = useState<string>("");
+  const [purgePreview, setPurgePreview] = useState<string | null>(null);
 
   const invalidate = () => {
     void client.invalidateQueries({ queryKey: ["messaging-settings", companyId] });
@@ -209,6 +212,26 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
             Changing retention requires messaging.manage_retention.
           </p>
         ) : null}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={!canRetention || busy}
+          onClick={() => {
+            void previewPurge({ data: { companyId } })
+              .then((result) => {
+                setPurgePreview(
+                  result.retentionDays == null
+                    ? "No retention window configured."
+                    : `Dry-run candidates older than ${result.retentionDays} days: ${result.candidateCount}. Cron purge stays dry-run unless MESSAGING_RETENTION_PURGE_EXECUTE=1.`,
+                );
+              })
+              .catch((error) => notify.error(error, "Could not preview retention purge"));
+          }}
+        >
+          Preview retention purge
+        </Button>
+        {purgePreview ? <p className="text-xs text-muted-foreground">{purgePreview}</p> : null}
       </div>
 
       <div className="space-y-2 border-t pt-4">

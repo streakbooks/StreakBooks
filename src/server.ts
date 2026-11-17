@@ -111,6 +111,24 @@ export default {
           return Response.json({ error: "Scheduled digest worker failed" }, { status: 503 });
         }
       }
+      if (pathname === "/api/messaging/retention-cron") {
+        if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
+        const { authenticateCronRequest } = await import("./integrations/supabase/cron-auth");
+        const authFailure = await authenticateCronRequest(request);
+        if (authFailure) return authFailure;
+        const { runMessagingRetentionPurge } = await import(
+          "./lib/messaging/retention-purge.server"
+        );
+        try {
+          const url = new URL(request.url);
+          const execute = url.searchParams.get("execute") === "1";
+          const result = await runMessagingRetentionPurge({ execute });
+          return Response.json(result, { headers: { "cache-control": "no-store" } });
+        } catch (error) {
+          console.error("Messaging retention purge error", error);
+          return Response.json({ error: "Messaging retention purge failed" }, { status: 503 });
+        }
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

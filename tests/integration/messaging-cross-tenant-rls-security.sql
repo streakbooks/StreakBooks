@@ -60,6 +60,12 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
+    SELECT 1 FROM pg_proc WHERE proname = 'messaging_report_message'
+  ) THEN
+    RAISE EXCEPTION 'messaging_report_message RPC missing';
+  END IF;
+
+  IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
     WHERE conname = 'communication_send_claims_kind_check'

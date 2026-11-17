@@ -16,6 +16,7 @@ import { MessageActions } from "@/components/messaging/MessageActions";
 import { MessageReceipts } from "@/components/messaging/MessageReceipts";
 import { MessagingAiAssistPanel } from "@/components/messaging/MessagingAiAssistPanel";
 import { MessagingVoiceVideoPanel } from "@/components/messaging/MessagingVoiceVideoPanel";
+import { SafeMessageBody } from "@/components/messaging/SafeMessageBody";
 import { cn } from "@/lib/utils";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import {
@@ -46,6 +47,10 @@ import {
   createMessagingSendPaceState,
   recordMessagingSend,
 } from "@/lib/messaging/rate-limit";
+import {
+  buildMessagingThreadExport,
+  downloadTextFile,
+} from "@/lib/messaging/export-thread";
 import { uploadMessagingAttachment } from "@/lib/messaging/upload-client";
 import { notify } from "@/lib/notify";
 import { looksLikeInformalApproval } from "@/lib/messaging/approvals";
@@ -473,6 +478,29 @@ export function MessagesScreen({
                   >
                     {showMembers ? "Hide members" : "Members"}
                   </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!messages.data?.length}
+                    onClick={() => {
+                      const title =
+                        selected?.title ||
+                        (selected?.conversation_type === "dm" ? "Direct message" : "Conversation");
+                      const text = buildMessagingThreadExport({
+                        title,
+                        conversationId,
+                        messages: messages.data ?? [],
+                      });
+                      downloadTextFile(
+                        `messages-${conversationId.slice(0, 8)}.txt`,
+                        text,
+                      );
+                      notify.success("Conversation exported");
+                    }}
+                  >
+                    Export
+                  </Button>
                   {selected &&
                   ["group", "channel", "hr_private", "accountant_client", "advisor_engagement"].includes(
                     selected.conversation_type,
@@ -601,7 +629,7 @@ export function MessagesScreen({
                         Replying to message {message.reply_to_message_id.slice(0, 8)}…
                       </p>
                     ) : null}
-                    <p className="whitespace-pre-wrap text-sm">{message.body}</p>
+                    <SafeMessageBody body={message.body} />
                     {companyId ? (
                       <MessageActions
                         companyId={companyId}

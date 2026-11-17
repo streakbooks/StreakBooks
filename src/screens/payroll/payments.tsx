@@ -774,6 +774,20 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               Allocations, unallocated balance, and linked journal entry.
             </DialogDescription>
           </DialogHeader>
+          {detailPaymentId !== null && paymentDetailQ.isSuccess ? (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={paymentDetailQ.isFetching}
+                onClick={() => void paymentDetailQ.refetch()}
+                aria-label="Refresh payroll payment details"
+              >
+                {paymentDetailQ.isFetching ? "Refreshing…" : "Refresh details"}
+              </Button>
+            </div>
+          ) : null}
           {paymentDetailQ.isPending ? (
             <LoadingState />
           ) : paymentDetailQ.isError ? (

@@ -2,10 +2,10 @@
 
 **Branch:** `feature/chat-collaboration-platform`  
 **Updated:** 2026-11-17  
-**Overall verified completion:** ~48% (draft PR open; attachments/portal/HR/approval code landed; staging DB apply + live E2E still outstanding)
+**Overall verified completion:** ~52% (draft PR #224; presence/typing landed; staging DB apply + live E2E still outstanding)
 
 ```
-[█████████░░░░░░░░░░░] 48%
+[██████████░░░░░░░░░░] 52%
 ```
 
 ## Phase status
@@ -29,7 +29,7 @@ Blocked: staging Supabase migration apply pending confirmation that `ipxflpzfcqw
 | Item | Status |
 | ---- | ------ |
 | Current branch | `feature/chat-collaboration-platform` (pushed) |
-| Relevant commits | `681059ee`, `293eda21`, + batch in progress |
+| Relevant commits | `681059ee`, `293eda21`, `cd633856`, `dd0a8227` |
 | Migration status | 3 SQL migrations on branch; **not applied** to remote DB |
 | Security tests | Structural + scenario scripts; live multi-user not executed |
 | Unit tests | `src/lib/messaging` — 13 passed this batch |

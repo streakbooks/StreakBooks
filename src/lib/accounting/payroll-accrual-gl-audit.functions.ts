@@ -32,7 +32,9 @@ export const auditPayrollAccrualGl = createServerFn({ method: "GET" })
 
     const { data: rawRun, error: runError } = await sb
       .from("payroll_runs" as never)
-      .select("id, company_id, run_number, status, currency, payment_date, net_minor, accrual_journal_id, posting_idempotency_key" as never)
+      .select(
+        "id, company_id, run_number, status, currency, payment_date, net_minor, accrual_journal_id, posting_idempotency_key" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.runId as never)
       .maybeSingle();
@@ -48,7 +50,9 @@ export const auditPayrollAccrualGl = createServerFn({ method: "GET" })
 
     const { data: rawJournal, error: journalError } = await sb
       .from("journals" as never)
-      .select("id, company_id, status, source_type, source_id, idempotency_key, currency_code, journal_date, reversed_by_journal_id" as never)
+      .select(
+        "id, company_id, status, source_type, source_id, idempotency_key, currency_code, journal_date, reversed_by_journal_id" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.journalId as never)
       .maybeSingle();
@@ -61,7 +65,9 @@ export const auditPayrollAccrualGl = createServerFn({ method: "GET" })
 
     const { data: rawSettings, error: settingsError } = await sb
       .from("payroll_settings" as never)
-      .select("company_id, salary_expense_account_id, deduction_liability_account_id, employer_expense_account_id, employer_liability_account_id, net_pay_liability_account_id" as never)
+      .select(
+        "company_id, salary_expense_account_id, deduction_liability_account_id, employer_expense_account_id, employer_liability_account_id, net_pay_liability_account_id" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
     if (settingsError) throw new Error(settingsError.message);
@@ -80,7 +86,9 @@ export const auditPayrollAccrualGl = createServerFn({ method: "GET" })
     if (employees.length >= 201) {
       throw new Error("Payroll employee source evidence exceeds the 200-row audit limit.");
     }
-    const included = employees.filter((employee) => employee.status === "included").map((e) => e.id);
+    const included = employees
+      .filter((employee) => employee.status === "included")
+      .map((e) => e.id);
     if (!included.length) throw new Error("Posted payroll has no included employee evidence.");
 
     const { data: rawSources, error: sourcesError } = await sb
@@ -95,8 +103,11 @@ export const auditPayrollAccrualGl = createServerFn({ method: "GET" })
     if (sources.length >= 1001) {
       throw new Error("Payroll component source evidence exceeds the 1000-row audit limit.");
     }
-    const componentIds = [...new Set(sources.map((line) => line.component_type_id)
-      .filter((id): id is string => Boolean(id)))];
+    const componentIds = [
+      ...new Set(
+        sources.map((line) => line.component_type_id).filter((id): id is string => Boolean(id)),
+      ),
+    ];
     if (componentIds.length > 150) {
       throw new Error("Payroll component mappings exceed the 150-account audit limit.");
     }
@@ -125,10 +136,19 @@ export const auditPayrollAccrualGl = createServerFn({ method: "GET" })
     if (glError) throw new Error(glError.message);
     const glLines = (rawGlLines ?? []) as unknown as PayrollAuditGlLine[];
     if (glLines.length >= 501) {
-      throw new Error("Payroll GL journal exceeds the 500-line audit limit; no incomplete match returned.");
+      throw new Error(
+        "Payroll GL journal exceeds the 500-line audit limit; no incomplete match returned.",
+      );
     }
     const report = auditPayrollAccrualTieOut(
-      data.companyId, run, settings, employees, sources, components, journal, glLines,
+      data.companyId,
+      run,
+      settings,
+      employees,
+      sources,
+      components,
+      journal,
+      glLines,
     );
     const accountIds = [...new Set(report.accounts.map((row) => row.accountId))];
     if (accountIds.length > 500) {
@@ -143,7 +163,10 @@ export const auditPayrollAccrualGl = createServerFn({ method: "GET" })
         .limit(501);
       if (accountError) throw new Error(accountError.message);
       const accountRows = (rawAccounts ?? []) as unknown as Array<{
-        id: string; company_id: string; code: string; name: string;
+        id: string;
+        company_id: string;
+        code: string;
+        name: string;
       }>;
       const byId = new Map(accountRows.map((row) => [row.id, row]));
       for (const id of accountIds) {

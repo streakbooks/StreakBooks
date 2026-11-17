@@ -75,10 +75,9 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
   }
   if (!canView) {
     return (
-      <RecordWorkspace title="Application" description="App Store"
-    >
-      <EmptyState title="No access" description="Requires appstore.view." />
-    </RecordWorkspace>
+      <RecordWorkspace title="Application" description="App Store">
+        <EmptyState title="No access" description="Requires appstore.view." />
+      </RecordWorkspace>
     );
   }
   if (catalogue.isLoading) {
@@ -86,7 +85,7 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
       <RecordWorkspace title="Application" description="Loading listing…">
         <AppStoreSubnav current="explore" />
         <LoadingState />
-    </RecordWorkspace>
+      </RecordWorkspace>
     );
   }
   if (catalogue.isError) {
@@ -115,7 +114,7 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
             </Button>
           }
         />
-    </RecordWorkspace>
+      </RecordWorkspace>
     );
   }
 
@@ -127,89 +126,90 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
   const already = app.installStatus === "installed" || app.installStatus === "disabled";
 
   return (
-      <RecordWorkspace title={app.name}
-        description={app.headline}
-        insights={
-          <WorkspaceInsights
-            title="Related"
-            facts={[
-              {
-                label: "Kind",
-                value:
-                  app.kind === "native"
-                    ? "Native"
-                    : app.kind === "partner_api"
-                      ? "Partner API"
-                      : "Hybrid",
-              },
-              {
-                label: "Status",
-                value: connectorStatusLabel(app.implementationStatus),
-              },
-              {
-                label: "Install state",
-                value: app.installStatus?.replaceAll("_", " ") ?? "not installed",
-              },
-              {
-                label: "Security review",
-                value: app.securityReviewPassed ? "passed" : "pending",
-              },
-              {
-                label: "Real customer data",
-                value: app.realCustomerDataEnabled ? "enabled" : "disabled",
-              },
-            ]}
-            links={[
-              {
-                label: "Explore catalogue",
-                to: "/app-store/$section",
-                params: { section: "explore" },
-                hint: "Return to the App Store catalogue",
-              },
-              {
-                label: "CSV / import alternative",
-                to: "/imports",
-                hint: "Use file import when a connector is unavailable",
-              },
-              {
-                label: "Public API docs",
-                to: "/developer/$section",
-                params: { section: "api-docs" },
-                hint: "Developer portal documentation",
-              },
-            ]}
-            footer="Install stays fail-closed until verified E2E sync and activation gates pass. No fabricated readiness."
-          />
-        }
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/app-store/$section" params={{ section: "explore" }}>
-                Back to explore
-              </Link>
+    <RecordWorkspace
+      title={app.name}
+      description={app.headline}
+      insights={
+        <WorkspaceInsights
+          title="Related"
+          facts={[
+            {
+              label: "Kind",
+              value:
+                app.kind === "native"
+                  ? "Native"
+                  : app.kind === "partner_api"
+                    ? "Partner API"
+                    : "Hybrid",
+            },
+            {
+              label: "Status",
+              value: connectorStatusLabel(app.implementationStatus),
+            },
+            {
+              label: "Install state",
+              value: app.installStatus?.replaceAll("_", " ") ?? "not installed",
+            },
+            {
+              label: "Security review",
+              value: app.securityReviewPassed ? "passed" : "pending",
+            },
+            {
+              label: "Real customer data",
+              value: app.realCustomerDataEnabled ? "enabled" : "disabled",
+            },
+          ]}
+          links={[
+            {
+              label: "Explore catalogue",
+              to: "/app-store/$section",
+              params: { section: "explore" },
+              hint: "Return to the App Store catalogue",
+            },
+            {
+              label: "CSV / import alternative",
+              to: "/imports",
+              hint: "Use file import when a connector is unavailable",
+            },
+            {
+              label: "Public API docs",
+              to: "/developer/$section",
+              params: { section: "api-docs" },
+              hint: "Developer portal documentation",
+            },
+          ]}
+          footer="Install stays fail-closed until verified E2E sync and activation gates pass. No fabricated readiness."
+        />
+      }
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/app-store/$section" params={{ section: "explore" }}>
+              Back to explore
+            </Link>
+          </Button>
+          {canRequest ? (
+            <Button
+              size="sm"
+              disabled={installMutation.isPending || already || action === "blocked"}
+              onClick={() => installMutation.mutate()}
+            >
+              {already
+                ? "Interest already recorded"
+                : installable
+                  ? "Install"
+                  : action === "request"
+                    ? "Register interest"
+                    : "Not available"}
             </Button>
-            {canRequest ? (
-              <Button
-                size="sm"
-                disabled={installMutation.isPending || already || action === "blocked"}
-                onClick={() => installMutation.mutate()}
-              >
-                {already
-                  ? "Interest already recorded"
-                  : installable
-                    ? "Install"
-                    : action === "request"
-                      ? "Register interest"
-                      : "Not available"}
-              </Button>
-            ) : null}
-            <Button asChild variant="outline" size="sm">
-              <Link to="/imports" search={{ module: undefined }}>
-                CSV / import alternative
-              </Link>
-            </Button>
-          </div>
-        }
+          ) : null}
+          <Button asChild variant="outline" size="sm">
+            <Link to="/imports" search={{ module: undefined }}>
+              CSV / import alternative
+            </Link>
+          </Button>
+        </div>
+      }
     >
       <AppStoreSubnav current="explore" />
 
@@ -350,5 +350,5 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
         />
       </div>
     </RecordWorkspace>
-    );
+  );
 }

@@ -82,15 +82,19 @@ describe("Fixed Assets form feedback", () => {
       expenseAccountId: "",
     });
     expect(frozen.valid).toBe(true);
-    expect(validateAssetFormForDisplay({ ...complete, frozen: true, name: "" }).fields.name)
-      .toMatch(/name/i);
+    expect(
+      validateAssetFormForDisplay({ ...complete, frozen: true, name: "" }).fields.name,
+    ).toMatch(/name/i);
   });
   it("rejects non-finite and imprecise amounts", () => {
-    expect(validateAssetFormForDisplay({ ...complete, costMinor: NaN }).fields.cost)
-      .toMatch(/exact/i);
-    expect(validateAssetFormForDisplay({
-      ...complete,
-      costMinor: Number.MAX_SAFE_INTEGER + 2,
-    }).fields.cost).toMatch(/exact/i);
+    expect(validateAssetFormForDisplay({ ...complete, costMinor: NaN }).fields.cost).toMatch(
+      /exact/i,
+    );
+    expect(
+      validateAssetFormForDisplay({
+        ...complete,
+        costMinor: Number.MAX_SAFE_INTEGER + 2,
+      }).fields.cost,
+    ).toMatch(/exact/i);
   });
 });

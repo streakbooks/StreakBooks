@@ -122,7 +122,12 @@ function monthEnd(day: string): boolean {
   value.setUTCDate(value.getUTCDate() + 1);
   return value.getUTCDate() === 1;
 }
-function put(map: Map<string, bigint>, accountId: string, side: "debit" | "credit", value: bigint): void {
+function put(
+  map: Map<string, bigint>,
+  accountId: string,
+  side: "debit" | "credit",
+  value: bigint,
+): void {
   if (value <= 0n || !accountId) return;
   const id = accountId + "|" + side;
   map.set(id, (map.get(id) ?? 0n) + value);
@@ -170,18 +175,25 @@ function journalLines(
   return { sides, debit, credit };
 }
 function metadata(
-  companyId: string, currency: string, journal: AssetPostingJournal,
-  expectedSource: string, expectedId: string, expectedKey: string, expectedDate: string,
+  companyId: string,
+  currency: string,
+  journal: AssetPostingJournal,
+  expectedSource: string,
+  expectedId: string,
+  expectedKey: string,
+  expectedDate: string,
   issues: string[],
 ): void {
-  if (journal.company_id !== companyId || !journal.id) issues.push("GL journal identity or organisation is invalid.");
+  if (journal.company_id !== companyId || !journal.id)
+    issues.push("GL journal identity or organisation is invalid.");
   if (journal.status !== "posted" || journal.reversed_by_journal_id) {
     issues.push("Linked asset journal is missing an active posted status.");
   }
   if (journal.source_type !== expectedSource || journal.source_id !== expectedId) {
     issues.push("Asset journal source type or source ID differs from posting source.");
   }
-  if (journal.idempotency_key !== expectedKey) issues.push("Asset journal posting key is incorrect.");
+  if (journal.idempotency_key !== expectedKey)
+    issues.push("Asset journal posting key is incorrect.");
   if (journal.journal_date !== expectedDate || !validDay(journal.journal_date)) {
     issues.push("Asset journal date differs from source posting date.");
   }
@@ -196,7 +208,8 @@ function metadata(
  * and side so shared expense/accumulated accounts do not get silently netted.
  */
 export function reviewAssetDepreciationPosting(
-  companyId: string, baseCurrency: string,
+  companyId: string,
+  baseCurrency: string,
   run: AssetDepreciationRunEvidence,
   entries: readonly AssetDepreciationEntryEvidence[],
   assets: readonly AssetPostingAsset[],
@@ -211,8 +224,16 @@ export function reviewAssetDepreciationPosting(
   if (!Number.isSafeInteger(run.asset_count) || run.asset_count < 1) {
     issues.push("Posted depreciation run has an invalid asset count.");
   }
-  metadata(companyId, baseCurrency, journal, "depreciation", run.id,
-    "fa-dep-run:" + run.id, run.period_end, issues);
+  metadata(
+    companyId,
+    baseCurrency,
+    journal,
+    "depreciation",
+    run.id,
+    "fa-dep-run:" + run.id,
+    run.period_end,
+    issues,
+  );
 
   const byAsset = new Map<string, AssetPostingAsset>();
   for (const asset of assets) {
@@ -227,9 +248,15 @@ export function reviewAssetDepreciationPosting(
   let expectedTotal = 0n;
   for (const [index, entry] of entries.entries()) {
     const label = "Depreciation entry " + (index + 1);
-    if (!entry.id || seenEntries.has(entry.id) || seenAssets.has(entry.asset_id) ||
-        entry.company_id !== companyId || entry.run_id !== run.id ||
-        entry.journal_id !== journal.id || entry.period_end !== run.period_end) {
+    if (
+      !entry.id ||
+      seenEntries.has(entry.id) ||
+      seenAssets.has(entry.asset_id) ||
+      entry.company_id !== companyId ||
+      entry.run_id !== run.id ||
+      entry.journal_id !== journal.id ||
+      entry.period_end !== run.period_end
+    ) {
       issues.push(label + " is duplicated or not linked to the requested run and period.");
     }
     seenEntries.add(entry.id);
@@ -246,14 +273,20 @@ export function reviewAssetDepreciationPosting(
         }
         try {
           const cost = exactMinor(asset.cost_minor, label + " asset cost");
-          const opening = exactMinor(asset.opening_accumulated_minor, label + " opening depreciation");
-          if (cost === 0n || cost > 900000000000000n || opening > cost ||
-              amount > cost - opening) {
-            issues.push(label + " exceeds the asset's valid cost and opening depreciation capacity.");
+          const opening = exactMinor(
+            asset.opening_accumulated_minor,
+            label + " opening depreciation",
+          );
+          if (cost === 0n || cost > 900000000000000n || opening > cost || amount > cost - opening) {
+            issues.push(
+              label + " exceeds the asset's valid cost and opening depreciation capacity.",
+            );
           }
-          if (asset.purchase_date > run.period_end ||
-              !validDay(asset.purchase_date) ||
-              (asset.disposal_date && asset.disposal_date.slice(0, 7) < run.period_end.slice(0, 7))) {
+          if (
+            asset.purchase_date > run.period_end ||
+            !validDay(asset.purchase_date) ||
+            (asset.disposal_date && asset.disposal_date.slice(0, 7) < run.period_end.slice(0, 7))
+          ) {
             issues.push(label + " belongs to an asset outside its valid purchase/disposal period.");
           }
         } catch (error) {
@@ -269,7 +302,8 @@ export function reviewAssetDepreciationPosting(
   if (entries.length === 0 || assets.length !== seenAssets.size) {
     issues.push("Depreciation entry/asset source evidence is missing or incomplete.");
   }
-  if (entries.length !== run.asset_count) issues.push("Depreciation entry count differs from run asset_count.");
+  if (entries.length !== run.asset_count)
+    issues.push("Depreciation entry count differs from run asset_count.");
   let registeredTotal: bigint | null = null;
   try {
     registeredTotal = exactMinor(run.total_minor, "Depreciation run total");
@@ -281,8 +315,11 @@ export function reviewAssetDepreciationPosting(
   }
 
   const posted = journalLines(companyId, journal.id, lines, issues);
-  const sides: AssetPostingAccountSide[] = [...new Set([...expected.keys(), ...posted.sides.keys()])]
-    .sort().map(key => {
+  const sides: AssetPostingAccountSide[] = [
+    ...new Set([...expected.keys(), ...posted.sides.keys()]),
+  ]
+    .sort()
+    .map((key) => {
       const separator = key.lastIndexOf("|");
       const exp = expected.get(key) ?? 0n;
       const actual = posted.sides.get(key) ?? 0n;
@@ -290,7 +327,8 @@ export function reviewAssetDepreciationPosting(
       return {
         accountId: key.slice(0, separator),
         side: key.slice(separator + 1) as "debit" | "credit",
-        expectedMinor: exp.toString(), postedMinor: actual.toString(),
+        expectedMinor: exp.toString(),
+        postedMinor: actual.toString(),
         matched: exp === actual,
       };
     });
@@ -299,13 +337,17 @@ export function reviewAssetDepreciationPosting(
   }
   return {
     status: issues.length ? "exceptions" : "matched",
-    runId: run.id, journalId: journal.id, currency: baseCurrency,
-    entryCount: entries.length, glLineCount: lines.length,
+    runId: run.id,
+    journalId: journal.id,
+    currency: baseCurrency,
+    entryCount: entries.length,
+    glLineCount: lines.length,
     expectedTotalMinor: expectedTotal.toString(),
     registeredTotalMinor: registeredTotal?.toString() ?? null,
     postedDebitMinor: posted.debit.toString(),
     postedCreditMinor: posted.credit.toString(),
-    accountSides: sides, issues,
+    accountSides: sides,
+    issues,
   };
 }
 
@@ -315,7 +357,8 @@ export function reviewAssetDepreciationPosting(
  * so no all-clear is possible for their classification from this evidence.
  */
 export function reviewAssetDisposalPosting(
-  companyId: string, baseCurrency: string,
+  companyId: string,
+  baseCurrency: string,
   asset: AssetPostingAsset,
   entries: readonly AssetDepreciationEntryEvidence[],
   journal: AssetPostingJournal,
@@ -325,25 +368,45 @@ export function reviewAssetDisposalPosting(
   const warnings = [
     "Proceeds and gain/loss account classifications are not independently verifiable from the current fixed-asset register row.",
   ];
-  if (!asset.id || asset.company_id !== companyId || asset.status !== "disposed" ||
-      !validDay(asset.purchase_date) || !validDay(asset.disposal_date ?? "") ||
-      (asset.disposal_date && asset.purchase_date > asset.disposal_date) ||
-      !asset.disposal_journal_id || asset.disposal_journal_id !== journal.id) {
+  if (
+    !asset.id ||
+    asset.company_id !== companyId ||
+    asset.status !== "disposed" ||
+    !validDay(asset.purchase_date) ||
+    !validDay(asset.disposal_date ?? "") ||
+    (asset.disposal_date && asset.purchase_date > asset.disposal_date) ||
+    !asset.disposal_journal_id ||
+    asset.disposal_journal_id !== journal.id
+  ) {
     issues.push("Disposal asset status, dates or linked journal are inconsistent.");
   }
-  metadata(companyId, baseCurrency, journal, "asset_disposal", asset.id,
-    "fa-dispose:" + asset.id, asset.disposal_date ?? "", issues);
+  metadata(
+    companyId,
+    baseCurrency,
+    journal,
+    "asset_disposal",
+    asset.id,
+    "fa-dispose:" + asset.id,
+    asset.disposal_date ?? "",
+    issues,
+  );
   const entryIds = new Set<string>();
   const periods = new Set<string>();
   let depreciation = 0n;
   for (const [index, entry] of entries.entries()) {
     const label = "Disposal depreciation entry " + (index + 1);
-    if (!entry.id || entryIds.has(entry.id) || entry.asset_id !== asset.id ||
-        entry.company_id !== companyId || !entry.run_id ||
-        !validDay(entry.period_end) || !monthEnd(entry.period_end) ||
-        periods.has(entry.period_end) ||
-        (asset.disposal_date && entry.period_end.slice(0, 7) > asset.disposal_date.slice(0, 7)) ||
-        !entry.journal_id) {
+    if (
+      !entry.id ||
+      entryIds.has(entry.id) ||
+      entry.asset_id !== asset.id ||
+      entry.company_id !== companyId ||
+      !entry.run_id ||
+      !validDay(entry.period_end) ||
+      !monthEnd(entry.period_end) ||
+      periods.has(entry.period_end) ||
+      (asset.disposal_date && entry.period_end.slice(0, 7) > asset.disposal_date.slice(0, 7)) ||
+      !entry.journal_id
+    ) {
       issues.push(label + " has duplicated, inconsistent or post-disposal source evidence.");
     }
     entryIds.add(entry.id);
@@ -356,11 +419,16 @@ export function reviewAssetDisposalPosting(
       issues.push(error instanceof Error ? error.message : label + " amount invalid.");
     }
   }
-  let cost: bigint | null = null, accumulated: bigint | null = null;
-  let proceeds: bigint | null = null, netBook: bigint | null = null, gainLoss: bigint | null = null;
+  let cost: bigint | null = null,
+    accumulated: bigint | null = null;
+  let proceeds: bigint | null = null,
+    netBook: bigint | null = null,
+    gainLoss: bigint | null = null;
   try {
     cost = exactMinor(asset.cost_minor, "Disposed asset cost");
-    accumulated = exactMinor(asset.opening_accumulated_minor, "Opening accumulated depreciation") + depreciation;
+    accumulated =
+      exactMinor(asset.opening_accumulated_minor, "Opening accumulated depreciation") +
+      depreciation;
     if (cost === 0n || accumulated > cost) {
       issues.push("Asset cost is zero or cumulative depreciation exceeds acquisition cost.");
     }
@@ -381,7 +449,8 @@ export function reviewAssetDisposalPosting(
   }
   if (cost !== null) {
     const assetCredit = posted.sides.get(asset.asset_account_id + "|credit") ?? 0n;
-    if (assetCredit !== cost) issues.push("Disposal journal does not credit exact original asset cost.");
+    if (assetCredit !== cost)
+      issues.push("Disposal journal does not credit exact original asset cost.");
   }
   if (accumulated !== null && accumulated > 0n) {
     const accumulatedDebit = posted.sides.get(asset.accumulated_account_id + "|debit") ?? 0n;
@@ -389,7 +458,9 @@ export function reviewAssetDisposalPosting(
       issues.push("Disposal journal does not debit accumulated depreciation in full.");
     }
     if (accumulatedDebit > accumulated) {
-      warnings.push("Accumulated depreciation GL account has additional disposal debit amounts; check shared proceeds accounts.");
+      warnings.push(
+        "Accumulated depreciation GL account has additional disposal debit amounts; check shared proceeds accounts.",
+      );
     }
   }
   if (cost !== null && netBook !== null && proceeds !== null) {
@@ -402,12 +473,18 @@ export function reviewAssetDisposalPosting(
   }
   return {
     status: issues.length ? "exceptions" : "partial",
-    assetId: asset.id, journalId: journal.id, currency: baseCurrency,
+    assetId: asset.id,
+    journalId: journal.id,
+    currency: baseCurrency,
     depreciationEntryCount: entries.length,
     accumulatedMinor: accumulated?.toString() ?? null,
-    costMinor: cost?.toString() ?? null, netBookValueMinor: netBook?.toString() ?? null,
-    proceedsMinor: proceeds?.toString() ?? null, gainLossMinor: gainLoss?.toString() ?? null,
-    postedDebitMinor: posted.debit.toString(), postedCreditMinor: posted.credit.toString(),
-    issues, warnings,
+    costMinor: cost?.toString() ?? null,
+    netBookValueMinor: netBook?.toString() ?? null,
+    proceedsMinor: proceeds?.toString() ?? null,
+    gainLossMinor: gainLoss?.toString() ?? null,
+    postedDebitMinor: posted.debit.toString(),
+    postedCreditMinor: posted.credit.toString(),
+    issues,
+    warnings,
   };
 }

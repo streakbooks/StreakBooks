@@ -26,9 +26,7 @@ export function buildFixedAssetRegisterCsv(
     const raw = String(value ?? "");
     // Neutralise spreadsheet formulas from user-entered asset names, numbers,
     // types and GL names. Exact financial amounts remain numeric.
-    const safe = typeof value === "string" && /^\s*[=+@-]/.test(raw)
-      ? "'" + raw
-      : raw;
+    const safe = typeof value === "string" && /^\s*[=+@-]/.test(raw) ? "'" + raw : raw;
     return '"' + safe.replace(/"/g, '""') + '"';
   };
   const headers = [
@@ -63,7 +61,7 @@ export function buildFixedAssetRegisterCsv(
       asset.asset_number,
       asset.name,
       future ? "Not yet purchased" : status,
-      asset.asset_type_id ? typeNames.get(asset.asset_type_id) ?? "Unlisted type" : "",
+      asset.asset_type_id ? (typeNames.get(asset.asset_type_id) ?? "Unlisted type") : "",
       accountNames.get(asset.asset_account_id) ?? "Unlisted account",
       asset.purchase_date,
       asset.depreciation_start_date,

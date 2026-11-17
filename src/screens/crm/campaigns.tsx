@@ -151,7 +151,10 @@ export function CrmCampaignsPage() {
       <CrmSubnav current="campaigns" />
 
       {settings.data && !settings.data.enabled ? (
-        <EmptyState title="CRM is disabled" description="Enable CRM to load campaigns and sources." />
+        <EmptyState
+          title="CRM is disabled"
+          description="Enable CRM to load campaigns and sources."
+        />
       ) : null}
 
       {settings.data?.enabled ? (
@@ -159,7 +162,8 @@ export function CrmCampaignsPage() {
           <Alert>
             <AlertTitle>Accounting boundary</AlertTitle>
             <AlertDescription>
-              Campaign budgets are CRM planning values only. They do not post GL journals or send email.
+              Campaign budgets are CRM planning values only. They do not post GL journals or send
+              email.
             </AlertDescription>
           </Alert>
 
@@ -172,11 +176,19 @@ export function CrmCampaignsPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="campaign-name">Name</Label>
-                  <Input id="campaign-name" value={name} onChange={(e) => setName(e.target.value)} />
+                  <Input
+                    id="campaign-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="campaign-code">Code</Label>
-                  <Input id="campaign-code" value={code} onChange={(e) => setCode(e.target.value)} />
+                  <Input
+                    id="campaign-code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Status</Label>

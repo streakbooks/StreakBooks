@@ -54,29 +54,33 @@ export function linkAiReviewsToWorkpaper(
       : signedOff
         ? "reviewed_evidence"
         : "needs_follow_up";
-    return [{
-      reviewId: review.id,
-      journalId: journal.id,
-      journalNumber: journal.journal_number,
-      journalDate: journal.journal_date,
-      journalStatus: journal.status,
-      sourceType: journal.source_type,
-      reviewStatus: review.status,
-      reviewedAt: review.reviewed_at,
-      reviewerId: review.reviewed_by,
-      signal,
-      explanation: !posted
-        ? "This journal is no longer posted; its previous AI review cannot be relied on as current posted evidence."
-        : signedOff
-          ? "An independent AI evidence review was recorded. It is not a balance reconciliation or workpaper sign-off."
-          : "An AI journal evidence case exists, but independent review is not currently signed off.",
-    }];
+    return [
+      {
+        reviewId: review.id,
+        journalId: journal.id,
+        journalNumber: journal.journal_number,
+        journalDate: journal.journal_date,
+        journalStatus: journal.status,
+        sourceType: journal.source_type,
+        reviewStatus: review.status,
+        reviewedAt: review.reviewed_at,
+        reviewerId: review.reviewed_by,
+        signal,
+        explanation: !posted
+          ? "This journal is no longer posted; its previous AI review cannot be relied on as current posted evidence."
+          : signedOff
+            ? "An independent AI evidence review was recorded. It is not a balance reconciliation or workpaper sign-off."
+            : "An AI journal evidence case exists, but independent review is not currently signed off.",
+      },
+    ];
   });
 }
 
-export function countAiWorkpaperEvidence(
-  entries: AiWorkpaperEvidenceLink[],
-): { reviewed: number; followUp: number; notPosted: number } {
+export function countAiWorkpaperEvidence(entries: AiWorkpaperEvidenceLink[]): {
+  reviewed: number;
+  followUp: number;
+  notPosted: number;
+} {
   return {
     reviewed: entries.filter((entry) => entry.signal === "reviewed_evidence").length,
     followUp: entries.filter((entry) => entry.signal === "needs_follow_up").length,

@@ -37,6 +37,8 @@ describe("expense status machines", () => {
   });
 
   it("throws on invalid approval transitions", () => {
-    expect(() => assertApprovalTransition("voided", "submitted")).toThrow(/Invalid expense approval/);
+    expect(() => assertApprovalTransition("voided", "submitted")).toThrow(
+      /Invalid expense approval/,
+    );
   });
 });

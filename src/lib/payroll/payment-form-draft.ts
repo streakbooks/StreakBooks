@@ -58,15 +58,14 @@ export function parsePayrollPaymentEntry(input: {
   for (const [payslipId, entered] of Object.entries(input.allocations)) {
     if (!entered.trim()) continue;
     const slip = byId.get(payslipId);
-    if (!slip) throw new Error("An allocation refers to a missing or closed payslip. Refresh the payment form.");
+    if (!slip)
+      throw new Error(
+        "An allocation refers to a missing or closed payslip. Refresh the payment form.",
+      );
     if (slip.currency.toUpperCase() !== currency) {
       throw new Error("An allocation currency differs from the payment currency.");
     }
-    const parsed = parseExactMinor(
-      entered,
-      currency,
-      `Allocation for payslip ${payslipId}`,
-    );
+    const parsed = parseExactMinor(entered, currency, `Allocation for payslip ${payslipId}`);
     allocations.push({
       payslipId,
       amountMinor: safeMinorNumber(parsed, `Allocation for payslip ${payslipId}`),

@@ -402,10 +402,7 @@ function ContactDetail() {
               ? [
                   {
                     label: `Receivable (${balQ.data.baseCurrency})`,
-                    value: fromMinorUnits(
-                      balQ.data.receivableMinor,
-                      balQ.data.baseCurrency,
-                    ),
+                    value: fromMinorUnits(balQ.data.receivableMinor, balQ.data.baseCurrency),
                   },
                   {
                     label: `Payable (${balQ.data.baseCurrency})`,

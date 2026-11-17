@@ -10,14 +10,24 @@ import { useFormat } from "@/hooks/use-format";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ErrorState, LoadingState } from "@/components/common/states";
 
 type Basis = "cash" | "accrual";
 
 /** Opt-in diagnostic: no extra GL query unless the user opens this comparison. */
 export function TaxGlComparisonPanel({
-  companyId, periodStart, periodEnd, basis,
+  companyId,
+  periodStart,
+  periodEnd,
+  basis,
 }: {
   companyId: string;
   periodStart: string;
@@ -32,9 +42,10 @@ export function TaxGlComparisonPanel({
   const query = useQuery({
     queryKey: ["tax-gl-compare", companyId, periodStart, periodEnd, basis],
     enabled: expanded && canViewGl,
-    queryFn: () => fetchComparison({
-      data: { companyId, periodStart, periodEnd, basis },
-    }),
+    queryFn: () =>
+      fetchComparison({
+        data: { companyId, periodStart, periodEnd, basis },
+      }),
   });
 
   const result = query.data;
@@ -48,7 +59,12 @@ export function TaxGlComparisonPanel({
             Read-only review of tax source documents against posted control-account activity.
           </p>
         </div>
-        <Button size="sm" variant="outline" disabled={!canViewGl} onClick={() => setExpanded((current) => !current)}>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!canViewGl}
+          onClick={() => setExpanded((current) => !current)}
+        >
           {expanded ? "Hide comparison" : "Review GL activity"}
         </Button>
       </CardHeader>
@@ -56,7 +72,9 @@ export function TaxGlComparisonPanel({
         <CardContent className="space-y-4">
           {!canViewGl ? (
             <p className="text-xs text-muted-foreground">Accounting view permission is required.</p>
-          ) : query.isPending ? <LoadingState /> : query.isError ? (
+          ) : query.isPending ? (
+            <LoadingState />
+          ) : query.isError ? (
             <ErrorState
               title="GL comparison could not be loaded"
               description={friendlyAuthError(query.error)}
@@ -79,8 +97,8 @@ export function TaxGlComparisonPanel({
                 <Alert>
                   <AlertTitle>Cash basis — informational comparison only</AlertTitle>
                   <AlertDescription>
-                    Tax return recognition follows payments, while these GL movements follow journal dates.
-                    The difference is not a cash-basis reconciliation result.
+                    Tax return recognition follows payments, while these GL movements follow journal
+                    dates. The difference is not a cash-basis reconciliation result.
                   </AlertDescription>
                 </Alert>
               ) : null}
@@ -94,14 +112,16 @@ export function TaxGlComparisonPanel({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {([
-                      ["Return calculation", "returnMinor"],
-                      ["Posted source documents", "documentMinor"],
-                      ["Reversal journals", "reversalMinor"],
-                      ["Other GL activity", "otherMinor"],
-                      ["All GL movements", "totalMinor"],
-                      ["Document + reversal − return", "documentAndReversalDifferenceMinor"],
-                    ] as const).map(([label, field]) => (
+                    {(
+                      [
+                        ["Return calculation", "returnMinor"],
+                        ["Posted source documents", "documentMinor"],
+                        ["Reversal journals", "reversalMinor"],
+                        ["Other GL activity", "otherMinor"],
+                        ["All GL movements", "totalMinor"],
+                        ["Document + reversal − return", "documentAndReversalDifferenceMinor"],
+                      ] as const
+                    ).map(([label, field]) => (
                       <TableRow key={field}>
                         <TableCell>{label}</TableCell>
                         <TableCell className="text-right tabular-nums">
@@ -118,19 +138,32 @@ export function TaxGlComparisonPanel({
               <div className="space-y-1 rounded-md border p-3 text-sm">
                 <p className="font-medium">Net tax payable comparison</p>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <p>Calculated return: <strong>{f.money(result.netReturnMinor, result.currency)}</strong></p>
-                  <p>Document and reversal journals: <strong>{f.money(result.netDocumentAndReversalMinor, result.currency)}</strong></p>
-                  <p>All GL movements: <strong>{f.money(result.netAllGlMinor, result.currency)}</strong></p>
-                  <p>Diagnostic difference: <strong>{f.money(result.netDiagnosticDifferenceMinor, result.currency)}</strong></p>
+                  <p>
+                    Calculated return:{" "}
+                    <strong>{f.money(result.netReturnMinor, result.currency)}</strong>
+                  </p>
+                  <p>
+                    Document and reversal journals:{" "}
+                    <strong>{f.money(result.netDocumentAndReversalMinor, result.currency)}</strong>
+                  </p>
+                  <p>
+                    All GL movements:{" "}
+                    <strong>{f.money(result.netAllGlMinor, result.currency)}</strong>
+                  </p>
+                  <p>
+                    Diagnostic difference:{" "}
+                    <strong>{f.money(result.netDiagnosticDifferenceMinor, result.currency)}</strong>
+                  </p>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  A zero difference is not proof of statutory compliance or a completed reconciliation.
+                  A zero difference is not proof of statutory compliance or a completed
+                  reconciliation.
                 </p>
               </div>
               <p className="text-xs text-muted-foreground">
-                Output tax shows credits less debits; input tax shows debits less credits.
-                The comparison is based only on the two configured accounts.
-                No reconciliation adjustment is posted.
+                Output tax shows credits less debits; input tax shows debits less credits. The
+                comparison is based only on the two configured accounts. No reconciliation
+                adjustment is posted.
               </p>
               <div className="space-y-1 text-xs text-muted-foreground">
                 {result.warnings.map((warning) => (
@@ -139,13 +172,16 @@ export function TaxGlComparisonPanel({
               </div>
               <div className="space-y-3">
                 <Button size="sm" variant="outline" onClick={() => setShowEvidence((v) => !v)}>
-                  {showEvidence ? "Hide journal evidence" : `Show journal evidence (${result.evidence.total})`}
+                  {showEvidence
+                    ? "Hide journal evidence"
+                    : `Show journal evidence (${result.evidence.total})`}
                 </Button>
                 {showEvidence ? (
                   <div className="space-y-2 overflow-x-auto">
                     {result.evidence.truncated ? (
                       <p className="text-xs text-muted-foreground">
-                        Showing the latest 100 journal lines only. Open Accounting for the complete ledger.
+                        Showing the latest 100 journal lines only. Open Accounting for the complete
+                        ledger.
                       </p>
                     ) : null}
                     <Table>
@@ -162,14 +198,24 @@ export function TaxGlComparisonPanel({
                           <TableRow key={entry.lineId}>
                             <TableCell>
                               {entry.journalId ? (
-                                <Link to="/accounting" search={{ tab: "journals", journal: entry.journalId }} className="underline">
+                                <Link
+                                  to="/accounting"
+                                  search={{ tab: "journals", journal: entry.journalId }}
+                                  className="underline"
+                                >
                                   {f.date(entry.journalDate)} · #{entry.journalNumber}
                                 </Link>
-                              ) : f.date(entry.journalDate)}
+                              ) : (
+                                f.date(entry.journalDate)
+                              )}
                             </TableCell>
-                            <TableCell>{entry.accountCode} · {entry.accountName} ({entry.accountSide})</TableCell>
+                            <TableCell>
+                              {entry.accountCode} · {entry.accountName} ({entry.accountSide})
+                            </TableCell>
                             <TableCell>{entry.sourceType.replaceAll("_", " ")}</TableCell>
-                            <TableCell className="text-right tabular-nums">{f.money(entry.movementMinor, result.currency)}</TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {f.money(entry.movementMinor, result.currency)}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

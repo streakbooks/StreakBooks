@@ -60,12 +60,10 @@ function statusFor(code: string): number {
   }
 }
 
-export function marketplaceVaultConfigured(
-  env: NodeJS.ProcessEnv = process.env,
-): boolean {
+export function marketplaceVaultConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
   return Boolean(
     env["MARKETPLACE_OAUTH_VAULT_KEY"]?.trim() ||
-      env["APP_STORE_OAUTH_VAULT_CONFIGURED"] === "true",
+    env["APP_STORE_OAUTH_VAULT_CONFIGURED"] === "true",
   );
 }
 
@@ -169,11 +167,7 @@ export async function handleMarketplaceApiV1(request: Request): Promise<Response
     });
   }
 
-  if (
-    pathname === BASE ||
-    pathname === `${BASE}/openapi` ||
-    pathname === `${BASE}/routes`
-  ) {
+  if (pathname === BASE || pathname === `${BASE}/openapi` || pathname === `${BASE}/routes`) {
     return json(200, {
       ok: true,
       apiVersion: PUBLIC_API_VERSION,

@@ -102,13 +102,12 @@ export function AppStoreAdminPage() {
   }
   if (!canAdmin) {
     return (
-      <ListWorkspace title="Platform Administration" description="App Store"
-    >
-      <EmptyState
+      <ListWorkspace title="Platform Administration" description="App Store">
+        <EmptyState
           title="No access"
           description="Requires appstore.manage_certification. Privileged admin tools are not exposed by hiding links alone."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
@@ -118,9 +117,10 @@ export function AppStoreAdminPage() {
   const suspended = (catalogue.data?.apps ?? []).filter((a) => a.suspended);
 
   return (
-      <ListWorkspace title="Platform Administration"
-        description="Approval queue, listing controls and audit-oriented marketplace operations."
-      subnav={<AppStoreSubnav current="admin"/>}
+    <ListWorkspace
+      title="Platform Administration"
+      description="Approval queue, listing controls and audit-oriented marketplace operations."
+      subnav={<AppStoreSubnav current="admin" />}
     >
       <Alert className="mb-6">
         <AlertTitle>Administrator controls</AlertTitle>
@@ -171,9 +171,7 @@ export function AppStoreAdminPage() {
                         <Button
                           size="sm"
                           disabled={decideMutation.isPending}
-                          onClick={() =>
-                            decideMutation.mutate({ reviewId: row.id, approve: true })
-                          }
+                          onClick={() => decideMutation.mutate({ reviewId: row.id, approve: true })}
                         >
                           Approve checklist
                         </Button>
@@ -242,5 +240,5 @@ export function AppStoreAdminPage() {
         </p>
       </section>
     </ListWorkspace>
-    );
+  );
 }

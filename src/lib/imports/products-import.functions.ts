@@ -42,11 +42,13 @@ export const importProductsCsv = createServerFn({ method: "POST" })
 
     // Check every requested account in this organisation before any insert. A pasted
     // foreign-company UUID must never become an accounting default for this company.
-    const accountIds = [...new Set(
-      records.flatMap((row) =>
-        [row.incomeAccountId, row.expenseAccountId].filter((id): id is string => Boolean(id)),
+    const accountIds = [
+      ...new Set(
+        records.flatMap((row) =>
+          [row.incomeAccountId, row.expenseAccountId].filter((id): id is string => Boolean(id)),
+        ),
       ),
-    )];
+    ];
     const accountById = new Map<
       string,
       { account_type: string; is_active: boolean; is_postable: boolean; archived_at: string | null }

@@ -46,7 +46,5 @@ export function userHasActiveIncomingDelegation(
   userId: string,
   todayIso = new Date().toISOString().slice(0, 10),
 ): boolean {
-  return delegations.some(
-    (row) => row.toUserId === userId && isDelegationActive(row, todayIso),
-  );
+  return delegations.some((row) => row.toUserId === userId && isDelegationActive(row, todayIso));
 }

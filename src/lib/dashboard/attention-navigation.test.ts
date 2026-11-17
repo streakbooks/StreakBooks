@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  DASHBOARD_ATTENTION_FILTERS,
-  parseDashboardSearch,
-} from "./attention-navigation";
+import { DASHBOARD_ATTENTION_FILTERS, parseDashboardSearch } from "./attention-navigation";
 
 describe("Dashboard priority queue deep links", () => {
   it("accepts every supported queue filter", () => {
@@ -19,17 +16,20 @@ describe("Dashboard priority queue deep links", () => {
   });
 
   it("rejects unknown, external and malformed destinations", () => {
-    expect(parseDashboardSearch({
-      attention: "../accounting",
-      redirect: "https://evil.example",
-    })).toEqual({});
+    expect(
+      parseDashboardSearch({
+        attention: "../accounting",
+        redirect: "https://evil.example",
+      }),
+    ).toEqual({});
     expect(parseDashboardSearch({ attention: "/sales/invoices" })).toEqual({});
     expect(parseDashboardSearch({ attention: ["bank"] })).toEqual({});
   });
 
   it("ignores unrelated query parameters or privileged selectors", () => {
-    expect(parseDashboardSearch({ attention: "bank", companyId: "other-company" }))
-      .toEqual({ attention: "bank" });
+    expect(parseDashboardSearch({ attention: "bank", companyId: "other-company" })).toEqual({
+      attention: "bank",
+    });
   });
 
   it("resolves missing filters to the default dashboard state", () => {

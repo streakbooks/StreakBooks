@@ -88,19 +88,29 @@ describe("financial insights reuse exact financial report values", () => {
 
   it("flags net loss, negative bank GL cash and weak working capital as review prompts only", () => {
     const out = buildFinancialInsights(
-      snapshot({}, {
-        net_profit: { value: "-12500", format: "money", reportId: "profit-and-loss" },
-        cash: { value: "-21000", format: "money", reportId: "cash-summary" },
-        working_capital: { value: "-5000", format: "money", reportId: "balance-sheet" },
-        current_ratio: { value: "8000", format: "ratio", reportId: "balance-sheet" },
-      }),
+      snapshot(
+        {},
+        {
+          net_profit: { value: "-12500", format: "money", reportId: "profit-and-loss" },
+          cash: { value: "-21000", format: "money", reportId: "cash-summary" },
+          working_capital: { value: "-5000", format: "money", reportId: "balance-sheet" },
+          current_ratio: { value: "8000", format: "ratio", reportId: "balance-sheet" },
+        },
+      ),
       null,
       "USD",
     );
     expect(out.observations.map((v) => v.id)).toEqual([
-      "loss", "negative_cash", "working_capital", "current_ratio",
+      "loss",
+      "negative_cash",
+      "working_capital",
+      "current_ratio",
     ]);
-    expect(out.observations.every((v) => v.sourceReportId && !/guaranteed|confirmed\s+overdraft/i.test(v.text))).toBe(true);
+    expect(
+      out.observations.every(
+        (v) => v.sourceReportId && !/guaranteed|confirmed\s+overdraft/i.test(v.text),
+      ),
+    ).toBe(true);
   });
 
   it("discloses missing period activity without misclassifying closing cash as missing", () => {
@@ -123,18 +133,28 @@ describe("financial insights reuse exact financial report values", () => {
   });
 
   it("fails closed on mismatched reporting provenance", () => {
-    const out = buildFinancialInsights(snapshot({}, {
-      cash: { value: "1000000", format: "money", reportId: "profit-and-loss" },
-    }), null, "USD");
+    const out = buildFinancialInsights(
+      snapshot(
+        {},
+        {
+          cash: { value: "1000000", format: "money", reportId: "profit-and-loss" },
+        },
+      ),
+      null,
+      "USD",
+    );
     expect(out.cards.find((v) => v.id === "cash")?.value).toBe("Not available");
     expect(out.observations.some((v) => v.id === "negative_cash")).toBe(false);
   });
 
   it("does not create an unavailable current ratio from zero-liability balances", () => {
     const out = buildFinancialInsights(
-      snapshot({}, {
-        current_ratio: { value: null, format: "ratio", reportId: "balance-sheet" },
-      }),
+      snapshot(
+        {},
+        {
+          current_ratio: { value: null, format: "ratio", reportId: "balance-sheet" },
+        },
+      ),
       null,
       "USD",
     );

@@ -31,7 +31,10 @@ export function readUiSource(file, { rootDir = process.cwd() } = {}) {
     }
   }
   return {
-    source: [source, ...[...screens].map((screen) => readFileSync(path.resolve(rootDir, screen), "utf8"))].join("\n"),
+    source: [
+      source,
+      ...[...screens].map((screen) => readFileSync(path.resolve(rootDir, screen), "utf8")),
+    ].join("\n"),
     screens: [...screens],
   };
 }

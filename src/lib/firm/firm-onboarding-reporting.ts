@@ -4,7 +4,13 @@ import type { FirmOnboardingDailySnapshot } from "./firm-onboarding-trends.funct
 import { onboardingBlocked } from "./onboarding-insights";
 
 export const ONBOARDING_AGE_FILTERS = [
-  "all", "not_due", "1_7", "8_30", "31_60", "61_plus", "unscheduled",
+  "all",
+  "not_due",
+  "1_7",
+  "8_30",
+  "31_60",
+  "61_plus",
+  "unscheduled",
 ] as const;
 export type OnboardingAgeFilter = (typeof ONBOARDING_AGE_FILTERS)[number];
 
@@ -63,20 +69,22 @@ export function onboardingOperationalRows(
         blocked: onboardingBlocked(row, groups.get(row.company_id) ?? []),
       };
     })
-    .filter((row) =>
-      (filters.companyId === "all" || row.company_id === filters.companyId) &&
-      (filters.assigneeId === "all" ||
-        (filters.assigneeId === "unassigned"
-          ? !row.assignee_id
-          : row.assignee_id === filters.assigneeId)) &&
-      (filters.includeCompleted || !row.completed_at) &&
-      (filters.age === "all" || row.ageBand === filters.age),
+    .filter(
+      (row) =>
+        (filters.companyId === "all" || row.company_id === filters.companyId) &&
+        (filters.assigneeId === "all" ||
+          (filters.assigneeId === "unassigned"
+            ? !row.assignee_id
+            : row.assignee_id === filters.assigneeId)) &&
+        (filters.includeCompleted || !row.completed_at) &&
+        (filters.age === "all" || row.ageBand === filters.age),
     )
-    .sort((a, b) =>
-      b.daysOverdue - a.daysOverdue ||
-      (a.due_date ?? "9999-12-31").localeCompare(b.due_date ?? "9999-12-31") ||
-      a.company_id.localeCompare(b.company_id) ||
-      a.task_key.localeCompare(b.task_key),
+    .sort(
+      (a, b) =>
+        b.daysOverdue - a.daysOverdue ||
+        (a.due_date ?? "9999-12-31").localeCompare(b.due_date ?? "9999-12-31") ||
+        a.company_id.localeCompare(b.company_id) ||
+        a.task_key.localeCompare(b.task_key),
     );
 }
 
@@ -91,8 +99,13 @@ export type OnboardingAgeCounts = {
 };
 export function onboardingAgeCounts(rows: OnboardingOperationalRow[]): OnboardingAgeCounts {
   const counts: OnboardingAgeCounts = {
-    not_due: 0, "1_7": 0, "8_30": 0, "31_60": 0, "61_plus": 0,
-    unscheduled: 0, completed: 0,
+    not_due: 0,
+    "1_7": 0,
+    "8_30": 0,
+    "31_60": 0,
+    "61_plus": 0,
+    unscheduled: 0,
+    completed: 0,
   };
   for (const row of rows) counts[row.ageBand]++;
   return counts;
@@ -119,8 +132,14 @@ export function onboardingDailyTrends(
     let day = byDate.get(row.snapshot_date);
     if (!day) {
       day = {
-        date: row.snapshot_date, clientCount: 0, total: 0, completed: 0,
-        overdue: 0, blocked: 0, unassigned: 0, completionPercent: 0,
+        date: row.snapshot_date,
+        clientCount: 0,
+        total: 0,
+        completed: 0,
+        overdue: 0,
+        blocked: 0,
+        unassigned: 0,
+        completionPercent: 0,
       };
       byDate.set(row.snapshot_date, day);
     }
@@ -134,7 +153,7 @@ export function onboardingDailyTrends(
   return [...byDate.values()]
     .map((row) => ({
       ...row,
-      completionPercent: row.total ? Math.round(row.completed / row.total * 100) : 0,
+      completionPercent: row.total ? Math.round((row.completed / row.total) * 100) : 0,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -145,32 +164,60 @@ export function onboardingOperationsCsv(
   staffNames: ReadonlyMap<string, string>,
 ): string {
   const headers = [
-    "Client", "Task", "Task key", "Assigned staff", "Due date", "Status",
-    "Days overdue", "Age band", "Blocked", "Completed on",
+    "Client",
+    "Task",
+    "Task key",
+    "Assigned staff",
+    "Due date",
+    "Status",
+    "Days overdue",
+    "Age band",
+    "Blocked",
+    "Completed on",
   ];
-  const lines = rows.map((row) => [
-    clientNames.get(row.company_id) ?? "Authorized client",
-    row.title,
-    row.task_key,
-    row.assignee_id ? staffNames.get(row.assignee_id) ?? "Assigned colleague" : "Unassigned",
-    row.due_date ?? "",
-    row.completed_at ? "Completed" : row.daysOverdue > 0 ? "Overdue" : "Open",
-    String(row.daysOverdue),
-    row.ageBand,
-    row.blocked ? "Yes" : "No",
-    row.completed_at ?? "",
-  ].map(csvField).join(","));
+  const lines = rows.map((row) =>
+    [
+      clientNames.get(row.company_id) ?? "Authorized client",
+      row.title,
+      row.task_key,
+      row.assignee_id ? (staffNames.get(row.assignee_id) ?? "Assigned colleague") : "Unassigned",
+      row.due_date ?? "",
+      row.completed_at ? "Completed" : row.daysOverdue > 0 ? "Overdue" : "Open",
+      String(row.daysOverdue),
+      row.ageBand,
+      row.blocked ? "Yes" : "No",
+      row.completed_at ?? "",
+    ]
+      .map(csvField)
+      .join(","),
+  );
   return "\uFEFF" + [headers.map(csvField).join(","), ...lines].join("\r\n");
 }
 
 export function onboardingTrendCsv(trends: OnboardingDailyTrend[]): string {
   const headers = [
-    "Snapshot date (UTC)", "Clients observed", "Total steps", "Completed steps",
-    "Completion percent", "Overdue steps", "Blocked steps", "Unassigned open steps",
+    "Snapshot date (UTC)",
+    "Clients observed",
+    "Total steps",
+    "Completed steps",
+    "Completion percent",
+    "Overdue steps",
+    "Blocked steps",
+    "Unassigned open steps",
   ];
-  const lines = trends.map((day) => [
-    day.date, day.clientCount, day.total, day.completed,
-    day.completionPercent, day.overdue, day.blocked, day.unassigned,
-  ].map((v) => csvField(String(v))).join(","));
+  const lines = trends.map((day) =>
+    [
+      day.date,
+      day.clientCount,
+      day.total,
+      day.completed,
+      day.completionPercent,
+      day.overdue,
+      day.blocked,
+      day.unassigned,
+    ]
+      .map((v) => csvField(String(v)))
+      .join(","),
+  );
   return "\uFEFF" + [headers.map(csvField).join(","), ...lines].join("\r\n");
 }

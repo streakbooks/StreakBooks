@@ -239,13 +239,7 @@ describe("unrealised FX revaluation to ledger audit", () => {
   });
 
   it("rejects a base-currency revaluation tag and invalid gain journal line side", () => {
-    const wrongCurrency = check(
-      run,
-      [journal],
-      [queue],
-      lines,
-      [{ ...tag, currency_code: "GBP" }],
-    );
+    const wrongCurrency = check(run, [journal], [queue], lines, [{ ...tag, currency_code: "GBP" }]);
     expect(wrongCurrency.items[0]!.issues).toContain(
       "Revaluation currency must differ from the organisation base currency.",
     );

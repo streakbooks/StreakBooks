@@ -38,17 +38,17 @@ export function AppStoreSyncActivityPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Synchronization Activity" description="App Store"
-    >
-      <EmptyState title="No access" description="Requires appstore.view_sync or appstore.view." />
-    </ListWorkspace>
+      <ListWorkspace title="Synchronization Activity" description="App Store">
+        <EmptyState title="No access" description="Requires appstore.view_sync or appstore.view." />
+      </ListWorkspace>
     );
   }
 
   return (
-      <ListWorkspace title="Synchronization Activity"
-        description="Durable sync jobs with correlation IDs, retries and checkpoints. Empty until a verified connector runs."
-      subnav={<AppStoreSubnav current="sync-activity"/>}
+    <ListWorkspace
+      title="Synchronization Activity"
+      description="Durable sync jobs with correlation IDs, retries and checkpoints. Empty until a verified connector runs."
+      subnav={<AppStoreSubnav current="sync-activity" />}
     >
       <Alert className="mb-6">
         <AlertTitle>Engine ready — connectors not E2E verified</AlertTitle>
@@ -107,5 +107,5 @@ export function AppStoreSyncActivityPage() {
         )
       ) : null}
     </ListWorkspace>
-    );
+  );
 }

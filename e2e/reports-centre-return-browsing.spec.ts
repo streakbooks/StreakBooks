@@ -17,11 +17,10 @@ test.describe("Reports Centre: native return-to-origin browsing", () => {
   });
 
   test("return from a report restores catalogue query and reporting period", async ({ page }) => {
-    await signIn(
-      page,
-      "/reports?tab=standard&query=profit&from=2026-01-01&to=2026-10-31",
-    );
-    const report = page.locator('section[aria-label="Report catalogue"] a[href*="centre="]').first();
+    await signIn(page, "/reports?tab=standard&query=profit&from=2026-01-01&to=2026-10-31");
+    const report = page
+      .locator('section[aria-label="Report catalogue"] a[href*="centre="]')
+      .first();
     await expect(report).toBeVisible();
     await report.click();
     await expect(page).toHaveURL(/\/reports\/[^/?]+/);
@@ -40,7 +39,9 @@ test.describe("Reports Centre: native return-to-origin browsing", () => {
     context,
   }) => {
     await signIn(page, "/reports?tab=standard&query=profit");
-    const report = page.locator('section[aria-label="Report catalogue"] a[href*="centre="]').first();
+    const report = page
+      .locator('section[aria-label="Report catalogue"] a[href*="centre="]')
+      .first();
     await expect(report).toBeVisible();
     const opened = context.waitForEvent("page");
     await report.click({ modifiers: ["Control"] });
@@ -53,9 +54,7 @@ test.describe("Reports Centre: native return-to-origin browsing", () => {
     await newTab.close();
   });
 
-  test("direct report deep link has a deterministic Reports Centre return", async ({
-    page,
-  }) => {
+  test("direct report deep link has a deterministic Reports Centre return", async ({ page }) => {
     await signIn(page, "/reports/profit-and-loss?from=2026-01-01&to=2026-10-31");
     await page.getByRole("link", { name: "Back to Reports Centre" }).click();
     await expect(page).toHaveURL(/\/reports(?:\/|\?|$)/);

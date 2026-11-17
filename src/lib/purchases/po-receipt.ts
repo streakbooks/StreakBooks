@@ -17,12 +17,7 @@ export type PoReceiptDelta = {
 };
 
 function assertQuantity(value: number, label: string): number {
-  if (
-    !Number.isFinite(value) ||
-    value <= 0 ||
-    value > 1e9 ||
-    value !== Number(value.toFixed(6))
-  ) {
+  if (!Number.isFinite(value) || value <= 0 || value > 1e9 || value !== Number(value.toFixed(6))) {
     throw new Error(`${label}: enter a positive quantity with up to six decimal places`);
   }
   return value;

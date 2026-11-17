@@ -11,7 +11,8 @@ describe("crmStatusAppearance", () => {
   });
   it("provides readable labels for unknown and compound statuses", () => {
     expect(crmStatusAppearance("awaiting_review")).toEqual({
-      variant: "neutral", label: "Awaiting Review",
+      variant: "neutral",
+      label: "Awaiting Review",
     });
   });
 });

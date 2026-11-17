@@ -109,9 +109,11 @@ export function reconcileFixedAssets(
   for (const asset of assets) {
     if (assetById.has(asset.id)) throw new Error("Duplicate fixed asset in register");
     assetById.set(asset.id, asset);
-    if ((asset.status === "disposed" && !asset.disposal_date) ||
-        (asset.status === "active" && asset.disposal_date !== null) ||
-        (asset.disposal_date !== null && asset.disposal_date < asset.purchase_date)) {
+    if (
+      (asset.status === "disposed" && !asset.disposal_date) ||
+      (asset.status === "active" && asset.disposal_date !== null) ||
+      (asset.disposal_date !== null && asset.disposal_date < asset.purchase_date)
+    ) {
       throw new Error("Fixed asset disposal state and dates are inconsistent");
     }
     if (asset.purchase_date > asOf) continue;
@@ -150,8 +152,10 @@ export function reconcileFixedAssets(
     // The disposal RPC allows depreciation already posted for the disposal
     // MONTH, even if the disposal occurred before calendar month-end. Only
     // entries in later months are invalid (see fixed_assets.sql).
-    if (asset.disposal_date !== null &&
-        entry.period_end.slice(0, 7) > asset.disposal_date.slice(0, 7)) {
+    if (
+      asset.disposal_date !== null &&
+      entry.period_end.slice(0, 7) > asset.disposal_date.slice(0, 7)
+    ) {
       throw new Error("Depreciation entry occurs after the asset disposal month");
     }
     const amount = exactMinor(entry.amount_minor, "Posted depreciation");

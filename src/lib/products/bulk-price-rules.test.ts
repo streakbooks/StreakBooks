@@ -17,9 +17,9 @@ describe("catalogue bulk price input", () => {
   });
   it("rejects missing or over-limit selection", () => {
     expect(() => normaliseBulkPriceChange({ ...input, productIds: [] })).toThrow(/1 and 100/);
-    expect(() =>
-      normaliseBulkPriceChange({ ...input, productIds: Array(101).fill("id") }),
-    ).toThrow(/1 and 100/);
+    expect(() => normaliseBulkPriceChange({ ...input, productIds: Array(101).fill("id") })).toThrow(
+      /1 and 100/,
+    );
     expect(() => normaliseBulkPriceChange({ ...input, productIds: [""] })).toThrow(/selection/);
   });
   it("rejects negative, fractional, unsafe or invalid prices", () => {
@@ -28,9 +28,11 @@ describe("catalogue bulk price input", () => {
     }
   });
   it("rejects unknown price fields", () => {
-    expect(() => normaliseBulkPriceChange({
-      ...input,
-      field: "inventory_value" as "sales_price_minor",
-    })).toThrow(/price field/);
+    expect(() =>
+      normaliseBulkPriceChange({
+        ...input,
+        field: "inventory_value" as "sales_price_minor",
+      }),
+    ).toThrow(/price field/);
   });
 });

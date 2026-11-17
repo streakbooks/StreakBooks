@@ -31,7 +31,10 @@ function Help() {
       title="Help centre"
       description="Step-by-step guides for the things you do most, written for what LinkBooks does today."
     >
-      <section aria-label="Search LinkBooks help" className="mb-7 max-w-2xl space-y-2 rounded-2xl border border-border/85 bg-gradient-to-r from-card to-accent/30 p-5 shadow-card">
+      <section
+        aria-label="Search LinkBooks help"
+        className="mb-7 max-w-2xl space-y-2 rounded-2xl border border-border/85 bg-gradient-to-r from-card to-accent/30 p-5 shadow-card"
+      >
         <Label htmlFor="help-search">Search help</Label>
         <Input
           id="help-search"
@@ -57,9 +60,14 @@ function Help() {
                 {articles
                   .filter((a) => a.topic === topic)
                   .map((a) => (
-                    <Card key={a.id} className="group/help border-border/85 shadow-card transition-[border-color,box-shadow] hover:border-primary/25 hover:shadow-sm">
+                    <Card
+                      key={a.id}
+                      className="group/help border-border/85 shadow-card transition-[border-color,box-shadow] hover:border-primary/25 hover:shadow-sm"
+                    >
                       <CardHeader>
-                        <CardTitle className="text-base font-bold tracking-[-0.015em]">{a.title}</CardTitle>
+                        <CardTitle className="text-base font-bold tracking-[-0.015em]">
+                          {a.title}
+                        </CardTitle>
                         <CardDescription>{a.summary}</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">

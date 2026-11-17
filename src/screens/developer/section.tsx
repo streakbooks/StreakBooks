@@ -57,9 +57,7 @@ function SectionSuspense({ children }: { children: ReactNode }) {
   return <Suspense fallback={<LoadingState />}>{children}</Suspense>;
 }
 
-const LAZY_PAGES: Partial<
-  Record<DeveloperPortalSectionKey, () => ReactNode>
-> = {
+const LAZY_PAGES: Partial<Record<DeveloperPortalSectionKey, () => ReactNode>> = {
   "api-docs": () => <DeveloperApiDocsPage />,
   submission: () => <DeveloperSubmissionPage />,
   credentials: () => <DeveloperCredentialsPage />,

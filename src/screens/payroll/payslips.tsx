@@ -171,10 +171,7 @@ export function PayrollPayslipsPage({
               variant="outline"
               disabled={filteredPayslips.length === 0}
               onClick={() =>
-                downloadCsv(
-                  "payroll-payslips-filtered.csv",
-                  payrollPayslipsToCsv(filteredPayslips),
-                )
+                downloadCsv("payroll-payslips-filtered.csv", payrollPayslipsToCsv(filteredPayslips))
               }
             >
               <Download className="mr-2 h-4 w-4" />
@@ -350,10 +347,7 @@ export function PayrollPayslipsPage({
                     {fmt.money(payslip.snapshot.totals?.netPayMinor ?? 0, run.currency)}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">
-                    {fmt.money(
-                      payslipNetBalances(payslip).outstandingMinor,
-                      run.currency,
-                    )}
+                    {fmt.money(payslipNetBalances(payslip).outstandingMinor, run.currency)}
                   </TableCell>
                 </TableRow>
               ))}

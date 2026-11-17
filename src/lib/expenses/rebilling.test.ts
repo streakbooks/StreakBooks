@@ -11,9 +11,9 @@ describe("calculateRebillNetMinor", () => {
   });
 
   it("applies markup basis points", () => {
-    expect(
-      calculateRebillNetMinor({ netMinor: 10000, method: "markup", markupBps: 1000 }),
-    ).toBe(11000);
+    expect(calculateRebillNetMinor({ netMinor: 10000, method: "markup", markupBps: 1000 })).toBe(
+      11000,
+    );
   });
 
   it("uses agreed rate × quantity", () => {

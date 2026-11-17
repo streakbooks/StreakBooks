@@ -15,7 +15,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 
 type Props = {
@@ -85,10 +89,10 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Assign one optional default list per active customer. New invoices and quotes can
-          suggest that list when the customer is selected and the document currency matches.
-          Existing document lines are never changed automatically. Only active base-currency
-          price lists are eligible for assignment.
+          Assign one optional default list per active customer. New invoices and quotes can suggest
+          that list when the customer is selected and the document currency matches. Existing
+          document lines are never changed automatically. Only active base-currency price lists are
+          eligible for assignment.
         </p>
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
           <div className="space-y-2">
@@ -112,7 +116,9 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
                   <SelectItem value={contactId}>{selectedCustomerName}</SelectItem>
                 ) : null}
                 {(customersQ.data ?? []).map((row) => (
-                  <SelectItem key={row.id} value={row.id}>{row.name}</SelectItem>
+                  <SelectItem key={row.id} value={row.id}>
+                    {row.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -141,14 +147,18 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
                   </SelectItem>
                 ) : null}
                 {activeLists.map((list) => (
-                  <SelectItem value={list.id} key={list.id}>{list.name}</SelectItem>
+                  <SelectItem value={list.id} key={list.id}>
+                    {list.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <Button
             disabled={
-              !canManage || !contactId || saveMut.isPending ||
+              !canManage ||
+              !contactId ||
+              saveMut.isPending ||
               (priceListId !== "none" && !activeLists.some((x) => x.id === priceListId))
             }
             onClick={() =>
@@ -189,20 +199,26 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm"
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     setContactId(row.contact_id);
                     setPriceListId(row.price_list_id);
-                  }}>
+                  }}
+                >
                   Edit
                 </Button>
-                <Button variant="outline" size="sm"
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={!canManage || saveMut.isPending}
                   onClick={() => {
                     if (window.confirm(`Remove the default for ${row.contact_name}?`)) {
                       saveMut.mutate({ contactId: row.contact_id, priceListId: null });
                     }
-                  }}>
+                  }}
+                >
                   Remove
                 </Button>
               </div>

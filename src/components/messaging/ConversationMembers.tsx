@@ -58,11 +58,7 @@ export function ConversationMembers({
   if (query.isPending) return <LoadingState rows={2} />;
   if (query.isError) {
     return (
-      <ErrorState
-        title="Could not load members"
-        onRetry={() => void query.refetch()}
-        compact
-      />
+      <ErrorState title="Could not load members" onRetry={() => void query.refetch()} compact />
     );
   }
   if (!query.data?.length) {
@@ -77,7 +73,9 @@ export function ConversationMembers({
           className="flex items-center justify-between gap-2 rounded border bg-background px-3 py-2 text-sm"
         >
           <div className="min-w-0">
-            <p className="truncate font-medium">{member.full_name || member.email || member.user_id}</p>
+            <p className="truncate font-medium">
+              {member.full_name || member.email || member.user_id}
+            </p>
             <p className="truncate text-xs text-muted-foreground">
               {member.role} · {member.email}
             </p>

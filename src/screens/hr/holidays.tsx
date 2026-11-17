@@ -362,9 +362,7 @@ export function HrHolidaysPage() {
             </Button>
             <Button
               type="button"
-              disabled={
-                !calendarId || !holidayDate || !holidayName.trim() || saveHolM.isPending
-              }
+              disabled={!calendarId || !holidayDate || !holidayName.trim() || saveHolM.isPending}
               onClick={() => saveHolM.mutate()}
             >
               Save

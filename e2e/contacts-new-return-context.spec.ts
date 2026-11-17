@@ -34,9 +34,11 @@ test.describe("Contact creation respects directory browsing context", () => {
   });
 
   test("invalid direct return tokens never become open redirects", async ({ page }) => {
-    await signIn(page, "/contacts/new?returnContext=" + encodeURIComponent(
-      "next=https%3A%2F%2Fevil.example&view=suppliers&admin=true",
-    ));
+    await signIn(
+      page,
+      "/contacts/new?returnContext=" +
+        encodeURIComponent("next=https%3A%2F%2Fevil.example&view=suppliers&admin=true"),
+    );
     await page.getByRole("link", { name: "Back to directory" }).click();
     await expect(page).toHaveURL(/\/contacts(?:\/|\?|$)/);
     const params = new URL(page.url()).searchParams;

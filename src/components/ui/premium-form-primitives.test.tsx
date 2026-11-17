@@ -37,7 +37,9 @@ describe("LinkBooks shared premium form and data primitives", () => {
 
   it("preserves real buttons and their disabled or busy state", () => {
     const markup = renderToStaticMarkup(
-      <Button disabled aria-busy="true" type="submit">Save draft</Button>,
+      <Button disabled aria-busy="true" type="submit">
+        Save draft
+      </Button>,
     );
     expect(markup).toContain("<button");
     expect(markup).toContain('type="submit"');
@@ -49,7 +51,9 @@ describe("LinkBooks shared premium form and data primitives", () => {
   it("retains semantic card headings for every module", () => {
     const markup = renderToStaticMarkup(
       <Card>
-        <CardHeader><CardTitle>Profit and loss</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Profit and loss</CardTitle>
+        </CardHeader>
         <CardContent>Verified reporting data</CardContent>
       </Card>,
     );
@@ -62,7 +66,9 @@ describe("LinkBooks shared premium form and data primitives", () => {
     const markup = renderToStaticMarkup(
       <Table aria-label="Account balances">
         <TableBody>
-          <TableRow><TableCell>Cash account</TableCell></TableRow>
+          <TableRow>
+            <TableCell>Cash account</TableCell>
+          </TableRow>
         </TableBody>
       </Table>,
     );

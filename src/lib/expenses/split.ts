@@ -18,8 +18,7 @@ export type ExpenseSplitLeg = {
 };
 
 export type ExpenseSplitResult =
-  | { ok: true; legs: ExpenseSplitLeg[]; totalMinor: number }
-  | { ok: false; error: string };
+  { ok: true; legs: ExpenseSplitLeg[]; totalMinor: number } | { ok: false; error: string };
 
 function assertWholeNonNegative(value: number, label: string): string | null {
   if (!Number.isSafeInteger(value) || value < 0) {

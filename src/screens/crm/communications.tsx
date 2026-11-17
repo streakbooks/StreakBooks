@@ -54,7 +54,10 @@ export function CrmCommunicationsPage() {
       <CrmSubnav current="communications" />
 
       {settings.data && !settings.data.enabled ? (
-        <EmptyState title="CRM is disabled" description="Enable CRM before configuring communications." />
+        <EmptyState
+          title="CRM is disabled"
+          description="Enable CRM before configuring communications."
+        />
       ) : null}
 
       {settings.isError ? (
@@ -85,7 +88,11 @@ export function CrmCommunicationsPage() {
                 title="Send is disabled"
                 description="Compose and send stay blocked so CRM cannot silently email contacts. Connect an App Store–approved provider in a later batch."
                 action={
-                  <Button type="button" disabled title="Blocked until an email provider is configured">
+                  <Button
+                    type="button"
+                    disabled
+                    title="Blocked until an email provider is configured"
+                  >
                     Compose email
                   </Button>
                 }

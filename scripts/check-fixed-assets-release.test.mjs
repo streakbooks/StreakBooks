@@ -1,7 +1,15 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -26,25 +34,32 @@ function fixture() {
   copyFileSync(runner, join(repo, "scripts", basename(runner)));
   writeFileSync(join(repo, "README.md"), "Local-only fixture; no network access.\n");
   if (process.platform === "win32") {
-    writeFileSync(join(bin, "npm.cmd"), [
-      "@echo off",
-      'echo %*>>"%FA_TEST_NPM_LOG%"',
-      'if /I "%FA_TEST_MUTATE%"=="tracked" if /I "%1"=="run" if /I "%2"=="typecheck" echo Modified>>README.md',
-      'if /I "%FA_TEST_MUTATE%"=="untracked" if /I "%1"=="run" if /I "%2"=="typecheck" echo Generated>output-from-build.txt',
-      'if /I "%FA_TEST_FAIL%"=="lint" if /I "%1"=="run" if /I "%2"=="lint" exit /b 4',
-      "exit /b 0",
-      "",
-    ].join("\r\n"));
+    writeFileSync(
+      join(bin, "npm.cmd"),
+      [
+        "@echo off",
+        'echo %*>>"%FA_TEST_NPM_LOG%"',
+        'if /I "%FA_TEST_MUTATE%"=="tracked" if /I "%1"=="run" if /I "%2"=="typecheck" echo Modified>>README.md',
+        'if /I "%FA_TEST_MUTATE%"=="untracked" if /I "%1"=="run" if /I "%2"=="typecheck" echo Generated>output-from-build.txt',
+        'if /I "%FA_TEST_FAIL%"=="lint" if /I "%1"=="run" if /I "%2"=="lint" exit /b 4',
+        "exit /b 0",
+        "",
+      ].join("\r\n"),
+    );
   } else {
-    writeFileSync(join(bin, "npm"), [
-      "#!/bin/sh",
-      'printf "%s\\n" "$*" >> "$FA_TEST_NPM_LOG"',
-      'if [ "$FA_TEST_MUTATE" = "tracked" ] && [ "$1" = "run" ] && [ "$2" = "typecheck" ]; then echo Modified >> README.md; fi',
-      'if [ "$FA_TEST_MUTATE" = "untracked" ] && [ "$1" = "run" ] && [ "$2" = "typecheck" ]; then echo Generated > output-from-build.txt; fi',
-      'if [ "$FA_TEST_FAIL" = "lint" ] && [ "$1" = "run" ] && [ "$2" = "lint" ]; then exit 4; fi',
-      "exit 0",
-      "",
-    ].join("\n"), { mode: 0o755 });
+    writeFileSync(
+      join(bin, "npm"),
+      [
+        "#!/bin/sh",
+        'printf "%s\\n" "$*" >> "$FA_TEST_NPM_LOG"',
+        'if [ "$FA_TEST_MUTATE" = "tracked" ] && [ "$1" = "run" ] && [ "$2" = "typecheck" ]; then echo Modified >> README.md; fi',
+        'if [ "$FA_TEST_MUTATE" = "untracked" ] && [ "$1" = "run" ] && [ "$2" = "typecheck" ]; then echo Generated > output-from-build.txt; fi',
+        'if [ "$FA_TEST_FAIL" = "lint" ] && [ "$1" = "run" ] && [ "$2" = "lint" ]; then exit 4; fi',
+        "exit 0",
+        "",
+      ].join("\n"),
+      { mode: 0o755 },
+    );
   }
 
   git(repo, "init", "-q", "-b", "main");
@@ -93,7 +108,10 @@ describe("Fixed Assets local non-CI release gate", () => {
       const x = execute(f);
       assert.equal(x.status, 0, x.output);
       assert.match(x.output, /Result: 9 \/ 9 checks passed/);
-      assert.match(x.output, /does NOT certify browser, database, staging or production readiness/i);
+      assert.match(
+        x.output,
+        /does NOT certify browser, database, staging or production readiness/i,
+      );
       assert.equal(seen(f).length, 9);
       assert.ok(seen(f).includes("test -- src/lib/fixed-assets/"));
       assert.ok(seen(f).includes("test"));

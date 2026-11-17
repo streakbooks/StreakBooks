@@ -32,13 +32,18 @@ test.describe("Tax module — authenticated staging release smoke (read-only)", 
     );
   }
 
-  test("Tax overview and reporting disclaimer are available without mutations", async ({ page }) => {
+  test("Tax overview and reporting disclaimer are available without mutations", async ({
+    page,
+  }) => {
     const errors: string[] = [];
     page.on("pageerror", (err) => errors.push(err.message));
     await authenticate(page, "/tax?tab=overview");
     await expect(page.getByRole("heading", { name: "Tax", exact: true })).toBeVisible();
     await expect(page.getByText("Calculation & reporting, not e-filing")).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tab", { name: "Overview" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     expect(errors).toEqual([]);
   });
 
@@ -48,8 +53,10 @@ test.describe("Tax module — authenticated staging release smoke (read-only)", 
     await expect(returns).toHaveAttribute("aria-selected", "true");
     await expect(page).toHaveURL(/\/tax\?tab=returns/);
     await page.getByRole("tab", { name: "Overview", exact: true }).click();
-    await expect(page.getByRole("tab", { name: "Overview", exact: true }))
-      .toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tab", { name: "Overview", exact: true })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     await expect(page).toHaveURL(/\/tax\?tab=overview/);
   });
 });

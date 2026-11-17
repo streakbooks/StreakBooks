@@ -37,8 +37,11 @@ export function parseCatalogueSearch(raw: Record<string, unknown>): CatalogueSea
     out.kind = kind as "all" | "service" | "product" | "non_inventory";
 
   const category = raw["category"];
-  if (typeof category === "string" && category.length <= 80 &&
-      (category === "all" || /^[a-zA-Z0-9_-]+$/.test(category)))
+  if (
+    typeof category === "string" &&
+    category.length <= 80 &&
+    (category === "all" || /^[a-zA-Z0-9_-]+$/.test(category))
+  )
     out.category = category;
 
   const status = raw["status"];
@@ -56,8 +59,10 @@ export function parseCatalogueSearch(raw: Record<string, unknown>): CatalogueSea
     out.page = Math.min(Number(page), 1_000_000);
 
   const pageSize = raw["pageSize"];
-  if ((typeof pageSize === "string" || typeof pageSize === "number") &&
-      PAGE_SIZES.has(Number(pageSize)))
+  if (
+    (typeof pageSize === "string" || typeof pageSize === "number") &&
+    PAGE_SIZES.has(Number(pageSize))
+  )
     out.pageSize = Number(pageSize) as 25 | 50 | 100;
 
   return out;

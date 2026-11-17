@@ -34,9 +34,7 @@ function scan(file) {
     const hasClick = attrs.includes("onActionClick");
     const hasAction = /(^|\s)action=/.test(attrs);
     if (!hasClick && !hasAction) {
-      failures.push(
-        `${rel}: EmptyState actionLabel without onActionClick or action (dead CTA)`,
-      );
+      failures.push(`${rel}: EmptyState actionLabel without onActionClick or action (dead CTA)`);
     }
   }
 }

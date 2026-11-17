@@ -51,8 +51,7 @@ export function ModuleSubnav({
   useEffect(() => {
     const strip = stripRef.current;
     if (!strip) return;
-    const observer =
-      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateEdges);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateEdges);
     observer?.observe(strip);
     if (strip.firstElementChild) observer?.observe(strip.firstElementChild);
     const frame = window.requestAnimationFrame(() => {

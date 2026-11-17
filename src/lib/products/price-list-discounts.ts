@@ -62,9 +62,7 @@ export function discountedUnitPriceMinor(basePriceMinor: number, bps: number): n
   if (!Number.isSafeInteger(basePriceMinor) || basePriceMinor < 0) {
     throw new Error("Invalid base price in minor currency units");
   }
-  const result = (
-    BigInt(basePriceMinor) * BigInt(10000 - bps) + 5000n
-  ) / 10000n;
+  const result = (BigInt(basePriceMinor) * BigInt(10000 - bps) + 5000n) / 10000n;
   return Number(result);
 }
 
@@ -90,17 +88,17 @@ export function resolveDraftDiscountedUnitPrice(
   discountRules: readonly DraftDiscountRule[],
 ): number | undefined {
   const fixedOrTier = resolveTierUnitPrice(
-    productId, quantity, documentDate, fixedPrices, fixedTiers,
+    productId,
+    quantity,
+    documentDate,
+    fixedPrices,
+    fixedTiers,
   );
-  const percent = findEffectiveDiscountRule(
-    discountRules, productId, quantity, documentDate,
-  );
+  const percent = findEffectiveDiscountRule(discountRules, productId, quantity, documentDate);
   if (fixedOrTier === undefined && percent === null) return undefined;
   const base = fixedOrTier ?? cataloguePriceMinor;
   if (base === undefined) {
     throw new Error("Cannot resolve a discounted price without an authorised catalogue base");
   }
-  return percent
-    ? discountedUnitPriceMinor(base, percent.discount_bps)
-    : base;
+  return percent ? discountedUnitPriceMinor(base, percent.discount_bps) : base;
 }

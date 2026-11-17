@@ -1,11 +1,6 @@
 /** Pure campaign draft validation (no I/O). */
 
-export type CrmCampaignStatus =
-  | "planned"
-  | "active"
-  | "paused"
-  | "completed"
-  | "cancelled";
+export type CrmCampaignStatus = "planned" | "active" | "paused" | "completed" | "cancelled";
 
 export const CRM_CAMPAIGN_STATUSES: readonly CrmCampaignStatus[] = [
   "planned",

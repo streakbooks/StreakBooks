@@ -277,7 +277,9 @@ function CreditNoteDetail() {
               companyId={company?.id ?? null}
               recordType="sales_credit_note"
               recordId={creditNoteId}
-              title={cn.credit_number ? `Credit note ${cn.credit_number}` : "Credit note discussion"}
+              title={
+                cn.credit_number ? `Credit note ${cn.credit_number}` : "Credit note discussion"
+              }
               label="Discuss"
             />
             {cn.status === "draft" ? (
@@ -308,232 +310,232 @@ function CreditNoteDetail() {
           </div>
         }
       >
-      <div className="mb-4 flex flex-wrap gap-3 text-sm">
-        <StatusBadge status={cn.status} label={creditNoteStatusLabel(cn.status)} />
-        <span>#{cn.credit_number ?? "—"}</span>
-        <span>Total {money(cn.total_minor, cur)}</span>
-        <span>Applied {money(cn.amount_allocated_minor, cur)}</span>
-        {live ? <span>Remaining credit {money(remaining, cur)}</span> : null}
-        {cn.source_invoice ? (
-          <span>
-            Credits invoice{" "}
-            <Link
-              className="underline"
-              to="/sales/invoices/$invoiceId"
-              params={{ invoiceId: cn.source_invoice.id }}
-            >
-              {cn.source_invoice.invoice_number ?? cn.source_invoice.id.slice(0, 8)}
-            </Link>
-          </span>
-        ) : null}
-        {cn.status === "void" && cn.void_reason ? (
-          <span className="text-destructive">Void: {cn.void_reason}</span>
-        ) : null}
-      </div>
-      {cn.memo ? <p className="mb-4 text-sm text-muted-foreground">{cn.memo}</p> : null}
+        <div className="mb-4 flex flex-wrap gap-3 text-sm">
+          <StatusBadge status={cn.status} label={creditNoteStatusLabel(cn.status)} />
+          <span>#{cn.credit_number ?? "—"}</span>
+          <span>Total {money(cn.total_minor, cur)}</span>
+          <span>Applied {money(cn.amount_allocated_minor, cur)}</span>
+          {live ? <span>Remaining credit {money(remaining, cur)}</span> : null}
+          {cn.source_invoice ? (
+            <span>
+              Credits invoice{" "}
+              <Link
+                className="underline"
+                to="/sales/invoices/$invoiceId"
+                params={{ invoiceId: cn.source_invoice.id }}
+              >
+                {cn.source_invoice.invoice_number ?? cn.source_invoice.id.slice(0, 8)}
+              </Link>
+            </span>
+          ) : null}
+          {cn.status === "void" && cn.void_reason ? (
+            <span className="text-destructive">Void: {cn.void_reason}</span>
+          ) : null}
+        </div>
+        {cn.memo ? <p className="mb-4 text-sm text-muted-foreground">{cn.memo}</p> : null}
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Description</TableHead>
-            <TableHead className="text-right">Qty</TableHead>
-            <TableHead className="text-right">Unit price</TableHead>
-            <TableHead className="text-right">Discount</TableHead>
-            <TableHead className="text-right">Tax %</TableHead>
-            <TableHead className="text-right">Net</TableHead>
-            <TableHead className="text-right">Tax</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {cn.sales_credit_note_lines.map((l) => (
-            <TableRow key={l.id}>
-              <TableCell>{l.description}</TableCell>
-              <TableCell className="text-right">{l.quantity}</TableCell>
-              <TableCell className="text-right">{money(l.unit_price_minor, cur)}</TableCell>
-              <TableCell className="text-right">{money(l.discount_minor, cur)}</TableCell>
-              <TableCell className="text-right">{bpsToPercentString(l.tax_rate_bps)}%</TableCell>
-              <TableCell className="text-right">{money(l.net_minor, cur)}</TableCell>
-              <TableCell className="text-right">{money(l.tax_minor, cur)}</TableCell>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Qty</TableHead>
+              <TableHead className="text-right">Unit price</TableHead>
+              <TableHead className="text-right">Discount</TableHead>
+              <TableHead className="text-right">Tax %</TableHead>
+              <TableHead className="text-right">Net</TableHead>
+              <TableHead className="text-right">Tax</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <div className="mt-4 ml-auto w-64 space-y-1 text-sm">
-        <div className="flex justify-between">
-          <span>Subtotal</span>
-          <span>{money(cn.subtotal_minor, cur)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Tax</span>
-          <span>{money(cn.tax_minor, cur)}</span>
-        </div>
-        <div className="flex justify-between font-medium">
-          <span>Total</span>
-          <span>{money(cn.total_minor, cur)}</span>
-        </div>
-      </div>
-
-      {cn.allocations.length > 0 ? (
-        <div className="mt-6">
-          <h3 className="mb-2 text-sm font-medium">Applied to invoices</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice</TableHead>
-                <TableHead>Applied on</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead />
+          </TableHeader>
+          <TableBody>
+            {cn.sales_credit_note_lines.map((l) => (
+              <TableRow key={l.id}>
+                <TableCell>{l.description}</TableCell>
+                <TableCell className="text-right">{l.quantity}</TableCell>
+                <TableCell className="text-right">{money(l.unit_price_minor, cur)}</TableCell>
+                <TableCell className="text-right">{money(l.discount_minor, cur)}</TableCell>
+                <TableCell className="text-right">{bpsToPercentString(l.tax_rate_bps)}%</TableCell>
+                <TableCell className="text-right">{money(l.net_minor, cur)}</TableCell>
+                <TableCell className="text-right">{money(l.tax_minor, cur)}</TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {cn.allocations.map((a) => (
-                <TableRow key={a.id}>
-                  <TableCell>
-                    <Link
-                      className="underline-offset-2 hover:underline"
-                      to="/sales/invoices/$invoiceId"
-                      params={{ invoiceId: a.invoice_id }}
+            ))}
+          </TableBody>
+        </Table>
+        <div className="mt-4 ml-auto w-64 space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span>Subtotal</span>
+            <span>{money(cn.subtotal_minor, cur)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Tax</span>
+            <span>{money(cn.tax_minor, cur)}</span>
+          </div>
+          <div className="flex justify-between font-medium">
+            <span>Total</span>
+            <span>{money(cn.total_minor, cur)}</span>
+          </div>
+        </div>
+
+        {cn.allocations.length > 0 ? (
+          <div className="mt-6">
+            <h3 className="mb-2 text-sm font-medium">Applied to invoices</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice</TableHead>
+                  <TableHead>Applied on</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cn.allocations.map((a) => (
+                  <TableRow key={a.id}>
+                    <TableCell>
+                      <Link
+                        className="underline-offset-2 hover:underline"
+                        to="/sales/invoices/$invoiceId"
+                        params={{ invoiceId: a.invoice_id }}
+                      >
+                        {a.sales_invoices?.invoice_number ?? a.invoice_id.slice(0, 8)}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{a.allocated_on ?? "—"}</TableCell>
+                    <TableCell className="text-right">{money(a.amount_minor, cur)}</TableCell>
+                    <TableCell className="text-right print:hidden">
+                      {live ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            setDialog({
+                              kind: "remove",
+                              allocationId: a.id,
+                              allocatedOn: a.allocated_on ?? cn.credit_date,
+                            })
+                          }
+                        >
+                          Remove
+                        </Button>
+                      ) : null}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : null}
+
+        {cn.reversedAllocations.length > 0 ? (
+          <div className="mt-6">
+            <h3 className="mb-2 text-sm font-medium">Removed applications</h3>
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              {cn.reversedAllocations.map((a) => (
+                <li key={a.id}>
+                  {a.sales_invoices?.invoice_number ?? a.invoice_id.slice(0, 8)} ·{" "}
+                  {money(a.amount_minor, cur)} · removed {a.reversed_on}
+                  {a.reverse_reason ? ` — ${a.reverse_reason}` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {canAllocate ? (
+          <div className="mt-8 space-y-3 rounded-md border p-4 print:hidden">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <Label>Apply remaining credit ({money(remaining, cur)})</Label>
+              <div className="flex items-center gap-2 text-sm">
+                <Label htmlFor="alloc-date">Applied on</Label>
+                <Input
+                  id="alloc-date"
+                  type="date"
+                  className="w-40"
+                  min={cn.credit_date}
+                  value={allocDate || today}
+                  onChange={(e) => setAllocDate(e.target.value)}
+                />
+              </div>
+            </div>
+            {openQ.isPending ? (
+              <LoadingState rows={2} />
+            ) : openInvoices.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No open {cur} invoices for this customer.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {openInvoices.map((inv) => {
+                  const checked = inv.id in allocs;
+                  return (
+                    <li
+                      key={inv.id}
+                      className="flex flex-wrap items-center gap-3 rounded border px-3 py-2"
                     >
-                      {a.sales_invoices?.invoice_number ?? a.invoice_id.slice(0, 8)}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{a.allocated_on ?? "—"}</TableCell>
-                  <TableCell className="text-right">{money(a.amount_minor, cur)}</TableCell>
-                  <TableCell className="text-right print:hidden">
-                    {live ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() =>
-                          setDialog({
-                            kind: "remove",
-                            allocationId: a.id,
-                            allocatedOn: a.allocated_on ?? cn.credit_date,
+                      <Checkbox
+                        checked={checked}
+                        aria-label={`Select ${inv.invoice_number ?? "invoice"}`}
+                        onCheckedChange={(v) =>
+                          setAllocs((prev) => {
+                            const next = { ...prev };
+                            if (!v) {
+                              delete next[inv.id];
+                              return next;
+                            }
+                            const left =
+                              remaining -
+                              Object.entries(prev).reduce((s, [, val]) => {
+                                try {
+                                  return s + Number(toMinorUnits(val || "0", cur));
+                                } catch {
+                                  return s;
+                                }
+                              }, 0);
+                            next[inv.id] = fromMinorUnits(
+                              Math.max(0, Math.min(inv.outstanding_minor, left)),
+                              cur,
+                            );
+                            return next;
                           })
                         }
-                      >
-                        Remove
-                      </Button>
-                    ) : null}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : null}
-
-      {cn.reversedAllocations.length > 0 ? (
-        <div className="mt-6">
-          <h3 className="mb-2 text-sm font-medium">Removed applications</h3>
-          <ul className="space-y-1 text-sm text-muted-foreground">
-            {cn.reversedAllocations.map((a) => (
-              <li key={a.id}>
-                {a.sales_invoices?.invoice_number ?? a.invoice_id.slice(0, 8)} ·{" "}
-                {money(a.amount_minor, cur)} · removed {a.reversed_on}
-                {a.reverse_reason ? ` — ${a.reverse_reason}` : ""}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {canAllocate ? (
-        <div className="mt-8 space-y-3 rounded-md border p-4 print:hidden">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <Label>Apply remaining credit ({money(remaining, cur)})</Label>
-            <div className="flex items-center gap-2 text-sm">
-              <Label htmlFor="alloc-date">Applied on</Label>
-              <Input
-                id="alloc-date"
-                type="date"
-                className="w-40"
-                min={cn.credit_date}
-                value={allocDate || today}
-                onChange={(e) => setAllocDate(e.target.value)}
-              />
+                      />
+                      <div className="min-w-0 flex-1 text-sm">
+                        <p>
+                          {inv.invoice_number ?? inv.id.slice(0, 8)} · {inv.invoice_date}
+                        </p>
+                        <p className="text-muted-foreground">
+                          Outstanding {money(inv.outstanding_minor, cur)} · due {inv.due_date}
+                        </p>
+                      </div>
+                      {checked ? (
+                        <Input
+                          className="w-28"
+                          value={allocs[inv.id] ?? ""}
+                          inputMode="decimal"
+                          onChange={(e) =>
+                            setAllocs((prev) => ({ ...prev, [inv.id]: e.target.value }))
+                          }
+                        />
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <div className="flex items-center gap-3">
+              <Button
+                size="sm"
+                disabled={allocateM.isPending || allocatedTotal <= 0 || allocatedTotal > remaining}
+                onClick={() => allocateM.mutate()}
+              >
+                {allocateM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                Apply credit
+              </Button>
+              {allocatedTotal > remaining ? (
+                <span className="text-sm text-destructive">Exceeds the remaining credit</span>
+              ) : null}
             </div>
           </div>
-          {openQ.isPending ? (
-            <LoadingState rows={2} />
-          ) : openInvoices.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No open {cur} invoices for this customer.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {openInvoices.map((inv) => {
-                const checked = inv.id in allocs;
-                return (
-                  <li
-                    key={inv.id}
-                    className="flex flex-wrap items-center gap-3 rounded border px-3 py-2"
-                  >
-                    <Checkbox
-                      checked={checked}
-                      aria-label={`Select ${inv.invoice_number ?? "invoice"}`}
-                      onCheckedChange={(v) =>
-                        setAllocs((prev) => {
-                          const next = { ...prev };
-                          if (!v) {
-                            delete next[inv.id];
-                            return next;
-                          }
-                          const left =
-                            remaining -
-                            Object.entries(prev).reduce((s, [, val]) => {
-                              try {
-                                return s + Number(toMinorUnits(val || "0", cur));
-                              } catch {
-                                return s;
-                              }
-                            }, 0);
-                          next[inv.id] = fromMinorUnits(
-                            Math.max(0, Math.min(inv.outstanding_minor, left)),
-                            cur,
-                          );
-                          return next;
-                        })
-                      }
-                    />
-                    <div className="min-w-0 flex-1 text-sm">
-                      <p>
-                        {inv.invoice_number ?? inv.id.slice(0, 8)} · {inv.invoice_date}
-                      </p>
-                      <p className="text-muted-foreground">
-                        Outstanding {money(inv.outstanding_minor, cur)} · due {inv.due_date}
-                      </p>
-                    </div>
-                    {checked ? (
-                      <Input
-                        className="w-28"
-                        value={allocs[inv.id] ?? ""}
-                        inputMode="decimal"
-                        onChange={(e) =>
-                          setAllocs((prev) => ({ ...prev, [inv.id]: e.target.value }))
-                        }
-                      />
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          <div className="flex items-center gap-3">
-            <Button
-              size="sm"
-              disabled={allocateM.isPending || allocatedTotal <= 0 || allocatedTotal > remaining}
-              onClick={() => allocateM.mutate()}
-            >
-              {allocateM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Apply credit
-            </Button>
-            {allocatedTotal > remaining ? (
-              <span className="text-sm text-destructive">Exceeds the remaining credit</span>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+        ) : null}
       </RecordWorkspace>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>

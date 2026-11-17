@@ -46,7 +46,9 @@ export function ConfirmDialog({
       <AlertDialogContent className={tone === "destructive" ? "border-destructive/30" : undefined}>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
-            {tone === "destructive" ? <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden="true" /> : null}
+            {tone === "destructive" ? (
+              <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden="true" />
+            ) : null}
             {title}
           </AlertDialogTitle>
           {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}

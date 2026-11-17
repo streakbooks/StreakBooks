@@ -351,13 +351,11 @@ export const listHrApprovalsInbox = createServerFn({ method: "GET" })
 
 export const linkHrEmployeeUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; employeeId: string; userId: string | null }) => ({
-      companyId: companyIdOf(input),
-      employeeId: input.employeeId,
-      userId: input.userId,
-    }),
-  )
+  .inputValidator((input: { companyId: string; employeeId: string; userId: string | null }) => ({
+    companyId: companyIdOf(input),
+    employeeId: input.employeeId,
+    userId: input.userId,
+  }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.employees.manage");
     const raw = await callRpc(

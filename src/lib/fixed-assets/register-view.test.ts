@@ -8,11 +8,7 @@ import {
   type AssetRegisterFilters,
 } from "./register-view";
 
-function asset(
-  id: string,
-  name: string,
-  changes: Partial<FixedAssetRow> = {},
-): FixedAssetRow {
+function asset(id: string, name: string, changes: Partial<FixedAssetRow> = {}): FixedAssetRow {
   return {
     id,
     asset_type_id: null,
@@ -104,9 +100,7 @@ describe("Fixed asset register view", () => {
   it("searches type, account code and notes, ignoring case", () => {
     for (const term of ["COMPUTERS", "1500", "warehouse 4"]) {
       expect(
-        selectRegisterAssets(rows, { ...defaults, search: term }, types, accounts).map(
-          (a) => a.id,
-        ),
+        selectRegisterAssets(rows, { ...defaults, search: term }, types, accounts).map((a) => a.id),
       ).toContain("FA-10");
     }
     expect(
@@ -129,9 +123,7 @@ describe("Fixed asset as-at totals", () => {
   ];
 
   it("excludes future purchases and disposed assets at the cutoff", () => {
-    expect(
-      summariseActiveAssets(rows, "2026-11-06", new Map([["current", 4000]])),
-    ).toEqual({
+    expect(summariseActiveAssets(rows, "2026-11-06", new Map([["current", 4000]]))).toEqual({
       activeCount: 1,
       costMinor: 10000,
       accumulatedMinor: 4000,
@@ -153,9 +145,7 @@ describe("Fixed asset as-at totals", () => {
   });
 
   it("flags accumulated depreciation that exceeds cost", () => {
-    expect(
-      summariseActiveAssets(rows, "2026-11-06", new Map([["current", 10001]])),
-    ).toMatchObject({
+    expect(summariseActiveAssets(rows, "2026-11-06", new Map([["current", 10001]]))).toMatchObject({
       costMinor: 10000,
       accumulatedMinor: null,
       netBookValueMinor: null,
@@ -165,24 +155,26 @@ describe("Fixed asset as-at totals", () => {
   it("refuses as-at accumulated depreciation below the saved opening", () => {
     const current = asset("current", "Current", { opening_accumulated_minor: 2500 });
     expect(validAssetAccumulatedAt(current, 2000)).toBeNull();
-    expect(summariseActiveAssets([current], "2026-11-06", new Map([["current", 2000]])))
-      .toMatchObject({
-        activeCount: 1,
-        costMinor: 10000,
-        accumulatedMinor: null,
-        netBookValueMinor: null,
-      });
+    expect(
+      summariseActiveAssets([current], "2026-11-06", new Map([["current", 2000]])),
+    ).toMatchObject({
+      activeCount: 1,
+      costMinor: 10000,
+      accumulatedMinor: null,
+      netBookValueMinor: null,
+    });
   });
 
   it("refuses balances beyond acquisition cost less residual value", () => {
     const current = asset("residual", "Residual", { residual_minor: 5000 });
     expect(validAssetAccumulatedAt(current, 5000)).toBe(5000);
     expect(validAssetAccumulatedAt(current, 5001)).toBeNull();
-    expect(summariseActiveAssets([current], "2026-11-06", new Map([["residual", 5001]])))
-      .toMatchObject({
-        accumulatedMinor: null,
-        netBookValueMinor: null,
-      });
+    expect(
+      summariseActiveAssets([current], "2026-11-06", new Map([["residual", 5001]])),
+    ).toMatchObject({
+      accumulatedMinor: null,
+      netBookValueMinor: null,
+    });
   });
 
   it("fails closed when residual plus opening depreciation exceeds acquisition cost", () => {
@@ -202,11 +194,13 @@ describe("Fixed asset as-at totals", () => {
 
   it("refuses individually unsafe or nonpositive costs even where sums could look valid", () => {
     for (const unsafe of [0, -500, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
-      expect(summariseActiveAssets(
-        [asset("bad", "Bad cost", { cost_minor: unsafe })],
-        "2026-11-06",
-        null,
-      ).costMinor).toBeNull();
+      expect(
+        summariseActiveAssets(
+          [asset("bad", "Bad cost", { cost_minor: unsafe })],
+          "2026-11-06",
+          null,
+        ).costMinor,
+      ).toBeNull();
     }
   });
 
@@ -217,12 +211,11 @@ describe("Fixed asset as-at totals", () => {
       opening_accumulated_minor: 1000,
     });
     expect(validAssetAccumulatedAt(fully, 8000)).toBe(8000);
-    expect(summariseActiveAssets([fully], "2026-11-06", new Map([["fully", 8000]])))
-      .toMatchObject({
-        costMinor: 10000,
-        accumulatedMinor: 8000,
-        netBookValueMinor: 2000,
-      });
+    expect(summariseActiveAssets([fully], "2026-11-06", new Map([["fully", 8000]]))).toMatchObject({
+      costMinor: 10000,
+      accumulatedMinor: 8000,
+      netBookValueMinor: 2000,
+    });
   });
 
   it("treats future purchases and disposals by their effective as-at dates", () => {
@@ -243,8 +236,7 @@ describe("Fixed asset as-at totals", () => {
       disposal_date: "2026-12-01",
     });
     expect(
-      summariseActiveAssets([futureDisposal], "2026-11-06", new Map([["end", 1200]]))
-        .activeCount,
+      summariseActiveAssets([futureDisposal], "2026-11-06", new Map([["end", 1200]])).activeCount,
     ).toBe(1);
   });
 

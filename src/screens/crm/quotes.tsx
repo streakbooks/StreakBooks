@@ -96,7 +96,11 @@ export function CrmQuotesPage() {
 
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
-        <ErrorState title="Could not load CRM settings" description={friendlyAuthError(settings.error)} onRetry={() => settings.refetch()} />
+        <ErrorState
+          title="Could not load CRM settings"
+          description={friendlyAuthError(settings.error)}
+          onRetry={() => settings.refetch()}
+        />
       ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before bridging quotes." />
@@ -145,7 +149,9 @@ export function CrmQuotesPage() {
                         <div className="font-medium">{opp.opportunityNumber}</div>
                         <div className="text-sm text-muted-foreground">{opp.name}</div>
                       </TableCell>
-                      <TableCell><CrmStatusBadge status={opp.status} /></TableCell>
+                      <TableCell>
+                        <CrmStatusBadge status={opp.status} />
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatCrmMinor(opp.amountMinor, opp.currencyCode)}
                       </TableCell>

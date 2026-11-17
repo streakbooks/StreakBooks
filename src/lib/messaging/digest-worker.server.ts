@@ -172,9 +172,7 @@ export async function runMessagingDigests(now = new Date()): Promise<{
         const text = [
           preview.subject,
           "",
-          ...preview.items.map(
-            (item, index) => `${index + 1}. ${item.title} — ${item.summary}`,
-          ),
+          ...preview.items.map((item, index) => `${index + 1}. ${item.title} — ${item.summary}`),
           "",
           preview.omittedSensitive
             ? `${preview.omittedSensitive} sensitive or private conversation(s) were omitted.`

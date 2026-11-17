@@ -47,18 +47,27 @@ export function AiWorkpaperEvidencePanel({
           <Badge variant="outline">Supplemental evidence only</Badge>
         </CardTitle>
         <CardDescription>
-          Link recorded AI evidence reviews for journals affecting this account up to {asOf}.
-          Formal workpaper balance verification, preparation and sign-off remain separate.
+          Link recorded AI evidence reviews for journals affecting this account up to {asOf}. Formal
+          workpaper balance verification, preparation and sign-off remain separate.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {evidence.isPending ? (
-          <p role="status" className="text-sm text-muted-foreground">Finding linked AI reviews…</p>
+          <p role="status" className="text-sm text-muted-foreground">
+            Finding linked AI reviews…
+          </p>
         ) : evidence.isError ? (
           <Alert variant="destructive">
             <AlertDescription>
               {friendlyAuthError(evidence.error)}{" "}
-              <Button type="button" size="sm" variant="outline" onClick={() => void evidence.refetch()}>Retry</Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void evidence.refetch()}
+              >
+                Retry
+              </Button>
             </AlertDescription>
           </Alert>
         ) : d ? (
@@ -67,13 +76,16 @@ export function AiWorkpaperEvidencePanel({
               <Badge variant="secondary">{d.pageCounts.reviewed} AI-reviewed on this page</Badge>
               <Badge variant="outline">{d.pageCounts.followUp} pending on this page</Badge>
               {d.pageCounts.notPosted > 0 ? (
-                <Badge variant="destructive">{d.pageCounts.notPosted} no longer posted on this page</Badge>
+                <Badge variant="destructive">
+                  {d.pageCounts.notPosted} no longer posted on this page
+                </Badge>
               ) : null}
             </div>
             <p className="text-xs text-muted-foreground">
               {d.total} matching AI review case(s) across all pages for this account through {asOf}.
-              Showing {d.links.length} result(s) on page {d.page + 1} of {Math.max(1, Math.ceil(d.total / d.pageSize))}.
-              The status badges count this page only; they are not ledger-wide totals.
+              Showing {d.links.length} result(s) on page {d.page + 1} of{" "}
+              {Math.max(1, Math.ceil(d.total / d.pageSize))}. The status badges count this page
+              only; they are not ledger-wide totals.
             </p>
             {d.links.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -85,7 +97,10 @@ export function AiWorkpaperEvidencePanel({
             ) : (
               <div className="max-h-72 space-y-2 overflow-y-auto">
                 {d.links.map((entry) => (
-                  <div key={entry.reviewId} className="flex flex-wrap items-start justify-between gap-2 rounded-lg border p-3 text-sm">
+                  <div
+                    key={entry.reviewId}
+                    className="flex flex-wrap items-start justify-between gap-2 rounded-lg border p-3 text-sm"
+                  >
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <Link
@@ -95,7 +110,11 @@ export function AiWorkpaperEvidencePanel({
                         >
                           Journal #{entry.journalNumber}
                         </Link>
-                        <Badge variant={entry.signal === "journal_not_posted" ? "destructive" : "outline"}>
+                        <Badge
+                          variant={
+                            entry.signal === "journal_not_posted" ? "destructive" : "outline"
+                          }
+                        >
                           {entry.signal === "journal_not_posted"
                             ? "No longer posted"
                             : entry.signal === "reviewed_evidence"
@@ -104,7 +123,7 @@ export function AiWorkpaperEvidencePanel({
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {entry.journalDate} · {entry.sourceType.replaceAll("_"," ")}
+                        {entry.journalDate} · {entry.sourceType.replaceAll("_", " ")}
                       </p>
                       <p className="text-xs text-muted-foreground">{entry.explanation}</p>
                       {entry.reviewedAt && entry.signal === "reviewed_evidence" ? (
@@ -125,7 +144,15 @@ export function AiWorkpaperEvidencePanel({
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => onUseReference("AI journal evidence review " + entry.reviewId + " (journal #" + entry.journalNumber + ")")}
+                        onClick={() =>
+                          onUseReference(
+                            "AI journal evidence review " +
+                              entry.reviewId +
+                              " (journal #" +
+                              entry.journalNumber +
+                              ")",
+                          )
+                        }
                       >
                         Use reference
                       </Button>
@@ -139,19 +166,31 @@ export function AiWorkpaperEvidencePanel({
                 Page {d.page + 1} / {Math.max(1, Math.ceil(d.total / d.pageSize))}
               </span>
               <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" disabled={page === 0 || evidence.isFetching} onClick={() => setPage((value) => Math.max(0, value - 1))}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 0 || evidence.isFetching}
+                  onClick={() => setPage((value) => Math.max(0, value - 1))}
+                >
                   Previous
                 </Button>
-                <Button type="button" variant="outline" size="sm" disabled={(page + 1) * d.pageSize >= d.total || evidence.isFetching} onClick={() => setPage((value) => value + 1)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={(page + 1) * d.pageSize >= d.total || evidence.isFetching}
+                  onClick={() => setPage((value) => value + 1)}
+                >
                   Next
                 </Button>
               </div>
             </div>
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="mt-0.5 size-4 shrink-0" />
-              {d.disclaimer} Using a reference fills the workpaper draft input only.
-              It does not save evidence, infer a supporting balance, submit for review,
-              or satisfy the separate accountant sign-off requirements.
+              {d.disclaimer} Using a reference fills the workpaper draft input only. It does not
+              save evidence, infer a supporting balance, submit for review, or satisfy the separate
+              accountant sign-off requirements.
             </p>
             <Button type="button" asChild size="sm" variant="outline">
               <Link to="/ai-assistant">Open AI Assistant review queue</Link>

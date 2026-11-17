@@ -31,12 +31,12 @@ describe("expense approval escalation helpers", () => {
   });
 
   it("formats refresh summaries", () => {
-    expect(
-      formatEscalationRefreshSummary({ escalationDays: 5, notifiedCount: 3 }),
-    ).toContain("3 notification");
-    expect(
-      formatEscalationRefreshSummary({ escalationDays: 0, notifiedCount: 0 }),
-    ).toMatch(/disabled/i);
+    expect(formatEscalationRefreshSummary({ escalationDays: 5, notifiedCount: 3 })).toContain(
+      "3 notification",
+    );
+    expect(formatEscalationRefreshSummary({ escalationDays: 0, notifiedCount: 0 })).toMatch(
+      /disabled/i,
+    );
   });
 
   it("maps refresh payloads", () => {

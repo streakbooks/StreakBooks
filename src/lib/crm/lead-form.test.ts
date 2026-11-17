@@ -19,12 +19,36 @@ describe("validateCrmLeadForm", () => {
   });
 
   it("allows organization-only or email-only leads", () => {
-    expect(validateCrmLeadForm({ ...draft, firstName: "", lastName: "", email: "", organizationName: "Acme" }).valid).toBe(true);
-    expect(validateCrmLeadForm({ ...draft, firstName: "", lastName: "", organizationName: "", email: "contact@example.com" }).valid).toBe(true);
+    expect(
+      validateCrmLeadForm({
+        ...draft,
+        firstName: "",
+        lastName: "",
+        email: "",
+        organizationName: "Acme",
+      }).valid,
+    ).toBe(true);
+    expect(
+      validateCrmLeadForm({
+        ...draft,
+        firstName: "",
+        lastName: "",
+        organizationName: "",
+        email: "contact@example.com",
+      }).valid,
+    ).toBe(true);
   });
 
   it("rejects missing identity and malformed emails", () => {
-    expect(validateCrmLeadForm({ ...draft, firstName: "", lastName: "", organizationName: "", email: "" }).valid).toBe(false);
+    expect(
+      validateCrmLeadForm({
+        ...draft,
+        firstName: "",
+        lastName: "",
+        organizationName: "",
+        email: "",
+      }).valid,
+    ).toBe(false);
     expect(validateCrmLeadForm({ ...draft, email: "invalid@" }).valid).toBe(false);
   });
 
@@ -36,11 +60,20 @@ describe("validateCrmLeadForm", () => {
   );
 
   it("accepts a leading-decimal amount", () => {
-    expect(validateCrmLeadForm({ ...draft, estimatedMajor: ".50" })).toMatchObject({ valid: true, estimatedValueMinor: 50 });
+    expect(validateCrmLeadForm({ ...draft, estimatedMajor: ".50" })).toMatchObject({
+      valid: true,
+      estimatedValueMinor: 50,
+    });
   });
 
   it("accepts a blank or zero amount", () => {
-    expect(validateCrmLeadForm({ ...draft, estimatedMajor: "" })).toMatchObject({ valid: true, estimatedValueMinor: 0 });
-    expect(validateCrmLeadForm({ ...draft, estimatedMajor: "0" })).toMatchObject({ valid: true, estimatedValueMinor: 0 });
+    expect(validateCrmLeadForm({ ...draft, estimatedMajor: "" })).toMatchObject({
+      valid: true,
+      estimatedValueMinor: 0,
+    });
+    expect(validateCrmLeadForm({ ...draft, estimatedMajor: "0" })).toMatchObject({
+      valid: true,
+      estimatedValueMinor: 0,
+    });
   });
 });

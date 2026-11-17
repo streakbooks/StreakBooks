@@ -53,23 +53,23 @@ describe("atomic budget document input validation", () => {
   });
   it("rejects missing or invalid concurrency tokens", () => {
     for (const expectedUpdatedAt of ["", "invalid", null, "2026-11-06"]) {
-      expect(() =>
-        validateBudgetDocumentInput({ ...valid, expectedUpdatedAt }),
-      ).toThrow(/version/);
+      expect(() => validateBudgetDocumentInput({ ...valid, expectedUpdatedAt })).toThrow(/version/);
     }
   });
   it("rejects empty names and overlong notes", () => {
     expect(() => validateBudgetDocumentInput({ ...valid, name: " " })).toThrow(/name/);
-    expect(() =>
-      validateBudgetDocumentInput({ ...valid, notes: "a".repeat(2001) }),
-    ).toThrow(/notes/);
+    expect(() => validateBudgetDocumentInput({ ...valid, notes: "a".repeat(2001) })).toThrow(
+      /notes/,
+    );
   });
   it("accepts an empty plan and maximum valid minor-unit amounts", () => {
     const empty = validateBudgetDocumentInput({ ...valid, rows: [] });
     expect(empty.rows).toEqual([]);
     const max = validateBudgetDocumentInput({
       ...valid,
-      rows: [{ accountId: "income-1", months: Array.from({ length: 12 }, () => MAX_BUDGET_CELL_MINOR) }],
+      rows: [
+        { accountId: "income-1", months: Array.from({ length: 12 }, () => MAX_BUDGET_CELL_MINOR) },
+      ],
     });
     expect(max.rows[0]!.months[11]).toBe(MAX_BUDGET_CELL_MINOR);
   });

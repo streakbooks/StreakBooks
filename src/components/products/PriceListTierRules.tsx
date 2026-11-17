@@ -20,7 +20,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 
 type Props = {
@@ -32,7 +36,11 @@ type Props = {
 };
 
 export function PriceListTierRules({
-  companyId, priceListId, listName, currency, isActive,
+  companyId,
+  priceListId,
+  listName,
+  currency,
+  isActive,
 }: Props) {
   const qc = useQueryClient();
   const fetchRules = useServerFn(listManagedPriceRules);
@@ -96,14 +104,19 @@ export function PriceListTierRules({
     ]);
   };
   const saveMut = useMutation({
-    mutationFn: () => saveRule({
-      data: {
-        companyId, priceListId, productId: selectedProductId,
-        ...(editingId ? { id: editingId } : {}),
-        minQuantity, effectiveFrom, effectiveTo: effectiveTo || null,
-        unitPriceMinor: Number(parseMinorOrThrow(price, currency, "Pricing rule")),
-      },
-    }),
+    mutationFn: () =>
+      saveRule({
+        data: {
+          companyId,
+          priceListId,
+          productId: selectedProductId,
+          ...(editingId ? { id: editingId } : {}),
+          minQuantity,
+          effectiveFrom,
+          effectiveTo: effectiveTo || null,
+          unitPriceMinor: Number(parseMinorOrThrow(price, currency, "Pricing rule")),
+        },
+      }),
     onSuccess: async () => {
       toast.success(editingId ? "Pricing tier updated" : "Pricing tier created");
       reset();
@@ -112,8 +125,7 @@ export function PriceListTierRules({
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const deleteMut = useMutation({
-    mutationFn: (ruleId: string) =>
-      deleteRule({ data: { companyId, priceListId, ruleId } }),
+    mutationFn: (ruleId: string) => deleteRule({ data: { companyId, priceListId, ruleId } }),
     onSuccess: async () => {
       toast.success("Pricing tier removed");
       if (editingId) reset();
@@ -123,14 +135,16 @@ export function PriceListTierRules({
   });
   return (
     <Card>
-      <CardHeader><CardTitle>{listName} — quantity and date pricing</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>{listName} — quantity and date pricing</CardTitle>
+      </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Set exact unit prices for minimum quantities and effective date ranges, in {currency}.
-          The highest eligible quantity tier wins, then the latest start date. Where no rule
-          qualifies, the fixed list price applies, then the standard catalogue price.
-          Dates are inclusive; 1900-01-01 means no practical start date.
-          Prices are snapshots on sales drafts and never retroactively applied to posted documents.
+          Set exact unit prices for minimum quantities and effective date ranges, in {currency}. The
+          highest eligible quantity tier wins, then the latest start date. Where no rule qualifies,
+          the fixed list price applies, then the standard catalogue price. Dates are inclusive;
+          1900-01-01 means no practical start date. Prices are snapshots on sales drafts and never
+          retroactively applied to posted documents.
         </p>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <div className="space-y-2">
@@ -139,22 +153,25 @@ export function PriceListTierRules({
               id="tier-product-search"
               value={search}
               placeholder="Find SKU or product name"
-              onChange={(event) => { setSearch(event.target.value); setSelectedProductId(""); }}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setSelectedProductId("");
+              }}
             />
             <Select value={selectedProductId} onValueChange={setSelectedProductId}>
               <SelectTrigger aria-label="Product for pricing rule">
                 <SelectValue placeholder="Choose product" />
               </SelectTrigger>
               <SelectContent>
-                {selectedProductId && selectedRule &&
-                  !productsQ.data?.some((p) => p.id === selectedProductId) ? (
-                    <SelectItem value={selectedProductId}>
-                      {selectedRule.product_name}
-                    </SelectItem>
-                  ) : null}
+                {selectedProductId &&
+                selectedRule &&
+                !productsQ.data?.some((p) => p.id === selectedProductId) ? (
+                  <SelectItem value={selectedProductId}>{selectedRule.product_name}</SelectItem>
+                ) : null}
                 {(productsQ.data ?? []).map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.code ? `${p.code} — ` : ""}{p.name}
+                    {p.code ? `${p.code} — ` : ""}
+                    {p.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -186,36 +203,52 @@ export function PriceListTierRules({
           </div>
           <div className="space-y-2">
             <Label htmlFor="tier-from">Effective from (inclusive)</Label>
-            <Input id="tier-from" type="date" min="1900-01-01" value={effectiveFrom}
+            <Input
+              id="tier-from"
+              type="date"
+              min="1900-01-01"
+              value={effectiveFrom}
               aria-invalid={!validRuleDate(effectiveFrom)}
-              onChange={(event) => setEffectiveFrom(event.target.value)} />
+              onChange={(event) => setEffectiveFrom(event.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="tier-to">Effective to (optional, inclusive)</Label>
-            <Input id="tier-to" type="date" min={effectiveFrom}
+            <Input
+              id="tier-to"
+              type="date"
+              min={effectiveFrom}
               value={effectiveTo}
-              onChange={(event) => setEffectiveTo(event.target.value)} />
+              onChange={(event) => setEffectiveTo(event.target.value)}
+            />
           </div>
           <div className="flex flex-wrap items-end gap-2">
             <Button
-              disabled={!isActive || !canManage || !selectedProductId || !validInputs ||
-                saveMut.isPending}
+              disabled={
+                !isActive || !canManage || !selectedProductId || !validInputs || saveMut.isPending
+              }
               onClick={() => saveMut.mutate()}
             >
               {saveMut.isPending ? "Saving…" : editingId ? "Save changes" : "Add pricing tier"}
             </Button>
-            <Button variant="outline" onClick={reset}>Clear</Button>
+            <Button variant="outline" onClick={reset}>
+              Clear
+            </Button>
           </div>
         </div>
         {rulesQ.isPending ? <p className="text-sm">Loading pricing tiers…</p> : null}
         {rulesQ.isError ? (
           <div role="alert" className="flex flex-wrap items-center gap-2">
             <p className="text-sm text-destructive">{friendlyAuthError(rulesQ.error)}</p>
-            <Button size="sm" variant="outline" onClick={() => rulesQ.refetch()}>Retry</Button>
+            <Button size="sm" variant="outline" onClick={() => rulesQ.refetch()}>
+              Retry
+            </Button>
           </div>
         ) : null}
         {rulesQ.data?.length === 0 ? (
-          <p className="rounded-md border p-3 text-sm">No tier rules configured for this price list.</p>
+          <p className="rounded-md border p-3 text-sm">
+            No tier rules configured for this price list.
+          </p>
         ) : null}
         <div className="space-y-2">
           {rulesQ.data?.map((rule) => (
@@ -225,24 +258,40 @@ export function PriceListTierRules({
             >
               <div className="min-w-0">
                 <p className="font-medium">
-                  {rule.product_code ? `${rule.product_code} — ` : ""}{rule.product_name}
+                  {rule.product_code ? `${rule.product_code} — ` : ""}
+                  {rule.product_name}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Qty ≥ {rule.min_quantity} · {fromMinorUnits(BigInt(rule.unit_price_minor), currency)}
-                  {" "}{currency} · {rule.effective_from} to {rule.effective_to ?? "open ended"}
+                  Qty ≥ {rule.min_quantity} ·{" "}
+                  {fromMinorUnits(BigInt(rule.unit_price_minor), currency)} {currency} ·{" "}
+                  {rule.effective_from} to {rule.effective_to ?? "open ended"}
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={!canManage || !isActive}
-                  onClick={() => edit(rule)}>Edit</Button>
-                <Button variant="outline" size="sm" disabled={!canManage || deleteMut.isPending}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!canManage || !isActive}
+                  onClick={() => edit(rule)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!canManage || deleteMut.isPending}
                   onClick={() => {
-                    if (window.confirm(
-                      `Remove tier for ${rule.product_name} at quantity ${rule.min_quantity}?`,
-                    )) {
+                    if (
+                      window.confirm(
+                        `Remove tier for ${rule.product_name} at quantity ${rule.min_quantity}?`,
+                      )
+                    ) {
                       deleteMut.mutate(rule.id);
                     }
-                  }}>Remove</Button>
+                  }}
+                >
+                  Remove
+                </Button>
               </div>
             </div>
           ))}

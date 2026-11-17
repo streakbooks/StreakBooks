@@ -165,24 +165,26 @@ describe("payroll settings drafts", () => {
       version: null,
     };
     expect(parsePayrollSettingsDraft(basic).ok).toBe(false);
-    expect(parsePayrollSettingsDraft({ ...basic, payrollStartDate: "2024-02-29" }).ok)
-      .toBe(true);
-    expect(parsePayScheduleDraft({
-      name: "Monthly",
-      frequency: "monthly",
-      anchorDate: "2026-02-30",
-      paymentOffsetDays: "-5",
-      isDefault: false,
-      isActive: true,
-    }).ok).toBe(false);
-    expect(parsePayScheduleDraft({
-      name: "Monthly",
-      frequency: "monthly",
-      anchorDate: "2024-02-29",
-      paymentOffsetDays: "-5",
-      isDefault: false,
-      isActive: true,
-    }).ok).toBe(true);
+    expect(parsePayrollSettingsDraft({ ...basic, payrollStartDate: "2024-02-29" }).ok).toBe(true);
+    expect(
+      parsePayScheduleDraft({
+        name: "Monthly",
+        frequency: "monthly",
+        anchorDate: "2026-02-30",
+        paymentOffsetDays: "-5",
+        isDefault: false,
+        isActive: true,
+      }).ok,
+    ).toBe(false);
+    expect(
+      parsePayScheduleDraft({
+        name: "Monthly",
+        frequency: "monthly",
+        anchorDate: "2024-02-29",
+        paymentOffsetDays: "-5",
+        isDefault: false,
+        isActive: true,
+      }).ok,
+    ).toBe(true);
   });
-
 });

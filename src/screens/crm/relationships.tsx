@@ -50,7 +50,10 @@ export function CrmRelationshipsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Customer Relationships" description="Read-only Sales payment status for CRM deals.">
+      <ListWorkspace
+        title="Customer Relationships"
+        description="Read-only Sales payment status for CRM deals."
+      >
         <EmptyState title="No CRM access" description="Ask an administrator for crm.view." />
       </ListWorkspace>
     );
@@ -72,7 +75,10 @@ export function CrmRelationshipsPage() {
       <CrmSubnav current="relationships" />
 
       {settings.data && !settings.data.enabled ? (
-        <EmptyState title="CRM is disabled" description="Enable CRM before reviewing deal payments." />
+        <EmptyState
+          title="CRM is disabled"
+          description="Enable CRM before reviewing deal payments."
+        />
       ) : null}
 
       {settings.data?.enabled && !canSales ? (
@@ -87,7 +93,8 @@ export function CrmRelationshipsPage() {
           <Alert>
             <AlertTitle>Accounting boundary</AlertTitle>
             <AlertDescription>
-              Outstanding balances come from Sales invoice fields only. Forecast pipeline values stay on Opportunities and are not GL revenue.
+              Outstanding balances come from Sales invoice fields only. Forecast pipeline values
+              stay on Opportunities and are not GL revenue.
             </AlertDescription>
           </Alert>
 

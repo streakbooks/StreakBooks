@@ -89,7 +89,9 @@ export function SectionHeader({
         <h2 className="text-base font-semibold tracking-tight">{title}</h2>
         {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
       </div>
-      {actions ? <div className="flex max-w-full flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="flex max-w-full flex-wrap items-center gap-2">{actions}</div>
+      ) : null}
     </div>
   );
 }

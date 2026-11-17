@@ -25,7 +25,8 @@ function KpiCard({
   value: string | number;
   hint: string;
   to?: {
-    section: "leads" | "opportunities" | "activities" | "tasks" | "forecasting" | "reports" | "calendar";
+    section:
+      "leads" | "opportunities" | "activities" | "tasks" | "forecasting" | "reports" | "calendar";
   };
 }) {
   const body = (
@@ -97,7 +98,9 @@ export function CrmOverviewPage() {
       actions={
         can("crm.leads.manage" as Permission) ? (
           <Button asChild>
-            <Link to="/crm/$section" params={{ section: "leads" }}>Manage leads</Link>
+            <Link to="/crm/$section" params={{ section: "leads" }}>
+              Manage leads
+            </Link>
           </Button>
         ) : undefined
       }
@@ -109,7 +112,8 @@ export function CrmOverviewPage() {
         <ErrorState
           title="Could not load CRM settings"
           description={friendlyAuthError(settings.error)}
-         onRetry={() => settings.refetch()}/>
+          onRetry={() => settings.refetch()}
+        />
       ) : null}
 
       {settings.data && !settings.data.enabled ? (
@@ -122,7 +126,9 @@ export function CrmOverviewPage() {
             </span>
             {can("crm.admin" as Permission) ? (
               <Button asChild variant="secondary">
-                <Link to="/crm/$section" params={{ section: "settings" }}>Open CRM Settings</Link>
+                <Link to="/crm/$section" params={{ section: "settings" }}>
+                  Open CRM Settings
+                </Link>
               </Button>
             ) : null}
           </AlertDescription>
@@ -136,7 +142,8 @@ export function CrmOverviewPage() {
             <ErrorState
               title="Could not load CRM dashboard"
               description={friendlyAuthError(kpis.error)}
-             onRetry={() => kpis.refetch()}/>
+              onRetry={() => kpis.refetch()}
+            />
           ) : null}
           {kpis.data ? (
             <div className="space-y-6">

@@ -15,23 +15,10 @@ export const STATUS_LABELS: Record<FirmClientStatus, string> = {
   archived: "Archived in practice",
 };
 
-export type FirmClientSort =
-  | "name"
-  | "name_desc"
-  | "review"
-  | "review_desc"
-  | "status"
-  | "service";
+export type FirmClientSort = "name" | "name_desc" | "review" | "review_desc" | "status" | "service";
 export type FirmClientReviewFilter = "all" | "due" | "upcoming" | "unscheduled";
 export type FirmClientColumn =
-  | "status"
-  | "contact"
-  | "email"
-  | "service"
-  | "industry"
-  | "tags"
-  | "access"
-  | "review";
+  "status" | "contact" | "email" | "service" | "industry" | "tags" | "access" | "review";
 
 export const FIRM_CLIENT_COLUMNS: { id: FirmClientColumn; label: string }[] = [
   { id: "status", label: "Status" },
@@ -57,7 +44,9 @@ export function normalizeFirmClientColumns(value: unknown): FirmClientColumn[] {
   const allowed = new Set<string>(FIRM_CLIENT_COLUMNS.map((column) => column.id));
   return [
     ...new Set(
-      value.filter((item): item is FirmClientColumn => typeof item === "string" && allowed.has(item)),
+      value.filter(
+        (item): item is FirmClientColumn => typeof item === "string" && allowed.has(item),
+      ),
     ),
   ];
 }
@@ -112,10 +101,7 @@ export function filterFirmClients(
       const profile = profilesByCompany.get(client.company_id);
       const currentStatus = profile?.status ?? "active";
       if (status !== "all" && status !== currentStatus) return false;
-      if (
-        review !== "all" &&
-        firmClientReviewState(profile?.next_review_date, today) !== review
-      )
+      if (review !== "all" && firmClientReviewState(profile?.next_review_date, today) !== review)
         return false;
       if (!term) return true;
       return [

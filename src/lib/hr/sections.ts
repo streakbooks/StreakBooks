@@ -67,7 +67,13 @@ export const HR_SECTIONS = [
     label: "Leave Management",
     path: `${HR_BASE}/leave`,
     group: "time",
-    anyOf: ["hr.view", "hr.leave.manage", "hr.leave.approve", "hr.self_service", "hr.manager"] as const,
+    anyOf: [
+      "hr.view",
+      "hr.leave.manage",
+      "hr.leave.approve",
+      "hr.self_service",
+      "hr.manager",
+    ] as const,
     batch: "HR-06",
   },
   {

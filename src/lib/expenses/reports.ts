@@ -91,8 +91,9 @@ export function mapExpenseManagementReport(row: unknown): ExpenseManagementRepor
     byPostingStatus: (Array.isArray(r["by_posting_status"]) ? r["by_posting_status"] : []).map(
       mapBucket,
     ),
-    byReimbursementStatus: (
-      Array.isArray(r["by_reimbursement_status"]) ? r["by_reimbursement_status"] : []
+    byReimbursementStatus: (Array.isArray(r["by_reimbursement_status"])
+      ? r["by_reimbursement_status"]
+      : []
     ).map(mapBucket),
     openAging: {
       days0to7: num(aging["0_7"] ?? aging["days0to7"]),
@@ -135,9 +136,8 @@ export function mapExpenseClaimAuditEvents(row: unknown): ExpenseClaimAuditEvent
       eventType: str(e["event_type"] ?? e["eventType"]),
       note: (e["note"] ?? null) as string | null,
       actedAt: str(e["acted_at"] ?? e["actedAt"]),
-      approvalStatusAfter: (e["approval_status_after"] ??
-        e["approvalStatusAfter"] ??
-        null) as string | null,
+      approvalStatusAfter: (e["approval_status_after"] ?? e["approvalStatusAfter"] ?? null) as
+        string | null,
     };
   });
 }

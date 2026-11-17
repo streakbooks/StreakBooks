@@ -52,9 +52,7 @@ export function ExpenseManagementExitSettlementPage() {
   const canManage =
     can("expenses.manage_advances" as Permission) || can("expenses.admin" as Permission);
   const canView =
-    canManage ||
-    can("expenses.view" as Permission) ||
-    can("expenses.audit" as Permission);
+    canManage || can("expenses.view" as Permission) || can("expenses.audit" as Permission);
   const canListMembers = can("members.view" as Permission) || can("expenses.admin" as Permission);
 
   const [employeeUserId, setEmployeeUserId] = useState("");
@@ -165,14 +163,15 @@ export function ExpenseManagementExitSettlementPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Exit Settlement"
-      subnav={<ExpenseManagementSubnav current="exit-settlement"/>}
-    >
-      <EmptyState
+      <ListWorkspace
+        title="Exit Settlement"
+        subnav={<ExpenseManagementSubnav current="exit-settlement" />}
+      >
+        <EmptyState
           title="No access"
           description="Ask an administrator for expenses.manage_advances."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
   if (settlementsQ.isLoading) {
@@ -181,10 +180,12 @@ export function ExpenseManagementExitSettlementPage() {
   if (settlementsQ.isError) {
     const message = friendlyAuthError(settlementsQ.error);
     return (
-      <ListWorkspace title="Exit Settlement" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="exit-settlement"/>}
-    >
-      {message.includes("20261107145000") ? (
+      <ListWorkspace
+        title="Exit Settlement"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="exit-settlement" />}
+      >
+        {message.includes("20261107145000") ? (
           <Alert>
             <AlertTitle>Database update required</AlertTitle>
             <AlertDescription>{EXPENSE_EXIT_SETTLEMENT_MIGRATION}</AlertDescription>
@@ -196,7 +197,7 @@ export function ExpenseManagementExitSettlementPage() {
             onRetry={() => settlementsQ.refetch()}
           />
         )}
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
@@ -205,9 +206,10 @@ export function ExpenseManagementExitSettlementPage() {
   );
 
   return (
-      <ListWorkspace title="Exit Settlement"
-        description="Clear open advances, drafts and card lines when an employee leaves."
-      subnav={<ExpenseManagementSubnav current="exit-settlement"/>}
+    <ListWorkspace
+      title="Exit Settlement"
+      description="Clear open advances, drafts and card lines when an employee leaves."
+      subnav={<ExpenseManagementSubnav current="exit-settlement" />}
     >
       {canManage ? (
         <section className="mb-8 space-y-4 rounded-lg border p-4">
@@ -269,7 +271,9 @@ export function ExpenseManagementExitSettlementPage() {
                   })
                 }
               >
-                {finalizeMut.isPending ? "Finalizing…" : `Finalize ${draftForEmployee.settlementNumber}`}
+                {finalizeMut.isPending
+                  ? "Finalizing…"
+                  : `Finalize ${draftForEmployee.settlementNumber}`}
               </Button>
             ) : null}
           </div>

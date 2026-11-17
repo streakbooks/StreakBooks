@@ -73,14 +73,9 @@ export function ExpenseManagementBudgetsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Budgets"
-      subnav={<ExpenseManagementSubnav current="budgets"/>}
-    >
-      <EmptyState
-          title="No access"
-          description="Ask an administrator for expenses.view."
-        />
-    </ListWorkspace>
+      <ListWorkspace title="Budgets" subnav={<ExpenseManagementSubnav current="budgets" />}>
+        <EmptyState title="No access" description="Ask an administrator for expenses.view." />
+      </ListWorkspace>
     );
   }
   if (claimsQ.isLoading) {
@@ -88,15 +83,17 @@ export function ExpenseManagementBudgetsPage() {
   }
   if (claimsQ.isError) {
     return (
-      <ListWorkspace title="Budgets" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="budgets"/>}
-    >
-      <ErrorState
+      <ListWorkspace
+        title="Budgets"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="budgets" />}
+      >
+        <ErrorState
           title="Could not load claim commitments"
           description={friendlyAuthError(claimsQ.error)}
           onRetry={() => claimsQ.refetch()}
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
@@ -104,14 +101,15 @@ export function ExpenseManagementBudgetsPage() {
   const rows = claimsQ.data ?? [];
 
   return (
-      <ListWorkspace title="Budgets"
-        description="Open claim commitments and soft budget exposure for the current month."
-        actions={
-          <Button asChild size="sm">
-            <Link to="/budgets">Open Budgets module</Link>
-          </Button>
-        }
-      subnav={<ExpenseManagementSubnav current="budgets"/>}
+    <ListWorkspace
+      title="Budgets"
+      description="Open claim commitments and soft budget exposure for the current month."
+      actions={
+        <Button asChild size="sm">
+          <Link to="/budgets">Open Budgets module</Link>
+        </Button>
+      }
+      subnav={<ExpenseManagementSubnav current="budgets" />}
     >
       <div className="mb-6 flex flex-wrap gap-2">
         <Badge variant="secondary">{rows.length} open claims</Badge>
@@ -200,10 +198,7 @@ export function ExpenseManagementBudgetsPage() {
                   <div className="font-medium">{claim.claimNumber}</div>
                   <div className="text-sm text-muted-foreground">{claim.title}</div>
                   <Button asChild variant="link" className="h-auto px-0" size="sm">
-                    <Link
-                      to="/expense-management/claims/$claimId"
-                      params={{ claimId: claim.id }}
-                    >
+                    <Link to="/expense-management/claims/$claimId" params={{ claimId: claim.id }}>
                       Open
                     </Link>
                   </Button>
@@ -221,5 +216,5 @@ export function ExpenseManagementBudgetsPage() {
         </Table>
       )}
     </ListWorkspace>
-    );
+  );
 }

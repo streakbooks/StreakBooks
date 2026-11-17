@@ -5,8 +5,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 export function isValidTaxDate(value: unknown): value is string {
   if (typeof value !== "string" || !ISO_DATE.test(value)) return false;
   const timestamp = Date.parse(value + "T00:00:00.000Z");
-  return Number.isFinite(timestamp) &&
-    new Date(timestamp).toISOString().slice(0, 10) === value;
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
 }
 
 /**
@@ -22,8 +21,7 @@ export function percentToTaxBasisPoints(value: string): number {
 }
 
 export function isValidTaxBasisPoints(value: unknown): value is number {
-  return typeof value === "number" &&
-    Number.isInteger(value) && value >= 0 && value <= 10000;
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 10000;
 }
 
 export type TaxReturnBasis = "cash" | "accrual";

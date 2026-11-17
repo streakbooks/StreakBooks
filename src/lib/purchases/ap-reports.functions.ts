@@ -104,8 +104,7 @@ function historyAllocation(
       reversedOn,
     };
   }
-  const creditNoteId =
-    typeof src["credit_note_id"] === "string" ? src["credit_note_id"] : null;
+  const creditNoteId = typeof src["credit_note_id"] === "string" ? src["credit_note_id"] : null;
   if (!creditNoteId) return null;
   return {
     allocationId: row.allocation_id,
@@ -220,21 +219,28 @@ export async function loadApAsAtInputs(supabase: SalesClient, companyId: string,
 
   let history: HistoryRow[] = [];
   try {
-    history = await fetchAllPages<HistoryRow>((from, to) =>
-      (supabase.from("cash_allocation_history" as never).select(
-        "id, source_table, allocation_id, operation, source_row, recorded_at" as never,
-      ) as unknown as Q)
-        .eq("company_id" as never, companyId as never)
-        .eq("operation" as never, "DELETE" as never)
-        .in("source_table" as never, [
-          "supplier_payment_allocations",
-          "purchase_credit_allocations",
-        ] as never)
-        .order("id" as never)
-        .range(from, to) as never,
+    history = await fetchAllPages<HistoryRow>(
+      (from, to) =>
+        (
+          supabase
+            .from("cash_allocation_history" as never)
+            .select(
+              "id, source_table, allocation_id, operation, source_row, recorded_at" as never,
+            ) as unknown as Q
+        )
+          .eq("company_id" as never, companyId as never)
+          .eq("operation" as never, "DELETE" as never)
+          .in(
+            "source_table" as never,
+            ["supplier_payment_allocations", "purchase_credit_allocations"] as never,
+          )
+          .order("id" as never)
+          .range(from, to) as never,
     );
   } catch (e) {
-    if (!(e instanceof Error && /relation .* does not exist|column .* does not exist/i.test(e.message))) {
+    if (!(
+      e instanceof Error && /relation .* does not exist|column .* does not exist/i.test(e.message)
+    )) {
       throw e;
     }
   }

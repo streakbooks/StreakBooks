@@ -10,14 +10,29 @@ import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
-  exportHrEmployeeDirectory, previewHrEmployeeImport, runHrReport,
+  exportHrEmployeeDirectory,
+  previewHrEmployeeImport,
+  runHrReport,
 } from "@/lib/hr/insights.functions";
 import { HR_REPORT_IDS, HR_REPORT_LABELS, type HrReportId } from "@/lib/hr/insights-types";
 import { csvFilename, downloadCsv, toCsv } from "@/lib/reports/csv";
@@ -50,14 +65,31 @@ export function HrReportsPage() {
     mutationFn: () => exportDir({ data: { companyId: company!.id } }),
     onSuccess: (data) => {
       const headers = [
-        "employeeNumber","firstName","lastName","email","status","hireDate","terminationDate",
-        "department","designation","location","managerEmployeeNumber","workArrangement",
+        "employeeNumber",
+        "firstName",
+        "lastName",
+        "email",
+        "status",
+        "hireDate",
+        "terminationDate",
+        "department",
+        "designation",
+        "location",
+        "managerEmployeeNumber",
+        "workArrangement",
       ];
-      const rows = data.items.map((r) => headers.map((h) => (r as Record<string, string | null>)[h] ?? ""));
+      const rows = data.items.map((r) =>
+        headers.map((h) => (r as Record<string, string | null>)[h] ?? ""),
+      );
       downloadCsv(
         csvFilename("hr-employees", today),
         toCsv(
-          { company: company!.name || company!.id, report: "HR employee directory", period: today, currency: company?.base_currency ?? "USD" },
+          {
+            company: company!.name || company!.id,
+            report: "HR employee directory",
+            period: today,
+            currency: company?.base_currency ?? "USD",
+          },
           headers,
           rows,
         ),
@@ -69,23 +101,31 @@ export function HrReportsPage() {
 
   const previewM = useMutation({
     mutationFn: async () => {
-      const lines = importText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      const lines = importText
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
       if (lines.length < 2) throw new Error("Paste a CSV header plus at least one data row");
       const headers = lines[0]!.split(",").map((h) => h.trim());
       const rows = lines.slice(1).map((line) => {
         const cols = line.split(",").map((c) => c.trim());
         const obj: Record<string, string | null> = {};
-        headers.forEach((h, i) => { obj[h] = cols[i] ?? null; });
+        headers.forEach((h, i) => {
+          obj[h] = cols[i] ?? null;
+        });
         return obj;
       });
       return previewImport({ data: { companyId: company!.id, rows } });
     },
-    onSuccess: (res) => { setPreview(res); toast.success("Dry-run complete"); },
+    onSuccess: (res) => {
+      setPreview(res);
+      toast.success("Dry-run complete");
+    },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  const columns = reportQ.data?.columns ?? [];
-  const rows = reportQ.data?.rows ?? [];
+  const columns = useMemo(() => reportQ.data?.columns ?? [], [reportQ.data?.columns]);
+  const rows = useMemo(() => reportQ.data?.rows ?? [], [reportQ.data?.rows]);
   const reportCsv = useMemo(() => {
     if (!company || columns.length === 0) return null;
     return toCsv(
@@ -101,10 +141,14 @@ export function HrReportsPage() {
   }, [company, columns, rows, reportId, dateFrom, dateTo]);
 
   if (isPending) return <LoadingState />;
-  if (!company) return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+  if (!company)
+    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
   if (!canReports) {
     return (
-      <ListWorkspace title="HR Reports" breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Reports" }]}>
+      <ListWorkspace
+        title="HR Reports"
+        breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Reports" }]}
+      >
         <HrSubnav current="reports" />
         <EmptyState title="No access" description="You need hr.reports.view or hr.view." />
       </ListWorkspace>
@@ -118,14 +162,21 @@ export function HrReportsPage() {
       breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Reports" }]}
       actions={
         <div className="flex gap-2">
-          <Button type="button" variant="outline" disabled={exportM.isPending} onClick={() => exportM.mutate()}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={exportM.isPending}
+            onClick={() => exportM.mutate()}
+          >
             Export directory CSV
           </Button>
           <Button
             type="button"
             variant="outline"
             disabled={!reportCsv}
-            onClick={() => reportCsv && downloadCsv(csvFilename(`hr-${reportId}`, dateTo), reportCsv)}
+            onClick={() =>
+              reportCsv && downloadCsv(csvFilename(`hr-${reportId}`, dateTo), reportCsv)
+            }
           >
             Export report CSV
           </Button>
@@ -137,9 +188,15 @@ export function HrReportsPage() {
         <div className="grid gap-1.5">
           <Label>Report</Label>
           <Select value={reportId} onValueChange={(v) => setReportId(v as HrReportId)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {HR_REPORT_IDS.map((id) => <SelectItem key={id} value={id}>{HR_REPORT_LABELS[id]}</SelectItem>)}
+              {HR_REPORT_IDS.map((id) => (
+                <SelectItem key={id} value={id}>
+                  {HR_REPORT_LABELS[id]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -153,20 +210,32 @@ export function HrReportsPage() {
         </div>
       </div>
 
-      {reportQ.isPending ? <LoadingState /> : reportQ.isError ? (
-        <ErrorState title="Could not run report" description={friendlyAuthError(reportQ.error)} onRetry={() => void reportQ.refetch()} />
+      {reportQ.isPending ? (
+        <LoadingState />
+      ) : reportQ.isError ? (
+        <ErrorState
+          title="Could not run report"
+          description={friendlyAuthError(reportQ.error)}
+          onRetry={() => void reportQ.refetch()}
+        />
       ) : rows.length === 0 ? (
         <EmptyState title="No rows" description="No data for this report and date range." />
       ) : (
         <TableCard>
           <Table>
             <TableHeader>
-              <TableRow>{columns.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}</TableRow>
+              <TableRow>
+                {columns.map((c) => (
+                  <TableHead key={c.key}>{c.label}</TableHead>
+                ))}
+              </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((r, idx) => (
                 <TableRow key={idx}>
-                  {columns.map((c) => <TableCell key={c.key}>{r[c.key] ?? "—"}</TableCell>)}
+                  {columns.map((c) => (
+                    <TableCell key={c.key}>{r[c.key] ?? "—"}</TableCell>
+                  ))}
                 </TableRow>
               ))}
             </TableBody>
@@ -176,23 +245,43 @@ export function HrReportsPage() {
 
       {canImport ? (
         <section className="mt-8 space-y-3 rounded-lg border p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Import dry-run</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Import dry-run
+          </h2>
           <p className="text-sm text-muted-foreground">
             Preview CSV rows only. Creates/updates stay on the shared Payroll employee master.
           </p>
-          <Textarea className="min-h-28 font-mono text-xs" value={importText} onChange={(e) => setImportText(e.target.value)} />
-          <Button type="button" disabled={previewM.isPending} onClick={() => previewM.mutate()}>Run dry-run</Button>
+          <Textarea
+            className="min-h-28 font-mono text-xs"
+            value={importText}
+            onChange={(e) => setImportText(e.target.value)}
+          />
+          <Button type="button" disabled={previewM.isPending} onClick={() => previewM.mutate()}>
+            Run dry-run
+          </Button>
           {preview ? (
             <div className="space-y-2 text-sm">
-              <p>Accepted {preview.accepted} · Warnings {preview.warnings} · Errors {preview.errors}</p>
+              <p>
+                Accepted {preview.accepted} · Warnings {preview.warnings} · Errors {preview.errors}
+              </p>
               <p className="text-muted-foreground">{preview.note}</p>
               {preview.issues.length > 0 ? (
                 <TableCard>
                   <Table>
-                    <TableHeader><TableRow><TableHead>Row</TableHead><TableHead>Level</TableHead><TableHead>Message</TableHead></TableRow></TableHeader>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Row</TableHead>
+                        <TableHead>Level</TableHead>
+                        <TableHead>Message</TableHead>
+                      </TableRow>
+                    </TableHeader>
                     <TableBody>
                       {preview.issues.slice(0, 50).map((i, idx) => (
-                        <TableRow key={idx}><TableCell>{i.row}</TableCell><TableCell>{i.level}</TableCell><TableCell>{i.message}</TableCell></TableRow>
+                        <TableRow key={idx}>
+                          <TableCell>{i.row}</TableCell>
+                          <TableCell>{i.level}</TableCell>
+                          <TableCell>{i.message}</TableCell>
+                        </TableRow>
                       ))}
                     </TableBody>
                   </Table>

@@ -11,11 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import {
-  getCrmDashboardKpis,
-  getCrmForecastReport,
-  getCrmSettings,
-} from "@/lib/crm/crm.functions";
+import { getCrmDashboardKpis, getCrmForecastReport, getCrmSettings } from "@/lib/crm/crm.functions";
 import { formatCrmMinor } from "@/lib/crm/format";
 import type { Permission } from "@/lib/permissions";
 
@@ -58,7 +54,10 @@ export function CrmReportsPage() {
   if (!canView) {
     return (
       <ListWorkspace title="CRM Reports" description="Pipeline and conversion summaries.">
-        <EmptyState title="No CRM access" description="Ask an administrator for crm.reports.view." />
+        <EmptyState
+          title="No CRM access"
+          description="Ask an administrator for crm.reports.view."
+        />
       </ListWorkspace>
     );
   }
@@ -74,7 +73,9 @@ export function CrmReportsPage() {
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "CRM Reports" }]}
       actions={
         <Button asChild variant="secondary">
-          <Link to="/crm/$section" params={{ section: "forecasting" }}>Open forecasting</Link>
+          <Link to="/crm/$section" params={{ section: "forecasting" }}>
+            Open forecasting
+          </Link>
         </Button>
       }
     >
@@ -89,7 +90,8 @@ export function CrmReportsPage() {
           <Alert>
             <AlertTitle>Reporting boundary</AlertTitle>
             <AlertDescription>
-              Export snapshots and scheduled packs arrive later. These live totals reuse authorised CRM KPIs and stage-weighted forecast maths.
+              Export snapshots and scheduled packs arrive later. These live totals reuse authorised
+              CRM KPIs and stage-weighted forecast maths.
             </AlertDescription>
           </Alert>
 
@@ -130,7 +132,9 @@ export function CrmReportsPage() {
                   <CardTitle className="text-3xl tabular-nums">{kpi.stagnantDeals}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">Past stale-deal threshold in settings.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Past stale-deal threshold in settings.
+                  </p>
                 </CardContent>
               </Card>
             </div>

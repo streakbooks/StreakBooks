@@ -1,23 +1,10 @@
 export type CrmLeadStatus =
-  | "new"
-  | "contacted"
-  | "qualified"
-  | "nurturing"
-  | "converted"
-  | "disqualified";
+  "new" | "contacted" | "qualified" | "nurturing" | "converted" | "disqualified";
 
 export type CrmOpportunityStatus = "open" | "won" | "lost" | "archived";
 
 export type CrmActivityKind =
-  | "call"
-  | "email"
-  | "meeting"
-  | "demo"
-  | "site_visit"
-  | "message"
-  | "task"
-  | "note"
-  | "other";
+  "call" | "email" | "meeting" | "demo" | "site_visit" | "message" | "task" | "note" | "other";
 
 export type CrmSettings = {
   companyId: string;
@@ -187,12 +174,7 @@ export type CrmLeadSource = {
   sortOrder: number;
 };
 
-export type CrmCampaignStatus =
-  | "planned"
-  | "active"
-  | "paused"
-  | "completed"
-  | "cancelled";
+export type CrmCampaignStatus = "planned" | "active" | "paused" | "completed" | "cancelled";
 
 export type CrmCampaign = {
   id: string;
@@ -223,10 +205,9 @@ export type CrmTerritory = {
   updatedAt: string;
 };
 
-export function displayLeadName(lead: Pick<
-  CrmLead,
-  "organizationName" | "firstName" | "lastName" | "email" | "leadNumber"
->): string {
+export function displayLeadName(
+  lead: Pick<CrmLead, "organizationName" | "firstName" | "lastName" | "email" | "leadNumber">,
+): string {
   if (lead.organizationName?.trim()) return lead.organizationName.trim();
   const person = [lead.firstName, lead.lastName].filter(Boolean).join(" ").trim();
   if (person) return person;

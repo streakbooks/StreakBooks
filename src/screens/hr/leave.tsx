@@ -187,10 +187,7 @@ export function HrLeavePage() {
   });
 
   const decideM = useMutation({
-    mutationFn: (input: {
-      requestId: string;
-      decision: "approved" | "rejected" | "cancelled";
-    }) =>
+    mutationFn: (input: { requestId: string; decision: "approved" | "rejected" | "cancelled" }) =>
       decideRequest({
         data: {
           companyId: company!.id,
@@ -462,7 +459,11 @@ export function HrLeavePage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Annual leave" />
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Annual leave"
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Annual allowance (days)</Label>
@@ -556,7 +557,11 @@ export function HrLeavePage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label>Start</Label>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label>End</Label>
@@ -570,8 +575,8 @@ export function HrLeavePage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {HR_LEAVE_REQUEST_STATUSES.filter((s) =>
-                    s === "draft" || s === "submitted" || s === "cancelled",
+                  {HR_LEAVE_REQUEST_STATUSES.filter(
+                    (s) => s === "draft" || s === "submitted" || s === "cancelled",
                   ).map((s) => (
                     <SelectItem key={s} value={s}>
                       {s}
@@ -591,9 +596,7 @@ export function HrLeavePage() {
             </Button>
             <Button
               type="button"
-              disabled={
-                !employeeId || !leaveTypeId || !startDate || !endDate || saveReqM.isPending
-              }
+              disabled={!employeeId || !leaveTypeId || !startDate || !endDate || saveReqM.isPending}
               onClick={() => saveReqM.mutate()}
             >
               Save

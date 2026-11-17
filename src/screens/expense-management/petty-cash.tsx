@@ -40,10 +40,7 @@ import {
   listExpensePettyCashFloats,
   saveExpensePettyCashFloat,
 } from "@/lib/expenses/expenses.functions";
-import {
-  canFundPettyCashFloat,
-  replenishAmountMinor,
-} from "@/lib/expenses/petty-cash";
+import { canFundPettyCashFloat, replenishAmountMinor } from "@/lib/expenses/petty-cash";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import type { Permission } from "@/lib/permissions";
 
@@ -121,11 +118,7 @@ export function ExpenseManagementPettyCashPage() {
   });
 
   const fundMut = useMutation({
-    mutationFn: async (input: {
-      id: string;
-      version: number;
-      amountMinor: number;
-    }) => {
+    mutationFn: async (input: { id: string; version: number; amountMinor: number }) => {
       if (!bankGlAccountId) throw new Error("Choose a bank account first.");
       return fundFloat({
         data: {
@@ -172,31 +165,35 @@ export function ExpenseManagementPettyCashPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Petty Cash" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="petty-cash"/>}
-    >
-      <EmptyState
+      <ListWorkspace
+        title="Petty Cash"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="petty-cash" />}
+      >
+        <EmptyState
           title="No access"
           description="Ask an administrator for expenses.manage_advances or expenses.view."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
   const migrationMissing =
-    floatsQ.error &&
-    String(floatsQ.error.message ?? "").includes(EXPENSE_PETTY_CASH_MIGRATION);
+    floatsQ.error && String(floatsQ.error.message ?? "").includes(EXPENSE_PETTY_CASH_MIGRATION);
   const pettyConfigured = Boolean(settingsQ.data?.pettyCashAccountId);
 
   return (
-      <ListWorkspace title="Petty Cash"
-        description="Maintain office floats, fund from bank, and settle spends as company-paid claims."
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/$section" params={{ section: "settings" }}>Settings</Link>
-          </Button>
-        }
-      subnav={<ExpenseManagementSubnav current="petty-cash"/>}
+    <ListWorkspace
+      title="Petty Cash"
+      description="Maintain office floats, fund from bank, and settle spends as company-paid claims."
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/expense-management/$section" params={{ section: "settings" }}>
+            Settings
+          </Link>
+        </Button>
+      }
+      subnav={<ExpenseManagementSubnav current="petty-cash" />}
     >
       {migrationMissing ? (
         <Alert className="mb-6" variant="destructive">
@@ -209,8 +206,8 @@ export function ExpenseManagementPettyCashPage() {
         <Alert className="mb-6">
           <AlertTitle>Petty cash account not configured</AlertTitle>
           <AlertDescription>
-            Set the petty cash asset account under Expenses settings before funding
-            floats. Company-paid claims credit that account when posted.
+            Set the petty cash asset account under Expenses settings before funding floats.
+            Company-paid claims credit that account when posted.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -230,11 +227,7 @@ export function ExpenseManagementPettyCashPage() {
             <div className="grid gap-4 md:grid-cols-3">
               <div className="grid gap-2">
                 <Label htmlFor="pc-name">Name</Label>
-                <Input
-                  id="pc-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
+                <Input id="pc-name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="pc-target">Target amount ({currency})</Label>
@@ -320,12 +313,8 @@ export function ExpenseManagementPettyCashPage() {
                     <div className="font-medium">{float.floatNumber}</div>
                     <div className="text-sm text-muted-foreground">{float.name}</div>
                   </TableCell>
-                  <TableCell>
-                    {fromMinorUnits(float.balanceMinor, float.currencyCode)}
-                  </TableCell>
-                  <TableCell>
-                    {fromMinorUnits(float.targetMinor, float.currencyCode)}
-                  </TableCell>
+                  <TableCell>{fromMinorUnits(float.balanceMinor, float.currencyCode)}</TableCell>
+                  <TableCell>{fromMinorUnits(float.targetMinor, float.currencyCode)}</TableCell>
                   <TableCell>
                     <Badge variant={float.status === "active" ? "default" : "secondary"}>
                       {float.status}
@@ -337,9 +326,7 @@ export function ExpenseManagementPettyCashPage() {
                         {gap > 0 ? (
                           <Button
                             size="sm"
-                            disabled={
-                              fundMut.isPending || !bankGlAccountId || !pettyConfigured
-                            }
+                            disabled={fundMut.isPending || !bankGlAccountId || !pettyConfigured}
                             onClick={() =>
                               fundMut.mutate({
                                 id: float.id,
@@ -355,9 +342,7 @@ export function ExpenseManagementPettyCashPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={
-                              fundMut.isPending || !bankGlAccountId || !pettyConfigured
-                            }
+                            disabled={fundMut.isPending || !bankGlAccountId || !pettyConfigured}
                             onClick={() => {
                               const amountMinor = Number(
                                 parseMinorOrThrow(fundAmount, "Fund amount"),
@@ -379,9 +364,7 @@ export function ExpenseManagementPettyCashPage() {
                         size="sm"
                         variant="outline"
                         disabled={closeMut.isPending}
-                        onClick={() =>
-                          closeMut.mutate({ id: float.id, version: float.version })
-                        }
+                        onClick={() => closeMut.mutate({ id: float.id, version: float.version })}
                       >
                         Close
                       </Button>

@@ -114,19 +114,20 @@ export function AppStoreTrustPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Trust & Certification" description="App Store"
-    >
-      <EmptyState title="No access" description="Requires appstore.view." />
-    </ListWorkspace>
+      <ListWorkspace title="Trust & Certification" description="App Store">
+        <EmptyState title="No access" description="Requires appstore.view." />
+      </ListWorkspace>
     );
   }
   if (catalogue.isLoading) {
     return (
-      <ListWorkspace title="Trust & Certification" description="Marketplace trust signals."
-      subnav={<AppStoreSubnav current="trust"/>}
-    >
-      <LoadingState />
-    </ListWorkspace>
+      <ListWorkspace
+        title="Trust & Certification"
+        description="Marketplace trust signals."
+        subnav={<AppStoreSubnav current="trust" />}
+      >
+        <LoadingState />
+      </ListWorkspace>
     );
   }
   if (catalogue.isError) {
@@ -147,9 +148,10 @@ export function AppStoreTrustPage() {
   const realDataLocked = apps.filter((a) => !a.realCustomerDataEnabled);
 
   return (
-      <ListWorkspace title="Trust & Certification"
-        description="Verified publishers, certification status, security approval and compatibility notices."
-      subnav={<AppStoreSubnav current="trust"/>}
+    <ListWorkspace
+      title="Trust & Certification"
+      description="Verified publishers, certification status, security approval and compatibility notices."
+      subnav={<AppStoreSubnav current="trust" />}
     >
       <Alert className="mb-6">
         <AlertTitle>Certification is earned, not claimed</AlertTitle>

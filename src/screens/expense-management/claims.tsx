@@ -69,11 +69,7 @@ function parseMinorNumber(value: string, label: string): number {
   return Number(parseMinorOrThrow(value, label));
 }
 
-export function ExpenseManagementClaimsPage({
-  mode,
-}: {
-  mode: "my-expenses" | "claims";
-}) {
+export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "claims" }) {
   const sectionKey: ExpenseManagementSectionKey = mode;
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
@@ -160,8 +156,7 @@ export function ExpenseManagementClaimsPage({
 
   const advancesQ = useQuery({
     queryKey: ["expense-cash-advances", company?.id, "claim-link"],
-    queryFn: () =>
-      fetchAdvances({ data: { companyId: company!.id, scope: "own" } }),
+    queryFn: () => fetchAdvances({ data: { companyId: company!.id, scope: "own" } }),
     enabled:
       Boolean(company?.id) &&
       canSubmit &&
@@ -204,9 +199,7 @@ export function ExpenseManagementClaimsPage({
     () =>
       (pettyFloatsQ.data ?? []).filter(
         (float) =>
-          float.status === "active" &&
-          float.balanceMinor > 0 &&
-          float.currencyCode === currency,
+          float.status === "active" && float.balanceMinor > 0 && float.currencyCode === currency,
       ),
     [pettyFloatsQ.data, currency],
   );
@@ -222,8 +215,7 @@ export function ExpenseManagementClaimsPage({
   const expenseAccounts = useMemo(
     () =>
       (accountsQ.data ?? []).filter(
-        (account) =>
-          account.is_active && account.is_postable && account.account_type === "expense",
+        (account) => account.is_active && account.is_postable && account.account_type === "expense",
       ),
     [accountsQ.data],
   );
@@ -348,7 +340,9 @@ export function ExpenseManagementClaimsPage({
     onSuccess: (count) => {
       if (company?.id) setOfflineDrafts(listOfflineExpenseClaimDrafts(company.id));
       invalidate();
-      toast.success(count === 0 ? "No offline drafts to sync." : `Synced ${count} offline draft(s).`);
+      toast.success(
+        count === 0 ? "No offline drafts to sync." : `Synced ${count} offline draft(s).`,
+      );
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -416,8 +410,7 @@ export function ExpenseManagementClaimsPage({
   });
 
   const duplicate = useMutation({
-    mutationFn: (claimId: string) =>
-      duplicateClaim({ data: { companyId: company!.id, claimId } }),
+    mutationFn: (claimId: string) => duplicateClaim({ data: { companyId: company!.id, claimId } }),
     onSuccess: () => {
       invalidate();
       toast.success("Claim duplicated as a new draft.");
@@ -447,9 +440,7 @@ export function ExpenseManagementClaimsPage({
       toast.error(result.error);
       return;
     }
-    setLines((current) =>
-      current.flatMap((row) => (row.key === line.key ? result.lines : [row])),
-    );
+    setLines((current) => current.flatMap((row) => (row.key === line.key ? result.lines : [row])));
     setSplitLineKey(null);
     setSplitAccountA("");
     setSplitAccountB("");
@@ -487,10 +478,11 @@ export function ExpenseManagementClaimsPage({
   }
   if (!allowed) {
     return (
-      <ListWorkspace title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
-      subnav={<ExpenseManagementSubnav current={sectionKey}/>}
-    >
-      <EmptyState
+      <ListWorkspace
+        title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
+        subnav={<ExpenseManagementSubnav current={sectionKey} />}
+      >
+        <EmptyState
           title="No access"
           description={
             mode === "my-expenses"
@@ -498,7 +490,7 @@ export function ExpenseManagementClaimsPage({
               : "Ask an administrator for expenses.view or expenses.approve."
           }
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
   if (claimsQ.isLoading) {
@@ -512,10 +504,11 @@ export function ExpenseManagementClaimsPage({
   if (claimsQ.isError) {
     const message = friendlyAuthError(claimsQ.error);
     return (
-      <ListWorkspace title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
-      subnav={<ExpenseManagementSubnav current={sectionKey}/>}
-    >
-      {message.includes("202611071") ? (
+      <ListWorkspace
+        title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
+        subnav={<ExpenseManagementSubnav current={sectionKey} />}
+      >
+        {message.includes("202611071") ? (
           <Alert>
             <AlertTitle>Database update required</AlertTitle>
             <AlertDescription>
@@ -531,7 +524,7 @@ export function ExpenseManagementClaimsPage({
             onRetry={() => claimsQ.refetch()}
           />
         )}
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
@@ -751,9 +744,7 @@ export function ExpenseManagementClaimsPage({
                   <Label>Description</Label>
                   <Input
                     value={line.description}
-                    onChange={(event) =>
-                      updateLine(line.key, { description: event.target.value })
-                    }
+                    onChange={(event) => updateLine(line.key, { description: event.target.value })}
                     required
                   />
                 </div>

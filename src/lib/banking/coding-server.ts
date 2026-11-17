@@ -220,6 +220,7 @@ export async function codeBankTransactionOnce(
   const { journalId } = await postJournal(supabase as never, {
     company_id: args.companyId,
     journal_date: txn.txn_date,
+    currency_code: account.currency_code,
     ...(memo ? { memo } : {}),
     source_type: "bank_transaction",
     source_id: txn.id,

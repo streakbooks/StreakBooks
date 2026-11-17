@@ -1141,6 +1141,147 @@ export const listPinnedMessagingMessages = createServerFn({ method: "GET" })
     }));
   });
 
+export const listMessagingConversationMembers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; conversationId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+  }))
+  .handler(async ({ data, context }): Promise<MessagingParticipant[]> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: members, error } = await supabase
+      .from("messaging_conversation_members" as never)
+      .select("user_id, member_role, status, participant_kind" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("conversation_id" as never, data.conversationId as never)
+      .eq("status" as never, "active" as never);
+    if (error) asError(error);
+    const userIds = [
+      ...new Set(
+        ((members ?? []) as Array<{ user_id: string | null }>)
+          .map((row) => row.user_id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    if (!userIds.length) return [];
+    const { data: profiles, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", userIds);
+    if (profileError) asError(profileError);
+    const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+    const roleById = new Map(
+      ((members ?? []) as Array<{ user_id: string | null; member_role: string }>).map((m) => [
+        String(m.user_id),
+        m.member_role,
+      ]),
+    );
+    return userIds.map((userId) => {
+      const profile = byId.get(userId);
+      return {
+        user_id: userId,
+        full_name: profile?.full_name ?? "Member",
+        email: profile?.email ?? "",
+        role: roleById.get(userId) ?? "member",
+        status: "active",
+      };
+    });
+  });
+
+export const listMessagingMessageReceipts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; messageId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    messageId: assertMessagingUuid(input?.messageId, "messageId"),
+  }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<Array<{ user_id: string; full_name: string; read_at: string }>> => {
+      const { supabase } = context;
+      await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+      const { data: rows, error } = await supabase
+        .from("messaging_message_receipts" as never)
+        .select("user_id, read_at" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("message_id" as never, data.messageId as never)
+        .not("read_at" as never, "is" as never, null as never)
+        .order("read_at" as never, { ascending: true })
+        .limit(40);
+      if (error) asError(error);
+      const receipts = (rows ?? []) as Array<{ user_id: string; read_at: string }>;
+      const ids = receipts.map((row) => row.user_id);
+      if (!ids.length) return [];
+      const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+      const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name ?? "Member"]));
+      return receipts.map((row) => ({
+        user_id: row.user_id,
+        full_name: names.get(row.user_id) ?? "Member",
+        read_at: row.read_at,
+      }));
+    },
+  );
+
+export const blockMessagingUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; blockedUserId: string; reason?: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    blockedUserId: assertMessagingUuid(input?.blockedUserId, "blockedUserId"),
+    reason: typeof input?.reason === "string" ? input.reason.trim().slice(0, 500) : "",
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: ok, error } = await supabase.rpc("messaging_block_user" as never, {
+      _company_id: data.companyId,
+      _blocked_user_id: data.blockedUserId,
+      _reason: data.reason || null,
+    } as never);
+    if (error) asError(error);
+    return { ok: Boolean(ok) };
+  });
+
+export const unblockMessagingUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; blockedUserId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    blockedUserId: assertMessagingUuid(input?.blockedUserId, "blockedUserId"),
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: ok, error } = await supabase.rpc("messaging_unblock_user" as never, {
+      _company_id: data.companyId,
+      _blocked_user_id: data.blockedUserId,
+    } as never);
+    if (error) asError(error);
+    return { ok: Boolean(ok) };
+  });
+
+export const setMessagingRetentionDays = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; retentionDays: number | null }) => ({
+    companyId: assertUuid(input?.companyId),
+    retentionDays:
+      input?.retentionDays == null
+        ? null
+        : Number.isFinite(input.retentionDays)
+          ? Math.floor(Number(input.retentionDays))
+          : null,
+  }))
+  .handler(async ({ data, context }): Promise<MessagingSettings> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.manage_retention");
+    const { data: row, error } = await supabase.rpc("messaging_set_retention_days" as never, {
+      _company_id: data.companyId,
+      _retention_days: data.retentionDays,
+    } as never);
+    if (error) asError(error);
+    return row as MessagingSettings;
+  });
+
 export const getMessagingAnalyticsSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; days?: number }) => ({

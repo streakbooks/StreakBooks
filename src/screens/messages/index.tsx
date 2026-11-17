@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ConversationFiles } from "@/components/messaging/ConversationFiles";
+import { ConversationMembers } from "@/components/messaging/ConversationMembers";
 import { ConversationPinned } from "@/components/messaging/ConversationPinned";
 import { MessageActions } from "@/components/messaging/MessageActions";
+import { MessageReceipts } from "@/components/messaging/MessageReceipts";
 import { MessagingAiAssistPanel } from "@/components/messaging/MessagingAiAssistPanel";
 import { MessagingVoiceVideoPanel } from "@/components/messaging/MessagingVoiceVideoPanel";
 import { cn } from "@/lib/utils";
@@ -39,6 +41,11 @@ import {
   requestMessagingFormalApproval,
 } from "@/lib/messaging/messaging.functions";
 import { insertMentionToken } from "@/lib/messaging/mentions";
+import {
+  canSendMessagingNow,
+  createMessagingSendPaceState,
+  recordMessagingSend,
+} from "@/lib/messaging/rate-limit";
 import { uploadMessagingAttachment } from "@/lib/messaging/upload-client";
 import { notify } from "@/lib/notify";
 import { looksLikeInformalApproval } from "@/lib/messaging/approvals";
@@ -108,10 +115,13 @@ export function MessagesScreen({
   const [approvalPeer, setApprovalPeer] = useState("");
   const [showFiles, setShowFiles] = useState(false);
   const [showPinned, setShowPinned] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
   const [showAi, setShowAi] = useState(false);
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [showMentionPicker, setShowMentionPicker] = useState(false);
   const [replyTo, setReplyTo] = useState<MessagingMessage | null>(null);
+  const [sendPace, setSendPace] = useState(() => createMessagingSendPaceState());
+  const [receiptMessageId, setReceiptMessageId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const registerAttachment = useServerFn(registerMessagingAttachment);
   const requestApproval = useServerFn(requestMessagingFormalApproval);
@@ -139,6 +149,11 @@ export function MessagesScreen({
 
   async function handleSend() {
     if (!conversationId || !composer.trim() || sending) return;
+    const pace = canSendMessagingNow(sendPace);
+    if (!pace.ok) {
+      notify.warning("Slow down", pace.reason);
+      return;
+    }
     setSending(true);
     const idempotencyKey = crypto.randomUUID();
     try {
@@ -148,6 +163,7 @@ export function MessagesScreen({
         idempotencyKey,
         ...(replyTo ? { replyToMessageId: replyTo.id } : {}),
       });
+      setSendPace((prev) => recordMessagingSend(prev));
       setComposer("");
       setReplyTo(null);
     } finally {
@@ -449,6 +465,14 @@ export function MessagesScreen({
                   >
                     {showPinned ? "Hide pins" : "Pinned"}
                   </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowMembers((value) => !value)}
+                  >
+                    {showMembers ? "Hide members" : "Members"}
+                  </Button>
                   {selected &&
                   ["group", "channel", "hr_private", "accountant_client", "advisor_engagement"].includes(
                     selected.conversation_type,
@@ -520,6 +544,16 @@ export function MessagesScreen({
                   <ConversationPinned companyId={companyId} conversationId={conversationId} />
                 </div>
               ) : null}
+              {showMembers && companyId ? (
+                <div className="border-b px-4 py-3">
+                  <ConversationMembers
+                    companyId={companyId}
+                    conversationId={conversationId}
+                    currentUserId={user?.id ?? null}
+                    allowBlock={selected?.conversation_type === "dm"}
+                  />
+                </div>
+              ) : null}
               {showAi ? (
                 <div className="border-b space-y-3 px-4 py-3">
                   <MessagingAiAssistPanel
@@ -575,6 +609,26 @@ export function MessagesScreen({
                         canEdit={Boolean(user?.id && message.author_user_id === user.id)}
                         onReply={(target) => setReplyTo(target)}
                       />
+                    ) : null}
+                    {companyId && user?.id && message.author_user_id === user.id ? (
+                      <div className="mt-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs"
+                          onClick={() =>
+                            setReceiptMessageId((current) =>
+                              current === message.id ? null : message.id,
+                            )
+                          }
+                        >
+                          {receiptMessageId === message.id ? "Hide receipts" : "Read receipts"}
+                        </Button>
+                        {receiptMessageId === message.id ? (
+                          <MessageReceipts companyId={companyId} messageId={message.id} />
+                        ) : null}
+                      </div>
                     ) : null}
                   </article>
                 ))}

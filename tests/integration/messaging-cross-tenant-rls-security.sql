@@ -48,6 +48,18 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
+    SELECT 1 FROM pg_proc WHERE proname = 'messaging_block_user'
+  ) THEN
+    RAISE EXCEPTION 'messaging_block_user RPC missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc WHERE proname = 'messaging_set_retention_days'
+  ) THEN
+    RAISE EXCEPTION 'messaging_set_retention_days RPC missing';
+  END IF;
+
+  IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
     WHERE conname = 'communication_send_claims_kind_check'

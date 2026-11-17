@@ -10,20 +10,26 @@ import {
   previewMessagingDigest,
   setMessagingCollaborationFlags,
   setMessagingEnabled,
+  setMessagingRetentionDays,
 } from "@/lib/messaging/messaging.functions";
+import { isValidMessagingRetentionDays, messagingRetentionLabel } from "@/lib/messaging/retention";
 import { notify } from "@/lib/notify";
 import { useCanDo } from "@/hooks/use-can";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
 /** Organisation messaging administration. Authorization remains server-side. */
 export function MessagingSettingsPanel({ companyId }: { companyId: string | null }) {
   const settings = useMessagingSettings(companyId);
   const canManage = useCanDo("messaging.manage_settings");
+  const canRetention = useCanDo("messaging.manage_retention");
   const setEnabled = useServerFn(setMessagingEnabled);
   const setFlags = useServerFn(setMessagingCollaborationFlags);
+  const setRetention = useServerFn(setMessagingRetentionDays);
   const previewDigest = useServerFn(previewMessagingDigest);
   const client = useQueryClient();
   const [digestPreview, setDigestPreview] = useState<string | null>(null);
+  const [retentionDraft, setRetentionDraft] = useState<string>("");
 
   const invalidate = () => {
     void client.invalidateQueries({ queryKey: ["messaging-settings", companyId] });
@@ -54,6 +60,16 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
     onError: (error) => notify.error(error, "Could not update collaboration flags"),
   });
 
+  const retentionMutation = useMutation({
+    mutationFn: (retentionDays: number | null) =>
+      setRetention({ data: { companyId: companyId!, retentionDays } }),
+    onSuccess: () => {
+      invalidate();
+      notify.success("Retention updated");
+    },
+    onError: (error) => notify.error(error, "Could not update retention"),
+  });
+
   if (!companyId) return null;
   if (settings.isPending) return <LoadingState />;
   if (settings.isError) {
@@ -67,7 +83,9 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
   }
 
   const enabled = settings.data?.enabled ?? false;
-  const busy = enabledMutation.isPending || flagsMutation.isPending;
+  const busy =
+    enabledMutation.isPending || flagsMutation.isPending || retentionMutation.isPending;
+  const currentRetention = settings.data?.retention_days ?? null;
 
   return (
     <div className="space-y-6 rounded-lg border bg-card p-4">
@@ -143,6 +161,54 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
           Customer/vendor messaging stays off until RLS and portal isolation are verified on
           staging.
         </p>
+      </div>
+
+      <div className="space-y-2 border-t pt-4">
+        <h4 className="text-sm font-medium">Retention</h4>
+        <p className="text-xs text-muted-foreground">
+          {messagingRetentionLabel(currentRetention)}. Automatic purge jobs stay off until
+          explicitly scheduled; this only stores the policy.
+        </p>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="space-y-1">
+            <Label htmlFor="retention-days">Days (30–3650, blank = indefinite)</Label>
+            <Input
+              id="retention-days"
+              inputMode="numeric"
+              className="w-40"
+              value={retentionDraft}
+              placeholder={currentRetention == null ? "" : String(currentRetention)}
+              onChange={(event) => setRetentionDraft(event.target.value)}
+              disabled={!canRetention || busy}
+            />
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={!canRetention || busy}
+            onClick={() => {
+              const trimmed = retentionDraft.trim();
+              if (!trimmed) {
+                retentionMutation.mutate(null);
+                return;
+              }
+              const days = Number(trimmed);
+              if (!isValidMessagingRetentionDays(days)) {
+                notify.warning("Invalid retention", "Enter 30–3650 days, or leave blank.");
+                return;
+              }
+              retentionMutation.mutate(days);
+            }}
+          >
+            Save retention
+          </Button>
+        </div>
+        {!canRetention ? (
+          <p className="text-xs text-muted-foreground">
+            Changing retention requires messaging.manage_retention.
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-2 border-t pt-4">

@@ -49,6 +49,12 @@
 -- 10) Digest claims
 -- messaging digest worker inserts communication_send_claims.kind = messaging_digest once per day.
 
+-- 11) Block peer
+-- messaging_block_user then messaging_create_dm(company_a, blocked_peer) -- DENY
+
+-- 12) Send rate limit
+-- 31 messaging_send_message calls within one minute -- DENY after 30
+
 DO $$
 BEGIN
   IF to_regclass('public.messaging_conversations') IS NULL THEN

@@ -60,17 +60,22 @@ A customer linked to an invoice does **not** make an internal record thread exte
 | Function | Purpose |
 | -------- | ------- |
 | `listMessagingConversations` | Inbox filters |
-| `getMessagingConversation` | Detail + members |
+| `listMessagingConversationMembers` | Active members |
 | `createDirectConversation` | DM find-or-create |
 | `createGroupConversation` | Group create |
-| `sendMessagingMessage` | Idempotent send |
-| `listMessagingMessages` | Cursor/seq pagination |
-| `markMessagingRead` | Receipts + unread |
-| `updateMessagingMembership` | Mute/archive/leave/roles |
-| `linkMessagingRecord` | Record association |
-| `requestMessagingApproval` | Formal approval handoff |
+| `addMessagingInternalMembers` | Invite internal members |
+| `sendMessagingMessage` | Idempotent send (rate-limited) |
+| `listMessagingMessages` / `searchMessagingMessages` | Cursor/seq + thread search |
+| `markMessagingRead` / `markMessagingUnread` | Receipts + unread |
+| `listMessagingMessageReceipts` | Read receipts |
+| `updateMessagingMembership` | Mute/archive/leave/star |
+| `blockMessagingUser` / `unblockMessagingUser` | Peer blocks |
+| `openRecordDiscussion` / portal open helpers | Record + portal discuss |
+| `requestMessagingFormalApproval` | Formal approval handoff |
 | `getMessagingUnreadCount` | Header badge |
 | `listEligibleMessagingParticipants` | Discovery |
+| `setMessagingCollaborationFlags` / `setMessagingRetentionDays` | Org settings |
+| `previewMessagingDigest` / digest-cron worker | Safe digests |
 
 ## Module registration contract
 

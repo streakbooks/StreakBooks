@@ -110,3 +110,7 @@ See [the exact commands, outcomes, revision and manual review instructions](VERI
 ## Batch 02 continuation
 
 [Approved event learning, durable feedback and preference controls](BATCH-02-CODING-MEMORY.md) now replace the initial aggregate-history loader. New migration is verified only in isolated PostgreSQL fixtures; no Supabase/production application. Current focused evidence: 208 unit/mocked tests, 59 PostgreSQL assertions, 5 isolated browser scenarios. Full acceptance remains 0/53; baseline TypeScript and staging/schema/security gates remain open. The earlier matrix describes the original audit baseline; Batch 02 supersedes its implemented Coding Memory details.
+
+## Batch 03 continuation
+
+[Readiness repairs and real Auth/API/browser evidence](BATCH-03-READINESS.md) supersede earlier baseline gate status where explicitly stated. Draft PR #251 integrates main fa57d602 and includes PR #225/#227 implementation without overwriting the remotely advanced foundation branch. Final counts and failed/unverified gates are recorded in the Batch 03 evidence. No full acceptance or production-readiness claim is made.

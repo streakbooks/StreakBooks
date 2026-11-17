@@ -181,3 +181,27 @@ export function proposeOpeningBalance(
     );
   return completed.length ? BigInt(completed[0]!.statement_balance_minor) : null;
 }
+
+export type OpeningProposalSource = "session" | "account_details";
+
+/**
+ * Prefer continuity from the last completed session. When none exists, fall back to the opening
+ * statement balance saved on Account Details so the first reconciliation is not free-typed.
+ */
+export function resolveOpeningProposal(args: {
+  sessions: ReadonlyArray<{
+    status: string;
+    statement_date: string;
+    created_at?: string;
+    statement_balance_minor: number | bigint;
+  }>;
+  storedOpeningMinor?: number | bigint | null;
+}): { minor: bigint; source: OpeningProposalSource } | null {
+  const fromSession = proposeOpeningBalance(args.sessions);
+  if (fromSession !== null) return { minor: fromSession, source: "session" };
+
+  if (args.storedOpeningMinor == null) return null;
+  const n = Number(args.storedOpeningMinor);
+  if (!Number.isFinite(n) || !Number.isSafeInteger(n)) return null;
+  return { minor: BigInt(n), source: "account_details" };
+}

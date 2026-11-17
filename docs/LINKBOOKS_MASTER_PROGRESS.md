@@ -36,9 +36,17 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 
 | Batch | Status | Evidence |
 |-------|--------|----------|
-| B0 — Tracker + IP register + full-coverage gap skeleton | **In progress** | This file; IP register; gap register |
-| B1 — Historical Aged Payables (dated AP allocations) | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 — unit 9/9; `check:modules` pass; tsc clean for batch; staging verify open |
+| B0 — Tracker + IP register + full-coverage gap skeleton | **Done on branch** | This file; IP register; gap register |
+| B1 — Historical Aged Payables (dated AP allocations) | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 @ `eba127b4` — unit 9/9; `check:modules` pass; full `tsc --noEmit` exit 0 after TS4111 bracket-access fix in `ap-reports.functions.ts`; staging verify open |
 | B2+ — Next financial-correctness / fail-closed module gaps | Pending | Priority: PO matching, inventory valuation, timesheets, bank feeds (provider), Coding Memory (#225) |
+
+### B1 typecheck remediation (2026-11-17)
+
+| Check | Result |
+|-------|--------|
+| Failure | Shell `787035` exit 2 — TS4111 on `Record<string, unknown>` dot access in `historyAllocation` |
+| Fix | Index signature access via `src["bill_id"]` (etc.) |
+| Re-run | Full `tsc --noEmit` exit **0** (shell `177001`); focused vitest **9/9** |
 
 ## Current blockers
 
@@ -46,9 +54,10 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 2. PR #227 conflicts with main after #228; release-gate repair needs rebase/decision.
 3. External providers (bank feeds, email delivery, payroll filing) remain fail-closed / unavailable until configured and verified.
 4. Pre-archive deleted AP allocations cannot be reconstructed (documented limitation).
+5. PR #229 CI status empty/pending at last check — do not merge without green checks + review.
 
 ## Next executable step
 
-1. Land B1 PR with originality/IP note after unit tests pass.
+1. Await/green CI on #229; authenticated Aged Payables as-at smoke on staging when authorized.
 2. Recheck #225 vs main typecheck readiness; do not duplicate Coding Memory.
 3. Continue gap register depth for Banking reconciliation and Inventory/COGS.

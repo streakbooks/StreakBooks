@@ -80,9 +80,9 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Frontend** | Reports `AgedView` uses as-at path; basis copy updated |
 | **Tests** | `ap-asat.test.ts`, updated `payables-integrity.test.ts` |
 | **Acceptance** | Past as-of includes bills paid after that date; unapplied payments/credits as negatives; currencies separate; future dates rejected |
-| **Development status** | Implemented on branch `feature/ap-asat-historical-aged-payables` |
+| **Development status** | Implemented on branch `feature/ap-asat-historical-aged-payables` (`eba127b4`+) |
 | **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 |
-| **Release verification** | Open — authenticated staging not run |
+| **Release verification** | Open — unit 9/9, `check:modules` pass, full `tsc` exit 0 after TS4111 fix; authenticated staging not run |
 
 ## Acceptance questions (programme-wide)
 

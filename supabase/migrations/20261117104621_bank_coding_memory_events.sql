@@ -196,7 +196,9 @@ begin
       left join public.bank_coding_memory_preferences p on p.history_id=h.id and p.company_id=e.company_id
     where e.company_id=_company_id and e.bank_account_id=_txn.bank_account_id
       and e.currency_code=b.currency_code::text and b.is_active and a.id<>b.gl_account_id
-      and j.status::text='posted' and j.reversed_by_journal_id is null and j.reverses_journal_id is null
+      and j.status::text='posted' and j.source_type::text='bank_transaction' and j.source_id=t.id
+      and j.currency_code::text=e.currency_code and jl.account_id=b.gl_account_id and (jl.debit_minor-jl.credit_minor)=e.amount_minor
+      and j.reversed_by_journal_id is null and j.reverses_journal_id is null
       and t.status::text in ('matched','reconciled') and t.amount_minor=e.amount_minor
       and a.is_active and a.is_postable and not coalesce(a.is_control,false) and a.archived_at is null
       and h.direction=case when _txn.amount_minor>=0 then 'in' else 'out' end

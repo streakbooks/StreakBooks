@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useActiveCompany } from "@/hooks/use-active-company";
+import { useRouteContext } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   useMessagingActions,
@@ -16,6 +17,7 @@ import {
   useMessagingMessages,
   useMessagingSettings,
 } from "@/hooks/use-messaging";
+import { useMessagingPresence } from "@/hooks/use-messaging-presence";
 import type { MessagingInboxFilter, MessagingParticipant } from "@/lib/messaging/types";
 import { registerMessagingAttachment, requestMessagingFormalApproval } from "@/lib/messaging/messaging.functions";
 import { uploadMessagingAttachment } from "@/lib/messaging/upload-client";
@@ -58,12 +60,14 @@ export function MessagesScreen({
   searchQuery?: string;
 }) {
   const { company } = useActiveCompany();
+  const { user } = useRouteContext({ from: "/_authenticated" });
   const companyId = company?.id ?? null;
   const navigate = useNavigate();
   const settings = useMessagingSettings(companyId);
   const conversations = useMessagingConversations(companyId, filter, searchQuery);
   const messages = useMessagingMessages(companyId, conversationId ?? null);
   const actions = useMessagingActions(companyId);
+  const presence = useMessagingPresence(conversationId ?? null, user?.id ?? null);
 
   const [composer, setComposer] = useState("");
   const [search, setSearch] = useState("");
@@ -282,6 +286,10 @@ export function MessagesScreen({
                   </h2>
                   <p className="text-xs text-muted-foreground">
                     {selected?.visibility ?? "internal"} · {selected?.conversation_type ?? "thread"}
+                    {presence.onlineIds.length > 1 ? ` · ${presence.onlineIds.length} online` : ""}
+                    {presence.typingIds.length
+                      ? ` · ${presence.typingIds.length} typing`
+                      : ""}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -373,7 +381,10 @@ export function MessagesScreen({
                 <Textarea
                   id="message-composer"
                   value={composer}
-                  onChange={(e) => setComposer(e.target.value)}
+                  onChange={(e) => {
+                    setComposer(e.target.value);
+                    void presence.signalTyping();
+                  }}
                   placeholder="Write a message"
                   rows={3}
                   maxLength={8000}

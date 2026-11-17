@@ -67,6 +67,88 @@ import {
 } from "@/lib/purchases/posting";
 import { applyReverseChargeToLines, loadTaxCodeInfo } from "@/lib/purchases/reverse-charge-lines";
 import { parseScheduleOptions } from "@/lib/recurring/recurring-schedule-options";
+import {
+  assessSupplierCreditLimit,
+  type SupplierCreditLimitAssessment,
+  type SupplierCreditLimitBill,
+} from "@/lib/purchases/supplier-credit-limit";
+
+export const SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED = "SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED";
+
+type PurchasesClient = Parameters<typeof assertCompanyPermission>[0];
+
+async function loadSupplierCreditLimitAssessment(
+  supabase: PurchasesClient,
+  companyId: string,
+  candidate: {
+    id: string;
+    contactId: string;
+    currencyCode: string;
+    status: string;
+    totalMinor: number;
+    amountPaidMinor: number;
+    amountCreditedMinor: number;
+  },
+): Promise<SupplierCreditLimitAssessment> {
+  const { data: company } = await supabase
+    .from("companies" as never)
+    .select("base_currency" as never)
+    .eq("id" as never, companyId as never)
+    .maybeSingle();
+  const baseCurrency = String(
+    (company as { base_currency?: string } | null)?.base_currency ?? "USD",
+  ).toUpperCase();
+
+  const { data: contact, error: cErr } = await supabase
+    .from("contacts" as never)
+    .select("credit_limit_minor, default_currency" as never)
+    .eq("id" as never, candidate.contactId as never)
+    .eq("company_id" as never, companyId as never)
+    .maybeSingle();
+  if (cErr) throw new Error(cErr.message);
+  const c = contact as { credit_limit_minor?: number | null; default_currency?: string | null } | null;
+  const limitCurrency = String(c?.default_currency || baseCurrency).toUpperCase();
+
+  const { data: openRows, error: oErr } = await supabase
+    .from("purchase_bills" as never)
+    .select("id, currency_code, status, total_minor, amount_paid_minor, amount_credited_minor" as never)
+    .eq("company_id" as never, companyId as never)
+    .eq("contact_id" as never, candidate.contactId as never)
+    .in("status" as never, ["authorised", "partly_paid"] as never);
+  if (oErr) throw new Error(oErr.message);
+
+  const openBills: SupplierCreditLimitBill[] = (
+    (openRows ?? []) as Array<{
+      id: string;
+      currency_code: string;
+      status: string;
+      total_minor: number;
+      amount_paid_minor: number;
+      amount_credited_minor: number;
+    }>
+  ).map((r) => ({
+    id: r.id,
+    currencyCode: String(r.currency_code || baseCurrency).toUpperCase(),
+    status: r.status,
+    totalMinor: Number(r.total_minor) || 0,
+    amountPaidMinor: Number(r.amount_paid_minor) || 0,
+    amountCreditedMinor: Number(r.amount_credited_minor) || 0,
+  }));
+
+  return assessSupplierCreditLimit({
+    creditLimitMinor: c?.credit_limit_minor ?? null,
+    limitCurrencyCode: limitCurrency,
+    openBills,
+    candidate: {
+      id: candidate.id,
+      currencyCode: candidate.currencyCode.toUpperCase(),
+      status: candidate.status,
+      totalMinor: candidate.totalMinor,
+      amountPaidMinor: candidate.amountPaidMinor,
+      amountCreditedMinor: candidate.amountCreditedMinor,
+    },
+  });
+}
 
 async function recordBillAudit(
   supabase: unknown,
@@ -1067,6 +1149,25 @@ export const getBill = createServerFn({ method: "GET" })
     const credited = Number(b.amount_credited_minor ?? 0);
     const balance = Math.max(0, total - paid - credited);
 
+    let supplierCreditLimitAssessment: SupplierCreditLimitAssessment | null = null;
+    try {
+      supplierCreditLimitAssessment = await loadSupplierCreditLimitAssessment(
+        context.supabase,
+        data.companyId,
+        {
+          id: b.id,
+          contactId: b.contact_id,
+          currencyCode: String(b.currency_code || "USD"),
+          status: b.status,
+          totalMinor: total,
+          amountPaidMinor: paid,
+          amountCreditedMinor: credited,
+        },
+      );
+    } catch {
+      supplierCreditLimitAssessment = null;
+    }
+
     return {
       id: b.id,
       status: b.status,
@@ -1125,6 +1226,7 @@ export const getBill = createServerFn({ method: "GET" })
       balance_due_minor: status === "draft" || status === "awaiting_approval" ? 0 : balance,
       document_total_minor: total,
       display_reference: b.supplier_invoice_number?.trim() || b.bill_number?.trim() || null,
+      supplierCreditLimitAssessment,
     };
   });
 
@@ -1700,6 +1802,7 @@ export async function authoriseBillInternal(
   userId: string,
   companyId: string,
   billId: string,
+  acknowledgeCreditLimit = false,
 ): Promise<{ journalId: string }> {
   await assertCompanyPermission(supabase, companyId, "purchases.authorise");
   const { data: bill, error } = await supabase
@@ -1711,10 +1814,15 @@ export async function authoriseBillInternal(
   if (error) throw new Error(error.message);
   if (!bill) throw new Error("Bill not found");
   const b = bill as {
+    id: string;
+    contact_id: string;
     status: string;
     bill_date: string;
     currency_code: string;
     memo: string | null;
+    total_minor: number;
+    amount_paid_minor?: number;
+    amount_credited_minor?: number;
     posted_journal_id: string | null;
     purchase_bill_lines: Array<{
       account_id: string;
@@ -1734,6 +1842,19 @@ export async function authoriseBillInternal(
     b.purchase_bill_lines.map((l) => l.tax_code_id ?? ""),
   );
   if (b.posted_journal_id) throw new Error("Bill already posted");
+
+  const credit = await loadSupplierCreditLimitAssessment(supabase, companyId, {
+    id: b.id,
+    contactId: b.contact_id,
+    currencyCode: b.currency_code,
+    status: b.status,
+    totalMinor: Number(b.total_minor) || 0,
+    amountPaidMinor: Number(b.amount_paid_minor) || 0,
+    amountCreditedMinor: Number(b.amount_credited_minor) || 0,
+  });
+  if (credit.overLimit && !acknowledgeCreditLimit) {
+    throw new Error(`${SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED}: ${credit.message}`);
+  }
 
   // Fail closed when purchases.three_way_matching is enabled for PO-linked bills.
   const billWithPo = bill as {
@@ -1815,12 +1936,23 @@ export async function authoriseBillInternal(
 
 export const authoriseBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string }) => ({
+  .inputValidator((input: {
+    companyId: string;
+    billId: string;
+    acknowledgeCreditLimit?: boolean;
+  }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
+    acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
   }))
   .handler(async ({ data, context }) => {
-    return authoriseBillInternal(context.supabase, context.userId, data.companyId, data.billId);
+    return authoriseBillInternal(
+      context.supabase,
+      context.userId,
+      data.companyId,
+      data.billId,
+      data.acknowledgeCreditLimit,
+    );
   });
 
 /** Order × received × bill match for a purchase-order-linked bill (advisory + authorise gate). */

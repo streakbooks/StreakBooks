@@ -30,8 +30,13 @@ import {
   startPortalPayment,
   uploadPortalFile,
 } from "@/lib/portals/portals.functions";
+import {
+  portalOpenInvoiceDiscussion,
+  portalSendMessagingMessage,
+} from "@/lib/messaging/messaging.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortal } from "@/components/portals/use-portal";
+import { useNavigate } from "@tanstack/react-router";
 
 type Row = Record<string, unknown>;
 
@@ -179,14 +184,29 @@ export function PortalInvoices() {
 export function PortalInvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const portal = usePortal();
   const current = portal.current;
+  const navigate = useNavigate();
   const fetchInvoice = useServerFn(getPortalInvoice);
   const pay = useServerFn(startPortalPayment);
+  const openDiscuss = useServerFn(portalOpenInvoiceDiscussion);
   const [amount, setAmount] = useState("");
   const query = useQuery({
     queryKey: ["portal-invoice", current?.membership_id, invoiceId],
     enabled: Boolean(current?.membership_id),
     queryFn: () =>
       fetchInvoice({ data: { membershipId: current!.membership_id, invoiceId } }) as Promise<Row>,
+  });
+  const discuss = useMutation({
+    mutationFn: () =>
+      openDiscuss({
+        data: { membershipId: current!.membership_id, invoiceId },
+      }),
+    onSuccess: (result) => {
+      void navigate({
+        to: "/portal/app/messages",
+        search: { conversation: result.conversationId },
+      });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const payment = useMutation({
     mutationFn: () => {
@@ -246,9 +266,19 @@ export function PortalInvoiceDetail({ invoiceId }: { invoiceId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
-        <Button variant="outline" onClick={() => window.print()}>
-          Print / Save as PDF
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => window.print()}>
+            Print / Save as PDF
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={discuss.isPending}
+            onClick={() => discuss.mutate()}
+          >
+            {discuss.isPending ? "Opening…" : "Message Business"}
+          </Button>
+        </div>
         <Button variant="outline" asChild>
           <Link to="/portal/app/invoices">All invoices</Link>
         </Button>
@@ -609,12 +639,13 @@ export function PortalDocuments() {
   );
 }
 
-export function PortalMessages() {
+export function PortalMessages({ conversationId }: { conversationId?: string }) {
   const portal = usePortal();
   const current = portal.current;
   const qc = useQueryClient();
   const fetchMessages = useServerFn(listPortalMessages);
   const sendMessage = useServerFn(postPortalMessage);
+  const sendUnified = useServerFn(portalSendMessagingMessage);
   const [body, setBody] = useState("");
   const query = useQuery({
     queryKey: ["portal-messages", current?.membership_id],
@@ -623,16 +654,34 @@ export function PortalMessages() {
       fetchMessages({ data: { membershipId: current!.membership_id } }) as Promise<Row[]>,
   });
   const send = useMutation({
-    mutationFn: () => sendMessage({ data: { membershipId: current!.membership_id, body } }),
+    mutationFn: async () => {
+      if (conversationId) {
+        return sendUnified({
+          data: {
+            membershipId: current!.membership_id,
+            conversationId,
+            body,
+            idempotencyKey: crypto.randomUUID(),
+          },
+        });
+      }
+      return sendMessage({ data: { membershipId: current!.membership_id, body } });
+    },
     onSuccess: async () => {
       setBody("");
       await qc.invalidateQueries({ queryKey: ["portal-messages", current?.membership_id] });
+      toast.success(conversationId ? "Message sent to the business" : "Message sent");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
   if (!current) return <LoadingState />;
   return (
     <div className="space-y-4">
+      {conversationId ? (
+        <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          You are messaging about an authorised record. Internal staff notes are never shown here.
+        </p>
+      ) : null}
       <ul className="space-y-2">
         {(query.data ?? []).map((message) => (
           <li
@@ -661,7 +710,7 @@ export function PortalMessages() {
           onChange={(event) => setBody(event.target.value)}
         />
         <Button type="submit" disabled={send.isPending || !body.trim()}>
-          Send
+          {send.isPending ? "Sending…" : "Send"}
         </Button>
       </form>
     </div>

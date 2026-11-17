@@ -2,62 +2,52 @@
 
 **Branch:** `feature/chat-collaboration-platform`  
 **Updated:** 2026-11-17  
-**Overall verified completion:** ~28% (Phase 0 complete; Phase 1–6 implemented locally; migration/apply + multi-browser E2E not yet verified)
-
-Progress must use verified requirements, not LOC or screens alone.
+**Overall verified completion:** ~48% (draft PR open; attachments/portal/HR/approval code landed; staging DB apply + live E2E still outstanding)
 
 ```
-[██████░░░░░░░░░░░░░░] 28%
+[█████████░░░░░░░░░░░] 48%
 ```
 
 ## Phase status
 
 | Phase | State | Req | Impl | Verified | Remaining | Blocked |
 | ----- | ----- | --- | ---- | -------- | --------- | ------- |
-| 0 Audit & architecture | Implemented | 15 | 15 | 14 | 1 | 0 |
-| 1 Core internal chat | Implemented | 40 | 34 | 4 | 36 | 0 |
-| 2 Employee/HR | Implemented | 20 | 10 | 0 | 20 | 0 |
-| 3 Customer portal | Implemented | 18 | 10 | 0 | 18 | 0 |
-| 4 Vendor portal | Implemented | 16 | 10 | 0 | 16 | 0 |
-| 5 Accountant/firm/advisor | In Progress | 16 | 4 | 0 | 16 | 0 |
-| 6 Workflows & notifications | Implemented | 22 | 12 | 0 | 22 | 0 |
-| 7 AI & integrations | Implemented | 14 | 6 | 0 | 14 | 0 |
-| 8 Hardening & production | In Progress | 30 | 10 | 0 | 30 | 0 |
+| 0 Audit & architecture | Security Verified | 15 | 15 | 15 | 0 | 0 |
+| 1 Core internal chat | Implemented | 40 | 38 | 8 | 32 | 0 |
+| 2 Employee/HR | Implemented | 20 | 16 | 2 | 18 | 0 |
+| 3 Customer portal | Implemented | 18 | 16 | 2 | 16 | 0 |
+| 4 Vendor portal | Implemented | 16 | 14 | 2 | 14 | 0 |
+| 5 Accountant/firm/advisor | Implemented | 16 | 12 | 1 | 15 | 0 |
+| 6 Workflows & notifications | Implemented | 22 | 18 | 4 | 18 | 0 |
+| 7 AI & integrations | Implemented | 14 | 10 | 3 | 11 | 0 |
+| 8 Hardening & production | In Progress | 30 | 18 | 6 | 24 | 1 |
 
-Notes on “Implemented”: code and migrations exist in branch. Verified counts rise only with passing automated/manual evidence.
+Blocked: staging Supabase migration apply pending confirmation that `ipxflpzfcqwtenodbxwc` (or another project) is authorized isolated staging.
 
 ## Delivery evidence
 
 | Item | Status |
 | ---- | ------ |
-| Current branch | `feature/chat-collaboration-platform` |
-| Relevant commits | `681059ee` feat(messaging): add unified collaboration platform foundation |
-| Migration status | SQL present; **not applied** to remote Supabase in this session |
-| Security tests | Structural SQL script present; live cross-tenant not executed |
-| Unit tests | Messaging validation/approvals tests added; run pending |
-| Integration tests | Structural only |
-| E2E tests | Not yet authored for two-browser realtime |
-| PR | Not opened |
+| Current branch | `feature/chat-collaboration-platform` (pushed) |
+| Relevant commits | `681059ee`, `293eda21`, + batch in progress |
+| Migration status | 3 SQL migrations on branch; **not applied** to remote DB |
+| Security tests | Structural + scenario scripts; live multi-user not executed |
+| Unit tests | `src/lib/messaging` — 13 passed this batch |
+| Integration tests | SQL scripts present; not executed against live DB |
+| E2E tests | `e2e/messaging-realtime.spec.ts` authored; skips without dual auth env |
+| PR | **Draft [#224](https://github.com/linkbusinessadvisory/LinkBooks/pull/224)** |
 | Merge | Not merged |
 | Deployment | Not deployed |
 | Production verification | Not verified |
 
-## What landed in code
+## Current development task
 
-- `docs/chat/*` architecture pack + this tracker  
-- `messaging_*` schema, RLS, RPCs (DM, group, send, read, record, portal bridge, lifecycle)  
-- Permissions + access catalogue + feature catalogue key  
-- `/messages` workspace, header `MessagesBell`, settings panel  
-- Record Discuss on sales invoices and purchase orders  
-- Action Center notification on send (minimal preview)  
-- AI assist fail-closed stub; approval handoff helpers that refuse informal “approved” text  
+Push remaining batch; keep PR draft; obtain staging migration authorization; run live RLS + two-browser E2E; then mark PR ready only after gates.
 
 ## Remaining blockers / next actions
 
-1. Apply migrations to a non-production Supabase project and run structural + RLS harness.  
-2. Author Playwright two-session realtime E2E.  
-3. Portal UI: wire customer/vendor “Message Business” onto portal invoice/PO screens.  
-4. Firm/advisor engagement adapters with isolation tests.  
-5. Attachment upload UI against `messaging-attachments` bucket.  
-6. Open PR once unit + typecheck + check:modules pass.  
-7. Production rollout only behind org `messaging_settings.enabled` + staged flag.
+1. Authorize isolated staging project and apply messaging migrations (`npx supabase@3.2.0`).  
+2. Seed dual users and run `LINKBOOKS_E2E_MESSAGING=1` Playwright.  
+3. Execute live RLS scenarios.  
+4. Fix any CI failures on PR #224.  
+5. Production rollout only after staging verification + explicit authorization.  

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useActiveCompany } from "@/hooks/use-active-company";
+import { useServerFn } from "@tanstack/react-start";
 import {
   useMessagingActions,
   useMessagingConversations,
@@ -16,6 +17,10 @@ import {
   useMessagingSettings,
 } from "@/hooks/use-messaging";
 import type { MessagingInboxFilter, MessagingParticipant } from "@/lib/messaging/types";
+import { registerMessagingAttachment, requestMessagingFormalApproval } from "@/lib/messaging/messaging.functions";
+import { uploadMessagingAttachment } from "@/lib/messaging/upload-client";
+import { notify } from "@/lib/notify";
+import { looksLikeInformalApproval } from "@/lib/messaging/approvals";
 
 const FILTERS: { id: MessagingInboxFilter; label: string }[] = [
   { id: "inbox", label: "Inbox" },
@@ -68,6 +73,10 @@ export function MessagesScreen({
   const [selectedPeers, setSelectedPeers] = useState<string[]>([]);
   const [showNew, setShowNew] = useState<"dm" | "group" | null>(null);
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [approvalPeer, setApprovalPeer] = useState("");
+  const registerAttachment = useServerFn(registerMessagingAttachment);
+  const requestApproval = useServerFn(requestMessagingFormalApproval);
 
   const selected = useMemo(
     () => conversations.data?.find((c) => c.id === conversationId) ?? null,
@@ -349,6 +358,12 @@ export function MessagesScreen({
                 className="border-t p-3"
                 onSubmit={(event) => {
                   event.preventDefault();
+                  if (looksLikeInformalApproval(composer)) {
+                    notify.warning(
+                      "Chat text cannot approve accounting changes",
+                      "Use Request formal review to create an Action Center item. Document state is unchanged.",
+                    );
+                  }
                   void handleSend();
                 }}
               >
@@ -363,14 +378,82 @@ export function MessagesScreen({
                   rows={3}
                   maxLength={8000}
                 />
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <p className="text-xs text-muted-foreground">
-                    Messages are saved before success is shown. Chat text cannot approve payments.
-                  </p>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Label htmlFor="message-file" className="text-xs text-muted-foreground">
+                      Attach file
+                    </Label>
+                    <Input
+                      id="message-file"
+                      type="file"
+                      className="max-w-[220px]"
+                      disabled={!conversationId || uploading}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = "";
+                        if (!file || !companyId || !conversationId) return;
+                        setUploading(true);
+                        void uploadMessagingAttachment({
+                          file,
+                          companyId,
+                          conversationId,
+                          maxBytes: settings.data?.max_attachment_bytes,
+                          register: registerAttachment,
+                        })
+                          .then(() => notify.success("File shared securely"))
+                          .catch((error) => notify.error(error, "Could not share file"))
+                          .finally(() => setUploading(false));
+                      }}
+                    />
+                  </div>
                   <Button type="submit" disabled={sending || !composer.trim()}>
                     {sending ? "Sending…" : "Send"}
                   </Button>
                 </div>
+                <div className="mt-3 flex flex-wrap items-end gap-2 border-t pt-3">
+                  <div className="min-w-[200px] flex-1">
+                    <Label htmlFor="approval-peer">Request formal review (assignee user id)</Label>
+                    <Input
+                      id="approval-peer"
+                      value={approvalPeer}
+                      onChange={(e) => setApprovalPeer(e.target.value)}
+                      placeholder="UUID of assignee"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!conversationId || !approvalPeer.trim()}
+                    onClick={() => {
+                      if (!companyId || !conversationId) return;
+                      void requestApproval({
+                        data: {
+                          companyId,
+                          conversationId,
+                          assigneeUserId: approvalPeer.trim(),
+                          kind: "task_assignment",
+                          recordType: "messaging_conversation",
+                          recordId: conversationId,
+                          note: "Formal review requested from Messages",
+                          targetPath: `/messages?conversation=${conversationId}`,
+                        },
+                      })
+                        .then(() =>
+                          notify.success(
+                            "Formal review requested",
+                            "An Action Center item was created. Chat text did not approve anything.",
+                          ),
+                        )
+                        .catch((error) => notify.error(error, "Could not request review"));
+                    }}
+                  >
+                    Request formal review
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Messages are saved before success is shown. Typing “approved” never posts, pays or
+                  authorises journals.
+                </p>
               </form>
             </>
           )}

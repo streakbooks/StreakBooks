@@ -508,3 +508,261 @@ export const openRecordDiscussion = createServerFn({ method: "POST" })
     if (error) asError(error);
     return { conversationId: String(id), path: `/messages?conversation=${id}` };
   });
+
+export const registerMessagingAttachment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      conversationId: string;
+      messageId?: string | null;
+      storagePath: string;
+      fileName: string;
+      mimeType: string;
+      byteSize: number;
+    }) => ({
+      companyId: assertUuid(input?.companyId),
+      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+      messageId: input?.messageId ? assertMessagingUuid(input.messageId, "messageId") : null,
+      storagePath: String(input?.storagePath ?? "").trim().slice(0, 500),
+      fileName: String(input?.fileName ?? "").trim().slice(0, 180),
+      mimeType: String(input?.mimeType ?? "").trim().slice(0, 120),
+      byteSize: Math.floor(Number(input?.byteSize) || 0),
+    }),
+  )
+  .handler(async ({ data, context }): Promise<{ id: string }> => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase.rpc("messaging_register_attachment" as never, {
+      _company_id: data.companyId,
+      _conversation_id: data.conversationId,
+      _message_id: data.messageId,
+      _storage_path: data.storagePath,
+      _file_name: data.fileName,
+      _mime_type: data.mimeType,
+      _byte_size: data.byteSize,
+    } as never);
+    if (error) asError(error);
+    return { id: String((row as { id: string }).id) };
+  });
+
+export const listMessagingAttachments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; conversationId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.view");
+    const { data: rows, error } = await supabase
+      .from("messaging_attachments" as never)
+      .select(
+        "id,company_id,conversation_id,message_id,file_name,mime_type,byte_size,storage_path,created_at" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .eq("conversation_id" as never, data.conversationId as never)
+      .order("created_at" as never, { ascending: false });
+    if (error) asError(error);
+    return rows ?? [];
+  });
+
+export const editMessagingMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; messageId: string; body: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    messageId: assertMessagingUuid(input?.messageId, "messageId"),
+    body: normaliseMessageBody(input?.body),
+  }))
+  .handler(async ({ data, context }): Promise<MessagingMessage> => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase.rpc("messaging_edit_message" as never, {
+      _company_id: data.companyId,
+      _message_id: data.messageId,
+      _body: data.body,
+    } as never);
+    if (error) asError(error);
+    return row as MessagingMessage;
+  });
+
+export const redactMessagingMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; messageId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    messageId: assertMessagingUuid(input?.messageId, "messageId"),
+  }))
+  .handler(async ({ data, context }): Promise<MessagingMessage> => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase.rpc("messaging_redact_message" as never, {
+      _company_id: data.companyId,
+      _message_id: data.messageId,
+    } as never);
+    if (error) asError(error);
+    return row as MessagingMessage;
+  });
+
+export const reactMessagingMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; messageId: string; emoji: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    messageId: assertMessagingUuid(input?.messageId, "messageId"),
+    emoji: String(input?.emoji ?? "").trim().slice(0, 16),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    if (!data.emoji) throw new Error("Emoji required");
+    const { data: row, error } = await supabase.rpc("messaging_react_message" as never, {
+      _company_id: data.companyId,
+      _message_id: data.messageId,
+      _emoji: data.emoji,
+    } as never);
+    if (error) asError(error);
+    return row;
+  });
+
+export const openHrPrivateConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; title: string; peerUserId?: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    title: normaliseGroupTitle(input?.title || "Private HR discussion"),
+    peerUserId: input?.peerUserId
+      ? assertMessagingUuid(input.peerUserId, "peerUserId")
+      : null,
+  }))
+  .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
+    const { supabase } = context;
+    const { data: id, error } = await supabase.rpc("messaging_open_hr_private" as never, {
+      _company_id: data.companyId,
+      _title: data.title,
+      _peer_user_id: data.peerUserId,
+    } as never);
+    if (error) asError(error);
+    return { conversationId: String(id) };
+  });
+
+export const openAccountantClientConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; title: string; peerUserId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    title: normaliseGroupTitle(input?.title || "Accountant discussion"),
+    peerUserId: assertMessagingUuid(input?.peerUserId, "peerUserId"),
+  }))
+  .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
+    const { supabase } = context;
+    const { data: id, error } = await supabase.rpc("messaging_open_accountant_client" as never, {
+      _company_id: data.companyId,
+      _title: data.title,
+      _peer_user_id: data.peerUserId,
+    } as never);
+    if (error) asError(error);
+    return { conversationId: String(id) };
+  });
+
+export const requestMessagingFormalApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      conversationId: string;
+      assigneeUserId: string;
+      kind: string;
+      recordType: string;
+      recordId: string;
+      note?: string;
+      targetPath?: string;
+    }) => ({
+      companyId: assertUuid(input?.companyId),
+      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+      assigneeUserId: assertMessagingUuid(input?.assigneeUserId, "assigneeUserId"),
+      kind: String(input?.kind ?? "").trim().slice(0, 80),
+      recordType: String(input?.recordType ?? "").trim().slice(0, 80),
+      recordId: assertMessagingUuid(input?.recordId, "recordId"),
+      note: typeof input?.note === "string" ? input.note.trim().slice(0, 500) : "",
+      targetPath:
+        typeof input?.targetPath === "string" ? input.targetPath.trim().slice(0, 400) : "",
+    }),
+  )
+  .handler(async ({ data, context }): Promise<{ notificationId: string }> => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "messaging.send");
+    if (looksLikeInformalOnly(data.note)) {
+      // Notes that are only "approved" still create a review request — never an approval.
+    }
+    const { data: id, error } = await supabase.rpc("messaging_request_formal_approval" as never, {
+      _company_id: data.companyId,
+      _conversation_id: data.conversationId,
+      _assignee_user_id: data.assigneeUserId,
+      _kind: data.kind || "task_assignment",
+      _record_type: data.recordType,
+      _record_id: data.recordId,
+      _note: data.note || "Review requested from Messages",
+      _target_path: data.targetPath || null,
+    } as never);
+    if (error) asError(error);
+    return { notificationId: String(id) };
+  });
+
+function looksLikeInformalOnly(note: string): boolean {
+  return /^(approved|approve|lgtm|ok|okay)[.!]*$/i.test(note.trim());
+}
+
+export const portalOpenInvoiceDiscussion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { membershipId: string; invoiceId: string }) => ({
+    membershipId: assertMessagingUuid(input?.membershipId, "membershipId"),
+    invoiceId: assertMessagingUuid(input?.invoiceId, "invoiceId"),
+  }))
+  .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
+    const { supabase } = context;
+    const { data: id, error } = await supabase.rpc(
+      "messaging_portal_open_invoice_discussion" as never,
+      {
+        _membership_id: data.membershipId,
+        _invoice_id: data.invoiceId,
+      } as never,
+    );
+    if (error) asError(error);
+    return { conversationId: String(id) };
+  });
+
+export const portalOpenPurchaseOrderDiscussion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { membershipId: string; orderId: string }) => ({
+    membershipId: assertMessagingUuid(input?.membershipId, "membershipId"),
+    orderId: assertMessagingUuid(input?.orderId, "orderId"),
+  }))
+  .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
+    const { supabase } = context;
+    const { data: id, error } = await supabase.rpc("messaging_portal_open_po_discussion" as never, {
+      _membership_id: data.membershipId,
+      _order_id: data.orderId,
+    } as never);
+    if (error) asError(error);
+    return { conversationId: String(id) };
+  });
+
+export const portalSendMessagingMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      membershipId: string;
+      conversationId: string;
+      body: string;
+      idempotencyKey: string;
+    }) => ({
+      membershipId: assertMessagingUuid(input?.membershipId, "membershipId"),
+      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+      body: normaliseMessageBody(input?.body),
+      idempotencyKey: assertMessagingUuid(input?.idempotencyKey, "idempotencyKey"),
+    }),
+  )
+  .handler(async ({ data, context }): Promise<MessagingMessage> => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase.rpc("messaging_portal_send_message" as never, {
+      _membership_id: data.membershipId,
+      _conversation_id: data.conversationId,
+      _body: data.body,
+      _idempotency_key: data.idempotencyKey,
+    } as never);
+    if (error) asError(error);
+    return row as MessagingMessage;
+  });

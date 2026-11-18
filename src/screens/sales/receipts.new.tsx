@@ -19,7 +19,9 @@ import {
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
 import { LoadingState, EmptyState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormGrid } from "@/components/common/form-layout";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { AccountLookup } from "@/components/lookup";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
@@ -248,125 +250,135 @@ function ReceiptForm({
   if (customersQ.isPending || depositsQ.isPending || configQ.isPending) return <LoadingState />;
 
   return (
-    <ListWorkspace
+    <TransactionWorkspace
       title="Record receipt"
       description="Posts DR bank / CR accounts receivable in one step together with the invoice allocations."
+      breadcrumbs={[
+        { label: "Sales", to: "/sales" },
+        { label: "Receipts", to: "/sales/receipts" },
+        { label: "New" },
+      ]}
+      meta={<StatusBadge status="draft" />}
       actions={
         <Button variant="outline" size="sm" asChild>
           <Link to="/sales/receipts">Back</Link>
         </Button>
       }
-    >
-      {formError ? (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{formError}</AlertDescription>
-        </Alert>
-      ) : null}
-      {deposits.length === 0 ? (
-        <Alert className="mb-4">
-          <AlertDescription>
-            No bank or cash account found. Add one in Banking or the chart of accounts first.
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      <div className="grid max-w-4xl gap-4">
-        <div className="space-y-2">
-          <Label>Customer</Label>
-          <EntityCombobox
-            aria-label="Customer"
-            options={customerOptions}
-            value={contactId}
-            onChange={(v) => {
-              setContactId(v);
-              setAlloc({});
-            }}
-            placeholder="Search customers"
-            allowClear={false}
-            companyId={companyId}
-            canAddNew={can("contacts.manage")}
-            createTitle="New customer"
-            renderCreate={
-              can("contacts.manage")
-                ? (ctx) => <ContactCreateForm companyId={companyId} kind="customer" ctx={ctx} />
-                : undefined
-            }
-          />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Receipt date</Label>
-            <Input
-              type="date"
-              value={receiptDate}
-              onChange={(e) => setReceiptDate(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Deposit to (bank / cash account)</Label>
-            <AccountLookup
-              ariaLabel="Deposit account"
-              accounts={deposits}
-              value={bankAccountId}
-              onChange={setBankAccountId}
-              companyId={companyId}
-              purpose="posting"
-              createKind="bank"
-              placeholder="Choose bank or cash account"
-              allowClear={false}
-            />
-          </div>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-4">
-          <div className="space-y-2">
-            <Label>Currency</Label>
-            <RecordLookupSelect
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-              value={cur}
-              onValueChange={(e) => {
-                setCurrency(e);
-                setAlloc({});
-              }}
-            >
-              {currencyOptions(
-                base,
-                open.map((i) => i.currency_code),
-              ).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                  {c === base ? " (base)" : ""}
-                </option>
-              ))}
-            </RecordLookupSelect>
-          </div>
-          {isForeign ? (
-            <div className="space-y-2">
-              <Label>
-                Rate (1 {cur} = ? {base})
-              </Label>
+      details={
+        <div className="space-y-3">
+          {formError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{formError}</AlertDescription>
+            </Alert>
+          ) : null}
+          {deposits.length === 0 ? (
+            <Alert>
+              <AlertDescription>
+                No bank or cash account found. Add one in Banking or the chart of accounts first.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          <FormGrid columns={3}>
+            <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+              <Label>Customer</Label>
+              <EntityCombobox
+                aria-label="Customer"
+                options={customerOptions}
+                value={contactId}
+                onChange={(v) => {
+                  setContactId(v);
+                  setAlloc({});
+                }}
+                placeholder="Search customers"
+                allowClear={false}
+                companyId={companyId}
+                canAddNew={can("contacts.manage")}
+                createTitle="New customer"
+                renderCreate={
+                  can("contacts.manage")
+                    ? (ctx) => <ContactCreateForm companyId={companyId} kind="customer" ctx={ctx} />
+                    : undefined
+                }
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Receipt date</Label>
               <Input
-                value={fxRate}
-                onChange={(e) => setFxRate(e.target.value)}
+                type="date"
+                value={receiptDate}
+                onChange={(e) => setReceiptDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+              <Label>Deposit to (bank / cash account)</Label>
+              <AccountLookup
+                ariaLabel="Deposit account"
+                accounts={deposits}
+                value={bankAccountId}
+                onChange={setBankAccountId}
+                companyId={companyId}
+                purpose="posting"
+                createKind="bank"
+                placeholder="Choose bank or cash account"
+                allowClear={false}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Currency</Label>
+              <RecordLookupSelect
+                className="h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-2.5 text-sm"
+                value={cur}
+                onValueChange={(e) => {
+                  setCurrency(e);
+                  setAlloc({});
+                }}
+              >
+                {currencyOptions(
+                  base,
+                  open.map((i) => i.currency_code),
+                ).map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                    {c === base ? " (base)" : ""}
+                  </option>
+                ))}
+              </RecordLookupSelect>
+            </div>
+            {isForeign ? (
+              <div className="space-y-1">
+                <Label>
+                  Rate (1 {cur} = ? {base})
+                </Label>
+                <Input
+                  value={fxRate}
+                  onChange={(e) => setFxRate(e.target.value)}
+                  inputMode="decimal"
+                />
+              </div>
+            ) : null}
+            <div className="space-y-1">
+              <Label>Amount received ({cur})</Label>
+              <Input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
                 inputMode="decimal"
               />
             </div>
-          ) : null}
-          <div className="space-y-2">
-            <Label>Amount received ({cur})</Label>
-            <Input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" />
-          </div>
-          <div className="space-y-2">
-            <Label>Reference</Label>
-            <Input value={reference} onChange={(e) => setReference(e.target.value)} />
-          </div>
+            <div className="space-y-1">
+              <Label>Reference</Label>
+              <Input value={reference} onChange={(e) => setReference(e.target.value)} />
+            </div>
+            <div className="space-y-1 sm:col-span-2 xl:col-span-3">
+              <Label>Memo</Label>
+              <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
+            </div>
+          </FormGrid>
         </div>
-        <div className="space-y-2">
-          <Label>Memo</Label>
-          <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
-        </div>
-
-        {contactId ? (
+      }
+      lines={
+        contactId ? (
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <Label>Apply to invoices ({cur})</Label>
               <Button
                 type="button"
@@ -429,25 +441,26 @@ function ReceiptForm({
               {Number.isFinite(unallocatedMinor) ? money(unallocatedMinor, cur) : "—"}
             </p>
           </div>
-        ) : null}
-
+        ) : null
+      }
+      support={
         <DocumentRecordPanel
           ref={recordRef}
           entityType="sales_receipt"
           entityId={null}
           audience="customer"
         />
-        <div>
-          <Button
-            size="sm"
-            disabled={mutation.isPending || deposits.length === 0}
-            onClick={() => mutation.mutate()}
-          >
-            {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            Record receipt
-          </Button>
-        </div>
-      </div>
-    </ListWorkspace>
+      }
+      stickyActions={
+        <Button
+          size="sm"
+          disabled={mutation.isPending || deposits.length === 0}
+          onClick={() => mutation.mutate()}
+        >
+          {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+          Record receipt
+        </Button>
+      }
+    />
   );
 }

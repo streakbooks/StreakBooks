@@ -160,6 +160,30 @@ export function CreateNewMenu() {
         void navigate({ to: "/contacts/new", search: { kind: "supplier" } });
         return;
       }
+      if (action.id === "manual_journal") {
+        void navigate({ to: "/accounting/journals/new", search: { mode: "post" } });
+        return;
+      }
+      if (action.id === "recurring_journal") {
+        void navigate({ to: "/accounting/journals/new", search: { mode: "template" } });
+        return;
+      }
+      const moneyKinds = new Set([
+        "sales_receipt",
+        "customer_refund",
+        "supplier_refund",
+        "receive_money",
+        "bank_deposit",
+        "card_payment",
+        "bank_adjustment",
+      ]);
+      if (moneyKinds.has(action.id)) {
+        void navigate({
+          to: "/banking/money-documents/new",
+          search: { kind: action.id },
+        });
+        return;
+      }
       void navigate({ to: action.route as never });
       return;
     }

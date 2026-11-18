@@ -30,7 +30,9 @@
 | 34 | Phase 3–5 | Soft tabs/subnav/cards; money TotalsSummary; journal paste; messaging PersistedSwitch; wider workspace adoption | `feature/premium-ui-batch34-soft-interactions-money` | [PR #280](https://github.com/linkbusinessadvisory/LinkBooks/pull/280) → `2e268fb8` | shared chrome + money/journals/messages | merged |
 | 35 | Phase 4–5 | Soft alerts/badges/tooltips; HR enable PersistedSwitch | `feature/premium-ui-batch35-module-soft-controls` | [PR #281](https://github.com/linkbusinessadvisory/LinkBooks/pull/281) | ui primitives + hr settings | merged |
 | 36 | Phase 3 | Excel-like document lines: 5 default rows, hide/resize columns, bottom tax, quiet cells | `feature/premium-ui-batch36-excel-line-grids` | [PR #282](https://github.com/linkbusinessadvisory/LinkBooks/pull/282) → `1cc8a3bb` | purchases/sales lines + defaults | merged |
-| 37 | Phase 3 | Full-page Create navigation + compact field density | `feature/premium-ui-batch37-fullpage-create-compact` | open | Create menu + control tokens + sales editor | in progress |
-| 38+ | Phase 4–10 | Remaining modules DoD + browsing runtime evidence | TBD | — | all modules | planned |
+| 37 | Phase 3 | Full-page Create navigation + compact field density | `feature/premium-ui-batch37-fullpage-create-compact` | [PR #283](https://github.com/linkbusinessadvisory/LinkBooks/pull/283) → `fd080f6a` | Create menu + control tokens + sales editor | merged |
+| 38 | Phase 3 | Remove redundant line up/down arrows; keep drag reorder | `feature/premium-ui-batch38-remove-line-move-arrows` | [PR #284](https://github.com/linkbusinessadvisory/LinkBooks/pull/284) → `fc605a7c` | purchases lines + PO | merged |
+| 39 | Phase 3 | Expense/receipt/payment TransactionWorkspace; money+journal Create routes | `feature/premium-ui-batch39-fullpage-remaining-new` | open | purchases/sales/banking/accounting | in progress |
+| 40+ | Phase 4–10 | Remaining modules DoD + browsing runtime evidence | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

@@ -26,7 +26,9 @@
 | Soft interactions + money/journals Batch 34 | Merged | PR #280 → `2e268fb8` |
 | Soft controls Batch 35 | Merged | PR #281 → soft alerts/badges/tooltips; HR enable PersistedSwitch |
 | Excel-like line grids Batch 36 | Merged | PR #282 → `1cc8a3bb` |
-| Full-page Create + compact density Batch 37 | In progress | Create menu navigates to full pages; compact control height 2.25rem |
+| Full-page Create + compact density Batch 37 | Merged | PR #283 → `fd080f6a` |
+| Remove redundant line move arrows | Merged | PR #284 → `fc605a7c` |
+| Remaining New screens + money/journal routes Batch 39 | In progress | Expense/receipt/payment TransactionWorkspace; money+journal full-page Create |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

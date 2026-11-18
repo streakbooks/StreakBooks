@@ -5,20 +5,7 @@ import { CREATE_ACTIONS, CREATE_GROUP_LABEL, type CreateAction } from "@/lib/cre
  * Full-page Create destinations (browser history + TransactionWorkspace).
  * Quick panels without a dedicated workspace stay as flyovers.
  */
-const CREATE_FLYOVER_ONLY = new Set([
-  "account",
-  "project",
-  "document_upload",
-  "manual_journal",
-  "recurring_journal",
-  "sales_receipt",
-  "customer_refund",
-  "supplier_refund",
-  "receive_money",
-  "bank_deposit",
-  "card_payment",
-  "bank_adjustment",
-]);
+const CREATE_FLYOVER_ONLY = new Set(["account", "project", "document_upload"]);
 
 export function opensCreateAsFullPage(action: CreateAction): boolean {
   if (!action.route) return false;

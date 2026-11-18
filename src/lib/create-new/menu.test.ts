@@ -69,12 +69,16 @@ describe("scoped permission hints", () => {
 });
 
 describe("create full-page destinations", () => {
-  it("opens invoice and bill as full pages, not flyovers", () => {
+  it("opens invoice, bill, journal and money docs as full pages", () => {
     const invoice = CREATE_ACTIONS.find((a) => a.id === "invoice");
     const bill = CREATE_ACTIONS.find((a) => a.id === "bill");
     const journal = CREATE_ACTIONS.find((a) => a.id === "manual_journal");
+    const receiveMoney = CREATE_ACTIONS.find((a) => a.id === "receive_money");
+    const account = CREATE_ACTIONS.find((a) => a.id === "account");
     expect(invoice && opensCreateAsFullPage(invoice)).toBe(true);
     expect(bill && opensCreateAsFullPage(bill)).toBe(true);
-    expect(journal && opensCreateAsFullPage(journal)).toBe(false);
+    expect(journal && opensCreateAsFullPage(journal)).toBe(true);
+    expect(receiveMoney && opensCreateAsFullPage(receiveMoney)).toBe(true);
+    expect(account && opensCreateAsFullPage(account)).toBe(false);
   });
 });

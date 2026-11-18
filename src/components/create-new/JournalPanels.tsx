@@ -317,7 +317,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
         }
         breadcrumbs={[
           { label: "Accounting", to: "/accounting" },
-          { label: mode === "template" ? "Recurring journals" : "Manual journal" },
+          { label: mode === "template" ? "Recurring journal" : "Manual journal" },
         ]}
         meta={<StatusBadge status={recordId ? "posted" : "draft"} />}
         stickyActions={

@@ -12,7 +12,10 @@ import { parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormGrid } from "@/components/common/form-layout";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
@@ -20,7 +23,9 @@ import {
 import { AccountLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { fromMinorUnits } from "@/lib/accounting/money";
 
 export function NewExpense() {
   const { company } = useActiveCompany();
@@ -51,7 +56,6 @@ export function NewExpense() {
   const expenseAccounts = accounts.filter(
     (a) => a.is_active && a.is_postable && a.account_type === "expense",
   );
-  // Bank / cash accounts only - receivables, VAT and fixed assets are not valid "paid from" accounts.
   const paymentAccountsQ = useQuery({
     queryKey: ["payment-accounts", companyId],
     enabled: Boolean(companyId),
@@ -74,6 +78,11 @@ export function NewExpense() {
   const recordRef = useRef<DocumentRecordHandle>(null);
   const amountInvalid = tryParseMinor(amount || "0", currency) === null;
   const taxInvalid = tryParseMinor(tax || "0", currency) === null;
+
+  const netMinor = tryParseMinor(amount || "0", currency);
+  const taxMinor = tryParseMinor(tax || "0", currency);
+  const totalMinor =
+    netMinor !== null && taxMinor !== null ? Number(netMinor) + Number(taxMinor) : null;
 
   const mutation = useMutation({
     mutationFn: (post: boolean) =>
@@ -112,53 +121,68 @@ export function NewExpense() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (accountsQ.isPending || paymentAccountsQ.isPending) return <LoadingState />;
 
+  const blocked = mutation.isPending || amountInvalid || taxInvalid;
+
   return (
-    <ListWorkspace
+    <TransactionWorkspace
       title="New direct expense"
       description="Pays immediately (DR expense / CR bank). Use Bills for supplier invoices paid later."
+      breadcrumbs={[
+        { label: "Purchases", to: "/purchases" },
+        { label: "Expenses", to: "/purchases/expenses" },
+        { label: "New" },
+      ]}
+      meta={<StatusBadge status="draft" />}
       actions={
         <Button variant="outline" size="sm" asChild>
           <Link to="/purchases/expenses">Back</Link>
         </Button>
       }
-    >
-      <div className="grid max-w-lg gap-4">
-        <div className="space-y-2">
-          <Label>Payee</Label>
-          <Input value={payeeName} onChange={(e) => setPayeeName(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label>Date</Label>
-          <Input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label>Expense account</Label>
-          <AccountLookup
-            ariaLabel="Expense account"
-            purpose="expense"
-            accounts={expenseAccounts}
-            value={expenseAccountId}
-            onChange={setExpenseAccountId}
-            companyId={companyId}
-            placeholder="Select account"
-            allowClear={false}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Payment account (bank)</Label>
-          <AccountLookup
-            ariaLabel="Payment account"
-            purpose="bank"
-            accounts={bankAccounts}
-            value={paymentAccountId}
-            onChange={setPaymentAccountId}
-            companyId={companyId}
-            placeholder="Select bank account"
-            allowClear={false}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
+      details={
+        <FormGrid columns={3}>
+          <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+            <Label>Payee</Label>
+            <Input value={payeeName} onChange={(e) => setPayeeName(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>Date</Label>
+            <Input
+              type="date"
+              value={expenseDate}
+              onChange={(e) => setExpenseDate(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Reference</Label>
+            <Input value={reference} onChange={(e) => setReference(e.target.value)} />
+          </div>
+          <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+            <Label>Expense account</Label>
+            <AccountLookup
+              ariaLabel="Expense account"
+              purpose="expense"
+              accounts={expenseAccounts}
+              value={expenseAccountId}
+              onChange={setExpenseAccountId}
+              companyId={companyId}
+              placeholder="Select account"
+              allowClear={false}
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+            <Label>Payment account (bank)</Label>
+            <AccountLookup
+              ariaLabel="Payment account"
+              purpose="bank"
+              accounts={bankAccounts}
+              value={paymentAccountId}
+              onChange={setPaymentAccountId}
+              companyId={companyId}
+              placeholder="Select bank account"
+              allowClear={false}
+            />
+          </div>
+          <div className="space-y-1">
             <Label>Net ({currency})</Label>
             <Input
               value={amount}
@@ -167,7 +191,7 @@ export function NewExpense() {
               onChange={(e) => setAmount(e.target.value)}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label>Tax ({currency})</Label>
             <Input
               value={tax}
@@ -176,33 +200,61 @@ export function NewExpense() {
               onChange={(e) => setTax(e.target.value)}
             />
           </div>
-        </div>
-        <div className="space-y-2">
-          <Label>Reference</Label>
-          <Input value={reference} onChange={(e) => setReference(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label>Memo</Label>
-          <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
-        </div>
+          <div className="space-y-1 sm:col-span-2 xl:col-span-3">
+            <Label>Memo</Label>
+            <Textarea
+              value={memo}
+              rows={2}
+              className="lb-spreadsheet-wrap min-h-16"
+              onChange={(e) => setMemo(e.target.value)}
+            />
+          </div>
+        </FormGrid>
+      }
+      totals={
+        <TotalsSummary
+          lines={[
+            {
+              id: "net",
+              label: "Net",
+              value: fromMinorUnits(Number(netMinor ?? 0), currency),
+            },
+            {
+              id: "tax",
+              label: "Tax",
+              value: fromMinorUnits(Number(taxMinor ?? 0), currency),
+              emphasis: "muted",
+            },
+            {
+              id: "total",
+              label: "Total",
+              value: fromMinorUnits(totalMinor ?? 0, currency),
+              emphasis: "total",
+            },
+          ]}
+        />
+      }
+      support={
         <DocumentRecordPanel
           ref={recordRef}
           entityType="purchase_expense"
           entityId={null}
           audience="supplier"
         />
-        <div className="flex gap-2">
+      }
+      stickyActions={
+        <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
             variant="outline"
-            disabled={mutation.isPending || amountInvalid || taxInvalid}
+            disabled={blocked}
             onClick={() => mutation.mutate(false)}
           >
             Save draft
           </Button>
           <Button
             size="sm"
-            disabled={mutation.isPending || amountInvalid || taxInvalid || !canPost}
+            disabled={blocked || !canPost}
             title={canPost ? undefined : "You do not have permission to post expenses"}
             onClick={() => mutation.mutate(true)}
           >
@@ -210,7 +262,7 @@ export function NewExpense() {
             Save & post
           </Button>
         </div>
-      </div>
-    </ListWorkspace>
+      }
+    />
   );
 }

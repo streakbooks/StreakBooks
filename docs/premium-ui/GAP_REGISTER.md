@@ -18,8 +18,9 @@ Labels: `missing` | `partial` | `existing` | `blocked` | `drift`
 | G09 | Inventory docs omit POS/CRM/PM/HR/Messages | Medium | 25 | refresh in 25 |
 | G10 | Finished-screen DoD incomplete all modules | High | 26–29+ | open |
 | G11 | Staging E2E / Section 18 | Blocker | 24 | blocked — no creds |
-| G12 | Banking Receive/Spend Money premium workspace | High | 26–34 | TransactionWorkspace + TotalsSummary on money docs |
-| G13 | Journals premium entry workspace | High | 27–34 | TransactionWorkspace + keyboard/paste on debit/credit |
+| G12 | Banking Receive/Spend Money premium workspace | High | 26–39 | Full-page `/banking/money-documents/new` + TransactionWorkspace |
+| G13 | Journals premium entry workspace | High | 27–39 | Full-page `/accounting/journals/new` + TransactionWorkspace |
+| G17 | Receipt/payment/expense still ListWorkspace | Medium | 39 | closed — TransactionWorkspace + compact FormGrid |
 | G14 | Cross-module visual inconsistency beyond chrome | High | 29–34 | light palette + soft tabs/subnav/cards; remaining module DoD open |
 | G15 | Competitor screenshot usability not yet coded as LinkBooks contract | Medium | 25–36 | `TRANSACTION_WORKSPACE_UX.md` updated for spreadsheet contract |
 | G16 | Dense bordered line cells / single default row / horizontal tax | High | 36 | closed on bills/invoices/quotes/credits/POs/journals/claims — quiet cells, 5 rows, wrap text, bottom TotalsSummary |

@@ -18,6 +18,8 @@ const VIEWS = new Set(["all", "to-file", "review"]);
 /** Bound and allowlist all URL fields. Never interpret any field as a redirect. */
 export function parseFilesListSearch(raw: Record<string, unknown>): FilesListSearch {
   const result: FilesListSearch = {};
+  // Route search may originate from malformed runtime input, not only typed router state.
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return result;
   // URL state must contain only explicit query entries, never prototype-inherited fields.
   const own = (key: string): unknown => Object.prototype.hasOwnProperty.call(raw, key) ? raw[key] : undefined;
   for (const key of ["folder", "file"] as const) {

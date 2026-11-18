@@ -33,6 +33,13 @@ Dark mode retains darker navigator surfaces for contrast when users choose dark 
 
 Named palettes keep their accent personality but light-mode sidebars stay light and subtle.
 
+## Soft chrome (Batches 34–35)
+
+- Tabs / ModuleSubnav selected: `--accent` (`#EEF4FF`), not solid navy fills.
+- Badges/alerts prefer `*-soft` / `*-ink` pairs.
+- Tooltips use card surfaces (not solid primary fills).
+- Dialog/sheet overlays use light `foreground/25` scrims.
+
 ## Rules
 
 1. Colour mainly on selection, badges, buttons, icons, charts, progress, toasts, alerts.

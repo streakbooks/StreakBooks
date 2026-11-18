@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { PersistedSwitch } from "@/components/common/PersistedSwitch";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -65,6 +66,29 @@ export function HrSettingsPage() {
     onSuccess: async (data) => {
       toast.success("HR settings saved");
       setVersion(data.version);
+      await queryClient.invalidateQueries({ queryKey: ["hr-settings", company?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["hr-dashboard-kpis", company?.id] });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const enableMut = useMutation({
+    mutationFn: (nextEnabled: boolean) =>
+      saveSettings({
+        data: {
+          companyId: company!.id,
+          enabled: nextEnabled,
+          defaultTimezone: timezone,
+          weekStartsOn,
+          requireManagerForLeave: requireManager,
+          disclaimerAcknowledged: disclaimerAck,
+          expectedVersion: version,
+        },
+      }),
+    onSuccess: async (data, nextEnabled) => {
+      setEnabled(nextEnabled);
+      setVersion(data.version);
+      toast.success(nextEnabled ? "HR enabled." : "HR disabled.");
       await queryClient.invalidateQueries({ queryKey: ["hr-settings", company?.id] });
       await queryClient.invalidateQueries({ queryKey: ["hr-dashboard-kpis", company?.id] });
     },
@@ -137,7 +161,15 @@ export function HrSettingsPage() {
                 Does not disable Payroll. Shared employee identity stays available to both modules.
               </p>
             </div>
-            <Switch checked={enabled} disabled={!canEdit} onCheckedChange={setEnabled} />
+            <PersistedSwitch
+              checked={enabled}
+              disabled={!canEdit || saveMut.isPending || enableMut.isPending}
+              disabledReason={canEdit ? undefined : "Ask an administrator for hr.settings.edit."}
+              aria-label="Enable HR Management"
+              onPersist={async (next) => {
+                await enableMut.mutateAsync(next);
+              }}
+            />
           </div>
 
           <div className="space-y-1">

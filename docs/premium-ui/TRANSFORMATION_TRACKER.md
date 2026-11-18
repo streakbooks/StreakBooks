@@ -23,7 +23,8 @@
 | Sales/purchases line keyboard + paste Batch 31 | Merged | PR #276 → `8cfa5280` |
 | Expenses PersistedSwitch Batch 32 | Merged | PR #277 → `31c77d9a` |
 | Light premium palette Batch 33 | On main | `21bb1311` — soft pastel blue, light sidebar, white surfaces |
-| Soft interactions + money/journals Batch 34 | In progress | Soft chrome, money totals, journal paste, messaging toggles |
+| Soft interactions + money/journals Batch 34 | Merged | PR #280 → `2e268fb8` |
+| Soft controls Batch 35 | In progress | Soft alerts/badges/tooltips; HR enable PersistedSwitch |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 
@@ -50,7 +51,7 @@
 | Expenses | `/expense-management` | in-progress | Enable toggle persists via PersistedSwitch | partial | IN PROGRESS |
 | CRM | `/crm` | in-progress | N/A kanban | partial | IN PROGRESS |
 | Property Management | `/property-management` | in-progress | later | partial | IN PROGRESS |
-| HR | `/hr` | in-progress | later | partial | IN PROGRESS |
+| HR | `/hr` | in-progress | Enable toggle persists via PersistedSwitch | partial | IN PROGRESS |
 | Contacts | `/contacts` | in-progress | N/A | partial | IN PROGRESS |
 | Products & Services | `/products-services` | in-progress | N/A | partial | IN PROGRESS |
 | Files | `/files` | in-progress | N/A | partial | IN PROGRESS |

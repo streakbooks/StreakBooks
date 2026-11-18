@@ -116,7 +116,7 @@ function OrderForm({
   );
   const [currencyOverride, setCurrencyOverride] = useState(initial?.currency_code.trim() ?? "");
   const [memo, setMemo] = useState(initial?.memo ?? "");
-  const nextKey = useRef(initial?.purchase_order_lines.length ?? 1);
+  const nextKey = useRef(initial?.purchase_order_lines.length ?? 5);
   const [lines, setLines] = useState(() =>
     initial
       ? [...initial.purchase_order_lines]
@@ -131,7 +131,7 @@ function OrderForm({
             discount: fromMinorUnits(impliedDiscountMinor(l), initial.currency_code),
             taxPercent: String(l.tax_rate_bps / 100),
           }))
-      : [{ ...emptyOrderLine(), key: 0 }],
+      : Array.from({ length: 5 }, (_, i) => ({ ...emptyOrderLine(), key: i })),
   );
   const [savedId, setSavedId] = useState<string | null>(null);
   const recordRef = useRef<DocumentRecordHandle>(null);
@@ -340,33 +340,35 @@ function OrderForm({
           <EditableLineItemGrid
             aria-label="Order lines"
             columns={[
-              { id: "description", header: "Description", widthClassName: "min-w-[12rem]" },
-              { id: "account", header: "Account", widthClassName: "min-w-[10rem]" },
-              { id: "qty", header: "Qty", align: "right", widthClassName: "w-24" },
-              { id: "price", header: "Price", align: "right", widthClassName: "w-28" },
-              { id: "discount", header: "Discount", align: "right", widthClassName: "w-28" },
-              { id: "tax", header: "Tax %", align: "right", widthClassName: "w-24" },
-              { id: "actions", header: "", widthClassName: "w-36" },
+              { id: "description", header: "Description", widthPx: 240, minWidthPx: 160 },
+              { id: "account", header: "Account", widthPx: 180, minWidthPx: 140 },
+              { id: "qty", header: "Qty", align: "right", widthPx: 72, minWidthPx: 64 },
+              { id: "price", header: "Price", align: "right", widthPx: 100, minWidthPx: 80 },
+              { id: "discount", header: "Discount", align: "right", widthPx: 96, minWidthPx: 72 },
+              { id: "tax", header: "Tax %", align: "right", widthPx: 80, minWidthPx: 64 },
+              { id: "actions", header: "", widthPx: 140, minWidthPx: 120, resizable: false },
             ]}
-            onAddRow={
-              lines.length >= 200
-                ? undefined
-                : () =>
+            {...(lines.length < 200
+              ? {
+                  onAddRow: () =>
                     setLines((current) => [
                       ...current,
                       { ...emptyOrderLine(), key: nextKey.current++ },
-                    ])
-            }
+                    ]),
+                }
+              : {})}
             addRowLabel="Add line"
           >
             {lines.map((line, index) => (
               <TableRow key={line.key}>
-                <TableCell className="align-top">
-                  <Input
+                <TableCell className="align-top p-0">
+                  <Textarea
                     id={`description-${line.key}`}
                     aria-label={`Line ${index + 1} description`}
                     value={line.description}
                     maxLength={2000}
+                    rows={2}
+                    className="lb-spreadsheet-wrap min-h-8"
                     onChange={(e) => updateLine(line.key, { description: e.target.value })}
                   />
                 </TableCell>

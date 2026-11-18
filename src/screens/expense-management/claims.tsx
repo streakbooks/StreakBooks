@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -90,7 +91,9 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
   const [cashAdvanceId, setCashAdvanceId] = useState("");
   const [pettyCashFloatId, setPettyCashFloatId] = useState("");
   const [corporateCardId, setCorporateCardId] = useState("");
-  const [lines, setLines] = useState<ExpenseDraftLineForm[]>([emptyDraftLine(today)]);
+  const [lines, setLines] = useState<ExpenseDraftLineForm[]>(() =>
+    Array.from({ length: 5 }, () => emptyDraftLine(today)),
+  );
   const [splitLineKey, setSplitLineKey] = useState<string | null>(null);
   const [splitAccountA, setSplitAccountA] = useState("");
   const [splitAccountB, setSplitAccountB] = useState("");
@@ -314,7 +317,7 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
       setCashAdvanceId("");
       setPettyCashFloatId("");
       setCorporateCardId("");
-      setLines([emptyDraftLine(today)]);
+      setLines(Array.from({ length: 5 }, () => emptyDraftLine(today)));
       setTemplateName("");
       if (company?.id) setOfflineDrafts(listOfflineExpenseClaimDrafts(company.id));
       if (result && typeof result === "object" && "offline" in result && result.offline) {
@@ -468,7 +471,7 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
               isBillable: Boolean(line.isBillable),
             };
           })
-        : [emptyDraftLine(today)],
+        : Array.from({ length: 5 }, () => emptyDraftLine(today)),
     );
     toast.success(`Loaded template “${template.name}”.`);
   };
@@ -743,8 +746,10 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                 </div>
                 <div className="grid gap-2">
                   <Label>Description</Label>
-                  <Input
+                  <Textarea
                     value={line.description}
+                    rows={2}
+                    className="lb-spreadsheet-wrap min-h-16"
                     onChange={(event) => updateLine(line.key, { description: event.target.value })}
                     required
                   />

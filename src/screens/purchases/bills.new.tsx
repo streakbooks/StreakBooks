@@ -87,6 +87,8 @@ import {
 } from "@/components/documents/DocumentRecordPanel";
 import { PurchasesDocumentLines } from "@/components/purchases/PurchasesDocumentLines";
 import { emptyPurchaseLine, type PurchaseLineFormState } from "@/lib/purchases/line-form-state";
+import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
+import type { LineColumnKey } from "@/components/purchases/PurchasesDocumentLines";
 import { BillWorkspaceLayout } from "@/components/purchases/BillWorkspaceLayout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -350,7 +352,12 @@ export function NewBill({
     postal: "",
     country: "",
   });
-  const [lines, setLines] = useState<PurchaseLineFormState[]>([emptyPurchaseLine()]);
+  const [lines, setLines] = useState<PurchaseLineFormState[]>(() =>
+    createEmptyDocumentLines(emptyPurchaseLine),
+  );
+  const [lineVisibleColumns, setLineVisibleColumns] = useState<LineColumnKey[]>(
+    () => DEFAULT_BILL_WORKSPACE_PREFS.visibleColumns as LineColumnKey[],
+  );
 
   useEffect(() => {
     if (!isTemplate || !seed) return;
@@ -715,6 +722,9 @@ export function NewBill({
     setSidebarWidth(prefsQ.data.sidebarWidthPx);
     setSidebarTab(prefsQ.data.sidebarTab);
     setViewMode(prefsQ.data.viewMode);
+    if (prefsQ.data.visibleColumns?.length) {
+      setLineVisibleColumns(prefsQ.data.visibleColumns as LineColumnKey[]);
+    }
     setPrefsHydrated(true);
   }, [prefsQ.data, prefsHydrated]);
 
@@ -725,6 +735,7 @@ export function NewBill({
       if (patch.sidebarWidthPx) setSidebarWidth(patch.sidebarWidthPx);
       if (patch.sidebarTab) setSidebarTab(patch.sidebarTab);
       if (patch.viewMode) setViewMode(patch.viewMode);
+      if (patch.visibleColumns) setLineVisibleColumns(patch.visibleColumns as LineColumnKey[]);
       try {
         await persistPrefs({ data: { companyId, prefs: patch } });
       } catch {
@@ -900,7 +911,7 @@ export function NewBill({
       );
     }
     const cleaned = cleanupBlankPurchaseLines(lines);
-    setLines(cleaned.length ? cleaned : [emptyPurchaseLine()]);
+    setLines(cleaned.length ? cleaned : createEmptyDocumentLines(emptyPurchaseLine));
     if (forAuthorise) {
       const bad = incompletePurchaseLines(cleaned);
       if (bad.length) {
@@ -1186,7 +1197,7 @@ export function NewBill({
     setTaxCalculation("exclusive");
     setAcknowledgeDuplicate(false);
     setAddr({ line1: "", line2: "", city: "", region: "", postal: "", country: "" });
-    setLines([emptyPurchaseLine()]);
+    setLines(createEmptyDocumentLines(emptyPurchaseLine));
     setPendingAttachments([]);
     setInternalNoteDraft("");
     setFormError(null);
@@ -2123,6 +2134,15 @@ export function NewBill({
             showProject={showProject}
             showBillable={showBillable}
             showDiscount={viewMode !== "basic"}
+            visibleColumns={
+              viewMode === "basic"
+                ? lineVisibleColumns.filter((column) => column !== "discount")
+                : lineVisibleColumns
+            }
+            onVisibleColumnsChange={(next) => {
+              setLineVisibleColumns(next);
+              void savePrefsPatch({ visibleColumns: next });
+            }}
             baseCurrencyEquivalent={
               currencyCode !== baseCurrency && baseEquivalent
                 ? `${baseEquivalent} ${baseCurrency}`

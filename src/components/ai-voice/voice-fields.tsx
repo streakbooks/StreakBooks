@@ -1,5 +1,6 @@
 import { useCallback, useRef, type ComponentProps, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { VoiceFieldSpec } from "@/lib/ai-voice/fields";
 import { FieldOwner, useVoiceField } from "./field-context";
 export function VoiceFields({ token, children }: { token: string; children: ReactNode }) {
@@ -25,6 +26,37 @@ export function VoiceInput({
   });
   return (
     <Input
+      {...props}
+      {...field}
+      ref={bindRef}
+      onFocus={(e) => {
+        field.onFocus();
+        props.onFocus?.(e);
+      }}
+    />
+  );
+}
+/** Multiline spreadsheet cell — wraps long descriptions without breaking column alignment. */
+export function VoiceTextarea({
+  voiceField,
+  ref: externalRef,
+  ...props
+}: ComponentProps<typeof Textarea> & { voiceField?: VoiceFieldSpec }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const bindRef = useCallback(
+    (node: HTMLTextAreaElement | null) => {
+      ref.current = node;
+      if (typeof externalRef === "function") return externalRef(node);
+      else if (externalRef) externalRef.current = node;
+    },
+    [externalRef],
+  );
+  const field = useVoiceField(voiceField, props.disabled || props.readOnly, () => {
+    ref.current?.focus();
+    ref.current?.scrollIntoView({ block: "nearest" });
+  });
+  return (
+    <Textarea
       {...props}
       {...field}
       ref={bindRef}

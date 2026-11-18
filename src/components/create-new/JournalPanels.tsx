@@ -24,6 +24,7 @@ import {
 } from "@/components/documents/DocumentRecordPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { AccountLookup } from "@/components/lookup";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +76,9 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   const [name, setName] = useState("");
   const [memo, setMemo] = useState("");
   const [autoReverseOn, setAutoReverseOn] = useState("");
-  const [lines, setLines] = useState<Line[]>([emptyLine(), emptyLine()]);
+  const [lines, setLines] = useState<Line[]>(() =>
+    Array.from({ length: 5 }, () => emptyLine()),
+  );
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [intervalMonths, setIntervalMonths] = useState("1");
   const [maxOccurrences, setMaxOccurrences] = useState("");
@@ -147,7 +150,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   }
 
   function reset() {
-    setLines([emptyLine(), emptyLine()]);
+    setLines(Array.from({ length: 5 }, () => emptyLine()));
     setImportedCount(0);
     setMemo("");
     setName("");
@@ -220,7 +223,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   if (!companyId) return null;
 
   const onLineKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>,
+    event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
     rowIndex: number,
     colIndex: number,
   ) => {
@@ -449,18 +452,18 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
           <EditableLineItemGrid
             aria-label="Journal lines"
             columns={[
-              { id: "account", header: "Account", widthClassName: "min-w-[12rem]" },
-              { id: "description", header: "Description", widthClassName: "min-w-[10rem]" },
-              { id: "debit", header: "Debit", align: "right", widthClassName: "w-28" },
-              { id: "credit", header: "Credit", align: "right", widthClassName: "w-28" },
-              { id: "actions", header: "", widthClassName: "w-12" },
+              { id: "account", header: "Account", widthPx: 220, minWidthPx: 140 },
+              { id: "description", header: "Description", widthPx: 260, minWidthPx: 160 },
+              { id: "debit", header: "Debit", align: "right", widthPx: 112, minWidthPx: 88 },
+              { id: "credit", header: "Credit", align: "right", widthPx: 112, minWidthPx: 88 },
+              { id: "actions", header: "", widthPx: 48, minWidthPx: 40, resizable: false },
             ]}
             onAddRow={() => setLines((current) => [...current, emptyLine()])}
             addRowLabel="Add line"
           >
             {lines.map((line, index) => (
               <TableRow key={index}>
-                <TableCell className="align-top">
+                <TableCell className="align-middle p-0">
                   <AccountLookup
                     ariaLabel={`Line ${index + 1} account`}
                     accounts={accounts}
@@ -472,12 +475,14 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                     allowClear
                   />
                 </TableCell>
-                <TableCell className="align-top">
-                  <Input
+                <TableCell className="align-top p-0">
+                  <Textarea
                     data-journal-cell={`${index}-1`}
                     aria-label={`Line ${index + 1} description`}
                     placeholder="Description"
                     value={line.description}
+                    rows={2}
+                    className="lb-spreadsheet-wrap min-h-8"
                     onChange={(e) => updateLine(index, { description: e.target.value })}
                     onKeyDown={(e) => onLineKeyDown(e, index, 1)}
                   />

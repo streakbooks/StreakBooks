@@ -50,6 +50,7 @@ import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
 import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
 import { emptySalesLine, type SalesLineFormState } from "@/lib/sales/line-form-state";
+import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
 import { computeTaxLineRounded } from "@/lib/sales/line-math-rounded";
 import {
   currencyOptions,
@@ -234,7 +235,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const [lines, setLines] = useState<SalesLineFormState[]>(() =>
     existing
       ? existing.lines.map((l) => lineRowToForm(l, existing.currencyCode))
-      : [emptySalesLine()],
+      : createEmptyDocumentLines(emptySalesLine),
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [defaultsApplied, setDefaultsApplied] = useState(Boolean(existing));

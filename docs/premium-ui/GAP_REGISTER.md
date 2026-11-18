@@ -8,9 +8,9 @@ Labels: `missing` | `partial` | `existing` | `blocked` | `drift`
 | ID | Gap | Severity | Owner batch | Status |
 | --- | --- | --- | --- | --- |
 | G01 | No shared `TransactionWorkspace` | High | 25–26 | scaffold in 25; adoption 26 |
-| G02 | No spreadsheet `EditableLineItemGrid` (keyboard/paste/sticky) | High | 25–27 | chrome in 25; behaviour 27 |
-| G03 | `SalesDocumentLines` card stack ≠ dense table UX | High | 26–31 | EditableLineItemGrid + numeric keyboard/paste in 31 |
-| G04 | `PurchasesDocumentLines` lacks sticky header / keyboard / paste | High | 26–31 | sticky header + numeric keyboard/paste closed in 30–31 |
+| G02 | No spreadsheet `EditableLineItemGrid` (keyboard/paste/sticky) | High | 25–36 | chrome 25; keyboard 27; resize/hide/5-rows Batch 36 |
+| G03 | `SalesDocumentLines` card stack ≠ dense table UX | High | 26–36 | EditableLineItemGrid + keyboard/paste; Batch 36 columns/resize/5 rows |
+| G04 | `PurchasesDocumentLines` lacks sticky header / keyboard / paste | High | 26–36 | sticky + keyboard/paste; Batch 36 vertical tax + Columns + resize |
 | G05 | Missing shared `TotalsSummary` / `SplitButton` | Medium | 25–26 | scaffolded 25 |
 | G06 | Density tokens absent; AppShell hardcoded widths | Medium | 25 | addressed 25 |
 | G07 | Browsing manifest stale (21 vs 29 sidebar) | Medium | 30 | closed — synced to 29/156 |
@@ -21,7 +21,8 @@ Labels: `missing` | `partial` | `existing` | `blocked` | `drift`
 | G12 | Banking Receive/Spend Money premium workspace | High | 26–34 | TransactionWorkspace + TotalsSummary on money docs |
 | G13 | Journals premium entry workspace | High | 27–34 | TransactionWorkspace + keyboard/paste on debit/credit |
 | G14 | Cross-module visual inconsistency beyond chrome | High | 29–34 | light palette + soft tabs/subnav/cards; remaining module DoD open |
-| G15 | Competitor screenshot usability not yet coded as LinkBooks contract | Medium | 25 | `TRANSACTION_WORKSPACE_UX.md` |
+| G15 | Competitor screenshot usability not yet coded as LinkBooks contract | Medium | 25–36 | `TRANSACTION_WORKSPACE_UX.md` updated for spreadsheet contract |
+| G16 | Dense bordered line cells / single default row / horizontal tax | High | 36 | closed on bills/invoices/quotes/credits/POs/journals/claims — quiet cells, 5 rows, wrap text, bottom TotalsSummary |
 
 ## Preserved / reuse (not gaps)
 

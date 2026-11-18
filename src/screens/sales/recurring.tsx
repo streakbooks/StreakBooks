@@ -118,7 +118,9 @@ export function RecurringInvoices() {
   const [terms, setTerms] = useState("");
   const [memo, setMemo] = useState("");
   const [autoAuth, setAutoAuth] = useState(false);
-  const [lines, setLines] = useState<SalesLineFormState[]>([emptySalesLine()]);
+  const [lines, setLines] = useState<SalesLineFormState[]>(() =>
+    Array.from({ length: 5 }, () => emptySalesLine()),
+  );
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -161,7 +163,7 @@ export function RecurringInvoices() {
     setTerms("");
     setMemo("");
     setAutoAuth(false);
-    setLines([emptySalesLine()]);
+    setLines(Array.from({ length: 5 }, () => emptySalesLine()));
   };
 
   const startEdit = async (id: string) => {
@@ -181,7 +183,7 @@ export function RecurringInvoices() {
       setLines(
         r.sales_recurring_invoice_lines.length
           ? r.sales_recurring_invoice_lines.map((l) => lineRowToForm(l, r.currency_code))
-          : [emptySalesLine()],
+          : Array.from({ length: 5 }, () => emptySalesLine()),
       );
     } catch (e) {
       toast.error(friendlyAuthError(e));

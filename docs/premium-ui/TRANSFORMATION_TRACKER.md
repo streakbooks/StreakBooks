@@ -24,7 +24,8 @@
 | Expenses PersistedSwitch Batch 32 | Merged | PR #277 → `31c77d9a` |
 | Light premium palette Batch 33 | On main | `21bb1311` — soft pastel blue, light sidebar, white surfaces |
 | Soft interactions + money/journals Batch 34 | Merged | PR #280 → `2e268fb8` |
-| Soft controls Batch 35 | In progress | Soft alerts/badges/tooltips; HR enable PersistedSwitch |
+| Soft controls Batch 35 | Merged | PR #281 → soft alerts/badges/tooltips; HR enable PersistedSwitch |
+| Excel-like line grids Batch 36 | In progress | 5 rows + hide/resize + wrap text + bottom tax across New bill/invoice/quote/credit/PO/journal/claim |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 
@@ -46,8 +47,8 @@
 | Dashboard | `/` | partial | N/A | partial | IN PROGRESS |
 | Banking | `/banking` | in-progress | Money docs TransactionWorkspace + TotalsSummary | partial | IN PROGRESS |
 | Point of Sale | `/pos` | in-progress | specialized | unverified | IN PROGRESS |
-| Sales | `/sales` | in-progress | TransactionWorkspace + spreadsheet lines with numeric keyboard/paste | partial | IN PROGRESS |
-| Purchases | `/purchases` | in-progress | Sticky line headers + sticky save actions; numeric line keyboard | partial | IN PROGRESS |
+| Sales | `/sales` | in-progress | TransactionWorkspace + spreadsheet lines (5 default rows, hide/resize columns, bottom tax) | partial | IN PROGRESS |
+| Purchases | `/purchases` | in-progress | Sticky actions + spreadsheet bill lines (5 rows, Columns menu, resize, vertical tax) | partial | IN PROGRESS |
 | Expenses | `/expense-management` | in-progress | Enable toggle persists via PersistedSwitch | partial | IN PROGRESS |
 | CRM | `/crm` | in-progress | N/A kanban | partial | IN PROGRESS |
 | Property Management | `/property-management` | in-progress | later | partial | IN PROGRESS |

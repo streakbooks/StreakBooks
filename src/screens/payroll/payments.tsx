@@ -845,7 +845,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                         No payslip allocations on this payment.
                       </p>
                     ) : (
-                      <ul className="space-y-2 rounded-md border p-3">
+                      <ul aria-label="Payslip allocations for this payment" className="space-y-2 rounded-md border p-3">
                         {allocations.map((row) => (
                           <li key={row.allocation.id} className="flex justify-between gap-2">
                             <span>

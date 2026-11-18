@@ -491,7 +491,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             }
           />
         ) : (
-          <Table>
+          <Table aria-label="Payroll payment records">
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>

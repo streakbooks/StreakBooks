@@ -7,6 +7,7 @@ import { FirmInvitationsPanel } from "@/components/firm/FirmInvitationsPanel";
 import { FirmRequestsPanel } from "@/components/firm/FirmRequestsPanel";
 import { FirmPartnerPanel } from "@/components/firm/FirmPartnerPanel";
 import { FirmAnalyticsPanel, FirmBillingPanel } from "@/components/firm/FirmBillingAnalytics";
+import { FirmClientRequestsPanel } from "@/components/firm/FirmClientRequestsPanel";
 import { setActiveCompany } from "@/lib/company.functions";
 import { useCanDo } from "@/hooks/use-can";
 import { useState } from "react";
@@ -362,12 +363,20 @@ function FirmPage() {
                   description={friendlyAuthError(clientsQ.error)}
                 />
               ) : (
+                <div className="space-y-6">
                 <FirmRequestsPanel
                   key={firmId}
                   firmId={firmId}
                   clients={clientsQ.data ?? []}
                   canManage={firmAdmin}
                 />
+                <FirmClientRequestsPanel
+                  key={firmId}
+                  firmId={firmId}
+                  clients={clientsQ.data ?? []}
+                  canManage={firmAdmin}
+                />
+                </div>
               )}
             </TabsContent>
 

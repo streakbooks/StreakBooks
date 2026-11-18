@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Trash2 } from "lucide-react";
@@ -34,6 +34,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { interpretLineGridKey } from "@/lib/ui/line-grid-keyboard";
+import { parseLineGridClipboard } from "@/lib/ui/line-grid-paste";
 
 type Line = { accountId: string; description: string; debit: string; credit: string };
 type AccountRow = {
@@ -234,13 +235,52 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
       setLines((current) => [...current, emptyLine()]);
       return;
     }
-    if (action.type === "move" && (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp")) {
+    if (
+      action.type === "move" &&
+      (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp")
+    ) {
       event.preventDefault();
       const nextRow = Math.max(0, Math.min(lines.length - 1, rowIndex + action.rowDelta));
       const selector = `[data-journal-cell="${nextRow}-${colIndex}"]`;
       const target = document.querySelector<HTMLElement>(selector);
       target?.focus();
     }
+  };
+
+  const onMoneyPaste = (
+    event: ClipboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    field: "debit" | "credit",
+  ) => {
+    const grid = parseLineGridClipboard(event.clipboardData.getData("text"));
+    if (grid.length <= 1 && (grid[0]?.length ?? 0) <= 1) return;
+    event.preventDefault();
+    setLines((current) => {
+      const next = current.map((line) => ({ ...line }));
+      for (let r = 0; r < grid.length; r++) {
+        const targetRow = rowIndex + r;
+        while (next.length <= targetRow) next.push(emptyLine());
+        const cells = grid[r] ?? [];
+        if (field === "debit") {
+          const debit = cells[0] ?? "";
+          const credit = cells[1] ?? "";
+          next[targetRow] = {
+            ...next[targetRow]!,
+            debit,
+            credit: debit ? "" : credit || next[targetRow]!.credit,
+          };
+          if (!debit && credit) next[targetRow]!.debit = "";
+        } else {
+          const credit = cells[0] ?? "";
+          next[targetRow] = {
+            ...next[targetRow]!,
+            credit,
+            debit: credit ? "" : next[targetRow]!.debit,
+          };
+        }
+      }
+      return next;
+    });
   };
 
   return (
@@ -457,6 +497,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                       })
                     }
                     onKeyDown={(e) => onLineKeyDown(e, index, 2)}
+                    onPaste={(e) => onMoneyPaste(e, index, "debit")}
                   />
                 </TableCell>
                 <TableCell className="align-top">
@@ -474,6 +515,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                       })
                     }
                     onKeyDown={(e) => onLineKeyDown(e, index, 3)}
+                    onPaste={(e) => onMoneyPaste(e, index, "credit")}
                   />
                 </TableCell>
                 <TableCell className="align-top">

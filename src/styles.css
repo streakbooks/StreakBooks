@@ -498,10 +498,16 @@
 /* Shared data/workspace polish: no per-module colour decisions required. */
 [data-slot="card"] {
   isolation: isolate;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  border-color: var(--border);
+  background-color: var(--card);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 4%, transparent);
+  transition:
+    border-color var(--lb-duration-fast) ease,
+    box-shadow var(--lb-duration-fast) ease;
 }
 [data-slot="card"]:focus-within {
-  border-color: color-mix(in oklab, var(--ring) 25%, var(--border));
+  border-color: color-mix(in oklab, var(--ring) 22%, var(--border));
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--foreground) 6%, transparent);
 }
 [data-slot="card"] > :where([data-slot="card-header"]) {
   border-radius: inherit;
@@ -513,8 +519,36 @@
   letter-spacing: -0.025em;
   text-wrap: balance;
 }
+
+/* Soft premium micro-interactions (respect reduced motion). */
+[data-slot="dialog-content"],
+[data-slot="sheet-content"],
+[data-slot="popover-content"],
+[data-slot="dropdown-menu-content"],
+[data-slot="select-content"],
+[data-slot="tooltip-content"] {
+  transition:
+    opacity var(--lb-duration-fast) ease,
+    transform var(--lb-duration-fast) ease;
+}
+.lb-transaction-workspace,
+.lb-list-workspace,
+.lb-record-workspace {
+  transition: background-color var(--lb-duration-normal) ease;
+}
 @media (prefers-reduced-motion: reduce) {
-  [data-slot="card"] { transition: none; }
+  [data-slot="card"],
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"],
+  [data-slot="tooltip-content"],
+  .lb-transaction-workspace,
+  .lb-list-workspace,
+  .lb-record-workspace {
+    transition: none;
+  }
 }
 @media (forced-colors: active) {
   .lb-status, .lb-status-indicator { border: 1px solid CanvasText; }

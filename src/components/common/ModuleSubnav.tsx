@@ -107,8 +107,9 @@ export function ModuleSubnav({
               activeOptions={{ exact: item.exact ?? false }}
               aria-current={isActive(item) ? "page" : undefined}
               className={cn(
-                "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-transparent px-3 py-2 text-sm font-medium text-muted-foreground outline-none transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none pointer-coarse:min-h-11",
-                isActive(item) && "border-primary/25 bg-primary/10 text-foreground shadow-sm",
+                "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-transparent px-3 py-2 text-sm font-medium text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow] duration-[var(--lb-duration-fast)] hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none pointer-coarse:min-h-11",
+                isActive(item) &&
+                  "border-border bg-accent text-foreground shadow-[0_1px_2px_color-mix(in_oklab,var(--foreground)_6%,transparent)]",
               )}
             >
               {item.label}

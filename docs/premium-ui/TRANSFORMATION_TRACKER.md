@@ -23,6 +23,7 @@
 | Sales/purchases line keyboard + paste Batch 31 | Merged | PR #276 → `8cfa5280` |
 | Expenses PersistedSwitch Batch 32 | Merged | PR #277 → `31c77d9a` |
 | Light premium palette Batch 33 | On main | `21bb1311` — soft pastel blue, light sidebar, white surfaces |
+| Soft interactions + money/journals Batch 34 | In progress | Soft chrome, money totals, journal paste, messaging toggles |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 
@@ -42,7 +43,7 @@
 | Module | Path | Premium status | Transaction editor | Browsing | Verdict |
 | --- | --- | --- | --- | --- | --- |
 | Dashboard | `/` | partial | N/A | partial | IN PROGRESS |
-| Banking | `/banking` | in-progress | Batch 28 planned | partial | IN PROGRESS |
+| Banking | `/banking` | in-progress | Money docs TransactionWorkspace + TotalsSummary | partial | IN PROGRESS |
 | Point of Sale | `/pos` | in-progress | specialized | unverified | IN PROGRESS |
 | Sales | `/sales` | in-progress | TransactionWorkspace + spreadsheet lines with numeric keyboard/paste | partial | IN PROGRESS |
 | Purchases | `/purchases` | in-progress | Sticky line headers + sticky save actions; numeric line keyboard | partial | IN PROGRESS |
@@ -53,7 +54,7 @@
 | Contacts | `/contacts` | in-progress | N/A | partial | IN PROGRESS |
 | Products & Services | `/products-services` | in-progress | N/A | partial | IN PROGRESS |
 | Files | `/files` | in-progress | N/A | partial | IN PROGRESS |
-| Accounting | `/accounting` | partial | Batch 26/28 journals | partial | IN PROGRESS |
+| Accounting | `/accounting` | partial | Journals TransactionWorkspace + debit/credit paste | partial | IN PROGRESS |
 | Budgets | `/budgets` | in-progress | N/A | partial | IN PROGRESS |
 | Projects | `/projects` | partial | N/A | unverified | IN PROGRESS |
 | Fixed assets | `/fixed-assets` | partial | later | partial | IN PROGRESS |
@@ -67,13 +68,13 @@
 | Action Center | `/notifications` | partial | N/A | partial | IN PROGRESS |
 | App Store | `/app-store` | partial | N/A | unverified | IN PROGRESS |
 | Developer | `/developer` | partial | N/A | unverified | IN PROGRESS |
-| Messages | `/messages` | in-progress | N/A | unverified | IN PROGRESS |
+| Messages | `/messages` | in-progress | Notification toggles persist via PersistedSwitch | partial | IN PROGRESS |
 | AI Assistant | `/ai-assistant` | partial | N/A | partial | IN PROGRESS |
 | Settings | `/settings` | partial | N/A | partial | IN PROGRESS |
 | Help | `/help` | partial | N/A | partial | IN PROGRESS |
 | Platform / Profile / Onboarding / Auth | various | partial | N/A | partial | IN PROGRESS |
 
-**Verified completion percentage:** 0% modules COMPLETE (DoD). Foundation reuse ≈ chrome adoption across high-traffic surfaces (43 via `check:workspace`).
+**Verified completion percentage:** 0% modules COMPLETE (DoD). Foundation reuse ≈ chrome adoption across high-traffic surfaces (49 via `check:workspace`).
 
 ## Shared components
 

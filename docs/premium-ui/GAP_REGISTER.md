@@ -18,9 +18,9 @@ Labels: `missing` | `partial` | `existing` | `blocked` | `drift`
 | G09 | Inventory docs omit POS/CRM/PM/HR/Messages | Medium | 25 | refresh in 25 |
 | G10 | Finished-screen DoD incomplete all modules | High | 26–29+ | open |
 | G11 | Staging E2E / Section 18 | Blocker | 24 | blocked — no creds |
-| G12 | Banking Receive/Spend Money premium workspace | High | 28 | open |
-| G13 | Journals premium entry workspace | High | 26/28 | open |
-| G14 | Cross-module visual inconsistency beyond chrome | High | 29+ | open |
+| G12 | Banking Receive/Spend Money premium workspace | High | 26–34 | TransactionWorkspace + TotalsSummary on money docs |
+| G13 | Journals premium entry workspace | High | 27–34 | TransactionWorkspace + keyboard/paste on debit/credit |
+| G14 | Cross-module visual inconsistency beyond chrome | High | 29–34 | light palette + soft tabs/subnav/cards; remaining module DoD open |
 | G15 | Competitor screenshot usability not yet coded as LinkBooks contract | Medium | 25 | `TRANSACTION_WORKSPACE_UX.md` |
 
 ## Preserved / reuse (not gaps)

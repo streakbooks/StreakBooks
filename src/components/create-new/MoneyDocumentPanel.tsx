@@ -24,7 +24,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { FormGrid } from "@/components/common/form-layout";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import type { BankAdjustmentType } from "@/lib/create-new/journal-contracts";
 
 type Kind =
@@ -188,6 +190,21 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
 
   if (!companyId) return null;
 
+  const moneyTotals = (() => {
+    try {
+      const amountMinor = amount.trim() ? toMinorUnits(amount, currency) : 0n;
+      const taxMinor = taxAmount.trim() ? toMinorUnits(taxAmount, currency) : 0n;
+      const totalMinor = amountMinor + (needsIncome ? taxMinor : 0n);
+      return {
+        amount: fromMinorUnits(amountMinor, currency),
+        tax: fromMinorUnits(taxMinor, currency),
+        total: fromMinorUnits(totalMinor, currency),
+      };
+    } catch {
+      return null;
+    }
+  })();
+
   return (
     <form
       className="space-y-4"
@@ -210,6 +227,19 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
           <Button type="submit" disabled={saveM.isPending}>
             {saveM.isPending ? "Posting…" : "Post"}
           </Button>
+        }
+        totals={
+          moneyTotals && kind !== "bank_deposit" ? (
+            <TotalsSummary
+              lines={[
+                { id: "amount", label: "Amount", value: moneyTotals.amount },
+                ...(needsIncome
+                  ? [{ id: "tax", label: "Tax", value: moneyTotals.tax, emphasis: "muted" as const }]
+                  : []),
+                { id: "total", label: "Total", value: moneyTotals.total, emphasis: "total" as const },
+              ]}
+            />
+          ) : null
         }
         details={
           <div className="space-y-4">

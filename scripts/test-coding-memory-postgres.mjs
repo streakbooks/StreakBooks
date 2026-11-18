@@ -89,9 +89,12 @@ try {
   sql(read("tests/fixtures/coding-memory/setup.sql"));
   const files = readdirSync(path.join(root, "supabase/migrations")).filter(
     (n) =>
-      n.endsWith("_bank_coding_memory_events.sql") || n.endsWith("_scoped_coding_memory_reset.sql"),
+      n.endsWith("_bank_coding_memory_events.sql") ||
+      n.endsWith("_scoped_coding_memory_reset.sql") ||
+      n.endsWith("_lock_coding_memory_control_scope.sql"),
   );
-  if (files.length !== 2) throw Error("Expected the foundation and scoped reset migrations");
+  if (files.length !== 3)
+    throw Error("Expected the foundation, scoped reset and scope lock migrations");
   for (const file of files.sort()) sql(read(`supabase/migrations/${file}`));
   sql(read("tests/fixtures/coding-memory/scenarios.sql"));
   // Two simultaneous transactions re-link the same approved journal after an unmatch.
@@ -168,6 +171,79 @@ try {
     select public.test_assert((select jsonb_array_length(allocations)=2 from public.bank_coding_events where journal_id=md5('split-journal')::uuid),'split allocations preserved');
     select public.test_assert((public.get_bank_coding_memory(md5('company-a')::uuid,md5('next-txn')::uuid)->0->>'times_used')::int=1,'split not flattened into a single account hint');`);
   sql(read("tests/fixtures/coding-memory/reset-scenarios.sql"));
+  // Hold a successful control in an open transaction. Verify concurrent bank and
+  // transaction scope changes block, then cancel the holder to roll it back.
+  for (const operation of ["preference", "reset"]) {
+    const history = `(select history_id from public.bank_coding_events where journal_id=md5('base-journal')::uuid)`;
+    const control =
+      operation === "preference"
+        ? `public.set_bank_coding_memory_preference(md5('company-a')::uuid,md5('next-txn')::uuid,${history},false)`
+        : `public.reset_bank_coding_memory_preference(md5('company-a')::uuid,md5('next-txn')::uuid,${history},md5('held-scope-reset')::uuid)`;
+    const holder = promisify(execFile)(
+      "docker",
+      [
+        ...prefix,
+        ...psql,
+        "-c",
+        `set application_name='memory-scope-holder'; set request.jwt.claims='{"sub":"11111111-1111-4111-8111-111111111111","aal":"aal2"}';
+       set role authenticated; begin; select ${control}; select pg_sleep(30); commit;`,
+      ],
+      { env },
+    ).then(
+      (result) => ({ result }),
+      (error) => ({ error }),
+    );
+    try {
+      let held = false;
+      for (let i = 0; i < 100; i++) {
+        if (
+          sql(
+            "select exists(select 1 from pg_stat_activity where application_name='memory-scope-holder' and wait_event='PgSleep')",
+          ).trim() === "t"
+        ) {
+          held = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 20));
+      }
+      if (!held) throw Error("Scope control did not acquire its locks");
+      for (const [label, query] of [
+        [
+          "bank currency",
+          "update public.bank_accounts set currency_code='USD' where id=md5('bank')::uuid",
+        ],
+        [
+          "transaction bank",
+          "update public.bank_transactions set bank_account_id=md5('bank2')::uuid where id=md5('next-txn')::uuid",
+        ],
+      ]) {
+        let blocked = false;
+        try {
+          sql(`set lock_timeout='200ms'; ${query};`);
+        } catch (error) {
+          if (!String(error.stderr).includes("lock timeout")) throw error;
+          blocked = true;
+        }
+        if (!blocked) throw Error(`${operation} did not protect ${label}`);
+        sql(`select public.test_assert(true,'${operation} holds ${label} scope until commit');`);
+      }
+    } finally {
+      sql(
+        "select pg_cancel_backend(pid) from pg_stat_activity where application_name='memory-scope-holder'",
+      );
+      const result = await holder;
+      if (
+        !result.error ||
+        !String(result.error.stderr).includes("canceling statement due to user request")
+      ) {
+        throw Error("Scope holder did not roll back on cancellation");
+      }
+    }
+    sql(
+      `set request.jwt.claims='{"sub":"11111111-1111-4111-8111-111111111111","aal":"aal2"}';
+       select public.test_assert((public.get_bank_coding_memory(md5('company-a')::uuid,md5('next-txn')::uuid)->0->>'times_used')::int=1,'cancelled ${operation} keeps learning intact');`,
+    );
+  }
   const feedbackRace = `set request.jwt.claims='{"sub":"11111111-1111-4111-8111-111111111111","aal":"aal2"}'; set role authenticated;
     select public.record_bank_coding_feedback(md5('company-a')::uuid,md5('bank2-txn')::uuid,
       (select history_id from public.bank_coding_events where journal_id=md5('base-journal')::uuid),'rejected',md5('race-feedback')::uuid);`;

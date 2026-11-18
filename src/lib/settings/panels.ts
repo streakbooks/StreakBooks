@@ -45,7 +45,7 @@ export function panelForDestination(destination: SettingsDestination): SettingsP
       ? "numbering"
       : destination.section === "portals"
         ? "portals"
-        : `category:${destination.section}`;
+        : parseSettingsPanel(`category:${destination.section}`);
   return undefined;
 }
 export function panelLabel(panel: SettingsPanelId, owner?: string): string {

@@ -162,6 +162,17 @@ describe("in-place settings routing", () => {
       ...current, settingsPanel: "bank-feeds", settingsTrail: ["category:banking", "bank-rules"],
     });
   });
+  it("writes only validated panel IDs and preserves unrelated query parameters", () => {
+    const original = { section: "banking", status: "draft", page: 4, settingsPanel: "bank-rules" };
+    const opened = openSettingsPanel(original, "bank-feeds");
+    expect(opened).toEqual({
+      ...original, settingsPanel: "bank-feeds", settingsTrail: ["bank-rules"],
+    });
+    expect(validateSettingsPanelSearch(opened)).toEqual({
+      settingsPanel: "bank-feeds", settingsTrail: ["bank-rules"],
+    });
+    expect(closeSettingsPanel(opened)).toEqual(original);
+  });
   it("rejects sparse Settings history instead of retaining undefined ancestors", () => {
     const sparse = new Array<string>(2);
     sparse[1] = "category:banking";

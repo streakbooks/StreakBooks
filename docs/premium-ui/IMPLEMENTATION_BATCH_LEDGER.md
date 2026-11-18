@@ -19,9 +19,9 @@
 | 23 | 8–9 | Apply pending Nov budget/tax/recon SQL to linked prod + evidence docs | `feature/premium-ui-batch23-supabase-migration-apply` | pending merge | 11 migrations via db query + repair | ready |
 | 24 | 8–9 | Staging smoke (when E2E creds), live RBAC, manual a11y, release close-out | TBD | — | | planned |
 | 25 | Phase 1 | Density tokens, AppShell wiring, TransactionWorkspace/TotalsSummary/SplitButton/EditableLineItemGrid/FormGrid scaffolds, central tracker | `feature/premium-ui-batch25-phase1-foundation` | [PR #271](https://github.com/linkbusinessadvisory/LinkBooks/pull/271) → `2aafc864` | shared chrome + docs | merged (CI blocked by org billing; local gates PASS) |
-| 26 | Phase 3 | Sales TransactionWorkspace + spreadsheet lines; money docs workspace; purchases sticky headers | `feature/premium-ui-batch26-transaction-workspaces` | open | sales/banking money/purchases lines | in progress |
-| 27 | Phase 3 | Spreadsheet keyboard/paste/sticky behaviours on line grids | TBD | — | line editors | planned |
-| 28 | Phase 3–4 | Banking money docs + journals workspace adoption | TBD | — | banking/accounting | planned |
+| 26 | Phase 3 | Sales TransactionWorkspace + spreadsheet lines; money docs workspace; purchases sticky headers | `feature/premium-ui-batch26-transaction-workspaces` | [PR #272](https://github.com/linkbusinessadvisory/LinkBooks/pull/272) → `c370c99c` | sales/banking money/purchases lines | merged |
+| 27 | Phase 3 | Line-grid keyboard helpers + Manual/Recurring journal TransactionWorkspace | `feature/premium-ui-batch27-line-grid-keyboard-journals` | open | journals + keyboard helpers | in progress |
+| 28 | Phase 3–4 | Remaining banking/PO/requisition/expense transaction polish | TBD | — | banking/purchases/expenses | planned |
 | 29+ | Phase 4–10 | Remaining modules DoD + browsing manifest refresh | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

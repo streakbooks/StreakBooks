@@ -15,7 +15,8 @@
 | Modules COMPLETE (DoD) | 0 | No module has full gate PASS |
 | Modules chrome-adopted / in-progress | 34 | Prior batches 1–22 + Batch 25 |
 | Shared foundation Batch 25 | Merged | PR #271 → `2aafc864` |
-| Transaction workspace Batch 26 | In progress | Sales + money docs |
+| Transaction workspace Batch 26 | Merged | PR #272 → `c370c99c` |
+| Line-grid keyboard + journals Batch 27 | In progress | this branch |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

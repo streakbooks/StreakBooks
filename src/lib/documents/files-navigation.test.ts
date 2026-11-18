@@ -46,6 +46,23 @@ describe("Files workspace native browsing state", () => {
     expect(parseFilesListSearch({ page: 1.3 })).toEqual({});
   });
 
+  it("normalizes Files search while retaining independent browsing filters", () => {
+    expect(parseFilesListSearch({ q: "  Tax & books  ", sort: "name", page: 2 }))
+      .toEqual({ q: "Tax & books", sort: "name", page: 2 });
+    expect(parseFilesListSearch({ q: "   ", sort: "oldest" }))
+      .toEqual({ sort: "oldest" });
+    expect(parseFilesListSearch({ q: " ".repeat(10) + "x".repeat(120) + " " }))
+      .toEqual({ q: "x".repeat(120) });
+    expect(parseFilesListSearch({ q: "x".repeat(121), view: "review" }))
+      .toEqual({ view: "review" });
+    for (const bad of ["a\\nb", "a\\tb", "a\\u202eb", "a\\u200bb", "a\\u2060b"]) {
+      expect(parseFilesListSearch({ q: bad, sort: "largest" }))
+        .toEqual({ sort: "largest" });
+    }
+    expect(parseFilesListSearch({ q: "  फ़ाइल 文件  " }))
+      .toEqual({ q: "फ़ाइल 文件" });
+  });
+
   it("accepts only known file record types", () => {
     for (const type of ["all", "company", "contact", "sales_invoice", "journal"]) {
       expect(parseFilesListSearch({ type })).toEqual({ type });

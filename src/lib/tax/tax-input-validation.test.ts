@@ -36,20 +36,37 @@ describe("tax input validation", () => {
   });
 
   it("validates period order and basis, defaults to accrual only when omitted", () => {
-    expect(validateTaxReturnPeriod({
-      periodStart: "2024-02-01", periodEnd: "2024-02-29",
-    })).toEqual({periodStart:"2024-02-01",periodEnd:"2024-02-29",basis:"accrual"});
-    expect(validateTaxReturnPeriod({
-      periodStart: "2026-07-01", periodEnd: "2026-09-30", basis: "cash",
-    }).basis).toBe("cash");
-    expect(() => validateTaxReturnPeriod({
-      periodStart: "2026-02-31", periodEnd: "2026-03-31",
-    })).toThrow(/real calendar date/);
-    expect(() => validateTaxReturnPeriod({
-      periodStart: "2026-10-01", periodEnd: "2026-09-30",
-    })).toThrow(/cannot end before/);
-    expect(() => validateTaxReturnPeriod({
-      periodStart: "2026-01-01", periodEnd: "2026-01-31", basis: "unknown",
-    })).toThrow(/cash or accrual/);
+    expect(
+      validateTaxReturnPeriod({
+        periodStart: "2024-02-01",
+        periodEnd: "2024-02-29",
+      }),
+    ).toEqual({ periodStart: "2024-02-01", periodEnd: "2024-02-29", basis: "accrual" });
+    expect(
+      validateTaxReturnPeriod({
+        periodStart: "2026-07-01",
+        periodEnd: "2026-09-30",
+        basis: "cash",
+      }).basis,
+    ).toBe("cash");
+    expect(() =>
+      validateTaxReturnPeriod({
+        periodStart: "2026-02-31",
+        periodEnd: "2026-03-31",
+      }),
+    ).toThrow(/real calendar date/);
+    expect(() =>
+      validateTaxReturnPeriod({
+        periodStart: "2026-10-01",
+        periodEnd: "2026-09-30",
+      }),
+    ).toThrow(/cannot end before/);
+    expect(() =>
+      validateTaxReturnPeriod({
+        periodStart: "2026-01-01",
+        periodEnd: "2026-01-31",
+        basis: "unknown",
+      }),
+    ).toThrow(/cash or accrual/);
   });
 });

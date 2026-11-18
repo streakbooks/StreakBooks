@@ -9,16 +9,28 @@ import {
 describe("Sales invoice browsing state", () => {
   it("normalises missing URL fields to existing list defaults", () => {
     expect(invoiceListStateFromSearch(parseInvoiceListSearch({}))).toEqual({
-      q: "", status: "all", from: "", to: "", sort: "invoice_date",
-      dir: "desc", page: 0, pageSize: 50,
+      q: "",
+      status: "all",
+      from: "",
+      to: "",
+      sort: "invoice_date",
+      dir: "desc",
+      page: 0,
+      pageSize: 50,
     });
   });
 
   it("round-trips full search, filters, sorting and pagination", () => {
     const input = {
-      q: "A&B Consulting", status: "partly_paid", from: "2026-01-01",
-      to: "2026-10-31", sort: "due_date", dir: "asc", page: 3,
-      pageSize: 100, overdue: true,
+      q: "A&B Consulting",
+      status: "partly_paid",
+      from: "2026-01-01",
+      to: "2026-10-31",
+      sort: "due_date",
+      dir: "asc",
+      page: 3,
+      pageSize: 100,
+      overdue: true,
     };
     const encoded = encodeInvoiceReturnContext(parseInvoiceListSearch(input));
     expect(decodeInvoiceReturnContext(encoded)).toEqual(input);
@@ -33,10 +45,15 @@ describe("Sales invoice browsing state", () => {
   });
 
   it("rejects malformed status, sort, direction and dates", () => {
-    expect(parseInvoiceListSearch({
-      status: "admin", sort: "created_by", dir: "wrong",
-      from: "yesterday", to: "2026-99-99extra",
-    })).toEqual({});
+    expect(
+      parseInvoiceListSearch({
+        status: "admin",
+        sort: "created_by",
+        dir: "wrong",
+        from: "yesterday",
+        to: "2026-99-99extra",
+      }),
+    ).toEqual({});
   });
 
   it("limits record pagination and accepts supported page sizes", () => {
@@ -44,7 +61,8 @@ describe("Sales invoice browsing state", () => {
       pageSize: 200,
     });
     expect(parseInvoiceListSearch({ page: "150", pageSize: "25" })).toEqual({
-      page: 150, pageSize: 25,
+      page: 150,
+      pageSize: 25,
     });
     expect(parseInvoiceListSearch({ page: -10, pageSize: 17 })).toEqual({});
   });

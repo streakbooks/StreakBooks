@@ -1283,9 +1283,7 @@ export const attemptEnqueueMarketplaceSyncJob = createServerFn({ method: "POST" 
         MARKETPLACE_MIGRATION,
       );
       const match = Array.isArray(rows)
-        ? (rows as Record<string, unknown>[]).find(
-            (r) => String(r["code"] ?? "") === data.appCode,
-          )
+        ? (rows as Record<string, unknown>[]).find((r) => String(r["code"] ?? "") === data.appCode)
         : undefined;
       if (match) {
         const rawStatus = String(
@@ -1324,7 +1322,7 @@ export const attemptEnqueueMarketplaceSyncJob = createServerFn({ method: "POST" 
       hasInstallPermission,
       oauthVaultConfigured: Boolean(
         process.env["MARKETPLACE_OAUTH_VAULT_KEY"]?.trim() ||
-          process.env["APP_STORE_OAUTH_VAULT_CONFIGURED"] === "true",
+        process.env["APP_STORE_OAUTH_VAULT_CONFIGURED"] === "true",
       ),
     });
 

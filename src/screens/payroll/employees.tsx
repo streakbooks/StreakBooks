@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -182,10 +183,7 @@ export function PayrollEmployeesPage() {
   };
 
   const exportCsv = () => {
-    downloadCsv(
-      "linkbooks-payroll-employees.csv",
-      payrollEmployeesToCsv(displayedEmployees),
-    );
+    downloadCsv("linkbooks-payroll-employees.csv", payrollEmployeesToCsv(displayedEmployees));
     toast.success(`Exported ${displayedEmployees.length} employees in displayed order`);
   };
 
@@ -204,7 +202,8 @@ export function PayrollEmployeesPage() {
       // Compare against the full organisation list, not the current search subset.
       // CSV lacks salary/bank fields, so existing employee IDs are never overwritten.
       const current = await fetchList({ data: { companyId: company.id, status: null, q: null } });
-      if (!current.available) throw new Error(current.migrationMessage ?? "Employee data unavailable.");
+      if (!current.available)
+        throw new Error(current.migrationMessage ?? "Employee data unavailable.");
       const existing = new Set(current.employees.map((employee) => employee.employee_number));
       const { toCreate: drafts, skipped } = planPayrollEmployeeImport(parsed.drafts, existing);
       setImportDone(0);
@@ -225,7 +224,14 @@ export function PayrollEmployeesPage() {
   };
 
   const confirmImport = async () => {
-    if (!importPreview || !company || importPreview.companyId !== company.id || !canManage || importBusyRef.current) return;
+    if (
+      !importPreview ||
+      !company ||
+      importPreview.companyId !== company.id ||
+      !canManage ||
+      importBusyRef.current
+    )
+      return;
     importBusyRef.current = true;
     setImporting(true);
     let created = 0;
@@ -234,7 +240,8 @@ export function PayrollEmployeesPage() {
       // Recheck on confirmation: another session may have created an employee
       // during CSV review. Never overwrite those employee records.
       const current = await fetchList({ data: { companyId: company.id, status: null, q: null } });
-      if (!current.available) throw new Error(current.migrationMessage ?? "Employee data unavailable.");
+      if (!current.available)
+        throw new Error(current.migrationMessage ?? "Employee data unavailable.");
       const existing = new Set(current.employees.map((employee) => employee.employee_number));
       const plan = planPayrollEmployeeImport(importPreview.drafts, existing);
       newlySkipped = plan.skipped;
@@ -244,7 +251,9 @@ export function PayrollEmployeesPage() {
         created += 1;
         setImportDone(created + newlySkipped);
       }
-      toast.success(`Imported ${created} employees; skipped ${importPreview.skipped + newlySkipped} existing IDs.`);
+      toast.success(
+        `Imported ${created} employees; skipped ${importPreview.skipped + newlySkipped} existing IDs.`,
+      );
     } catch (error) {
       toast.error(`Import stopped after ${created} saved and ${newlySkipped} newly skipped rows.`, {
         description: `Earlier rows were saved; later rows were not attempted. ${friendlyAuthError(error)}`,
@@ -276,25 +285,25 @@ export function PayrollEmployeesPage() {
                 type="file"
                 accept=".csv,text/csv"
                 className="hidden"
-                  onChange={(e) => void importCsv(e.target.files?.[0] ?? null)}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!list.available || importing}
-                  onClick={() => importInputRef.current?.click()}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  {importing ? "Preparing…" : "Import CSV"}
-                </Button>
-                <Button size="sm" onClick={openAdd} disabled={!list.available}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add employee
-                </Button>
-              </>
-            ) : null}
-          </div>
-        }
+                onChange={(e) => void importCsv(e.target.files?.[0] ?? null)}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!list.available || importing}
+                onClick={() => importInputRef.current?.click()}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {importing ? "Preparing…" : "Import CSV"}
+              </Button>
+              <Button size="sm" onClick={openAdd} disabled={!list.available}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add employee
+              </Button>
+            </>
+          ) : null}
+        </div>
+      }
       subnav={<PayrollSubnav current="employees" />}
     >
       {!list.available ? (
@@ -312,7 +321,7 @@ export function PayrollEmployeesPage() {
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search employees"
             />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <RecordLookupSelect value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" aria-label="Filter by status">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -324,7 +333,7 @@ export function PayrollEmployeesPage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
             <Select value={sort} onValueChange={(value) => setSort(value as typeof sort)}>
               <SelectTrigger className="w-[170px]" aria-label="Sort employees">
                 <SelectValue />
@@ -430,7 +439,9 @@ export function PayrollEmployeesPage() {
                 </div>
                 <div>
                   <dt className="text-muted-foreground">New</dt>
-                  <dd className="text-lg font-semibold tabular-nums">{importPreview.drafts.length}</dd>
+                  <dd className="text-lg font-semibold tabular-nums">
+                    {importPreview.drafts.length}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Skipped</dt>
@@ -458,10 +469,14 @@ export function PayrollEmployeesPage() {
               Cancel
             </Button>
             <Button
-              disabled={importing || !importPreview?.drafts.length || importPreview.companyId !== company.id}
+              disabled={
+                importing || !importPreview?.drafts.length || importPreview.companyId !== company.id
+              }
               onClick={() => void confirmImport()}
             >
-              {importing ? "Importing…" : `Import ${importPreview?.drafts.length ?? 0} new employees`}
+              {importing
+                ? "Importing…"
+                : `Import ${importPreview?.drafts.length ?? 0} new employees`}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -564,7 +579,7 @@ function EmployeeForm({
         </div>
         <div className="space-y-1">
           <Label htmlFor="emp-status">Status</Label>
-          <Select
+          <RecordLookupSelect
             value={draft.status}
             onValueChange={(v) => patch({ status: v as PayrollEmployeeDraft["status"] })}
           >
@@ -578,7 +593,7 @@ function EmployeeForm({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
       </div>
       {draft.status === "terminated" ? (
@@ -595,7 +610,7 @@ function EmployeeForm({
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="space-y-1">
           <Label htmlFor="emp-type">Employment type</Label>
-          <Select
+          <RecordLookupSelect
             value={draft.employmentType}
             onValueChange={(v) =>
               patch({ employmentType: v as PayrollEmployeeDraft["employmentType"] })
@@ -611,11 +626,11 @@ function EmployeeForm({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="space-y-1">
           <Label htmlFor="emp-pay-method">Payment method</Label>
-          <Select
+          <RecordLookupSelect
             value={draft.paymentMethod}
             onValueChange={(v) =>
               patch({ paymentMethod: v as PayrollEmployeeDraft["paymentMethod"] })
@@ -631,7 +646,7 @@ function EmployeeForm({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
@@ -656,7 +671,7 @@ function EmployeeForm({
       </div>
       <div className="space-y-1">
         <Label htmlFor="emp-schedule">Pay schedule</Label>
-        <Select
+        <RecordLookupSelect
           value={draft.payScheduleId || "none"}
           onValueChange={(v) => patch({ payScheduleId: v === "none" ? "" : v })}
         >
@@ -673,7 +688,7 @@ function EmployeeForm({
                 </SelectItem>
               ))}
           </SelectContent>
-        </Select>
+        </RecordLookupSelect>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="space-y-1">

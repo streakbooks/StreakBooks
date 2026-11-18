@@ -369,11 +369,7 @@ export const getHrEmployee = createServerFn({ method: "GET" })
 export const upsertHrEmployeeProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: {
-      companyId: string;
-      employeeId: string;
-      payload: Record<string, unknown>;
-    }) => ({
+    (input: { companyId: string; employeeId: string; payload: Record<string, unknown> }) => ({
       companyId: companyIdOf(input),
       employeeId: input.employeeId,
       payload: input.payload,

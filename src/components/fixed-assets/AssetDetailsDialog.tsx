@@ -66,9 +66,7 @@ export function AssetDetailsDialog({
   const schedule = detail?.schedule ?? [];
   const numberOfPages = Math.ceil(schedule.length / PAGE_SIZE);
   const postedPages = Math.ceil((detail?.entries.length ?? 0) / PAGE_SIZE);
-  const summary = asset && detail
-    ? summarizeAssetDetailHistory(asset, detail.entries)
-    : null;
+  const summary = asset && detail ? summarizeAssetDetailHistory(asset, detail.entries) : null;
   const accountName = (id: string) => {
     const account = accounts.find((a) => a.id === id);
     return account ? account.code + " · " + account.name : "Account not in active list";
@@ -115,7 +113,10 @@ export function AssetDetailsDialog({
                 </span>
               </div>
 
-              <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4" aria-label="Asset financial summary">
+              <dl
+                className="grid grid-cols-2 gap-2 lg:grid-cols-4"
+                aria-label="Asset financial summary"
+              >
                 {[
                   {
                     label: "Original cost",
@@ -133,11 +134,16 @@ export function AssetDetailsDialog({
                     note: "Opening plus posted",
                   },
                   {
-                    label: asset.status === "disposed" ? "Disposal date" : "Less recorded depreciation",
-                    amount: asset.status === "disposed" ? null : summary?.remainingBeforeDisposalMinor,
-                    note: asset.status === "disposed"
-                      ? (asset.disposal_date ? fmt.date(asset.disposal_date) : "Not available")
-                      : "Not a GL reconciliation",
+                    label:
+                      asset.status === "disposed" ? "Disposal date" : "Less recorded depreciation",
+                    amount:
+                      asset.status === "disposed" ? null : summary?.remainingBeforeDisposalMinor,
+                    note:
+                      asset.status === "disposed"
+                        ? asset.disposal_date
+                          ? fmt.date(asset.disposal_date)
+                          : "Not available"
+                        : "Not a GL reconciliation",
                   },
                 ].map((metric) => (
                   <div className="min-w-0 rounded-lg border bg-card p-3 sm:p-4" key={metric.label}>
@@ -158,8 +164,8 @@ export function AssetDetailsDialog({
               {summary?.issue ? (
                 <Alert variant="destructive">
                   <AlertDescription>
-                    The asset summary could not be calculated safely: {summary.issue}
-                    {" "}Review the source journal entries before relying on a book value.
+                    The asset summary could not be calculated safely: {summary.issue} Review the
+                    source journal entries before relying on a book value.
                   </AlertDescription>
                 </Alert>
               ) : null}
@@ -171,9 +177,7 @@ export function AssetDetailsDialog({
               >
                 <TabsList className="w-full justify-start" aria-label="Asset detail sections">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="depreciation">
-                    Depreciation schedule
-                  </TabsTrigger>
+                  <TabsTrigger value="depreciation">Depreciation schedule</TabsTrigger>
                   <TabsTrigger value="journals">
                     Posted journals ({detail.entries.length})
                   </TabsTrigger>
@@ -189,10 +193,16 @@ export function AssetDetailsDialog({
                         ["Depreciation starts", fmt.date(asset.depreciation_start_date)],
                         ["Method", methodName ?? asset.depreciation_method],
                         ["Residual value", fmt.money(asset.residual_minor, currency)],
-                        ["Opening depreciation", fmt.money(asset.opening_accumulated_minor, currency)],
-                        ["Depreciated through", asset.depreciated_through
-                          ? fmt.date(asset.depreciated_through)
-                          : "No posted period"],
+                        [
+                          "Opening depreciation",
+                          fmt.money(asset.opening_accumulated_minor, currency),
+                        ],
+                        [
+                          "Depreciated through",
+                          asset.depreciated_through
+                            ? fmt.date(asset.depreciated_through)
+                            : "No posted period",
+                        ],
                         ["Cost account", accountName(asset.asset_account_id)],
                         ["Accumulated account", accountName(asset.accumulated_account_id)],
                         ["Expense account", accountName(asset.expense_account_id)],
@@ -209,7 +219,9 @@ export function AssetDetailsDialog({
                     <section className="space-y-2 rounded-lg border p-4">
                       <h3 className="text-sm font-semibold">Description & notes</h3>
                       {asset.description ? (
-                        <p className="whitespace-pre-wrap break-words text-sm">{asset.description}</p>
+                        <p className="whitespace-pre-wrap break-words text-sm">
+                          {asset.description}
+                        </p>
                       ) : null}
                       {asset.notes ? (
                         <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground">
@@ -228,9 +240,13 @@ export function AssetDetailsDialog({
                   {asset.status === "disposed" ? (
                     <section className="space-y-2 rounded-lg border p-4 text-sm">
                       <h3 className="font-semibold">Disposal</h3>
-                      <p>Date: {asset.disposal_date ? fmt.date(asset.disposal_date) : "Not available"}</p>
                       <p>
-                        Proceeds: {asset.disposal_proceeds_minor === null
+                        Date:{" "}
+                        {asset.disposal_date ? fmt.date(asset.disposal_date) : "Not available"}
+                      </p>
+                      <p>
+                        Proceeds:{" "}
+                        {asset.disposal_proceeds_minor === null
                           ? "Not recorded"
                           : fmt.money(asset.disposal_proceeds_minor, currency)}
                       </p>
@@ -409,7 +425,9 @@ export function AssetDetailsDialog({
           )}
         </div>
         <DialogFooter className="shrink-0 border-t px-4 py-3 sm:px-6">
-          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

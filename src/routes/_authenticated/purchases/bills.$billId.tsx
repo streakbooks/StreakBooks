@@ -877,6 +877,7 @@ function BillDocumentWorkspace() {
               disabled={copyMutation.isPending}
               onClick={() => copyMutation.mutate()}
             >
+              {copyMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Copy bill
             </Button>
           ) : null}

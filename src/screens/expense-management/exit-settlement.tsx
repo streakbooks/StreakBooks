@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -52,9 +53,7 @@ export function ExpenseManagementExitSettlementPage() {
   const canManage =
     can("expenses.manage_advances" as Permission) || can("expenses.admin" as Permission);
   const canView =
-    canManage ||
-    can("expenses.view" as Permission) ||
-    can("expenses.audit" as Permission);
+    canManage || can("expenses.view" as Permission) || can("expenses.audit" as Permission);
   const canListMembers = can("members.view" as Permission) || can("expenses.admin" as Permission);
 
   const [employeeUserId, setEmployeeUserId] = useState("");
@@ -165,14 +164,15 @@ export function ExpenseManagementExitSettlementPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Exit Settlement"
-      subnav={<ExpenseManagementSubnav current="exit-settlement"/>}
-    >
-      <EmptyState
+      <ListWorkspace
+        title="Exit Settlement"
+        subnav={<ExpenseManagementSubnav current="exit-settlement" />}
+      >
+        <EmptyState
           title="No access"
           description="Ask an administrator for expenses.manage_advances."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
   if (settlementsQ.isLoading) {
@@ -181,10 +181,12 @@ export function ExpenseManagementExitSettlementPage() {
   if (settlementsQ.isError) {
     const message = friendlyAuthError(settlementsQ.error);
     return (
-      <ListWorkspace title="Exit Settlement" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="exit-settlement"/>}
-    >
-      {message.includes("20261107145000") ? (
+      <ListWorkspace
+        title="Exit Settlement"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="exit-settlement" />}
+      >
+        {message.includes("20261107145000") ? (
           <Alert>
             <AlertTitle>Database update required</AlertTitle>
             <AlertDescription>{EXPENSE_EXIT_SETTLEMENT_MIGRATION}</AlertDescription>
@@ -196,7 +198,7 @@ export function ExpenseManagementExitSettlementPage() {
             onRetry={() => settlementsQ.refetch()}
           />
         )}
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
@@ -205,9 +207,10 @@ export function ExpenseManagementExitSettlementPage() {
   );
 
   return (
-      <ListWorkspace title="Exit Settlement"
-        description="Clear open advances, drafts and card lines when an employee leaves."
-      subnav={<ExpenseManagementSubnav current="exit-settlement"/>}
+    <ListWorkspace
+      title="Exit Settlement"
+      description="Clear open advances, drafts and card lines when an employee leaves."
+      subnav={<ExpenseManagementSubnav current="exit-settlement" />}
     >
       {canManage ? (
         <section className="mb-8 space-y-4 rounded-lg border p-4">
@@ -216,7 +219,7 @@ export function ExpenseManagementExitSettlementPage() {
             <div className="grid gap-2">
               <Label>Employee</Label>
               {members.length > 0 ? (
-                <Select value={employeeUserId} onValueChange={setEmployeeUserId}>
+                <RecordLookupSelect value={employeeUserId} onValueChange={setEmployeeUserId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select member" />
                   </SelectTrigger>
@@ -227,7 +230,7 @@ export function ExpenseManagementExitSettlementPage() {
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               ) : (
                 <p className="text-sm text-muted-foreground">
                   Members list unavailable (needs members.view). Ask an admin, or apply migrations
@@ -237,7 +240,7 @@ export function ExpenseManagementExitSettlementPage() {
             </div>
             <div className="grid gap-2">
               <Label>Bank account for advance reclaim</Label>
-              <Select value={bankAccountId} onValueChange={setBankAccountId}>
+              <RecordLookupSelect value={bankAccountId} onValueChange={setBankAccountId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select bank" />
                 </SelectTrigger>
@@ -248,7 +251,7 @@ export function ExpenseManagementExitSettlementPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -269,7 +272,9 @@ export function ExpenseManagementExitSettlementPage() {
                   })
                 }
               >
-                {finalizeMut.isPending ? "Finalizing…" : `Finalize ${draftForEmployee.settlementNumber}`}
+                {finalizeMut.isPending
+                  ? "Finalizing…"
+                  : `Finalize ${draftForEmployee.settlementNumber}`}
               </Button>
             ) : null}
           </div>

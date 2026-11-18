@@ -91,8 +91,13 @@ export function AssetCapitalisationReviewPanel({
   const review = reviewed.result ?? {
     rows: [],
     totals: {
-      candidates: 0, unlinked: 0, partiallyLinked: 0, linked: 0,
-      fxReview: 0, overlinked: 0, nonPurchase: 0,
+      candidates: 0,
+      unlinked: 0,
+      partiallyLinked: 0,
+      linked: 0,
+      fxReview: 0,
+      overlinked: 0,
+      nonPurchase: 0,
     },
   };
   const filtered = useMemo(
@@ -104,12 +109,16 @@ export function AssetCapitalisationReviewPanel({
   const shown = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
   const expandedLine = shown.find((row) => row.lineId === expandedLineId) ?? null;
   const exportCsv = () => {
-    if (!candidates.data || candidates.data.asOf !== asOf ||
-        candidates.isFetching || !validDate || reviewed.issue) return;
+    if (
+      !candidates.data ||
+      candidates.data.asOf !== asOf ||
+      candidates.isFetching ||
+      !validDate ||
+      reviewed.issue
+    )
+      return;
     const csv = capitalisationReviewCsv(filtered, asOf, currency);
-    const url = URL.createObjectURL(
-      new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
-    );
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = "linkbooks-capitalisation-review-" + asOf + ".csv";
@@ -187,7 +196,11 @@ export function AssetCapitalisationReviewPanel({
             ariaLabel="Filter review by GL account"
             companyId={companyId}
             value={accountId}
-            onChange={(value) => { setAccountId(value); setPage(0); setExpandedLineId(null); }}
+            onChange={(value) => {
+              setAccountId(value);
+              setPage(0);
+              setExpandedLineId(null);
+            }}
             options={accounts}
             placeholder="All accounts"
             searchPlaceholder="Search GL account"
@@ -204,7 +217,11 @@ export function AssetCapitalisationReviewPanel({
             className="pl-9"
             value={search}
             placeholder="Bill, supplier, description"
-            onChange={(event) => { setSearch(event.target.value); setPage(0); setExpandedLineId(null); }}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(0);
+              setExpandedLineId(null);
+            }}
           />
         </div>
         <Button
@@ -219,8 +236,13 @@ export function AssetCapitalisationReviewPanel({
         <Button
           size="sm"
           variant="outline"
-          disabled={!candidates.data || candidates.data.asOf !== asOf ||
-            candidates.isFetching || !validDate || reviewed.issue !== null}
+          disabled={
+            !candidates.data ||
+            candidates.data.asOf !== asOf ||
+            candidates.isFetching ||
+            !validDate ||
+            reviewed.issue !== null
+          }
           onClick={exportCsv}
         >
           <Download className="mr-2 size-4" />
@@ -254,7 +276,8 @@ export function AssetCapitalisationReviewPanel({
               { label: "Partially linked", value: review.totals.partiallyLinked },
               {
                 label: "Other review flags",
-                value: review.totals.fxReview + review.totals.overlinked + review.totals.nonPurchase,
+                value:
+                  review.totals.fxReview + review.totals.overlinked + review.totals.nonPurchase,
               },
             ].map((stat) => (
               <div className="rounded-lg border bg-card p-4" key={stat.label}>
@@ -265,10 +288,10 @@ export function AssetCapitalisationReviewPanel({
           </div>
           <p className="text-xs text-muted-foreground">
             {filtered.length} matching line{filtered.length === 1 ? "" : "s"}; linked amounts
-            represent the current asset register, not a historical snapshot. Bills are filtered
-            by date, and foreign-currency bill values cannot be directly compared with base-currency
-            registered costs. "Linked" means a relationship exists, not proof that capitalisation
-            is complete or appropriate.
+            represent the current asset register, not a historical snapshot. Bills are filtered by
+            date, and foreign-currency bill values cannot be directly compared with base-currency
+            registered costs. "Linked" means a relationship exists, not proof that capitalisation is
+            complete or appropriate.
           </p>
           {filtered.length === 0 ? (
             <p className="rounded-lg border p-6 text-sm text-muted-foreground">
@@ -310,7 +333,9 @@ export function AssetCapitalisationReviewPanel({
                             {line.description}
                           </span>
                         </TableCell>
-                        <TableCell>{line.accountCode} · {line.accountName}</TableCell>
+                        <TableCell>
+                          {line.accountCode} · {line.accountName}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {fmt.amount(line.netMinor, line.currency)}
                           <span className="block text-xs text-muted-foreground">
@@ -319,9 +344,7 @@ export function AssetCapitalisationReviewPanel({
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {fmt.amount(line.registeredMinor, currency)}
-                          <span className="block text-xs text-muted-foreground">
-                            {currency}
-                          </span>
+                          <span className="block text-xs text-muted-foreground">{currency}</span>
                         </TableCell>
                         <TableCell>
                           <Badge variant={line.status === "linked" ? "secondary" : "outline"}>
@@ -333,18 +356,24 @@ export function AssetCapitalisationReviewPanel({
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-2">
-                            <Button size="sm" variant="outline"
+                            <Button
+                              size="sm"
+                              variant="outline"
                               aria-expanded={expandedLineId === line.lineId}
-                              onClick={() => setExpandedLineId(
-                                (id) => id === line.lineId ? null : line.lineId,
-                              )}>
+                              onClick={() =>
+                                setExpandedLineId((id) => (id === line.lineId ? null : line.lineId))
+                              }
+                            >
                               Why flagged?
                             </Button>
                             {capitalisationReviewGuidance(line.status).canPrepareNewAsset ? (
-                              <Button size="sm" variant="outline"
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 disabled={!canManage}
                                 onClick={() => onCreate(line)}
-                                title="Verify treatment before saving; registration never posts the bill twice.">
+                                title="Verify treatment before saving; registration never posts the bill twice."
+                              >
                                 Review / add asset
                               </Button>
                             ) : null}
@@ -359,10 +388,12 @@ export function AssetCapitalisationReviewPanel({
                 <section className="space-y-2 rounded-lg border bg-muted/20 p-4" aria-live="polite">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="font-semibold">
-                      {expandedLine.billNumber ?? "Supplier bill"} · {STATUS_LABEL[expandedLine.status]}
+                      {expandedLine.billNumber ?? "Supplier bill"} ·{" "}
+                      {STATUS_LABEL[expandedLine.status]}
                     </h3>
-                    <Button size="sm" variant="ghost"
-                      onClick={() => setExpandedLineId(null)}>Close explanation</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setExpandedLineId(null)}>
+                      Close explanation
+                    </Button>
                   </div>
                   <p className="text-sm">
                     {capitalisationReviewGuidance(expandedLine.status).reason}
@@ -371,14 +402,13 @@ export function AssetCapitalisationReviewPanel({
                     {capitalisationReviewGuidance(expandedLine.status).nextStep}
                   </p>
                   <Button size="sm" variant="outline" asChild>
-                    <Link to="/purchases/bills/$billId"
-                      params={{ billId: expandedLine.billId }}>
+                    <Link to="/purchases/bills/$billId" params={{ billId: expandedLine.billId }}>
                       Inspect source bill
                     </Link>
                   </Button>
                   <p className="text-xs text-muted-foreground">
-                    Review guidance is advisory. No asset, tax adjustment or journal entry
-                    is created until a separately authorised action is performed.
+                    Review guidance is advisory. No asset, tax adjustment or journal entry is
+                    created until a separately authorised action is performed.
                   </p>
                 </section>
               ) : null}
@@ -387,10 +417,20 @@ export function AssetCapitalisationReviewPanel({
                   Page {currentPage + 1} of {pages} ({PAGE_SIZE} rows per page)
                 </span>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={currentPage === 0}
+                    onClick={() => setPage(currentPage - 1)}
+                  >
                     Previous
                   </Button>
-                  <Button size="sm" variant="outline" disabled={currentPage >= pages - 1} onClick={() => setPage(currentPage + 1)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={currentPage >= pages - 1}
+                    onClick={() => setPage(currentPage + 1)}
+                  >
                     Next
                   </Button>
                 </div>

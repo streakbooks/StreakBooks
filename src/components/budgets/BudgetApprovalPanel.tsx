@@ -123,8 +123,8 @@ export function BudgetApprovalPanel({
             <ShieldCheck className="size-4" /> Budget approvals
           </h2>
           <p className="text-sm text-muted-foreground">
-            Independent review with a permanent decision trail. Pending and approved plans
-            cannot be edited.
+            Independent review with a permanent decision trail. Pending and approved plans cannot be
+            edited.
           </p>
         </div>
         <span className="rounded-full border px-3 py-1 text-xs font-medium">
@@ -136,16 +136,16 @@ export function BudgetApprovalPanel({
       ) : error ? (
         <Alert variant="destructive">
           <AlertDescription>
-            Approval status could not be verified: {friendlyAuthError(error)}. Editing is
-            disabled until this can be checked.
+            Approval status could not be verified: {friendlyAuthError(error)}. Editing is disabled
+            until this can be checked.
           </AlertDescription>
         </Alert>
       ) : !approval?.available ? (
         <Alert>
           <AlertDescription>
             Budget approvals require the database migration
-            20261106193000_budget_approval_workflows.sql. This organisation can continue
-            using budgets without approvals until that migration is installed.
+            20261106193000_budget_approval_workflows.sql. This organisation can continue using
+            budgets without approvals until that migration is installed.
           </AlertDescription>
         </Alert>
       ) : (
@@ -162,8 +162,8 @@ export function BudgetApprovalPanel({
           ) : approval.status === "approved" ? (
             <Alert>
               <AlertDescription>
-                This plan is approved and read-only. Reopening requires an audit reason and
-                allows further changes before a new submission cycle.
+                This plan is approved and read-only. Reopening requires an audit reason and allows
+                further changes before a new submission cycle.
               </AlertDescription>
             </Alert>
           ) : approval.status === "rejected" ? (
@@ -243,7 +243,9 @@ export function BudgetApprovalPanel({
                         mutation.mutate(action);
                       }}
                     >
-                      {mutation.isPending ? "Saving…" : `Confirm ${ACTION_LABELS[action].toLowerCase()}`}
+                      {mutation.isPending
+                        ? "Saving…"
+                        : `Confirm ${ACTION_LABELS[action].toLowerCase()}`}
                     </Button>
                     <Button
                       type="button"

@@ -38,8 +38,11 @@ export function DeveloperApiDocsPage() {
     return (
       <>
         <ListWorkspace title="API Documentation" description="Developer portal">
-        <EmptyState title="No access" description="Requires developer or App Store view access." />
-    </ListWorkspace>
+          <EmptyState
+            title="No access"
+            description="Requires developer or App Store view access."
+          />
+        </ListWorkspace>
       </>
     );
   }
@@ -51,86 +54,86 @@ export function DeveloperApiDocsPage() {
         description={`LinkBooks public API ${PUBLIC_API_VERSION} — scoped, versioned access for approved partners.`}
         subnav={<DeveloperSubnav current="api-docs" />}
       >
-      <Alert className="mb-6">
-        <AlertTitle>Security model</AlertTitle>
-        <AlertDescription>
-          Partners authenticate with OAuth 2.0 / PKCE where applicable, request least-privilege
-          scopes, and never receive unrestricted database or service-role credentials. Runtime API
-          routes and token issuance continue after this catalogue foundation.
-        </AlertDescription>
-      </Alert>
+        <Alert className="mb-6">
+          <AlertTitle>Security model</AlertTitle>
+          <AlertDescription>
+            Partners authenticate with OAuth 2.0 / PKCE where applicable, request least-privilege
+            scopes, and never receive unrestricted database or service-role credentials. Runtime API
+            routes and token issuance continue after this catalogue foundation.
+          </AlertDescription>
+        </Alert>
 
-      {scopes.isLoading ? <LoadingState /> : null}
-      {scopes.isError ? (
-        <ErrorState
-          title="Could not load scopes"
-          description={friendlyAuthError(scopes.error)}
-          onRetry={() => scopes.refetch()}
-        />
-      ) : null}
+        {scopes.isLoading ? <LoadingState /> : null}
+        {scopes.isError ? (
+          <ErrorState
+            title="Could not load scopes"
+            description={friendlyAuthError(scopes.error)}
+            onRetry={() => scopes.refetch()}
+          />
+        ) : null}
 
-      {scopes.data ? (
-        <div className="space-y-8">
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Scope</TableHead>
-                  <TableHead>Module</TableHead>
-                  <TableHead>Access</TableHead>
-                  <TableHead>Description</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {scopes.data.scopes.map((scope) => (
-                  <TableRow key={scope.key}>
-                    <TableCell className="font-mono text-xs">{scope.key}</TableCell>
-                    <TableCell>{scope.module}</TableCell>
-                    <TableCell>
-                      <Badge variant={scope.access === "write" ? "default" : "secondary"}>
-                        {scope.access}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{scope.description}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold">Versioned routes ({PUBLIC_API_VERSION})</h2>
-            <p className="text-sm text-muted-foreground">
-              Documented partner surface. Runtime calls stay gated until OAuth token issuance and
-              the credential vault are production-ready. Status “documented” is not “implemented”.
-            </p>
+        {scopes.data ? (
+          <div className="space-y-8">
             <div className="rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Path</TableHead>
                     <TableHead>Scope</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Module</TableHead>
+                    <TableHead>Access</TableHead>
+                    <TableHead>Description</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {listPublicApiCatalog().routes.map((route) => (
-                    <TableRow key={`${route.method}-${route.path}`}>
-                      <TableCell className="font-mono text-xs">{route.method}</TableCell>
-                      <TableCell className="font-mono text-xs">{route.path}</TableCell>
-                      <TableCell className="font-mono text-xs">{route.scope}</TableCell>
+                  {scopes.data.scopes.map((scope) => (
+                    <TableRow key={scope.key}>
+                      <TableCell className="font-mono text-xs">{scope.key}</TableCell>
+                      <TableCell>{scope.module}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{route.status}</Badge>
+                        <Badge variant={scope.access === "write" ? "default" : "secondary"}>
+                          {scope.access}
+                        </Badge>
                       </TableCell>
+                      <TableCell className="text-muted-foreground">{scope.description}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
-          </section>
-        </div>
-      ) : null}
+
+            <section className="space-y-3">
+              <h2 className="text-lg font-semibold">Versioned routes ({PUBLIC_API_VERSION})</h2>
+              <p className="text-sm text-muted-foreground">
+                Documented partner surface. Runtime calls stay gated until OAuth token issuance and
+                the credential vault are production-ready. Status “documented” is not “implemented”.
+              </p>
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Path</TableHead>
+                      <TableHead>Scope</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {listPublicApiCatalog().routes.map((route) => (
+                      <TableRow key={`${route.method}-${route.path}`}>
+                        <TableCell className="font-mono text-xs">{route.method}</TableCell>
+                        <TableCell className="font-mono text-xs">{route.path}</TableCell>
+                        <TableCell className="font-mono text-xs">{route.scope}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{route.status}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </section>
+          </div>
+        ) : null}
       </ListWorkspace>
     </>
   );

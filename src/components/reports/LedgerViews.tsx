@@ -596,7 +596,8 @@ export function AgedView({ ctx, kind }: { ctx: ReportCtx; kind: "ar" | "ap" }) {
       const baseTotals = r.totalsByCurrency.find((t) => t.currency_code === r.baseCurrency);
       const total = baseTotals?.total ?? 0;
       const foreign = r.totalsByCurrency.filter((t) => t.currency_code !== r.baseCurrency);
-      const variance = typeof r.varianceMinor === "number" ? r.varianceMinor : total - r.apControlBalanceMinor;
+      const variance =
+        typeof r.varianceMinor === "number" ? r.varianceMinor : total - r.apControlBalanceMinor;
       return {
         rows: r.rows
           .filter((row) => row.currency_code === r.baseCurrency)

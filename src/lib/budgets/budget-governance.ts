@@ -1,8 +1,8 @@
 /** Strict, pure validation shared between the UI server function and tests. */
-export function validateBudgetLockCommand(input: {
-  locked: unknown;
-  reason: unknown;
-}): { locked: boolean; reason: string } {
+export function validateBudgetLockCommand(input: { locked: unknown; reason: unknown }): {
+  locked: boolean;
+  reason: string;
+} {
   if (typeof input?.locked !== "boolean") {
     throw new Error("Choose a valid lock state.");
   }

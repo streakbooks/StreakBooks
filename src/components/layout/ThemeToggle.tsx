@@ -255,8 +255,16 @@ export function ThemeToggle() {
             <div className="grid gap-3 sm:grid-cols-2">
               {(
                 [
-                  { key: "primary", label: "Primary colour", hint: "Actions and active navigation" },
-                  { key: "accent", label: "Accent colour", hint: "Hover surfaces and chart series" },
+                  {
+                    key: "primary",
+                    label: "Primary colour",
+                    hint: "Actions and active navigation",
+                  },
+                  {
+                    key: "accent",
+                    label: "Accent colour",
+                    hint: "Hover surfaces and chart series",
+                  },
                   { key: "sidebar", label: "Sidebar colour", hint: "Navigation background" },
                   {
                     key: "lightBackground",

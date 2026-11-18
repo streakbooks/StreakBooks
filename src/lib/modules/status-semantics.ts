@@ -3,7 +3,12 @@
  * Unknown statuses stay neutral/unmapped — never auto-promoted to paid/approved/success.
  */
 
-import { humanizeStatus, statusDisplay, type StatusDisplay, type StatusTone } from "@/lib/status-badge";
+import {
+  humanizeStatus,
+  statusDisplay,
+  type StatusDisplay,
+  type StatusTone,
+} from "@/lib/status-badge";
 
 export type DomainStatusDefinition = {
   key: string;

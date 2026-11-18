@@ -40,7 +40,8 @@ export function parseFilesListSearch(raw: Record<string, unknown>): FilesListSea
   if (
     (typeof page === "number" && Number.isSafeInteger(page) && page >= 0) ||
     (typeof page === "string" && /^\d{1,7}$/.test(page))
-  ) result.page = Math.min(Number(page), 1_000_000);
+  )
+    result.page = Math.min(Number(page), 1_000_000);
 
   return result;
 }

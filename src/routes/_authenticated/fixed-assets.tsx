@@ -12,7 +12,10 @@ import { useTablePrefs } from "@/hooks/use-table-prefs";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { addMonthsIso, monthEnd, monthStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { DEPRECIATION_METHODS } from "@/lib/fixed-assets/depreciation";
-import { planDepreciationMonths, summarizeDepreciationPreview } from "@/lib/fixed-assets/depreciation-review";
+import {
+  planDepreciationMonths,
+  summarizeDepreciationPreview,
+} from "@/lib/fixed-assets/depreciation-review";
 import {
   assetStatusAsOf,
   selectRegisterAssets,
@@ -48,7 +51,11 @@ import {
   FixedAssetSavedFilterViews,
   FixedAssetTableColumns,
 } from "@/components/fixed-assets/AssetRegisterPersonalization";
-import { capitalisationReviewGuidance, reviewCapitalisableLines, selectCapitalisationReviewRows } from "@/lib/fixed-assets/capitalisation-review";
+import {
+  capitalisationReviewGuidance,
+  reviewCapitalisableLines,
+  selectCapitalisationReviewRows,
+} from "@/lib/fixed-assets/capitalisation-review";
 import { buildFixedAssetRegisterCsv } from "@/lib/fixed-assets/register-export";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -77,7 +84,14 @@ import {
 
 export const Route = createFileRoute("/_authenticated/fixed-assets")({
   validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
-    tab: ["dashboard", "register", "depreciation", "types", "reconciliation", "bill-review"].includes(String(raw["tab"]))
+    tab: [
+      "dashboard",
+      "register",
+      "depreciation",
+      "types",
+      "reconciliation",
+      "bill-review",
+    ].includes(String(raw["tab"]))
       ? String(raw["tab"])
       : undefined,
   }),
@@ -121,8 +135,9 @@ function FixedAssetsPage() {
   );
   const columnVisible = (id: string) =>
     id === "asset" || id === "actions" || tablePrefs.isVisible(id);
-  const hiddenColumnCount = FIXED_ASSET_TABLE_COLUMNS
-    .filter((col) => !("required" in col && col.required) && !columnVisible(col.id)).length;
+  const hiddenColumnCount = FIXED_ASSET_TABLE_COLUMNS.filter(
+    (col) => !("required" in col && col.required) && !columnVisible(col.id),
+  ).length;
   const appliedFilters: AssetRegisterFilters = {
     search: assetSearch,
     status: assetStatus,
@@ -166,10 +181,7 @@ function FixedAssetsPage() {
   const d = page.data;
   if (!d.available) {
     return (
-      <ListWorkspace
-        title="Fixed assets"
-        description="Register, depreciate and dispose of assets."
-      >
+      <ListWorkspace title="Fixed assets" description="Register, depreciate and dispose of assets.">
         <Alert>
           <AlertDescription>
             Fixed assets are not available yet: the database updates that add them have not been
@@ -180,17 +192,12 @@ function FixedAssetsPage() {
     );
   }
   const currency = d.currency;
-  const balancesReady =
-    register.isSuccess && !register.isFetching && register.data?.asOf === today;
-  const balanceMap = balancesReady && register.data
-    ? new Map(register.data.rows.map((r) => [r.asset_id, r.accumulated_minor] as const))
-    : null;
-  const visibleAssets = selectRegisterAssets(
-    d.assets,
-    appliedFilters,
-    d.types,
-    d.accounts,
-  );
+  const balancesReady = register.isSuccess && !register.isFetching && register.data?.asOf === today;
+  const balanceMap =
+    balancesReady && register.data
+      ? new Map(register.data.rows.map((r) => [r.asset_id, r.accumulated_minor] as const))
+      : null;
+  const visibleAssets = selectRegisterAssets(d.assets, appliedFilters, d.types, d.accounts);
   const summary = summariseActiveAssets(visibleAssets, today, balanceMap);
   const usedAssetAccounts = new Set(d.assets.map((asset) => asset.asset_account_id));
   const accumulatedOf = (a: FixedAssetRow): number | null =>
@@ -225,431 +232,436 @@ function FixedAssetsPage() {
           </>
         }
       >
-      <Tabs value={tab}>
-        <TabsList
-          className="flex min-h-11 w-full max-w-full flex-nowrap justify-start overflow-x-auto gap-1"
-          onKeyDown={handleNativeTabKeyDown}
-          aria-label="Fixed Assets sections"
-        >
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "dashboard"}
-            data-state={tab === "dashboard" ? "active" : "inactive"}
-            to="/fixed-assets"
-            search={{ tab: "dashboard" }}
+        <Tabs value={tab}>
+          <TabsList
+            className="flex min-h-11 w-full max-w-full flex-nowrap justify-start overflow-x-auto gap-1"
+            onKeyDown={handleNativeTabKeyDown}
+            aria-label="Fixed Assets sections"
           >
-            Dashboard
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "register"}
-            data-state={tab === "register" ? "active" : "inactive"}
-            to="/fixed-assets"
-            search={{ tab: "register" }}
-          >
-            Register
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "depreciation"}
-            data-state={tab === "depreciation" ? "active" : "inactive"}
-            to="/fixed-assets"
-            search={{ tab: "depreciation" }}
-          >
-            Run depreciation
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "types"}
-            data-state={tab === "types" ? "active" : "inactive"}
-            to="/fixed-assets"
-            search={{ tab: "types" }}
-          >
-            Asset types
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "bill-review"}
-            data-state={tab === "bill-review" ? "active" : "inactive"}
-            to="/fixed-assets"
-            search={{ tab: "bill-review" }}
-          >
-            Review bill purchases
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "reconciliation"}
-            data-state={tab === "reconciliation" ? "active" : "inactive"}
-            to="/fixed-assets"
-            search={{ tab: "reconciliation" }}
-          >
-            Reconcile to GL
-          </Link>
-        </TabsList>
-        <p className="mt-1 text-xs text-muted-foreground sm:hidden">
-          Swipe the section tabs horizontally to view all Fixed Assets screens.
-        </p>
-
-        <TabsContent value="dashboard" className="space-y-4">
-          <AssetPortfolioPanel
-            assets={d.assets}
-            types={d.types}
-            currency={currency}
-            asOf={today}
-            balances={balanceMap}
-            balancesLoading={!balancesReady && !register.isError}
-            onView={(asset) => setDialog({ kind: "details", asset })}
-          />
-          {register.isError ? (
-            <Alert variant="destructive">
-              <AlertDescription className="flex flex-wrap items-center gap-2">
-                Financial summary unavailable: {friendlyAuthError(register.error)}
-                <Button size="sm" variant="outline" onClick={() => void register.refetch()}>
-                  Retry balances
-                </Button>
-              </AlertDescription>
-            </Alert>
-          ) : null}
-        </TabsContent>
-
-        <TabsContent value="register" className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: "Active assets in view", value: String(summary.activeCount) },
-              {
-                label: "Original cost in view",
-                value: summary.costMinor === null
-                  ? "Unavailable"
-                  : fmt.amount(summary.costMinor, currency),
-              },
-              {
-                label: "Accumulated depreciation",
-                value: summary.accumulatedMinor === null
-                  ? balancesReady || register.isError ? "Unavailable" : "Loading…"
-                  : fmt.amount(summary.accumulatedMinor, currency),
-              },
-              {
-                label: "Net book value",
-                value: summary.netBookValueMinor === null
-                  ? balancesReady || register.isError ? "Unavailable" : "Loading…"
-                  : fmt.amount(summary.netBookValueMinor, currency),
-              },
-            ].map((metric) => (
-              <div key={metric.label} className="rounded-lg border bg-card p-4">
-                <p className="text-sm text-muted-foreground">{metric.label}</p>
-                <p className="mt-1 text-xl font-semibold tabular-nums">{metric.value}</p>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Balances as at {fmt.date(today)}. Totals reflect active assets matching the current
-            filters; future purchases and completed disposals are excluded.
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={tab === "dashboard"}
+              data-state={tab === "dashboard" ? "active" : "inactive"}
+              to="/fixed-assets"
+              search={{ tab: "dashboard" }}
+            >
+              Dashboard
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={tab === "register"}
+              data-state={tab === "register" ? "active" : "inactive"}
+              to="/fixed-assets"
+              search={{ tab: "register" }}
+            >
+              Register
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={tab === "depreciation"}
+              data-state={tab === "depreciation" ? "active" : "inactive"}
+              to="/fixed-assets"
+              search={{ tab: "depreciation" }}
+            >
+              Run depreciation
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={tab === "types"}
+              data-state={tab === "types" ? "active" : "inactive"}
+              to="/fixed-assets"
+              search={{ tab: "types" }}
+            >
+              Asset types
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={tab === "bill-review"}
+              data-state={tab === "bill-review" ? "active" : "inactive"}
+              to="/fixed-assets"
+              search={{ tab: "bill-review" }}
+            >
+              Review bill purchases
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={tab === "reconciliation"}
+              data-state={tab === "reconciliation" ? "active" : "inactive"}
+              to="/fixed-assets"
+              search={{ tab: "reconciliation" }}
+            >
+              Reconcile to GL
+            </Link>
+          </TabsList>
+          <p className="mt-1 text-xs text-muted-foreground sm:hidden">
+            Swipe the section tabs horizontally to view all Fixed Assets screens.
           </p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              disabled={!canManage}
-              onClick={() => setDialog({ kind: "asset", editing: null, fromBillLine: null })}
-            >
-              Add asset
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!canManage}
-              onClick={() => setDialog({ kind: "bill-lines" })}
-            >
-              Capitalise from a bill
-            </Button>
-            <Button asChild size="sm" variant="outline">
-              <Link to="/imports" search={{ module: "fixed_assets" }}>
-                Import fixed assets
-              </Link>
-            </Button>
-          </div>
-          {d.assets.length > 0 ? (
-            <div className="space-y-2 rounded-lg border p-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative min-w-[220px] flex-1">
-                  <Search
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                  />
-                  <Input
-                    aria-label="Search fixed assets"
-                    className="pl-9"
-                    placeholder="Search asset, notes, type or account"
-                    value={assetSearch}
-                    onChange={(event) => setAssetSearch(event.target.value)}
-                  />
+
+          <TabsContent value="dashboard" className="space-y-4">
+            <AssetPortfolioPanel
+              assets={d.assets}
+              types={d.types}
+              currency={currency}
+              asOf={today}
+              balances={balanceMap}
+              balancesLoading={!balancesReady && !register.isError}
+              onView={(asset) => setDialog({ kind: "details", asset })}
+            />
+            {register.isError ? (
+              <Alert variant="destructive">
+                <AlertDescription className="flex flex-wrap items-center gap-2">
+                  Financial summary unavailable: {friendlyAuthError(register.error)}
+                  <Button size="sm" variant="outline" onClick={() => void register.refetch()}>
+                    Retry balances
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="register" className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                { label: "Active assets in view", value: String(summary.activeCount) },
+                {
+                  label: "Original cost in view",
+                  value:
+                    summary.costMinor === null
+                      ? "Unavailable"
+                      : fmt.amount(summary.costMinor, currency),
+                },
+                {
+                  label: "Accumulated depreciation",
+                  value:
+                    summary.accumulatedMinor === null
+                      ? balancesReady || register.isError
+                        ? "Unavailable"
+                        : "Loading…"
+                      : fmt.amount(summary.accumulatedMinor, currency),
+                },
+                {
+                  label: "Net book value",
+                  value:
+                    summary.netBookValueMinor === null
+                      ? balancesReady || register.isError
+                        ? "Unavailable"
+                        : "Loading…"
+                      : fmt.amount(summary.netBookValueMinor, currency),
+                },
+              ].map((metric) => (
+                <div key={metric.label} className="rounded-lg border bg-card p-4">
+                  <p className="text-sm text-muted-foreground">{metric.label}</p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums">{metric.value}</p>
                 </div>
-                <select
-                  aria-label="Filter asset status"
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
-                  value={assetStatus}
-                  onChange={(event) =>
-                    setAssetStatus(event.target.value as "all" | "active" | "disposed")
-                  }
-                >
-                  <option value="all">All statuses</option>
-                  <option value="active">Active</option>
-                  <option value="disposed">Disposed</option>
-                </select>
-                <div className="min-w-[170px] flex-1 sm:max-w-[250px]">
-                  <LookupSelect
-                    ariaLabel="Filter by asset type"
-                    value={assetTypeId}
-                    onChange={setAssetTypeId}
-                    placeholder="All asset types"
-                    searchPlaceholder="Search asset types"
-                    allowClear
-                    companyId={companyId}
-                    options={d.types.map((type) => ({
-                      id: type.id,
-                      name: type.name,
-                      label: type.name,
-                      keywords: type.name,
-                    }))}
-                  />
-                </div>
-                <div className="min-w-[185px] flex-1 sm:max-w-[290px]">
-                  <LookupSelect
-                    ariaLabel="Filter by asset GL account"
-                    value={assetAccountId}
-                    onChange={setAssetAccountId}
-                    placeholder="All asset accounts"
-                    searchPlaceholder="Search GL accounts"
-                    allowClear
-                    companyId={companyId}
-                    options={d.accounts
-                      .filter((account) => usedAssetAccounts.has(account.id))
-                      .map((account) => ({
-                        id: account.id,
-                        name: account.name,
-                        label: account.code + " · " + account.name,
-                        keywords: account.code + " " + account.name,
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Balances as at {fmt.date(today)}. Totals reflect active assets matching the current
+              filters; future purchases and completed disposals are excluded.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                disabled={!canManage}
+                onClick={() => setDialog({ kind: "asset", editing: null, fromBillLine: null })}
+              >
+                Add asset
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!canManage}
+                onClick={() => setDialog({ kind: "bill-lines" })}
+              >
+                Capitalise from a bill
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/imports" search={{ module: "fixed_assets" }}>
+                  Import fixed assets
+                </Link>
+              </Button>
+            </div>
+            {d.assets.length > 0 ? (
+              <div className="space-y-2 rounded-lg border p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative min-w-[220px] flex-1">
+                    <Search
+                      aria-hidden="true"
+                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                    />
+                    <Input
+                      aria-label="Search fixed assets"
+                      className="pl-9"
+                      placeholder="Search asset, notes, type or account"
+                      value={assetSearch}
+                      onChange={(event) => setAssetSearch(event.target.value)}
+                    />
+                  </div>
+                  <select
+                    aria-label="Filter asset status"
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                    value={assetStatus}
+                    onChange={(event) =>
+                      setAssetStatus(event.target.value as "all" | "active" | "disposed")
+                    }
+                  >
+                    <option value="all">All statuses</option>
+                    <option value="active">Active</option>
+                    <option value="disposed">Disposed</option>
+                  </select>
+                  <div className="min-w-[170px] flex-1 sm:max-w-[250px]">
+                    <LookupSelect
+                      ariaLabel="Filter by asset type"
+                      value={assetTypeId}
+                      onChange={setAssetTypeId}
+                      placeholder="All asset types"
+                      searchPlaceholder="Search asset types"
+                      allowClear
+                      companyId={companyId}
+                      options={d.types.map((type) => ({
+                        id: type.id,
+                        name: type.name,
+                        label: type.name,
+                        keywords: type.name,
                       }))}
-                  />
+                    />
+                  </div>
+                  <div className="min-w-[185px] flex-1 sm:max-w-[290px]">
+                    <LookupSelect
+                      ariaLabel="Filter by asset GL account"
+                      value={assetAccountId}
+                      onChange={setAssetAccountId}
+                      placeholder="All asset accounts"
+                      searchPlaceholder="Search GL accounts"
+                      allowClear
+                      companyId={companyId}
+                      options={d.accounts
+                        .filter((account) => usedAssetAccounts.has(account.id))
+                        .map((account) => ({
+                          id: account.id,
+                          name: account.name,
+                          label: account.code + " · " + account.name,
+                          keywords: account.code + " " + account.name,
+                        }))}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  aria-label="Sort fixed assets"
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
-                  value={assetSort}
-                  onChange={(event) => setAssetSort(event.target.value as AssetRegisterSort)}
-                >
-                  <option value="number">Sort: Asset number</option>
-                  <option value="name">Sort: Name</option>
-                  <option value="purchase">Sort: Purchase date</option>
-                  <option value="cost">Sort: Original cost</option>
-                </select>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  aria-label={sortDescending ? "Sort ascending" : "Sort descending"}
-                  onClick={() => setSortDescending((current) => !current)}
-                >
-                  <ArrowDownUp className="mr-2 size-4" />
-                  {sortDescending ? "Descending" : "Ascending"}
-                </Button>
-                {filterActive ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    aria-label="Sort fixed assets"
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                    value={assetSort}
+                    onChange={(event) => setAssetSort(event.target.value as AssetRegisterSort)}
+                  >
+                    <option value="number">Sort: Asset number</option>
+                    <option value="name">Sort: Name</option>
+                    <option value="purchase">Sort: Purchase date</option>
+                    <option value="cost">Sort: Original cost</option>
+                  </select>
                   <Button
                     size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setAssetSearch("");
-                      setAssetStatus("all");
-                      setAssetTypeId("");
-                      setAssetAccountId("");
-                    }}
+                    variant="outline"
+                    aria-label={sortDescending ? "Sort ascending" : "Sort descending"}
+                    onClick={() => setSortDescending((current) => !current)}
                   >
-                    Clear filters
+                    <ArrowDownUp className="mr-2 size-4" />
+                    {sortDescending ? "Descending" : "Ascending"}
                   </Button>
-                ) : null}
-                <FixedAssetTableColumns
-                  visible={columnVisible}
-                  hiddenCount={hiddenColumnCount}
-                  density={tablePrefs.density}
-                  toggle={tablePrefs.toggle}
-                  setDensity={tablePrefs.setDensity}
-                  reset={tablePrefs.reset}
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!exportReady}
-                  title={
-                    exportReady
-                      ? "Exports the complete standard asset register, independent of hidden screen columns"
-                      : "A complete, current depreciation balance is required to export"
-                  }
-                  onClick={() =>
-                    exportAssetRegisterCsv(
-                      visibleAssets,
-                      balanceMap,
-                      today,
-                      new Map(d.types.map((type) => [type.id, type.name])),
-                      new Map(
-                        d.accounts.map((account) => [
-                          account.id,
-                          account.code + " · " + account.name,
-                        ]),
-                      ),
-                    )
-                  }
-                >
-                  <Download className="mr-2 size-4" /> Export CSV
-                </Button>
-                <span className="text-xs text-muted-foreground">
-                  {visibleAssets.length} of {d.assets.length} assets
-                </span>
+                  {filterActive ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setAssetSearch("");
+                        setAssetStatus("all");
+                        setAssetTypeId("");
+                        setAssetAccountId("");
+                      }}
+                    >
+                      Clear filters
+                    </Button>
+                  ) : null}
+                  <FixedAssetTableColumns
+                    visible={columnVisible}
+                    hiddenCount={hiddenColumnCount}
+                    density={tablePrefs.density}
+                    toggle={tablePrefs.toggle}
+                    setDensity={tablePrefs.setDensity}
+                    reset={tablePrefs.reset}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!exportReady}
+                    title={
+                      exportReady
+                        ? "Exports the complete standard asset register, independent of hidden screen columns"
+                        : "A complete, current depreciation balance is required to export"
+                    }
+                    onClick={() =>
+                      exportAssetRegisterCsv(
+                        visibleAssets,
+                        balanceMap,
+                        today,
+                        new Map(d.types.map((type) => [type.id, type.name])),
+                        new Map(
+                          d.accounts.map((account) => [
+                            account.id,
+                            account.code + " · " + account.name,
+                          ]),
+                        ),
+                      )
+                    }
+                  >
+                    <Download className="mr-2 size-4" /> Export CSV
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    {visibleAssets.length} of {d.assets.length} assets
+                  </span>
+                </div>
+                <div className="flex min-w-0 flex-wrap items-start gap-3 border-t pt-3">
+                  <FixedAssetSavedFilterViews
+                    companyId={companyId}
+                    filters={appliedFilters}
+                    onApply={applySavedFilters}
+                  />
+                </div>
               </div>
-              <div className="flex min-w-0 flex-wrap items-start gap-3 border-t pt-3">
-                <FixedAssetSavedFilterViews
-                  companyId={companyId}
-                  filters={appliedFilters}
-                  onApply={applySavedFilters}
-                />
-              </div>
-            </div>
-          ) : null}
-          {register.isError ? (
-            <Alert variant="destructive">
-              <AlertDescription className="flex flex-wrap items-center gap-2">
-                Depreciation balances could not be loaded. Disposal and balance exports are paused
-                until a fresh register is available. {friendlyAuthError(register.error)}
-                <Button size="sm" variant="outline" onClick={() => void register.refetch()}>
-                  Retry balances
-                </Button>
-              </AlertDescription>
-            </Alert>
-          ) : null}
-          {d.assets.length === 0 ? (
-            <EmptyState
-              title="No fixed assets"
-              description="Add an asset, or capitalise a line from a posted bill."
-            />
-          ) : visibleAssets.length === 0 ? (
-            <EmptyState
-              title="No matching assets"
-              description="Try different filters or clear the search."
-            />
-          ) : (
-            <RegisterTable
-              assets={visibleAssets}
-              types={d.types}
-              accounts={d.accounts}
-              columnVisible={columnVisible}
-              density={tablePrefs.density}
-              currency={currency}
-              accumulatedOf={accumulatedOf}
-              canManage={canManage}
-              canPost={canPost}
+            ) : null}
+            {register.isError ? (
+              <Alert variant="destructive">
+                <AlertDescription className="flex flex-wrap items-center gap-2">
+                  Depreciation balances could not be loaded. Disposal and balance exports are paused
+                  until a fresh register is available. {friendlyAuthError(register.error)}
+                  <Button size="sm" variant="outline" onClick={() => void register.refetch()}>
+                    Retry balances
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {d.assets.length === 0 ? (
+              <EmptyState
+                title="No fixed assets"
+                description="Add an asset, or capitalise a line from a posted bill."
+              />
+            ) : visibleAssets.length === 0 ? (
+              <EmptyState
+                title="No matching assets"
+                description="Try different filters or clear the search."
+              />
+            ) : (
+              <RegisterTable
+                assets={visibleAssets}
+                types={d.types}
+                accounts={d.accounts}
+                columnVisible={columnVisible}
+                density={tablePrefs.density}
+                currency={currency}
+                accumulatedOf={accumulatedOf}
+                canManage={canManage}
+                canPost={canPost}
+                companyId={companyId}
+                onEdit={(a) => setDialog({ kind: "asset", editing: a, fromBillLine: null })}
+                onView={(a) => setDialog({ kind: "details", asset: a })}
+                onDispose={(a) => setDialog({ kind: "dispose", asset: a })}
+              />
+            )}
+            <p className="text-xs text-muted-foreground">
+              Registering an asset does not post anything: the purchase is already in your books.
+              Depreciation is charged for whole months from the month depreciation starts.
+            </p>
+          </TabsContent>
+
+          <TabsContent value="depreciation">
+            <DepreciationPanel
               companyId={companyId}
-              onEdit={(a) => setDialog({ kind: "asset", editing: a, fromBillLine: null })}
-              onView={(a) => setDialog({ kind: "details", asset: a })}
-              onDispose={(a) => setDialog({ kind: "dispose", asset: a })}
+              currency={currency}
+              assets={d.assets}
+              lastRunThrough={d.lastRunThrough}
+              canPost={canPost}
             />
-          )}
-          <p className="text-xs text-muted-foreground">
-            Registering an asset does not post anything: the purchase is already in your books.
-            Depreciation is charged for whole months from the month depreciation starts.
-          </p>
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="depreciation">
-          <DepreciationPanel
-            companyId={companyId}
-            currency={currency}
-            assets={d.assets}
-            lastRunThrough={d.lastRunThrough}
-            canPost={canPost}
-          />
-        </TabsContent>
-
-        <TabsContent value="bill-review" className="space-y-4">
-          <AssetCapitalisationReviewPanel
-            companyId={companyId}
-            currency={currency}
-            canManage={canManage}
-            onCreate={(line) =>
-              setDialog({ kind: "asset", editing: null, fromBillLine: line })
-            }
-          />
-        </TabsContent>
-
-        <TabsContent value="reconciliation" className="space-y-4">
-          {canViewAccounting ? (
-            <AssetReconciliationPanel companyId={companyId} />
-          ) : (
-            <Alert>
-              <AlertDescription>
-                GL reconciliation requires accounting view permission for this organisation.
-                Ask an organisation administrator to review your access.
-              </AlertDescription>
-            </Alert>
-          )}
-        </TabsContent>
-
-        <TabsContent value="types" className="space-y-4">
-          <Button
-            size="sm"
-            disabled={!canManage}
-            onClick={() => setDialog({ kind: "type", editing: null })}
-          >
-            New asset type
-          </Button>
-          {d.types.length === 0 ? (
-            <EmptyState
-              title="No asset types"
-              description="Types such as Computers or Vehicles set default methods and accounts."
+          <TabsContent value="bill-review" className="space-y-4">
+            <AssetCapitalisationReviewPanel
+              companyId={companyId}
+              currency={currency}
+              canManage={canManage}
+              onCreate={(line) => setDialog({ kind: "asset", editing: null, fromBillLine: line })}
             />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead className="text-right">Life / rate</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {d.types.map((t) => (
-                  <TableRow key={t.id}>
-                    <TableCell>{t.name}</TableCell>
-                    <TableCell>{METHOD_LABEL.get(t.depreciation_method)}</TableCell>
-                    <TableCell className="text-right">
-                      {t.depreciation_method === "straight_line"
-                        ? `${t.useful_life_months} months`
-                        : t.depreciation_method === "reducing_balance"
-                          ? `${fmt.percentBps(t.annual_rate_bps ?? 0)} a year`
-                          : "–"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={!canManage}
-                        onClick={() => setDialog({ kind: "type", editing: t })}
-                      >
-                        Edit
-                      </Button>
-                    </TableCell>
+          </TabsContent>
+
+          <TabsContent value="reconciliation" className="space-y-4">
+            {canViewAccounting ? (
+              <AssetReconciliationPanel companyId={companyId} />
+            ) : (
+              <Alert>
+                <AlertDescription>
+                  GL reconciliation requires accounting view permission for this organisation. Ask
+                  an organisation administrator to review your access.
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
+
+          <TabsContent value="types" className="space-y-4">
+            <Button
+              size="sm"
+              disabled={!canManage}
+              onClick={() => setDialog({ kind: "type", editing: null })}
+            >
+              New asset type
+            </Button>
+            {d.types.length === 0 ? (
+              <EmptyState
+                title="No asset types"
+                description="Types such as Computers or Vehicles set default methods and accounts."
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead className="text-right">Life / rate</TableHead>
+                    <TableHead />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </TabsContent>
-      </Tabs>
+                </TableHeader>
+                <TableBody>
+                  {d.types.map((t) => (
+                    <TableRow key={t.id}>
+                      <TableCell>{t.name}</TableCell>
+                      <TableCell>{METHOD_LABEL.get(t.depreciation_method)}</TableCell>
+                      <TableCell className="text-right">
+                        {t.depreciation_method === "straight_line"
+                          ? `${t.useful_life_months} months`
+                          : t.depreciation_method === "reducing_balance"
+                            ? `${fmt.percentBps(t.annual_rate_bps ?? 0)} a year`
+                            : "–"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={!canManage}
+                          onClick={() => setDialog({ kind: "type", editing: t })}
+                        >
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+        </Tabs>
       </ListWorkspace>
 
       {dialog?.kind === "asset" ? (
@@ -725,11 +737,17 @@ function exportAssetRegisterCsv(
 ) {
   try {
     const csv = buildFixedAssetRegisterCsv(
-      assets, accumulatedByAssetId, asOf, typeNames, accountNames,
+      assets,
+      accumulatedByAssetId,
+      asOf,
+      typeNames,
+      accountNames,
     );
-    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], {
-      type: "text/csv;charset=utf-8",
-    }));
+    const url = URL.createObjectURL(
+      new Blob(["\uFEFF", csv], {
+        type: "text/csv;charset=utf-8",
+      }),
+    );
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = "linkbooks-fixed-assets-" + asOf + ".csv";
@@ -772,7 +790,9 @@ function RegisterTable({
   const fmt = useFormat();
   const queryClient = useQueryClient();
   const typeNames = new Map(types.map((type) => [type.id, type.name]));
-  const accountNames = new Map(accounts.map((account) => [account.id, account.code + " · " + account.name]));
+  const accountNames = new Map(
+    accounts.map((account) => [account.id, account.code + " · " + account.name]),
+  );
   const compactCellClass = density === "compact" ? "py-1.5" : undefined;
   const deleteFn = useServerFn(deleteFixedAsset);
   const asOf = todayIso();
@@ -794,9 +814,13 @@ function RegisterTable({
     const isDisposed = asset.status === "disposed";
     const hasPosted = asset.depreciated_through !== null;
     return (
-      <div className={compact
-        ? "flex flex-wrap items-center gap-1 border-t pt-3"
-        : "flex items-center justify-end gap-1"}>
+      <div
+        className={
+          compact
+            ? "flex flex-wrap items-center gap-1 border-t pt-3"
+            : "flex items-center justify-end gap-1"
+        }
+      >
         {compact ? (
           <Button size="sm" variant="outline" onClick={() => onView(asset)}>
             View
@@ -838,10 +862,8 @@ function RegisterTable({
 
   const statusBadge = (asset: FixedAssetRow) => {
     const status = assetStatusAsOf(asset, asOf);
-    if (status === "not_acquired")
-      return <Badge variant="outline">Future purchase</Badge>;
-    if (status === "disposed")
-      return <Badge variant="secondary">Disposed</Badge>;
+    if (status === "not_acquired") return <Badge variant="outline">Future purchase</Badge>;
+    if (status === "disposed") return <Badge variant="secondary">Disposed</Badge>;
     return <Badge variant="outline">Active</Badge>;
   };
 
@@ -880,10 +902,15 @@ function RegisterTable({
                   ["Purchased", fmt.date(asset.purchase_date)],
                   ["Method", METHOD_LABEL.get(asset.depreciation_method) ?? "—"],
                   ["Original cost", fmt.money(asset.cost_minor, currency)],
-                  ["Accumulated", accumulated === null ? "Unavailable" : fmt.money(accumulated, currency)],
+                  [
+                    "Accumulated",
+                    accumulated === null ? "Unavailable" : fmt.money(accumulated, currency),
+                  ],
                   ["Net book value", remaining],
-                  ["Posted through", asset.depreciated_through
-                    ? fmt.date(asset.depreciated_through) : "Not posted"],
+                  [
+                    "Posted through",
+                    asset.depreciated_through ? fmt.date(asset.depreciated_through) : "Not posted",
+                  ],
                 ].map(([label, value]) => (
                   <div key={label} className="min-w-0">
                     <dt className="text-xs text-muted-foreground">{label}</dt>
@@ -907,9 +934,15 @@ function RegisterTable({
               {columnVisible("type") ? <TableHead>Asset type</TableHead> : null}
               {columnVisible("account") ? <TableHead>Cost GL account</TableHead> : null}
               {columnVisible("cost") ? <TableHead className="text-right">Cost</TableHead> : null}
-              {columnVisible("residual") ? <TableHead className="text-right">Residual</TableHead> : null}
-              {columnVisible("accumulated") ? <TableHead className="text-right">Accumulated</TableHead> : null}
-              {columnVisible("bookValue") ? <TableHead className="text-right">Net book value</TableHead> : null}
+              {columnVisible("residual") ? (
+                <TableHead className="text-right">Residual</TableHead>
+              ) : null}
+              {columnVisible("accumulated") ? (
+                <TableHead className="text-right">Accumulated</TableHead>
+              ) : null}
+              {columnVisible("bookValue") ? (
+                <TableHead className="text-right">Net book value</TableHead>
+              ) : null}
               {columnVisible("depreciatedTo") ? <TableHead>Depreciated to</TableHead> : null}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -937,7 +970,9 @@ function RegisterTable({
                     <TableCell className={compactCellClass}>{statusBadge(asset)}</TableCell>
                   ) : null}
                   {columnVisible("purchased") ? (
-                    <TableCell className={compactCellClass}>{fmt.date(asset.purchase_date)}</TableCell>
+                    <TableCell className={compactCellClass}>
+                      {fmt.date(asset.purchase_date)}
+                    </TableCell>
                   ) : null}
                   {columnVisible("method") ? (
                     <TableCell className={compactCellClass}>
@@ -947,7 +982,7 @@ function RegisterTable({
                   {columnVisible("type") ? (
                     <TableCell className={compactCellClass}>
                       {asset.asset_type_id
-                        ? typeNames.get(asset.asset_type_id) ?? "Unlisted type"
+                        ? (typeNames.get(asset.asset_type_id) ?? "Unlisted type")
                         : "Unclassified"}
                     </TableCell>
                   ) : null}
@@ -980,7 +1015,9 @@ function RegisterTable({
                   ) : null}
                   {columnVisible("depreciatedTo") ? (
                     <TableCell className={compactCellClass}>
-                      {asset.depreciated_through ? fmt.date(asset.depreciated_through) : "Not posted"}
+                      {asset.depreciated_through
+                        ? fmt.date(asset.depreciated_through)
+                        : "Not posted"}
                     </TableCell>
                   ) : null}
                   <TableCell className={compactCellClass}>{actions(asset, accumulated)}</TableCell>
@@ -989,7 +1026,6 @@ function RegisterTable({
             })}
           </TableBody>
         </Table>
-
       </div>
     </>
   );
@@ -1042,7 +1078,8 @@ function DepreciationPanel({
   } | null>(null);
   const validMonth =
     /^\d{4}-(0[1-9]|1[0-2])$/.test(month) &&
-    month.slice(0, 4) !== "0000" && month <= thisMonth.slice(0, 7);
+    month.slice(0, 4) !== "0000" &&
+    month <= thisMonth.slice(0, 7);
   const periodEnd = validMonth ? monthEnd(month + "-01") : "";
   const preview = useQuery({
     queryKey: ["fixed-assets", companyId, "preview", periodEnd],
@@ -1050,14 +1087,18 @@ function DepreciationPanel({
     queryFn: () => previewFn({ data: { companyId, periodEnd } }),
   });
   const reviewed = useMemo(() => {
-    if (!preview.data || preview.data.periodEnd !== periodEnd) return { summary: null, issue: null };
+    if (!preview.data || preview.data.periodEnd !== periodEnd)
+      return { summary: null, issue: null };
     try {
       return {
         summary: summarizeDepreciationPreview(preview.data.rows, preview.data.totalMinor),
         issue: null,
       };
     } catch (error) {
-      return { summary: null, issue: error instanceof Error ? error.message : "Invalid preview data." };
+      return {
+        summary: null,
+        issue: error instanceof Error ? error.message : "Invalid preview data.",
+      };
     }
   }, [preview.data, periodEnd]);
   const plan = useMemo(() => {
@@ -1068,22 +1109,25 @@ function DepreciationPanel({
       return null;
     }
   }, [outstanding, month, validMonth]);
-  const previewReady = preview.isSuccess && !preview.isFetching &&
-    preview.data?.periodEnd === periodEnd && reviewed.summary !== null;
+  const previewReady =
+    preview.isSuccess &&
+    !preview.isFetching &&
+    preview.data?.periodEnd === periodEnd &&
+    reviewed.summary !== null;
   const summary = reviewed.summary;
   const rows = preview.data?.periodEnd === periodEnd ? preview.data.rows : [];
-  const visibleRows = rows.filter((row) =>
-    rowFilter === "all" ||
-    row.status === rowFilter ||
-    (rowFilter === "other" && row.status !== "due" && row.status !== "behind"),
+  const visibleRows = rows.filter(
+    (row) =>
+      rowFilter === "all" ||
+      row.status === rowFilter ||
+      (rowFilter === "other" && row.status !== "due" && row.status !== "behind"),
   );
   const pageSize = 25;
   const pages = Math.max(1, Math.ceil(visibleRows.length / pageSize));
   const currentPage = Math.min(previewPage, pages - 1);
   const shown = visibleRows.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
   const catchUpAvailable = Boolean(
-    plan && plan.periodEnds.length > 1 && summary &&
-    (summary.behind > 0 || summary.due > 0),
+    plan && plan.periodEnds.length > 1 && summary && (summary.behind > 0 || summary.due > 0),
   );
 
   const post = useMutation({
@@ -1091,14 +1135,16 @@ function DepreciationPanel({
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["fixed-assets", companyId] });
       if (result.posted.length > 0) {
-        const value = result.posted.reduce((total, period) => total + BigInt(period.totalMinor), 0n);
+        const value = result.posted.reduce(
+          (total, period) => total + BigInt(period.totalMinor),
+          0n,
+        );
         toast.success(
           `Processed ${result.posted.length} month${result.posted.length === 1 ? "" : "s"} (${fmt.money(value, currency)} posted).`,
         );
       }
-      if (result.failure) toast.error(
-        `Stopped at ${fmt.date(result.failure.periodEnd)}: ${result.failure.message}`,
-      );
+      if (result.failure)
+        toast.error(`Stopped at ${fmt.date(result.failure.periodEnd)}: ${result.failure.message}`);
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -1119,8 +1165,15 @@ function DepreciationPanel({
   };
 
   const confirmPosting = () => {
-    if (!confirmation || !previewReady || post.isPending || !canPost ||
-        confirmation.periodEnd !== periodEnd || !plan) return;
+    if (
+      !confirmation ||
+      !previewReady ||
+      post.isPending ||
+      !canPost ||
+      confirmation.periodEnd !== periodEnd ||
+      !plan
+    )
+      return;
     const expected = confirmation.mode === "one" ? [periodEnd] : plan.periodEnds;
     if (expected.join("|") !== confirmation.periodEnds.join("|")) return;
     setConfirmation(null);
@@ -1164,21 +1217,23 @@ function DepreciationPanel({
           {lastRunThrough
             ? `Last recorded run: ${fmt.date(lastRunThrough)}.`
             : "No depreciation run recorded yet."}{" "}
-          Previewing never posts journals. Posting requires confirmation and is
-          revalidated by the accounting engine, including closed periods.
+          Previewing never posts journals. Posting requires confirmation and is revalidated by the
+          accounting engine, including closed periods.
         </p>
       </div>
 
       {!validMonth ? (
         <Alert variant="destructive">
-          <AlertDescription>Select a valid depreciation month to view its preview.</AlertDescription>
+          <AlertDescription>
+            Select a valid depreciation month to view its preview.
+          </AlertDescription>
         </Alert>
       ) : !canPost ? (
         <Alert>
           <AlertDescription>
-            Depreciation previews require accounting posting or manual journal permission
-            under the current database policy, even though a preview does not create entries.
-            Ask an organisation administrator to review your access.
+            Depreciation previews require accounting posting or manual journal permission under the
+            current database policy, even though a preview does not create entries. Ask an
+            organisation administrator to review your access.
           </AlertDescription>
         </Alert>
       ) : preview.isPending ? (
@@ -1201,20 +1256,25 @@ function DepreciationPanel({
             {[
               { label: "Ready for selected month", value: String(summary.due) },
               { label: "Earlier periods outstanding", value: String(summary.behind) },
-              { label: "Already posted / completed", value: String(summary.alreadyDone + summary.fullyDepreciated) },
+              {
+                label: "Already posted / completed",
+                value: String(summary.alreadyDone + summary.fullyDepreciated),
+              },
               { label: "Preview charge", value: fmt.money(summary.totalDueMinor, currency) },
             ].map((metric) => (
               <div key={metric.label} className="min-w-0 rounded-lg border bg-card p-4">
                 <p className="text-xs text-muted-foreground">{metric.label}</p>
-                <p className="mt-2 break-words text-lg font-semibold tabular-nums">{metric.value}</p>
+                <p className="mt-2 break-words text-lg font-semibold tabular-nums">
+                  {metric.value}
+                </p>
               </div>
             ))}
           </div>
           {summary.behind > 0 ? (
             <Alert>
               <AlertDescription>
-                {summary.behind} asset{summary.behind === 1 ? " has" : "s have"} earlier
-                months outstanding. Work from the earliest period and check for locked periods.
+                {summary.behind} asset{summary.behind === 1 ? " has" : "s have"} earlier months
+                outstanding. Work from the earliest period and check for locked periods.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -1245,8 +1305,12 @@ function DepreciationPanel({
                 <option value="behind">Earlier periods ({summary.behind})</option>
                 <option value="other">Other statuses</option>
               </select>
-              <Button size="sm" variant="outline" disabled={preview.isFetching}
-                onClick={() => void preview.refetch()}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={preview.isFetching}
+                onClick={() => void preview.refetch()}
+              >
                 Refresh preview
               </Button>
             </div>
@@ -1287,7 +1351,9 @@ function DepreciationPanel({
                         {row.status === "due" ? fmt.amount(row.amount_minor, currency) : "—"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {row.status === "due" ? fmt.amount(row.accumulated_after_minor, currency) : "—"}
+                        {row.status === "due"
+                          ? fmt.amount(row.accumulated_after_minor, currency)
+                          : "—"}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1301,39 +1367,60 @@ function DepreciationPanel({
                 Page {currentPage + 1} of {pages}
               </span>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" disabled={currentPage === 0}
-                  onClick={() => setPreviewPage(currentPage - 1)}>Previous</Button>
-                <Button size="sm" variant="outline" disabled={currentPage >= pages - 1}
-                  onClick={() => setPreviewPage(currentPage + 1)}>Next</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={currentPage === 0}
+                  onClick={() => setPreviewPage(currentPage - 1)}
+                >
+                  Previous
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={currentPage >= pages - 1}
+                  onClick={() => setPreviewPage(currentPage + 1)}
+                >
+                  Next
+                </Button>
               </div>
             </div>
           ) : null}
           <div className="flex flex-wrap items-center gap-2">
             <Button
-              disabled={!canPost || post.isPending || !previewReady ||
-                summary.due === 0 || summary.behind > 0}
-              title={!canPost ? "You lack permission to post journals"
-                : summary.behind > 0
-                  ? "Post the earlier outstanding months first"
-                  : undefined}
+              disabled={
+                !canPost ||
+                post.isPending ||
+                !previewReady ||
+                summary.due === 0 ||
+                summary.behind > 0
+              }
+              title={
+                !canPost
+                  ? "You lack permission to post journals"
+                  : summary.behind > 0
+                    ? "Post the earlier outstanding months first"
+                    : undefined
+              }
               onClick={() => requestPosting("one")}
             >
               {post.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
               Review posting for {fmt.date(periodEnd)}
             </Button>
             {catchUpAvailable ? (
-              <Button variant="outline"
+              <Button
+                variant="outline"
                 disabled={!canPost || post.isPending || !previewReady}
                 onClick={() => requestPosting("catch_up")}
               >
                 Review {plan?.periodEnds.length ?? 0}-month catch-up
               </Button>
             ) : null}
-           </div>
+          </div>
           <p className="text-xs text-muted-foreground">
-            These values are a read-only preview for the selected month, not a promise of
-            journals that will post. A multi-month catch-up is recalculated by the server
-            for each month; this month's charge is <strong>not</strong> its total.
+            These values are a read-only preview for the selected month, not a promise of journals
+            that will post. A multi-month catch-up is recalculated by the server for each month;
+            this month's charge is <strong>not</strong> its total.
           </p>
         </>
       ) : null}
@@ -1344,13 +1431,15 @@ function DepreciationPanel({
           {post.data ? (
             <>
               <p className="text-sm">
-                {post.data.posted.length} month(s) processed. Journal amounts below are
-                actual returned posting results, not prior preview estimates.
+                {post.data.posted.length} month(s) processed. Journal amounts below are actual
+                returned posting results, not prior preview estimates.
               </p>
               <ul className="space-y-1 text-sm">
                 {post.data.posted.map((item) => (
                   <li key={item.periodEnd} className="flex flex-wrap justify-between gap-2">
-                    <span>{fmt.date(item.periodEnd)} · {item.assets} asset(s)</span>
+                    <span>
+                      {fmt.date(item.periodEnd)} · {item.assets} asset(s)
+                    </span>
                     <span className="tabular-nums">{fmt.money(item.totalMinor, currency)}</span>
                   </li>
                 ))}
@@ -1367,20 +1456,24 @@ function DepreciationPanel({
           ) : null}
           {post.isError ? (
             <Alert variant="destructive">
-              <AlertDescription>Could not run depreciation: {friendlyAuthError(post.error)}</AlertDescription>
+              <AlertDescription>
+                Could not run depreciation: {friendlyAuthError(post.error)}
+              </AlertDescription>
             </Alert>
           ) : null}
         </section>
       ) : null}
 
-      <Dialog open={confirmation !== null}
-        onOpenChange={(open) => !open && !post.isPending && setConfirmation(null)}>
+      <Dialog
+        open={confirmation !== null}
+        onOpenChange={(open) => !open && !post.isPending && setConfirmation(null)}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Confirm depreciation posting</DialogTitle>
             <DialogDescription>
-              Posting creates or reuses authorised monthly journal records, subject to
-              period locks and server-side permissions.
+              Posting creates or reuses authorised monthly journal records, subject to period locks
+              and server-side permissions.
             </DialogDescription>
           </DialogHeader>
           {confirmation ? (
@@ -1404,9 +1497,9 @@ function DepreciationPanel({
               {confirmation.mode === "catch_up" ? (
                 <Alert>
                   <AlertDescription>
-                    Each period is recalculated on the server. The one-month preview charge
-                    does not represent the total catch-up. The run stops at the first failed
-                    period; successful earlier months remain posted.
+                    Each period is recalculated on the server. The one-month preview charge does not
+                    represent the total catch-up. The run stops at the first failed period;
+                    successful earlier months remain posted.
                   </AlertDescription>
                 </Alert>
               ) : null}
@@ -1422,11 +1515,25 @@ function DepreciationPanel({
             </div>
           ) : null}
           <DialogFooter>
-            <Button size="sm" variant="outline" onClick={() => setConfirmation(null)}
-              disabled={post.isPending}>Cancel</Button>
-            <Button size="sm" onClick={confirmPosting}
-              disabled={!confirmation || !previewReady || post.isPending || !canPost ||
-                confirmation.periodEnd !== periodEnd}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setConfirmation(null)}
+              disabled={post.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={confirmPosting}
+              disabled={
+                !confirmation ||
+                !previewReady ||
+                post.isPending ||
+                !canPost ||
+                confirmation.periodEnd !== periodEnd
+              }
+            >
               {post.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
               Confirm and post
             </Button>
@@ -1480,9 +1587,9 @@ function BillLinesDialog({
         <DialogHeader>
           <DialogTitle>Capitalise from a bill</DialogTitle>
           <DialogDescription>
-            Posted bill lines coded to asset accounts are candidates for review, not proof
-            of capital purchases. Select a bill line to prepare an asset registration; the
-            original purchase is not posted again.
+            Posted bill lines coded to asset accounts are candidates for review, not proof of
+            capital purchases. Select a bill line to prepare an asset registration; the original
+            purchase is not posted again.
           </DialogDescription>
         </DialogHeader>
         {q.isPending ? (
@@ -1571,7 +1678,9 @@ function BillLinesDialog({
                           <TableCell className="text-right">
                             <Button
                               size="sm"
-                              disabled={!capitalisationReviewGuidance(line.status).canPrepareNewAsset}
+                              disabled={
+                                !capitalisationReviewGuidance(line.status).canPrepareNewAsset
+                              }
                               title={
                                 capitalisationReviewGuidance(line.status).canPrepareNewAsset
                                   ? "Verify eligible acquisition costs before registration"
@@ -1615,7 +1724,9 @@ function BillLinesDialog({
           </div>
         )}
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

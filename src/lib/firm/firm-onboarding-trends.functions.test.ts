@@ -2,9 +2,15 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-start", () => ({
   createServerFn: () => ({
-    middleware() { return this; },
-    inputValidator() { return this; },
-    handler(fn: unknown) { return fn; },
+    middleware() {
+      return this;
+    },
+    inputValidator() {
+      return this;
+    },
+    handler(fn: unknown) {
+      return fn;
+    },
   }),
 }));
 vi.mock("@/integrations/supabase/auth-middleware", () => ({
@@ -24,11 +30,18 @@ describe("firm onboarding historical query input", () => {
     expect(firmOnboardingTrendInput.safeParse({ firmId, days: 365 }).success).toBe(false);
     expect(firmOnboardingTrendInput.safeParse({ firmId, days: 15 }).success).toBe(false);
     expect(firmOnboardingTrendInput.safeParse({ firmId, days: "30" }).success).toBe(false);
-    expect(firmOnboardingTrendInput.safeParse({
-      firmId, days: 30, userId: firmId,
-    }).success).toBe(false);
-    expect(firmOnboardingTrendInput.safeParse({
-      firmId: "not-a-firm", days: 30,
-    }).success).toBe(false);
+    expect(
+      firmOnboardingTrendInput.safeParse({
+        firmId,
+        days: 30,
+        userId: firmId,
+      }).success,
+    ).toBe(false);
+    expect(
+      firmOnboardingTrendInput.safeParse({
+        firmId: "not-a-firm",
+        days: 30,
+      }).success,
+    ).toBe(false);
   });
 });

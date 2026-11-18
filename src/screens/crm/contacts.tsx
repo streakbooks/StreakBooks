@@ -11,7 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
@@ -46,22 +51,29 @@ export function CrmContactsPage() {
   });
 
   if (isPending) return <LoadingState />;
-  if (!company) return <CompanyEmptyState title="No organisation" description="Select a company first." />;
-  if (!canView) return (
-    <ListWorkspace title="CRM Contacts" description="People linked to your customer accounts.">
-      <EmptyState title="No CRM access" description="Ask an administrator for crm.view permission." />
-    </ListWorkspace>
-  );
+  if (!company)
+    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+  if (!canView)
+    return (
+      <ListWorkspace title="CRM Contacts" description="People linked to your customer accounts.">
+        <EmptyState
+          title="No CRM access"
+          description="Ask an administrator for crm.view permission."
+        />
+      </ListWorkspace>
+    );
 
   const term = search.trim().toLocaleLowerCase();
-  const rows = (people.data ?? []).filter((person) =>
-    !term || [
-      person.displayName,
-      person.accountName,
-      person.jobTitle ?? "",
-      person.email ?? "",
-      person.phone ?? "",
-    ].some((value) => value.toLocaleLowerCase().includes(term)),
+  const rows = (people.data ?? []).filter(
+    (person) =>
+      !term ||
+      [
+        person.displayName,
+        person.accountName,
+        person.jobTitle ?? "",
+        person.email ?? "",
+        person.phone ?? "",
+      ].some((value) => value.toLocaleLowerCase().includes(term)),
   );
 
   return (
@@ -69,9 +81,13 @@ export function CrmContactsPage() {
       title="CRM Contacts"
       description="Find people in customer organisations. Records remain owned by the shared Contacts module."
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "CRM Contacts" }]}
-      actions={canEditMaster ? (
-        <Button asChild variant="secondary"><Link to="/contacts">Manage Contacts</Link></Button>
-      ) : undefined}
+      actions={
+        canEditMaster ? (
+          <Button asChild variant="secondary">
+            <Link to="/contacts">Manage Contacts</Link>
+          </Button>
+        ) : undefined
+      }
     >
       <CrmSubnav current="contacts" />
       {settings.isLoading ? <LoadingState /> : null}
@@ -83,7 +99,10 @@ export function CrmContactsPage() {
         />
       ) : null}
       {settings.data && !settings.data.enabled ? (
-        <EmptyState title="CRM is disabled" description="An administrator must enable CRM in settings." />
+        <EmptyState
+          title="CRM is disabled"
+          description="An administrator must enable CRM in settings."
+        />
       ) : null}
       {settings.data?.enabled ? (
         <div className="space-y-4">
@@ -98,9 +117,9 @@ export function CrmContactsPage() {
               onChange={(event) => setSearch(event.target.value)}
             />
             <p role="status" className="text-xs text-muted-foreground">
-              Showing {rows.length} of {people.data?.length ?? 0} loaded people.
-              This view currently loads up to 500 people belonging to the first 200 customer accounts.
-              Enterprise pagination is still pending.
+              Showing {rows.length} of {people.data?.length ?? 0} loaded people. This view currently
+              loads up to 500 people belonging to the first 200 customer accounts. Enterprise
+              pagination is still pending.
             </p>
           </div>
           {people.isLoading ? <LoadingState /> : null}
@@ -114,9 +133,11 @@ export function CrmContactsPage() {
           {people.isSuccess && rows.length === 0 ? (
             <EmptyState
               title={term ? "No matching people in loaded records" : "No customer people found"}
-              description={term
-                ? "Try a different search, or open Contacts for the complete customer master."
-                : "Add a person to a customer account in Contacts, then refresh this view."}
+              description={
+                term
+                  ? "Try a different search, or open Contacts for the complete customer master."
+                  : "Add a person to a customer account in Contacts, then refresh this view."
+              }
             />
           ) : null}
           {people.isSuccess && rows.length > 0 ? (
@@ -156,8 +177,30 @@ export function CrmContactsPage() {
                         </Link>
                       </TableCell>
                       <TableCell>{person.jobTitle ?? "—"}</TableCell>
-                      <TableCell>{person.email ? <a className="text-primary underline-offset-4 hover:underline" href={`mailto:${person.email}`}>{person.email}</a> : "—"}</TableCell>
-                      <TableCell>{person.phone ? <a className="text-primary underline-offset-4 hover:underline" href={`tel:${person.phone}`}>{person.phone}</a> : "—"}</TableCell>
+                      <TableCell>
+                        {person.email ? (
+                          <a
+                            className="text-primary underline-offset-4 hover:underline"
+                            href={`mailto:${person.email}`}
+                          >
+                            {person.email}
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {person.phone ? (
+                          <a
+                            className="text-primary underline-offset-4 hover:underline"
+                            href={`tel:${person.phone}`}
+                          >
+                            {person.phone}
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

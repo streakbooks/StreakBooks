@@ -35,28 +35,27 @@ import { companyIdOf, isoDate } from "@/lib/planning/rpc";
  */
 export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    budgetId: string;
-    categoryId: string;
-    through?: string;
-  }) => ({
-    companyId: companyIdOf(input),
-    budgetId: assertUuid(input?.budgetId, "budget"),
-    categoryId: assertUuid(input?.categoryId, "category"),
-    through: input.through ? isoDate(input.through, "As of") : undefined,
-  }))
+  .inputValidator(
+    (input: { companyId: string; budgetId: string; categoryId: string; through?: string }) => ({
+      companyId: companyIdOf(input),
+      budgetId: assertUuid(input?.budgetId, "budget"),
+      categoryId: assertUuid(input?.categoryId, "category"),
+      through: input.through ? isoDate(input.through, "As of") : undefined,
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
     const [meta, budgetResult, categoryResult, metas] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
-      sb.from("budgets" as never)
+      sb
+        .from("budgets" as never)
         .select("id,name,fiscal_year_start" as never)
         .eq("id" as never, data.budgetId as never)
         .eq("company_id" as never, data.companyId as never)
         .maybeSingle(),
-      sb.from("tracking_categories" as never)
+      sb
+        .from("tracking_categories" as never)
         .select("id,name,dimension_kind" as never)
         .eq("id" as never, data.categoryId as never)
         .eq("company_id" as never, data.companyId as never)
@@ -104,22 +103,26 @@ export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
     type Tag = { line_id: string; option_id: string };
 
     const [budgetRows, options, posted] = await Promise.all([
-      fetchAllPages<RawBudget>((from, to) =>
-        sb.from("budget_dimension_lines" as never)
-          .select("option_id,account_id,period_month,amount_minor" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq("budget_id" as never, data.budgetId as never)
-          .eq("category_id" as never, data.categoryId as never)
-          .order("id" as never)
-          .range(from, to) as unknown as PromiseLike<PageResult<RawBudget>>,
+      fetchAllPages<RawBudget>(
+        (from, to) =>
+          sb
+            .from("budget_dimension_lines" as never)
+            .select("option_id,account_id,period_month,amount_minor" as never)
+            .eq("company_id" as never, data.companyId as never)
+            .eq("budget_id" as never, data.budgetId as never)
+            .eq("category_id" as never, data.categoryId as never)
+            .order("id" as never)
+            .range(from, to) as unknown as PromiseLike<PageResult<RawBudget>>,
       ),
-      fetchAllPages<RawOption>((from, to) =>
-        sb.from("tracking_options" as never)
-          .select("id,name,code" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq("category_id" as never, data.categoryId as never)
-          .order("id" as never)
-          .range(from, to) as unknown as PromiseLike<PageResult<RawOption>>,
+      fetchAllPages<RawOption>(
+        (from, to) =>
+          sb
+            .from("tracking_options" as never)
+            .select("id,name,code" as never)
+            .eq("company_id" as never, data.companyId as never)
+            .eq("category_id" as never, data.categoryId as never)
+            .order("id" as never)
+            .range(from, to) as unknown as PromiseLike<PageResult<RawOption>>,
       ),
       months.length === 0 || incomeExpenseIds.length === 0
         ? Promise.resolve([])
@@ -135,15 +138,17 @@ export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
     const includedPosted = eligibleDimensionActualLines(posted);
     const tags: Tag[] = [];
     for (const ids of batchPostedLineIds(includedPosted)) {
-      const batch = await fetchAllPages<Tag>((from, to) =>
-        sb.from("line_tracking_assignments" as never)
-          .select("line_id,option_id" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq("category_id" as never, data.categoryId as never)
-          .eq("entity_type" as never, "journal_line" as never)
-          .in("line_id" as never, ids as never)
-          .order("id" as never)
-          .range(from, to) as unknown as PromiseLike<PageResult<Tag>>,
+      const batch = await fetchAllPages<Tag>(
+        (from, to) =>
+          sb
+            .from("line_tracking_assignments" as never)
+            .select("line_id,option_id" as never)
+            .eq("company_id" as never, data.companyId as never)
+            .eq("category_id" as never, data.categoryId as never)
+            .eq("entity_type" as never, "journal_line" as never)
+            .in("line_id" as never, ids as never)
+            .order("id" as never)
+            .range(from, to) as unknown as PromiseLike<PageResult<Tag>>,
       );
       tags.push(...batch);
     }

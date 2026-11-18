@@ -42,10 +42,7 @@ function num(value: unknown): number {
 }
 
 /** Round distance × rate-per-unit into minor currency units. */
-export function calculateMileageNetMinor(
-  distanceValue: number,
-  rateMinorPerUnit: number,
-): number {
+export function calculateMileageNetMinor(distanceValue: number, rateMinorPerUnit: number): number {
   if (!Number.isFinite(distanceValue) || distanceValue <= 0) {
     throw new Error("Distance must be greater than zero.");
   }
@@ -69,18 +66,13 @@ export function buildMileageClaimLine(input: ExpenseMileageLineDraft) {
   if (input.distanceUnit !== input.rate.distanceUnit) {
     throw new Error("Distance unit must match the selected mileage rate.");
   }
-  const netMinor = calculateMileageNetMinor(
-    input.distanceValue,
-    input.rate.rateMinorPerUnit,
-  );
+  const netMinor = calculateMileageNetMinor(input.distanceValue, input.rate.rateMinorPerUnit);
   const taxMinor = input.taxMinor ?? 0;
   const grossMinor = netMinor + taxMinor;
   const origin = input.origin?.trim() ?? "";
   const destination = input.destination?.trim() ?? "";
   const route =
-    origin && destination
-      ? `${origin} → ${destination}`
-      : origin || destination || input.rate.name;
+    origin && destination ? `${origin} → ${destination}` : origin || destination || input.rate.name;
 
   return {
     expenseDate: input.expenseDate,

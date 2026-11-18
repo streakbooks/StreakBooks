@@ -9,12 +9,7 @@ import {
 } from "@/lib/app-store/security/activation";
 
 export type InstallWizardStepId =
-  | "organisation"
-  | "permissions"
-  | "oauth"
-  | "mapping"
-  | "dry_run"
-  | "activate";
+  "organisation" | "permissions" | "oauth" | "mapping" | "dry_run" | "activate";
 
 export type InstallWizardStep = {
   id: InstallWizardStepId;

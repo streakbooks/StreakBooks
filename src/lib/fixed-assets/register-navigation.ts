@@ -1,7 +1,12 @@
 import type { AssetRegisterSort } from "./register-view";
 
 export const FIXED_ASSET_SECTIONS = [
-  "dashboard", "register", "depreciation", "types", "reconciliation", "bill-review",
+  "dashboard",
+  "register",
+  "depreciation",
+  "types",
+  "reconciliation",
+  "bill-review",
 ] as const;
 export type FixedAssetSection = (typeof FIXED_ASSET_SECTIONS)[number];
 

@@ -26,10 +26,10 @@ describe("Payroll salary input integrity", () => {
   });
 
   it("enforces the PostgreSQL salary line upper bound before JS Number conversion", () => {
-    expect(parsePayrollSalaryMinor("9000000000000", "GBP", "Salary"))
-      .toBe(PAYROLL_SALARY_MAX_MINOR);
-    expect(() => parsePayrollSalaryMinor("9000000000000.01", "GBP", "Salary"))
-      .toThrow(/limit/);
+    expect(parsePayrollSalaryMinor("9000000000000", "GBP", "Salary")).toBe(
+      PAYROLL_SALARY_MAX_MINOR,
+    );
+    expect(() => parsePayrollSalaryMinor("9000000000000.01", "GBP", "Salary")).toThrow(/limit/);
   });
 
   it("parses percentages exactly as integer basis points", () => {

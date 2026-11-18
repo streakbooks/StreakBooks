@@ -22,15 +22,19 @@ export function buildCrmPersonDirectory(
   people: CrmAccountPerson[],
   allowedCustomerAccounts: CrmAccountName[],
 ): CrmPersonDirectoryRow[] {
-  const accountNames = new Map(allowedCustomerAccounts.map((account) => [account.id, account.name]));
+  const accountNames = new Map(
+    allowedCustomerAccounts.map((account) => [account.id, account.name]),
+  );
   return people.flatMap((person) => {
     const accountName = accountNames.get(person.contactId);
     if (!accountName) return []; // Never expose supplier-only or cross-company people
     const fullName = [person.firstName, person.lastName].filter(Boolean).join(" ").trim();
-    return [{
-      ...person,
-      displayName: fullName || person.email?.trim() || "Unnamed contact",
-      accountName,
-    }];
+    return [
+      {
+        ...person,
+        displayName: fullName || person.email?.trim() || "Unnamed contact",
+        accountName,
+      },
+    ];
   });
 }

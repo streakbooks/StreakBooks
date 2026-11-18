@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useId, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -422,15 +423,13 @@ export function PayrollSettingsPage() {
                 />
               </Field>
               <Field label="Default pay schedule" htmlFor={`${uiId}-schedule`}>
-                <select
+                <RecordLookupSelect
                   id={`${uiId}-schedule`}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={draft.defaultPayScheduleId}
                   disabled={!canEdit}
-                  onChange={(e) =>
-                    setDraft((prev) =>
-                      prev ? { ...prev, defaultPayScheduleId: e.target.value } : prev,
-                    )
+                  onValueChange={(e) =>
+                    setDraft((prev) => (prev ? { ...prev, defaultPayScheduleId: e } : prev))
                   }
                 >
                   <option value="">Not set</option>
@@ -441,7 +440,7 @@ export function PayrollSettingsPage() {
                         {schedule.name} ({schedule.frequency})
                       </option>
                     ))}
-                </select>
+                </RecordLookupSelect>
               </Field>
               <Field label="Default working days / week" htmlFor={`${uiId}-days`}>
                 <Input
@@ -483,16 +482,14 @@ export function PayrollSettingsPage() {
                 />
               </Field>
               <Field label="Default payment method" htmlFor={`${uiId}-method`}>
-                <select
+                <RecordLookupSelect
                   id={`${uiId}-method`}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={draft.defaultPaymentMethod}
                   disabled={!canEdit}
-                  onChange={(e) =>
+                  onValueChange={(e) =>
                     setDraft((prev) =>
-                      prev
-                        ? { ...prev, defaultPaymentMethod: assertPaymentMethod(e.target.value) }
-                        : prev,
+                      prev ? { ...prev, defaultPaymentMethod: assertPaymentMethod(e) } : prev,
                     )
                   }
                 >
@@ -501,17 +498,17 @@ export function PayrollSettingsPage() {
                       {method.replaceAll("_", " ")}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </Field>
               <Field label="Rounding mode" htmlFor={`${uiId}-rounding`}>
-                <select
+                <RecordLookupSelect
                   id={`${uiId}-rounding`}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={draft.roundingMode}
                   disabled={!canEdit}
-                  onChange={(e) =>
+                  onValueChange={(e) =>
                     setDraft((prev) =>
-                      prev ? { ...prev, roundingMode: assertRoundingMode(e.target.value) } : prev,
+                      prev ? { ...prev, roundingMode: assertRoundingMode(e) } : prev,
                     )
                   }
                 >
@@ -520,7 +517,7 @@ export function PayrollSettingsPage() {
                       {mode}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </Field>
               <div className="flex items-center justify-between gap-3 rounded-md border p-3 md:col-span-2">
                 <div>
@@ -720,21 +717,19 @@ export function PayrollSettingsPage() {
                   />
                 </Field>
                 <Field label="Frequency" htmlFor={`${uiId}-sched-freq`}>
-                  <select
+                  <RecordLookupSelect
                     id={`${uiId}-sched-freq`}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={scheduleDraft.frequency}
                     disabled={!canEdit}
-                    onChange={(e) =>
-                      setScheduleDraft((prev) => ({ ...prev, frequency: e.target.value }))
-                    }
+                    onValueChange={(e) => setScheduleDraft((prev) => ({ ...prev, frequency: e }))}
                   >
                     {PAY_FREQUENCIES.map((frequency) => (
                       <option key={frequency} value={frequency}>
                         {frequency}
                       </option>
                     ))}
-                  </select>
+                  </RecordLookupSelect>
                 </Field>
                 <Field label="Anchor / period start date" htmlFor={`${uiId}-sched-anchor`}>
                   <Input
@@ -942,32 +937,30 @@ export function PayrollSettingsPage() {
                   />
                 </Field>
                 <Field label="Kind" htmlFor={`${uiId}-comp-kind`}>
-                  <select
+                  <RecordLookupSelect
                     id={`${uiId}-comp-kind`}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={componentDraft.kind}
                     disabled={!canEdit}
-                    onChange={(e) =>
-                      setComponentDraft((prev) => ({ ...prev, kind: e.target.value }))
-                    }
+                    onValueChange={(e) => setComponentDraft((prev) => ({ ...prev, kind: e }))}
                   >
                     {COMPONENT_KINDS.map((kind) => (
                       <option key={kind} value={kind}>
                         {kind.replaceAll("_", " ")}
                       </option>
                     ))}
-                  </select>
+                  </RecordLookupSelect>
                 </Field>
                 <Field label="Calculation" htmlFor={`${uiId}-comp-calc`}>
-                  <select
+                  <RecordLookupSelect
                     id={`${uiId}-comp-calc`}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={componentDraft.calculationMethod}
                     disabled={!canEdit}
-                    onChange={(e) =>
+                    onValueChange={(e) =>
                       setComponentDraft((prev) => ({
                         ...prev,
-                        calculationMethod: e.target.value,
+                        calculationMethod: e,
                       }))
                     }
                   >
@@ -976,19 +969,19 @@ export function PayrollSettingsPage() {
                         {method}
                       </option>
                     ))}
-                  </select>
+                  </RecordLookupSelect>
                 </Field>
                 {componentDraft.calculationMethod === "percentage" ? (
                   <Field label="Percentage base" htmlFor={`${uiId}-comp-base`}>
-                    <select
+                    <RecordLookupSelect
                       id={`${uiId}-comp-base`}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                       value={componentDraft.percentageBase}
                       disabled={!canEdit}
-                      onChange={(e) =>
+                      onValueChange={(e) =>
                         setComponentDraft((prev) => ({
                           ...prev,
-                          percentageBase: e.target.value,
+                          percentageBase: e,
                         }))
                       }
                     >
@@ -997,7 +990,7 @@ export function PayrollSettingsPage() {
                           {base.replaceAll("_", " ")}
                         </option>
                       ))}
-                    </select>
+                    </RecordLookupSelect>
                   </Field>
                 ) : null}
                 <Field label="Sort order" htmlFor={`${uiId}-comp-sort`}>

@@ -11,11 +11,7 @@ import {
 } from "lucide-react";
 import { badgeVariants } from "@/components/ui/badge-variants";
 import { cn } from "@/lib/utils";
-import {
-  effectiveStatus,
-  statusDisplay,
-  type StatusTone,
-} from "@/lib/status-badge";
+import { effectiveStatus, statusDisplay, type StatusTone } from "@/lib/status-badge";
 
 const TONE_ICONS: Record<StatusTone, LucideIcon> = {
   neutral: Circle,

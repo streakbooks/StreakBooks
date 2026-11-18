@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -57,8 +58,7 @@ export function ExpenseManagementReimbursementsPage() {
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
   const queryClient = useQueryClient();
-  const canPay =
-    can("expenses.reimburse" as Permission) || can("expenses.admin" as Permission);
+  const canPay = can("expenses.reimburse" as Permission) || can("expenses.admin" as Permission);
   const [bankGlAccountId, setBankGlAccountId] = useState("");
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -103,17 +103,18 @@ export function ExpenseManagementReimbursementsPage() {
 
   const openClaims = useMemo(
     () =>
-      (claimsQ.data ?? []).filter((claim) =>
-        canReimburseClaim({
-          approvalStatus: claim.approvalStatus,
-          postingStatus: claim.postingStatus,
-          paymentSource: claim.paymentSource,
-          reimbursementStatus: claim.reimbursementStatus,
-          postedJournalId: claim.postedJournalId,
-          reimbursableMinor: claim.reimbursableMinor,
-          reimbursedMinor: claim.reimbursedMinor,
-          reimbursementChannel: claim.reimbursementChannel,
-        }).ok,
+      (claimsQ.data ?? []).filter(
+        (claim) =>
+          canReimburseClaim({
+            approvalStatus: claim.approvalStatus,
+            postingStatus: claim.postingStatus,
+            paymentSource: claim.paymentSource,
+            reimbursementStatus: claim.reimbursementStatus,
+            postedJournalId: claim.postedJournalId,
+            reimbursableMinor: claim.reimbursableMinor,
+            reimbursedMinor: claim.reimbursedMinor,
+            reimbursementChannel: claim.reimbursementChannel,
+          }).ok,
       ),
     [claimsQ.data],
   );
@@ -142,8 +143,7 @@ export function ExpenseManagementReimbursementsPage() {
   );
 
   const bankOptions = useMemo(
-    () =>
-      (banksQ.data ?? []).filter((account) => account.is_active && account.gl_account_id),
+    () => (banksQ.data ?? []).filter((account) => account.is_active && account.gl_account_id),
     [banksQ.data],
   );
 
@@ -153,11 +153,7 @@ export function ExpenseManagementReimbursementsPage() {
   };
 
   const pay = useMutation({
-    mutationFn: async (input: {
-      id: string;
-      version: number;
-      remainingMinor: number;
-    }) => {
+    mutationFn: async (input: { id: string; version: number; remainingMinor: number }) => {
       if (!company) throw new Error("Select a company first.");
       if (!bankGlAccountId) throw new Error("Choose a bank account.");
       const rawAmount = partialAmounts[input.id]?.trim();
@@ -199,9 +195,7 @@ export function ExpenseManagementReimbursementsPage() {
     },
     onSuccess: (_result, variables) => {
       invalidate();
-      toast.success(
-        variables.cancel ? "Payroll queue cancelled." : "Claim queued for payroll.",
-      );
+      toast.success(variables.cancel ? "Payroll queue cancelled." : "Claim queued for payroll.");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -249,9 +243,7 @@ export function ExpenseManagementReimbursementsPage() {
     },
     onError: (error) => {
       const message = friendlyAuthError(error);
-      toast.error(
-        message.includes("20261107149000") ? EXPENSE_BATCH_REIMBURSE_MIGRATION : message,
-      );
+      toast.error(message.includes("20261107149000") ? EXPENSE_BATCH_REIMBURSE_MIGRATION : message);
     },
   });
 
@@ -261,32 +253,33 @@ export function ExpenseManagementReimbursementsPage() {
   }
   if (!canPay) {
     return (
-      <ListWorkspace title="Reimbursements"
-      subnav={<ExpenseManagementSubnav current="reimbursements"/>}
-    >
-      <EmptyState
-          title="No access"
-          description="Ask an administrator for expenses.reimburse."
-        />
-    </ListWorkspace>
+      <ListWorkspace
+        title="Reimbursements"
+        subnav={<ExpenseManagementSubnav current="reimbursements" />}
+      >
+        <EmptyState title="No access" description="Ask an administrator for expenses.reimburse." />
+      </ListWorkspace>
     );
   }
   if (claimsQ.isLoading || banksQ.isLoading) {
     return (
-      <ListWorkspace title="Reimbursements" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="reimbursements"/>}
-    >
-      <LoadingState />
-    </ListWorkspace>
+      <ListWorkspace
+        title="Reimbursements"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="reimbursements" />}
+      >
+        <LoadingState />
+      </ListWorkspace>
     );
   }
   if (claimsQ.isError) {
     const message = friendlyAuthError(claimsQ.error);
     return (
-      <ListWorkspace title="Reimbursements"
-      subnav={<ExpenseManagementSubnav current="reimbursements"/>}
-    >
-      {message.includes("20261107138000") || message.includes("20261107123000") ? (
+      <ListWorkspace
+        title="Reimbursements"
+        subnav={<ExpenseManagementSubnav current="reimbursements" />}
+      >
+        {message.includes("20261107138000") || message.includes("20261107123000") ? (
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
             <AlertDescription>{EXPENSE_REIMBURSEMENT_MIGRATION}</AlertDescription>
@@ -298,7 +291,7 @@ export function ExpenseManagementReimbursementsPage() {
             onRetry={() => claimsQ.refetch()}
           />
         )}
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
@@ -315,9 +308,7 @@ export function ExpenseManagementReimbursementsPage() {
             disabled={batchPay.isPending || selectedIds.length === 0 || !bankGlAccountId}
             onClick={() => batchPay.mutate()}
           >
-            {batchPay.isPending
-              ? "Paying batch…"
-              : `Pay selected (${selectedIds.length})`}
+            {batchPay.isPending ? "Paying batch…" : `Pay selected (${selectedIds.length})`}
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link to="/purchases/employee-expenses">Legacy employee expenses</Link>
@@ -329,16 +320,16 @@ export function ExpenseManagementReimbursementsPage() {
       <Alert className="mb-6">
         <AlertTitle>Bank, partial, batch, or payroll queue</AlertTitle>
         <AlertDescription>
-          Leave the amount blank to pay the remaining balance. Enter a smaller amount for a
-          partial bank payment. Batch pays remaining balances (up to 50). Payroll queue marks the
-          claim for payroll processing without posting a payslip in this release.
+          Leave the amount blank to pay the remaining balance. Enter a smaller amount for a partial
+          bank payment. Batch pays remaining balances (up to 50). Payroll queue marks the claim for
+          payroll processing without posting a payslip in this release.
         </AlertDescription>
       </Alert>
 
       <div className="mb-6 grid max-w-xl gap-3 rounded-lg border p-4">
         <div className="grid gap-2">
           <Label>Bank account</Label>
-          <Select value={bankGlAccountId} onValueChange={setBankGlAccountId}>
+          <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
             <SelectTrigger aria-label="Bank account for reimbursement">
               <SelectValue placeholder="Select bank account" />
             </SelectTrigger>
@@ -350,7 +341,7 @@ export function ExpenseManagementReimbursementsPage() {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="grid gap-2">
           <Label htmlFor="em-reimburse-date">Payment date</Label>
@@ -414,10 +405,7 @@ export function ExpenseManagementReimbursementsPage() {
                     <div className="font-medium">{claim.claimNumber || "Claim"}</div>
                     <div className="text-sm text-muted-foreground">{claim.title}</div>
                     <Button asChild variant="link" className="h-auto px-0" size="sm">
-                      <Link
-                        to="/expense-management/claims/$claimId"
-                        params={{ claimId: claim.id }}
-                      >
+                      <Link to="/expense-management/claims/$claimId" params={{ claimId: claim.id }}>
                         Open detail
                       </Link>
                     </Button>
@@ -467,9 +455,7 @@ export function ExpenseManagementReimbursementsPage() {
                       size="sm"
                       variant="outline"
                       disabled={payrollMut.isPending || claim.reimbursedMinor > 0}
-                      onClick={() =>
-                        payrollMut.mutate({ id: claim.id, version: claim.version })
-                      }
+                      onClick={() => payrollMut.mutate({ id: claim.id, version: claim.version })}
                     >
                       Queue payroll
                     </Button>
@@ -532,9 +518,7 @@ export function ExpenseManagementReimbursementsPage() {
                     <TableCell className="text-right">
                       <Button
                         size="sm"
-                        disabled={
-                          pay.isPending || !claim || !bank?.gl_account_id
-                        }
+                        disabled={pay.isPending || !claim || !bank?.gl_account_id}
                         onClick={() => {
                           if (!claim || !bank?.gl_account_id) return;
                           setBankGlAccountId(bank.gl_account_id);
@@ -620,9 +604,7 @@ export function ExpenseManagementReimbursementsPage() {
                       size="sm"
                       variant="outline"
                       disabled={refundMut.isPending || claim.reimbursedMinor <= 0}
-                      onClick={() =>
-                        refundMut.mutate({ id: claim.id, version: claim.version })
-                      }
+                      onClick={() => refundMut.mutate({ id: claim.id, version: claim.version })}
                     >
                       Refund last payment
                     </Button>

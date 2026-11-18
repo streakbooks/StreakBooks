@@ -1,12 +1,7 @@
 /** Budget approval actions and presentation rules. Server validates again in the SQL RPC. */
 export type BudgetApprovalAction = "submit" | "withdraw" | "approve" | "reject" | "reopen";
 export type BudgetApprovalStatus =
-  | "draft"
-  | "pending"
-  | "approved"
-  | "rejected"
-  | "withdrawn"
-  | "reopened";
+  "draft" | "pending" | "approved" | "rejected" | "withdrawn" | "reopened";
 
 export const APPROVAL_STATUS_LABELS: Record<BudgetApprovalStatus, string> = {
   draft: "Draft",
@@ -17,10 +12,10 @@ export const APPROVAL_STATUS_LABELS: Record<BudgetApprovalStatus, string> = {
   reopened: "Reopened for revision",
 };
 
-export function validateBudgetApprovalAction(input: {
-  action: unknown;
-  note: unknown;
-}): { action: BudgetApprovalAction; note: string } {
+export function validateBudgetApprovalAction(input: { action: unknown; note: unknown }): {
+  action: BudgetApprovalAction;
+  note: string;
+} {
   if (
     input.action !== "submit" &&
     input.action !== "withdraw" &&

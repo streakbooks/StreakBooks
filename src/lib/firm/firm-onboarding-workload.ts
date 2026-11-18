@@ -73,25 +73,31 @@ export function onboardingTaskQueue(
       const blocked = onboardingBlocked(step, groups.get(step.company_id) ?? []);
       return {
         ...step,
-        status: step.due_date && step.due_date < today
-          ? "overdue"
-          : blocked
-            ? "blocked"
-            : step.due_date && step.due_date <= soon
-              ? "due_soon"
-              : step.due_date
-                ? "scheduled"
-                : "unscheduled",
+        status:
+          step.due_date && step.due_date < today
+            ? "overdue"
+            : blocked
+              ? "blocked"
+              : step.due_date && step.due_date <= soon
+                ? "due_soon"
+                : step.due_date
+                  ? "scheduled"
+                  : "unscheduled",
       };
     });
   const order: Record<OnboardingTask["status"], number> = {
-    overdue: 0, due_soon: 1, blocked: 2, scheduled: 3, unscheduled: 4,
+    overdue: 0,
+    due_soon: 1,
+    blocked: 2,
+    scheduled: 3,
+    unscheduled: 4,
   };
-  return tasks.sort((a, b) =>
-    order[a.status] - order[b.status] ||
-    (a.due_date ?? "9999-12-31").localeCompare(b.due_date ?? "9999-12-31") ||
-    a.company_id.localeCompare(b.company_id) ||
-    a.task_key.localeCompare(b.task_key),
+  return tasks.sort(
+    (a, b) =>
+      order[a.status] - order[b.status] ||
+      (a.due_date ?? "9999-12-31").localeCompare(b.due_date ?? "9999-12-31") ||
+      a.company_id.localeCompare(b.company_id) ||
+      a.task_key.localeCompare(b.task_key),
   );
 }
 
@@ -113,17 +119,15 @@ export function onboardingCompletionReport(
   const completedSteps = steps.filter((step) => Boolean(step.completed_at)).length;
   return {
     clientCount: companyRows.size,
-    fullyCompletedClients: [...companyRows.values()].filter((rows) =>
-      rows.length > 0 && rows.every((row) => Boolean(row.completed_at)),
+    fullyCompletedClients: [...companyRows.values()].filter(
+      (rows) => rows.length > 0 && rows.every((row) => Boolean(row.completed_at)),
     ).length,
     completedSteps,
     totalSteps: steps.length,
     completionPercent: steps.length ? Math.round((100 * completedSteps) / steps.length) : 0,
-    overdueSteps: steps.filter((step) =>
-      !step.completed_at && step.due_date && step.due_date < today,
+    overdueSteps: steps.filter(
+      (step) => !step.completed_at && step.due_date && step.due_date < today,
     ).length,
-    unassignedOpenSteps: steps.filter((step) =>
-      !step.completed_at && !step.assignee_id,
-    ).length,
+    unassignedOpenSteps: steps.filter((step) => !step.completed_at && !step.assignee_id).length,
   };
 }

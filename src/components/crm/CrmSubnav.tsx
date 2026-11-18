@@ -69,10 +69,7 @@ export function CrmSubnav({ current }: { current: CrmSectionKey }) {
         ) : null}
       </div>
 
-      <div
-        aria-label="CRM navigation groups"
-        className="flex min-w-0 gap-1 overflow-x-auto pb-2"
-      >
+      <div aria-label="CRM navigation groups" className="flex min-w-0 gap-1 overflow-x-auto pb-2">
         {groups.map((group) => {
           const active = group.key === selectedGroup;
           return (
@@ -92,7 +89,10 @@ export function CrmSubnav({ current }: { current: CrmSectionKey }) {
               {group.label}
               <span
                 aria-hidden="true"
-                className={cn("text-xs tabular-nums", active ? "text-primary" : "text-muted-foreground")}
+                className={cn(
+                  "text-xs tabular-nums",
+                  active ? "text-primary" : "text-muted-foreground",
+                )}
               >
                 {group.sections.length}
               </span>

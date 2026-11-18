@@ -187,8 +187,14 @@ describe("Action Center triage and overview", () => {
 
 describe("Smart Action Center history and bookmarkable filters", () => {
   it("deduplicates changing offset pages without mutating source data", () => {
-    const first = [{ id: "a", value: 1 }, { id: "b", value: 2 }];
-    const second = [{ id: "b", value: 99 }, { id: "c", value: 3 }];
+    const first = [
+      { id: "a", value: 1 },
+      { id: "b", value: 2 },
+    ];
+    const second = [
+      { id: "b", value: 99 },
+      { id: "c", value: 3 },
+    ];
     expect(mergeNotificationPages([first, second])).toEqual([
       { id: "a", value: 1 },
       { id: "b", value: 2 },

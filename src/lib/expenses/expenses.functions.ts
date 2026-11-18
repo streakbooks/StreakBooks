@@ -42,10 +42,7 @@ import {
   type ExpenseCashAdvance,
   type ExpenseCashAdvanceDraftInput,
 } from "@/lib/expenses/cash-advances";
-import {
-  mapBatchReimburseResult,
-  type BatchReimburseResult,
-} from "@/lib/expenses/reimbursement";
+import { mapBatchReimburseResult, type BatchReimburseResult } from "@/lib/expenses/reimbursement";
 import {
   mapExpenseApprovalDelegation,
   type ExpenseApprovalDelegation,
@@ -245,7 +242,10 @@ async function countRows(
     .select("id", { count: "exact", head: true })
     .eq("company_id", companyId);
   for (const filter of filters) {
-    query = "values" in filter ? query.in(filter.column, filter.values) : query.eq(filter.column, filter.value);
+    query =
+      "values" in filter
+        ? query.in(filter.column, filter.values)
+        : query.eq(filter.column, filter.value);
   }
   const result = await query;
   if (result.error) {
@@ -320,29 +320,23 @@ export const getExpenseManagementOverview = createServerFn({ method: "GET" })
 
     // Probe EM foundation once. When migrations are not applied, skip the three extra
     // expense_claims counts that would otherwise each hit a missing-relation failure.
-    const [
-      legacySubmitted,
-      legacyReimbursed,
-      legacyRejected,
-      directDraft,
-      directPosted,
-      emTotal,
-    ] = await Promise.all([
-      countRows(sb, "employee_expense_claims", data.companyId, [
-        { column: "status", value: "submitted" },
-      ]),
-      countRows(sb, "employee_expense_claims", data.companyId, [
-        { column: "status", value: "reimbursed" },
-      ]),
-      countRows(sb, "employee_expense_claims", data.companyId, [
-        { column: "status", value: "rejected" },
-      ]),
-      countRows(sb, "purchase_expenses", data.companyId, [{ column: "status", value: "draft" }]),
-      countRows(sb, "purchase_expenses", data.companyId, [
-        { column: "status", values: ["authorised", "paid", "partly_paid"] },
-      ]),
-      countRows(sb, "expense_claims", data.companyId, []),
-    ]);
+    const [legacySubmitted, legacyReimbursed, legacyRejected, directDraft, directPosted, emTotal] =
+      await Promise.all([
+        countRows(sb, "employee_expense_claims", data.companyId, [
+          { column: "status", value: "submitted" },
+        ]),
+        countRows(sb, "employee_expense_claims", data.companyId, [
+          { column: "status", value: "reimbursed" },
+        ]),
+        countRows(sb, "employee_expense_claims", data.companyId, [
+          { column: "status", value: "rejected" },
+        ]),
+        countRows(sb, "purchase_expenses", data.companyId, [{ column: "status", value: "draft" }]),
+        countRows(sb, "purchase_expenses", data.companyId, [
+          { column: "status", values: ["authorised", "paid", "partly_paid"] },
+        ]),
+        countRows(sb, "expense_claims", data.companyId, []),
+      ]);
 
     const foundationAvailable = !emTotal.missing;
     let emPendingCount = 0;
@@ -389,11 +383,7 @@ export const getExpenseManagementOverview = createServerFn({ method: "GET" })
 export const listExpenseClaims = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: {
-      companyId: string;
-      scope?: "own" | "all";
-      approvalStatuses?: string[];
-    }) => ({
+    (input: { companyId: string; scope?: "own" | "all"; approvalStatuses?: string[] }) => ({
       companyId: companyIdOf(input),
       scope: input.scope === "all" ? ("all" as const) : ("own" as const),
       approvalStatuses: Array.isArray(input.approvalStatuses)
@@ -859,12 +849,10 @@ export const listExpenseSpendingRequests = createServerFn({ method: "GET" })
 
 export const saveExpenseSpendingRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; draft: ExpenseSpendingRequestDraftInput }) => ({
-      companyId: companyIdOf(input),
-      draft: input.draft,
-    }),
-  )
+  .inputValidator((input: { companyId: string; draft: ExpenseSpendingRequestDraftInput }) => ({
+    companyId: companyIdOf(input),
+    draft: input.draft,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseSpendingRequestSummary> => {
     await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
     if (!data.draft.title.trim()) throw new Error("Request title is required.");
@@ -1060,13 +1048,11 @@ export const reimburseExpenseClaim = createServerFn({ method: "POST" })
 
 export const queueExpenseClaimForPayroll = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; claimId: string; version: number }) => ({
-      companyId: companyIdOf(input),
-      claimId: input.claimId,
-      version: input.version,
-    }),
-  )
+  .inputValidator((input: { companyId: string; claimId: string; version: number }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+    version: input.version,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
     await assertCompanyPermission(context.supabase, data.companyId, "expenses.reimburse");
     const raw = await callRpc<unknown>(
@@ -1084,13 +1070,11 @@ export const queueExpenseClaimForPayroll = createServerFn({ method: "POST" })
 
 export const cancelExpenseClaimPayrollQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; claimId: string; version: number }) => ({
-      companyId: companyIdOf(input),
-      claimId: input.claimId,
-      version: input.version,
-    }),
-  )
+  .inputValidator((input: { companyId: string; claimId: string; version: number }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+    version: input.version,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
     await assertCompanyPermission(context.supabase, data.companyId, "expenses.reimburse");
     const raw = await callRpc<unknown>(
@@ -1113,15 +1097,8 @@ export const saveExpenseRequiredApprovalCount = createServerFn({ method: "POST" 
     count: input.count,
   }))
   .handler(
-    async ({
-      data,
-      context,
-    }): Promise<{ requiredApprovalCount: number; version: number }> => {
-      await assertCompanyPermission(
-        context.supabase,
-        data.companyId,
-        "expenses.manage_policies",
-      );
+    async ({ data, context }): Promise<{ requiredApprovalCount: number; version: number }> => {
+      await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_policies");
       const raw = await callRpc<{
         required_approval_count?: number;
         version?: number;
@@ -1228,12 +1205,7 @@ export const validateExpenseClaimFx = createServerFn({ method: "GET" })
 export const refundExpenseClaimReimbursement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: {
-      companyId: string;
-      claimId: string;
-      version: number;
-      paymentId?: string;
-    }) => ({
+    (input: { companyId: string; claimId: string; version: number; paymentId?: string }) => ({
       companyId: companyIdOf(input),
       claimId: input.claimId,
       version: input.version,
@@ -1439,15 +1411,8 @@ export const saveExpenseApprovalEscalationDays = createServerFn({ method: "POST"
     days: input.days,
   }))
   .handler(
-    async ({
-      data,
-      context,
-    }): Promise<{ approvalEscalationDays: number; version: number }> => {
-      await assertCompanyPermission(
-        context.supabase,
-        data.companyId,
-        "expenses.manage_policies",
-      );
+    async ({ data, context }): Promise<{ approvalEscalationDays: number; version: number }> => {
+      await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_policies");
       const raw = await callRpc<{
         approval_escalation_days?: number;
         version?: number;
@@ -1469,12 +1434,10 @@ export const saveExpenseApprovalEscalationDays = createServerFn({ method: "POST"
 
 export const listExpenseMileageRates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; activeOnly?: boolean }) => ({
-      companyId: companyIdOf(input),
-      activeOnly: input.activeOnly !== false,
-    }),
-  )
+  .inputValidator((input: { companyId: string; activeOnly?: boolean }) => ({
+    companyId: companyIdOf(input),
+    activeOnly: input.activeOnly !== false,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseMileageRate[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const raw = await callRpc<{ rates?: unknown[] }>(
@@ -1546,12 +1509,10 @@ export const listExpenseCashAdvances = createServerFn({ method: "GET" })
 
 export const saveExpenseCashAdvance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; draft: ExpenseCashAdvanceDraftInput }) => ({
-      companyId: companyIdOf(input),
-      draft: input.draft,
-    }),
-  )
+  .inputValidator((input: { companyId: string; draft: ExpenseCashAdvanceDraftInput }) => ({
+    companyId: companyIdOf(input),
+    draft: input.draft,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseCashAdvance> => {
     await assertCompanyMember(context.supabase, data.companyId);
     if (!data.draft.title.trim()) throw new Error("Advance title is required.");
@@ -1607,13 +1568,11 @@ export const issueExpenseCashAdvance = createServerFn({ method: "POST" })
 
 export const cancelExpenseCashAdvance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; advanceId: string; version: number }) => ({
-      companyId: companyIdOf(input),
-      advanceId: input.advanceId,
-      version: input.version,
-    }),
-  )
+  .inputValidator((input: { companyId: string; advanceId: string; version: number }) => ({
+    companyId: companyIdOf(input),
+    advanceId: input.advanceId,
+    version: input.version,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseCashAdvance> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(
@@ -1632,12 +1591,7 @@ export const cancelExpenseCashAdvance = createServerFn({ method: "POST" })
 export const linkExpenseClaimCashAdvance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: {
-      companyId: string;
-      claimId: string;
-      version: number;
-      advanceId: string;
-    }) => ({
+    (input: { companyId: string; claimId: string; version: number; advanceId: string }) => ({
       companyId: companyIdOf(input),
       claimId: input.claimId,
       version: input.version,
@@ -1678,12 +1632,10 @@ export const listExpensePettyCashFloats = createServerFn({ method: "GET" })
 
 export const saveExpensePettyCashFloat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; draft: ExpensePettyCashFloatDraftInput }) => ({
-      companyId: companyIdOf(input),
-      draft: input.draft,
-    }),
-  )
+  .inputValidator((input: { companyId: string; draft: ExpensePettyCashFloatDraftInput }) => ({
+    companyId: companyIdOf(input),
+    draft: input.draft,
+  }))
   .handler(async ({ data, context }): Promise<ExpensePettyCashFloat> => {
     await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_advances");
     if (!data.draft.name.trim()) throw new Error("Float name is required.");
@@ -1743,13 +1695,11 @@ export const fundExpensePettyCashFloat = createServerFn({ method: "POST" })
 
 export const closeExpensePettyCashFloat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; floatId: string; version: number }) => ({
-      companyId: companyIdOf(input),
-      floatId: input.floatId,
-      version: input.version,
-    }),
-  )
+  .inputValidator((input: { companyId: string; floatId: string; version: number }) => ({
+    companyId: companyIdOf(input),
+    floatId: input.floatId,
+    version: input.version,
+  }))
   .handler(async ({ data, context }): Promise<ExpensePettyCashFloat> => {
     await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_advances");
     const raw = await callRpc<unknown>(
@@ -1768,12 +1718,7 @@ export const closeExpensePettyCashFloat = createServerFn({ method: "POST" })
 export const linkExpenseClaimPettyCashFloat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: {
-      companyId: string;
-      claimId: string;
-      version: number;
-      floatId: string;
-    }) => ({
+    (input: { companyId: string; claimId: string; version: number; floatId: string }) => ({
       companyId: companyIdOf(input),
       claimId: input.claimId,
       version: input.version,
@@ -1871,12 +1816,10 @@ export const listExpenseCorporateCards = createServerFn({ method: "GET" })
 
 export const saveExpenseCorporateCard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; draft: ExpenseCorporateCardDraftInput }) => ({
-      companyId: companyIdOf(input),
-      draft: input.draft,
-    }),
-  )
+  .inputValidator((input: { companyId: string; draft: ExpenseCorporateCardDraftInput }) => ({
+    companyId: companyIdOf(input),
+    draft: input.draft,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseCorporateCard> => {
     await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_cards");
     if (!data.draft.label.trim()) throw new Error("Card label is required.");
@@ -1900,13 +1843,11 @@ export const saveExpenseCorporateCard = createServerFn({ method: "POST" })
 
 export const listExpenseCorporateCardTransactions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; cardId?: string; status?: string }) => ({
-      companyId: companyIdOf(input),
-      cardId: input.cardId,
-      status: input.status,
-    }),
-  )
+  .inputValidator((input: { companyId: string; cardId?: string; status?: string }) => ({
+    companyId: companyIdOf(input),
+    cardId: input.cardId,
+    status: input.status,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseCorporateCardTransaction[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const raw = await callRpc<{ transactions?: unknown[] }>(
@@ -1961,13 +1902,11 @@ export const saveExpenseCorporateCardTransaction = createServerFn({ method: "POS
 
 export const matchExpenseCorporateCardTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; transactionId: string; claimId: string }) => ({
-      companyId: companyIdOf(input),
-      transactionId: input.transactionId,
-      claimId: input.claimId,
-    }),
-  )
+  .inputValidator((input: { companyId: string; transactionId: string; claimId: string }) => ({
+    companyId: companyIdOf(input),
+    transactionId: input.transactionId,
+    claimId: input.claimId,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseCorporateCardTransaction> => {
     await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_cards");
     const raw = await callRpc<unknown>(
@@ -1986,12 +1925,7 @@ export const matchExpenseCorporateCardTransaction = createServerFn({ method: "PO
 export const linkExpenseClaimCorporateCard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: {
-      companyId: string;
-      claimId: string;
-      version: number;
-      cardId: string;
-    }) => ({
+    (input: { companyId: string; claimId: string; version: number; cardId: string }) => ({
       companyId: companyIdOf(input),
       claimId: input.claimId,
       version: input.version,
@@ -2016,13 +1950,11 @@ export const linkExpenseClaimCorporateCard = createServerFn({ method: "POST" })
 
 export const disputeExpenseCorporateCardTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; transactionId: string; reason?: string }) => ({
-      companyId: companyIdOf(input),
-      transactionId: input.transactionId,
-      reason: input.reason,
-    }),
-  )
+  .inputValidator((input: { companyId: string; transactionId: string; reason?: string }) => ({
+    companyId: companyIdOf(input),
+    transactionId: input.transactionId,
+    reason: input.reason,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseCorporateCardTransaction> => {
     await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_cards");
     const raw = await callRpc<unknown>(
@@ -2101,12 +2033,7 @@ export const prepareExpenseClaimForRebilling = createServerFn({ method: "POST" }
 export const markExpenseClaimRebilled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: {
-      companyId: string;
-      claimId: string;
-      version: number;
-      invoiceId: string;
-    }) => ({
+    (input: { companyId: string; claimId: string; version: number; invoiceId: string }) => ({
       companyId: companyIdOf(input),
       claimId: input.claimId,
       version: input.version,
@@ -2169,13 +2096,11 @@ export const listExpenseExitSettlements = createServerFn({ method: "GET" })
 
 export const createExpenseExitSettlement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; employeeUserId: string; notes?: string }) => ({
-      companyId: companyIdOf(input),
-      employeeUserId: input.employeeUserId,
-      notes: input.notes,
-    }),
-  )
+  .inputValidator((input: { companyId: string; employeeUserId: string; notes?: string }) => ({
+    companyId: companyIdOf(input),
+    employeeUserId: input.employeeUserId,
+    notes: input.notes,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseExitSettlement> => {
     await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_advances");
     if (!data.employeeUserId) throw new Error("Select an employee.");
@@ -2364,13 +2289,11 @@ export const requestExpenseReceiptOcr = createServerFn({ method: "POST" })
 
 export const getExpenseManagementReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; fromDate?: string; toDate?: string }) => ({
-      companyId: companyIdOf(input),
-      fromDate: input.fromDate,
-      toDate: input.toDate,
-    }),
-  )
+  .inputValidator((input: { companyId: string; fromDate?: string; toDate?: string }) => ({
+    companyId: companyIdOf(input),
+    fromDate: input.fromDate,
+    toDate: input.toDate,
+  }))
   .handler(async ({ data, context }): Promise<ExpenseManagementReport> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(
@@ -2388,13 +2311,11 @@ export const getExpenseManagementReport = createServerFn({ method: "GET" })
 
 export const exportExpenseClaimsReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; fromDate?: string; toDate?: string }) => ({
-      companyId: companyIdOf(input),
-      fromDate: input.fromDate,
-      toDate: input.toDate,
-    }),
-  )
+  .inputValidator((input: { companyId: string; fromDate?: string; toDate?: string }) => ({
+    companyId: companyIdOf(input),
+    fromDate: input.fromDate,
+    toDate: input.toDate,
+  }))
   .handler(
     async ({
       data,

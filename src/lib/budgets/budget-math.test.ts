@@ -14,9 +14,7 @@ describe("Budgets precision-safe minor-unit arithmetic", () => {
   });
 
   it("does not silently round sums of individually safe large integers", () => {
-    expect(() => sumMinorNumbers([
-      Number.MAX_SAFE_INTEGER, 1,
-    ])).toThrow(/safe minor-unit/);
+    expect(() => sumMinorNumbers([Number.MAX_SAFE_INTEGER, 1])).toThrow(/safe minor-unit/);
     expect(sumMinorNumbers([Number.MAX_SAFE_INTEGER, -1])).toBe(Number.MAX_SAFE_INTEGER - 1);
   });
 
@@ -33,17 +31,22 @@ describe("Budgets precision-safe minor-unit arithmetic", () => {
   });
 
   it("rejects unsafe natural actual subtraction", () => {
-    expect(() => naturalActual("income", -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER))
-      .toThrow(/safe minor-unit/);
+    expect(() =>
+      naturalActual("income", -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER),
+    ).toThrow(/safe minor-unit/);
     expect(() => naturalActual("expense", 1.25, 0)).toThrow(/safe integer/);
   });
 
   it("marks expense increases unfavourable and income increases favourable", () => {
     expect(computeVariance("income", 1_000, 1_500)).toMatchObject({
-      varianceMinor: 500, status: "favourable", variancePctBps: 5000,
+      varianceMinor: 500,
+      status: "favourable",
+      variancePctBps: 5000,
     });
     expect(computeVariance("expense", 1_000, 1_500)).toMatchObject({
-      varianceMinor: -500, status: "unfavourable", variancePctBps: -5000,
+      varianceMinor: -500,
+      status: "unfavourable",
+      variancePctBps: -5000,
     });
   });
 
@@ -52,19 +55,19 @@ describe("Budgets precision-safe minor-unit arithmetic", () => {
   });
 
   it("rejects unsafe variance or percentage rather than truncating", () => {
-    expect(() => computeVariance("income", -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER))
-      .toThrow(/safe minor-unit/);
-    expect(() => computeVariance("income", 1, 1_000_000_000_000))
-      .toThrow(/safe minor-unit/);
+    expect(() =>
+      computeVariance("income", -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER),
+    ).toThrow(/safe minor-unit/);
+    expect(() => computeVariance("income", 1, 1_000_000_000_000)).toThrow(/safe minor-unit/);
   });
 
   it("applies percentage uplift with integer rounding and rejects overflow", () => {
     expect(applyUpliftBps(101, 500)).toBe(106);
     expect(applyUpliftBps(-101, 500)).toBe(-106);
-    expect(() => applyUpliftBps(Number.MAX_SAFE_INTEGER, 10_000))
-      .toThrow(/safe minor-unit/);
-    expect(() => applyUpliftBps(100, Number.MAX_SAFE_INTEGER + 1))
-      .toThrow(/safe whole basis points/);
+    expect(() => applyUpliftBps(Number.MAX_SAFE_INTEGER, 10_000)).toThrow(/safe minor-unit/);
+    expect(() => applyUpliftBps(100, Number.MAX_SAFE_INTEGER + 1)).toThrow(
+      /safe whole basis points/,
+    );
   });
 
   it("spreads an annual total without losing rounding remainders", () => {
@@ -87,13 +90,26 @@ describe("Budgets precision-safe minor-unit arithmetic", () => {
 
   it("preserves totals and keeps monthly differences within one minor unit", () => {
     for (const annual of [
-      -101, -13, -12, -11, -7, -1, 0, 1, 7, 11, 12, 13, 101,
-      Number.MAX_SAFE_INTEGER, -Number.MAX_SAFE_INTEGER,
+      -101,
+      -13,
+      -12,
+      -11,
+      -7,
+      -1,
+      0,
+      1,
+      7,
+      11,
+      12,
+      13,
+      101,
+      Number.MAX_SAFE_INTEGER,
+      -Number.MAX_SAFE_INTEGER,
     ]) {
       const monthly = spreadEvenly(annual, 12);
       expect(sumMinorNumbers(monthly)).toBe(annual);
       expect(Math.max(...monthly) - Math.min(...monthly)).toBeLessThanOrEqual(1);
-      expect(monthly.every((m) => annual >= 0 ? m >= 0 : m <= 0)).toBe(true);
+      expect(monthly.every((m) => (annual >= 0 ? m >= 0 : m <= 0))).toBe(true);
     }
   });
 

@@ -111,6 +111,21 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     notes: "Batch 2: ListWorkspace on accounts, transfers, bank documents.",
   },
   {
+    id: "pos",
+    label: "Point of Sale",
+    description: "Catalogue cash checkout, register setup and drawer sessions",
+    path: "/pos",
+    group: "money",
+    inSidebar: true,
+    pageKind: "list",
+    viewModes: ["list", "mobile-card"],
+    screenRoot: "src/screens/pos",
+    experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
+    premiumStatus: "in-progress",
+    notes:
+      "Cash checkout for non-stock catalogue items, location-scoped register sessions and controlled drawer movements; migration not live until separately authorized.",
+  },
+  {
     id: "sales",
     label: "Sales",
     description: "Invoices and customer payments",
@@ -459,7 +474,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     screenRoot: "src/screens/messages",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
     premiumStatus: "in-progress",
-    notes: "Unified messaging platform; feature-flagged via messaging_collaboration / messaging_settings.",
+    notes:
+      "Unified messaging platform; feature-flagged via messaging_collaboration / messaging_settings.",
   },
   {
     id: "ai-assistant",
@@ -570,9 +586,7 @@ export function assertRegistryMatchesNav(): string[] {
     }
   }
   if (sidebar.length !== navItems.length) {
-    failures.push(
-      `Sidebar registry count ${sidebar.length} !== navItems count ${navItems.length}`,
-    );
+    failures.push(`Sidebar registry count ${sidebar.length} !== navItems count ${navItems.length}`);
   }
   const ids = new Set<string>();
   for (const module of MODULE_REGISTRY) {

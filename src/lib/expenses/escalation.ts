@@ -37,9 +37,7 @@ export function mapExpenseApprovalEscalationRefresh(
   };
 }
 
-export function formatEscalationRefreshSummary(
-  result: ExpenseApprovalEscalationRefresh,
-): string {
+export function formatEscalationRefreshSummary(result: ExpenseApprovalEscalationRefresh): string {
   if (result.escalationDays <= 0) {
     return "Escalation is disabled (0 days).";
   }

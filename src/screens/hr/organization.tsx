@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -105,12 +106,12 @@ export function HrOrganizationPage() {
 
   const rows =
     kind === "location"
-      ? orgQ.data?.locations ?? []
+      ? (orgQ.data?.locations ?? [])
       : kind === "branch"
-        ? orgQ.data?.branches ?? []
+        ? (orgQ.data?.branches ?? [])
         : kind === "department"
-          ? orgQ.data?.departments ?? []
-          : orgQ.data?.designations ?? [];
+          ? (orgQ.data?.departments ?? [])
+          : (orgQ.data?.designations ?? []);
 
   return (
     <ListWorkspace
@@ -247,7 +248,7 @@ export function HrOrganizationPage() {
             {kind === "department" ? (
               <div className="space-y-1">
                 <Label>Parent department</Label>
-                <Select
+                <RecordLookupSelect
                   value={parentId || "__none"}
                   onValueChange={(value) => setParentId(value === "__none" ? "" : value)}
                 >
@@ -262,13 +263,13 @@ export function HrOrganizationPage() {
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
             ) : null}
             {kind === "branch" ? (
               <div className="space-y-1">
                 <Label>Location</Label>
-                <Select
+                <RecordLookupSelect
                   value={locationId || "__none"}
                   onValueChange={(value) => setLocationId(value === "__none" ? "" : value)}
                 >
@@ -283,7 +284,7 @@ export function HrOrganizationPage() {
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
             ) : null}
           </div>

@@ -44,7 +44,9 @@ export function summarizeAssetDetailHistory(
     }
     const accumulated = opening + posted;
     if (accumulated > cost - residual) {
-      throw new Error("Recorded depreciation exceeds the asset's depreciable cost after residual value.");
+      throw new Error(
+        "Recorded depreciation exceeds the asset's depreciable cost after residual value.",
+      );
     }
     return {
       costMinor: cost.toString(),

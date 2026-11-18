@@ -81,7 +81,10 @@ export function accountPostingMeaning(
   if (debitMinor === 0n && creditMinor === 0n) return "No movement to explain.";
   if (debitMinor > 0n && creditMinor > 0n)
     return "Both debit and credit columns contain a positive amount; inspect the source line.";
-  const t = type && Object.prototype.hasOwnProperty.call(TYPE_LABELS, type) ? (type as JournalAccountType) : null;
+  const t =
+    type && Object.prototype.hasOwnProperty.call(TYPE_LABELS, type)
+      ? (type as JournalAccountType)
+      : null;
   if (!t) return "Account classification is unavailable; inspect the original chart of accounts.";
   const debitIncreases = t === "asset" || t === "expense";
   const increases = debitMinor > 0n ? debitIncreases : !debitIncreases;
@@ -128,14 +131,11 @@ export function buildJournalExplanation(input: PostedJournalInput): JournalExpla
     const credit = checkedMinor(line.credit_minor);
     debitTotal += debit;
     creditTotal += credit;
-    if (
-      debit < 0n ||
-      credit < 0n ||
-      (debit > 0n && credit > 0n) ||
-      (debit === 0n && credit === 0n)
-    ) atypicalLines++;
+    if (debit < 0n || credit < 0n || (debit > 0n && credit > 0n) || (debit === 0n && credit === 0n))
+      atypicalLines++;
     if (line.account_active === false) inactiveAccounts++;
-    if (!line.account_type || !Object.prototype.hasOwnProperty.call(TYPE_LABELS, line.account_type)) unclassifiedAccounts++;
+    if (!line.account_type || !Object.prototype.hasOwnProperty.call(TYPE_LABELS, line.account_type))
+      unclassifiedAccounts++;
     return {
       ...line,
       debit_display: currency + " " + fromMinorUnits(debit, currency),
@@ -149,7 +149,8 @@ export function buildJournalExplanation(input: PostedJournalInput): JournalExpla
     actions.push({
       id: "balance",
       title: "Investigate journal balancing",
-      detail: "Debit and credit totals do not match or no positive debit is present. Inspect the original journal and ledger integrity.",
+      detail:
+        "Debit and credit totals do not match or no positive debit is present. Inspect the original journal and ledger integrity.",
       severity: "review",
     });
   }
@@ -157,7 +158,9 @@ export function buildJournalExplanation(input: PostedJournalInput): JournalExpla
     actions.push({
       id: "atypical_lines",
       title: "Review unusual journal lines",
-      detail: String(atypicalLines) + " line(s) have negative, double-sided or zero movements. Investigate their posting and source context.",
+      detail:
+        String(atypicalLines) +
+        " line(s) have negative, double-sided or zero movements. Investigate their posting and source context.",
       severity: "review",
     });
   }
@@ -165,7 +168,9 @@ export function buildJournalExplanation(input: PostedJournalInput): JournalExpla
     actions.push({
       id: "inactive_accounts",
       title: "Check inactive accounts",
-      detail: String(inactiveAccounts) + " line(s) reference an account currently inactive. Historical use may be valid; verify effective dates and coding.",
+      detail:
+        String(inactiveAccounts) +
+        " line(s) reference an account currently inactive. Historical use may be valid; verify effective dates and coding.",
       severity: "review",
     });
   }
@@ -173,7 +178,9 @@ export function buildJournalExplanation(input: PostedJournalInput): JournalExpla
     actions.push({
       id: "unclassified_accounts",
       title: "Verify account classification",
-      detail: String(unclassifiedAccounts) + " line(s) lack a recognised account classification. Interpret them using the chart of accounts.",
+      detail:
+        String(unclassifiedAccounts) +
+        " line(s) lack a recognised account classification. Interpret them using the chart of accounts.",
       severity: "review",
     });
   }
@@ -181,7 +188,8 @@ export function buildJournalExplanation(input: PostedJournalInput): JournalExpla
     actions.push({
       id: "memo",
       title: "Check supporting narrative",
-      detail: "No journal header memo is recorded. Confirm the business reason from original documentation and existing review procedures.",
+      detail:
+        "No journal header memo is recorded. Confirm the business reason from original documentation and existing review procedures.",
       severity: "review",
     });
   }
@@ -189,7 +197,8 @@ export function buildJournalExplanation(input: PostedJournalInput): JournalExpla
     actions.push({
       id: "source",
       title: "Check the source-document reference",
-      detail: "The journal is marked as originating from a document but contains no source ID in this record. Locate its supporting document.",
+      detail:
+        "The journal is marked as originating from a document but contains no source ID in this record. Locate its supporting document.",
       severity: "review",
     });
   }
@@ -197,13 +206,15 @@ export function buildJournalExplanation(input: PostedJournalInput): JournalExpla
     {
       id: "source_support",
       title: "Verify source and substance",
-      detail: "Open the originating document and confirm amounts, dates, counterparties and classification against the journal. A source link is not proof of completeness.",
+      detail:
+        "Open the originating document and confirm amounts, dates, counterparties and classification against the journal. A source link is not proof of completeness.",
       severity: "info",
     },
     {
       id: "period_tax",
       title: "Review cut-off, tax and approvals",
-      detail: "Confirm period permissions, tax treatment, relevant attachments and approvals in the originating workflow. These checks are not automated here.",
+      detail:
+        "Confirm period permissions, tax treatment, relevant attachments and approvals in the originating workflow. These checks are not automated here.",
       severity: "info",
     },
   );
@@ -217,9 +228,17 @@ export function buildJournalExplanation(input: PostedJournalInput): JournalExpla
     total_credit_minor: creditTotal.toString(),
     balanced,
     summary:
-      "Posted journal #" + input.journal_number + " dated " + input.journal_date +
-      " has " + lines.length + " line(s), sourced as " + sourceText +
-      ", recorded in " + currency + ". " +
+      "Posted journal #" +
+      input.journal_number +
+      " dated " +
+      input.journal_date +
+      " has " +
+      lines.length +
+      " line(s), sourced as " +
+      sourceText +
+      ", recorded in " +
+      currency +
+      ". " +
       (balanced
         ? "The debits and credits total equally; correctness of classification and supporting documentation remains unverified."
         : "The reported debit and credit totals need further investigation."),

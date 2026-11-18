@@ -48,34 +48,30 @@ export const getFirmDirectoryPreferences = createServerFn({ method: "GET" })
 
 export const saveFirmDirectoryPreference = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    firmId: string;
-    kind: FirmDirectoryPreferenceKind;
-    value: unknown;
-  }) => {
-    if (input.kind !== "columns" && input.kind !== "views") {
-      throw new Error("Unsupported firm preference");
-    }
-    return {
-      firmId: assertUuid(input.firmId),
-      kind: input.kind,
-      value: normalizeFirmDirectoryPreference(input.kind, input.value),
-    };
-  })
+  .inputValidator(
+    (input: { firmId: string; kind: FirmDirectoryPreferenceKind; value: unknown }) => {
+      if (input.kind !== "columns" && input.kind !== "views") {
+        throw new Error("Unsupported firm preference");
+      }
+      return {
+        firmId: assertUuid(input.firmId),
+        kind: input.kind,
+        value: normalizeFirmDirectoryPreference(input.kind, input.value),
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     await assertFirmMember(context.supabase, data.firmId, context.userId);
-    const { error } = await context.supabase
-      .from("firm_ui_preferences" as never)
-      .upsert(
-        {
-          firm_id: data.firmId,
-          user_id: context.userId,
-          preference_key: FIRM_DIRECTORY_PREFERENCE_KEYS[data.kind],
-          preference_value: data.value,
-          updated_at: new Date().toISOString(),
-        } as never,
-        { onConflict: "firm_id,user_id,preference_key" },
-      );
+    const { error } = await context.supabase.from("firm_ui_preferences" as never).upsert(
+      {
+        firm_id: data.firmId,
+        user_id: context.userId,
+        preference_key: FIRM_DIRECTORY_PREFERENCE_KEYS[data.kind],
+        preference_value: data.value,
+        updated_at: new Date().toISOString(),
+      } as never,
+      { onConflict: "firm_id,user_id,preference_key" },
+    );
     if (error) throw new Error(error.message);
     return { kind: data.kind, value: data.value };
   });

@@ -76,7 +76,10 @@ export function CrmProductsPage() {
       <CrmSubnav current="products" />
 
       {settings.data && !settings.data.enabled ? (
-        <EmptyState title="CRM is disabled" description="Enable CRM before browsing catalogue lines." />
+        <EmptyState
+          title="CRM is disabled"
+          description="Enable CRM before browsing catalogue lines."
+        />
       ) : null}
 
       {settings.data?.enabled ? (
@@ -84,7 +87,8 @@ export function CrmProductsPage() {
           <Alert>
             <AlertTitle>Shared catalogue</AlertTitle>
             <AlertDescription>
-              Create and edit products in Products & Services. CRM opportunity quotes continue to use Sales document lines, not a CRM-only price list.
+              Create and edit products in Products & Services. CRM opportunity quotes continue to
+              use Sales document lines, not a CRM-only price list.
             </AlertDescription>
           </Alert>
 

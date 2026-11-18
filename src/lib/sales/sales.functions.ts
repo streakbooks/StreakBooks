@@ -17,7 +17,11 @@ import { addDaysIso, type SalesLineInput } from "@/lib/sales/line-helpers";
 import { postInvoiceAuthorisation } from "@/lib/sales/posting";
 import { resolveArAccount } from "@/lib/sales/ar-accounts";
 import { callSalesRpc, requireRpc, type SalesClient } from "@/lib/sales/rpc";
-import { deleteDraftDocument, saveSalesDocument, type SalesDraftPricing } from "@/lib/sales/doc-save";
+import {
+  deleteDraftDocument,
+  saveSalesDocument,
+  type SalesDraftPricing,
+} from "@/lib/sales/doc-save";
 import type { PriceListLineSnapshot } from "@/lib/products/price-list-provenance";
 import {
   type ListQuery,
@@ -87,12 +91,17 @@ async function loadCreditLimitAssessment(
     .eq("company_id" as never, companyId as never)
     .maybeSingle();
   if (cErr) throw new Error(cErr.message);
-  const c = contact as { credit_limit_minor?: number | null; default_currency?: string | null } | null;
+  const c = contact as {
+    credit_limit_minor?: number | null;
+    default_currency?: string | null;
+  } | null;
   const limitCurrency = String(c?.default_currency || baseCurrency).toUpperCase();
 
   const { data: openRows, error: oErr } = await supabase
     .from("sales_invoices" as never)
-    .select("id, currency_code, status, total_minor, amount_paid_minor, amount_credited_minor" as never)
+    .select(
+      "id, currency_code, status, total_minor, amount_paid_minor, amount_credited_minor" as never,
+    )
     .eq("company_id" as never, companyId as never)
     .eq("contact_id" as never, candidate.contactId as never)
     .in("status" as never, ["authorised", "partly_paid"] as never);
@@ -600,15 +609,19 @@ export const getInvoice = createServerFn({ method: "GET" })
     };
     let creditLimitAssessment: CreditLimitAssessment | null = null;
     try {
-      creditLimitAssessment = await loadCreditLimitAssessment(supabase as SalesClient, data.companyId, {
-        id: invoiceRow.id,
-        contactId: invoiceRow.contact_id,
-        currencyCode: invoiceRow.currency_code,
-        status: invoiceRow.status,
-        totalMinor: Number(invoiceRow.total_minor) || 0,
-        amountPaidMinor: Number(invoiceRow.amount_paid_minor) || 0,
-        amountCreditedMinor: Number(invoiceRow.amount_credited_minor) || 0,
-      });
+      creditLimitAssessment = await loadCreditLimitAssessment(
+        supabase as SalesClient,
+        data.companyId,
+        {
+          id: invoiceRow.id,
+          contactId: invoiceRow.contact_id,
+          currencyCode: invoiceRow.currency_code,
+          status: invoiceRow.status,
+          totalMinor: Number(invoiceRow.total_minor) || 0,
+          amountPaidMinor: Number(invoiceRow.amount_paid_minor) || 0,
+          amountCreditedMinor: Number(invoiceRow.amount_credited_minor) || 0,
+        },
+      );
     } catch {
       creditLimitAssessment = null;
     }
@@ -659,8 +672,11 @@ function validatePricingPayload(
       if (!Number.isSafeInteger(trace.unit_price_minor) || trace.unit_price_minor < 0) {
         throw new Error("Invalid price-list unit amount");
       }
-      if (!Number.isInteger(trace.discount_bps) || trace.discount_bps < 0 ||
-        trace.discount_bps > 10000) {
+      if (
+        !Number.isInteger(trace.discount_bps) ||
+        trace.discount_bps < 0 ||
+        trace.discount_bps > 10000
+      ) {
         throw new Error("Invalid pricing discount basis points");
       }
       return {
@@ -843,15 +859,13 @@ export { JournalPostedUnlinkedError } from "@/lib/accounting/journal-posted-unli
 
 export const authoriseInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    invoiceId: string;
-    acknowledgeCreditLimit?: boolean;
-  }) => ({
-    companyId: assertUuid(input.companyId),
-    invoiceId: assertUuid(input.invoiceId, "invoice"),
-    acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
-  }))
+  .inputValidator(
+    (input: { companyId: string; invoiceId: string; acknowledgeCreditLimit?: boolean }) => ({
+      companyId: assertUuid(input.companyId),
+      invoiceId: assertUuid(input.invoiceId, "invoice"),
+      acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
+    }),
+  )
   .handler(async ({ data, context }) =>
     authoriseInvoiceCore(context, data.companyId, data.invoiceId, data.acknowledgeCreditLimit),
   );

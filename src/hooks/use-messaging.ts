@@ -82,9 +82,7 @@ export function useMessagingConversations(
             quiet_hours_start?: string | null;
             quiet_hours_end?: string | null;
           }>(["messaging-notification-prefs", companyId]);
-          if (
-            isWithinMessagingQuietHours(prefs?.quiet_hours_start, prefs?.quiet_hours_end)
-          ) {
+          if (isWithinMessagingQuietHours(prefs?.quiet_hours_start, prefs?.quiet_hours_end)) {
             return;
           }
           showMessagingDesktopNotification(
@@ -332,8 +330,7 @@ export function useMessagingActions(companyId: string | null) {
   });
 
   const dmMutation = useMutation({
-    mutationFn: (peerUserId: string) =>
-      createDm({ data: { companyId: companyId!, peerUserId } }),
+    mutationFn: (peerUserId: string) => createDm({ data: { companyId: companyId!, peerUserId } }),
     onSuccess: invalidate,
     onError: (error) => notify.error(error, "Could not start conversation"),
   });

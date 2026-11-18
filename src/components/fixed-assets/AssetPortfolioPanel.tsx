@@ -33,10 +33,10 @@ export function AssetPortfolioPanel({
       <div className="space-y-3">
         <Alert variant="destructive">
           <AlertDescription role="alert">
-            The asset overview could not calculate trustworthy totals:
-            {" "}{error instanceof Error ? error.message : "Inconsistent asset register data."}
-            {" "}Review the saved asset amounts and depreciation history before relying on
-            this dashboard. No accounting records have been changed.
+            The asset overview could not calculate trustworthy totals:{" "}
+            {error instanceof Error ? error.message : "Inconsistent asset register data."} Review
+            the saved asset amounts and depreciation history before relying on this dashboard. No
+            accounting records have been changed.
           </AlertDescription>
         </Alert>
         <div className="flex flex-wrap gap-2">
@@ -67,16 +67,22 @@ export function AssetPortfolioPanel({
     },
     {
       label: "Recorded accumulated",
-      value: portfolio.accumulatedMinor === null
-        ? balancesLoading ? "Loading…" : "Unavailable"
-        : fmt.money(portfolio.accumulatedMinor, currency),
+      value:
+        portfolio.accumulatedMinor === null
+          ? balancesLoading
+            ? "Loading…"
+            : "Unavailable"
+          : fmt.money(portfolio.accumulatedMinor, currency),
       note: "As-at register balances only",
     },
     {
       label: "Cost less recorded depreciation",
-      value: portfolio.netBookValueMinor === null
-        ? balancesLoading ? "Loading…" : "Unavailable"
-        : fmt.money(portfolio.netBookValueMinor, currency),
+      value:
+        portfolio.netBookValueMinor === null
+          ? balancesLoading
+            ? "Loading…"
+            : "Unavailable"
+          : fmt.money(portfolio.netBookValueMinor, currency),
       note: "Check against Reconcile to GL",
     },
   ];
@@ -104,14 +110,17 @@ export function AssetPortfolioPanel({
         <div>
           <h2 className="text-lg font-semibold">Fixed Assets overview</h2>
           <p className="text-sm text-muted-foreground">
-            Portfolio at {fmt.date(asOf)}. Figures are from the asset register, not a
-            replacement for the posted general ledger or an impairment review.
+            Portfolio at {fmt.date(asOf)}. Figures are from the asset register, not a replacement
+            for the posted general ledger or an impairment review.
           </p>
         </div>
         <Badge variant="outline">{currency} · Register snapshot</Badge>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Portfolio overview metrics">
+      <div
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        aria-label="Portfolio overview metrics"
+      >
         {costMetrics.map((metric) => (
           <div key={metric.label} className="min-w-0 rounded-xl border bg-card p-4">
             <p className="text-xs font-medium text-muted-foreground">{metric.label}</p>
@@ -127,7 +136,9 @@ export function AssetPortfolioPanel({
             <p className="text-xs font-medium text-muted-foreground">{metric.label}</p>
             <p className="mt-2 text-xl font-semibold tabular-nums">
               {metric.value === null
-                ? balancesLoading ? "Loading…" : "Unavailable"
+                ? balancesLoading
+                  ? "Loading…"
+                  : "Unavailable"
                 : metric.value}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">{metric.note}</p>
@@ -159,7 +170,10 @@ export function AssetPortfolioPanel({
       </nav>
 
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-        <section className="min-w-0 space-y-3 rounded-xl border p-4 sm:p-5" aria-label="Assets by category">
+        <section
+          className="min-w-0 space-y-3 rounded-xl border p-4 sm:p-5"
+          aria-label="Assets by category"
+        >
           <div>
             <h3 className="font-semibold">Acquisition cost by asset type</h3>
             <p className="text-xs text-muted-foreground">
@@ -167,21 +181,25 @@ export function AssetPortfolioPanel({
             </p>
           </div>
           {portfolio.categoryRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No active registered assets to group.
-            </p>
+            <p className="text-sm text-muted-foreground">No active registered assets to group.</p>
           ) : (
             <div className="space-y-4">
               {portfolio.categoryRows.map((row) => (
                 <div key={row.key} className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span className="min-w-0 break-words font-medium">{row.name} ({row.count})</span>
-                    <span className="font-medium tabular-nums">{fmt.money(row.costMinor, currency)}</span>
+                    <span className="min-w-0 break-words font-medium">
+                      {row.name} ({row.count})
+                    </span>
+                    <span className="font-medium tabular-nums">
+                      {fmt.money(row.costMinor, currency)}
+                    </span>
                   </div>
                   <div
                     className="h-2.5 overflow-hidden rounded-full bg-muted"
                     role="img"
-                    aria-label={row.name + ": " + (row.shareBps / 100).toFixed(2) + "% of active cost"}
+                    aria-label={
+                      row.name + ": " + (row.shareBps / 100).toFixed(2) + "% of active cost"
+                    }
                   >
                     <div
                       className="h-full rounded-full bg-primary"
@@ -194,7 +212,10 @@ export function AssetPortfolioPanel({
           )}
         </section>
 
-        <section className="min-w-0 space-y-3 rounded-xl border p-4 sm:p-5" aria-label="Recently acquired assets">
+        <section
+          className="min-w-0 space-y-3 rounded-xl border p-4 sm:p-5"
+          aria-label="Recently acquired assets"
+        >
           <div>
             <h3 className="font-semibold">Recently acquired assets</h3>
             <p className="text-xs text-muted-foreground">
@@ -206,7 +227,10 @@ export function AssetPortfolioPanel({
           ) : (
             <ul className="divide-y">
               {portfolio.recentAcquisitions.map((asset) => (
-                <li key={asset.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                <li
+                  key={asset.id}
+                  className="flex flex-wrap items-center justify-between gap-2 py-3"
+                >
                   <div className="min-w-0">
                     <button
                       type="button"

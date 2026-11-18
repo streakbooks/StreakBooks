@@ -40,13 +40,13 @@ export function AdvisorsPortalMessagesPage() {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <ListWorkspace title="Messages" description="Talk with your advisor.">
-        <ErrorState
-          title="Messages unavailable"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
-          </ListWorkspace>
-  </main>
+          <ErrorState
+            title="Messages unavailable"
+            description={friendlyAuthError(query.error)}
+            onRetry={() => void query.refetch()}
+          />
+        </ListWorkspace>
+      </main>
     );
   }
 
@@ -57,39 +57,39 @@ export function AdvisorsPortalMessagesPage() {
         description="Secure thread with your assigned Advisors team."
         subnav={<AdvisorsPortalSubnav />}
       >
-      <form
-        className="space-y-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          sendM.mutate();
-        }}
-      >
-        <Textarea
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-          placeholder="Write a message to your advisor"
-          rows={4}
-          required
-        />
-        <Button type="submit" disabled={sendM.isPending || body.trim().length < 1}>
-          Send message
-        </Button>
-      </form>
-      {query.data.length === 0 ? (
-        <EmptyState title="No messages yet" description="Start the conversation above." />
-      ) : (
-        <ul className="space-y-3">
-          {query.data.map((item) => (
-            <li key={item.id} className="rounded-lg border border-border p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                {item.authorRole} · {new Date(item.createdAt).toLocaleString()}
-              </p>
-              <p className="mt-1 whitespace-pre-wrap text-sm">{item.body}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-        </ListWorkspace>
-  </main>
+        <form
+          className="space-y-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            sendM.mutate();
+          }}
+        >
+          <Textarea
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+            placeholder="Write a message to your advisor"
+            rows={4}
+            required
+          />
+          <Button type="submit" disabled={sendM.isPending || body.trim().length < 1}>
+            Send message
+          </Button>
+        </form>
+        {query.data.length === 0 ? (
+          <EmptyState title="No messages yet" description="Start the conversation above." />
+        ) : (
+          <ul className="space-y-3">
+            {query.data.map((item) => (
+              <li key={item.id} className="rounded-lg border border-border p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {item.authorRole} · {new Date(item.createdAt).toLocaleString()}
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-sm">{item.body}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </ListWorkspace>
+    </main>
   );
 }

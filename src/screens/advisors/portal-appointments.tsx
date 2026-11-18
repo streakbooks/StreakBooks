@@ -22,14 +22,15 @@ export function AdvisorsPortalAppointmentsPage() {
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <ListWorkspace
           title="Appointments"
-          description="Consultations linked to your Advisors email.">
-        <ErrorState
-          title="Appointments unavailable"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
-          </ListWorkspace>
-  </main>
+          description="Consultations linked to your Advisors email."
+        >
+          <ErrorState
+            title="Appointments unavailable"
+            description={friendlyAuthError(query.error)}
+            onRetry={() => void query.refetch()}
+          />
+        </ListWorkspace>
+      </main>
     );
   }
 
@@ -38,40 +39,42 @@ export function AdvisorsPortalAppointmentsPage() {
       <ListWorkspace
         title="Appointments"
         description="View and manage consultations. Reminder emails are scheduled automatically."
-       subnav={<AdvisorsPortalSubnav />}>{query.data.length === 0 ? (
-        <EmptyState
-          title="No appointments yet"
-          description="Book a consultation from the public Advisors booking page."
-        />
-      ) : (
-        <ul className="space-y-3">
-          {query.data.map((item) => (
-            <li
-              key={item.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4"
-            >
-              <div>
-                <p className="font-medium">{new Date(item.startsAt).toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">
-                  {item.advisorName || "Advisor"}
-                  {item.serviceCode ? ` · ${item.serviceCode}` : ""}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{item.status}</Badge>
-                <Link
-                  to="/advisors/manage/$manageToken"
-                  params={{ manageToken: item.manageToken }}
-                  className="text-sm text-primary underline-offset-4 hover:underline"
-                >
-                  Manage
-                </Link>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-        </ListWorkspace>
-  </main>
+        subnav={<AdvisorsPortalSubnav />}
+      >
+        {query.data.length === 0 ? (
+          <EmptyState
+            title="No appointments yet"
+            description="Book a consultation from the public Advisors booking page."
+          />
+        ) : (
+          <ul className="space-y-3">
+            {query.data.map((item) => (
+              <li
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4"
+              >
+                <div>
+                  <p className="font-medium">{new Date(item.startsAt).toLocaleString()}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {item.advisorName || "Advisor"}
+                    {item.serviceCode ? ` · ${item.serviceCode}` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{item.status}</Badge>
+                  <Link
+                    to="/advisors/manage/$manageToken"
+                    params={{ manageToken: item.manageToken }}
+                    className="text-sm text-primary underline-offset-4 hover:underline"
+                  >
+                    Manage
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </ListWorkspace>
+    </main>
   );
 }

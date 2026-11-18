@@ -7,11 +7,7 @@ import {
 import type { Permission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-export function ExpenseManagementSubnav({
-  current,
-}: {
-  current: ExpenseManagementSectionKey;
-}) {
+export function ExpenseManagementSubnav({ current }: { current: ExpenseManagementSectionKey }) {
   const { can } = useCan();
   const visible = EXPENSE_MANAGEMENT_SECTIONS.filter((section) =>
     section.anyOf.some((permission) => can(permission as Permission)),

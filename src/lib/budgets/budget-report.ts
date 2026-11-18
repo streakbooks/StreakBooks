@@ -64,8 +64,7 @@ export function parseSafeBudgetMinor(value: unknown, label: string): number {
     throw new Error(label + " must be a decimal integer in minor units.");
   }
   const parsed = BigInt(value);
-  if (parsed > BigInt(Number.MAX_SAFE_INTEGER) ||
-      parsed < BigInt(Number.MIN_SAFE_INTEGER)) {
+  if (parsed > BigInt(Number.MAX_SAFE_INTEGER) || parsed < BigInt(Number.MIN_SAFE_INTEGER)) {
     throw new Error(label + " exceeds the supported safe minor-unit range.");
   }
   return Number(parsed);
@@ -78,8 +77,7 @@ function asMinor(value: number, label: string): bigint {
   return BigInt(value);
 }
 function asSafe(value: bigint, label: string): number {
-  if (value > BigInt(Number.MAX_SAFE_INTEGER) ||
-      value < BigInt(Number.MIN_SAFE_INTEGER)) {
+  if (value > BigInt(Number.MAX_SAFE_INTEGER) || value < BigInt(Number.MIN_SAFE_INTEGER)) {
     throw new Error(label + " exceeds the supported minor-unit range.");
   }
   return Number(value);
@@ -90,8 +88,10 @@ function cell(kind: BudgetAccountKind, budget: bigint, actual: bigint): Variance
   // computeVariance uses bigint rounding for the percentage, but its final
   // public values are numbers; reject unsafe percent/variance conversion too.
   const metrics = computeVariance(kind, b, a);
-  if (!Number.isSafeInteger(metrics.varianceMinor) ||
-      (metrics.variancePctBps !== null && !Number.isSafeInteger(metrics.variancePctBps))) {
+  if (
+    !Number.isSafeInteger(metrics.varianceMinor) ||
+    (metrics.variancePctBps !== null && !Number.isSafeInteger(metrics.variancePctBps))
+  ) {
     throw new Error("Budget variance exceeds the supported precision.");
   }
   return { budgetMinor: b, actualMinor: a, ...metrics };
@@ -167,15 +167,12 @@ export function buildBudgetVsActual(input: {
         budget += budgetBy.get(k) ?? 0n;
         const posted = activityBy.get(k);
         if (posted) {
-          actual += account.kind === "income" ?
-            posted.c - posted.d : posted.d - posted.c;
+          actual += account.kind === "income" ? posted.c - posted.d : posted.d - posted.c;
         }
       }
       if (budget !== 0n || actual !== 0n) touched = true;
-      budgetTotals[account.kind][ci] =
-        (budgetTotals[account.kind][ci] ?? 0n) + budget;
-      actualTotals[account.kind][ci] =
-        (actualTotals[account.kind][ci] ?? 0n) + actual;
+      budgetTotals[account.kind][ci] = (budgetTotals[account.kind][ci] ?? 0n) + budget;
+      actualTotals[account.kind][ci] = (actualTotals[account.kind][ci] ?? 0n) + actual;
       return cell(account.kind, budget, actual);
     });
     if (touched) {

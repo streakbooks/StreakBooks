@@ -21,14 +21,7 @@ export type ModulePageKind =
 
 /** View modes a module may opt into. Never force Kanban/calendar onto ledger screens. */
 export type ModuleViewMode =
-  | "list"
-  | "card"
-  | "kanban"
-  | "calendar"
-  | "timeline"
-  | "graph"
-  | "pivot"
-  | "mobile-card";
+  "list" | "card" | "kanban" | "calendar" | "timeline" | "graph" | "pivot" | "mobile-card";
 
 export type ModuleSubnavItem = {
   to: string;

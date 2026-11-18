@@ -1,0 +1,13 @@
+# Database and migration design
+
+Batch 2 migration: `20261117220001_pos_register_session_foundation.sql`, created with Supabase CLI 3.2.0 then sequenced after main's existing future-dated `20261117220000` migration. It has been applied only to disposable PostgreSQL, never the hosted database.
+
+Implemented entities: `pos_registers`, `pos_register_sessions`, `pos_location_access`. Existing `hr_locations` is the physical-location master; existing `accounts`, `company_members`, `profiles`, companies and audit events are reused. Composite tenant FKs link locations, cash accounts and registers. RLS plus explicit Data API SELECT privileges govern reads; clients receive no direct DML grants. Only guarded private commands elevate, with pinned empty search paths, authentication, membership, permission and location checks. Public RPC wrappers use SECURITY INVOKER.
+
+One-open-session partial uniqueness plus row locks serialize competing opens. Company operation UUIDs bind opening and closing requests to immutable payloads; replays return the original durable ID and conflicting replays fail. Counts use bigint and serialize as strings. Existing asset-account mappings must be active/postable and in company currency. Managers configure registers and location grants; ordinary cashiers need a location grant. Active membership is checked again server-side. Closed session commands cannot rewrite history. Audit failure rolls back creation/opening/closing.
+
+Opening float is a physical declaration of cash already held, not a transfer or new revenue/asset posting. Current close accepts only the original float, because sales and cash movements are not implemented. A variance fails and leaves the session open. No variance is silently expensed or posted. Future checkout must extend expected cash before it can be enabled; the current equality constraint is intentional and must be replaced through a separately tested accounting batch.
+
+Workspace reads are bounded: 100 accessible registers/locations/members, their open sessions, latest 50 closed sessions, 500 eligible accounts and 1,000 grants. Member names/emails additionally require existing `members.view`. No HR employee/payroll records are returned. UI labels truncated lists explicitly.
+
+Future sale/payment/line/stock entities remain proposed, with origin uniqueness, tenant FKs, immutable posting links and line-level tax/pricing snapshots. No duplicate Contacts, Products, locations or ledger entities are introduced. Rollout needs an approved full-schema migration rehearsal and authenticated staging tests; isolated master fixtures are not a full-schema upgrade proof.

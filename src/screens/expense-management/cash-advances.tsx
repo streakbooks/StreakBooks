@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -77,8 +78,7 @@ export function ExpenseManagementCashAdvancesPage() {
 
   const advancesQ = useQuery({
     queryKey: ["expense-cash-advances", company?.id, scope],
-    queryFn: () =>
-      fetchAdvances({ data: { companyId: company!.id, scope } }),
+    queryFn: () => fetchAdvances({ data: { companyId: company!.id, scope } }),
     enabled: Boolean(company?.id) && canView,
   });
 
@@ -193,14 +193,16 @@ export function ExpenseManagementCashAdvancesPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Cash Advances" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="cash-advances"/>}
-    >
-      <EmptyState
+      <ListWorkspace
+        title="Cash Advances"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="cash-advances" />}
+      >
+        <EmptyState
           title="No access"
           description="Ask an administrator for expenses.submit or expenses.manage_advances."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
@@ -211,14 +213,17 @@ export function ExpenseManagementCashAdvancesPage() {
   const advanceAccountConfigured = Boolean(settingsQ.data?.employeeAdvanceAccountId);
 
   return (
-      <ListWorkspace title="Cash Advances"
-        description="Issue employee floats, settle via cash-advance claims, and reclaim unused balances."
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/$section" params={{ section: "settings" }}>Settings</Link>
-          </Button>
-        }
-      subnav={<ExpenseManagementSubnav current="cash-advances"/>}
+    <ListWorkspace
+      title="Cash Advances"
+      description="Issue employee floats, settle via cash-advance claims, and reclaim unused balances."
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/expense-management/$section" params={{ section: "settings" }}>
+            Settings
+          </Link>
+        </Button>
+      }
+      subnav={<ExpenseManagementSubnav current="cash-advances" />}
     >
       {migrationMissing ? (
         <Alert className="mb-6" variant="destructive">
@@ -231,8 +236,8 @@ export function ExpenseManagementCashAdvancesPage() {
         <Alert className="mb-6">
           <AlertTitle>Advance account not configured</AlertTitle>
           <AlertDescription>
-            Set the employee advance account under Expenses settings before issuing
-            advances. Settlement posts credit that asset when cash-advance claims are posted.
+            Set the employee advance account under Expenses settings before issuing advances.
+            Settlement posts credit that asset when cash-advance claims are posted.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -291,7 +296,7 @@ export function ExpenseManagementCashAdvancesPage() {
       {canManage ? (
         <section className="mb-6 grid max-w-md gap-2">
           <Label>Bank account for issuing / reclaim</Label>
-          <Select value={bankGlAccountId} onValueChange={setBankGlAccountId}>
+          <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
             <SelectTrigger>
               <SelectValue placeholder="Select bank / cash account" />
             </SelectTrigger>
@@ -302,7 +307,7 @@ export function ExpenseManagementCashAdvancesPage() {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </section>
       ) : null}
 
@@ -352,10 +357,10 @@ export function ExpenseManagementCashAdvancesPage() {
                     {canManage && issueGate.ok ? (
                       <Button
                         size="sm"
-                        disabled={issueMut.isPending || !bankGlAccountId || !advanceAccountConfigured}
-                        onClick={() =>
-                          issueMut.mutate({ id: adv.id, version: adv.version })
+                        disabled={
+                          issueMut.isPending || !bankGlAccountId || !advanceAccountConfigured
                         }
+                        onClick={() => issueMut.mutate({ id: adv.id, version: adv.version })}
                       >
                         Issue
                       </Button>
@@ -367,9 +372,7 @@ export function ExpenseManagementCashAdvancesPage() {
                         disabled={
                           reclaimMut.isPending || !bankGlAccountId || !advanceAccountConfigured
                         }
-                        onClick={() =>
-                          reclaimMut.mutate({ id: adv.id, version: adv.version })
-                        }
+                        onClick={() => reclaimMut.mutate({ id: adv.id, version: adv.version })}
                       >
                         Reclaim
                       </Button>
@@ -379,9 +382,7 @@ export function ExpenseManagementCashAdvancesPage() {
                         size="sm"
                         variant="outline"
                         disabled={cancelMut.isPending}
-                        onClick={() =>
-                          cancelMut.mutate({ id: adv.id, version: adv.version })
-                        }
+                        onClick={() => cancelMut.mutate({ id: adv.id, version: adv.version })}
                       >
                         Cancel
                       </Button>
@@ -394,5 +395,5 @@ export function ExpenseManagementCashAdvancesPage() {
         </Table>
       )}
     </ListWorkspace>
-    );
+  );
 }

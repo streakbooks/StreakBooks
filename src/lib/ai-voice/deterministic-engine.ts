@@ -62,6 +62,7 @@ export const VOICE_COMMANDS = [
 }[];
 
 const modulePermission: Record<string, Permission> = {
+  "/pos": "pos.view",
   "/banking": "banking.view",
   "/expense-management": "expenses.view",
   "/sales": "sales.view",

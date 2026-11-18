@@ -43,9 +43,14 @@ export const getPayrollLiabilityRollforward = createServerFn({ method: "GET" })
       .maybeSingle();
     if (settingsError) throw new Error(settingsError.message);
     const settings = rawSettings as unknown as {
-      company_id: string; net_pay_liability_account_id: string | null;
+      company_id: string;
+      net_pay_liability_account_id: string | null;
     } | null;
-    if (!settings || settings.company_id !== data.companyId || !settings.net_pay_liability_account_id) {
+    if (
+      !settings ||
+      settings.company_id !== data.companyId ||
+      !settings.net_pay_liability_account_id
+    ) {
       throw new Error("Configure a Payroll net-pay liability account to run the roll-forward.");
     }
 
@@ -57,11 +62,22 @@ export const getPayrollLiabilityRollforward = createServerFn({ method: "GET" })
       .maybeSingle();
     if (accountError) throw new Error(accountError.message);
     const account = rawAccount as unknown as {
-      id: string; company_id: string; code: string; name: string; account_type: string;
+      id: string;
+      company_id: string;
+      code: string;
+      name: string;
+      account_type: string;
     } | null;
-    if (!account || account.company_id !== data.companyId || account.id !== settings.net_pay_liability_account_id ||
-        !account.code?.trim() || account.account_type !== "liability") {
-      throw new Error("Payroll net-pay liability account is missing, invalid or no longer a liability.");
+    if (
+      !account ||
+      account.company_id !== data.companyId ||
+      account.id !== settings.net_pay_liability_account_id ||
+      !account.code?.trim() ||
+      account.account_type !== "liability"
+    ) {
+      throw new Error(
+        "Payroll net-pay liability account is missing, invalid or no longer a liability.",
+      );
     }
 
     // Prefer the existing report reader: only POSTED journals, exact FX-to-base
@@ -69,18 +85,25 @@ export const getPayrollLiabilityRollforward = createServerFn({ method: "GET" })
     const meta = await loadCompanyMeta(sb as unknown as Sb, data.companyId);
     const [ledgerLines, runsResult, paymentsResult] = await Promise.all([
       loadPostedLines(sb as unknown as Sb, data.companyId, meta.baseCurrency, {
-        accountIds: [account.id], to: data.to,
+        accountIds: [account.id],
+        to: data.to,
       }),
-      sb.from("payroll_runs" as never)
-        .select("id, company_id, status, payment_date, currency, net_minor, accrual_journal_id" as never)
+      sb
+        .from("payroll_runs" as never)
+        .select(
+          "id, company_id, status, payment_date, currency, net_minor, accrual_journal_id" as never,
+        )
         .eq("company_id" as never, data.companyId as never)
         .in("status" as never, ["posted", "paid", "complete"] as never)
         .gte("payment_date" as never, data.from as never)
         .lte("payment_date" as never, data.to as never)
         .order("id" as never)
         .limit(501),
-      sb.from("payroll_payments" as never)
-        .select("id, company_id, status, payment_date, currency, amount_minor, unallocated_minor, journal_id" as never)
+      sb
+        .from("payroll_payments" as never)
+        .select(
+          "id, company_id, status, payment_date, currency, amount_minor, unallocated_minor, journal_id" as never,
+        )
         .eq("company_id" as never, data.companyId as never)
         .in("status" as never, ["posted", "reversed"] as never)
         .gte("payment_date" as never, data.from as never)
@@ -93,11 +116,18 @@ export const getPayrollLiabilityRollforward = createServerFn({ method: "GET" })
     const runs = (runsResult.data ?? []) as unknown as LiabilitySourceRun[];
     const payments = (paymentsResult.data ?? []) as unknown as LiabilitySourcePayment[];
     if (runs.length >= 501 || payments.length >= 501) {
-      throw new Error("Payroll source evidence exceeds 500 records for this period. Choose a smaller date range.");
+      throw new Error(
+        "Payroll source evidence exceeds 500 records for this period. Choose a smaller date range.",
+      );
     }
     return calculatePayrollLiabilityRollforward(
-      data.companyId, meta.baseCurrency, account.id, account.code, account.name,
-      data.from, data.to,
+      data.companyId,
+      meta.baseCurrency,
+      account.id,
+      account.code,
+      account.name,
+      data.from,
+      data.to,
       ledgerLines.map((row) => ({
         line_id: row.line_id ?? "",
         journal_id: row.journal_id ?? "",
@@ -108,6 +138,7 @@ export const getPayrollLiabilityRollforward = createServerFn({ method: "GET" })
         debit_minor: row.debit_minor,
         credit_minor: row.credit_minor,
       })),
-      runs, payments,
+      runs,
+      payments,
     );
   });

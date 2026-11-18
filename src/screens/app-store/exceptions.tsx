@@ -40,22 +40,22 @@ export function AppStoreExceptionsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Integration Exceptions" description="App Store"
-    >
-      <EmptyState
+      <ListWorkspace title="Integration Exceptions" description="App Store">
+        <EmptyState
           title="No access"
           description="Requires appstore.resolve_exceptions or appstore.view."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
   const exceptions = deriveIntegrationExceptions(jobs.data ?? []);
 
   return (
-      <ListWorkspace title="Integration Exceptions"
-        description="Failed, partial and dead-letter sync jobs for this organisation. Empty until a verified connector runs."
-      subnav={<AppStoreSubnav current="exceptions"/>}
+    <ListWorkspace
+      title="Integration Exceptions"
+      description="Failed, partial and dead-letter sync jobs for this organisation. Empty until a verified connector runs."
+      subnav={<AppStoreSubnav current="exceptions" />}
     >
       <Alert className="mb-6">
         <AlertTitle>No fabricated exceptions</AlertTitle>
@@ -118,5 +118,5 @@ export function AppStoreExceptionsPage() {
         )
       ) : null}
     </ListWorkspace>
-    );
+  );
 }

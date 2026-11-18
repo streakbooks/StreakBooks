@@ -49,10 +49,13 @@ export function buildCrmAccountOverlay(input: {
   leads: CrmAccountLeadSeed[];
   opportunities: CrmAccountOpportunitySeed[];
 }): CrmAccountOverlayRow[] {
-  const openOppByContact = new Map<string, {
-    count: number;
-    currencyTotals: Map<string, number>;
-  }>();
+  const openOppByContact = new Map<
+    string,
+    {
+      count: number;
+      currencyTotals: Map<string, number>;
+    }
+  >();
 
   for (const opp of input.opportunities) {
     if (!opp.contactId || opp.status !== "open") continue;

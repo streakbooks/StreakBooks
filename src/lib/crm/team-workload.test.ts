@@ -22,11 +22,7 @@ describe("buildCrmTeamWorkload", () => {
           isYou: false,
         },
       ],
-      leads: [
-        { ownerUserId: "u1" },
-        { ownerUserId: "u1" },
-        { ownerUserId: null },
-      ],
+      leads: [{ ownerUserId: "u1" }, { ownerUserId: "u1" }, { ownerUserId: null }],
       opportunities: [{ ownerUserId: "u2" }, { ownerUserId: "u1" }],
     });
     expect(rows[0]?.openLeadCount).toBe(2);

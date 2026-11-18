@@ -14,8 +14,14 @@ export type JournalBrowseSearch = {
 };
 
 export const JOURNAL_BROWSE_KEYS = [
-  "journalQ", "journalSource", "journalFrom", "journalTo",
-  "journalPageSize", "journalPage", "journalSort", "journalDir",
+  "journalQ",
+  "journalSource",
+  "journalFrom",
+  "journalTo",
+  "journalPageSize",
+  "journalPage",
+  "journalSort",
+  "journalDir",
 ] as const;
 
 const SORTS = new Set(["number", "date", "source", "amount"]);
@@ -26,21 +32,27 @@ export function parseJournalBrowseSearch(raw: Record<string, unknown>): JournalB
   const q = raw["journalQ"];
   if (typeof q === "string" && q.length > 0 && q.length <= 120) result.journalQ = q;
   const source = raw["journalSource"];
-  if (typeof source === "string" && Object.prototype.hasOwnProperty.call(
-    JOURNAL_SOURCE_LABELS, source,
-  )) result.journalSource = source;
+  if (
+    typeof source === "string" &&
+    Object.prototype.hasOwnProperty.call(JOURNAL_SOURCE_LABELS, source)
+  )
+    result.journalSource = source;
   if (isReportDate(raw["journalFrom"])) result.journalFrom = raw["journalFrom"];
   if (isReportDate(raw["journalTo"])) result.journalTo = raw["journalTo"];
 
   const pageSize = raw["journalPageSize"];
-  if ((typeof pageSize === "number" || typeof pageSize === "string") &&
-      PAGE_SIZES.has(Number(pageSize))) {
+  if (
+    (typeof pageSize === "number" || typeof pageSize === "string") &&
+    PAGE_SIZES.has(Number(pageSize))
+  ) {
     result.journalPageSize = Number(pageSize) as 50 | 100 | 200;
   }
 
   const page = raw["journalPage"];
-  if ((typeof page === "number" && Number.isSafeInteger(page) && page >= 0) ||
-      (typeof page === "string" && /^\d{1,7}$/.test(page))) {
+  if (
+    (typeof page === "number" && Number.isSafeInteger(page) && page >= 0) ||
+    (typeof page === "string" && /^\d{1,7}$/.test(page))
+  ) {
     result.journalPage = Math.min(Number(page), 1_000_000);
   }
 

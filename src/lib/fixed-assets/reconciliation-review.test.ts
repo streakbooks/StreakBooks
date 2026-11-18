@@ -7,7 +7,8 @@ import {
 import type { ReconciliationAccountRow } from "./reconciliation";
 
 const row = (
-  accountId: string, differenceMinor: string,
+  accountId: string,
+  differenceMinor: string,
   patch: Partial<ReconciliationAccountRow> = {},
 ): ReconciliationAccountRow => ({
   accountId,
@@ -60,9 +61,13 @@ describe("fixed asset GL reconciliation review helpers", () => {
       order: "largest_difference",
     });
     expect(selected.map((r) => r.accountCode)).toEqual(["1600", "1500"]);
-    expect(selectReconciliationReviewRows(rows, {
-      status: "matched", query: "1550", order: "account",
-    }).map((r) => r.accountId)).toEqual(["1550"]);
+    expect(
+      selectReconciliationReviewRows(rows, {
+        status: "matched",
+        query: "1550",
+        order: "account",
+      }).map((r) => r.accountId),
+    ).toEqual(["1550"]);
     // Input remains untouched.
     expect(rows[0]?.accountCode).toBe("1600");
   });
@@ -74,9 +79,11 @@ describe("fixed asset GL reconciliation review helpers", () => {
   });
 
   it("fails on duplicate rows or status/variance inconsistencies", () => {
-    expect(() => summarizeReconciliationExceptions([row("a", "0"), row("a", "0")]))
-      .toThrow(/duplicate/i);
-    expect(() => summarizeReconciliationExceptions([row("a", "1", { status: "matched" })]))
-      .toThrow(/status/i);
+    expect(() => summarizeReconciliationExceptions([row("a", "0"), row("a", "0")])).toThrow(
+      /duplicate/i,
+    );
+    expect(() => summarizeReconciliationExceptions([row("a", "1", { status: "matched" })])).toThrow(
+      /status/i,
+    );
   });
 });

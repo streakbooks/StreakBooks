@@ -16,18 +16,18 @@ const FACTOR = 100000000n;
 export function validRuleDate(raw: string): boolean {
   const match = DATE.exec(raw);
   if (!match) return false;
-  const y = Number(match[1]), m = Number(match[2]), d = Number(match[3]);
+  const y = Number(match[1]),
+    m = Number(match[2]),
+    d = Number(match[3]);
   if (y < 1900 || y > 9999 || m < 1 || m > 12 || d < 1 || d > 31) return false;
   const test = new Date(Date.UTC(y, m - 1, d));
-  return test.getUTCFullYear() === y &&
-    test.getUTCMonth() + 1 === m && test.getUTCDate() === d;
+  return test.getUTCFullYear() === y && test.getUTCMonth() + 1 === m && test.getUTCDate() === d;
 }
 
 function quantityScaled(raw: string, fromDocument = false): bigint | null {
   const match = (fromDocument ? DOCUMENT_QUANTITY : RULE_QUANTITY).exec(raw);
   if (!match) return null;
-  return BigInt(match[1]!) * FACTOR +
-    BigInt((match[2] ?? "").padEnd(8, "0") || "0");
+  return BigInt(match[1]!) * FACTOR + BigInt((match[2] ?? "").padEnd(8, "0") || "0");
 }
 
 export function validateRuleInput(input: {
@@ -43,8 +43,10 @@ export function validateRuleInput(input: {
   if (!validRuleDate(input.effectiveFrom)) {
     throw new Error("Enter a valid effective-from date (1900–9999)");
   }
-  if (input.effectiveTo && (!validRuleDate(input.effectiveTo) ||
-    input.effectiveTo < input.effectiveFrom)) {
+  if (
+    input.effectiveTo &&
+    (!validRuleDate(input.effectiveTo) || input.effectiveTo < input.effectiveFrom)
+  ) {
     throw new Error("Effective-to must be a valid date on or after effective-from");
   }
   if (!Number.isSafeInteger(input.unitPriceMinor) || input.unitPriceMinor < 0) {
@@ -52,7 +54,9 @@ export function validateRuleInput(input: {
   }
   // Normalize equivalent quantities like 01.20 to 1.2 to avoid duplicate keys.
   const integer = scaled / FACTOR;
-  const fraction = String(scaled % FACTOR).padStart(8, "0").replace(/0+$/, "");
+  const fraction = String(scaled % FACTOR)
+    .padStart(8, "0")
+    .replace(/0+$/, "");
   return {
     minQuantity: fraction ? `${integer}.${fraction}` : String(integer),
     effectiveFrom: input.effectiveFrom,
@@ -85,16 +89,23 @@ export function findEffectiveQuantityRule<T extends DateEffectiveQuantityRule>(
   let best: T | null = null;
   let bestQty = 0n;
   for (const rule of rules) {
-    if (rule.product_id !== productId || rule.effective_from > date ||
-      (rule.effective_to !== null && rule.effective_to < date)) continue;
+    if (
+      rule.product_id !== productId ||
+      rule.effective_from > date ||
+      (rule.effective_to !== null && rule.effective_to < date)
+    )
+      continue;
     const minimum = quantityScaled(String(rule.min_quantity));
     if (minimum === null || minimum <= 0n) {
       throw new Error("Invalid price-list quantity threshold returned from the server");
     }
     if (amount < minimum) continue;
-    if (!best || minimum > bestQty ||
+    if (
+      !best ||
+      minimum > bestQty ||
       (minimum === bestQty && rule.effective_from > best.effective_from) ||
-      (minimum === bestQty && rule.effective_from === best.effective_from && rule.id < best.id)) {
+      (minimum === bestQty && rule.effective_from === best.effective_from && rule.id < best.id)
+    ) {
       best = rule;
       bestQty = minimum;
     }
@@ -110,8 +121,10 @@ export function findEffectiveTier(
   date: string,
 ): DraftTierPriceRule | null {
   const selected = findEffectiveQuantityRule(rules, productId, quantity, date);
-  if (selected && (!Number.isSafeInteger(selected.unit_price_minor) ||
-    selected.unit_price_minor < 0)) {
+  if (
+    selected &&
+    (!Number.isSafeInteger(selected.unit_price_minor) || selected.unit_price_minor < 0)
+  ) {
     throw new Error("Invalid price-list tier amount returned from the server");
   }
   return selected;

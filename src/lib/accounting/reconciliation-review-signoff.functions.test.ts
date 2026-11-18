@@ -2,10 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-start", () => ({
   createServerFn: () => {
-    let validate: (value: unknown) => unknown = x => x;
+    let validate: (value: unknown) => unknown = (x) => x;
     const chain = {
-      middleware() { return chain; },
-      inputValidator(fn: (data: unknown) => unknown) { validate = fn; return chain; },
+      middleware() {
+        return chain;
+      },
+      inputValidator(fn: (data: unknown) => unknown) {
+        validate = fn;
+        return chain;
+      },
       handler(fn: (args: { data: unknown; context: unknown }) => Promise<unknown>) {
         return (args: { data: unknown; context: unknown }) =>
           fn({ ...args, data: validate(args.data) });
@@ -18,7 +23,8 @@ vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth:
 vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn() }));
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 import {
-  listReconciliationReviewHistory, progressReconciliationReviewCase,
+  listReconciliationReviewHistory,
+  progressReconciliationReviewCase,
 } from "./reconciliation-review-signoff.functions";
 
 const company = "11111111-1111-4111-8111-111111111111";
@@ -26,9 +32,14 @@ const caseId = "22222222-2222-4222-8222-222222222222";
 const uid = "33333333-3333-4333-8333-333333333333";
 const originalCase = { id: caseId, company_id: company };
 const event = {
-  id: "event-one", company_id: company, case_id: caseId,
-  actor_id: uid, action: "open", note: "Started investigation",
-  old_state: null, new_state: { status: "open", version: 1 },
+  id: "event-one",
+  company_id: company,
+  case_id: caseId,
+  actor_id: uid,
+  action: "open",
+  note: "Started investigation",
+  old_state: null,
+  new_state: { status: "open", version: 1 },
   created_at: "2026-11-06T10:00:00Z",
 };
 let tables: Record<string, unknown[]>;
@@ -37,42 +48,62 @@ const seen = vi.fn();
 const from = vi.fn((table: string) => {
   const filters: Array<(item: Record<string, unknown>) => boolean> = [];
   const q = {
-    select() { return q; },
-    eq(key: string, value: unknown) {
-      seen(table, key, value);
-      filters.push(item => item[key] === value);
+    select() {
       return q;
     },
-    order() { return q; },
+    eq(key: string, value: unknown) {
+      seen(table, key, value);
+      filters.push((item) => item[key] === value);
+      return q;
+    },
+    order() {
+      return q;
+    },
     async maybeSingle() {
-      const data = (tables[table] ?? [])
-        .filter(row => filters.every(f => f(row as Record<string, unknown>)));
-      return { data: data[0] ?? null,
-        error: errorTable === table ? { message: "Simulated database failure" } : null };
+      const data = (tables[table] ?? []).filter((row) =>
+        filters.every((f) => f(row as Record<string, unknown>)),
+      );
+      return {
+        data: data[0] ?? null,
+        error: errorTable === table ? { message: "Simulated database failure" } : null,
+      };
     },
     async limit(n: number) {
       const data = (tables[table] ?? [])
-        .filter(row => filters.every(f => f(row as Record<string, unknown>)))
+        .filter((row) => filters.every((f) => f(row as Record<string, unknown>)))
         .slice(0, n);
-      return { data, error: errorTable === table ? { message: "Simulated database failure" } : null };
+      return {
+        data,
+        error: errorTable === table ? { message: "Simulated database failure" } : null,
+      };
     },
   };
   return q;
 });
 const rpc = vi.fn(async (): Promise<{ data: unknown; error: { message: string } | null }> => ({
-  data: { id: caseId, status: "in_review", version: 4,
-    assigned_to: uid, updated_at: "2026-11-06T12:00:00Z",
-    evidence_url: "https://example.com/report", submitted_by: null, reviewed_by: null },
+  data: {
+    id: caseId,
+    status: "in_review",
+    version: 4,
+    assigned_to: uid,
+    updated_at: "2026-11-06T12:00:00Z",
+    evidence_url: "https://example.com/report",
+    submitted_by: null,
+    reviewed_by: null,
+  },
   error: null,
 }));
 const context = { supabase: { from, rpc } };
 const invoke = (fn: unknown, data: unknown) =>
   (fn as (args: unknown) => Promise<unknown>)({ data, context });
-const history = (id=company, caseKey=caseId) =>
+const history = (id = company, caseKey = caseId) =>
   invoke(listReconciliationReviewHistory, { companyId: id, caseId: caseKey });
 const progressInput = {
-  companyId: company, caseId, action: "attach_evidence",
-  expectedVersion: 3, note: "Source audit attached",
+  companyId: company,
+  caseId,
+  action: "attach_evidence",
+  expectedVersion: 3,
+  note: "Source audit attached",
   evidenceUrl: "https://example.com/report",
 };
 const progress = (overrides: Record<string, unknown> = {}) =>
@@ -86,9 +117,16 @@ beforeEach(() => {
   };
   errorTable = null;
   rpc.mockResolvedValue({
-    data: { id: caseId, status: "in_review", version: 4,
-      assigned_to: uid, updated_at: "2026-11-06T12:00:00Z",
-      evidence_url: "https://example.com/report", submitted_by: null, reviewed_by: null },
+    data: {
+      id: caseId,
+      status: "in_review",
+      version: 4,
+      assigned_to: uid,
+      updated_at: "2026-11-06T12:00:00Z",
+      evidence_url: "https://example.com/report",
+      submitted_by: null,
+      reviewed_by: null,
+    },
     error: null,
   });
 });
@@ -101,7 +139,9 @@ describe("persistent reconciliation review progression and history", () => {
       hasMore: false,
     });
     expect(assertCompanyPermission).toHaveBeenCalledWith(
-      expect.anything(), company, "accounting.view",
+      expect.anything(),
+      company,
+      "accounting.view",
     );
     for (const table of ["reconciliation_review_cases", "reconciliation_review_events"]) {
       expect(seen).toHaveBeenCalledWith(table, "company_id", company);
@@ -132,9 +172,11 @@ describe("persistent reconciliation review progression and history", () => {
     await expect(history()).resolves.toMatchObject({ events: [] });
   });
   it("bounds history at 100 and exposes hasMore", async () => {
-    tables["reconciliation_review_events"] = Array.from({ length: 101 }, (_, i) =>
-      ({ ...event, id: "event-" + i }));
-    const result = await history() as { events: unknown[]; hasMore: boolean };
+    tables["reconciliation_review_events"] = Array.from({ length: 101 }, (_, i) => ({
+      ...event,
+      id: "event-" + i,
+    }));
+    const result = (await history()) as { events: unknown[]; hasMore: boolean };
     expect(result.events).toHaveLength(100);
     expect(result.hasMore).toBe(true);
   });
@@ -147,23 +189,35 @@ describe("persistent reconciliation review progression and history", () => {
   it("checks both accounting permissions before writing by RPC", async () => {
     await expect(progress()).resolves.toMatchObject({ version: 4 });
     expect(assertCompanyPermission).toHaveBeenNthCalledWith(
-      1, expect.anything(), company, "accounting.view",
+      1,
+      expect.anything(),
+      company,
+      "accounting.view",
     );
     expect(assertCompanyPermission).toHaveBeenNthCalledWith(
-      2, expect.anything(), company, "accounting.post",
+      2,
+      expect.anything(),
+      company,
+      "accounting.post",
     );
-    expect(rpc).toHaveBeenCalledWith("progress_reconciliation_review_case", expect.objectContaining({
-      _company_id: company, _case_id: caseId,
-      _action: "attach_evidence", _expected_version: 3,
-      _evidence_url: "https://example.com/report",
-    }));
+    expect(rpc).toHaveBeenCalledWith(
+      "progress_reconciliation_review_case",
+      expect.objectContaining({
+        _company_id: company,
+        _case_id: caseId,
+        _action: "attach_evidence",
+        _expected_version: 3,
+        _evidence_url: "https://example.com/report",
+      }),
+    );
     expect(from).not.toHaveBeenCalled();
   });
   it("blocks write when either accounting.view or accounting.post is denied", async () => {
     vi.mocked(assertCompanyPermission).mockRejectedValueOnce(new Error("No viewing"));
     await expect(progress()).rejects.toThrow("No viewing");
     expect(rpc).not.toHaveBeenCalled();
-    vi.mocked(assertCompanyPermission).mockResolvedValueOnce(undefined)
+    vi.mocked(assertCompanyPermission)
+      .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(new Error("No posting"));
     await expect(progress()).rejects.toThrow("No posting");
     expect(rpc).not.toHaveBeenCalled();
@@ -180,8 +234,11 @@ describe("persistent reconciliation review progression and history", () => {
   });
   it("rejects http, javascript, whitespace, excessive URLs and non-HTTPS links", () => {
     for (const url of [
-      "http://example.com", "javascript:alert(1)", "https://example.com/a b",
-      "https://example.com/" + "x".repeat(500), "https://example.com/\nfoo",
+      "http://example.com",
+      "javascript:alert(1)",
+      "https://example.com/a b",
+      "https://example.com/" + "x".repeat(500),
+      "https://example.com/\nfoo",
     ]) {
       expect(() => progress({ evidenceUrl: url })).toThrow(/HTTPS URL/);
     }
@@ -189,16 +246,21 @@ describe("persistent reconciliation review progression and history", () => {
   it("requires evidence and appropriate investigation notes", () => {
     expect(() => progress({ evidenceUrl: null })).toThrow(/Evidence or conclusion/);
     expect(() => progress({ note: "hi" })).toThrow(/Evidence or conclusion/);
-    expect(() => progress({ action: "submit", evidenceUrl: null, note: "short" }))
-      .toThrow(/Evidence or conclusion/);
+    expect(() => progress({ action: "submit", evidenceUrl: null, note: "short" })).toThrow(
+      /Evidence or conclusion/,
+    );
   });
   it("supports submission, independent signoff and reopen request shapes", async () => {
     for (const action of ["submit", "sign_off", "reopen"]) {
       await progress({ action, evidenceUrl: null, note: "Detailed review conclusion" });
-      expect(rpc).toHaveBeenCalledWith("progress_reconciliation_review_case",
+      expect(rpc).toHaveBeenCalledWith(
+        "progress_reconciliation_review_case",
         expect.objectContaining({
-          _action: action, _evidence_url: null, _expected_version: 3,
-        }));
+          _action: action,
+          _evidence_url: null,
+          _expected_version: 3,
+        }),
+      );
     }
   });
   it("propagates database failure and does not report success without saved result", async () => {

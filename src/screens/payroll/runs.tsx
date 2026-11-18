@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -69,7 +70,9 @@ export function PayrollRunsPage() {
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [runSearch, setRunSearch] = useState("");
-  const [runSort, setRunSort] = useState<"payment-newest" | "payment-oldest" | "period-newest">("payment-newest");
+  const [runSort, setRunSort] = useState<"payment-newest" | "payment-oldest" | "period-newest">(
+    "payment-newest",
+  );
   const [createOpen, setCreateOpen] = useState(false);
   const [scheduleId, setScheduleId] = useState("");
   const [periodStart, setPeriodStart] = useState("");
@@ -173,10 +176,12 @@ export function PayrollRunsPage() {
   const searchTerm = runSearch.trim().toLocaleLowerCase();
   const matchingRuns = list.runs
     .filter((run) => statusFilter === "all" || run.status === statusFilter)
-    .filter((run) =>
-      !searchTerm ||
-      [run.run_number, scheduleName(run.pay_schedule_id), run.period_start, run.period_end]
-        .some((value) => value.toLocaleLowerCase().includes(searchTerm)),
+    .filter(
+      (run) =>
+        !searchTerm ||
+        [run.run_number, scheduleName(run.pay_schedule_id), run.period_start, run.period_end].some(
+          (value) => value.toLocaleLowerCase().includes(searchTerm),
+        ),
     )
     .sort((a, b) =>
       runSort === "period-newest"
@@ -208,10 +213,13 @@ export function PayrollRunsPage() {
       description="Create pay runs, calculate amounts, review and approve."
       actions={
         canPrepare && list.available ? (
-          <Button size="sm" onClick={() => {
+          <Button
+            size="sm"
+            onClick={() => {
               setUserEditedDates(false);
               setCreateOpen(true);
-            }}>
+            }}
+          >
             <Plus className="mr-2 h-4 w-4" />
             New run
           </Button>
@@ -230,7 +238,7 @@ export function PayrollRunsPage() {
             <Label htmlFor="run-status-filter" className="sr-only">
               Filter by status
             </Label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <RecordLookupSelect value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger id="run-status-filter" className="w-[180px]">
                 <SelectValue placeholder="All statuses" />
               </SelectTrigger>
@@ -242,7 +250,7 @@ export function PayrollRunsPage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
             <Input
               value={runSearch}
               onChange={(event) => setRunSearch(event.target.value)}
@@ -250,10 +258,7 @@ export function PayrollRunsPage() {
               aria-label="Search payroll runs"
               className="w-full sm:w-64"
             />
-            <Select
-              value={runSort}
-              onValueChange={(value) => setRunSort(value as typeof runSort)}
-            >
+            <Select value={runSort} onValueChange={(value) => setRunSort(value as typeof runSort)}>
               <SelectTrigger className="w-[190px]" aria-label="Sort payroll runs">
                 <SelectValue />
               </SelectTrigger>
@@ -288,10 +293,13 @@ export function PayrollRunsPage() {
                       Clear filters
                     </Button>
                   ) : canPrepare ? (
-                    <Button size="sm" onClick={() => {
-                setUserEditedDates(false);
-                setCreateOpen(true);
-              }}>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setUserEditedDates(false);
+                        setCreateOpen(true);
+                      }}
+                    >
                       <Plus className="mr-2 h-4 w-4" />
                       Create run
                     </Button>
@@ -350,7 +358,7 @@ export function PayrollRunsPage() {
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="run-schedule">Pay schedule</Label>
-              <Select
+              <RecordLookupSelect
                 value={scheduleId}
                 onValueChange={(value) => {
                   setScheduleId(value);
@@ -367,7 +375,7 @@ export function PayrollRunsPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-2">
@@ -428,7 +436,12 @@ export function PayrollRunsPage() {
             </Button>
             <Button
               disabled={
-                !scheduleId || !periodStart || !periodEnd || !paymentDate || invalidPeriod || createMut.isPending
+                !scheduleId ||
+                !periodStart ||
+                !periodEnd ||
+                !paymentDate ||
+                invalidPeriod ||
+                createMut.isPending
               }
               onClick={() => createMut.mutate()}
             >

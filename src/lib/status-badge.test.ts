@@ -31,14 +31,26 @@ describe("statusDisplay", () => {
     expect(statusDisplay("open")).toMatchObject({ label: "Open", tone: "info" });
     expect(statusDisplay("completed")).toMatchObject({ label: "Completed", tone: "complete" });
     expect(statusDisplay("active")).toMatchObject({ label: "Active", tone: "success" });
-    expect(statusDisplay("archived")).toMatchObject({ label: "Archived", tone: "neutral", muted: true });
-    expect(statusDisplay("not_acquired")).toMatchObject({ label: "Future purchase", tone: "neutral" });
-    expect(statusDisplay("disposed")).toMatchObject({ label: "Disposed", tone: "neutral", muted: true });
+    expect(statusDisplay("archived")).toMatchObject({
+      label: "Archived",
+      tone: "neutral",
+      muted: true,
+    });
+    expect(statusDisplay("not_acquired")).toMatchObject({
+      label: "Future purchase",
+      tone: "neutral",
+    });
+    expect(statusDisplay("disposed")).toMatchObject({
+      label: "Disposed",
+      tone: "neutral",
+      muted: true,
+    });
   });
 
   it("distinguishes AI suggestions ready for review from actually applied", () => {
     expect(statusDisplay("validated")).toMatchObject({
-      label: "Validated for review", tone: "info",
+      label: "Validated for review",
+      tone: "info",
     });
     expect(statusDisplay("applied")).toMatchObject({ label: "Applied", tone: "complete" });
     expect(statusDisplay("invalid")).toMatchObject({ label: "Invalid", tone: "danger" });
@@ -49,7 +61,9 @@ describe("statusDisplay", () => {
   it("distinguishes actual App Store connection and health states", () => {
     expect(statusDisplay("connected")).toMatchObject({ label: "Connected", tone: "info" });
     expect(statusDisplay("disconnected")).toMatchObject({
-      label: "Disconnected", tone: "neutral", muted: true,
+      label: "Disconnected",
+      tone: "neutral",
+      muted: true,
     });
     expect(statusDisplay("healthy")).toMatchObject({ label: "Healthy", tone: "success" });
     expect(statusDisplay("degraded")).toMatchObject({ label: "Degraded", tone: "warning" });
@@ -61,7 +75,11 @@ describe("statusDisplay", () => {
 
   it("keeps accountant journals separate from payment completion", () => {
     expect(statusDisplay("posted")).toMatchObject({ label: "Posted", tone: "success" });
-    expect(statusDisplay("reversed")).toMatchObject({ label: "Reversed", tone: "neutral", muted: true });
+    expect(statusDisplay("reversed")).toMatchObject({
+      label: "Reversed",
+      tone: "neutral",
+      muted: true,
+    });
     expect(statusDisplay("paid")).toMatchObject({ label: "Paid", tone: "complete" });
   });
 

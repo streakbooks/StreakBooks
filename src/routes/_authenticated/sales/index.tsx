@@ -96,7 +96,6 @@ function SalesOverview() {
         </>
       }
     >
-
       {overviewQ.isPending ? (
         <LoadingState />
       ) : overviewQ.isError ? (

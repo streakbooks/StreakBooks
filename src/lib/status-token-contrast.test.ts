@@ -18,11 +18,11 @@ function relativeLuminance({ L, C, h }: { L: number; C: number; h: number }): nu
 }
 
 function oklchValues(token: string): Array<{ L: number; C: number; h: number }> {
-  const pattern = new RegExp(
-    token + ":\\s*oklch\\(([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\)", "g",
-  );
+  const pattern = new RegExp(token + ":\\s*oklch\\(([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\)", "g");
   return Array.from(css.matchAll(pattern), (match) => ({
-    L: Number(match[1]), C: Number(match[2]), h: Number(match[3]),
+    L: Number(match[1]),
+    C: Number(match[2]),
+    h: Number(match[3]),
   }));
 }
 
@@ -42,8 +42,8 @@ describe("Original LinkBooks cross-theme completion states", () => {
     for (let i = 0; i < 2; i++) {
       const background = relativeLuminance(backgrounds[i]!);
       const foreground = relativeLuminance(foregrounds[i]!);
-      const ratio = (Math.max(background, foreground) + 0.05) /
-        (Math.min(background, foreground) + 0.05);
+      const ratio =
+        (Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05);
       expect(ratio).toBeGreaterThanOrEqual(4.5);
     }
   });

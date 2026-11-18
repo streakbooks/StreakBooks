@@ -48,13 +48,8 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const pathname = new URL(request.url).pathname;
-      if (
-        pathname === "/api/marketplace/v1" ||
-        pathname.startsWith("/api/marketplace/v1/")
-      ) {
-        const { handleMarketplaceApiV1 } = await import(
-          "./lib/app-store/api/v1/http.server"
-        );
+      if (pathname === "/api/marketplace/v1" || pathname.startsWith("/api/marketplace/v1/")) {
+        const { handleMarketplaceApiV1 } = await import("./lib/app-store/api/v1/http.server");
         return handleMarketplaceApiV1(request);
       }
       if (pathname.startsWith("/api/v1/")) {
@@ -116,9 +111,8 @@ export default {
         const { authenticateCronRequest } = await import("./integrations/supabase/cron-auth");
         const authFailure = await authenticateCronRequest(request);
         if (authFailure) return authFailure;
-        const { runMessagingRetentionPurge } = await import(
-          "./lib/messaging/retention-purge.server"
-        );
+        const { runMessagingRetentionPurge } =
+          await import("./lib/messaging/retention-purge.server");
         try {
           const url = new URL(request.url);
           const execute = url.searchParams.get("execute") === "1";

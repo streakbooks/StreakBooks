@@ -14,8 +14,12 @@ import {
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
-function pick(row: Record<string, unknown>, key: string): unknown { return row[key]; }
-function str(value: unknown): string { return typeof value === "string" ? value : String(value ?? ""); }
+function pick(row: Record<string, unknown>, key: string): unknown {
+  return row[key];
+}
+function str(value: unknown): string {
+  return typeof value === "string" ? value : String(value ?? "");
+}
 function strOrNull(value: unknown): string | null {
   if (value === null || value === undefined || value === "") return null;
   return str(value);
@@ -26,9 +30,13 @@ function num(value: unknown, fallback = 0): number {
 function bool(value: unknown, fallback = false): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
-function asUnknownArray(value: unknown): unknown[] { return Array.isArray(value) ? value : []; }
+function asUnknownArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
 async function requireHr(
-  supabase: Parameters<typeof assertCompanyMember>[0], companyId: string, permission: Permission,
+  supabase: Parameters<typeof assertCompanyMember>[0],
+  companyId: string,
+  permission: Permission,
 ) {
   await assertCompanyMember(supabase, companyId);
   await assertCompanyPermission(supabase, companyId, permission);
@@ -98,54 +106,91 @@ function mapTask(raw: unknown): HrOffboardingTask {
 export const listHrTransferRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; status?: string | null }) => ({
-    companyId: companyIdOf(input), status: input.status?.trim() || null,
+    companyId: companyIdOf(input),
+    status: input.status?.trim() || null,
   }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.view");
-    const raw = await callRpc(context.supabase, "list_hr_transfer_requests", {
-      _company_id: data.companyId, _status: data.status,
-    }, HR10_MIGRATION);
+    const raw = await callRpc(
+      context.supabase,
+      "list_hr_transfer_requests",
+      {
+        _company_id: data.companyId,
+        _status: data.status,
+      },
+      HR10_MIGRATION,
+    );
     return { items: asUnknownArray(pick(asRecord(raw), "items")).map(mapTransfer) };
   });
 
 export const upsertHrTransferRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    payload: {
-      id?: string | null; employeeId: string; changeType: string; effectiveOn: string; status: string;
-      toDepartmentId: string | null; toDesignationId: string | null; toLocationId: string | null;
-      toBranchId: string | null; toManagerEmployeeId: string | null; toWorkArrangement: string | null;
-      reason: string | null;
-    };
-  }) => ({ companyId: companyIdOf(input), payload: input.payload }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      payload: {
+        id?: string | null;
+        employeeId: string;
+        changeType: string;
+        effectiveOn: string;
+        status: string;
+        toDepartmentId: string | null;
+        toDesignationId: string | null;
+        toLocationId: string | null;
+        toBranchId: string | null;
+        toManagerEmployeeId: string | null;
+        toWorkArrangement: string | null;
+        reason: string | null;
+      };
+    }) => ({ companyId: companyIdOf(input), payload: input.payload }),
+  )
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.employees.manage");
-    const raw = await callRpc(context.supabase, "upsert_hr_transfer_request", {
-      _company_id: data.companyId, _payload: data.payload,
-    }, HR10_MIGRATION);
+    const raw = await callRpc(
+      context.supabase,
+      "upsert_hr_transfer_request",
+      {
+        _company_id: data.companyId,
+        _payload: data.payload,
+      },
+      HR10_MIGRATION,
+    );
     const row = asRecord(raw);
-    return { id: str(pick(row, "id")), requestNumber: str(pick(row, "requestNumber")), status: str(pick(row, "status")) };
+    return {
+      id: str(pick(row, "id")),
+      requestNumber: str(pick(row, "requestNumber")),
+      status: str(pick(row, "status")),
+    };
   });
 
 export const decideHrTransferRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string; requestId: string; decision: "approve" | "reject" | "cancel"; rejectionReason?: string | null;
-  }) => ({
-    companyId: companyIdOf(input),
-    requestId: input.requestId,
-    decision: input.decision,
-    rejectionReason: input.rejectionReason?.trim() || null,
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      requestId: string;
+      decision: "approve" | "reject" | "cancel";
+      rejectionReason?: string | null;
+    }) => ({
+      companyId: companyIdOf(input),
+      requestId: input.requestId,
+      decision: input.decision,
+      rejectionReason: input.rejectionReason?.trim() || null,
+    }),
+  )
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.employees.manage");
-    const raw = await callRpc(context.supabase, "decide_hr_transfer_request", {
-      _company_id: data.companyId,
-      _request_id: data.requestId,
-      _decision: data.decision,
-      _rejection_reason: data.rejectionReason,
-    }, HR10_MIGRATION);
+    const raw = await callRpc(
+      context.supabase,
+      "decide_hr_transfer_request",
+      {
+        _company_id: data.companyId,
+        _request_id: data.requestId,
+        _decision: data.decision,
+        _rejection_reason: data.rejectionReason,
+      },
+      HR10_MIGRATION,
+    );
     const row = asRecord(raw);
     return {
       id: str(pick(row, "id")),
@@ -158,13 +203,20 @@ export const decideHrTransferRequest = createServerFn({ method: "POST" })
 export const listHrOffboardingCases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; status?: string | null }) => ({
-    companyId: companyIdOf(input), status: input.status?.trim() || null,
+    companyId: companyIdOf(input),
+    status: input.status?.trim() || null,
   }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.view");
-    const raw = await callRpc(context.supabase, "list_hr_offboarding_cases", {
-      _company_id: data.companyId, _status: data.status,
-    }, HR10_MIGRATION);
+    const raw = await callRpc(
+      context.supabase,
+      "list_hr_offboarding_cases",
+      {
+        _company_id: data.companyId,
+        _status: data.status,
+      },
+      HR10_MIGRATION,
+    );
     return { items: asUnknownArray(pick(asRecord(raw), "items")).map(mapOffboardingList) };
   });
 
@@ -195,50 +247,74 @@ function mapOffboardingDetail(raw: unknown): HrOffboardingCaseDetail {
 export const getHrOffboardingCase = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; caseId: string }) => ({
-    companyId: companyIdOf(input), caseId: input.caseId,
+    companyId: companyIdOf(input),
+    caseId: input.caseId,
   }))
   .handler(async ({ data, context }): Promise<HrOffboardingCaseDetail> => {
     await requireHr(context.supabase, data.companyId, "hr.view");
-    const raw = await callRpc(context.supabase, "get_hr_offboarding_case", {
-      _company_id: data.companyId, _case_id: data.caseId,
-    }, HR10_MIGRATION);
+    const raw = await callRpc(
+      context.supabase,
+      "get_hr_offboarding_case",
+      {
+        _company_id: data.companyId,
+        _case_id: data.caseId,
+      },
+      HR10_MIGRATION,
+    );
     return mapOffboardingDetail(raw);
   });
 
 export const createHrOffboardingCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    payload: {
-      employeeId: string; lastWorkingDay: string; exitReason: string;
-      noticeDate: string | null; payrollHandoffNote: string | null; notes: string | null;
-    };
-  }) => ({ companyId: companyIdOf(input), payload: input.payload }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      payload: {
+        employeeId: string;
+        lastWorkingDay: string;
+        exitReason: string;
+        noticeDate: string | null;
+        payrollHandoffNote: string | null;
+        notes: string | null;
+      };
+    }) => ({ companyId: companyIdOf(input), payload: input.payload }),
+  )
   .handler(async ({ data, context }): Promise<HrOffboardingCaseDetail> => {
     await requireHr(context.supabase, data.companyId, "hr.employees.manage");
-    const raw = await callRpc(context.supabase, "create_hr_offboarding_case", {
-      _company_id: data.companyId, _payload: data.payload,
-    }, HR10_MIGRATION);
+    const raw = await callRpc(
+      context.supabase,
+      "create_hr_offboarding_case",
+      {
+        _company_id: data.companyId,
+        _payload: data.payload,
+      },
+      HR10_MIGRATION,
+    );
     return mapOffboardingDetail(raw);
   });
 
 export const updateHrOffboardingTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string; taskId: string; status: string; notes?: string | null;
-  }) => ({
-    companyId: companyIdOf(input),
-    taskId: input.taskId,
-    status: input.status,
-    notes: input.notes?.trim() || null,
-  }))
+  .inputValidator(
+    (input: { companyId: string; taskId: string; status: string; notes?: string | null }) => ({
+      companyId: companyIdOf(input),
+      taskId: input.taskId,
+      status: input.status,
+      notes: input.notes?.trim() || null,
+    }),
+  )
   .handler(async ({ data, context }): Promise<HrOffboardingCaseDetail> => {
     await requireHr(context.supabase, data.companyId, "hr.employees.manage");
-    const raw = await callRpc(context.supabase, "update_hr_offboarding_task", {
-      _company_id: data.companyId,
-      _task_id: data.taskId,
-      _status: data.status,
-      _notes: data.notes,
-    }, HR10_MIGRATION);
+    const raw = await callRpc(
+      context.supabase,
+      "update_hr_offboarding_task",
+      {
+        _company_id: data.companyId,
+        _task_id: data.taskId,
+        _status: data.status,
+        _notes: data.notes,
+      },
+      HR10_MIGRATION,
+    );
     return mapOffboardingDetail(raw);
   });

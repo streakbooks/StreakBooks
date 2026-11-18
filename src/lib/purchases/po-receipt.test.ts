@@ -6,7 +6,9 @@ import {
   remainingToReceive,
 } from "./po-receipt";
 
-const line = (over: Partial<{ lineId: string; orderedQuantity: number; quantityReceived: number }> = {}) => ({
+const line = (
+  over: Partial<{ lineId: string; orderedQuantity: number; quantityReceived: number }> = {},
+) => ({
   lineId: "11111111-1111-4111-8111-111111111111",
   orderedQuantity: 10,
   quantityReceived: 0,
@@ -68,7 +70,11 @@ describe("purchase order goods receipt", () => {
     expect(
       receiveAllOutstanding([
         line({ quantityReceived: 3 }),
-        line({ lineId: "22222222-2222-4222-8222-222222222222", orderedQuantity: 2, quantityReceived: 2 }),
+        line({
+          lineId: "22222222-2222-4222-8222-222222222222",
+          orderedQuantity: 2,
+          quantityReceived: 2,
+        }),
       ]),
     ).toEqual([{ lineId: line().lineId, receiveQuantity: 7 }]);
   });

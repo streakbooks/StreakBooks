@@ -21,7 +21,13 @@ import {
   getYearActuals,
   saveBudgetDocument,
 } from "@/lib/budgets/budgets.functions";
-import { applyUpliftBps, fillRight, monthLabel, spreadEvenly, sumMinorNumbers } from "@/lib/budgets/budget-math";
+import {
+  applyUpliftBps,
+  fillRight,
+  monthLabel,
+  spreadEvenly,
+  sumMinorNumbers,
+} from "@/lib/budgets/budget-math";
 import { summarizeBudgetGrid } from "@/lib/budgets/budget-grid-summary";
 import { preparePriorYearActualsDraft } from "@/lib/budgets/budget-prior-year";
 import {
@@ -256,7 +262,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
     if (
       rows.length > 0 &&
       !window.confirm(
-        "Replace all account rows with last year\'s actuals? Unsaved amounts will be lost.",
+        "Replace all account rows with last year's actuals? Unsaved amounts will be lost.",
       )
     )
       return;
@@ -438,11 +444,14 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             className="h-8 w-28 text-right font-medium tabular-nums"
             inputMode="decimal"
             disabled={!canEdit}
-            value={annualDrafts[a.id] ?? (total === null || total === 0 ? "" : fromMinorUnits(total, currency))}
+            value={
+              annualDrafts[a.id] ??
+              (total === null || total === 0 ? "" : fromMinorUnits(total, currency))
+            }
             aria-invalid={
               total === null ||
               (annualDrafts[a.id] !== undefined &&
-              parseCell(annualDrafts[a.id]!, currency) === null)
+                parseCell(annualDrafts[a.id]!, currency) === null)
             }
             onChange={(event) => {
               setAnnualDrafts((prev) => ({ ...prev, [a.id]: event.target.value }));
@@ -459,7 +468,10 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
                 toast.error(`Enter a valid annual amount for ${a.name}.`);
                 return;
               }
-              setRow(a.id, spreadEvenly(value, 12).map((x) => toText(x, currency)));
+              setRow(
+                a.id,
+                spreadEvenly(value, 12).map((x) => toText(x, currency)),
+              );
               setAnnualDrafts((prev) => {
                 const next = { ...prev };
                 delete next[a.id];
@@ -526,7 +538,9 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           {totalsError ? "—" : fmt.amount(v, currency)}
         </TableCell>
       ))}
-      <TableCell className="text-right tabular-nums">{totalsError ? "—" : fmt.amount(sum(values), currency)}</TableCell>
+      <TableCell className="text-right tabular-nums">
+        {totalsError ? "—" : fmt.amount(sum(values), currency)}
+      </TableCell>
       <TableCell />
     </TableRow>
   );
@@ -643,17 +657,18 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       {approvalFrozen ? (
         <Alert className="mb-4">
           <AlertDescription>
-            This budget is {approvalQuery.data?.status === "pending" ? "awaiting approval" : "approved"}
-            {" "}and is read-only. Withdraw, reject or reopen the review before changing
-            budget details or monthly amounts.
+            This budget is{" "}
+            {approvalQuery.data?.status === "pending" ? "awaiting approval" : "approved"} and is
+            read-only. Withdraw, reject or reopen the review before changing budget details or
+            monthly amounts.
           </AlertDescription>
         </Alert>
       ) : null}
       {locked ? (
         <Alert className="mb-4">
           <AlertDescription>
-            This budget is locked. You can review its accounts, revision history and export a
-            copy, but changes are blocked until an authorised user unlocks it.
+            This budget is locked. You can review its accounts, revision history and export a copy,
+            but changes are blocked until an authorised user unlocks it.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -775,11 +790,11 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         </Button>
         <div className="ml-auto flex flex-wrap gap-2">
           <Button
-              size="sm"
-              variant="outline"
-              disabled={hasInvalidAmounts || hiddenLineCount > 0}
-              onClick={onExport}
-            >
+            size="sm"
+            variant="outline"
+            disabled={hasInvalidAmounts || hiddenLineCount > 0}
+            onClick={onExport}
+          >
             <Download className="mr-1 size-4" /> Export CSV
           </Button>
           <Button
@@ -832,9 +847,9 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         <Alert variant="destructive" className="mb-3">
           <AlertDescription>
             This budget contains {hiddenLineCount} saved monthly amount
-            {hiddenLineCount === 1 ? "" : "s"} on inactive or unavailable accounts. Those
-            amounts are preserved; saving replacements is blocked until the historical accounts
-            can be reviewed. Use the revision history to review the original amounts.
+            {hiddenLineCount === 1 ? "" : "s"} on inactive or unavailable accounts. Those amounts
+            are preserved; saving replacements is blocked until the historical accounts can be
+            reviewed. Use the revision history to review the original amounts.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -843,8 +858,8 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           <AlertDescription>
             {unappliedAnnualCount} annual amount
             {unappliedAnnualCount === 1 ? " is" : "s are"} awaiting application. Press Enter or
-            leave each annual-total field before saving; the amount will then distribute across
-            all twelve months.
+            leave each annual-total field before saving; the amount will then distribute across all
+            twelve months.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -858,9 +873,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
               variant="outline"
               onClick={() => {
                 if (
-                  window.confirm(
-                    "Reload the current budget? Your unsaved draft will be discarded.",
-                  )
+                  window.confirm("Reload the current budget? Your unsaved draft will be discarded.")
                 ) {
                   window.location.reload();
                 }
@@ -874,8 +887,8 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       {totalsError ? (
         <Alert variant="destructive" className="mb-3">
           <AlertDescription>
-            Budget totals cannot be calculated exactly: {totalsError}
-            {" "}Reduce the amounts before saving, exporting or applying bulk changes.
+            Budget totals cannot be calculated exactly: {totalsError} Reduce the amounts before
+            saving, exporting or applying bulk changes.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -883,9 +896,8 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         <Alert variant="destructive" className="mb-3">
           <AlertDescription>
             {invalidAmountCount} amount
-            {invalidAmountCount === 1 ? " is" : "s are"} not a valid number. Fix
-            the highlighted monthly or annual amounts before saving, exporting or using bulk
-            actions.
+            {invalidAmountCount === 1 ? " is" : "s are"} not a valid number. Fix the highlighted
+            monthly or annual amounts before saving, exporting or using bulk actions.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -917,8 +929,8 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Showing {rows.filter(visible).length} of {rows.length} accounts. Totals always include
-          all accounts.
+          Showing {rows.filter(visible).length} of {rows.length} accounts. Totals always include all
+          accounts.
         </p>
       </div>
 
@@ -941,18 +953,14 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             {totalRow("Total income", incomeTotals)}
             {section("Expenses", expense.filter(visible))}
             {totalRow("Total expenses", expenseTotals)}
-            {totalRow(
-              "Budgeted net profit",
-              netTotals,
-              true,
-            )}
+            {totalRow("Budgeted net profit", netTotals, true)}
           </TableBody>
         </Table>
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
         Tip: type in a month, then press “Fill right” to repeat it in later months. Editing the Year
-        total spreads it evenly (any rounding remainder is distributed to the final months). Importing a CSV
-        replaces the rows it contains; accounts not in the file keep their amounts.
+        total spreads it evenly (any rounding remainder is distributed to the final months).
+        Importing a CSV replaces the rows it contains; accounts not in the file keep their amounts.
       </p>
       <BudgetDimensionsPanel
         companyId={companyId}

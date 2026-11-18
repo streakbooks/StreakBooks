@@ -80,8 +80,12 @@ export const saveFirmServiceCategory = createServerFn({ method: "POST" })
     const projection = "id,firm_id,name,is_active,version";
     if (!id) {
       const { data: created, error } = await table
-        .insert({ ...fields, firm_id: firmId, created_by: context.userId,
-          updated_by: context.userId } as never)
+        .insert({
+          ...fields,
+          firm_id: firmId,
+          created_by: context.userId,
+          updated_by: context.userId,
+        } as never)
         .select(projection as never)
         .single();
       if (error) throw new Error(error.message);
@@ -106,20 +110,24 @@ export const listFirmCustomOnboarding = createServerFn({ method: "GET" })
     await assertFirmMembership(context, data.firmId, false);
     const { data: rows, error } = await context.supabase
       .from("firm_onboarding_template_steps" as never)
-      .select("firm_id,task_key,title,is_active,sort_order,due_in_days,reminders_enabled,version" as never)
+      .select(
+        "firm_id,task_key,title,is_active,sort_order,due_in_days,reminders_enabled,version" as never,
+      )
       .eq("firm_id" as never, data.firmId as never)
       .order("sort_order" as never)
       .order("task_key" as never)
       .limit(101);
     if (error) throw new Error(error.message);
-    if ((rows ?? []).length > 100)
-      throw new Error("Firm onboarding templates exceed 100 steps");
+    if ((rows ?? []).length > 100) throw new Error("Firm onboarding templates exceed 100 steps");
     return (rows ?? []) as FirmCustomOnboardingStep[];
   });
 
 const onboardingInput = firmScope
   .extend({
-    task_key: z.string().regex(/^custom_[0-9a-f]{32}$/).optional(),
+    task_key: z
+      .string()
+      .regex(/^custom_[0-9a-f]{32}$/)
+      .optional(),
     version: z.number().int().positive().optional(),
     title: z.string().trim().min(2).max(180),
     is_active: z.boolean(),
@@ -146,7 +154,10 @@ export const saveFirmCustomOnboarding = createServerFn({ method: "POST" })
     if (!task_key) {
       const { data: created, error } = await table
         .insert({
-          ...fields, firm_id: firmId, created_by: context.userId, updated_by: context.userId,
+          ...fields,
+          firm_id: firmId,
+          created_by: context.userId,
+          updated_by: context.userId,
         } as never)
         .select(projection as never)
         .single();

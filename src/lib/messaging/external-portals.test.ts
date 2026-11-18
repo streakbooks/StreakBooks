@@ -16,12 +16,12 @@ describe("messaging external portals kill-switch", () => {
   });
 
   it("blocks enabling customer/vendor when locked", () => {
-    expect(() =>
-      assertMessagingExternalPortalsAllowed({ allowCustomer: true }, {}),
-    ).toThrow(/locked/i);
-    expect(() =>
-      assertMessagingExternalPortalsAllowed({ allowVendor: true }, {}),
-    ).toThrow(/locked/i);
+    expect(() => assertMessagingExternalPortalsAllowed({ allowCustomer: true }, {})).toThrow(
+      /locked/i,
+    );
+    expect(() => assertMessagingExternalPortalsAllowed({ allowVendor: true }, {})).toThrow(
+      /locked/i,
+    );
     expect(() =>
       assertMessagingExternalPortalsAllowed({ allowCustomer: false, allowVendor: false }, {}),
     ).not.toThrow();

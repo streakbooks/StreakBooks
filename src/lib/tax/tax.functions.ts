@@ -113,9 +113,11 @@ export const saveTaxRate = createServerFn({ method: "POST" })
     }) => {
       const name = (input.name ?? "").trim();
       if (!name) throw new Error("Rate name is required");
-      if (!isValidTaxDate(input.effectiveFrom)) throw new Error("effectiveFrom must be a real YYYY-MM-DD calendar date");
+      if (!isValidTaxDate(input.effectiveFrom))
+        throw new Error("effectiveFrom must be a real YYYY-MM-DD calendar date");
       const to = input.effectiveTo ? String(input.effectiveTo).trim() : "";
-      if (to && !isValidTaxDate(to)) throw new Error("effectiveTo must be a real YYYY-MM-DD calendar date");
+      if (to && !isValidTaxDate(to))
+        throw new Error("effectiveTo must be a real YYYY-MM-DD calendar date");
       if (to && to < input.effectiveFrom)
         throw new Error("effectiveTo cannot be before effectiveFrom");
       const rateBps = input.rateBps;
@@ -333,7 +335,9 @@ export const postTaxAdjustment = createServerFn({ method: "POST" })
       }
       const amount = input.amountMinor;
       if (!Number.isSafeInteger(amount) || amount <= 0) {
-        throw new Error("Adjustment amount must be a positive whole number of minor currency units");
+        throw new Error(
+          "Adjustment amount must be a positive whole number of minor currency units",
+        );
       }
       if (!["increase_payable", "decrease_payable"].includes(input.direction)) {
         throw new Error("Invalid adjustment direction");

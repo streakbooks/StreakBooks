@@ -1,3 +1,4 @@
+import { hasAsciiControlCharacters } from "@/lib/text-validation";
 import type { AssetRegisterFilters } from "./register-view";
 
 /** A named view saves *filters and sorting*, not accounting data or permissions. */
@@ -16,18 +17,22 @@ export function normalizeAssetFilterView(value: unknown): SavedAssetFilterView |
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const input = value as Record<string, unknown>;
   const name = typeof input["name"] === "string" ? input["name"].trim() : "";
-  if (!name || name.length > MAX_NAME || /[\x00-\x1F]/.test(name)) return null;
+  if (!name || name.length > MAX_NAME || hasAsciiControlCharacters(name)) return null;
   const raw = input["filters"];
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const f = raw as Record<string, unknown>;
   if (
-    typeof f["search"] !== "string" || f["search"].length > MAX_QUERY ||
+    typeof f["search"] !== "string" ||
+    f["search"].length > MAX_QUERY ||
     !STATUSES.includes(String(f["status"])) ||
     !SORTS.includes(String(f["sort"])) ||
-    typeof f["typeId"] !== "string" || f["typeId"].length > 80 ||
-    typeof f["accountId"] !== "string" || f["accountId"].length > 80 ||
+    typeof f["typeId"] !== "string" ||
+    f["typeId"].length > 80 ||
+    typeof f["accountId"] !== "string" ||
+    f["accountId"].length > 80 ||
     typeof f["descending"] !== "boolean"
-  ) return null;
+  )
+    return null;
   return {
     name,
     filters: {
@@ -71,14 +76,13 @@ export function saveAssetFilterView(
   const normalized = normalizeAssetFilterView({ name, filters });
   if (!normalized) throw new Error("Enter a view name of up to 48 characters and valid filters.");
   const idx = views.findIndex(
-    (view) => view.name.toLocaleLowerCase("en-US") ===
-      normalized.name.toLocaleLowerCase("en-US"),
+    (view) => view.name.toLocaleLowerCase("en-US") === normalized.name.toLocaleLowerCase("en-US"),
   );
   if (idx === -1 && views.length >= MAX_VIEWS) {
     throw new Error("You can save up to 10 named Fixed Assets views on this browser.");
   }
   if (idx >= 0) {
-    return views.map((view, index) => index === idx ? normalized : view);
+    return views.map((view, index) => (index === idx ? normalized : view));
   }
   return [...views, normalized];
 }

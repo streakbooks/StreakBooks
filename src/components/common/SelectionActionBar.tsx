@@ -27,7 +27,11 @@ export function SelectionActionBar({ count, onClear, children, description }: Pr
         </p>
         {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
       </div>
-      {children ? <div className="flex min-w-0 w-full flex-wrap items-center gap-2 border-t border-primary/15 pt-3 sm:w-auto sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">{children}</div> : null}
+      {children ? (
+        <div className="flex min-w-0 w-full flex-wrap items-center gap-2 border-t border-primary/15 pt-3 sm:w-auto sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+          {children}
+        </div>
+      ) : null}
       <Button
         type="button"
         variant="ghost"

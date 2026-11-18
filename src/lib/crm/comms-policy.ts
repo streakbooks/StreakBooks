@@ -9,9 +9,7 @@ export type CrmCommsPolicy = {
   reason: string;
 };
 
-export function resolveCrmCommsPolicy(input?: {
-  providerConfigured?: boolean;
-}): CrmCommsPolicy {
+export function resolveCrmCommsPolicy(input?: { providerConfigured?: boolean }): CrmCommsPolicy {
   if (input?.providerConfigured) {
     return {
       canCompose: true,

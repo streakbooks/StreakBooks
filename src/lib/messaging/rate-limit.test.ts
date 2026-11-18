@@ -29,10 +29,7 @@ describe("messaging send rate limit", () => {
     for (let i = 0; i < MESSAGING_SEND_RATE.maxPerMinute; i += 1) {
       state = recordMessagingSend(state, start + i * 1_000);
     }
-    const blocked = canSendMessagingNow(
-      state,
-      start + MESSAGING_SEND_RATE.maxPerMinute * 1_000,
-    );
+    const blocked = canSendMessagingNow(state, start + MESSAGING_SEND_RATE.maxPerMinute * 1_000);
     expect(blocked.ok).toBe(false);
   });
 });

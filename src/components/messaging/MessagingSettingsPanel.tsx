@@ -39,8 +39,7 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
   };
 
   const enabledMutation = useMutation({
-    mutationFn: (enabled: boolean) =>
-      setEnabled({ data: { companyId: companyId!, enabled } }),
+    mutationFn: (enabled: boolean) => setEnabled({ data: { companyId: companyId!, enabled } }),
     onSuccess: () => {
       invalidate();
       notify.success("Messaging settings updated");
@@ -86,8 +85,7 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
   }
 
   const enabled = settings.data?.enabled ?? false;
-  const busy =
-    enabledMutation.isPending || flagsMutation.isPending || retentionMutation.isPending;
+  const busy = enabledMutation.isPending || flagsMutation.isPending || retentionMutation.isPending;
   const currentRetention = settings.data?.retention_days ?? null;
 
   return (
@@ -95,8 +93,8 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
       <div>
         <h3 className="text-base font-semibold">Messaging &amp; collaboration</h3>
         <p className="text-sm text-muted-foreground">
-          Controls organisation messaging. Chat never posts journals, pays bills or approves
-          payroll by itself. Formal approvals use existing LinkBooks engines.
+          Controls organisation messaging. Chat never posts journals, pays bills or approves payroll
+          by itself. Formal approvals use existing LinkBooks engines.
         </p>
       </div>
       <div className="flex items-center justify-between gap-4">
@@ -182,8 +180,8 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
         })}
         <p className="text-xs text-muted-foreground">
           Customer/vendor messaging stays locked until{" "}
-          <code className="rounded bg-muted px-1">MESSAGING_EXTERNAL_PORTALS_ENABLED=1</code>{" "}
-          after portal isolation E2E. Internal messaging is unaffected.
+          <code className="rounded bg-muted px-1">MESSAGING_EXTERNAL_PORTALS_ENABLED=1</code> after
+          portal isolation E2E. Internal messaging is unaffected.
         </p>
       </div>
 

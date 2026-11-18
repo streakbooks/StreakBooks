@@ -9,12 +9,21 @@ import { TableCard } from "@/components/common/table-card";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
-  listHrAutomationRules, runHrAutomations, upsertHrAutomationRule,
+  listHrAutomationRules,
+  runHrAutomations,
+  upsertHrAutomationRule,
 } from "@/lib/hr/insights.functions";
 
 export function HrAutomationsPage() {
@@ -32,32 +41,57 @@ export function HrAutomationsPage() {
     retry: false,
   });
 
-  const inv = async () => { await qc.invalidateQueries({ queryKey: ["hr-automations", company?.id] }); };
+  const inv = async () => {
+    await qc.invalidateQueries({ queryKey: ["hr-automations", company?.id] });
+  };
 
   const toggleM = useMutation({
-    mutationFn: (rule: { id: string; code: string; name: string; triggerKind: string; isEnabled: boolean }) =>
-      save({ data: {
-        companyId: company!.id,
-        payload: {
-          id: rule.id, code: rule.code, name: rule.name, triggerKind: rule.triggerKind,
-          isEnabled: !rule.isEnabled, config: {},
+    mutationFn: (rule: {
+      id: string;
+      code: string;
+      name: string;
+      triggerKind: string;
+      isEnabled: boolean;
+    }) =>
+      save({
+        data: {
+          companyId: company!.id,
+          payload: {
+            id: rule.id,
+            code: rule.code,
+            name: rule.name,
+            triggerKind: rule.triggerKind,
+            isEnabled: !rule.isEnabled,
+            config: {},
+          },
         },
-      } }),
-    onSuccess: async () => { toast.success("Automation updated"); await inv(); },
+      }),
+    onSuccess: async () => {
+      toast.success("Automation updated");
+      await inv();
+    },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
   const runM = useMutation({
-    mutationFn: (ruleId?: string | null) => run({ data: { companyId: company!.id, ruleId: ruleId ?? null } }),
-    onSuccess: async () => { toast.success("Automations ran"); await inv(); },
+    mutationFn: (ruleId?: string | null) =>
+      run({ data: { companyId: company!.id, ruleId: ruleId ?? null } }),
+    onSuccess: async () => {
+      toast.success("Automations ran");
+      await inv();
+    },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
   if (isPending) return <LoadingState />;
-  if (!company) return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+  if (!company)
+    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
   if (!canManage) {
     return (
-      <ListWorkspace title="HR Automations" breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Automations" }]}>
+      <ListWorkspace
+        title="HR Automations"
+        breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Automations" }]}
+      >
         <HrSubnav current="automations" />
         <EmptyState title="No access" description="Missing permission: hr.settings.edit." />
       </ListWorkspace>
@@ -79,8 +113,14 @@ export function HrAutomationsPage() {
       }
     >
       <HrSubnav current="automations" />
-      {dataQ.isPending ? <LoadingState /> : dataQ.isError ? (
-        <ErrorState title="Could not load automations" description={friendlyAuthError(dataQ.error)} onRetry={() => void dataQ.refetch()} />
+      {dataQ.isPending ? (
+        <LoadingState />
+      ) : dataQ.isError ? (
+        <ErrorState
+          title="Could not load automations"
+          description={friendlyAuthError(dataQ.error)}
+          onRetry={() => void dataQ.refetch()}
+        />
       ) : items.length === 0 ? (
         <EmptyState title="No automation rules" description="Defaults seed on first open." />
       ) : (
@@ -110,12 +150,20 @@ export function HrAutomationsPage() {
                     />
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">{r.lastRunAt ? new Date(r.lastRunAt).toLocaleString() : "—"}</div>
+                    <div className="text-sm">
+                      {r.lastRunAt ? new Date(r.lastRunAt).toLocaleString() : "—"}
+                    </div>
                     <div className="text-muted-foreground text-xs">{r.lastRunSummary ?? ""}</div>
                     {r.lastRunStatus ? <StatusBadge status={r.lastRunStatus} /> : null}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button type="button" size="sm" variant="outline" disabled={!r.isEnabled || runM.isPending} onClick={() => runM.mutate(r.id)}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!r.isEnabled || runM.isPending}
+                      onClick={() => runM.mutate(r.id)}
+                    >
                       Run
                     </Button>
                   </TableCell>
@@ -127,9 +175,14 @@ export function HrAutomationsPage() {
       )}
 
       <section className="mt-8 space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Recent runs</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Recent runs
+        </h2>
         {runs.length === 0 ? (
-          <EmptyState title="No runs yet" description="Run an automation to create a retry log entry." />
+          <EmptyState
+            title="No runs yet"
+            description="Run an automation to create a retry log entry."
+          />
         ) : (
           <TableCard>
             <Table>
@@ -144,7 +197,9 @@ export function HrAutomationsPage() {
                 {runs.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell>{new Date(r.startedAt).toLocaleString()}</TableCell>
-                    <TableCell><StatusBadge status={r.status} /></TableCell>
+                    <TableCell>
+                      <StatusBadge status={r.status} />
+                    </TableCell>
                     <TableCell>{r.summary}</TableCell>
                   </TableRow>
                 ))}

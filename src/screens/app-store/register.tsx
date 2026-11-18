@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
@@ -94,7 +95,7 @@ export function AppStoreRegisterPage() {
           placeholder="Search register"
           aria-label="Search integration register"
         />
-        <Select value={status} onValueChange={setStatus}>
+        <RecordLookupSelect value={status} onValueChange={setStatus}>
           <SelectTrigger aria-label="Status filter">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -106,8 +107,8 @@ export function AppStoreRegisterPage() {
               </SelectItem>
             ))}
           </SelectContent>
-        </Select>
-        <Select value={group} onValueChange={setGroup}>
+        </RecordLookupSelect>
+        <RecordLookupSelect value={group} onValueChange={setGroup}>
           <SelectTrigger aria-label="Category group filter">
             <SelectValue placeholder="Category group" />
           </SelectTrigger>
@@ -119,7 +120,7 @@ export function AppStoreRegisterPage() {
               </SelectItem>
             ))}
           </SelectContent>
-        </Select>
+        </RecordLookupSelect>
       </div>
 
       <div className="rounded-lg border">

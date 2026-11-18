@@ -18,11 +18,27 @@ export type BillsReturnContext = {
 };
 
 const TABS = new Set(["all", "drafts", "for_approval", "to_pay", "paid", "recurring"]);
-const STATUSES = new Set(["draft", "awaiting_approval", "authorised", "partly_paid", "paid", "void"]);
+const STATUSES = new Set([
+  "draft",
+  "awaiting_approval",
+  "authorised",
+  "partly_paid",
+  "paid",
+  "void",
+]);
 const SORT_KEYS = new Set(["bill_date", "due_date", "total_minor", "status", "bill_number"]);
 const KEYS: Array<keyof BillsReturnContext> = [
-  "tab", "q", "from", "to", "dateField", "includeVoid", "overdueOnly",
-  "status", "page", "sortBy", "sortDir",
+  "tab",
+  "q",
+  "from",
+  "to",
+  "dateField",
+  "includeVoid",
+  "overdueOnly",
+  "status",
+  "page",
+  "sortBy",
+  "sortDir",
 ];
 const MAX_LENGTH = 2048;
 

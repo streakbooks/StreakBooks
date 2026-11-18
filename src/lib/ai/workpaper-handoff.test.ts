@@ -10,7 +10,10 @@ const A = "11111111-1111-4111-8111-111111111111";
 const B = "22222222-2222-4222-8222-222222222222";
 const C = "33333333-3333-4333-8333-333333333333";
 
-function review(journal_id = A, fields: Partial<AiWorkpaperReviewSource> = {}): AiWorkpaperReviewSource {
+function review(
+  journal_id = A,
+  fields: Partial<AiWorkpaperReviewSource> = {},
+): AiWorkpaperReviewSource {
   return {
     id: journal_id,
     journal_id,
@@ -38,8 +41,11 @@ describe("AI-to-accountant workpaper evidence handoff", () => {
     const out = linkAiReviewsToWorkpaper([review()], [journal()], [A], "2026-11-06");
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({
-      journalId: A, reviewId: A, journalNumber: 123,
-      signal: "reviewed_evidence", reviewStatus: "reviewed",
+      journalId: A,
+      reviewId: A,
+      journalNumber: 123,
+      signal: "reviewed_evidence",
+      reviewStatus: "reviewed",
     });
     expect(out[0]?.explanation).toMatch(/not a balance reconciliation/);
   });
@@ -55,7 +61,12 @@ describe("AI-to-accountant workpaper evidence handoff", () => {
   it("does not treat open, assigned or reopened review cases as signed off", () => {
     const statuses = ["open", "assigned", "reopened"] as const;
     for (const status of statuses) {
-      const out = linkAiReviewsToWorkpaper([review(A, { status, reviewed_by: null, reviewed_at: null })], [journal()], [A], "2026-11-06");
+      const out = linkAiReviewsToWorkpaper(
+        [review(A, { status, reviewed_by: null, reviewed_at: null })],
+        [journal()],
+        [A],
+        "2026-11-06",
+      );
       expect(out[0]?.signal).toBe("needs_follow_up");
     }
   });
@@ -68,7 +79,12 @@ describe("AI-to-accountant workpaper evidence handoff", () => {
   });
 
   it("flags a reversed journal even if its earlier AI review was signed off", () => {
-    const out = linkAiReviewsToWorkpaper([review()], [journal(A, { status: "reversed" })], [A], "2026-11-06");
+    const out = linkAiReviewsToWorkpaper(
+      [review()],
+      [journal(A, { status: "reversed" })],
+      [A],
+      "2026-11-06",
+    );
     expect(out[0]?.signal).toBe("journal_not_posted");
     expect(out[0]?.explanation).toMatch(/no longer posted/i);
   });
@@ -81,7 +97,7 @@ describe("AI-to-accountant workpaper evidence handoff", () => {
     const out = linkAiReviewsToWorkpaper(
       [review(A), review(B, { status: "open", reviewed_by: null, reviewed_at: null }), review(C)],
       [journal(A), journal(B), journal(C, { status: "reversed" })],
-      [A,B,C],
+      [A, B, C],
       "2026-11-06",
     );
     expect(countAiWorkpaperEvidence(out)).toEqual({ reviewed: 1, followUp: 1, notPosted: 1 });
@@ -89,6 +105,8 @@ describe("AI-to-accountant workpaper evidence handoff", () => {
   });
 
   it("does not double-count repeated journal-line references for an account", () => {
-    expect(linkAiReviewsToWorkpaper([review()], [journal()], [A,A,A], "2026-11-06")).toHaveLength(1);
+    expect(linkAiReviewsToWorkpaper([review()], [journal()], [A, A, A], "2026-11-06")).toHaveLength(
+      1,
+    );
   });
 });

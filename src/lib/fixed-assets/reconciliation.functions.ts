@@ -2,11 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { fetchAllPages, type PageResult } from "@/lib/accounting/fetch-all";
-import {
-  loadAccountMetas,
-  loadCompanyMeta,
-  type Sb,
-} from "@/lib/accounting/ledger-data";
+import { loadAccountMetas, loadCompanyMeta, type Sb } from "@/lib/accounting/ledger-data";
 import { todayIso } from "@/lib/accounting/fiscal-year";
 import { companyIdOf, isoDate } from "@/lib/planning/rpc";
 import {
@@ -55,9 +51,7 @@ export const getFixedAssetReconciliation = createServerFn({ method: "GET" })
             .eq("company_id" as never, data.companyId as never)
             .lte("period_end" as never, data.asOf as never)
             .order("id" as never)
-            .range(from, to) as unknown as PromiseLike<
-              PageResult<ReconciliationDepreciationEntry>
-            >,
+            .range(from, to) as unknown as PromiseLike<PageResult<ReconciliationDepreciationEntry>>,
       ),
     ]);
     const referencedAccounts = [

@@ -48,13 +48,11 @@ export function getAiSuggestionKind(
  * Preview only; posting is independently validated by the accounting engine.
  * Fail closed for missing, unsafe, unbalanced or non-journal payloads.
  */
-export function getJournalPreview(
-  suggestion: {
-    intent: string;
-    status: string;
-    payload: Record<string, unknown> | null | undefined;
-  },
-): JournalPreviewLine[] | null {
+export function getJournalPreview(suggestion: {
+  intent: string;
+  status: string;
+  payload: Record<string, unknown> | null | undefined;
+}): JournalPreviewLine[] | null {
   if (
     suggestion.status !== "validated" ||
     getAiSuggestionKind(suggestion.intent, suggestion.payload) !== "journal_draft"

@@ -14,10 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCan } from "@/hooks/use-can";
-import {
-  developerPortalSection,
-  type DeveloperPortalSectionKey,
-} from "@/lib/app-store/sections";
+import { developerPortalSection, type DeveloperPortalSectionKey } from "@/lib/app-store/sections";
 import type { Permission } from "@/lib/permissions";
 import type { ReactNode } from "react";
 
@@ -84,13 +81,7 @@ export function DeveloperPortalSectionShell({
   );
 }
 
-export function EmptyPortalTable({
-  columns,
-  message,
-}: {
-  columns: string[];
-  message: string;
-}) {
+export function EmptyPortalTable({ columns, message }: { columns: string[]; message: string }) {
   return (
     <div className="rounded-lg border">
       <Table>

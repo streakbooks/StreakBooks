@@ -42,7 +42,11 @@ for (const doc of requiredDocs) {
 
 // --- Parse MODULE_REGISTRY ids/paths from TypeScript source (no TS runtime needed) ---
 const registrySource = read("src/lib/modules/registry.ts");
-const moduleBlocks = [...registrySource.matchAll(/\{\s*id:\s*"([^"]+)"[\s\S]*?path:\s*"([^"]+)"[\s\S]*?inSidebar:\s*(true|false)/g)];
+const moduleBlocks = [
+  ...registrySource.matchAll(
+    /\{\s*id:\s*"([^"]+)"[\s\S]*?path:\s*"([^"]+)"[\s\S]*?inSidebar:\s*(true|false)/g,
+  ),
+];
 if (moduleBlocks.length < 24) {
   failures.push(`Expected at least 24 MODULE_REGISTRY entries, found ${moduleBlocks.length}`);
 }
@@ -64,8 +68,8 @@ if (!navItemsBlock) failures.push("Could not parse export const navItems from sr
 const navEntries = [
   ...(navItemsBlock?.[1].matchAll(/\{\s*label:\s*"([^"]+)"[\s\S]*?to:\s*"([^"]+)"/g) ?? []),
 ].map((m) => ({ label: m[1], to: m[2] }));
-if (navEntries.length !== 27) {
-  failures.push(`Expected 27 navItems, found ${navEntries.length}`);
+if (navEntries.length !== 28) {
+  failures.push(`Expected 28 navItems, found ${navEntries.length}`);
 }
 if (sidebar.length !== navEntries.length) {
   failures.push(
@@ -139,7 +143,12 @@ if (!exists("scripts/scaffold-module.mjs")) {
   failures.push("Missing scripts/scaffold-module.mjs");
 } else {
   const scaffold = read("scripts/scaffold-module.mjs");
-  for (const token of ["ListWorkspace", "fail-closed", "NEW-MODULE-DEFINITION-OF-DONE", "--dry-run"]) {
+  for (const token of [
+    "ListWorkspace",
+    "fail-closed",
+    "NEW-MODULE-DEFINITION-OF-DONE",
+    "--dry-run",
+  ]) {
     if (!scaffold.includes(token)) {
       failures.push(`scaffold-module.mjs missing required token: ${token}`);
     }
@@ -165,8 +174,7 @@ function scanPageHeaderBypass(dir, relativePrefix) {
     const importsPageHeader =
       /import\s*\{[^}]*\bPageHeader\b[^}]*\}\s*from\s*["']@\/components\/common\/states["']/.test(
         source,
-      ) ||
-      /import\s*\{[^}]*\bPageHeader\b[^}]*\}\s*from\s*["']\.\.\/.*states["']/.test(source);
+      ) || /import\s*\{[^}]*\bPageHeader\b[^}]*\}\s*from\s*["']\.\.\/.*states["']/.test(source);
     if (importsPageHeader) {
       failures.push(
         `${rel} imports PageHeader directly; use ListWorkspace/RecordWorkspace for premium inheritance`,

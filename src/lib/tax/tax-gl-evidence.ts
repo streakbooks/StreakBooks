@@ -33,9 +33,10 @@ export function taxJournalEvidence(
     truncated: matching.length > maxRows,
     rows: ordered.slice(0, maxRows).map((l) => {
       const side = l.account_id === outputAccountId ? "output" : "input";
-      const move = side === "output"
-        ? BigInt(l.credit_minor) - BigInt(l.debit_minor)
-        : BigInt(l.debit_minor) - BigInt(l.credit_minor);
+      const move =
+        side === "output"
+          ? BigInt(l.credit_minor) - BigInt(l.debit_minor)
+          : BigInt(l.debit_minor) - BigInt(l.credit_minor);
       return {
         lineId: l.line_id ?? "",
         journalId: l.journal_id ?? "",
@@ -59,15 +60,22 @@ export function taxJournalEvidence(
 export function taxGlJournalDigest(lines: readonly PostedLine[]): string {
   let hash = 14695981039346656037n;
   const mask = (1n << 64n) - 1n;
-  const ordered = [...lines].sort((a, b) =>
-    (a.line_id ?? "").localeCompare(b.line_id ?? "") ||
-    (a.journal_id ?? "").localeCompare(b.journal_id ?? ""));
+  const ordered = [...lines].sort(
+    (a, b) =>
+      (a.line_id ?? "").localeCompare(b.line_id ?? "") ||
+      (a.journal_id ?? "").localeCompare(b.journal_id ?? ""),
+  );
   for (const line of ordered) {
-    const value = [
-      line.line_id ?? "", line.journal_id ?? "", line.journal_date,
-      line.account_id, line.source_type ?? "",
-      String(line.debit_minor), String(line.credit_minor),
-    ].join("|") + "\n";
+    const value =
+      [
+        line.line_id ?? "",
+        line.journal_id ?? "",
+        line.journal_date,
+        line.account_id,
+        line.source_type ?? "",
+        String(line.debit_minor),
+        String(line.credit_minor),
+      ].join("|") + "\n";
     for (let i = 0; i < value.length; i++) {
       hash ^= BigInt(value.charCodeAt(i));
       hash = (hash * 1099511628211n) & mask;
@@ -96,12 +104,20 @@ export function taxGlReviewSnapshot(value: {
   journalDigest: string;
 }): string {
   return [
-    value.periodStart, value.periodEnd, value.basis,
-    value.outputAccountId, value.inputAccountId,
-    value.returnOutputMinor, value.returnInputMinor,
-    value.glOutputMinor, value.glInputMinor,
+    value.periodStart,
+    value.periodEnd,
+    value.basis,
+    value.outputAccountId,
+    value.inputAccountId,
+    value.returnOutputMinor,
+    value.returnInputMinor,
+    value.glOutputMinor,
+    value.glInputMinor,
     String(value.journalLines),
-    value.documentOutputMinor, value.documentInputMinor,
-    value.reversalOutputMinor, value.reversalInputMinor, value.journalDigest,
+    value.documentOutputMinor,
+    value.documentInputMinor,
+    value.reversalOutputMinor,
+    value.reversalInputMinor,
+    value.journalDigest,
   ].join("|");
 }

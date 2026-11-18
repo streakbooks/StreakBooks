@@ -28,9 +28,16 @@ const CREATE: PaletteAction[] = [
   {
     id: "new-expense",
     group: "Create",
-    label: "New expense",
-    keywords: "spend receipt company paid",
-    href: "/purchases/expenses/new",
+    label: "Spend money",
+    keywords: "spend receipt company paid direct expense banking",
+    href: "/banking/spend-money",
+  },
+  {
+    id: "new-receive-money",
+    group: "Create",
+    label: "Receive money",
+    keywords: "receive money other income banking",
+    href: "/banking/receive-money",
   },
   {
     id: "new-expense-claim",

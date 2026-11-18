@@ -133,7 +133,7 @@ const FORMS = [
     phrases: ["sales credit note", "credit note"],
   },
   {
-    destination: "/purchases/expenses/new",
+    destination: "/banking/spend-money",
     label: "New expense form",
     requiredPermission: "expenses.submit",
     phrases: ["expense"],

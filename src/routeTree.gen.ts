@@ -72,8 +72,10 @@ import { Route as AuthenticatedBankingCashCodingRouteImport } from './routes/_au
 import { Route as AuthenticatedBankingFeedsRouteImport } from './routes/_authenticated/banking/feeds'
 import { Route as AuthenticatedBankingImportRouteImport } from './routes/_authenticated/banking/import'
 import { Route as AuthenticatedBankingMoneyDocumentsRouteImport } from './routes/_authenticated/banking/money-documents'
+import { Route as AuthenticatedBankingReceiveMoneyRouteImport } from './routes/_authenticated/banking/receive-money'
 import { Route as AuthenticatedBankingReconcileRouteImport } from './routes/_authenticated/banking/reconcile'
 import { Route as AuthenticatedBankingRulesRouteImport } from './routes/_authenticated/banking/rules'
+import { Route as AuthenticatedBankingSpendMoneyRouteImport } from './routes/_authenticated/banking/spend-money'
 import { Route as AuthenticatedBankingTransactionsRouteImport } from './routes/_authenticated/banking/transactions'
 import { Route as AuthenticatedBankingTransfersRouteImport } from './routes/_authenticated/banking/transfers'
 import { Route as AuthenticatedBudgetsIndexRouteImport } from './routes/_authenticated/budgets/index'
@@ -550,6 +552,12 @@ const AuthenticatedBankingMoneyDocumentsRoute =
     path: '/money-documents',
     getParentRoute: () => AuthenticatedBankingRouteRoute,
   } as any)
+const AuthenticatedBankingReceiveMoneyRoute =
+  AuthenticatedBankingReceiveMoneyRouteImport.update({
+    id: '/receive-money',
+    path: '/receive-money',
+    getParentRoute: () => AuthenticatedBankingRouteRoute,
+  } as any)
 const AuthenticatedBankingReconcileRoute =
   AuthenticatedBankingReconcileRouteImport.update({
     id: '/reconcile',
@@ -560,6 +568,12 @@ const AuthenticatedBankingRulesRoute =
   AuthenticatedBankingRulesRouteImport.update({
     id: '/rules',
     path: '/rules',
+    getParentRoute: () => AuthenticatedBankingRouteRoute,
+  } as any)
+const AuthenticatedBankingSpendMoneyRoute =
+  AuthenticatedBankingSpendMoneyRouteImport.update({
+    id: '/spend-money',
+    path: '/spend-money',
     getParentRoute: () => AuthenticatedBankingRouteRoute,
   } as any)
 const AuthenticatedBankingTransactionsRoute =
@@ -1367,8 +1381,10 @@ export interface FileRoutesByFullPath {
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/banking/import': typeof AuthenticatedBankingImportRoute
   '/banking/money-documents': typeof AuthenticatedBankingMoneyDocumentsRouteWithChildren
+  '/banking/receive-money': typeof AuthenticatedBankingReceiveMoneyRoute
   '/banking/reconcile': typeof AuthenticatedBankingReconcileRoute
   '/banking/rules': typeof AuthenticatedBankingRulesRoute
+  '/banking/spend-money': typeof AuthenticatedBankingSpendMoneyRoute
   '/banking/transactions': typeof AuthenticatedBankingTransactionsRoute
   '/banking/transfers': typeof AuthenticatedBankingTransfersRoute
   '/budgets/$budgetId': typeof AuthenticatedBudgetsBudgetIdRoute
@@ -1553,8 +1569,10 @@ export interface FileRoutesByTo {
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/banking/import': typeof AuthenticatedBankingImportRoute
   '/banking/money-documents': typeof AuthenticatedBankingMoneyDocumentsRouteWithChildren
+  '/banking/receive-money': typeof AuthenticatedBankingReceiveMoneyRoute
   '/banking/reconcile': typeof AuthenticatedBankingReconcileRoute
   '/banking/rules': typeof AuthenticatedBankingRulesRoute
+  '/banking/spend-money': typeof AuthenticatedBankingSpendMoneyRoute
   '/banking/transactions': typeof AuthenticatedBankingTransactionsRoute
   '/banking/transfers': typeof AuthenticatedBankingTransfersRoute
   '/budgets/$budgetId': typeof AuthenticatedBudgetsBudgetIdRoute
@@ -1746,8 +1764,10 @@ export interface FileRoutesById {
   '/_authenticated/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/_authenticated/banking/import': typeof AuthenticatedBankingImportRoute
   '/_authenticated/banking/money-documents': typeof AuthenticatedBankingMoneyDocumentsRouteWithChildren
+  '/_authenticated/banking/receive-money': typeof AuthenticatedBankingReceiveMoneyRoute
   '/_authenticated/banking/reconcile': typeof AuthenticatedBankingReconcileRoute
   '/_authenticated/banking/rules': typeof AuthenticatedBankingRulesRoute
+  '/_authenticated/banking/spend-money': typeof AuthenticatedBankingSpendMoneyRoute
   '/_authenticated/banking/transactions': typeof AuthenticatedBankingTransactionsRoute
   '/_authenticated/banking/transfers': typeof AuthenticatedBankingTransfersRoute
   '/_authenticated/budgets/$budgetId': typeof AuthenticatedBudgetsBudgetIdRoute
@@ -1942,8 +1962,10 @@ export interface FileRouteTypes {
     | '/banking/feeds'
     | '/banking/import'
     | '/banking/money-documents'
+    | '/banking/receive-money'
     | '/banking/reconcile'
     | '/banking/rules'
+    | '/banking/spend-money'
     | '/banking/transactions'
     | '/banking/transfers'
     | '/budgets/$budgetId'
@@ -2128,8 +2150,10 @@ export interface FileRouteTypes {
     | '/banking/feeds'
     | '/banking/import'
     | '/banking/money-documents'
+    | '/banking/receive-money'
     | '/banking/reconcile'
     | '/banking/rules'
+    | '/banking/spend-money'
     | '/banking/transactions'
     | '/banking/transfers'
     | '/budgets/$budgetId'
@@ -2320,8 +2344,10 @@ export interface FileRouteTypes {
     | '/_authenticated/banking/feeds'
     | '/_authenticated/banking/import'
     | '/_authenticated/banking/money-documents'
+    | '/_authenticated/banking/receive-money'
     | '/_authenticated/banking/reconcile'
     | '/_authenticated/banking/rules'
+    | '/_authenticated/banking/spend-money'
     | '/_authenticated/banking/transactions'
     | '/_authenticated/banking/transfers'
     | '/_authenticated/budgets/$budgetId'
@@ -2920,6 +2946,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBankingMoneyDocumentsRouteImport
       parentRoute: typeof AuthenticatedBankingRouteRoute
     }
+    '/_authenticated/banking/receive-money': {
+      id: '/_authenticated/banking/receive-money'
+      path: '/receive-money'
+      fullPath: '/banking/receive-money'
+      preLoaderRoute: typeof AuthenticatedBankingReceiveMoneyRouteImport
+      parentRoute: typeof AuthenticatedBankingRouteRoute
+    }
     '/_authenticated/banking/reconcile': {
       id: '/_authenticated/banking/reconcile'
       path: '/reconcile'
@@ -2932,6 +2965,13 @@ declare module '@tanstack/react-router' {
       path: '/rules'
       fullPath: '/banking/rules'
       preLoaderRoute: typeof AuthenticatedBankingRulesRouteImport
+      parentRoute: typeof AuthenticatedBankingRouteRoute
+    }
+    '/_authenticated/banking/spend-money': {
+      id: '/_authenticated/banking/spend-money'
+      path: '/spend-money'
+      fullPath: '/banking/spend-money'
+      preLoaderRoute: typeof AuthenticatedBankingSpendMoneyRouteImport
       parentRoute: typeof AuthenticatedBankingRouteRoute
     }
     '/_authenticated/banking/transactions': {
@@ -3853,8 +3893,10 @@ interface AuthenticatedBankingRouteRouteChildren {
   AuthenticatedBankingFeedsRoute: typeof AuthenticatedBankingFeedsRoute
   AuthenticatedBankingImportRoute: typeof AuthenticatedBankingImportRoute
   AuthenticatedBankingMoneyDocumentsRoute: typeof AuthenticatedBankingMoneyDocumentsRouteWithChildren
+  AuthenticatedBankingReceiveMoneyRoute: typeof AuthenticatedBankingReceiveMoneyRoute
   AuthenticatedBankingReconcileRoute: typeof AuthenticatedBankingReconcileRoute
   AuthenticatedBankingRulesRoute: typeof AuthenticatedBankingRulesRoute
+  AuthenticatedBankingSpendMoneyRoute: typeof AuthenticatedBankingSpendMoneyRoute
   AuthenticatedBankingTransactionsRoute: typeof AuthenticatedBankingTransactionsRoute
   AuthenticatedBankingTransfersRoute: typeof AuthenticatedBankingTransfersRoute
   AuthenticatedBankingIndexRoute: typeof AuthenticatedBankingIndexRoute
@@ -3869,8 +3911,11 @@ const AuthenticatedBankingRouteRouteChildren: AuthenticatedBankingRouteRouteChil
     AuthenticatedBankingImportRoute: AuthenticatedBankingImportRoute,
     AuthenticatedBankingMoneyDocumentsRoute:
       AuthenticatedBankingMoneyDocumentsRouteWithChildren,
+    AuthenticatedBankingReceiveMoneyRoute:
+      AuthenticatedBankingReceiveMoneyRoute,
     AuthenticatedBankingReconcileRoute: AuthenticatedBankingReconcileRoute,
     AuthenticatedBankingRulesRoute: AuthenticatedBankingRulesRoute,
+    AuthenticatedBankingSpendMoneyRoute: AuthenticatedBankingSpendMoneyRoute,
     AuthenticatedBankingTransactionsRoute:
       AuthenticatedBankingTransactionsRoute,
     AuthenticatedBankingTransfersRoute: AuthenticatedBankingTransfersRoute,

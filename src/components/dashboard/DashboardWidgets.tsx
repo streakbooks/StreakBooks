@@ -79,7 +79,7 @@ export function QuickActions() {
         <Link to="/purchases/bills/new">New bill</Link>
       </Button>
       <Button size="sm" variant="outline" asChild>
-        <Link to="/purchases/expenses/new">New expense</Link>
+        <Link to="/banking/spend-money">Spend money</Link>
       </Button>
       <Button size="sm" asChild>
         <Link to="/sales/invoices/new">New invoice</Link>

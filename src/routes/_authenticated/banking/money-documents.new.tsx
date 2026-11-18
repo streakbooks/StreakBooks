@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { MoneyDocumentPanel } from "@/components/create-new/MoneyDocumentPanel";
 
 const KINDS = [
@@ -21,6 +21,12 @@ export const Route = createFileRoute("/_authenticated/banking/money-documents/ne
   validateSearch: (search: Record<string, unknown>): { kind: MoneyKind } => ({
     kind: isMoneyKind(search["kind"]) ? search["kind"] : "receive_money",
   }),
+  beforeLoad: ({ search }) => {
+    // Canonical Receive Money path is /banking/receive-money
+    if (search.kind === "receive_money") {
+      throw redirect({ to: "/banking/receive-money" });
+    }
+  },
   head: ({ match }) => ({
     meta: [{ title: `New ${match.search.kind.replace(/_/g, " ")} — LinkBooks` }],
   }),

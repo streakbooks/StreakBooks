@@ -189,4 +189,15 @@ describe("in-place settings routing", () => {
       settingsTrail: ["bank-rules"],
     });
   });
+  it("rejects inherited array slots in Settings history", () => {
+    const inherited = new Array<string>(2);
+    inherited[1] = "bank-rules";
+    Object.setPrototypeOf(inherited, Object.assign(Object.create(Array.prototype), { 0: "category:banking" }));
+    expect(settingsPanelTrail(inherited)).toEqual([]);
+    expect(validateSettingsPanelSearch({
+      settingsPanel: "bank-feeds",
+      settingsTrail: inherited,
+    })).toEqual({ settingsPanel: "bank-feeds" });
+  });
+
 });

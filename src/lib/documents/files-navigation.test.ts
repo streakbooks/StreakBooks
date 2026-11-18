@@ -55,7 +55,7 @@ describe("Files workspace native browsing state", () => {
       .toEqual({ q: "x".repeat(120) });
     expect(parseFilesListSearch({ q: "x".repeat(121), view: "review" }))
       .toEqual({ view: "review" });
-    for (const bad of ["a\\nb", "a\\tb", "a\\u202eb", "a\\u200bb", "a\\u2060b"]) {
+    for (const bad of ["a\nb", "a\tb", "a\u202eb", "a\u200bb", "a\u2060b"]) {
       expect(parseFilesListSearch({ q: bad, sort: "largest" }))
         .toEqual({ sort: "largest" });
     }

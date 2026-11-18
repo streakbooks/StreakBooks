@@ -1919,8 +1919,8 @@ CREATE OR REPLACE FUNCTION public.generate_pm_owner_statement(
   _company_id UUID,
   _owner_id UUID,
   _property_id UUID DEFAULT NULL,
-  _period_start DATE,
-  _period_end DATE,
+  _period_start DATE DEFAULT NULL,
+  _period_end DATE DEFAULT NULL,
   _basis TEXT DEFAULT 'accrual'
 )
 RETURNS JSONB

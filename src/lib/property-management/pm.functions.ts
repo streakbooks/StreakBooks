@@ -30,16 +30,20 @@ import { emptyPmDashboardKpis } from "@/lib/property-management/types";
 export const PM_MIGRATION =
   "Property Management is not available yet: database update 20261118150000 has not been applied.";
 
-async function requirePmView(supabase: unknown, companyId: string) {
+/**
+ * Prefer RPC permission checks. Pre-asserting property.* before the migration is
+ * applied returns a generic deny while the client catalogue already shows the
+ * module — callRpc then surfaces the migration message instead.
+ */
+async function requirePmMember(supabase: unknown, companyId: string) {
   await assertCompanyMember(supabase as never, companyId);
-  await assertCompanyPermission(supabase as never, companyId, "property.view");
 }
 
 export const getPmSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<PmSettings> => {
-    await requirePmView(context.supabase, data.companyId);
+    await requirePmMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(
       context.supabase,
       "get_pm_settings",
@@ -71,7 +75,7 @@ export const upsertPmSettings = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }): Promise<PmSettings> => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await requirePmMember(context.supabase, data.companyId);
     await assertCompanyPermission(context.supabase, data.companyId, "property.settings.manage");
     const raw = await callRpc<unknown>(
       context.supabase,
@@ -94,7 +98,7 @@ export const getPmDashboardKpis = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<PmDashboardKpis> => {
-    await requirePmView(context.supabase, data.companyId);
+    await requirePmMember(context.supabase, data.companyId);
     try {
       const raw = await callRpc<unknown>(
         context.supabase,
@@ -117,7 +121,7 @@ export const listPmProperties = createServerFn({ method: "GET" })
     status: input.status?.trim() || null,
   }))
   .handler(async ({ data, context }): Promise<PmProperty[]> => {
-    await requirePmView(context.supabase, data.companyId);
+    await requirePmMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(
       context.supabase,
       "list_pm_properties",
@@ -182,7 +186,7 @@ export const listPmUnits = createServerFn({ method: "GET" })
     propertyId: input.propertyId ?? null,
   }))
   .handler(async ({ data, context }): Promise<PmUnit[]> => {
-    await requirePmView(context.supabase, data.companyId);
+    await requirePmMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(
       context.supabase,
       "list_pm_units",
@@ -232,8 +236,7 @@ export const listPmOwners = createServerFn({ method: "GET" })
     search: input.search?.trim() || null,
   }))
   .handler(async ({ data, context }): Promise<PmOwner[]> => {
-    await assertCompanyMember(context.supabase, data.companyId);
-    await assertCompanyPermission(context.supabase, data.companyId, "property.owner.view");
+    await requirePmMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(
       context.supabase,
       "list_pm_owners",
@@ -278,8 +281,7 @@ export const listPmOwnership = createServerFn({ method: "GET" })
     propertyId: String(input.propertyId),
   }))
   .handler(async ({ data, context }): Promise<PmOwnership[]> => {
-    await assertCompanyMember(context.supabase, data.companyId);
-    await assertCompanyPermission(context.supabase, data.companyId, "property.owner.view");
+    await requirePmMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(
       context.supabase,
       "list_pm_property_ownership",
@@ -325,7 +327,7 @@ export const listPmManagementAgreements = createServerFn({ method: "GET" })
     propertyId: input.propertyId ?? null,
   }))
   .handler(async ({ data, context }): Promise<PmManagementAgreement[]> => {
-    await requirePmView(context.supabase, data.companyId);
+    await requirePmMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(
       context.supabase,
       "list_pm_management_agreements",

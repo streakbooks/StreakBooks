@@ -125,7 +125,10 @@ export function PmPropertiesPage() {
       <PmSubnav current="properties" />
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
-        <ErrorState title="Settings error" description={friendlyAuthError(settings.error)} onRetry={() => settings.refetch()}
+        <ErrorState
+          title="Property Management backend unavailable"
+          description={`${friendlyAuthError(settings.error)} If this module was just deployed, apply migration 20261118150000 (and 20261118160000), then hard-refresh or sign out/in so permissions reload.`}
+          onRetry={() => settings.refetch()}
         />
       ) : null}
       {settings.data && !settings.data.enabled ? (

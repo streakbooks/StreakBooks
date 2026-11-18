@@ -147,4 +147,20 @@ describe("in-place settings routing", () => {
     expect(panelForDestination({ to: "/banking/rules" })).toBe("bank-rules");
     expect(panelForDestination({ to: "/purchases/bills/new" })).toBeUndefined();
   });
+  it("rejects sparse Settings history instead of retaining undefined ancestors", () => {
+    const sparse = new Array<string>(2);
+    sparse[1] = "category:banking";
+    expect(settingsPanelTrail(sparse)).toEqual([]);
+    expect(validateSettingsPanelSearch({
+      settingsPanel: "bank-rules",
+      settingsTrail: sparse,
+    })).toEqual({ settingsPanel: "bank-rules" });
+    expect(openSettingsPanel({
+      settingsPanel: "bank-rules",
+      settingsTrail: sparse,
+    }, "bank-feeds")).toEqual({
+      settingsPanel: "bank-feeds",
+      settingsTrail: ["bank-rules"],
+    });
+  });
 });

@@ -1,3 +1,4 @@
+import { Route as AccountingRoute } from "@/routes/_authenticated/accounting";
 import { useCaptcha } from "@/hooks/use-captcha";
 import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
 import { MoneyField } from "@/components/banking/MoneyField";
@@ -19,7 +20,13 @@ import { PortalInvoiceDetail } from "@/components/portals/customer-pages";
 import { BillWorkspaceLayout } from "@/components/purchases/BillWorkspaceLayout";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { createRootRoute, createRoute, createRouter, RouterProvider } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/common/states";
 import { ModuleSubnav } from "@/components/common/ModuleSubnav";
 import { ListToolbar } from "@/components/common/ListTools";
@@ -29,7 +36,12 @@ import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { CsvImportPreview } from "@/components/common/CsvImportPreview";
-import { FormSection, FormField, FormGrid, FormControlShell } from "@/components/common/form-layout";
+import {
+  FormSection,
+  FormField,
+  FormGrid,
+  FormControlShell,
+} from "@/components/common/form-layout";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -252,11 +264,21 @@ function DensityFixture() {
             </FormControlShell>
             <FormControlShell width="date">
               <Label htmlFor="density-bill-date">Bill date</Label>
-              <Input id="density-bill-date" aria-label="Bill date" type="date" defaultValue="2026-11-18" />
+              <Input
+                id="density-bill-date"
+                aria-label="Bill date"
+                type="date"
+                defaultValue="2026-11-18"
+              />
             </FormControlShell>
             <FormControlShell width="date">
               <Label htmlFor="density-due-date">Due date</Label>
-              <Input id="density-due-date" aria-label="Due date" type="date" defaultValue="2026-12-18" />
+              <Input
+                id="density-due-date"
+                aria-label="Due date"
+                type="date"
+                defaultValue="2026-12-18"
+              />
             </FormControlShell>
             <FormControlShell width="currency">
               <Label>Currency</Label>
@@ -307,10 +329,18 @@ function DensityFixture() {
                   <Input aria-label={`Line ${index + 1} description`} defaultValue="" />
                 </TableCell>
                 <TableCell className="p-0">
-                  <Input aria-label={`Line ${index + 1} qty`} defaultValue="" className="text-right" />
+                  <Input
+                    aria-label={`Line ${index + 1} qty`}
+                    defaultValue=""
+                    className="text-right"
+                  />
                 </TableCell>
                 <TableCell className="p-0">
-                  <Input aria-label={`Line ${index + 1} price`} defaultValue="" className="text-right" />
+                  <Input
+                    aria-label={`Line ${index + 1} price`}
+                    defaultValue=""
+                    className="text-right"
+                  />
                 </TableCell>
                 <TableCell className="p-0" />
               </TableRow>
@@ -535,6 +565,7 @@ function LookupMigrationFixture() {
 }
 
 function Scenario() {
+  if (window.location.pathname.startsWith("/accounting")) return <Outlet />;
   const params = new URLSearchParams(window.location.search);
   if (params.get("flow") === "lookup-migration") return <LookupMigrationFixture />;
   if (params.get("flow") === "captcha") return <CaptchaFixture />;
@@ -584,7 +615,24 @@ function Scenario() {
 }
 const root = createRootRoute({ component: Scenario });
 const child = createRoute({ getParentRoute: () => root, path: "$" });
-const router = createRouter({ routeTree: root.addChildren([child]) });
+const app = createRoute({
+  getParentRoute: () => root,
+  id: "_authenticated",
+  component: () => (
+    <main className="p-4">
+      <Outlet />
+    </main>
+  ),
+});
+const accounting = createRoute({
+  getParentRoute: () => app,
+  path: "/accounting",
+  validateSearch: AccountingRoute.options.validateSearch,
+  component: AccountingRoute.options.component,
+});
+const router = createRouter({
+  routeTree: root.addChildren([child, app.addChildren([accounting])]),
+});
 const client = new QueryClient({
   defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
 });

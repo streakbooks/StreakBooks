@@ -1,21 +1,27 @@
+import { parseChartBrowseSearch } from "@/lib/accounting/chart-browsing";
 import { CashClassificationPanel } from "@/components/accounting/CashClassificationPanel";
-import { getRouteApi } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { type AccountingTab } from "@/lib/navigation/workspace-search";
 import { DeferralsPanel } from "@/components/accounting/DeferralsPanel";
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { TransactionCorrections } from "@/components/accounting/corrections/TransactionCorrections";
-import { Link, Navigate } from "@tanstack/react-router";
+import { getRouteApi, Link, Navigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
+import { useCanDo } from "@/hooks/use-can";
 import { ensureLedgerMasters } from "@/lib/accounting/accounting.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
-import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import { ChartAccountsPanel } from "@/components/accounting/ChartAccountsPanel";
@@ -27,6 +33,21 @@ import { LedgerHealthPanel } from "@/components/accounting/LedgerHealthPanel";
 import { ReconciliationExceptionCentre } from "@/components/accounting/ReconciliationExceptionCentre";
 import { JournalsPanel } from "@/components/accounting/JournalsPanel";
 import { PeriodClosePanel } from "@/components/accounting/PeriodClosePanel";
+
+const accountingViews = [
+  ["coa", "Chart of accounts"],
+  ["journals", "Journals"],
+  ["periods", "Financial years"],
+  ["close", "Period close"],
+  ["corrections", "Transaction corrections"],
+  ["exceptions", "Reconciliation exceptions"],
+  ["conversion", "Opening balances"],
+  ["deferrals", "Prepayments & deferred income"],
+  ["fx", "FX & reversals"],
+  ["cash-classification", "Cash classification"],
+  ["health", "Ledger health"],
+  ["industry", "Industry library"],
+] as const satisfies ReadonlyArray<readonly [AccountingTab, string]>;
 
 const routeApi = getRouteApi("/_authenticated/accounting");
 
@@ -53,14 +74,32 @@ export function AccountingWorkspace({
 }) {
   const queryClient = useQueryClient();
   const search = routeApi.useSearch();
+  const navigate = routeApi.useNavigate();
+  const chartSearch = parseChartBrowseSearch(search);
+  const canManageAccounts = useCanDo("accounts.manage");
+  const canPostJournal = useCanDo("journals.manual");
+  const tabsRef = useRef<HTMLDivElement>(null);
   const seedMasters = useServerFn(ensureLedgerMasters);
   const tab: AccountingTab = search.tab ?? (search.journal ? "journals" : "coa");
+
+  useEffect(() => {
+    const list = tabsRef.current;
+    const active = list?.querySelector('[aria-selected="true"]');
+    if (!list || !active) return;
+    const viewport = list.getBoundingClientRect();
+    const bounds = active.getBoundingClientRect();
+    if (bounds.left < viewport.left) list.scrollLeft -= viewport.left - bounds.left + 4;
+    if (bounds.right > viewport.right) list.scrollLeft += bounds.right - viewport.right + 4;
+  }, [tab]);
 
   const seedMutation = useMutation({
     mutationFn: () => seedMasters({ data: { companyId } }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["accounts", companyId] });
-      await queryClient.invalidateQueries({ queryKey: ["periods", companyId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["accounts", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["chart-accounts", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["periods", companyId] }),
+      ]);
       toast.success("Chart of accounts and periods ready");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -69,240 +108,116 @@ export function AccountingWorkspace({
   return (
     <ListWorkspace
       title="Accounting"
-      description="Authoritative double-entry ledger: chart of accounts, journals, financial years and period close."
-      insights={
-        <WorkspaceInsights
-          title="Accounting shortcuts"
-          facts={[
-            {
-              label: "Posting engine",
-              value: "post_journal RPC only",
-            },
-            {
-              label: "History",
-              value: "Immutable — correct via reversal",
-            },
-          ]}
-          links={[
-            {
-              label: "Chart of accounts",
-              to: "/accounting",
-              search: { tab: "coa" },
-              hint: "Ledger account structure",
-            },
-            {
-              label: "Journals",
-              to: "/accounting",
-              search: { tab: "journals" },
-              hint: "Posted and draft journals",
-            },
-            {
-              label: "Financial years",
-              to: "/accounting",
-              search: { tab: "periods" },
-              hint: "Fiscal years and period close",
-            },
-            {
-              label: "Recurring journals",
-              to: "/recurring-journals",
-              hint: "Scheduled journal templates",
-            },
-            {
-              label: "Reports",
-              to: "/reports",
-              hint: "Financial statements from the ledger",
-            },
-          ]}
-          footer="All posts use the shared ledger engine. Empty periods are not treated as successful closes."
-        />
-      }
       actions={
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/recurring-journals">Recurring journals</Link>
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={seedMutation.isPending}
-            onClick={() => seedMutation.mutate()}
-          >
-            {seedMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            Ensure CoA & periods
-          </Button>
-        </div>
+        <>
+          {tab !== "journals" && canPostJournal ? (
+            <Button size="sm" asChild>
+              <Link to="/accounting/journals/new" search={{ mode: "post" }}>
+                New manual journal
+              </Link>
+            </Button>
+          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline">
+                Accounting tools <ChevronDown className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/recurring-journals">Recurring journals</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/reports">Reports</Link>
+              </DropdownMenuItem>
+              {canManageAccounts ? (
+                <DropdownMenuItem
+                  disabled={seedMutation.isPending}
+                  onSelect={() => seedMutation.mutate()}
+                >
+                  {seedMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                  Set up accounts and periods
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
       }
     >
-      <Alert className="mb-6">
-        <AlertTitle>Single posting engine</AlertTitle>
-        <AlertDescription>
-          All posts go through the server/database <code>post_journal</code> RPC (balanced minor
-          units, period locks, idempotency). Posted history is immutable — correct via reversal.
-        </AlertDescription>
-      </Alert>
-
       <Tabs value={tab}>
-        <TabsList onKeyDown={handleNativeTabKeyDown} className="flex-wrap">
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "coa"}
-            data-state={tab === "coa" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "coa" }}
-            resetScroll={false}
-          >
-            Chart of accounts
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "industry"}
-            data-state={tab === "industry" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "industry" }}
-            resetScroll={false}
-          >
-            Industry library
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "corrections"}
-            data-state={tab === "corrections" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "corrections" }}
-            resetScroll={false}
-          >
-            Transaction corrections
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "journals"}
-            data-state={tab === "journals" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "journals" }}
-            resetScroll={false}
-          >
-            Journals
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={false}
-            data-state="inactive"
-            to="/accounting/journals/new"
-            search={{ mode: "post" }}
-          >
-            Post manual journal
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "periods"}
-            data-state={tab === "periods" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "periods" }}
-            resetScroll={false}
-          >
-            Financial years
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "close"}
-            data-state={tab === "close" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "close" }}
-            resetScroll={false}
-          >
-            Period close
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "health"}
-            data-state={tab === "health" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "health" }}
-            resetScroll={false}
-          >
-            Ledger health
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "exceptions"}
-            data-state={tab === "exceptions" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "exceptions" }}
-            resetScroll={false}
-          >
-            Reconciliation exceptions
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "conversion"}
-            data-state={tab === "conversion" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "conversion" }}
-            resetScroll={false}
-          >
-            Opening balances
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "fx"}
-            data-state={tab === "fx" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "fx" }}
-            resetScroll={false}
-          >
-            FX &amp; reversals
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "deferrals"}
-            data-state={tab === "deferrals" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "deferrals" }}
-            resetScroll={false}
-          >
-            Prepayments & deferred income
-          </Link>
-          <Link
-            className={nativeTabLinkClass}
-            role="tab"
-            aria-selected={tab === "cash-classification"}
-            data-state={tab === "cash-classification" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "cash-classification" }}
-            resetScroll={false}
-          >
-            Cash classification
-          </Link>
+        <TabsList
+          ref={tabsRef}
+          aria-label="Accounting views"
+          onKeyDown={handleNativeTabKeyDown}
+          className="flex w-full flex-nowrap"
+        >
+          {accountingViews.map(([view, label]) => (
+            <Link
+              key={view}
+              id={`accounting-tab-${view}`}
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-controls={`accounting-panel-${view}`}
+              aria-selected={tab === view}
+              data-state={tab === view ? "active" : "inactive"}
+              tabIndex={tab === view ? 0 : -1}
+              to="/accounting"
+              search={tab === view ? search : { ...chartSearch, tab: view }}
+              resetScroll={false}
+            >
+              {label}
+            </Link>
+          ))}
         </TabsList>
 
-        <TabsContent value="deferrals" className="mt-4">
+        <TabsContent
+          value="deferrals"
+          id="accounting-panel-deferrals"
+          aria-labelledby="accounting-tab-deferrals"
+        >
           <DeferralsPanel key={companyId} companyId={companyId} currency={currency} />
         </TabsContent>
-        <TabsContent value="coa" className="mt-4">
-          <ChartAccountsPanel key={companyId} companyId={companyId} currency={currency} />
+        <TabsContent value="coa" id="accounting-panel-coa" aria-labelledby="accounting-tab-coa">
+          <ChartAccountsPanel
+            key={companyId}
+            companyId={companyId}
+            currency={currency}
+            browsing={chartSearch}
+            onBrowse={(patch) => {
+              void navigate({
+                search: (previous) => ({
+                  ...previous,
+                  ...parseChartBrowseSearch({ ...previous, ...patch }),
+                  tab: "coa",
+                }),
+                replace: true,
+                resetScroll: false,
+              });
+            }}
+          />
         </TabsContent>
 
-        <TabsContent value="industry" className="mt-4">
+        <TabsContent
+          value="industry"
+          id="accounting-panel-industry"
+          aria-labelledby="accounting-tab-industry"
+        >
           <IndustryCoaPanel companyId={companyId} />
         </TabsContent>
 
-        <TabsContent value="corrections" className="mt-4">
+        <TabsContent
+          value="corrections"
+          id="accounting-panel-corrections"
+          aria-labelledby="accounting-tab-corrections"
+        >
           <TransactionCorrections key={companyId} companyId={companyId} />
         </TabsContent>
 
-        <TabsContent value="journals" className="mt-4">
+        <TabsContent
+          value="journals"
+          id="accounting-panel-journals"
+          aria-labelledby="accounting-tab-journals"
+        >
           <JournalsPanel
             key={companyId}
             companyId={companyId}
@@ -311,35 +226,59 @@ export function AccountingWorkspace({
           />
         </TabsContent>
 
-        <TabsContent value="post" className="mt-4">
+        <TabsContent value="post">
           {/* Legacy deep link /accounting?tab=post → canonical full-page create */}
-          <Navigate to="/accounting/journals/new" search={{ mode: "post" }} />
+          <Navigate to="/accounting/journals/new" search={{ mode: "post" }} replace />
         </TabsContent>
 
-        <TabsContent value="periods" className="mt-4">
+        <TabsContent
+          value="periods"
+          id="accounting-panel-periods"
+          aria-labelledby="accounting-tab-periods"
+        >
           <FinancialYearsPanel key={companyId} companyId={companyId} />
         </TabsContent>
 
-        <TabsContent value="close" className="mt-4">
+        <TabsContent
+          value="close"
+          id="accounting-panel-close"
+          aria-labelledby="accounting-tab-close"
+        >
           <PeriodClosePanel key={companyId} companyId={companyId} initialPeriodId={search.period} />
         </TabsContent>
 
-        <TabsContent value="exceptions" className="mt-4">
+        <TabsContent
+          value="exceptions"
+          id="accounting-panel-exceptions"
+          aria-labelledby="accounting-tab-exceptions"
+        >
           <ReconciliationExceptionCentre key={companyId} companyId={companyId} />
         </TabsContent>
 
-        <TabsContent value="health" className="mt-4">
+        <TabsContent
+          value="health"
+          id="accounting-panel-health"
+          aria-labelledby="accounting-tab-health"
+        >
           <LedgerHealthPanel key={companyId} companyId={companyId} />
         </TabsContent>
 
-        <TabsContent value="conversion" className="mt-4">
+        <TabsContent
+          value="conversion"
+          id="accounting-panel-conversion"
+          aria-labelledby="accounting-tab-conversion"
+        >
           <ConversionBalancesPanel key={companyId} companyId={companyId} currency={currency} />
         </TabsContent>
 
-        <TabsContent value="fx" className="mt-4">
+        <TabsContent value="fx" id="accounting-panel-fx" aria-labelledby="accounting-tab-fx">
           <FxPanel key={companyId} companyId={companyId} currency={currency} />
         </TabsContent>
-        <TabsContent value="cash-classification" className="mt-4">
+        <TabsContent
+          value="cash-classification"
+          id="accounting-panel-cash-classification"
+          aria-labelledby="accounting-tab-cash-classification"
+        >
           <CashClassificationPanel
             key={companyId}
             companyId={companyId}

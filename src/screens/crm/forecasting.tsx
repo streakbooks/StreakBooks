@@ -54,7 +54,10 @@ export function CrmForecastingPage() {
   if (!canView) {
     return (
       <ListWorkspace title="Sales Forecasting" description="Weighted pipeline by stage.">
-        <EmptyState title="No CRM access" description="Ask an administrator for crm.view or crm.reports.view." />
+        <EmptyState
+          title="No CRM access"
+          description="Ask an administrator for crm.view or crm.reports.view."
+        />
       </ListWorkspace>
     );
   }
@@ -69,7 +72,9 @@ export function CrmForecastingPage() {
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "Sales Forecasting" }]}
       actions={
         <Button asChild variant="secondary">
-          <Link to="/crm/$section" params={{ section: "opportunities" }}>Open opportunities</Link>
+          <Link to="/crm/$section" params={{ section: "opportunities" }}>
+            Open opportunities
+          </Link>
         </Button>
       }
     >
@@ -143,8 +148,12 @@ export function CrmForecastingPage() {
                       {report.stages.map((stage) => (
                         <TableRow key={stage.stageId}>
                           <TableCell className="font-medium">{stage.stageName}</TableCell>
-                          <TableCell className="text-right tabular-nums">{stage.dealCount}</TableCell>
-                          <TableCell className="text-right tabular-nums">{stage.probabilityPct}%</TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {stage.dealCount}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {stage.probabilityPct}%
+                          </TableCell>
                           <TableCell className="text-right tabular-nums">
                             {formatCrmMinor(stage.amountMinor, currency)}
                           </TableCell>

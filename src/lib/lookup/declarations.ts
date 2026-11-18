@@ -28,6 +28,7 @@ function nodeText(node: ReactNode): string {
 }
 type DeclaredLookup = {
   options: LookupOption[];
+  triggerClassName?: string;
   placeholder?: string;
   id?: string;
   ariaLabel?: string;
@@ -58,6 +59,11 @@ export function declaredLookupOptions(children: ReactNode): DeclaredLookup {
           ...(p.disabled ? { disabled: true } : {}),
         });
         return;
+      }
+      // Only trigger layout belongs to the resulting control, never popup/item decoration.
+      const component = node.type as { displayName?: string; name?: string };
+      if ((component.displayName ?? component.name) === "SelectTrigger" && p.className) {
+        result.triggerClassName = p.className;
       }
       // Option metadata must never overwrite the selected control's accessibility state.
       if (p.id) result.id = p.id;

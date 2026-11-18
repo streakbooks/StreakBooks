@@ -36,9 +36,7 @@ export const listFirmOnboardingTrends = createServerFn({ method: "GET" })
 
     // The scheduled snapshots and comparison use UTC calendar days.
     const now = new Date();
-    const today = new Date(Date.UTC(
-      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
-    ));
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     const start = new Date(today);
     start.setUTCDate(start.getUTCDate() - data.days + 1);
     const since = start.toISOString().slice(0, 10);

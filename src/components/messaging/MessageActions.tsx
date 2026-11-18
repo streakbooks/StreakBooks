@@ -46,8 +46,7 @@ export function MessageActions({
   };
 
   const editMutation = useMutation({
-    mutationFn: () =>
-      edit({ data: { companyId, messageId: message.id, body: draft } }),
+    mutationFn: () => edit({ data: { companyId, messageId: message.id, body: draft } }),
     onSuccess: () => {
       setEditing(false);
       invalidate();
@@ -66,8 +65,7 @@ export function MessageActions({
   });
 
   const reactMutation = useMutation({
-    mutationFn: (emoji: string) =>
-      react({ data: { companyId, messageId: message.id, emoji } }),
+    mutationFn: (emoji: string) => react({ data: { companyId, messageId: message.id, emoji } }),
     onSuccess: () => invalidate(),
     onError: (error) => notify.error(error, "Could not react"),
   });
@@ -85,8 +83,7 @@ export function MessageActions({
   const [starred, setStarred] = useState(Boolean(message.is_starred));
 
   const starMutation = useMutation({
-    mutationFn: () =>
-      star({ data: { companyId, messageId: message.id, starred: !starred } }),
+    mutationFn: () => star({ data: { companyId, messageId: message.id, starred: !starred } }),
     onSuccess: () => {
       setStarred((value) => !value);
       void client.invalidateQueries({ queryKey: ["messaging-starred-messages", companyId] });

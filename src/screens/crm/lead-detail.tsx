@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,13 +9,7 @@ import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -176,7 +171,11 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
   if (leadQuery.isError) {
     return (
       <RecordWorkspace title="Lead" description="Lead detail">
-        <ErrorState title="Could not load lead" description={friendlyAuthError(leadQuery.error)} onRetry={() => leadQuery.refetch()} />
+        <ErrorState
+          title="Could not load lead"
+          description={friendlyAuthError(leadQuery.error)}
+          onRetry={() => leadQuery.refetch()}
+        />
       </RecordWorkspace>
     );
   }
@@ -289,7 +288,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
             ) : canManage ? (
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select
+                <RecordLookupSelect
                   value={statusValue}
                   onValueChange={(value) => {
                     const next = value as CrmLeadStatus;
@@ -308,7 +307,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
             ) : (
               <p className="capitalize text-sm">{lead.status}</p>
@@ -320,7 +319,9 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
               <span className="text-muted-foreground">Score:</span>{" "}
               <span className="font-medium tabular-nums">{lead.score}/100</span>
             </p>
-            {scoreExplainer ? <p className="text-xs text-muted-foreground">{scoreExplainer}</p> : null}
+            {scoreExplainer ? (
+              <p className="text-xs text-muted-foreground">{scoreExplainer}</p>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -348,7 +349,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
               ) : (
                 <div className="space-y-2">
                   <Label>Use existing contact</Label>
-                  <Select
+                  <RecordLookupSelect
                     value={selectedContactId || "__none"}
                     onValueChange={(v) => setSelectedContactId(v === "__none" ? "" : v)}
                   >
@@ -364,7 +365,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                   <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"

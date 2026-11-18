@@ -33,10 +33,7 @@ import {
   useMessagingThreadSearch,
 } from "@/hooks/use-messaging";
 import { getMessagingRecordAdapter } from "@/lib/messaging/module-adapters";
-import {
-  messagingConnectionLabel,
-  useMessagingConnection,
-} from "@/hooks/use-messaging-connection";
+import { messagingConnectionLabel, useMessagingConnection } from "@/hooks/use-messaging-connection";
 import { useMessagingPresence } from "@/hooks/use-messaging-presence";
 import type { MessagingInboxFilter, MessagingParticipant } from "@/lib/messaging/types";
 import {
@@ -59,10 +56,7 @@ import {
   loadMessagingComposerDraft,
   saveMessagingComposerDraft,
 } from "@/lib/messaging/composer-drafts";
-import {
-  buildMessagingThreadExport,
-  downloadTextFile,
-} from "@/lib/messaging/export-thread";
+import { buildMessagingThreadExport, downloadTextFile } from "@/lib/messaging/export-thread";
 import { uploadMessagingAttachment } from "@/lib/messaging/upload-client";
 import { notify } from "@/lib/notify";
 import { looksLikeInformalApproval } from "@/lib/messaging/approvals";
@@ -178,11 +172,7 @@ export function MessagesScreen({
   useEffect(() => {
     saveMessagingComposerDraft(companyId, conversationId ?? null, composer);
   }, [companyId, conversationId, composer]);
-  const threadHits = useMessagingThreadSearch(
-    companyId,
-    conversationId ?? null,
-    threadSearch,
-  );
+  const threadHits = useMessagingThreadSearch(companyId, conversationId ?? null, threadSearch);
   const globalHits = useMessagingGlobalSearch(
     companyId,
     filter === "search" ? searchQuery || search : "",
@@ -311,7 +301,10 @@ export function MessagesScreen({
   if (!companyId) {
     return (
       <ListWorkspace title="Messages" description="Organisation messaging">
-        <EmptyState title="Select an organisation" description="Choose a company to open Messages." />
+        <EmptyState
+          title="Select an organisation"
+          description="Choose a company to open Messages."
+        />
       </ListWorkspace>
     );
   }
@@ -575,7 +568,10 @@ export function MessagesScreen({
           </ul>
         </section>
 
-        <section aria-label="Conversation thread" className="flex min-h-[420px] flex-col rounded-lg border bg-card">
+        <section
+          aria-label="Conversation thread"
+          className="flex min-h-[420px] flex-col rounded-lg border bg-card"
+        >
           {!conversationId && (
             <EmptyState
               title="Select a conversation"
@@ -593,16 +589,16 @@ export function MessagesScreen({
                   <p className="text-xs text-muted-foreground">
                     {selected?.visibility ?? "internal"} · {selected?.conversation_type ?? "thread"}
                     {presence.onlineIds.length > 1 ? ` · ${presence.onlineIds.length} online` : ""}
-                    {presence.typingIds.length
-                      ? ` · ${presence.typingIds.length} typing`
-                      : ""}
+                    {presence.typingIds.length ? ` · ${presence.typingIds.length} typing` : ""}
                     {" · "}
                     <span
                       className={cn(
-                        connection.state === "connected" && "text-emerald-700 dark:text-emerald-400",
+                        connection.state === "connected" &&
+                          "text-emerald-700 dark:text-emerald-400",
                         (connection.state === "offline" || connection.state === "error") &&
                           "text-destructive",
-                        (connection.state === "reconnecting" || connection.state === "connecting") &&
+                        (connection.state === "reconnecting" ||
+                          connection.state === "connecting") &&
                           "text-amber-700 dark:text-amber-400",
                       )}
                     >
@@ -802,19 +798,20 @@ export function MessagesScreen({
                         conversationId,
                         messages: messages.data ?? [],
                       });
-                      downloadTextFile(
-                        `messages-${conversationId.slice(0, 8)}.txt`,
-                        text,
-                      );
+                      downloadTextFile(`messages-${conversationId.slice(0, 8)}.txt`, text);
                       notify.success("Conversation exported");
                     }}
                   >
                     Export
                   </Button>
                   {selected &&
-                  ["group", "channel", "hr_private", "accountant_client", "advisor_engagement"].includes(
-                    selected.conversation_type,
-                  ) ? (
+                  [
+                    "group",
+                    "channel",
+                    "hr_private",
+                    "accountant_client",
+                    "advisor_engagement",
+                  ].includes(selected.conversation_type) ? (
                     <Button
                       type="button"
                       size="sm"
@@ -889,10 +886,7 @@ export function MessagesScreen({
                     conversationId={conversationId}
                     currentUserId={user?.id ?? null}
                     allowBlock={selected?.conversation_type === "dm"}
-                    allowRemove={
-                      Boolean(selected) &&
-                      selected!.conversation_type !== "dm"
-                    }
+                    allowRemove={Boolean(selected) && selected!.conversation_type !== "dm"}
                   />
                 </div>
               ) : null}
@@ -916,8 +910,7 @@ export function MessagesScreen({
                 className="relative flex-1 space-y-3 overflow-y-auto px-4 py-4"
                 onScroll={(event) => {
                   const target = event.currentTarget;
-                  const distance =
-                    target.scrollHeight - target.scrollTop - target.clientHeight;
+                  const distance = target.scrollHeight - target.scrollTop - target.clientHeight;
                   setShowJumpLatest(distance > 160);
                 }}
               >
@@ -978,7 +971,10 @@ export function MessagesScreen({
                         {message.is_edited ? " · edited" : ""}
                         {message.is_pinned ? " · pinned" : ""}
                       </span>
-                      <time dateTime={message.created_at} title={new Date(message.created_at).toLocaleString()}>
+                      <time
+                        dateTime={message.created_at}
+                        title={new Date(message.created_at).toLocaleString()}
+                      >
                         {formatMessagingRelativeTime(message.created_at)}
                       </time>
                     </div>
@@ -1062,12 +1058,15 @@ export function MessagesScreen({
                 {replyTo ? (
                   <div className="mb-2 flex items-start justify-between gap-2 rounded border bg-muted/30 px-3 py-2 text-xs">
                     <div className="min-w-0">
-                      <p className="font-medium">
-                        Replying to {replyTo.author_name ?? "member"}
-                      </p>
+                      <p className="font-medium">Replying to {replyTo.author_name ?? "member"}</p>
                       <p className="truncate text-muted-foreground">{replyTo.body}</p>
                     </div>
-                    <Button type="button" size="sm" variant="ghost" onClick={() => setReplyTo(null)}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setReplyTo(null)}
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -1161,7 +1160,10 @@ export function MessagesScreen({
                           className="block w-full px-3 py-2 text-left text-sm hover:bg-muted/50"
                           onClick={() => {
                             setComposer((prev) =>
-                              insertMentionToken(prev, peer.full_name || peer.email || peer.user_id),
+                              insertMentionToken(
+                                prev,
+                                peer.full_name || peer.email || peer.user_id,
+                              ),
                             );
                             setShowMentionPicker(false);
                           }}
@@ -1367,9 +1369,7 @@ export function MessagesScreen({
                           },
                         })
                           .then((result) => {
-                            notify.success(
-                              result.added > 0 ? "Member added" : "Already a member",
-                            );
+                            notify.success(result.added > 0 ? "Member added" : "Already a member");
                             setShowAddMembers(false);
                           })
                           .catch((error) => notify.error(error, "Could not add member"));

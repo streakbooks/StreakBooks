@@ -11,12 +11,14 @@ import {
   type AiWorkpaperEvidenceLink,
 } from "@/lib/ai/workpaper-handoff";
 
-export const workpaperEvidenceInput = z.object({
-  companyId: z.string().uuid(),
-  accountId: z.string().uuid(),
-  asOf: isoDate,
-  page: z.number().int().min(0).max(10000).default(0),
-}).strict();
+export const workpaperEvidenceInput = z
+  .object({
+    companyId: z.string().uuid(),
+    accountId: z.string().uuid(),
+    asOf: isoDate,
+    page: z.number().int().min(0).max(10000).default(0),
+  })
+  .strict();
 
 export type AiWorkpaperEvidenceResponse = {
   accountId: string;
@@ -83,10 +85,14 @@ export const getAiWorkpaperEvidence = createServerFn({ method: "GET" })
     const result = payload as DbEvidencePage;
     const total = Number(result.total);
     if (
-      !Number.isSafeInteger(total) || total < 0 ||
-      result.page !== data.page || result.pageSize !== 25 ||
-      !Array.isArray(result.rows) || result.rows.length > 25
-    ) throw new Error("The evidence pagination response is invalid.");
+      !Number.isSafeInteger(total) ||
+      total < 0 ||
+      result.page !== data.page ||
+      result.pageSize !== 25 ||
+      !Array.isArray(result.rows) ||
+      result.rows.length > 25
+    )
+      throw new Error("The evidence pagination response is invalid.");
 
     const cases: AiWorkpaperReviewSource[] = result.rows.map((r) => ({
       id: r.review_id,
@@ -118,6 +124,7 @@ export const getAiWorkpaperEvidence = createServerFn({ method: "GET" })
       total,
       links,
       pageCounts: countAiWorkpaperEvidence(links),
-      disclaimer: "This page shows recorded AI review cases linked to the selected account. AI sign-off is not a workpaper sign-off, bank reconciliation, journal approval, or proof that all ledger movements were checked.",
+      disclaimer:
+        "This page shows recorded AI review cases linked to the selected account. AI sign-off is not a workpaper sign-off, bank reconciliation, journal approval, or proof that all ledger movements were checked.",
     };
   });

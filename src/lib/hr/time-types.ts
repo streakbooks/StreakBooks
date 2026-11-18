@@ -153,7 +153,5 @@ export type HrHoliday = {
   updatedAt: string;
 };
 
-export const HR05_MIGRATION =
-  "HR attendance/shifts needs database update 20261109192000.";
-export const HR06_MIGRATION =
-  "HR leave/holidays needs database update 20261109193000.";
+export const HR05_MIGRATION = "HR attendance/shifts needs database update 20261109192000.";
+export const HR06_MIGRATION = "HR leave/holidays needs database update 20261109193000.";

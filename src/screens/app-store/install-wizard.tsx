@@ -52,7 +52,10 @@ export function AppStoreInstallWizard({
     [step, companyName, permissionsAcknowledged, gates],
   );
 
-  const index = Math.max(0, INSTALL_WIZARD_STEPS.findIndex((s) => s.id === step));
+  const index = Math.max(
+    0,
+    INSTALL_WIZARD_STEPS.findIndex((s) => s.id === step),
+  );
   const current = INSTALL_WIZARD_STEPS[index]!;
 
   function goNext() {
@@ -74,7 +77,10 @@ export function AppStoreInstallWizard({
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2">
           {INSTALL_WIZARD_STEPS.map((s, i) => (
-            <Badge key={s.id} variant={i === index ? "default" : i < index ? "secondary" : "outline"}>
+            <Badge
+              key={s.id}
+              variant={i === index ? "default" : i < index ? "secondary" : "outline"}
+            >
               {i + 1}. {s.label}
             </Badge>
           ))}
@@ -129,7 +135,9 @@ export function AppStoreInstallWizard({
 
         {step === "activate" ? (
           <Alert>
-            <AlertTitle>{activation.allowed ? "Ready to activate" : "Activation locked"}</AlertTitle>
+            <AlertTitle>
+              {activation.allowed ? "Ready to activate" : "Activation locked"}
+            </AlertTitle>
             <AlertDescription>{activation.reason}</AlertDescription>
           </Alert>
         ) : null}

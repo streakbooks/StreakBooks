@@ -1,20 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { reviewJournalLines, type JournalReviewDetail, type JournalReviewHeader } from "./journal-line-review";
+import {
+  reviewJournalLines,
+  type JournalReviewDetail,
+  type JournalReviewHeader,
+} from "./journal-line-review";
 
 const header: JournalReviewHeader = {
-  id: "j1", journal_number: 17, journal_date: "2026-11-06",
-  status: "posted", source_type: "payroll", currency_code: "JPY", total_debit_minor: 150,
+  id: "j1",
+  journal_number: 17,
+  journal_date: "2026-11-06",
+  status: "posted",
+  source_type: "payroll",
+  currency_code: "JPY",
+  total_debit_minor: 150,
 };
 const detail: JournalReviewDetail = {
-  id: "j1", journal_number: 17, journal_date: "2026-11-06",
-  status: "posted", source_type: "payroll", currency_code: "JPY",
+  id: "j1",
+  journal_number: 17,
+  journal_date: "2026-11-06",
+  status: "posted",
+  source_type: "payroll",
+  currency_code: "JPY",
   lines: [
     { id: "l1", line_no: 1, account_code: "100", debit_minor: 150, credit_minor: 0 },
     { id: "l2", line_no: 2, account_code: "200", debit_minor: 0, credit_minor: 150 },
   ],
 };
-const review = (override: Partial<JournalReviewDetail> = {}, h: Partial<JournalReviewHeader> = {}) =>
-  reviewJournalLines({ ...header, ...h }, { ...detail, ...override });
+const review = (
+  override: Partial<JournalReviewDetail> = {},
+  h: Partial<JournalReviewHeader> = {},
+) => reviewJournalLines({ ...header, ...h }, { ...detail, ...override });
 
 describe("journal line-to-list review", () => {
   it("checks posted debits and credits using original minor-unit values", () => {
@@ -35,12 +50,18 @@ describe("journal line-to-list review", () => {
     expect(review({ lines: detail.lines.slice(0, 1) }).issues.join(" ")).toMatch(/at least two/);
   });
   it("rejects an unbalanced or header-mismatched journal", () => {
-    expect(review({ lines: [{ ...detail.lines[0]!, debit_minor: 151 }, detail.lines[1]!] }).issues.join(" "))
-      .toMatch(/not equal/);
+    expect(
+      review({ lines: [{ ...detail.lines[0]!, debit_minor: 151 }, detail.lines[1]!] }).issues.join(
+        " ",
+      ),
+    ).toMatch(/not equal/);
     expect(review({}, { total_debit_minor: 151 }).issues.join(" ")).toMatch(/differs/);
   });
   it("detects duplicate identifiers, line numbers and missing account evidence", () => {
-    const lines = [{ ...detail.lines[0]! }, { ...detail.lines[1]!, id: "l1", line_no: 1, account_code: "" }];
+    const lines = [
+      { ...detail.lines[0]! },
+      { ...detail.lines[1]!, id: "l1", line_no: 1, account_code: "" },
+    ];
     const result = review({ lines });
     expect(result.state).toBe("exception");
     expect(result.issues.join(" ")).toMatch(/duplicate ID/);
@@ -48,11 +69,17 @@ describe("journal line-to-list review", () => {
     expect(result.issues.join(" ")).toMatch(/no linked account/);
   });
   it("rejects double-sided and zero-sided journal lines", () => {
-    const lines = [{ ...detail.lines[0]!, credit_minor: 1 }, { ...detail.lines[1]!, debit_minor: 0, credit_minor: 0 }];
-    expect(review({ lines }).issues.filter(x => x.includes("both/neither"))).toHaveLength(2);
+    const lines = [
+      { ...detail.lines[0]!, credit_minor: 1 },
+      { ...detail.lines[1]!, debit_minor: 0, credit_minor: 0 },
+    ];
+    expect(review({ lines }).issues.filter((x) => x.includes("both/neither"))).toHaveLength(2);
   });
   it("rejects unsafe amounts without silently rounding", () => {
-    const lines = [{ ...detail.lines[0]!, debit_minor: Number.MAX_SAFE_INTEGER + 1 }, detail.lines[1]!];
+    const lines = [
+      { ...detail.lines[0]!, debit_minor: Number.MAX_SAFE_INTEGER + 1 },
+      detail.lines[1]!,
+    ];
     expect(review({ lines }).state).toBe("exception");
     expect(review({ lines }).issues.join(" ")).toMatch(/unsafe/);
   });

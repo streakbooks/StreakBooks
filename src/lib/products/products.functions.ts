@@ -372,7 +372,8 @@ export const upsertProduct = createServerFn({ method: "POST" })
           .from("products" as never)
           .select("category_id" as never)
           .eq("company_id" as never, data.companyId as never)
-          .eq("id" as never, data.id as never).maybeSingle();
+          .eq("id" as never, data.id as never)
+          .maybeSingle();
         if (existingError) throw new Error(existingError.message);
         if ((existing as { category_id: string | null } | null)?.category_id !== data.categoryId) {
           throw new Error("Archived categories cannot be assigned to other items");
@@ -534,7 +535,7 @@ export const setProductPrices = createServerFn({ method: "POST" })
       throw new Error("Not all items could be updated; refresh the catalogue and review prices");
     }
     const { error: auditError } = await context.supabase.rpc(
-      "record_audit_event" as never,
+      "record_app_audit_event" as never,
       {
         _company_id: data.companyId,
         _action: "products.bulk_price_set",

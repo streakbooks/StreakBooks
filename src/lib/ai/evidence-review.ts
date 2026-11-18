@@ -15,7 +15,8 @@ export type JournalEvidenceRow = {
   total_credit_minor: number;
 };
 
-export type JournalEvidenceStatus = "balanced_totals" | "review_totals" | "unavailable" | "not_posted";
+export type JournalEvidenceStatus =
+  "balanced_totals" | "review_totals" | "unavailable" | "not_posted";
 
 export type JournalEvidenceCheck = {
   status: JournalEvidenceStatus;
@@ -28,7 +29,8 @@ export function assessJournalEvidence(row: JournalEvidenceRow): JournalEvidenceC
   if (row.status !== "posted") {
     return {
       status: "not_posted",
-      explanation: "This journal is not posted. Its recorded totals do not establish ledger activity.",
+      explanation:
+        "This journal is not posted. Its recorded totals do not establish ledger activity.",
       debit: null,
       credit: null,
     };
@@ -38,7 +40,8 @@ export function assessJournalEvidence(row: JournalEvidenceRow): JournalEvidenceC
   if (!Number.isSafeInteger(debit) || !Number.isSafeInteger(credit)) {
     return {
       status: "unavailable",
-      explanation: "The report amounts cannot be verified as exact integers in this browser view. Open the journal detail.",
+      explanation:
+        "The report amounts cannot be verified as exact integers in this browser view. Open the journal detail.",
       debit: null,
       credit: null,
     };
@@ -48,14 +51,16 @@ export function assessJournalEvidence(row: JournalEvidenceRow): JournalEvidenceC
   if (d <= 0n || c <= 0n || d !== c) {
     return {
       status: "review_totals",
-      explanation: "The reported posted journal totals are missing, zero or unequal. Open the journal to investigate the underlying entry.",
+      explanation:
+        "The reported posted journal totals are missing, zero or unequal. Open the journal to investigate the underlying entry.",
       debit: d,
       credit: c,
     };
   }
   return {
     status: "balanced_totals",
-    explanation: "The reported debit and credit totals are equal. This does not verify account selection, documentation, tax or period.",
+    explanation:
+      "The reported debit and credit totals are equal. This does not verify account selection, documentation, tax or period.",
     debit: d,
     credit: c,
   };
@@ -127,7 +132,8 @@ export function assessAccountEvidenceLine(line: AccountEvidenceLine): {
   ) {
     return {
       status: "unavailable",
-      explanation: "An amount exceeds exact browser integer precision. Review the full posted-ledger report.",
+      explanation:
+        "An amount exceeds exact browser integer precision. Review the full posted-ledger report.",
     };
   }
   const d = BigInt(line.debit_minor);
@@ -135,11 +141,13 @@ export function assessAccountEvidenceLine(line: AccountEvidenceLine): {
   if (d < 0n || c < 0n || (d > 0n && c > 0n) || (d === 0n && c === 0n)) {
     return {
       status: "review",
-      explanation: "This displayed ledger line has unusual debit/credit columns; inspect its journal before drawing conclusions.",
+      explanation:
+        "This displayed ledger line has unusual debit/credit columns; inspect its journal before drawing conclusions.",
     };
   }
   return {
     status: "ordinary",
-    explanation: "A posted ledger movement, not independent evidence of correct classification or reconciliation.",
+    explanation:
+      "A posted ledger movement, not independent evidence of correct classification or reconciliation.",
   };
 }

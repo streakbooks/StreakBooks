@@ -16,7 +16,9 @@ describe("ledger-only truncate gate", () => {
   });
 
   it("assert throws when truncated", () => {
-    expect(() => assertLedgerOnlyReviewable(LEDGER_ONLY_REVIEW_CAP + 1)).toThrow(/Narrow the statement date/i);
+    expect(() => assertLedgerOnlyReviewable(LEDGER_ONLY_REVIEW_CAP + 1)).toThrow(
+      /Narrow the statement date/i,
+    );
     expect(() => assertLedgerOnlyReviewable(LEDGER_ONLY_REVIEW_CAP)).not.toThrow();
   });
 });

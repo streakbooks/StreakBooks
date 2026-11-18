@@ -1,15 +1,8 @@
 import { Button } from "@/components/ui/button";
-import {
-  canStartMessagingMedia,
-  messagingVoiceVideoDisclosure,
-} from "@/lib/messaging/voice-video";
+import { canStartMessagingMedia, messagingVoiceVideoDisclosure } from "@/lib/messaging/voice-video";
 import { notify } from "@/lib/notify";
 
-export function MessagingVoiceVideoPanel({
-  allowVoiceVideo,
-}: {
-  allowVoiceVideo: boolean;
-}) {
+export function MessagingVoiceVideoPanel({ allowVoiceVideo }: { allowVoiceVideo: boolean }) {
   return (
     <div className="space-y-2 rounded-lg border border-dashed bg-muted/20 p-3">
       <h3 className="text-sm font-semibold">Voice / video</h3>
@@ -27,10 +20,7 @@ export function MessagingVoiceVideoPanel({
                 capability,
                 providerConfigured: false,
               });
-              notify.info(
-                capability === "voice_call" ? "Voice call" : "Video call",
-                result.reason,
-              );
+              notify.info(capability === "voice_call" ? "Voice call" : "Video call", result.reason);
             }}
           >
             {capability === "voice_call" ? "Start voice" : "Start video"}

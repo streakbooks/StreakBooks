@@ -50,10 +50,33 @@ describe("exit settlement helpers", () => {
       mapExpenseExitOutstanding({
         employee_user_id: "u1",
         open_advances: [
-          { id: "a1", advance_number: "A", remaining_minor: 1000, currency_code: "USD", status: "issued", version: 1 },
-          { id: "a2", advance_number: "B", remaining_minor: 500, currency_code: "USD", status: "partially_settled", version: 1 },
+          {
+            id: "a1",
+            advance_number: "A",
+            remaining_minor: 1000,
+            currency_code: "USD",
+            status: "issued",
+            version: 1,
+          },
+          {
+            id: "a2",
+            advance_number: "B",
+            remaining_minor: 500,
+            currency_code: "USD",
+            status: "partially_settled",
+            version: 1,
+          },
         ],
-        open_claims: [{ id: "c1", claim_number: "E", approval_status: "draft", reimbursement_status: "not_eligible", total_minor: 1, claim_currency: "USD" }],
+        open_claims: [
+          {
+            id: "c1",
+            claim_number: "E",
+            approval_status: "draft",
+            reimbursement_status: "not_eligible",
+            total_minor: 1,
+            claim_currency: "USD",
+          },
+        ],
         open_card_transactions: [],
       }),
     );

@@ -1,7 +1,12 @@
 import type { AssetRegisterSort } from "./register-view";
 
 export const FIXED_ASSET_SECTIONS = [
-  "dashboard", "register", "depreciation", "types", "reconciliation", "bill-review",
+  "dashboard",
+  "register",
+  "depreciation",
+  "types",
+  "reconciliation",
+  "bill-review",
 ] as const;
 export type FixedAssetSection = (typeof FIXED_ASSET_SECTIONS)[number];
 
@@ -31,7 +36,7 @@ export function parseFixedAssetRegisterSearch(
   if (typeof q === "string" && q.length > 0 && q.length <= 120) result.q = q;
   const status = raw["status"];
   if (typeof status === "string" && STATUSES.has(status)) {
-    result.status = status as "all" | "active" | "disposed";
+    result.status = status as NonNullable<FixedAssetRegisterSearch["status"]>;
   }
   for (const key of ["typeId", "accountId"] as const) {
     const id = raw[key];

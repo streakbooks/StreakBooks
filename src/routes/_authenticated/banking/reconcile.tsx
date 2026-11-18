@@ -484,8 +484,8 @@ function Reconcile() {
                 <span>
                   Reconcile the statement dated {statementDate} with closing balance{" "}
                   {money(Number(closingMinor))}. This will mark {tickedTxnIds.length} bank
-                  transaction(s) and {tickedLineIds.length} journal line(s) as reconciled.
-                  The difference must remain zero. Reopening is a separate controlled action.
+                  transaction(s) and {tickedLineIds.length} journal line(s) as reconciled. The
+                  difference must remain zero. Reopening is a separate controlled action.
                 </span>
               }
               confirmLabel="Complete reconciliation"
@@ -494,7 +494,9 @@ function Reconcile() {
                 if (canComplete && !completeM.isPending) completeM.mutate();
               }}
             >
-              {completeM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" aria-hidden="true" /> : null}
+              {completeM.isPending ? (
+                <Loader2 className="mr-1 size-4 animate-spin" aria-hidden="true" />
+              ) : null}
               Complete reconciliation
             </ConfirmButton>
             {summary && !summary.balanced ? (

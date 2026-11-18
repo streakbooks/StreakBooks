@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,13 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
@@ -30,11 +25,7 @@ import {
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import {
-  getHrEmployee,
-  listHrOrgUnits,
-  upsertHrEmployeeProfile,
-} from "@/lib/hr/hr.functions";
+import { getHrEmployee, listHrOrgUnits, upsertHrEmployeeProfile } from "@/lib/hr/hr.functions";
 import { HR_WORK_ARRANGEMENTS } from "@/lib/hr/types";
 
 type ProfileDraft = {
@@ -187,7 +178,10 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
   if (!detailQ.data) {
     return (
       <RecordWorkspace title="Employee" description="HR profile">
-        <EmptyState title="Employee not found" description="Return to the directory and try again." />
+        <EmptyState
+          title="Employee not found"
+          description="Return to the directory and try again."
+        />
       </RecordWorkspace>
     );
   }
@@ -212,11 +206,7 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
             </Link>
           </Button>
           {canManage ? (
-            <Button
-              type="button"
-              onClick={() => saveMut.mutate()}
-              disabled={saveMut.isPending}
-            >
+            <Button type="button" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
               {saveMut.isPending ? "Saving…" : "Save HR profile"}
             </Button>
           ) : null}
@@ -280,7 +270,7 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
             </div>
             <div className="space-y-1">
               <Label htmlFor="workArrangement">Work arrangement</Label>
-              <Select
+              <RecordLookupSelect
                 value={draft.workArrangement}
                 disabled={!canManage}
                 onValueChange={(value) => setDraft((d) => ({ ...d, workArrangement: value }))}
@@ -295,11 +285,11 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="departmentId">Department</Label>
-              <Select
+              <RecordLookupSelect
                 value={draft.departmentId || "__none"}
                 disabled={!canManage}
                 onValueChange={(value) =>
@@ -317,11 +307,11 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="designationId">Designation</Label>
-              <Select
+              <RecordLookupSelect
                 value={draft.designationId || "__none"}
                 disabled={!canManage}
                 onValueChange={(value) =>
@@ -339,11 +329,11 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="locationId">Location</Label>
-              <Select
+              <RecordLookupSelect
                 value={draft.locationId || "__none"}
                 disabled={!canManage}
                 onValueChange={(value) =>
@@ -361,7 +351,7 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="probationEndDate">Probation end</Label>

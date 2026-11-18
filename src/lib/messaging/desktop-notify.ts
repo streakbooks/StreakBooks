@@ -28,11 +28,7 @@ export function shouldShowMessagingDesktopNotification(
   if (permission !== "granted") return false;
   if (opts.pushEnabled === false) return false;
   if (
-    isWithinMessagingQuietHours(
-      opts.quietHoursStart,
-      opts.quietHoursEnd,
-      opts.now ?? new Date(),
-    )
+    isWithinMessagingQuietHours(opts.quietHoursStart, opts.quietHoursEnd, opts.now ?? new Date())
   ) {
     return false;
   }

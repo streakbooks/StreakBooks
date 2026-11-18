@@ -43,22 +43,23 @@ export function AppStoreMyAppsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="My Apps" description="App Store"
-    >
-      <EmptyState
+      <ListWorkspace title="My Apps" description="App Store">
+        <EmptyState
           title="No access"
           description="Requires App Store view or install permission."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
   if (catalogue.isLoading) {
     return (
-      <ListWorkspace title="My Apps" description="Installed and requested applications."
-      subnav={<AppStoreSubnav current="my-apps"/>}
-    >
-      <LoadingState />
-    </ListWorkspace>
+      <ListWorkspace
+        title="My Apps"
+        description="Installed and requested applications."
+        subnav={<AppStoreSubnav current="my-apps" />}
+      >
+        <LoadingState />
+      </ListWorkspace>
     );
   }
   if (catalogue.isError) {
@@ -76,16 +77,17 @@ export function AppStoreMyAppsPage() {
   );
 
   return (
-      <ListWorkspace title="My Apps"
-        description="Organisation installations and requests. Live connection and sync actions arrive after verified E2E connectors."
-        actions={
-          <Button asChild size="sm">
-            <Link to="/app-store/$section" params={{ section: "explore" }}>
-              Browse apps
-            </Link>
-          </Button>
-        }
-      subnav={<AppStoreSubnav current="my-apps"/>}
+    <ListWorkspace
+      title="My Apps"
+      description="Organisation installations and requests. Live connection and sync actions arrive after verified E2E connectors."
+      actions={
+        <Button asChild size="sm">
+          <Link to="/app-store/$section" params={{ section: "explore" }}>
+            Browse apps
+          </Link>
+        </Button>
+      }
+      subnav={<AppStoreSubnav current="my-apps" />}
     >
       {rows.length === 0 ? (
         <EmptyState
@@ -138,5 +140,5 @@ export function AppStoreMyAppsPage() {
         </div>
       )}
     </ListWorkspace>
-    );
+  );
 }

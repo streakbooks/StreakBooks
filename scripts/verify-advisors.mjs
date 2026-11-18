@@ -33,11 +33,7 @@ function run(command, args, label) {
 run(npmCmd, ["run", "typecheck"], "TypeScript");
 run(npmCmd, ["run", "check:ui"], "UI route contracts");
 run(npmCmd, ["run", "check:bundle"], "Client bundle boundaries");
-run(
-  npmCmd,
-  ["run", "test", "--", "--run", "src/lib/advisors"],
-  "Advisors unit tests",
-);
+run(npmCmd, ["run", "test", "--", "--run", "src/lib/advisors"], "Advisors unit tests");
 run(
   npxCmd,
   [

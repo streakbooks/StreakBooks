@@ -38,10 +38,12 @@ export async function uploadMessagingAttachment(input: {
     fileName: input.file.name,
   });
 
-  const { error } = await supabase.storage.from(MESSAGING_ATTACHMENTS_BUCKET).upload(storagePath, input.file, {
-    ...(input.file.type ? { contentType: input.file.type } : {}),
-    upsert: false,
-  });
+  const { error } = await supabase.storage
+    .from(MESSAGING_ATTACHMENTS_BUCKET)
+    .upload(storagePath, input.file, {
+      ...(input.file.type ? { contentType: input.file.type } : {}),
+      upsert: false,
+    });
   if (error) {
     if (/bucket not found/i.test(error.message)) {
       throw new Error("Messaging file storage is not set up yet. Apply the messaging migrations.");
@@ -71,7 +73,10 @@ export async function uploadMessagingAttachment(input: {
   }
 }
 
-export async function createMessagingAttachmentSignedUrl(storagePath: string, downloadName?: string) {
+export async function createMessagingAttachmentSignedUrl(
+  storagePath: string,
+  downloadName?: string,
+) {
   const { data, error } = await supabase.storage
     .from(MESSAGING_ATTACHMENTS_BUCKET)
     .createSignedUrl(storagePath, 120, downloadName ? { download: downloadName } : undefined);

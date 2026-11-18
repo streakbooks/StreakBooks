@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -12,13 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -40,10 +35,7 @@ import {
   listExpensePettyCashFloats,
   saveExpensePettyCashFloat,
 } from "@/lib/expenses/expenses.functions";
-import {
-  canFundPettyCashFloat,
-  replenishAmountMinor,
-} from "@/lib/expenses/petty-cash";
+import { canFundPettyCashFloat, replenishAmountMinor } from "@/lib/expenses/petty-cash";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import type { Permission } from "@/lib/permissions";
 
@@ -121,11 +113,7 @@ export function ExpenseManagementPettyCashPage() {
   });
 
   const fundMut = useMutation({
-    mutationFn: async (input: {
-      id: string;
-      version: number;
-      amountMinor: number;
-    }) => {
+    mutationFn: async (input: { id: string; version: number; amountMinor: number }) => {
       if (!bankGlAccountId) throw new Error("Choose a bank account first.");
       return fundFloat({
         data: {
@@ -172,31 +160,35 @@ export function ExpenseManagementPettyCashPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Petty Cash" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="petty-cash"/>}
-    >
-      <EmptyState
+      <ListWorkspace
+        title="Petty Cash"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="petty-cash" />}
+      >
+        <EmptyState
           title="No access"
           description="Ask an administrator for expenses.manage_advances or expenses.view."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
   const migrationMissing =
-    floatsQ.error &&
-    String(floatsQ.error.message ?? "").includes(EXPENSE_PETTY_CASH_MIGRATION);
+    floatsQ.error && String(floatsQ.error.message ?? "").includes(EXPENSE_PETTY_CASH_MIGRATION);
   const pettyConfigured = Boolean(settingsQ.data?.pettyCashAccountId);
 
   return (
-      <ListWorkspace title="Petty Cash"
-        description="Maintain office floats, fund from bank, and settle spends as company-paid claims."
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/$section" params={{ section: "settings" }}>Settings</Link>
-          </Button>
-        }
-      subnav={<ExpenseManagementSubnav current="petty-cash"/>}
+    <ListWorkspace
+      title="Petty Cash"
+      description="Maintain office floats, fund from bank, and settle spends as company-paid claims."
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/expense-management/$section" params={{ section: "settings" }}>
+            Settings
+          </Link>
+        </Button>
+      }
+      subnav={<ExpenseManagementSubnav current="petty-cash" />}
     >
       {migrationMissing ? (
         <Alert className="mb-6" variant="destructive">
@@ -209,8 +201,8 @@ export function ExpenseManagementPettyCashPage() {
         <Alert className="mb-6">
           <AlertTitle>Petty cash account not configured</AlertTitle>
           <AlertDescription>
-            Set the petty cash asset account under Expenses settings before funding
-            floats. Company-paid claims credit that account when posted.
+            Set the petty cash asset account under Expenses settings before funding floats.
+            Company-paid claims credit that account when posted.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -230,11 +222,7 @@ export function ExpenseManagementPettyCashPage() {
             <div className="grid gap-4 md:grid-cols-3">
               <div className="grid gap-2">
                 <Label htmlFor="pc-name">Name</Label>
-                <Input
-                  id="pc-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
+                <Input id="pc-name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="pc-target">Target amount ({currency})</Label>
@@ -259,7 +247,7 @@ export function ExpenseManagementPettyCashPage() {
           <section className="mb-6 grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
               <Label>Bank account for funding</Label>
-              <Select value={bankGlAccountId} onValueChange={setBankGlAccountId}>
+              <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select bank / cash account" />
                 </SelectTrigger>
@@ -270,7 +258,7 @@ export function ExpenseManagementPettyCashPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="pc-fund-amt">Custom fund amount ({currency})</Label>
@@ -320,12 +308,8 @@ export function ExpenseManagementPettyCashPage() {
                     <div className="font-medium">{float.floatNumber}</div>
                     <div className="text-sm text-muted-foreground">{float.name}</div>
                   </TableCell>
-                  <TableCell>
-                    {fromMinorUnits(float.balanceMinor, float.currencyCode)}
-                  </TableCell>
-                  <TableCell>
-                    {fromMinorUnits(float.targetMinor, float.currencyCode)}
-                  </TableCell>
+                  <TableCell>{fromMinorUnits(float.balanceMinor, float.currencyCode)}</TableCell>
+                  <TableCell>{fromMinorUnits(float.targetMinor, float.currencyCode)}</TableCell>
                   <TableCell>
                     <Badge variant={float.status === "active" ? "default" : "secondary"}>
                       {float.status}
@@ -337,9 +321,7 @@ export function ExpenseManagementPettyCashPage() {
                         {gap > 0 ? (
                           <Button
                             size="sm"
-                            disabled={
-                              fundMut.isPending || !bankGlAccountId || !pettyConfigured
-                            }
+                            disabled={fundMut.isPending || !bankGlAccountId || !pettyConfigured}
                             onClick={() =>
                               fundMut.mutate({
                                 id: float.id,
@@ -355,9 +337,7 @@ export function ExpenseManagementPettyCashPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={
-                              fundMut.isPending || !bankGlAccountId || !pettyConfigured
-                            }
+                            disabled={fundMut.isPending || !bankGlAccountId || !pettyConfigured}
                             onClick={() => {
                               const amountMinor = Number(
                                 parseMinorOrThrow(fundAmount, "Fund amount"),
@@ -379,9 +359,7 @@ export function ExpenseManagementPettyCashPage() {
                         size="sm"
                         variant="outline"
                         disabled={closeMut.isPending}
-                        onClick={() =>
-                          closeMut.mutate({ id: float.id, version: float.version })
-                        }
+                        onClick={() => closeMut.mutate({ id: float.id, version: float.version })}
                       >
                         Close
                       </Button>

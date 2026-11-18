@@ -31,7 +31,10 @@ export function canReimburseClaim(input: {
       "partially_paid",
     ].includes(input.reimbursementStatus)
   ) {
-    return { ok: false, error: `Claim is not open for reimbursement (${input.reimbursementStatus}).` };
+    return {
+      ok: false,
+      error: `Claim is not open for reimbursement (${input.reimbursementStatus}).`,
+    };
   }
   if (input.reimbursableMinor <= 0) {
     return { ok: false, error: "Claim has no reimbursable amount." };
@@ -40,7 +43,10 @@ export function canReimburseClaim(input: {
   if (reimbursed >= input.reimbursableMinor) {
     return { ok: false, error: "Claim is already fully reimbursed." };
   }
-  if (input.reimbursementChannel === "payroll" && input.reimbursementStatus === "payment_initiated") {
+  if (
+    input.reimbursementChannel === "payroll" &&
+    input.reimbursementStatus === "payment_initiated"
+  ) {
     return { ok: false, error: "Claim is queued for payroll. Cancel payroll queue first." };
   }
   return { ok: true };
@@ -62,7 +68,9 @@ export type BatchReimburseResult = {
 
 export function mapBatchReimburseResult(row: unknown): BatchReimburseResult {
   const r =
-    row && typeof row === "object" ? (row as Record<string, unknown>) : ({} as Record<string, unknown>);
+    row && typeof row === "object"
+      ? (row as Record<string, unknown>)
+      : ({} as Record<string, unknown>);
   const results = Array.isArray(r["results"]) ? r["results"] : [];
   return {
     paidCount: typeof r["paid_count"] === "number" ? r["paid_count"] : Number(r["paid_count"] ?? 0),
@@ -106,7 +114,17 @@ export function buildReimbursementJournalLines(input: {
   bankAccountId: string;
   amountMinor: number;
   claimNumber: string;
-}): { ok: true; lines: Array<{ accountId: string; debitMinor: number; creditMinor: number; description: string }> } | { ok: false; error: string } {
+}):
+  | {
+      ok: true;
+      lines: Array<{
+        accountId: string;
+        debitMinor: number;
+        creditMinor: number;
+        description: string;
+      }>;
+    }
+  | { ok: false; error: string } {
   if (!input.payableAccountId || !input.bankAccountId) {
     return { ok: false, error: "Payable and bank accounts are required." };
   }

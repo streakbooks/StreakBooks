@@ -85,3 +85,19 @@ describe("shared lookup migration adapter", () => {
     ]);
   });
 });
+
+describe("declarative trigger layout", () => {
+  it("preserves shared trigger sizing without inheriting popup or option styles", async () => {
+    const { SelectTrigger, SelectContent, SelectItem } = await import("@/components/ui/select");
+    const result = declaredLookupOptions([
+      createElement(SelectTrigger, { className: "w-48", "aria-label": "Account" }),
+      createElement(
+        SelectContent,
+        { className: "max-h-96" },
+        createElement(SelectItem, { value: "a", className: "text-red-500" }, "Account A"),
+      ),
+    ]);
+    expect(result.triggerClassName).toBe("w-48");
+    expect(result.options).toEqual([{ id: "a", label: "Account A" }]);
+  });
+});

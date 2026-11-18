@@ -160,7 +160,14 @@ export function parseActionCenterSearch(raw: Record<string, unknown>): ActionCen
 
 /** Searches are literal: SQL LIKE wildcard characters must not widen the match. */
 export function actionNotificationSearchPattern(search: string): string {
-  return "%" + search.trim().toLocaleLowerCase().replace(/[\\%_]/g, (ch) => "\\" + ch) + "%";
+  return (
+    "%" +
+    search
+      .trim()
+      .toLocaleLowerCase()
+      .replace(/[\\%_]/g, (ch) => "\\" + ch) +
+    "%"
+  );
 }
 
 export type ActionCenterFilters = {

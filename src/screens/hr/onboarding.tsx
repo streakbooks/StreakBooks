@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -18,13 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -341,13 +336,14 @@ export function HrOnboardingPage() {
                       </TableCell>
                       <TableCell>
                         {canManage ? (
-                          <Select
+                          <RecordLookupSelect
                             value={task.status}
-                            onValueChange={(status) =>
-                              taskMut.mutate({ taskId: task.id, status })
-                            }
+                            onValueChange={(status) => taskMut.mutate({ taskId: task.id, status })}
                           >
-                            <SelectTrigger className="w-[140px]" aria-label={`Update ${task.title}`}>
+                            <SelectTrigger
+                              className="w-[140px]"
+                              aria-label={`Update ${task.title}`}
+                            >
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -357,7 +353,7 @@ export function HrOnboardingPage() {
                                 </SelectItem>
                               ))}
                             </SelectContent>
-                          </Select>
+                          </RecordLookupSelect>
                         ) : null}
                       </TableCell>
                     </TableRow>
@@ -416,7 +412,10 @@ export function HrOnboardingPage() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Template</Label>
-              <Select value={templateId || "__none"} onValueChange={(v) => setTemplateId(v === "__none" ? "" : v)}>
+              <RecordLookupSelect
+                value={templateId || "__none"}
+                onValueChange={(v) => setTemplateId(v === "__none" ? "" : v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Optional template" />
                 </SelectTrigger>
@@ -428,11 +427,11 @@ export function HrOnboardingPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label>Employee</Label>
-              <Select
+              <RecordLookupSelect
                 value={employeeId || "__none"}
                 onValueChange={(v) => setEmployeeId(v === "__none" ? "" : v)}
               >
@@ -447,7 +446,7 @@ export function HrOnboardingPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="join-date">Target join date</Label>
@@ -463,11 +462,7 @@ export function HrOnboardingPage() {
             <Button type="button" variant="outline" onClick={() => setCaseOpen(false)}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              disabled={caseMut.isPending}
-              onClick={() => caseMut.mutate()}
-            >
+            <Button type="button" disabled={caseMut.isPending} onClick={() => caseMut.mutate()}>
               {caseMut.isPending ? "Creating…" : "Create case"}
             </Button>
           </DialogFooter>

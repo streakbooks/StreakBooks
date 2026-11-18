@@ -49,7 +49,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(loadCashProfitLossInput).mockImplementation(async () => cashInputFixture());
   vi.mocked(callRpc).mockImplementation(async (_sb, name, args) => {
-    if (name === "record_audit_event") return true;
+    if (name === "record_app_audit_event") return true;
     const f = reportingFactsFixture();
     f.accounts = cashInputFixture().accounts;
     f.from = (args as { _from: string })._from;

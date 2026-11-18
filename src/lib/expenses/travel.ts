@@ -57,10 +57,7 @@ export function inclusiveTravelDays(startDate: string, endDate: string): number 
   return Math.floor((end - start) / 86_400_000) + 1;
 }
 
-export function calculatePerDiemNetMinor(
-  dayCount: number,
-  rateMinorPerDay: number,
-): number {
+export function calculatePerDiemNetMinor(dayCount: number, rateMinorPerDay: number): number {
   if (!Number.isFinite(dayCount) || dayCount <= 0) {
     throw new Error("Travel day count must be greater than zero.");
   }
@@ -82,15 +79,12 @@ export function isPerDiemRateEffectiveOn(
 
 export function buildPerDiemClaimLine(input: ExpensePerDiemLineDraft) {
   const dayCount =
-    input.dayCount ??
-    inclusiveTravelDays(input.travelStartDate, input.travelEndDate);
+    input.dayCount ?? inclusiveTravelDays(input.travelStartDate, input.travelEndDate);
   const netMinor = calculatePerDiemNetMinor(dayCount, input.rate.rateMinorPerDay);
   const taxMinor = input.taxMinor ?? 0;
   const grossMinor = netMinor + taxMinor;
   const destination =
-    input.destination?.trim() ||
-    input.rate.locationLabel?.trim() ||
-    input.rate.name;
+    input.destination?.trim() || input.rate.locationLabel?.trim() || input.rate.name;
 
   return {
     expenseDate: input.expenseDate,

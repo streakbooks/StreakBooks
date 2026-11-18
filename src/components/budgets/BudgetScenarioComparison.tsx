@@ -6,15 +6,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { monthLabel } from "@/lib/budgets/budget-math";
-import type {
-  ScenarioCell,
-  ScenarioRow,
-  ScenarioSection,
-} from "@/lib/budgets/budget-scenarios";
-import {
-  compareBudgetScenarios,
-  type BudgetSummary,
-} from "@/lib/budgets/budgets.functions";
+import type { ScenarioCell, ScenarioRow, ScenarioSection } from "@/lib/budgets/budget-scenarios";
+import { compareBudgetScenarios, type BudgetSummary } from "@/lib/budgets/budgets.functions";
 import { csvFilename, csvMoney, downloadCsv, toCsv } from "@/lib/reports/csv";
 import { ErrorState, LoadingState } from "@/components/common/states";
 import { LookupSelect } from "@/components/lookup";
@@ -71,14 +64,13 @@ export function BudgetScenarioComparison({
   const reportQuery = useQuery({
     queryKey: ["budget-scenario-comparison", companyId, baselineId, scenarioId],
     enabled: Boolean(companyId && baselineId && scenarioId && baselineId !== scenarioId),
-    queryFn: () =>
-      compareFn({ data: { companyId, baselineId, scenarioId } }),
+    queryFn: () => compareFn({ data: { companyId, baselineId, scenarioId } }),
   });
 
   const data = reportQuery.data;
   const comparison = data?.comparison;
   const selectedCell = (row: { annual: ScenarioCell; months: ScenarioCell[] }): ScenarioCell =>
-    focus === "annual" ? row.annual : row.months[Number(focus)] ?? row.annual;
+    focus === "annual" ? row.annual : (row.months[Number(focus)] ?? row.annual);
   const money = (minor: number) => fmt.money(minor, data?.currency ?? fmt.baseCurrency);
   const matches = (row: ScenarioRow) => {
     const text = `${row.code} ${row.name}`.toLocaleLowerCase();
@@ -88,13 +80,9 @@ export function BudgetScenarioComparison({
     );
   };
   const baselinePeriod =
-    !data || focus === "annual"
-      ? "Full year"
-      : monthLabel(data.baselineMonths[Number(focus)]!);
+    !data || focus === "annual" ? "Full year" : monthLabel(data.baselineMonths[Number(focus)]!);
   const scenarioPeriod =
-    !data || focus === "annual"
-      ? "Full year"
-      : monthLabel(data.scenarioMonths[Number(focus)]!);
+    !data || focus === "annual" ? "Full year" : monthLabel(data.scenarioMonths[Number(focus)]!);
 
   const exportComparison = () => {
     if (!data || !comparison) return;
@@ -111,17 +99,16 @@ export function BudgetScenarioComparison({
       "Annual comparison",
       "Annual favourable variance",
     ];
-    const columns = (row: { annual: ScenarioCell; months: ScenarioCell[] }) =>
-      [
-        ...row.months.flatMap((cell) => [
-          csvMoney(cell.baselineMinor, data.currency),
-          csvMoney(cell.scenarioMinor, data.currency),
-          csvMoney(cell.varianceMinor, data.currency),
-        ]),
-        csvMoney(row.annual.baselineMinor, data.currency),
-        csvMoney(row.annual.scenarioMinor, data.currency),
-        csvMoney(row.annual.varianceMinor, data.currency),
-      ];
+    const columns = (row: { annual: ScenarioCell; months: ScenarioCell[] }) => [
+      ...row.months.flatMap((cell) => [
+        csvMoney(cell.baselineMinor, data.currency),
+        csvMoney(cell.scenarioMinor, data.currency),
+        csvMoney(cell.varianceMinor, data.currency),
+      ]),
+      csvMoney(row.annual.baselineMinor, data.currency),
+      csvMoney(row.annual.scenarioMinor, data.currency),
+      csvMoney(row.annual.varianceMinor, data.currency),
+    ];
     const group = (label: string, section: ScenarioSection): string[][] => [
       ...section.rows.map((row) => [row.code, row.name, label, ...columns(row)]),
       ["", `Total ${label.toLowerCase()}`, label, ...columns(section)],
@@ -189,7 +176,10 @@ export function BudgetScenarioComparison({
   );
 
   return (
-    <section className="my-6 space-y-4 rounded-lg border p-4" aria-label="Budget scenario comparison">
+    <section
+      className="my-6 space-y-4 rounded-lg border p-4"
+      aria-label="Budget scenario comparison"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Compare budget scenarios</h2>
@@ -273,11 +263,11 @@ export function BudgetScenarioComparison({
         <>
           <Alert>
             <AlertDescription>
-              Baseline: {data.baselineBudget.name} ({fmt.date(data.baselineBudget.fiscal_year_start)})
-              {" · "}Comparison: {data.scenarioBudget.name} (
-              {fmt.date(data.scenarioBudget.fiscal_year_start)}). Months are aligned by fiscal-month
-              position, not by calendar date. Positive variance means higher income, lower expense
-              or improved net profit.
+              Baseline: {data.baselineBudget.name} (
+              {fmt.date(data.baselineBudget.fiscal_year_start)}){" · "}Comparison:{" "}
+              {data.scenarioBudget.name} ({fmt.date(data.scenarioBudget.fiscal_year_start)}). Months
+              are aligned by fiscal-month position, not by calendar date. Positive variance means
+              higher income, lower expense or improved net profit.
             </AlertDescription>
           </Alert>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -315,12 +305,14 @@ export function BudgetScenarioComparison({
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            {comparison.accountCount} account(s) across both budgets. The totals always include
-            all accounts, including historical accounts no longer postable, regardless of filters.
+            {comparison.accountCount} account(s) across both budgets. The totals always include all
+            accounts, including historical accounts no longer postable, regardless of filters.
           </p>
           {comparison.accountCount === 0 ? (
             <Alert>
-              <AlertDescription>Both budgets are empty. Add monthly amounts to compare.</AlertDescription>
+              <AlertDescription>
+                Both budgets are empty. Add monthly amounts to compare.
+              </AlertDescription>
             </Alert>
           ) : (
             <div className="overflow-x-auto rounded-md border">
@@ -328,12 +320,8 @@ export function BudgetScenarioComparison({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Account</TableHead>
-                    <TableHead className="text-right">
-                      Baseline: {baselinePeriod}
-                    </TableHead>
-                    <TableHead className="text-right">
-                      Comparison: {scenarioPeriod}
-                    </TableHead>
+                    <TableHead className="text-right">Baseline: {baselinePeriod}</TableHead>
+                    <TableHead className="text-right">Comparison: {scenarioPeriod}</TableHead>
                     <TableHead className="text-right">Favourable variance</TableHead>
                     <TableHead className="text-right">Variance %</TableHead>
                   </TableRow>

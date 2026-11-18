@@ -184,7 +184,7 @@ export const registerAttachment = createServerFn({ method: "POST" })
       supabase as unknown as {
         rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
       }
-    ).rpc("record_audit_event", {
+    ).rpc("record_app_audit_event", {
       _company_id: data.companyId,
       _action: "document.attachment.upload",
       _entity_type: data.entityType,
@@ -322,7 +322,7 @@ export const deleteAttachment = createServerFn({ method: "POST" })
       supabase as unknown as {
         rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
       }
-    ).rpc("record_audit_event", {
+    ).rpc("record_app_audit_event", {
       _company_id: data.companyId,
       _action: "document.attachment.delete",
       _entity_type: r.entity_type,

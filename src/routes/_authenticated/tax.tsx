@@ -223,20 +223,20 @@ function TaxConfigPage() {
     input_tax_account_id: string | null;
     non_recoverable_tax_account_id: string | null;
   } | null;
-  const registrationDirty = Boolean(persisted) && (
-    regime !== (persisted?.tax_regime ?? "none") ||
-    jurisdiction.trim().toUpperCase() !== (persisted?.jurisdiction_code ?? "") ||
-    regNumber.trim() !== (persisted?.registration_number ?? "") ||
-    regDate !== (persisted?.registration_date ?? "") ||
-    includeTax !== Boolean(persisted?.prices_include_tax) ||
-    basis !== (persisted?.tax_basis ?? "invoice") ||
-    filing !== (persisted?.filing_frequency ?? "")
-  );
-  const mappingsDirty = Boolean(persisted) && (
-    outputAcc !== (persisted?.output_tax_account_id ?? "") ||
-    inputAcc !== (persisted?.input_tax_account_id ?? "") ||
-    nonRecAcc !== (persisted?.non_recoverable_tax_account_id ?? "")
-  );
+  const registrationDirty =
+    Boolean(persisted) &&
+    (regime !== (persisted?.tax_regime ?? "none") ||
+      jurisdiction.trim().toUpperCase() !== (persisted?.jurisdiction_code ?? "") ||
+      regNumber.trim() !== (persisted?.registration_number ?? "") ||
+      regDate !== (persisted?.registration_date ?? "") ||
+      includeTax !== Boolean(persisted?.prices_include_tax) ||
+      basis !== (persisted?.tax_basis ?? "invoice") ||
+      filing !== (persisted?.filing_frequency ?? ""));
+  const mappingsDirty =
+    Boolean(persisted) &&
+    (outputAcc !== (persisted?.output_tax_account_id ?? "") ||
+      inputAcc !== (persisted?.input_tax_account_id ?? "") ||
+      nonRecAcc !== (persisted?.non_recoverable_tax_account_id ?? ""));
   const resetRegistration = () => {
     if (!persisted) return;
     setRegime(persisted.tax_regime ?? "none");
@@ -367,7 +367,9 @@ function TaxConfigPage() {
           <div className="grid max-w-2xl gap-4 rounded-md border p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-medium">Organisation tax settings</h2>
-              <Badge variant="outline">{!canTax ? "View only" : registrationDirty ? "Unsaved changes" : "Saved"}</Badge>
+              <Badge variant="outline">
+                {!canTax ? "View only" : registrationDirty ? "Unsaved changes" : "Saved"}
+              </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
               Suggested regime for {orgCountry}:{" "}
@@ -401,11 +403,20 @@ function TaxConfigPage() {
               </div>
               <div className="space-y-1">
                 <Label>Registration number</Label>
-                <Input value={regNumber} disabled={!canTax} onChange={(e) => setRegNumber(e.target.value)} />
+                <Input
+                  value={regNumber}
+                  disabled={!canTax}
+                  onChange={(e) => setRegNumber(e.target.value)}
+                />
               </div>
               <div className="space-y-1">
                 <Label>Registration date</Label>
-                <Input type="date" value={regDate} disabled={!canTax} onChange={(e) => setRegDate(e.target.value)} />
+                <Input
+                  type="date"
+                  value={regDate}
+                  disabled={!canTax}
+                  onChange={(e) => setRegDate(e.target.value)}
+                />
               </div>
               <div className="space-y-1">
                 <Label>Tax basis (reporting preference)</Label>
@@ -454,7 +465,12 @@ function TaxConfigPage() {
               >
                 {registrationM.isPending ? "Saving..." : "Save registration & defaults"}
               </Button>
-              <Button size="sm" variant="outline" disabled={!registrationDirty || registrationM.isPending} onClick={resetRegistration}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!registrationDirty || registrationM.isPending}
+                onClick={resetRegistration}
+              >
                 Discard changes
               </Button>
             </div>
@@ -465,7 +481,9 @@ function TaxConfigPage() {
           <div className="grid max-w-2xl gap-4 rounded-md border p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-medium">GL mappings</h2>
-              <Badge variant="outline">{!canTax ? "View only" : mappingsDirty ? "Unsaved changes" : "Saved"}</Badge>
+              <Badge variant="outline">
+                {!canTax ? "View only" : mappingsDirty ? "Unsaved changes" : "Saved"}
+              </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
               Posting uses these accounts when set; otherwise falls back to CoA codes 2100 (output)
@@ -521,10 +539,25 @@ function TaxConfigPage() {
               </Alert>
             ) : null}
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" disabled={!canTax || !mappingsDirty || accountsQ.isPending || accountsQ.isError || mappingsM.isPending} onClick={() => mappingsM.mutate()}>
+              <Button
+                size="sm"
+                disabled={
+                  !canTax ||
+                  !mappingsDirty ||
+                  accountsQ.isPending ||
+                  accountsQ.isError ||
+                  mappingsM.isPending
+                }
+                onClick={() => mappingsM.mutate()}
+              >
                 {mappingsM.isPending ? "Saving..." : "Save mappings"}
               </Button>
-              <Button size="sm" variant="outline" disabled={!mappingsDirty || mappingsM.isPending} onClick={resetMappings}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!mappingsDirty || mappingsM.isPending}
+                onClick={resetMappings}
+              >
                 Discard changes
               </Button>
             </div>

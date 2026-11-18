@@ -1141,7 +1141,9 @@ export function NewBill({
           );
           toast.error("Journal posted — retry Authorise to link status");
         } else {
-          setFormError(`Saved as a draft, but it could not be authorised: ${result.authoriseError}`);
+          setFormError(
+            `Saved as a draft, but it could not be authorised: ${result.authoriseError}`,
+          );
           toast.error("Saved as draft — authorise failed");
         }
         setBaseline(snapshot());

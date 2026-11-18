@@ -459,7 +459,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     screenRoot: "src/screens/messages",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
     premiumStatus: "in-progress",
-    notes: "Unified messaging platform; feature-flagged via messaging_collaboration / messaging_settings.",
+    notes:
+      "Unified messaging platform; feature-flagged via messaging_collaboration / messaging_settings.",
   },
   {
     id: "ai-assistant",
@@ -570,9 +571,7 @@ export function assertRegistryMatchesNav(): string[] {
     }
   }
   if (sidebar.length !== navItems.length) {
-    failures.push(
-      `Sidebar registry count ${sidebar.length} !== navItems count ${navItems.length}`,
-    );
+    failures.push(`Sidebar registry count ${sidebar.length} !== navItems count ${navItems.length}`);
   }
   const ids = new Set<string>();
   for (const module of MODULE_REGISTRY) {

@@ -30,17 +30,18 @@ export function parseFilesListSearch(raw: Record<string, unknown>): FilesListSea
 
   const sort = raw["sort"];
   if (typeof sort === "string" && SORT.has(sort))
-    result.sort = sort as "newest" | "oldest" | "name" | "largest";
+    result.sort = sort as NonNullable<FilesListSearch["sort"]>;
 
   const view = raw["view"];
   if (typeof view === "string" && VIEWS.has(view))
-    result.view = view as "all" | "to-file" | "review";
+    result.view = view as NonNullable<FilesListSearch["view"]>;
 
   const page = raw["page"];
   if (
     (typeof page === "number" && Number.isSafeInteger(page) && page >= 0) ||
     (typeof page === "string" && /^\d{1,7}$/.test(page))
-  ) result.page = Math.min(Number(page), 1_000_000);
+  )
+    result.page = Math.min(Number(page), 1_000_000);
 
   return result;
 }

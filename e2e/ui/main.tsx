@@ -354,8 +354,82 @@ function CaptchaFixture() {
     </main>
   );
 }
+
+function LookupMigrationFixture() {
+  const [record, setRecord] = useState("");
+  const [mode, setMode] = useState("active");
+  const [applied, setApplied] = useState(0);
+  const records = [
+    { id: "member-a", name: "Alex · North", disabled: false },
+    { id: "member-b", name: "Alex · South", disabled: false },
+    { id: "member-disabled", name: "Archived member", disabled: true },
+  ];
+  return (
+    <main className="max-w-xl space-y-4 p-4">
+      <RecordLookupSelect
+        id="migrated-member"
+        aria-label="Organisation member"
+        value={record}
+        onValueChange={setRecord}
+      >
+        <option value="">All members</option>
+        <optgroup label="Team">
+          {records.map((row) => (
+            <option key={row.id} value={row.id} disabled={row.disabled}>
+              {row.name}
+            </option>
+          ))}
+        </optgroup>
+      </RecordLookupSelect>
+      <output aria-label="Selected member ID">{record || "all"}</output>
+      <RecordLookupSelect value={mode} onValueChange={setMode}>
+        <SelectTrigger aria-label="Member status" className="w-48" aria-describedby="mode-help">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {["active", "archived"].map((status) => (
+            <SelectItem key={status} value={status}>
+              {status}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </RecordLookupSelect>
+      <p id="mode-help">Status changes the view without altering records.</p>
+      <output aria-label="Selected status">{mode}</output>
+      <RecordLookupSelect
+        aria-label="Apply template"
+        value=""
+        onValueChange={(value) => {
+          if (value) setApplied((count) => count + 1);
+        }}
+      >
+        <option value="">Choose a template</option>
+        {["standard"].map((value) => (
+          <option key={value} value={value}>
+            Standard template
+          </option>
+        ))}
+      </RecordLookupSelect>
+      <output aria-label="Template applications">{applied}</output>
+      <RecordLookupSelect
+        disabled
+        aria-label="Denied selector"
+        value={record}
+        onValueChange={setRecord}
+      >
+        {records.map((row) => (
+          <option key={row.id} value={row.id}>
+            {row.name}
+          </option>
+        ))}
+      </RecordLookupSelect>
+    </main>
+  );
+}
+
 function Scenario() {
   const params = new URLSearchParams(window.location.search);
+  if (params.get("flow") === "lookup-migration") return <LookupMigrationFixture />;
   if (params.get("flow") === "captcha") return <CaptchaFixture />;
   if (params.get("flow") === "accessibility") return <AccessibilityFixture />;
   if (params.get("flow") === "checkout") return <CheckoutFixture />;

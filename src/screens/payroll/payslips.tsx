@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -171,10 +172,7 @@ export function PayrollPayslipsPage({
               variant="outline"
               disabled={filteredPayslips.length === 0}
               onClick={() =>
-                downloadCsv(
-                  "payroll-payslips-filtered.csv",
-                  payrollPayslipsToCsv(filteredPayslips),
-                )
+                downloadCsv("payroll-payslips-filtered.csv", payrollPayslipsToCsv(filteredPayslips))
               }
             >
               <Download className="mr-2 h-4 w-4" />
@@ -220,7 +218,7 @@ export function PayrollPayslipsPage({
           {employeeOptions.length > 1 || employeeIdFilter ? (
             <div className="grid gap-1.5">
               <Label htmlFor="payslip-employee-filter">Employee</Label>
-              <Select
+              <RecordLookupSelect
                 value={employeeIdFilter ?? "all"}
                 onValueChange={(value) =>
                   setSearchFilters({ employeeId: value === "all" ? null : value })
@@ -237,7 +235,7 @@ export function PayrollPayslipsPage({
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
           ) : null}
           <div className="grid gap-1.5">
@@ -350,10 +348,7 @@ export function PayrollPayslipsPage({
                     {fmt.money(payslip.snapshot.totals?.netPayMinor ?? 0, run.currency)}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">
-                    {fmt.money(
-                      payslipNetBalances(payslip).outstandingMinor,
-                      run.currency,
-                    )}
+                    {fmt.money(payslipNetBalances(payslip).outstandingMinor, run.currency)}
                   </TableCell>
                 </TableRow>
               ))}

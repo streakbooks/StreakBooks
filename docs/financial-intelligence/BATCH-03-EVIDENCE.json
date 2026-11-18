@@ -1,0 +1,137 @@
+{
+  "revision": "d99bf1aa152d196ad4b6771b9fe36d02f0dc4562",
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exit_code": 0
+    },
+    "unit": {
+      "command": "npm test -- --maxWorkers=4",
+      "exit_code": 0
+    },
+    "lint": {
+      "command": "npm run lint -- --max-warnings=0",
+      "exit_code": 0
+    },
+    "repository": {
+      "command": "npm run check:repository",
+      "exit_code": 0
+    },
+    "migrations": {
+      "command": "npm run check:migrations",
+      "exit_code": 0
+    },
+    "ui": {
+      "command": "npm run check:ui",
+      "exit_code": 0
+    },
+    "ui-resolver": {
+      "command": "node --test scripts/lib/ui-route-source.test.mjs",
+      "exit_code": 0
+    },
+    "modules": {
+      "command": "npm run check:modules",
+      "exit_code": 0
+    },
+    "navigation": {
+      "command": "npm run check:navigation",
+      "exit_code": 0
+    },
+    "lookups": {
+      "command": "npm run check:lookups",
+      "exit_code": 1
+    },
+    "banking-postgres": {
+      "command": "npm run test:banking:postgres",
+      "exit_code": 0
+    },
+    "build": {
+      "command": "npm run build",
+      "exit_code": 0
+    },
+    "bundle": {
+      "command": "npm run check:bundle",
+      "exit_code": 0
+    }
+  },
+  "date": "2026-11-17",
+  "status": "release_blocked",
+  "pull_request": "https://github.com/linkbusinessadvisory/LinkBooks/pull/251",
+  "main_snapshot": "fa57d602e9552c92e6dc77914052df467b48285d",
+  "unit": {
+    "files_passed": 582,
+    "passed": 3985,
+    "failed": 0,
+    "skipped": 0
+  },
+  "isolated_coding_memory_postgres": {
+    "passed": 59,
+    "failed": 0
+  },
+  "real_local_api": {
+    "target": "isolated localhost Supabase; real Auth and RLS",
+    "passed": 12,
+    "assertions": [
+      "Real Auth password session created",
+      "Real Auth password session created",
+      "Canonical company creation returned a company identity",
+      "Authoritative posting retries reuse the same journal",
+      "Authoritative journal is balanced",
+      "Linked approved posting becomes exactly one recommendation",
+      "Real API feedback retries deduplicate",
+      "Rejected feedback adds no learning",
+      "Preference False persists through the real API",
+      "Preference True persists through the real API",
+      "Real RLS hides another company learning evidence",
+      "Direct learning-event forgery is denied"
+    ]
+  },
+  "real_local_reversal": {
+    "target": "isolated localhost Supabase; real Auth and RLS",
+    "passed": 3,
+    "assertions": [
+      "Reversal remains on the same local endpoint",
+      "Authoritative reversals remove all fixture precedents",
+      "Reversal retains immutable learning evidence"
+    ]
+  },
+  "real_local_browser": {
+    "passed": 3,
+    "failed": 0,
+    "revision": "ab264d53",
+    "backend": "real localhost Auth/PostgREST with normal user token",
+    "viewports": [1280, 768, 375],
+    "limitations": [
+      "Focused keyboard and posting flow only",
+      "Final main integration did not rerun real browser flows",
+      "Not hosted staging or production"
+    ]
+  },
+  "lookup_architecture": {
+    "shared_lookup_declarations": 227,
+    "violations": 147
+  },
+  "isolated_migrations": {
+    "clean_replay_at_earlier_snapshot": 337,
+    "messaging_upgrade": 12,
+    "purchase_upgrade": 5,
+    "total_applied": 354,
+    "hosted_applied_by_this_session": false,
+    "final_head_single_clean_replay": false
+  },
+  "github_ci": {
+    "run_id": 44116032487,
+    "url": "https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44116032487",
+    "conclusion": "failure",
+    "job_step_summaries": 0,
+    "job_log_download": "404 BlobNotFound",
+    "cause": "not established"
+  },
+  "hosted_staging": "not executed",
+  "deployment": "not performed",
+  "production_verified": false,
+  "programme_full_acceptance": {
+    "verified": 0,
+    "total": 53
+  }
+}

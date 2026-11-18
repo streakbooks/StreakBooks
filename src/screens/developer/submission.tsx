@@ -64,11 +64,11 @@ export function DeveloperSubmissionPage() {
     return (
       <>
         <ListWorkspace title="App Submission" description="Developer portal">
-        <EmptyState
-          title="No access"
-          description="Requires developer.submit_apps or developer.manage_apps."
-        />
-    </ListWorkspace>
+          <EmptyState
+            title="No access"
+            description="Requires developer.submit_apps or developer.manage_apps."
+          />
+        </ListWorkspace>
       </>
     );
   }
@@ -80,69 +80,69 @@ export function DeveloperSubmissionPage() {
         description="Security verification checklist before third-party apps can be publicly listed or activated."
         subnav={<DeveloperSubnav current="submission" />}
       >
-      <Alert className="mb-6">
-        <AlertTitle>Fail closed</AlertTitle>
-        <AlertDescription>
-          Submitting a review never enables real customer data. Administrator approval and verified
-          E2E synchronization are still required. Incomplete checklists are rejected by the preview
-          gates below.
-        </AlertDescription>
-      </Alert>
+        <Alert className="mb-6">
+          <AlertTitle>Fail closed</AlertTitle>
+          <AlertDescription>
+            Submitting a review never enables real customer data. Administrator approval and
+            verified E2E synchronization are still required. Incomplete checklists are rejected by
+            the preview gates below.
+          </AlertDescription>
+        </Alert>
 
-      <div className="mb-6 max-w-xl space-y-3">
-        <div className="space-y-2">
-          <Label htmlFor="app-code">Marketplace app code</Label>
-          <Input
-            id="app-code"
-            value={appCode}
-            onChange={(e) => setAppCode(e.target.value)}
-            placeholder="e.g. hubdoc"
-            autoComplete="off"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="submitter-notes">Submitter notes</Label>
-          <Textarea
-            id="submitter-notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={4}
-            placeholder="Evidence links, sandbox accounts, threat model summary…"
-          />
-        </div>
-      </div>
-
-      <div className="mb-6 space-y-3">
-        <h2 className="text-lg font-semibold">Security checklist</h2>
-        {SECURITY_REVIEW_CHECKLIST.map((item) => (
-          <label key={item.key} className="flex items-start gap-3 rounded-md border p-3">
-            <Checkbox
-              checked={checks[item.key] === true}
-              onCheckedChange={(value) =>
-                setChecks((prev) => ({ ...prev, [item.key]: value === true }))
-              }
-              aria-label={item.label}
+        <div className="mb-6 max-w-xl space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="app-code">Marketplace app code</Label>
+            <Input
+              id="app-code"
+              value={appCode}
+              onChange={(e) => setAppCode(e.target.value)}
+              placeholder="e.g. hubdoc"
+              autoComplete="off"
             />
-            <span className="text-sm leading-snug">{item.label}</span>
-          </label>
-        ))}
-      </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="submitter-notes">Submitter notes</Label>
+            <Textarea
+              id="submitter-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={4}
+              placeholder="Evidence links, sandbox accounts, threat model summary…"
+            />
+          </div>
+        </div>
 
-      <Alert className="mb-6">
-        <AlertTitle>Gate preview</AlertTitle>
-        <AlertDescription>
-          {preview.reason} Can publish after admin approval path:{" "}
-          {preview.missingChecklist.length === 0 ? "checklist complete" : "blocked"}. Real-data
-          enablement from this form: never.
-        </AlertDescription>
-      </Alert>
+        <div className="mb-6 space-y-3">
+          <h2 className="text-lg font-semibold">Security checklist</h2>
+          {SECURITY_REVIEW_CHECKLIST.map((item) => (
+            <label key={item.key} className="flex items-start gap-3 rounded-md border p-3">
+              <Checkbox
+                checked={checks[item.key] === true}
+                onCheckedChange={(value) =>
+                  setChecks((prev) => ({ ...prev, [item.key]: value === true }))
+                }
+                aria-label={item.label}
+              />
+              <span className="text-sm leading-snug">{item.label}</span>
+            </label>
+          ))}
+        </div>
 
-      <Button
-        disabled={mutation.isPending || !appCode.trim() || preview.missingChecklist.length > 0}
-        onClick={() => mutation.mutate()}
-      >
-        Submit for security review
-      </Button>
+        <Alert className="mb-6">
+          <AlertTitle>Gate preview</AlertTitle>
+          <AlertDescription>
+            {preview.reason} Can publish after admin approval path:{" "}
+            {preview.missingChecklist.length === 0 ? "checklist complete" : "blocked"}. Real-data
+            enablement from this form: never.
+          </AlertDescription>
+        </Alert>
+
+        <Button
+          disabled={mutation.isPending || !appCode.trim() || preview.missingChecklist.length > 0}
+          onClick={() => mutation.mutate()}
+        >
+          Submit for security review
+        </Button>
       </ListWorkspace>
     </>
   );

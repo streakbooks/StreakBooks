@@ -47,7 +47,9 @@ describe("buildCrmAccountOverlay", () => {
   });
   it("preserves separate currencies and ignores won deals in open pipeline totals", () => {
     const rows = buildCrmAccountOverlay({
-      contacts: [{ id: "c1", name: "Customer", email: null, phone: null, kind: "customer", isActive: true }],
+      contacts: [
+        { id: "c1", name: "Customer", email: null, phone: null, kind: "customer", isActive: true },
+      ],
       leads: [],
       opportunities: [
         { id: "usd", contactId: "c1", status: "open", amountMinor: 5000, currencyCode: "USD" },

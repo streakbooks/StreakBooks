@@ -14,8 +14,7 @@ export function assertMessagingExternalPortalsAllowed(
   input: { allowCustomer?: boolean | null; allowVendor?: boolean | null },
   env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env,
 ): void {
-  const unlocking =
-    input.allowCustomer === true || input.allowVendor === true;
+  const unlocking = input.allowCustomer === true || input.allowVendor === true;
   if (!unlocking) return;
   if (messagingExternalPortalsUnlocked(env)) return;
   throw new Error(

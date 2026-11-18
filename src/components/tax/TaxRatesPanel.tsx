@@ -28,7 +28,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -80,13 +86,19 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
     queryKey: ["tax-rates", companyId],
     queryFn: () => fetchRates({ data: { companyId } }),
   });
-  const rows = (q.data ?? []) as TaxRateRow[];
-  const visibleRows = useMemo(() => rows.filter((rate) => {
-    const term = search.trim().toLocaleLowerCase();
-    const matches = !term || rate.name.toLocaleLowerCase().includes(term) ||
-      String(rate.rate_bps / 100).includes(term);
-    return matches && (statusFilter === "all" || rateStatus(rate, today) === statusFilter);
-  }), [rows, search, statusFilter, today]);
+  const rows = useMemo(() => (q.data ?? []) as TaxRateRow[], [q.data]);
+  const visibleRows = useMemo(
+    () =>
+      rows.filter((rate) => {
+        const term = search.trim().toLocaleLowerCase();
+        const matches =
+          !term ||
+          rate.name.toLocaleLowerCase().includes(term) ||
+          String(rate.rate_bps / 100).includes(term);
+        return matches && (statusFilter === "all" || rateStatus(rate, today) === statusFilter);
+      }),
+    [rows, search, statusFilter, today],
+  );
 
   const save = useMutation({
     mutationFn: (v: {
@@ -190,7 +202,10 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as "all" | RateStatus)}>
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as "all" | RateStatus)}
+        >
           <SelectTrigger aria-label="Filter tax rate status" className="w-full sm:w-44">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
@@ -203,7 +218,11 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
           </SelectContent>
         </Select>
         {!canTax ? <Badge variant="outline">View only</Badge> : null}
-        {!q.isPending && !q.isError ? <span className="text-xs text-muted-foreground">{visibleRows.length} of {rows.length} rates</span> : null}
+        {!q.isPending && !q.isError ? (
+          <span className="text-xs text-muted-foreground">
+            {visibleRows.length} of {rows.length} rates
+          </span>
+        ) : null}
       </div>
 
       {q.isPending ? (
@@ -217,7 +236,10 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
       ) : rows.length === 0 ? (
         <EmptyState title="No tax rates" description="Add a rate, or apply a country pack." />
       ) : visibleRows.length === 0 ? (
-        <EmptyState title="No matching tax rates" description="Change the search or status filter." />
+        <EmptyState
+          title="No matching tax rates"
+          description="Change the search or status filter."
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -294,9 +316,9 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
           <DialogHeader>
             <DialogTitle>{draft?.id ? "Edit tax rate" : "Add tax rate"}</DialogTitle>
             <DialogDescription>
-              A rate referenced by posted invoices or bills cannot have its percentage or
-              historical start date changed after the database guard migration is applied. End
-              the old rate on or after its latest posted document, then create a replacement.
+              A rate referenced by posted invoices or bills cannot have its percentage or historical
+              start date changed after the database guard migration is applied. End the old rate on
+              or after its latest posted document, then create a replacement.
             </DialogDescription>
           </DialogHeader>
           {draft ? (
@@ -320,7 +342,8 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
                 />
               </div>
               <p id="rate-precision-help" className="text-xs text-muted-foreground">
-                Percentages support two decimal places. For historical changes, end the old rate and add a new rate.
+                Percentages support two decimal places. For historical changes, end the old rate and
+                add a new rate.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">

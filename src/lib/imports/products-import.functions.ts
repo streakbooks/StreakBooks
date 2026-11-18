@@ -42,11 +42,13 @@ export const importProductsCsv = createServerFn({ method: "POST" })
 
     // Check every requested account in this organisation before any insert. A pasted
     // foreign-company UUID must never become an accounting default for this company.
-    const accountIds = [...new Set(
-      records.flatMap((row) =>
-        [row.incomeAccountId, row.expenseAccountId].filter((id): id is string => Boolean(id)),
+    const accountIds = [
+      ...new Set(
+        records.flatMap((row) =>
+          [row.incomeAccountId, row.expenseAccountId].filter((id): id is string => Boolean(id)),
+        ),
       ),
-    )];
+    ];
     const accountById = new Map<
       string,
       { account_type: string; is_active: boolean; is_postable: boolean; archived_at: string | null }
@@ -141,7 +143,7 @@ export const importProductsCsv = createServerFn({ method: "POST" })
 
     if (createdCodes.length) {
       const { error } = await context.supabase.rpc(
-        "record_audit_event" as never,
+        "record_app_audit_event" as never,
         {
           _company_id: data.companyId,
           _action: "products.import",

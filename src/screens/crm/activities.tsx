@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -87,12 +88,22 @@ export function CrmActivitiesPage({
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
-  const calendarFrom = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).toISOString();
-  const calendarTo = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1).toISOString();
-  const activityKind = sectionKey === "tasks" ? "task" : sectionKey === "calendar" ? "meeting" : kind;
+  const calendarFrom = new Date(
+    calendarMonth.getFullYear(),
+    calendarMonth.getMonth(),
+    1,
+  ).toISOString();
+  const calendarTo = new Date(
+    calendarMonth.getFullYear(),
+    calendarMonth.getMonth() + 1,
+    1,
+  ).toISOString();
+  const activityKind =
+    sectionKey === "tasks" ? "task" : sectionKey === "calendar" ? "meeting" : kind;
   const dueIsValid = !dueAt || Number.isFinite(new Date(dueAt).getTime());
   const needsDue = activityKind === "meeting";
-  const relatedId = relatedType === "lead" ? leadId : relatedType === "opportunity" ? opportunityId : contactId;
+  const relatedId =
+    relatedType === "lead" ? leadId : relatedType === "opportunity" ? opportunityId : contactId;
 
   const title =
     sectionKey === "tasks"
@@ -109,7 +120,17 @@ export function CrmActivitiesPage({
   });
 
   const activities = useQuery({
-    queryKey: ["crm-activities", company?.id, sectionKey, taskFilter, overdueAsOf, appliedSearch, page, calendarFrom, calendarTo],
+    queryKey: [
+      "crm-activities",
+      company?.id,
+      sectionKey,
+      taskFilter,
+      overdueAsOf,
+      appliedSearch,
+      page,
+      calendarFrom,
+      calendarTo,
+    ],
     queryFn: () =>
       fetchActivities({
         data: {
@@ -119,7 +140,11 @@ export function CrmActivitiesPage({
           ...(sectionKey === "tasks" ? { kind: "task" } : {}),
           ...(sectionKey === "calendar"
             ? { kind: "meeting", dueFrom: calendarFrom, dueTo: calendarTo, limit: 500 }
-            : { q: appliedSearch, limit: ACTIVITY_PAGE_SIZE + 1, offset: page * ACTIVITY_PAGE_SIZE }),
+            : {
+                q: appliedSearch,
+                limit: ACTIVITY_PAGE_SIZE + 1,
+                offset: page * ACTIVITY_PAGE_SIZE,
+              }),
         },
       }),
     enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
@@ -206,15 +231,17 @@ export function CrmActivitiesPage({
     );
   }
 
-  const rows = (sectionKey === "calendar"
-    ? activities.data ?? []
-    : (activities.data ?? []).slice(0, ACTIVITY_PAGE_SIZE)
+  const rows = (
+    sectionKey === "calendar"
+      ? (activities.data ?? [])
+      : (activities.data ?? []).slice(0, ACTIVITY_PAGE_SIZE)
   ).filter((row) => {
     if (sectionKey === "calendar") return row.kind === "meeting";
     if (sectionKey === "tasks") return row.kind === "task";
     return true;
   });
-  const hasNextPage = sectionKey !== "calendar" && (activities.data?.length ?? 0) > ACTIVITY_PAGE_SIZE;
+  const hasNextPage =
+    sectionKey !== "calendar" && (activities.data?.length ?? 0) > ACTIVITY_PAGE_SIZE;
 
   return (
     <ListWorkspace
@@ -224,7 +251,13 @@ export function CrmActivitiesPage({
       actions={
         canManage && settings.data?.enabled ? (
           <Button type="button" onClick={() => setShowForm((v) => !v)}>
-            {showForm ? "Close form" : sectionKey === "calendar" ? "New meeting" : sectionKey === "tasks" ? "New task" : "New activity"}
+            {showForm
+              ? "Close form"
+              : sectionKey === "calendar"
+                ? "New meeting"
+                : sectionKey === "tasks"
+                  ? "New task"
+                  : "New activity"}
           </Button>
         ) : undefined
       }
@@ -238,7 +271,9 @@ export function CrmActivitiesPage({
         <div className="space-y-4">
           {sectionKey !== "calendar" ? (
             <div className="flex flex-wrap items-center gap-3">
-              <Label htmlFor="crm-activity-search" className="sr-only">Search activities</Label>
+              <Label htmlFor="crm-activity-search" className="sr-only">
+                Search activities
+              </Label>
               <Input
                 id="crm-activity-search"
                 type="search"
@@ -255,12 +290,19 @@ export function CrmActivitiesPage({
           {sectionKey === "tasks" ? (
             <div className="flex flex-wrap items-center gap-3">
               <Label htmlFor="crm-task-filter">Task status</Label>
-              <Select value={taskFilter} onValueChange={(value) => {
-                setTaskFilter(value as "open" | "all" | "overdue");
-                setPage(0);
-                if (value === "overdue") setOverdueAsOf(new Date().toISOString());
-              }}>
-                <SelectTrigger id="crm-task-filter" className="w-48" aria-label="Filter task status">
+              <Select
+                value={taskFilter}
+                onValueChange={(value) => {
+                  setTaskFilter(value as "open" | "all" | "overdue");
+                  setPage(0);
+                  if (value === "overdue") setOverdueAsOf(new Date().toISOString());
+                }}
+              >
+                <SelectTrigger
+                  id="crm-task-filter"
+                  className="w-48"
+                  aria-label="Filter task status"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -272,12 +314,22 @@ export function CrmActivitiesPage({
             </div>
           ) : null}
           {sectionKey === "calendar" && activities.isSuccess ? (
-            <CrmMeetingCalendar activities={rows} month={calendarMonth} onMonthChange={setCalendarMonth} />
+            <CrmMeetingCalendar
+              activities={rows}
+              month={calendarMonth}
+              onMonthChange={setCalendarMonth}
+            />
           ) : null}
           {showForm && canManage ? (
             <Card>
               <CardHeader>
-                <CardTitle>{sectionKey === "calendar" ? "New meeting" : sectionKey === "tasks" ? "New task" : "New activity"}</CardTitle>
+                <CardTitle>
+                  {sectionKey === "calendar"
+                    ? "New meeting"
+                    : sectionKey === "tasks"
+                      ? "New task"
+                      : "New activity"}
+                </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
@@ -307,8 +359,13 @@ export function CrmActivitiesPage({
                 ) : null}
                 <div className="space-y-2">
                   <Label>Related to</Label>
-                  <Select value={relatedType} onValueChange={(v) => setRelatedType(v as "lead" | "opportunity" | "contact")}>
-                    <SelectTrigger aria-label="Related record type"><SelectValue /></SelectTrigger>
+                  <Select
+                    value={relatedType}
+                    onValueChange={(v) => setRelatedType(v as "lead" | "opportunity" | "contact")}
+                  >
+                    <SelectTrigger aria-label="Related record type">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="lead">Lead</SelectItem>
                       <SelectItem value="opportunity">Opportunity</SelectItem>
@@ -317,62 +374,85 @@ export function CrmActivitiesPage({
                   </Select>
                 </div>
                 {relatedType === "lead" ? (
-                <div className="space-y-2">
-                  <Label>Lead</Label>
-                  <Select value={leadId || "__none"} onValueChange={(v) => setLeadId(v === "__none" ? "" : v)}>
-                    <SelectTrigger aria-label="Related lead">
-                      <SelectValue placeholder="Select lead" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">Select lead</SelectItem>
-                      {(leads.data ?? []).map((lead) => (
-                        <SelectItem key={lead.id} value={lead.id}>
-                          {displayLeadName(lead)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {leads.isError ? (
-                    <p role="alert" className="text-xs text-destructive">Could not load leads. Retry the form.</p>
-                  ) : null}
-                </div>
+                  <div className="space-y-2">
+                    <Label>Lead</Label>
+                    <RecordLookupSelect
+                      value={leadId || "__none"}
+                      onValueChange={(v) => setLeadId(v === "__none" ? "" : v)}
+                    >
+                      <SelectTrigger aria-label="Related lead">
+                        <SelectValue placeholder="Select lead" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">Select lead</SelectItem>
+                        {(leads.data ?? []).map((lead) => (
+                          <SelectItem key={lead.id} value={lead.id}>
+                            {displayLeadName(lead)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                    {leads.isError ? (
+                      <p role="alert" className="text-xs text-destructive">
+                        Could not load leads. Retry the form.
+                      </p>
+                    ) : null}
+                  </div>
                 ) : relatedType === "opportunity" ? (
-                <div className="space-y-2">
-                  <Label>Opportunity</Label>
-                  <Select value={opportunityId || "__none"} onValueChange={(v) => setOpportunityId(v === "__none" ? "" : v)}>
-                    <SelectTrigger aria-label="Related opportunity"><SelectValue placeholder="Select opportunity" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">Select opportunity</SelectItem>
-                      {(opportunities.data ?? []).map((opportunity) => (
-                        <SelectItem key={opportunity.id} value={opportunity.id}>
-                          {opportunity.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {opportunities.isError ? (
-                    <p role="alert" className="text-xs text-destructive">Could not load opportunities. Retry the form.</p>
-                  ) : null}
-                </div>
+                  <div className="space-y-2">
+                    <Label>Opportunity</Label>
+                    <RecordLookupSelect
+                      value={opportunityId || "__none"}
+                      onValueChange={(v) => setOpportunityId(v === "__none" ? "" : v)}
+                    >
+                      <SelectTrigger aria-label="Related opportunity">
+                        <SelectValue placeholder="Select opportunity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">Select opportunity</SelectItem>
+                        {(opportunities.data ?? []).map((opportunity) => (
+                          <SelectItem key={opportunity.id} value={opportunity.id}>
+                            {opportunity.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                    {opportunities.isError ? (
+                      <p role="alert" className="text-xs text-destructive">
+                        Could not load opportunities. Retry the form.
+                      </p>
+                    ) : null}
+                  </div>
                 ) : (
-                <div className="space-y-2">
-                  <Label>Customer / Contact</Label>
-                  <Select value={contactId || "__none"} onValueChange={(v) => setContactId(v === "__none" ? "" : v)}>
-                    <SelectTrigger aria-label="Related CRM contact"><SelectValue placeholder="Select contact" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">Select contact</SelectItem>
-                      {(accounts.data ?? []).map((account) => (
-                        <SelectItem key={account.contactId} value={account.contactId}>{account.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {accounts.isError ? (
-                    <p role="alert" className="text-xs text-destructive">Could not load Contacts. Retry the form.</p>
-                  ) : null}
-                </div>
+                  <div className="space-y-2">
+                    <Label>Customer / Contact</Label>
+                    <RecordLookupSelect
+                      value={contactId || "__none"}
+                      onValueChange={(v) => setContactId(v === "__none" ? "" : v)}
+                    >
+                      <SelectTrigger aria-label="Related CRM contact">
+                        <SelectValue placeholder="Select contact" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">Select contact</SelectItem>
+                        {(accounts.data ?? []).map((account) => (
+                          <SelectItem key={account.contactId} value={account.contactId}>
+                            {account.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                    {accounts.isError ? (
+                      <p role="alert" className="text-xs text-destructive">
+                        Could not load Contacts. Retry the form.
+                      </p>
+                    ) : null}
+                  </div>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="act-due">{activityKind === "meeting" ? "Meeting date and time" : "Due"}</Label>
+                  <Label htmlFor="act-due">
+                    {activityKind === "meeting" ? "Meeting date and time" : "Due"}
+                  </Label>
                   <Input
                     id="act-due"
                     type="datetime-local"
@@ -380,23 +460,39 @@ export function CrmActivitiesPage({
                     onChange={(e) => setDueAt(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Uses your browser's local timezone; external calendar synchronization is not yet enabled.
+                    Uses your browser's local timezone; external calendar synchronization is not yet
+                    enabled.
                   </p>
                   {!dueIsValid || (needsDue && !dueAt) ? (
-                    <p role="alert" className="text-xs text-destructive">A valid meeting date and time is required.</p>
+                    <p role="alert" className="text-xs text-destructive">
+                      A valid meeting date and time is required.
+                    </p>
                   ) : null}
                 </div>
                 <div className="sm:col-span-2">
                   <Button
                     type="button"
-                    disabled={createMutation.isPending || !subject.trim() || !relatedId || !dueIsValid || (needsDue && !dueAt) || (relatedType === "lead"
-                      ? leads.isLoading || leads.isError
-                      : relatedType === "opportunity"
-                        ? opportunities.isLoading || opportunities.isError
-                        : accounts.isLoading || accounts.isError)}
+                    disabled={
+                      createMutation.isPending ||
+                      !subject.trim() ||
+                      !relatedId ||
+                      !dueIsValid ||
+                      (needsDue && !dueAt) ||
+                      (relatedType === "lead"
+                        ? leads.isLoading || leads.isError
+                        : relatedType === "opportunity"
+                          ? opportunities.isLoading || opportunities.isError
+                          : accounts.isLoading || accounts.isError)
+                    }
                     onClick={() => createMutation.mutate()}
                   >
-                    {createMutation.isPending ? "Saving…" : activityKind === "meeting" ? "Save meeting" : activityKind === "task" ? "Save task" : "Save activity"}
+                    {createMutation.isPending
+                      ? "Saving…"
+                      : activityKind === "meeting"
+                        ? "Save meeting"
+                        : activityKind === "task"
+                          ? "Save task"
+                          : "Save activity"}
                   </Button>
                 </div>
               </CardContent>
@@ -408,11 +504,18 @@ export function CrmActivitiesPage({
             <ErrorState
               title="Could not load activities"
               description={friendlyAuthError(activities.error)}
-             onRetry={() => activities.refetch()}/>
+              onRetry={() => activities.refetch()}
+            />
           ) : null}
           {activities.isSuccess && rows.length === 0 ? (
             <EmptyState
-              title={sectionKey === "calendar" ? "No meetings" : sectionKey === "tasks" ? "No open tasks" : "No activities"}
+              title={
+                sectionKey === "calendar"
+                  ? "No meetings"
+                  : sectionKey === "tasks"
+                    ? "No open tasks"
+                    : "No activities"
+              }
               description="Create a task, meeting or activity linked to a lead or opportunity."
             />
           ) : null}
@@ -433,7 +536,9 @@ export function CrmActivitiesPage({
                     <TableRow key={row.id}>
                       <TableCell>{row.subject}</TableCell>
                       <TableCell className="capitalize">{row.kind.replace("_", " ")}</TableCell>
-                      <TableCell><CrmStatusBadge status={row.status} /></TableCell>
+                      <TableCell>
+                        <CrmStatusBadge status={row.status} />
+                      </TableCell>
                       <TableCell>
                         {row.dueAt ? new Date(row.dueAt).toLocaleString() : "—"}
                       </TableCell>
@@ -457,11 +562,28 @@ export function CrmActivitiesPage({
             </div>
           ) : null}
           {activities.isSuccess && sectionKey !== "calendar" && (page > 0 || hasNextPage) ? (
-            <nav aria-label="Activity list pages" className="flex flex-wrap items-center justify-between gap-3">
+            <nav
+              aria-label="Activity list pages"
+              className="flex flex-wrap items-center justify-between gap-3"
+            >
               <p className="text-sm text-muted-foreground">Page {page + 1}</p>
               <div className="flex gap-2">
-                <Button type="button" variant="secondary" disabled={page === 0 || activities.isFetching} onClick={() => setPage((value) => Math.max(0, value - 1))}>Previous</Button>
-                <Button type="button" variant="secondary" disabled={!hasNextPage || activities.isFetching} onClick={() => setPage((value) => value + 1)}>Next</Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={page === 0 || activities.isFetching}
+                  onClick={() => setPage((value) => Math.max(0, value - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!hasNextPage || activities.isFetching}
+                  onClick={() => setPage((value) => value + 1)}
+                >
+                  Next
+                </Button>
               </div>
             </nav>
           ) : null}

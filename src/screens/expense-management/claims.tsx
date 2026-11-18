@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -69,11 +70,7 @@ function parseMinorNumber(value: string, label: string): number {
   return Number(parseMinorOrThrow(value, label));
 }
 
-export function ExpenseManagementClaimsPage({
-  mode,
-}: {
-  mode: "my-expenses" | "claims";
-}) {
+export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "claims" }) {
   const sectionKey: ExpenseManagementSectionKey = mode;
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
@@ -160,8 +157,7 @@ export function ExpenseManagementClaimsPage({
 
   const advancesQ = useQuery({
     queryKey: ["expense-cash-advances", company?.id, "claim-link"],
-    queryFn: () =>
-      fetchAdvances({ data: { companyId: company!.id, scope: "own" } }),
+    queryFn: () => fetchAdvances({ data: { companyId: company!.id, scope: "own" } }),
     enabled:
       Boolean(company?.id) &&
       canSubmit &&
@@ -204,9 +200,7 @@ export function ExpenseManagementClaimsPage({
     () =>
       (pettyFloatsQ.data ?? []).filter(
         (float) =>
-          float.status === "active" &&
-          float.balanceMinor > 0 &&
-          float.currencyCode === currency,
+          float.status === "active" && float.balanceMinor > 0 && float.currencyCode === currency,
       ),
     [pettyFloatsQ.data, currency],
   );
@@ -222,8 +216,7 @@ export function ExpenseManagementClaimsPage({
   const expenseAccounts = useMemo(
     () =>
       (accountsQ.data ?? []).filter(
-        (account) =>
-          account.is_active && account.is_postable && account.account_type === "expense",
+        (account) => account.is_active && account.is_postable && account.account_type === "expense",
       ),
     [accountsQ.data],
   );
@@ -348,7 +341,9 @@ export function ExpenseManagementClaimsPage({
     onSuccess: (count) => {
       if (company?.id) setOfflineDrafts(listOfflineExpenseClaimDrafts(company.id));
       invalidate();
-      toast.success(count === 0 ? "No offline drafts to sync." : `Synced ${count} offline draft(s).`);
+      toast.success(
+        count === 0 ? "No offline drafts to sync." : `Synced ${count} offline draft(s).`,
+      );
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -416,8 +411,7 @@ export function ExpenseManagementClaimsPage({
   });
 
   const duplicate = useMutation({
-    mutationFn: (claimId: string) =>
-      duplicateClaim({ data: { companyId: company!.id, claimId } }),
+    mutationFn: (claimId: string) => duplicateClaim({ data: { companyId: company!.id, claimId } }),
     onSuccess: () => {
       invalidate();
       toast.success("Claim duplicated as a new draft.");
@@ -447,9 +441,7 @@ export function ExpenseManagementClaimsPage({
       toast.error(result.error);
       return;
     }
-    setLines((current) =>
-      current.flatMap((row) => (row.key === line.key ? result.lines : [row])),
-    );
+    setLines((current) => current.flatMap((row) => (row.key === line.key ? result.lines : [row])));
     setSplitLineKey(null);
     setSplitAccountA("");
     setSplitAccountB("");
@@ -487,10 +479,11 @@ export function ExpenseManagementClaimsPage({
   }
   if (!allowed) {
     return (
-      <ListWorkspace title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
-      subnav={<ExpenseManagementSubnav current={sectionKey}/>}
-    >
-      <EmptyState
+      <ListWorkspace
+        title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
+        subnav={<ExpenseManagementSubnav current={sectionKey} />}
+      >
+        <EmptyState
           title="No access"
           description={
             mode === "my-expenses"
@@ -498,7 +491,7 @@ export function ExpenseManagementClaimsPage({
               : "Ask an administrator for expenses.view or expenses.approve."
           }
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
   if (claimsQ.isLoading) {
@@ -512,10 +505,11 @@ export function ExpenseManagementClaimsPage({
   if (claimsQ.isError) {
     const message = friendlyAuthError(claimsQ.error);
     return (
-      <ListWorkspace title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
-      subnav={<ExpenseManagementSubnav current={sectionKey}/>}
-    >
-      {message.includes("202611071") ? (
+      <ListWorkspace
+        title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
+        subnav={<ExpenseManagementSubnav current={sectionKey} />}
+      >
+        {message.includes("202611071") ? (
           <Alert>
             <AlertTitle>Database update required</AlertTitle>
             <AlertDescription>
@@ -531,7 +525,7 @@ export function ExpenseManagementClaimsPage({
             onRetry={() => claimsQ.refetch()}
           />
         )}
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
@@ -582,13 +576,12 @@ export function ExpenseManagementClaimsPage({
             {(templatesQ.data?.length ?? 0) > 0 ? (
               <div className="grid gap-1">
                 <Label htmlFor="em-template">Load template</Label>
-                <select
+                <RecordLookupSelect
                   id="em-template"
-                  className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
-                  defaultValue=""
-                  onChange={(event) => {
-                    if (event.target.value) applyTemplate(event.target.value);
-                    event.target.value = "";
+                  className="flex h-10 border-input px-3"
+                  value=""
+                  onValueChange={(nextValue) => {
+                    if (nextValue) applyTemplate(nextValue);
                   }}
                 >
                   <option value="">Select template</option>
@@ -597,7 +590,7 @@ export function ExpenseManagementClaimsPage({
                       {template.name}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
             ) : null}
           </div>
@@ -643,11 +636,11 @@ export function ExpenseManagementClaimsPage({
             {paymentSource === "cash_advance" ? (
               <div className="grid gap-2">
                 <Label htmlFor="em-claim-advance">Cash advance</Label>
-                <select
+                <RecordLookupSelect
                   id="em-claim-advance"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-10 w-full border-input px-3 py-2"
                   value={cashAdvanceId}
-                  onChange={(event) => setCashAdvanceId(event.target.value)}
+                  onValueChange={(nextValue) => setCashAdvanceId(nextValue)}
                 >
                   <option value="">Select issued advance</option>
                   {openAdvances.map((adv) => (
@@ -656,17 +649,17 @@ export function ExpenseManagementClaimsPage({
                       {fromMinorUnits(adv.remainingMinor, adv.currencyCode)}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
             ) : null}
             {paymentSource === "company_paid" ? (
               <div className="grid gap-2">
                 <Label htmlFor="em-claim-petty">Petty cash float</Label>
-                <select
+                <RecordLookupSelect
                   id="em-claim-petty"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-10 w-full border-input px-3 py-2"
                   value={pettyCashFloatId}
-                  onChange={(event) => setPettyCashFloatId(event.target.value)}
+                  onValueChange={(nextValue) => setPettyCashFloatId(nextValue)}
                 >
                   <option value="">Select float with balance</option>
                   {openPettyFloats.map((float) => (
@@ -675,17 +668,17 @@ export function ExpenseManagementClaimsPage({
                       {fromMinorUnits(float.balanceMinor, float.currencyCode)})
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
             ) : null}
             {paymentSource === "corporate_card" ? (
               <div className="grid gap-2">
                 <Label htmlFor="em-claim-card">Corporate card</Label>
-                <select
+                <RecordLookupSelect
                   id="em-claim-card"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-10 w-full border-input px-3 py-2"
                   value={corporateCardId}
-                  onChange={(event) => setCorporateCardId(event.target.value)}
+                  onValueChange={(nextValue) => setCorporateCardId(nextValue)}
                 >
                   <option value="">Select card</option>
                   {openCards.map((card) => (
@@ -693,7 +686,7 @@ export function ExpenseManagementClaimsPage({
                       {card.label} ****{card.last4}
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </div>
             ) : null}
           </div>
@@ -751,9 +744,7 @@ export function ExpenseManagementClaimsPage({
                   <Label>Description</Label>
                   <Input
                     value={line.description}
-                    onChange={(event) =>
-                      updateLine(line.key, { description: event.target.value })
-                    }
+                    onChange={(event) => updateLine(line.key, { description: event.target.value })}
                     required
                   />
                 </div>

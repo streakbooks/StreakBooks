@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  CRM_E2E_CASES,
-  assertCrmE2ePackComplete,
-  crmE2eCaseIds,
-} from "@/lib/crm/e2e-pack";
+import { CRM_E2E_CASES, assertCrmE2ePackComplete, crmE2eCaseIds } from "@/lib/crm/e2e-pack";
 import { resolveCrmCommsPolicy } from "@/lib/crm/comms-policy";
 import { resolveCrmAutomationPolicy } from "@/lib/crm/automation-policy";
 import { resolveCrmImportExportPolicy } from "@/lib/crm/import-export-policy";

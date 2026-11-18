@@ -16,8 +16,7 @@ const exchange: AiExchangeToSave = {
 };
 
 type FakeDatabaseResult =
-  | { data: { id: string }; error: null }
-  | { data: null; error: { message: string } };
+  { data: { id: string }; error: null } | { data: null; error: { message: string } };
 
 function clientFor(
   result: FakeDatabaseResult | Error,
@@ -44,13 +43,10 @@ describe("private AI conversation history persistence", () => {
   it("saves one exchange with organisation and user scoping", async () => {
     let captured: unknown;
     let table = "";
-    const client = clientFor(
-      { data: { id: "entry-1" }, error: null },
-      (row, name) => {
-        captured = row;
-        table = name;
-      },
-    );
+    const client = clientFor({ data: { id: "entry-1" }, error: null }, (row, name) => {
+      captured = row;
+      table = name;
+    });
     await expect(saveAiExchange(client, exchange)).resolves.toEqual({
       saved: true,
       historyId: "entry-1",
@@ -75,7 +71,10 @@ describe("private AI conversation history persistence", () => {
   });
 
   it("does not leak database exceptions to the caller when saving fails", async () => {
-    const result = await saveAiExchange(clientFor(new Error("sensitive database details")), exchange);
+    const result = await saveAiExchange(
+      clientFor(new Error("sensitive database details")),
+      exchange,
+    );
     expect(result).toEqual({ saved: false, historyId: null });
   });
 });

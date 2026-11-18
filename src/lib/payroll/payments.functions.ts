@@ -6,7 +6,11 @@ import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment
 import { payrollClearingCurrencyMismatch } from "@/lib/payroll/clearing-currency";
 import { assertPayrollSettlementDateOnly } from "@/lib/payroll/payment-date";
 import { mustValidateFreshPayrollAllocations } from "@/lib/payroll/payment-replay-preflight";
-import { filterPayrollClearingAccounts, type PayrollClearingCandidate, type PayrollLinkedBank } from "@/lib/payroll/clearing-account-options";
+import {
+  filterPayrollClearingAccounts,
+  type PayrollClearingCandidate,
+  type PayrollLinkedBank,
+} from "@/lib/payroll/clearing-account-options";
 import type { PayrollPaymentMethod } from "@/lib/payroll/types";
 import { PAYROLL_RUNS_MIGRATION } from "@/lib/payroll/runs.functions";
 
@@ -175,7 +179,9 @@ export const listPayrollSettlementAccounts = createServerFn({ method: "GET" })
 
     const payrollCurrency = (
       (settingsRes.data as { payroll_currency: string } | null)?.payroll_currency ?? ""
-    ).trim().toUpperCase();
+    )
+      .trim()
+      .toUpperCase();
     if (!/^[A-Z]{3}$/.test(payrollCurrency)) {
       throw new Error("Configure the payroll currency before selecting a clearing account.");
     }
@@ -409,9 +415,7 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
         .eq("idempotency_key" as never, data.idempotencyKey as never)
         .maybeSingle();
       if (replayRes.error) throw new Error(replayRes.error.message);
-      existingPaymentId = (
-        replayRes.data as { id: string } | null
-      )?.id ?? null;
+      existingPaymentId = (replayRes.data as { id: string } | null)?.id ?? null;
     }
 
     const paymentAmountMinor = BigInt(data.amountMinor);
@@ -429,9 +433,9 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
         .in("id" as never, ids as never);
       if (slipRes.error) throw new Error(slipRes.error.message);
 
-      const runIds = [...new Set(
-        (slipRes.data ?? []).map((row) => (row as { run_id: string }).run_id),
-      )];
+      const runIds = [
+        ...new Set((slipRes.data ?? []).map((row) => (row as { run_id: string }).run_id)),
+      ];
       const runRes = await context.supabase
         .from("payroll_runs" as never)
         .select("id, currency" as never)

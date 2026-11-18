@@ -1,13 +1,8 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   messagingAiDisclosure,
   runMessagingAiAssist,
@@ -55,7 +50,7 @@ export function MessagingAiAssistPanel({
         <>
           <div className="space-y-2">
             <Label>Capability</Label>
-            <Select
+            <RecordLookupSelect
               value={capability}
               onValueChange={(value) => setCapability(value as MessagingAiCapability)}
             >
@@ -69,7 +64,7 @@ export function MessagingAiAssistPanel({
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
           </div>
           <Button
             type="button"

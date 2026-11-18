@@ -16,7 +16,10 @@ import type {
   MessagingVisibility,
 } from "@/lib/messaging/types";
 import { getMessagingRecordAdapter } from "@/lib/messaging/module-adapters";
-import { assertMessagingExternalPortalsAllowed, messagingExternalPortalsUnlocked } from "@/lib/messaging/external-portals";
+import {
+  assertMessagingExternalPortalsAllowed,
+  messagingExternalPortalsUnlocked,
+} from "@/lib/messaging/external-portals";
 
 function asError(error: { message: string } | null): never {
   throw new Error(error?.message ?? "Messaging request failed");
@@ -124,10 +127,13 @@ export const setMessagingEnabled = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<MessagingSettings> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.manage_settings");
-    const { data: row, error } = await supabase.rpc("messaging_set_enabled" as never, {
-      _company_id: data.companyId,
-      _enabled: data.enabled,
-    } as never);
+    const { data: row, error } = await supabase.rpc(
+      "messaging_set_enabled" as never,
+      {
+        _company_id: data.companyId,
+        _enabled: data.enabled,
+      } as never,
+    );
     if (error) asError(error);
     return {
       ...(row as MessagingSettings),
@@ -151,7 +157,8 @@ export const setMessagingCollaborationFlags = createServerFn({ method: "POST" })
       allowFileShare: typeof input?.allowFileShare === "boolean" ? input.allowFileShare : null,
       allowCustomer: typeof input?.allowCustomer === "boolean" ? input.allowCustomer : null,
       allowVendor: typeof input?.allowVendor === "boolean" ? input.allowVendor : null,
-      allowGroupCreate: typeof input?.allowGroupCreate === "boolean" ? input.allowGroupCreate : null,
+      allowGroupCreate:
+        typeof input?.allowGroupCreate === "boolean" ? input.allowGroupCreate : null,
     }),
   )
   .handler(async ({ data, context }): Promise<MessagingSettings> => {
@@ -181,12 +188,10 @@ export const setMessagingCollaborationFlags = createServerFn({ method: "POST" })
 
 export const previewMessagingDigest = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; frequency?: "daily" | "weekly" }) => ({
-      companyId: assertUuid(input?.companyId),
-      frequency: input?.frequency === "weekly" ? ("weekly" as const) : ("daily" as const),
-    }),
-  )
+  .inputValidator((input: { companyId: string; frequency?: "daily" | "weekly" }) => ({
+    companyId: assertUuid(input?.companyId),
+    frequency: input?.frequency === "weekly" ? ("weekly" as const) : ("daily" as const),
+  }))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.view");
@@ -254,9 +259,12 @@ export const getMessagingUnreadCount = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<number> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.view");
-    const { data: count, error } = await supabase.rpc("messaging_unread_count" as never, {
-      _company_id: data.companyId,
-    } as never);
+    const { data: count, error } = await supabase.rpc(
+      "messaging_unread_count" as never,
+      {
+        _company_id: data.companyId,
+      } as never,
+    );
     if (error) asError(error);
     return Number(count ?? 0);
   });
@@ -297,9 +305,7 @@ export const listEligibleMessagingParticipants = createServerFn({ method: "GET" 
       }))
       .filter((p) => {
         if (!search) return true;
-        return (
-          p.full_name.toLowerCase().includes(search) || p.email.toLowerCase().includes(search)
-        );
+        return p.full_name.toLowerCase().includes(search) || p.email.toLowerCase().includes(search);
       })
       .slice(0, 50);
   });
@@ -402,9 +408,7 @@ export const listMessagingConversations = createServerFn({ method: "GET" })
         rows = rows.filter((c) => c.conversation_type === "dm");
         break;
       case "groups":
-        rows = rows.filter((c) =>
-          ["group", "channel"].includes(c.conversation_type),
-        );
+        rows = rows.filter((c) => ["group", "channel"].includes(c.conversation_type));
         break;
       case "starred":
         rows = rows.filter((c) => c.is_starred);
@@ -504,7 +508,9 @@ export const listMessagingMessages = createServerFn({ method: "GET" })
     if (data.beforeSeq > 0 || data.afterSeq === 0) {
       messages = [...messages].sort((a, b) => a.seq - b.seq);
     }
-    const authorIds = [...new Set(messages.map((m) => m.author_user_id).filter(Boolean))] as string[];
+    const authorIds = [
+      ...new Set(messages.map((m) => m.author_user_id).filter(Boolean)),
+    ] as string[];
     const { data: profiles } = authorIds.length
       ? await supabase.from("profiles").select("id, full_name").in("id", authorIds)
       : { data: [] as { id: string; full_name: string }[] };
@@ -582,7 +588,9 @@ export const searchMessagingAcrossConversations = createServerFn({ method: "GET"
     if (memError) asError(memError);
     const conversationIds = [
       ...new Set(
-        ((memberships ?? []) as Array<{ conversation_id: string }>).map((row) => row.conversation_id),
+        ((memberships ?? []) as Array<{ conversation_id: string }>).map(
+          (row) => row.conversation_id,
+        ),
       ),
     ];
     if (!conversationIds.length) return [];
@@ -611,9 +619,13 @@ export const searchMessagingAcrossConversations = createServerFn({ method: "GET"
       .in("id" as never, hitConversationIds as never);
     if (conversationError) asError(conversationError);
     const meta = new Map(
-      ((conversations ?? []) as Array<{ id: string; title: string | null; conversation_type: string }>).map(
-        (row) => [row.id, row] as const,
-      ),
+      (
+        (conversations ?? []) as Array<{
+          id: string;
+          title: string | null;
+          conversation_type: string;
+        }>
+      ).map((row) => [row.id, row] as const),
     );
 
     return messages.map((m) => {
@@ -636,10 +648,13 @@ export const createDirectConversation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.create");
-    const { data: id, error } = await supabase.rpc("messaging_create_dm" as never, {
-      _company_id: data.companyId,
-      _peer_user_id: data.peerUserId,
-    } as never);
+    const { data: id, error } = await supabase.rpc(
+      "messaging_create_dm" as never,
+      {
+        _company_id: data.companyId,
+        _peer_user_id: data.peerUserId,
+      } as never,
+    );
     if (error) asError(error);
     return { conversationId: String(id) };
   });
@@ -665,12 +680,15 @@ export const createGroupConversation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.create_group");
-    const { data: id, error } = await supabase.rpc("messaging_create_group" as never, {
-      _company_id: data.companyId,
-      _title: data.title,
-      _description: data.description || null,
-      _member_user_ids: data.memberUserIds,
-    } as never);
+    const { data: id, error } = await supabase.rpc(
+      "messaging_create_group" as never,
+      {
+        _company_id: data.companyId,
+        _title: data.title,
+        _description: data.description || null,
+        _member_user_ids: data.memberUserIds,
+      } as never,
+    );
     if (error) asError(error);
     return { conversationId: String(id) };
   });
@@ -696,12 +714,15 @@ export const createChannelConversation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.create_group");
-    const { data: id, error } = await supabase.rpc("messaging_create_channel" as never, {
-      _company_id: data.companyId,
-      _title: data.title,
-      _description: data.description || null,
-      _member_user_ids: data.memberUserIds,
-    } as never);
+    const { data: id, error } = await supabase.rpc(
+      "messaging_create_channel" as never,
+      {
+        _company_id: data.companyId,
+        _title: data.title,
+        _description: data.description || null,
+        _member_user_ids: data.memberUserIds,
+      } as never,
+    );
     if (error) asError(error);
     return { conversationId: String(id) };
   });
@@ -768,14 +789,17 @@ export const sendMessagingMessage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<MessagingMessage> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.send");
-    const { data: row, error } = await supabase.rpc("messaging_send_message" as never, {
-      _company_id: data.companyId,
-      _conversation_id: data.conversationId,
-      _body: data.body,
-      _idempotency_key: data.idempotencyKey,
-      _reply_to_message_id: data.replyToMessageId,
-      _body_format: "plain",
-    } as never);
+    const { data: row, error } = await supabase.rpc(
+      "messaging_send_message" as never,
+      {
+        _company_id: data.companyId,
+        _conversation_id: data.conversationId,
+        _body: data.body,
+        _idempotency_key: data.idempotencyKey,
+        _reply_to_message_id: data.replyToMessageId,
+        _body_format: "plain",
+      } as never,
+    );
     if (error) asError(error);
     return row as MessagingMessage;
   });
@@ -790,11 +814,14 @@ export const markMessagingRead = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.view");
-    const { data: ok, error } = await supabase.rpc("messaging_mark_read" as never, {
-      _company_id: data.companyId,
-      _conversation_id: data.conversationId,
-      _seq: data.seq,
-    } as never);
+    const { data: ok, error } = await supabase.rpc(
+      "messaging_mark_read" as never,
+      {
+        _company_id: data.companyId,
+        _conversation_id: data.conversationId,
+        _seq: data.seq,
+      } as never,
+    );
     if (error) asError(error);
     return { ok: Boolean(ok) };
   });
@@ -820,28 +847,21 @@ export const updateMessagingMembership = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.view");
-    const allowed = new Set([
-      "mute",
-      "unmute",
-      "archive",
-      "unarchive",
-      "star",
-      "unstar",
-      "leave",
-    ]);
+    const allowed = new Set(["mute", "unmute", "archive", "unarchive", "star", "unstar", "leave"]);
     if (!allowed.has(data.action)) throw new Error("Invalid membership action");
     const mutedUntil =
       data.action === "mute"
-        ? new Date(
-            Date.now() + (data.muteHours ?? 24 * 365) * 60 * 60 * 1000,
-          ).toISOString()
+        ? new Date(Date.now() + (data.muteHours ?? 24 * 365) * 60 * 60 * 1000).toISOString()
         : null;
-    const { data: ok, error } = await supabase.rpc("messaging_update_membership" as never, {
-      _company_id: data.companyId,
-      _conversation_id: data.conversationId,
-      _action: data.action,
-      _muted_until: mutedUntil,
-    } as never);
+    const { data: ok, error } = await supabase.rpc(
+      "messaging_update_membership" as never,
+      {
+        _company_id: data.companyId,
+        _conversation_id: data.conversationId,
+        _action: data.action,
+        _muted_until: mutedUntil,
+      } as never,
+    );
     if (error) asError(error);
     return { ok: Boolean(ok) };
   });
@@ -856,32 +876,36 @@ export const renameMessagingConversation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.view");
-    const { data: row, error } = await supabase.rpc("messaging_rename_conversation" as never, {
-      _company_id: data.companyId,
-      _conversation_id: data.conversationId,
-      _title: data.title,
-    } as never);
+    const { data: row, error } = await supabase.rpc(
+      "messaging_rename_conversation" as never,
+      {
+        _company_id: data.companyId,
+        _conversation_id: data.conversationId,
+        _title: data.title,
+      } as never,
+    );
     if (error) asError(error);
     return row as MessagingConversation;
   });
 
 export const removeMessagingInternalMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; conversationId: string; memberUserId: string }) => ({
-      companyId: assertUuid(input?.companyId),
-      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
-      memberUserId: assertMessagingUuid(input?.memberUserId, "memberUserId"),
-    }),
-  )
+  .inputValidator((input: { companyId: string; conversationId: string; memberUserId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+    memberUserId: assertMessagingUuid(input?.memberUserId, "memberUserId"),
+  }))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.invite_internal");
-    const { data: ok, error } = await supabase.rpc("messaging_remove_internal_member" as never, {
-      _company_id: data.companyId,
-      _conversation_id: data.conversationId,
-      _member_user_id: data.memberUserId,
-    } as never);
+    const { data: ok, error } = await supabase.rpc(
+      "messaging_remove_internal_member" as never,
+      {
+        _company_id: data.companyId,
+        _conversation_id: data.conversationId,
+        _member_user_id: data.memberUserId,
+      } as never,
+    );
     if (error) asError(error);
     return { ok: Boolean(ok) };
   });
@@ -901,7 +925,9 @@ export const openPortalDiscussion = createServerFn({ method: "POST" })
       companyId: assertUuid(input?.companyId),
       portalRole: input?.portalRole === "supplier" ? "supplier" : "customer",
       contactId: assertMessagingUuid(input?.contactId, "contactId"),
-      recordType: String(input?.recordType ?? "").trim().slice(0, 80),
+      recordType: String(input?.recordType ?? "")
+        .trim()
+        .slice(0, 80),
       recordId: assertMessagingUuid(input?.recordId, "recordId"),
       title: typeof input?.title === "string" ? input.title.trim().slice(0, 120) : "",
       deepLinkPath:
@@ -911,15 +937,18 @@ export const openPortalDiscussion = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.link_records");
-    const { data: id, error } = await supabase.rpc("messaging_open_portal_discussion" as never, {
-      _company_id: data.companyId,
-      _portal_role: data.portalRole,
-      _contact_id: data.contactId,
-      _record_type: data.recordType,
-      _record_id: data.recordId,
-      _title: data.title || null,
-      _deep_link_path: data.deepLinkPath || null,
-    } as never);
+    const { data: id, error } = await supabase.rpc(
+      "messaging_open_portal_discussion" as never,
+      {
+        _company_id: data.companyId,
+        _portal_role: data.portalRole,
+        _contact_id: data.contactId,
+        _record_type: data.recordType,
+        _record_id: data.recordId,
+        _title: data.title || null,
+        _deep_link_path: data.deepLinkPath || null,
+      } as never,
+    );
     if (error) asError(error);
     return { conversationId: String(id) };
   });
@@ -935,7 +964,9 @@ export const openRecordDiscussion = createServerFn({ method: "POST" })
       title?: string;
     }) => ({
       companyId: assertUuid(input?.companyId),
-      recordType: String(input?.recordType ?? "").trim().slice(0, 80),
+      recordType: String(input?.recordType ?? "")
+        .trim()
+        .slice(0, 80),
       recordId: assertMessagingUuid(input?.recordId, "recordId"),
       visibility: (input?.visibility ?? "internal") as MessagingVisibility,
       title: typeof input?.title === "string" ? input.title.trim().slice(0, 120) : "",
@@ -957,14 +988,17 @@ export const openRecordDiscussion = createServerFn({ method: "POST" })
       }
     }
     const deepLink = adapter.buildDeepLink(data.recordId);
-    const { data: id, error } = await supabase.rpc("messaging_open_record_discussion" as never, {
-      _company_id: data.companyId,
-      _record_type: data.recordType,
-      _record_id: data.recordId,
-      _visibility: data.visibility || adapter.defaultVisibility,
-      _title: data.title || adapter.label,
-      _deep_link_path: deepLink,
-    } as never);
+    const { data: id, error } = await supabase.rpc(
+      "messaging_open_record_discussion" as never,
+      {
+        _company_id: data.companyId,
+        _record_type: data.recordType,
+        _record_id: data.recordId,
+        _visibility: data.visibility || adapter.defaultVisibility,
+        _title: data.title || adapter.label,
+        _deep_link_path: deepLink,
+      } as never,
+    );
     if (error) asError(error);
     return { conversationId: String(id), path: `/messages?conversation=${id}` };
   });
@@ -984,23 +1018,32 @@ export const registerMessagingAttachment = createServerFn({ method: "POST" })
       companyId: assertUuid(input?.companyId),
       conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
       messageId: input?.messageId ? assertMessagingUuid(input.messageId, "messageId") : null,
-      storagePath: String(input?.storagePath ?? "").trim().slice(0, 500),
-      fileName: String(input?.fileName ?? "").trim().slice(0, 180),
-      mimeType: String(input?.mimeType ?? "").trim().slice(0, 120),
+      storagePath: String(input?.storagePath ?? "")
+        .trim()
+        .slice(0, 500),
+      fileName: String(input?.fileName ?? "")
+        .trim()
+        .slice(0, 180),
+      mimeType: String(input?.mimeType ?? "")
+        .trim()
+        .slice(0, 120),
       byteSize: Math.floor(Number(input?.byteSize) || 0),
     }),
   )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     const { supabase } = context;
-    const { data: row, error } = await supabase.rpc("messaging_register_attachment" as never, {
-      _company_id: data.companyId,
-      _conversation_id: data.conversationId,
-      _message_id: data.messageId,
-      _storage_path: data.storagePath,
-      _file_name: data.fileName,
-      _mime_type: data.mimeType,
-      _byte_size: data.byteSize,
-    } as never);
+    const { data: row, error } = await supabase.rpc(
+      "messaging_register_attachment" as never,
+      {
+        _company_id: data.companyId,
+        _conversation_id: data.conversationId,
+        _message_id: data.messageId,
+        _storage_path: data.storagePath,
+        _file_name: data.fileName,
+        _mime_type: data.mimeType,
+        _byte_size: data.byteSize,
+      } as never,
+    );
     if (error) asError(error);
     return { id: String((row as { id: string }).id) };
   });
@@ -1035,11 +1078,14 @@ export const editMessagingMessage = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }): Promise<MessagingMessage> => {
     const { supabase } = context;
-    const { data: row, error } = await supabase.rpc("messaging_edit_message" as never, {
-      _company_id: data.companyId,
-      _message_id: data.messageId,
-      _body: data.body,
-    } as never);
+    const { data: row, error } = await supabase.rpc(
+      "messaging_edit_message" as never,
+      {
+        _company_id: data.companyId,
+        _message_id: data.messageId,
+        _body: data.body,
+      } as never,
+    );
     if (error) asError(error);
     return row as MessagingMessage;
   });
@@ -1052,10 +1098,13 @@ export const redactMessagingMessage = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }): Promise<MessagingMessage> => {
     const { supabase } = context;
-    const { data: row, error } = await supabase.rpc("messaging_redact_message" as never, {
-      _company_id: data.companyId,
-      _message_id: data.messageId,
-    } as never);
+    const { data: row, error } = await supabase.rpc(
+      "messaging_redact_message" as never,
+      {
+        _company_id: data.companyId,
+        _message_id: data.messageId,
+      } as never,
+    );
     if (error) asError(error);
     return row as MessagingMessage;
   });
@@ -1065,16 +1114,21 @@ export const reactMessagingMessage = createServerFn({ method: "POST" })
   .inputValidator((input: { companyId: string; messageId: string; emoji: string }) => ({
     companyId: assertUuid(input?.companyId),
     messageId: assertMessagingUuid(input?.messageId, "messageId"),
-    emoji: String(input?.emoji ?? "").trim().slice(0, 16),
+    emoji: String(input?.emoji ?? "")
+      .trim()
+      .slice(0, 16),
   }))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     if (!data.emoji) throw new Error("Emoji required");
-    const { data: row, error } = await supabase.rpc("messaging_react_message" as never, {
-      _company_id: data.companyId,
-      _message_id: data.messageId,
-      _emoji: data.emoji,
-    } as never);
+    const { data: row, error } = await supabase.rpc(
+      "messaging_react_message" as never,
+      {
+        _company_id: data.companyId,
+        _message_id: data.messageId,
+        _emoji: data.emoji,
+      } as never,
+    );
     if (error) asError(error);
     return row;
   });
@@ -1084,17 +1138,18 @@ export const openHrPrivateConversation = createServerFn({ method: "POST" })
   .inputValidator((input: { companyId: string; title: string; peerUserId?: string }) => ({
     companyId: assertUuid(input?.companyId),
     title: normaliseGroupTitle(input?.title || "Private HR discussion"),
-    peerUserId: input?.peerUserId
-      ? assertMessagingUuid(input.peerUserId, "peerUserId")
-      : null,
+    peerUserId: input?.peerUserId ? assertMessagingUuid(input.peerUserId, "peerUserId") : null,
   }))
   .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
     const { supabase } = context;
-    const { data: id, error } = await supabase.rpc("messaging_open_hr_private" as never, {
-      _company_id: data.companyId,
-      _title: data.title,
-      _peer_user_id: data.peerUserId,
-    } as never);
+    const { data: id, error } = await supabase.rpc(
+      "messaging_open_hr_private" as never,
+      {
+        _company_id: data.companyId,
+        _title: data.title,
+        _peer_user_id: data.peerUserId,
+      } as never,
+    );
     if (error) asError(error);
     return { conversationId: String(id) };
   });
@@ -1108,11 +1163,14 @@ export const openAccountantClientConversation = createServerFn({ method: "POST" 
   }))
   .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
     const { supabase } = context;
-    const { data: id, error } = await supabase.rpc("messaging_open_accountant_client" as never, {
-      _company_id: data.companyId,
-      _title: data.title,
-      _peer_user_id: data.peerUserId,
-    } as never);
+    const { data: id, error } = await supabase.rpc(
+      "messaging_open_accountant_client" as never,
+      {
+        _company_id: data.companyId,
+        _title: data.title,
+        _peer_user_id: data.peerUserId,
+      } as never,
+    );
     if (error) asError(error);
     return { conversationId: String(id) };
   });
@@ -1133,8 +1191,12 @@ export const requestMessagingFormalApproval = createServerFn({ method: "POST" })
       companyId: assertUuid(input?.companyId),
       conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
       assigneeUserId: assertMessagingUuid(input?.assigneeUserId, "assigneeUserId"),
-      kind: String(input?.kind ?? "").trim().slice(0, 80),
-      recordType: String(input?.recordType ?? "").trim().slice(0, 80),
+      kind: String(input?.kind ?? "")
+        .trim()
+        .slice(0, 80),
+      recordType: String(input?.recordType ?? "")
+        .trim()
+        .slice(0, 80),
       recordId: assertMessagingUuid(input?.recordId, "recordId"),
       note: typeof input?.note === "string" ? input.note.trim().slice(0, 500) : "",
       targetPath:
@@ -1147,16 +1209,19 @@ export const requestMessagingFormalApproval = createServerFn({ method: "POST" })
     if (looksLikeInformalOnly(data.note)) {
       // Notes that are only "approved" still create a review request — never an approval.
     }
-    const { data: id, error } = await supabase.rpc("messaging_request_formal_approval" as never, {
-      _company_id: data.companyId,
-      _conversation_id: data.conversationId,
-      _assignee_user_id: data.assigneeUserId,
-      _kind: data.kind || "task_assignment",
-      _record_type: data.recordType,
-      _record_id: data.recordId,
-      _note: data.note || "Review requested from Messages",
-      _target_path: data.targetPath || null,
-    } as never);
+    const { data: id, error } = await supabase.rpc(
+      "messaging_request_formal_approval" as never,
+      {
+        _company_id: data.companyId,
+        _conversation_id: data.conversationId,
+        _assignee_user_id: data.assigneeUserId,
+        _kind: data.kind || "task_assignment",
+        _record_type: data.recordType,
+        _record_id: data.recordId,
+        _note: data.note || "Review requested from Messages",
+        _target_path: data.targetPath || null,
+      } as never,
+    );
     if (error) asError(error);
     return { notificationId: String(id) };
   });
@@ -1192,10 +1257,13 @@ export const portalOpenPurchaseOrderDiscussion = createServerFn({ method: "POST"
   }))
   .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
     const { supabase } = context;
-    const { data: id, error } = await supabase.rpc("messaging_portal_open_po_discussion" as never, {
-      _membership_id: data.membershipId,
-      _order_id: data.orderId,
-    } as never);
+    const { data: id, error } = await supabase.rpc(
+      "messaging_portal_open_po_discussion" as never,
+      {
+        _membership_id: data.membershipId,
+        _order_id: data.orderId,
+      } as never,
+    );
     if (error) asError(error);
     return { conversationId: String(id) };
   });
@@ -1217,12 +1285,15 @@ export const portalSendMessagingMessage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<MessagingMessage> => {
     const { supabase } = context;
-    const { data: row, error } = await supabase.rpc("messaging_portal_send_message" as never, {
-      _membership_id: data.membershipId,
-      _conversation_id: data.conversationId,
-      _body: data.body,
-      _idempotency_key: data.idempotencyKey,
-    } as never);
+    const { data: row, error } = await supabase.rpc(
+      "messaging_portal_send_message" as never,
+      {
+        _membership_id: data.membershipId,
+        _conversation_id: data.conversationId,
+        _body: data.body,
+        _idempotency_key: data.idempotencyKey,
+      } as never,
+    );
     if (error) asError(error);
     return row as MessagingMessage;
   });
@@ -1236,11 +1307,14 @@ export const openAdvisorEngagementConversation = createServerFn({ method: "POST"
   }))
   .handler(async ({ data, context }): Promise<{ conversationId: string }> => {
     const { supabase } = context;
-    const { data: id, error } = await supabase.rpc("messaging_open_advisor_engagement" as never, {
-      _company_id: data.companyId,
-      _title: data.title,
-      _peer_user_id: data.peerUserId,
-    } as never);
+    const { data: id, error } = await supabase.rpc(
+      "messaging_open_advisor_engagement" as never,
+      {
+        _company_id: data.companyId,
+        _title: data.title,
+        _peer_user_id: data.peerUserId,
+      } as never,
+    );
     if (error) asError(error);
     return { conversationId: String(id) };
   });
@@ -1253,10 +1327,13 @@ export const markMessagingUnread = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { supabase } = context;
-    const { data: ok, error } = await supabase.rpc("messaging_mark_unread" as never, {
-      _company_id: data.companyId,
-      _conversation_id: data.conversationId,
-    } as never);
+    const { data: ok, error } = await supabase.rpc(
+      "messaging_mark_unread" as never,
+      {
+        _company_id: data.companyId,
+        _conversation_id: data.conversationId,
+      } as never,
+    );
     if (error) asError(error);
     return { ok: Boolean(ok) };
   });
@@ -1300,11 +1377,14 @@ export const markAllMessagingRead = createServerFn({ method: "POST" })
     for (const mem of memRows) {
       const max = maxSeq.get(mem.conversation_id) ?? 0;
       if (max <= Number(mem.last_read_seq)) continue;
-      const { error } = await supabase.rpc("messaging_mark_read" as never, {
-        _company_id: data.companyId,
-        _conversation_id: mem.conversation_id,
-        _seq: max,
-      } as never);
+      const { error } = await supabase.rpc(
+        "messaging_mark_read" as never,
+        {
+          _company_id: data.companyId,
+          _conversation_id: mem.conversation_id,
+          _seq: max,
+        } as never,
+      );
       if (error) asError(error);
       marked += 1;
     }
@@ -1427,11 +1507,14 @@ export const pinMessagingMessage = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }): Promise<MessagingMessage> => {
     const { supabase } = context;
-    const { data: row, error } = await supabase.rpc("messaging_pin_message" as never, {
-      _company_id: data.companyId,
-      _message_id: data.messageId,
-      _pinned: data.pinned,
-    } as never);
+    const { data: row, error } = await supabase.rpc(
+      "messaging_pin_message" as never,
+      {
+        _company_id: data.companyId,
+        _message_id: data.messageId,
+        _pinned: data.pinned,
+      } as never,
+    );
     if (error) asError(error);
     return row as MessagingMessage;
   });
@@ -1445,11 +1528,14 @@ export const starMessagingMessage = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { supabase } = context;
-    const { data: ok, error } = await supabase.rpc("messaging_star_message" as never, {
-      _company_id: data.companyId,
-      _message_id: data.messageId,
-      _starred: data.starred,
-    } as never);
+    const { data: ok, error } = await supabase.rpc(
+      "messaging_star_message" as never,
+      {
+        _company_id: data.companyId,
+        _message_id: data.messageId,
+        _starred: data.starred,
+      } as never,
+    );
     if (error) asError(error);
     return { ok: Boolean(ok) };
   });
@@ -1461,9 +1547,7 @@ export const addMessagingInternalMembers = createServerFn({ method: "POST" })
       companyId: assertUuid(input?.companyId),
       conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
       memberUserIds: Array.isArray(input?.memberUserIds)
-        ? input.memberUserIds
-            .slice(0, 40)
-            .map((id) => assertMessagingUuid(id, "memberUserId"))
+        ? input.memberUserIds.slice(0, 40).map((id) => assertMessagingUuid(id, "memberUserId"))
         : [],
     }),
   )
@@ -1583,7 +1667,10 @@ export const listMessagingMessageReceipts = createServerFn({ method: "GET" })
       const receipts = (rows ?? []) as Array<{ user_id: string; read_at: string }>;
       const ids = receipts.map((row) => row.user_id);
       if (!ids.length) return [];
-      const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", ids);
       const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name ?? "Member"]));
       return receipts.map((row) => ({
         user_id: row.user_id,
@@ -1603,11 +1690,14 @@ export const blockMessagingUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.view");
-    const { data: ok, error } = await supabase.rpc("messaging_block_user" as never, {
-      _company_id: data.companyId,
-      _blocked_user_id: data.blockedUserId,
-      _reason: data.reason || null,
-    } as never);
+    const { data: ok, error } = await supabase.rpc(
+      "messaging_block_user" as never,
+      {
+        _company_id: data.companyId,
+        _blocked_user_id: data.blockedUserId,
+        _reason: data.reason || null,
+      } as never,
+    );
     if (error) asError(error);
     return { ok: Boolean(ok) };
   });
@@ -1621,10 +1711,13 @@ export const unblockMessagingUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.view");
-    const { data: ok, error } = await supabase.rpc("messaging_unblock_user" as never, {
-      _company_id: data.companyId,
-      _blocked_user_id: data.blockedUserId,
-    } as never);
+    const { data: ok, error } = await supabase.rpc(
+      "messaging_unblock_user" as never,
+      {
+        _company_id: data.companyId,
+        _blocked_user_id: data.blockedUserId,
+      } as never,
+    );
     if (error) asError(error);
     return { ok: Boolean(ok) };
   });
@@ -1643,10 +1736,13 @@ export const setMessagingRetentionDays = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<MessagingSettings> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.manage_retention");
-    const { data: row, error } = await supabase.rpc("messaging_set_retention_days" as never, {
-      _company_id: data.companyId,
-      _retention_days: data.retentionDays,
-    } as never);
+    const { data: row, error } = await supabase.rpc(
+      "messaging_set_retention_days" as never,
+      {
+        _company_id: data.companyId,
+        _retention_days: data.retentionDays,
+      } as never,
+    );
     if (error) asError(error);
     return row as MessagingSettings;
   });
@@ -1661,11 +1757,14 @@ export const reportMessagingMessage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ reportId: string }> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.view");
-    const { data: id, error } = await supabase.rpc("messaging_report_message" as never, {
-      _company_id: data.companyId,
-      _message_id: data.messageId,
-      _reason: data.reason,
-    } as never);
+    const { data: id, error } = await supabase.rpc(
+      "messaging_report_message" as never,
+      {
+        _company_id: data.companyId,
+        _message_id: data.messageId,
+        _reason: data.reason,
+      } as never,
+    );
     if (error) asError(error);
     return { reportId: String(id) };
   });
@@ -1679,7 +1778,15 @@ export const listBlockedMessagingUsers = createServerFn({ method: "GET" })
     async ({
       data,
       context,
-    }): Promise<Array<{ blocked_user_id: string; full_name: string; email: string; reason: string | null; created_at: string }>> => {
+    }): Promise<
+      Array<{
+        blocked_user_id: string;
+        full_name: string;
+        email: string;
+        reason: string | null;
+        created_at: string;
+      }>
+    > => {
       const { supabase, userId } = context;
       await assertCompanyPermission(supabase, data.companyId, "messaging.view");
       const { data: rows, error } = await supabase

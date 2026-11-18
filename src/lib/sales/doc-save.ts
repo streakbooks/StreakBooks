@@ -101,39 +101,37 @@ export async function saveSalesDocument(
     quoteId: input.quoteId,
     hasPricing: Boolean(input.pricing),
   });
-  const rpc = await callSalesRpc<{ id: string; number: string | null }>(
-    supabase,
-    rpcName,
-    {
-      kind: input.kind,
-      company_id: input.companyId,
-      id: input.id ?? null,
-      contact_id: input.contactId,
-      doc_date: input.docDate,
-      due_date: input.dueDate ?? null,
-      expiry_date: input.expiryDate ?? null,
-      number: input.number ?? null,
-      memo: input.memo ?? null,
-      currency_code: input.currencyCode,
-      fx_rate_to_base: input.fxRateToBase ?? 1,
-      invoice_id: input.sourceInvoiceId ?? null,
-      quote_id: input.quoteId ?? null,
-      lines: input.lines.map(linePayload),
-      ...(input.pricing ? {
-        pricing: {
-          price_list_id: input.pricing.priceListId,
-          lines: input.pricing.lines,
-        },
-      } : {}),
-    },
-  );
+  const rpc = await callSalesRpc<{ id: string; number: string | null }>(supabase, rpcName, {
+    kind: input.kind,
+    company_id: input.companyId,
+    id: input.id ?? null,
+    contact_id: input.contactId,
+    doc_date: input.docDate,
+    due_date: input.dueDate ?? null,
+    expiry_date: input.expiryDate ?? null,
+    number: input.number ?? null,
+    memo: input.memo ?? null,
+    currency_code: input.currencyCode,
+    fx_rate_to_base: input.fxRateToBase ?? 1,
+    invoice_id: input.sourceInvoiceId ?? null,
+    quote_id: input.quoteId ?? null,
+    lines: input.lines.map(linePayload),
+    ...(input.pricing
+      ? {
+          pricing: {
+            price_list_id: input.pricing.priceListId,
+            lines: input.pricing.lines,
+          },
+        }
+      : {}),
+  });
   if (!rpc.missing) {
     return { id: rpc.data.id, number: rpc.data.number ?? null, usedFallback: false };
   }
   if (requiresAtomicPricingRpc(rpcName)) {
     throw new Error(
       "This sale uses atomic pricing provenance. The corresponding database migration " +
-      "is not deployed; no document was saved. Ask an administrator to apply the migration.",
+        "is not deployed; no document was saved. Ask an administrator to apply the migration.",
     );
   }
   const r = await saveFallback(supabase, input);

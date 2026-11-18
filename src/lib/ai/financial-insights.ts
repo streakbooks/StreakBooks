@@ -5,14 +5,64 @@ import { fromMinorUnits } from "@/lib/accounting/money";
  * Do not independently compute revenue, profit, cash, or balances from raw journals here.
  */
 export const FINANCIAL_METRICS = [
-  { id: "revenue", label: "Revenue", format: "money", source: "profit-and-loss", description: "Net posted income for the selected period." },
-  { id: "gross_profit", label: "Gross profit", format: "money", source: "profit-and-loss", description: "Revenue after cost of sales for the selected period." },
-  { id: "net_profit", label: "Net profit", format: "money", source: "profit-and-loss", description: "Net income less expenses for the selected period." },
-  { id: "cash", label: "Bank GL balances", format: "money", source: "cash-summary", description: "Closing company bank general-ledger balances as of the end date; not bank-feed balances." },
-  { id: "working_capital", label: "Working capital", format: "money", source: "balance-sheet", description: "Current assets less current liabilities as of the end date." },
-  { id: "current_ratio", label: "Current ratio", format: "ratio", source: "balance-sheet", description: "Current assets divided by current liabilities; unavailable when liabilities are not positive." },
-  { id: "gross_margin", label: "Gross margin", format: "percent", source: "profit-and-loss", description: "Gross profit divided by net revenue, when revenue is positive." },
-  { id: "net_margin", label: "Net margin", format: "percent", source: "profit-and-loss", description: "Net profit divided by net revenue, when revenue is positive." },
+  {
+    id: "revenue",
+    label: "Revenue",
+    format: "money",
+    source: "profit-and-loss",
+    description: "Net posted income for the selected period.",
+  },
+  {
+    id: "gross_profit",
+    label: "Gross profit",
+    format: "money",
+    source: "profit-and-loss",
+    description: "Revenue after cost of sales for the selected period.",
+  },
+  {
+    id: "net_profit",
+    label: "Net profit",
+    format: "money",
+    source: "profit-and-loss",
+    description: "Net income less expenses for the selected period.",
+  },
+  {
+    id: "cash",
+    label: "Bank GL balances",
+    format: "money",
+    source: "cash-summary",
+    description:
+      "Closing company bank general-ledger balances as of the end date; not bank-feed balances.",
+  },
+  {
+    id: "working_capital",
+    label: "Working capital",
+    format: "money",
+    source: "balance-sheet",
+    description: "Current assets less current liabilities as of the end date.",
+  },
+  {
+    id: "current_ratio",
+    label: "Current ratio",
+    format: "ratio",
+    source: "balance-sheet",
+    description:
+      "Current assets divided by current liabilities; unavailable when liabilities are not positive.",
+  },
+  {
+    id: "gross_margin",
+    label: "Gross margin",
+    format: "percent",
+    source: "profit-and-loss",
+    description: "Gross profit divided by net revenue, when revenue is positive.",
+  },
+  {
+    id: "net_margin",
+    label: "Net margin",
+    format: "percent",
+    source: "profit-and-loss",
+    description: "Net profit divided by net revenue, when revenue is positive.",
+  },
 ] as const;
 
 export type FinancialMetricId = (typeof FINANCIAL_METRICS)[number]["id"];
@@ -51,7 +101,12 @@ function decimal2(value: bigint, scale: bigint): string {
   const negative = value < 0n;
   const absolute = negative ? -value : value;
   const rounded = (absolute * 100n + scale / 2n) / scale;
-  return (negative ? "-" : "") + (rounded / 100n).toString() + "." + (rounded % 100n).toString().padStart(2, "0");
+  return (
+    (negative ? "-" : "") +
+    (rounded / 100n).toString() +
+    "." +
+    (rounded % 100n).toString().padStart(2, "0")
+  );
 }
 
 /** Ratios/percentages from getManagementMetrics use integer basis points. */
@@ -85,7 +140,8 @@ function datesAreComparable(current: FinancialSnapshot, previous: FinancialSnaps
     !valid.test(previous.to) ||
     current.accountingBasis !== previous.accountingBasis ||
     previous.to >= current.from
-  ) return false;
+  )
+    return false;
   const days = (from: string, to: string) =>
     (Date.parse(to + "T00:00:00Z") - Date.parse(from + "T00:00:00Z")) / 86_400_000;
   return days(current.from, current.to) === days(previous.from, previous.to);
@@ -108,8 +164,13 @@ export function buildFinancialInsights(
     return {
       id: def.id,
       label: def.label,
-      value: formatFinancialMetric(actual === null ? null : actual.toString(), def.format, currency),
-      priorValue: prior === null ? null : formatFinancialMetric(prior.toString(), def.format, currency),
+      value: formatFinancialMetric(
+        actual === null ? null : actual.toString(),
+        def.format,
+        currency,
+      ),
+      priorValue:
+        prior === null ? null : formatFinancialMetric(prior.toString(), def.format, currency),
       change:
         change === null
           ? null

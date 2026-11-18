@@ -26,9 +26,7 @@ export function exactJournalMinor(value: number | string, label = "Journal line"
 }
 
 /** Add using BigInt so a safe line-by-line payload cannot overflow silently. */
-export function sumJournalDebits(
-  lines: ReadonlyArray<{ debit_minor: number | string }>,
-): number {
+export function sumJournalDebits(lines: ReadonlyArray<{ debit_minor: number | string }>): number {
   let total = 0n;
   for (const line of lines) {
     total += parseExactJournalMinor(line.debit_minor, "Journal debit");

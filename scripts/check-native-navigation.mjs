@@ -96,122 +96,42 @@ for (const tab of tabs)
 
 // Comprehensive top-level source/route coverage; not a claim of live functionality.
 const EXPECTED_TOP_LEVEL = new Map([
-  [
-    "Dashboard",
-    "/"
-  ],
-  [
-    "Banking",
-    "/banking"
-  ],
-  [
-    "Sales",
-    "/sales"
-  ],
-  [
-    "Purchases",
-    "/purchases"
-  ],
-  [
-    "Expenses",
-    "/expense-management"
-  ],
-  [
-    "CRM",
-    "/crm"
-  ],
-  [
-    "HR",
-    "/hr"
-  ],
-  [
-    "Contacts",
-    "/contacts"
-  ],
-  [
-    "Products & Services",
-    "/products-services"
-  ],
-  [
-    "Files",
-    "/files"
-  ],
-  [
-    "Accounting",
-    "/accounting"
-  ],
-  [
-    "Messages",
-    "/messages"
-  ],
-  [
-    "Action Center",
-    "/notifications"
-  ],
-  [
-    "Budgets",
-    "/budgets"
-  ],
-  [
-    "Fixed assets",
-    "/fixed-assets"
-  ],
-  [
-    "Payroll",
-    "/payroll"
-  ],
-  [
-    "Reports",
-    "/reports"
-  ],
-  [
-    "Tax",
-    "/tax"
-  ],
-  [
-    "Accountant",
-    "/accountant"
-  ],
-  [
-    "Firm",
-    "/firm"
-  ],
-  [
-    "Advisors",
-    "/advisors-admin"
-  ],
-  [
-    "Advisors portal",
-    "/advisors-portal"
-  ],
-  [
-    "App Store",
-    "/app-store"
-  ],
-  [
-    "Developer",
-    "/developer"
-  ],
-  [
-    "AI Assistant",
-    "/ai-assistant"
-  ],
-  [
-    "Settings",
-    "/settings"
-  ],
-  [
-    "Help",
-    "/help"
-  ]
+  ["Dashboard", "/"],
+  ["Banking", "/banking"],
+  ["Sales", "/sales"],
+  ["Purchases", "/purchases"],
+  ["Expenses", "/expense-management"],
+  ["CRM", "/crm"],
+  ["HR", "/hr"],
+  ["Contacts", "/contacts"],
+  ["Products & Services", "/products-services"],
+  ["Files", "/files"],
+  ["Accounting", "/accounting"],
+  ["Messages", "/messages"],
+  ["Action Center", "/notifications"],
+  ["Budgets", "/budgets"],
+  ["Fixed assets", "/fixed-assets"],
+  ["Payroll", "/payroll"],
+  ["Reports", "/reports"],
+  ["Tax", "/tax"],
+  ["Accountant", "/accountant"],
+  ["Firm", "/firm"],
+  ["Advisors", "/advisors-admin"],
+  ["Advisors portal", "/advisors-portal"],
+  ["App Store", "/app-store"],
+  ["Developer", "/developer"],
+  ["AI Assistant", "/ai-assistant"],
+  ["Settings", "/settings"],
+  ["Help", "/help"],
 ]);
 const registeredRoutePaths = new Set(
-  [...read("src/routeTree.gen.ts").matchAll(/\bpath:\s*'([^']+)'/g)]
-    .map((match) => match[1].replace(/\/+$/, "") || "/"),
+  [...read("src/routeTree.gen.ts").matchAll(/\bpath:\s*'([^']+)'/g)].map(
+    (match) => match[1].replace(/\/+$/, "") || "/",
+  ),
 );
-const navigationEntries = [...read("src/lib/nav.ts").matchAll(
-  /\blabel:\s*"([^"]+)"\s*,\s*to:\s*"([^"]+)"/g,
-)].map((match) => ({ label: match[1], to: match[2] }));
+const navigationEntries = [
+  ...read("src/lib/nav.ts").matchAll(/\blabel:\s*"([^"]+)"\s*,\s*to:\s*"([^"]+)"/g),
+].map((match) => ({ label: match[1], to: match[2] }));
 const seenLabels = new Set();
 const seenPaths = new Set();
 for (const item of navigationEntries) {
@@ -227,7 +147,9 @@ for (const [label, destination] of EXPECTED_TOP_LEVEL) {
     failures.push(`Missing/moved required module: ${label} -> ${destination}`);
 }
 if (navigationEntries.length !== EXPECTED_TOP_LEVEL.size)
-  failures.push(`Expected ${EXPECTED_TOP_LEVEL.size} unique top-level modules; found ${navigationEntries.length}`);
+  failures.push(
+    `Expected ${EXPECTED_TOP_LEVEL.size} unique top-level modules; found ${navigationEntries.length}`,
+  );
 
 const nav = read("src/lib/nav.ts");
 const known = (nav.match(/\blabel:\s*"/g) ?? []).length;

@@ -40,7 +40,8 @@ export function runMessagingAiAssist(request: MessagingAiRequest): MessagingAiRe
   if (request.userConfirmedExternalSend) {
     return {
       ok: false,
-      reason: "External AI sends require a configured provider and explicit product confirmation flow",
+      reason:
+        "External AI sends require a configured provider and explicit product confirmation flow",
     };
   }
   return {

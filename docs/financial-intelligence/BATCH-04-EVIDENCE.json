@@ -1,0 +1,249 @@
+{
+  "date": "2026-11-18",
+  "status": "local corrective gates passed; full programme and hosted release remain blocked",
+  "runtime_revision": "1b3d12eeba5e00feb2adfd92fdcb90324cb04453",
+  "integrated_main_snapshot": "8c79ac08e1f21884395a6066a71267f04ffda6d5",
+  "pull_request": "https://github.com/linkbusinessadvisory/LinkBooks/pull/251",
+  "static": {
+    "revision": "1b3d12eeba5e00feb2adfd92fdcb90324cb04453",
+    "checks": {
+      "typecheck": {
+        "command": "npm run typecheck",
+        "exit_code": 0
+      },
+      "lint": {
+        "command": "npm run lint -- --max-warnings=0",
+        "exit_code": 0
+      },
+      "repository": {
+        "command": "npm run check:repository",
+        "exit_code": 0
+      },
+      "migrations": {
+        "command": "npm run check:migrations",
+        "exit_code": 0
+      },
+      "ui": {
+        "command": "npm run check:ui",
+        "exit_code": 0
+      },
+      "ui-resolver": {
+        "command": "node --test scripts/lib/ui-route-source.test.mjs",
+        "exit_code": 0
+      },
+      "modules": {
+        "command": "npm run check:modules",
+        "exit_code": 0
+      },
+      "navigation": {
+        "command": "npm run check:navigation",
+        "exit_code": 0
+      },
+      "lookups": {
+        "command": "npm run check:lookups",
+        "exit_code": 0
+      },
+      "build": {
+        "command": "npm run build",
+        "exit_code": 0
+      },
+      "bundle": {
+        "command": "npm run check:bundle",
+        "exit_code": 0
+      }
+    }
+  },
+  "flows": {
+    "revision": "1b3d12eeba5e00feb2adfd92fdcb90324cb04453",
+    "checks": {
+      "api": {
+        "command": "python3 scripts/test-banking-local-api.py --env-file <private local CLI status file>",
+        "exit_code": 0
+      },
+      "helpers": {
+        "command": "docker exec -i supabase_db_full-schema psql -U postgres -d postgres -v ON_ERROR_STOP=1",
+        "exit_code": 0
+      },
+      "security": {
+        "command": "npx --yes supabase db advisors --workdir /workspace/work/full-schema --type security --level warn --fail-on warn",
+        "exit_code": 0
+      },
+      "real-browser": {
+        "command": "npx playwright test --config playwright.banking-local-api.config.ts",
+        "exit_code": 0
+      },
+      "reversal": {
+        "command": "python3 scripts/test-banking-local-api.py --env-file <private local CLI status file> --reverse",
+        "exit_code": 0
+      },
+      "mfa": {
+        "command": "python3 scripts/test-banking-local-api.py --env-file <private local CLI status file> --mfa",
+        "exit_code": 0
+      },
+      "unit": {
+        "command": "npm test -- --maxWorkers=4",
+        "exit_code": 0
+      },
+      "postgres": {
+        "command": "npm run test:banking:postgres",
+        "exit_code": 0
+      },
+      "ui-fixtures": {
+        "command": "npm run test:ui",
+        "exit_code": 0
+      },
+      "memory-fixtures": {
+        "command": "npm run test:banking:ui",
+        "exit_code": 0
+      }
+    }
+  },
+  "additional_isolated_postgres_suites": {
+    "revision": "1b3d12eeba5e00feb2adfd92fdcb90324cb04453",
+    "checks": {
+      "workflows": {
+        "command": "npm run test:workflows:postgres",
+        "exit_code": 0
+      },
+      "documents": {
+        "command": "npm run test:documents:postgres",
+        "exit_code": 0
+      },
+      "accountant": {
+        "command": "npm run test:accountant:postgres",
+        "exit_code": 0
+      },
+      "correction-approvals": {
+        "command": "npm run test:correction-approvals:postgres",
+        "exit_code": 0
+      },
+      "workpaper-items": {
+        "command": "npm run test:workpaper-items:postgres",
+        "exit_code": 0
+      },
+      "platform": {
+        "command": "npm run test:platform:postgres",
+        "exit_code": 0
+      },
+      "billing": {
+        "command": "npm run test:billing:postgres",
+        "exit_code": 0
+      }
+    }
+  },
+  "unit": {
+    "files_passed": 591,
+    "passed": 4010,
+    "failed": 0,
+    "skipped": 0
+  },
+  "browser": {
+    "real_local_passed": 7,
+    "shared_ui_fixture_passed": 79,
+    "coding_memory_fixture_passed": 5,
+    "failed": 0,
+    "hosted_staging": false
+  },
+  "real_api": {
+    "target": "isolated localhost Supabase; real Auth and RLS",
+    "passed": 23,
+    "assertions": [
+      "Real Auth password session created",
+      "Real Auth password session created",
+      "Canonical company creation returned a company identity",
+      "Authoritative posting retries reuse the same journal",
+      "Authoritative journal is balanced",
+      "Linked approved posting becomes exactly one recommendation",
+      "Real API feedback retries deduplicate",
+      "Rejected feedback adds no learning",
+      "Preference False persists through the real API",
+      "Preference True persists through the real API",
+      "Real RLS hides another company learning evidence",
+      "Direct learning-event forgery is denied",
+      "App audit RPC resolves UUID strings and preserves the actor while removing secret fields",
+      "App audit RPC preserves non-UUID entity references",
+      "App audit RPC rejects another company user",
+      "Anonymous app audit writes are denied",
+      "Same owner has a second isolated company for real UI switching",
+      "Real Auth password session created",
+      "Real read-only company member can view coding memory",
+      "Real read-only member cannot submit coding feedback",
+      "Real read-only member cannot change memory preferences",
+      "Real read-only member cannot bypass the UI to post a journal",
+      "Denied posting leaves the original journal unchanged"
+    ]
+  },
+  "real_mfa": {
+    "target": "isolated localhost Supabase; real Auth and RLS",
+    "passed": 8,
+    "assertions": [
+      "MFA remains on the same explicit local endpoint",
+      "Normal password session can read its fixture evidence before enrollment",
+      "Real Auth enrollment and challenge return an AAL2 session",
+      "Old AAL1 session cannot read evidence after verified enrollment",
+      "Verified AAL2 session restores only its existing company evidence",
+      "Coding Memory RPC accepts the real AAL2 session",
+      "AAL2 does not permit direct learning-event forgery",
+      "Both app and legacy audit endpoints enforce MFA while AAL2 audit writes succeed"
+    ]
+  },
+  "real_reversal": {
+    "target": "isolated localhost Supabase; real Auth and RLS",
+    "passed": 3,
+    "assertions": [
+      "Reversal remains on the same local endpoint",
+      "Authoritative reversals remove all fixture precedents",
+      "Reversal retains immutable learning evidence"
+    ]
+  },
+  "banking_postgres": {
+    "passed": 59,
+    "failed": 0,
+    "scope": "isolated fixtures"
+  },
+  "search_path_helper_smoke": {
+    "helpers_exercised": 19,
+    "caller_search_path": "pg_temp"
+  },
+  "local_security_advisors": {
+    "warning_error_findings": 0,
+    "info_and_performance_certified": false
+  },
+  "local_schema": {
+    "target": "isolated local stack (127.0.0.1:54322)",
+    "cli_exit_code": 1,
+    "expected_migration_count": 357,
+    "applied_migration_count": 357,
+    "all_repository_versions_match": true,
+    "service_health_probe": "not certified by migration success",
+    "auth_host_http_status": 200,
+    "rest_host_http_status": 200
+  },
+  "schema_files_identical_after_main_integration": true,
+  "lookup_architecture": {
+    "shared_declarations": 374,
+    "violations": 0,
+    "migrated_controls": 147,
+    "application_files": 66
+  },
+  "github_ci": {
+    "source_revision": "1b3d12eeba5e00feb2adfd92fdcb90324cb04453",
+    "run_id": 44220265623,
+    "url": "https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44220265623",
+    "conclusion": "failure",
+    "failed_job_count": 5,
+    "annotations_per_job": 2,
+    "validate_steps": [],
+    "validate_log_download": "404 BlobNotFound",
+    "annotation_read": "connector endpoint unsupported",
+    "root_cause": "not established; annotation text requested from user"
+  },
+  "production_migrations_performed": false,
+  "main_merge_performed": false,
+  "deployment_performed": false,
+  "production_verified": false,
+  "complete_directive_criteria_acceptance": {
+    "verified": 0,
+    "total": 53
+  }
+}

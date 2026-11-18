@@ -5,43 +5,70 @@ import type { ExceptionFinding } from "./reconciliation-exceptions";
  * NOT a signature, authorization token, source attestation, or proof of resolution.
  * Changed source evidence intentionally creates a separate review case.
  */
-export function reconciliationFindingFingerprint(finding: Pick<
-  ExceptionFinding, "source" | "title" | "detail" | "severity" | "reference" | "journalId"
->): string {
+export function reconciliationFindingFingerprint<
+  T extends Pick<
+    ExceptionFinding,
+    "source" | "title" | "detail" | "severity" | "reference" | "journalId"
+  >,
+>(finding: T): string {
   const material = [
-    finding.source, finding.reference ?? "", finding.journalId ?? "",
-    finding.severity, finding.title, finding.detail,
-  ].map(x => x.length + ":" + x).join("|");
+    finding.source,
+    finding.reference ?? "",
+    finding.journalId ?? "",
+    finding.severity,
+    finding.title,
+    finding.detail,
+  ]
+    .map((x) => x.length + ":" + x)
+    .join("|");
   const mod = (1n << 64n) - 1n;
   const prime = 1099511628211n;
-  let first = 14695981039346656037n, second = 7809847782465536322n;
+  let first = 14695981039346656037n,
+    second = 7809847782465536322n;
   for (let i = 0; i < material.length; i++) {
     const code = BigInt(material.charCodeAt(i));
     first = ((first ^ code) * prime) & mod;
     second = ((second ^ code) * (prime + 2n)) & mod;
   }
-  return "f" + first.toString(16).padStart(16, "0") +
-    second.toString(16).padStart(16, "0");
+  return "f" + first.toString(16).padStart(16, "0") + second.toString(16).padStart(16, "0");
 }
-export type ReconciliationCaseStatus = "open" | "in_review" | "blocked" | "ready_for_review" | "reviewed";
+export type ReconciliationCaseStatus =
+  "open" | "in_review" | "blocked" | "ready_for_review" | "reviewed";
 export type ReconciliationCaseAction = "open" | "assign" | "comment" | "status";
 export type ReconciliationSavedCase = {
-  id: string; company_id: string; source_type: ExceptionFinding["source"];
-  finding_fingerprint: string; severity: "error" | "warning";
-  title: string; detail: string;
-  source_reference: string | null; journal_id: string | null;
-  status: ReconciliationCaseStatus; assigned_to: string | null;
-  version: number; created_at: string; updated_at: string;
-  created_by: string; updated_by: string;
-  evidence_url: string | null; evidence_added_by: string | null;
-  evidence_added_at: string | null; submitted_by: string | null;
-  submitted_at: string | null; reviewed_by: string | null;
+  id: string;
+  company_id: string;
+  source_type: ExceptionFinding["source"];
+  finding_fingerprint: string;
+  severity: "error" | "warning";
+  title: string;
+  detail: string;
+  source_reference: string | null;
+  journal_id: string | null;
+  status: ReconciliationCaseStatus;
+  assigned_to: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  updated_by: string;
+  evidence_url: string | null;
+  evidence_added_by: string | null;
+  evidence_added_at: string | null;
+  submitted_by: string | null;
+  submitted_at: string | null;
+  reviewed_by: string | null;
   reviewed_at: string | null;
 };
 export type ReconciliationReviewAction = "attach_evidence" | "submit" | "sign_off" | "reopen";
 export type ReconciliationReviewEvent = {
-  id: string; company_id: string; case_id: string;
-  actor_id: string; action: string; note: string;
-  old_state: Json | null;
-  new_state: Json; created_at: string;
+  id: string;
+  company_id: string;
+  case_id: string;
+  actor_id: string;
+  action: string;
+  note: string;
+  old_state: Record<string, Json> | null;
+  new_state: Record<string, Json>;
+  created_at: string;
 };

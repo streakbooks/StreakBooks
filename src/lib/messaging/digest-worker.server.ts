@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/documents/email-templates";
 /**
  * Messaging digest worker. Invoked from /api/communications/digest-cron
  * after communication digests. Skips demo companies and sensitive previews.
@@ -172,9 +173,7 @@ export async function runMessagingDigests(now = new Date()): Promise<{
         const text = [
           preview.subject,
           "",
-          ...preview.items.map(
-            (item, index) => `${index + 1}. ${item.title} — ${item.summary}`,
-          ),
+          ...preview.items.map((item, index) => `${index + 1}. ${item.title} — ${item.summary}`),
           "",
           preview.omittedSensitive
             ? `${preview.omittedSensitive} sensitive or private conversation(s) were omitted.`
@@ -189,8 +188,8 @@ export async function runMessagingDigests(now = new Date()): Promise<{
           {
             to: [recipient.user.email],
             subject: preview.subject,
-            html: text.replace(/\n/g, "<br>"),
             text,
+            html: `<pre>${escapeHtml(text)}</pre>`,
             ...(sender.replyTo ? { replyTo: sender.replyTo } : {}),
           },
         );

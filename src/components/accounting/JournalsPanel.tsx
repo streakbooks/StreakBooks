@@ -25,7 +25,11 @@ import { reviewJournalLines } from "@/lib/accounting/journal-line-review";
 import { JournalPostedGlEvidence } from "@/components/accounting/JournalPostedGlEvidence";
 import { PayrollAccrualGlAudit } from "@/components/accounting/PayrollAccrualGlAudit";
 import { PayrollPaymentGlAudit } from "@/components/accounting/PayrollPaymentGlAudit";
-import { JOURNAL_SOURCE_LABELS, journalSourceLabel, journalLineCurrency } from "@/lib/accounting/journal-display";
+import {
+  JOURNAL_SOURCE_LABELS,
+  journalSourceLabel,
+  journalLineCurrency,
+} from "@/lib/accounting/journal-display";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
@@ -56,15 +60,14 @@ function JournalLineReviewNotice({
   const review = reviewJournalLines(journal, detail);
   const currency = detail.currency_code;
   return (
-    <div className={`rounded-md border p-3 space-y-1 ${
-      review.state === "exception"
-        ? "border-destructive/40 bg-destructive/5"
-        : "border-border bg-muted/40"
-    }`}>
-      <p
-        role={review.state === "exception" ? "alert" : "status"}
-        className="text-sm font-semibold"
-      >
+    <div
+      className={`rounded-md border p-3 space-y-1 ${
+        review.state === "exception"
+          ? "border-destructive/40 bg-destructive/5"
+          : "border-border bg-muted/40"
+      }`}
+    >
+      <p role={review.state === "exception" ? "alert" : "status"} className="text-sm font-semibold">
         {review.state === "balanced"
           ? "Journal line check passed"
           : review.state === "not_posted"
@@ -73,12 +76,15 @@ function JournalLineReviewNotice({
       </p>
       {review.debitMinor !== null && review.creditMinor !== null ? (
         <p className="text-xs tabular-nums text-muted-foreground">
-          Debit: {fmt.amount(review.debitMinor, currency)} · Credit: {fmt.amount(review.creditMinor, currency)}
+          Debit: {fmt.amount(review.debitMinor, currency)} · Credit:{" "}
+          {fmt.amount(review.creditMinor, currency)}
         </p>
       ) : null}
       {review.issues.length > 0 ? (
         <ul className="list-disc space-y-1 pl-5 text-sm text-destructive">
-          {review.issues.map((issue, index) => <li key={index}>{issue}</li>)}
+          {review.issues.map((issue, index) => (
+            <li key={index}>{issue}</li>
+          ))}
         </ul>
       ) : null}
       <p className="text-xs text-muted-foreground">
@@ -159,8 +165,7 @@ export function JournalsPanel({
   });
 
   const reverseM = useMutation({
-    mutationFn: (journalId: string) =>
-      reverse({ data: { companyId, journalId } }),
+    mutationFn: (journalId: string) => reverse({ data: { companyId, journalId } }),
     onSuccess: async () => {
       toast.success("Reversing journal posted");
       await qc.invalidateQueries({ queryKey: ["journals", companyId] });
@@ -302,7 +307,8 @@ export function JournalsPanel({
           Export displayed journals CSV
         </Button>
         <span className="text-xs text-muted-foreground">
-          Export contains the displayed page only. Amounts use each journal\'s own currency; amount sorting is not FX-converted.
+          Export contains the displayed page only. Amounts use each journal\'s own currency; amount
+          sorting is not FX-converted.
         </span>
       </div>
 
@@ -344,7 +350,11 @@ export function JournalsPanel({
                 <SortableHead label="Date" {...headProps("date")} />
                 <SortableHead label="Source" {...headProps("source")} />
                 <TableHead>Narration</TableHead>
-                <SortableHead label="Amount (journal currency)" align="right" {...headProps("amount")} />
+                <SortableHead
+                  label="Amount (journal currency)"
+                  align="right"
+                  {...headProps("amount")}
+                />
                 <TableHead>Status</TableHead>
                 <TableHead />
               </TableRow>
@@ -352,7 +362,11 @@ export function JournalsPanel({
             <TableBody>
               {rows.map((j) => {
                 const expanded = open === j.id;
-                const lineCurrency = journalLineCurrency(detail.data?.currency_code, j.currency_code, currency);
+                const lineCurrency = journalLineCurrency(
+                  detail.data?.currency_code,
+                  j.currency_code,
+                  currency,
+                );
                 return (
                   <Fragment key={j.id}>
                     <TableRow
@@ -386,9 +400,7 @@ export function JournalsPanel({
                       </TableCell>
                       <TableCell className="space-x-1">
                         <StatusBadge status={j.status} />
-                        {j.reversed_by_journal_id ? (
-                          <StatusBadge status="reversed" />
-                        ) : null}
+                        {j.reversed_by_journal_id ? <StatusBadge status="reversed" /> : null}
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         {canReverse && canReverseHere(j) ? (
@@ -430,7 +442,11 @@ export function JournalsPanel({
                           ) : detail.data ? (
                             <div className="space-y-3">
                               <JournalLineReviewNotice journal={j} detail={detail.data} />
-                              <JournalPostedGlEvidence companyId={companyId} journalId={j.id} status={j.status} />
+                              <JournalPostedGlEvidence
+                                companyId={companyId}
+                                journalId={j.id}
+                                status={j.status}
+                              />
                               {canViewPayroll &&
                               j.status === "posted" &&
                               !j.reversed_by_journal_id &&
@@ -459,27 +475,31 @@ export function JournalsPanel({
                                   <TableRow>
                                     <TableHead>Account</TableHead>
                                     <TableHead>Description</TableHead>
-                                    <TableHead className="text-right">Debit ({lineCurrency})</TableHead>
-                                    <TableHead className="text-right">Credit ({lineCurrency})</TableHead>
+                                    <TableHead className="text-right">
+                                      Debit ({lineCurrency})
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                      Credit ({lineCurrency})
+                                    </TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                   {detail.data.lines.map((line) => (
                                     <TableRow key={line.id}>
                                       <TableCell>
-                                      {line.account_code} {line.account_name}
-                                    </TableCell>
-                                    <TableCell>{line.description ?? "—"}</TableCell>
-                                    <TableCell className="text-right tabular-nums">
-                                      {line.debit_minor
-                                        ? fmt.amount(line.debit_minor, lineCurrency)
-                                        : ""}
-                                    </TableCell>
-                                    <TableCell className="text-right tabular-nums">
-                                      {line.credit_minor
-                                        ? fmt.amount(line.credit_minor, lineCurrency)
-                                        : ""}
-                                    </TableCell>
+                                        {line.account_code} {line.account_name}
+                                      </TableCell>
+                                      <TableCell>{line.description ?? "—"}</TableCell>
+                                      <TableCell className="text-right tabular-nums">
+                                        {line.debit_minor
+                                          ? fmt.amount(line.debit_minor, lineCurrency)
+                                          : ""}
+                                      </TableCell>
+                                      <TableCell className="text-right tabular-nums">
+                                        {line.credit_minor
+                                          ? fmt.amount(line.credit_minor, lineCurrency)
+                                          : ""}
+                                      </TableCell>
                                     </TableRow>
                                   ))}
                                 </TableBody>

@@ -1,32 +1,65 @@
 /** Read-only posted GL evidence check. No source-document or FX valuation assurance. */
 export type GlAuditJournal = {
-  id: string; company_id: string; journal_number: number; journal_date: string;
-  status: string; currency_code: string | null; source_type: string;
-  reversed_by_journal_id: string | null; reverses_journal_id: string | null;
+  id: string;
+  company_id: string;
+  journal_number: number;
+  journal_date: string;
+  status: string;
+  currency_code: string | null;
+  source_type: string;
+  reversed_by_journal_id: string | null;
+  reverses_journal_id: string | null;
 };
 export type GlAuditLine = {
-  id: string; company_id: string; journal_id: string; line_no: number;
-  account_id: string; debit_minor: number | string; credit_minor: number | string;
+  id: string;
+  company_id: string;
+  journal_id: string;
+  line_no: number;
+  account_id: string;
+  debit_minor: number | string;
+  credit_minor: number | string;
 };
 export type GlAuditAccount = {
-  id: string; company_id: string; code: string; name: string;
+  id: string;
+  company_id: string;
+  code: string;
+  name: string;
 };
 export type GlAuditPeriod = {
-  id: string; company_id: string; start_date: string; end_date: string; status: string;
+  id: string;
+  company_id: string;
+  start_date: string;
+  end_date: string;
+  status: string;
 };
 export type GlAuditReversal = {
-  id: string; company_id: string; status: string;
-  reverses_journal_id: string | null; reversed_by_journal_id: string | null;
+  id: string;
+  company_id: string;
+  status: string;
+  reverses_journal_id: string | null;
+  reversed_by_journal_id: string | null;
 };
 export type GlAccountEvidence = {
-  accountId: string; code: string; name: string; debitMinor: string; creditMinor: string;
+  accountId: string;
+  code: string;
+  name: string;
+  debitMinor: string;
+  creditMinor: string;
 };
 export type PostedGlEvidenceResult = {
-  journalId: string; journalNumber: number; status: "passed" | "exceptions" | "not_posted";
-  currencyCode: string; sourceType: string; lineCount: number; accountCount: number;
-  periodId: string | null; periodStatus: string | null;
-  debitMinor: string | null; creditMinor: string | null;
-  accounts: GlAccountEvidence[]; issues: string[];
+  journalId: string;
+  journalNumber: number;
+  status: "passed" | "exceptions" | "not_posted";
+  currencyCode: string;
+  sourceType: string;
+  lineCount: number;
+  accountCount: number;
+  periodId: string | null;
+  periodStatus: string | null;
+  debitMinor: string | null;
+  creditMinor: string | null;
+  accounts: GlAccountEvidence[];
+  issues: string[];
 };
 function isRealIsoDay(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -51,7 +84,8 @@ export function reviewPostedGlEvidence(
   reversals: readonly GlAuditReversal[],
 ): PostedGlEvidenceResult {
   const issues: string[] = [];
-  if (journal.company_id !== expectedCompanyId) issues.push("Journal organisation differs from the request.");
+  if (journal.company_id !== expectedCompanyId)
+    issues.push("Journal organisation differs from the request.");
   if (!journal.id) issues.push("Journal identity is missing.");
   if (!Number.isSafeInteger(journal.journal_number) || journal.journal_number <= 0) {
     issues.push("Journal number is invalid.");
@@ -62,10 +96,19 @@ export function reviewPostedGlEvidence(
     issues.push("Journal date is missing or malformed.");
   }
   const result: PostedGlEvidenceResult = {
-    journalId: journal.id, journalNumber: journal.journal_number, status: "not_posted",
-    currencyCode: journal.currency_code ?? "", sourceType: journal.source_type,
-    lineCount: lines.length, accountCount: 0, periodId: null, periodStatus: null,
-    debitMinor: null, creditMinor: null, accounts: [], issues,
+    journalId: journal.id,
+    journalNumber: journal.journal_number,
+    status: "not_posted",
+    currencyCode: journal.currency_code ?? "",
+    sourceType: journal.source_type,
+    lineCount: lines.length,
+    accountCount: 0,
+    periodId: null,
+    periodStatus: null,
+    debitMinor: null,
+    creditMinor: null,
+    accounts: [],
+    issues,
   };
   if (journal.status !== "posted") {
     if (issues.length) result.status = "exceptions";
@@ -77,9 +120,13 @@ export function reviewPostedGlEvidence(
       issues.push("Accounting period belongs to a different organisation.");
       return false;
     }
-    if (!period.id || !isRealIsoDay(period.start_date) ||
-        !isRealIsoDay(period.end_date) || period.start_date > period.end_date ||
-        !period.status?.trim()) {
+    if (
+      !period.id ||
+      !isRealIsoDay(period.start_date) ||
+      !isRealIsoDay(period.end_date) ||
+      period.start_date > period.end_date ||
+      !period.status?.trim()
+    ) {
       issues.push("Accounting period evidence is malformed.");
       return false;
     }
@@ -116,7 +163,8 @@ export function reviewPostedGlEvidence(
     }
     seenNumbers.add(line.line_no);
     const account = accountMap.get(line.account_id);
-    if (!account || !account.code.trim()) issues.push(label + " has no valid organisation-owned account.");
+    if (!account || !account.code.trim())
+      issues.push(label + " has no valid organisation-owned account.");
     try {
       const debit = exactMinor(line.debit_minor, label + " debit");
       const credit = exactMinor(line.credit_minor, label + " credit");
@@ -148,8 +196,14 @@ export function reviewPostedGlEvidence(
   );
   const reversalMap = new Map<string, GlAuditReversal>();
   for (const reversal of reversals) {
-    if (!relatedIds.includes(reversal.id) || reversal.company_id !== expectedCompanyId || reversalMap.has(reversal.id)) {
-      issues.push("Related reversal evidence is unexpected, duplicated or from another organisation.");
+    if (
+      !relatedIds.includes(reversal.id) ||
+      reversal.company_id !== expectedCompanyId ||
+      reversalMap.has(reversal.id)
+    ) {
+      issues.push(
+        "Related reversal evidence is unexpected, duplicated or from another organisation.",
+      );
     } else {
       reversalMap.set(reversal.id, reversal);
     }
@@ -162,7 +216,11 @@ export function reviewPostedGlEvidence(
   }
   if (journal.reverses_journal_id) {
     const original = reversalMap.get(journal.reverses_journal_id);
-    if (!original || original.status !== "posted" || original.reversed_by_journal_id !== journal.id) {
+    if (
+      !original ||
+      original.status !== "posted" ||
+      original.reversed_by_journal_id !== journal.id
+    ) {
       issues.push("Original journal is missing, not posted, or does not reference this reversal.");
     }
   }
@@ -173,8 +231,11 @@ export function reviewPostedGlEvidence(
     .map(([id, sums]) => {
       const account = accountMap.get(id)!;
       return {
-        accountId: id, code: account.code, name: account.name,
-        debitMinor: sums.debit.toString(), creditMinor: sums.credit.toString(),
+        accountId: id,
+        code: account.code,
+        name: account.name,
+        debitMinor: sums.debit.toString(),
+        creditMinor: sums.credit.toString(),
       };
     })
     .sort((a, b) => a.code.localeCompare(b.code) || a.accountId.localeCompare(b.accountId));

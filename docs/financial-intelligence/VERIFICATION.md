@@ -1,5 +1,7 @@
 # Verification and review — draft PR #225
 
+Current continuation: [Batch 05 scoped Coding Memory reset](BATCH-05-SCOPED-MEMORY-RESET.md). Earlier counts and failed baseline gates below are historical; use the latest batch evidence for current status.
+
 Result: PARTIALLY COMPLETED. [Draft PR #225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225) is open; no merge requested or performed. [Main baseline](https://github.com/linkbusinessadvisory/LinkBooks/commit/a2a8a79efbf8ad11b0aa64bd00a7e64095ba0484). [Code commit](https://github.com/linkbusinessadvisory/LinkBooks/commit/743c73fcddf9611657c8b0d3a2c0351bf3de4bc6). Documentation-only follow-up does not alter tested runtime source.
 
 Environment: isolated Linux cloud worktree `/workspace/work/linkbooks`, Node 24.19.0, npm 11.9.0. `npm ci` succeeded using the authoritative repository lockfile (646 packages). Initial borrowed dependencies lacked a font required by authoritative main; that preliminary build failed, then was superseded by a clean installation and successful build. No dependency manifests were changed. Initial typecheck detected one new test index-signature diagnostic; it was fixed before the code commit. Full final status is recorded below.

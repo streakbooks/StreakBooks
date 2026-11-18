@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import {
-  StatusBadge,
-  StatusIndicator,
-  StatusTimeline,
-} from "./StatusBadge";
+import { StatusBadge, StatusIndicator, StatusTimeline } from "./StatusBadge";
 import { StatusBadge as ExistingStatusBadge } from "./stat-card";
 
 describe("Live LinkBooks semantic status visuals", () => {

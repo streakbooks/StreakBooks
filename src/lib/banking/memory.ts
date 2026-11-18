@@ -5,6 +5,7 @@ export type MemoryPreference = CodingHistoryRow & {
   enabled: boolean;
   last_approved_at: string;
   latest_journal_id: string;
+  last_reset_at?: string | null;
   last_feedback?: { state: MemoryFeedbackState; posted: boolean; created_at: string } | null;
 };
 export type MemoryFeedbackState = "accepted" | "edited" | "rejected";

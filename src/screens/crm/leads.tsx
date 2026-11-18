@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -77,7 +78,13 @@ export function CrmLeadsPage() {
   const [phone, setPhone] = useState("");
   const [sourceId, setSourceId] = useState<string>("");
   const [estimatedMajor, setEstimatedMajor] = useState("");
-  const validation = validateCrmLeadForm({ firstName, lastName, organizationName, email, estimatedMajor });
+  const validation = validateCrmLeadForm({
+    firstName,
+    lastName,
+    organizationName,
+    email,
+    estimatedMajor,
+  });
   const duplicateCheckRequired = Boolean(email.trim() || phone.trim() || organizationName.trim());
 
   const dupQuery = useQuery({
@@ -102,7 +109,8 @@ export function CrmLeadsPage() {
     retry: false,
   });
   const dupMatches = dupQuery.data?.matches ?? [];
-  const duplicateCheckReady = !duplicateCheckRequired || (dupQuery.isSuccess && !dupQuery.isFetching);
+  const duplicateCheckReady =
+    !duplicateCheckRequired || (dupQuery.isSuccess && !dupQuery.isFetching);
 
   const settings = useQuery({
     queryKey: ["crm-settings", company?.id],
@@ -119,7 +127,9 @@ export function CrmLeadsPage() {
           companyId: company!.id,
           ...(statusFilter === "open"
             ? { activeOnly: true }
-            : statusFilter === "all" ? {} : { status: statusFilter }),
+            : statusFilter === "all"
+              ? {}
+              : { status: statusFilter }),
           q: appliedSearch,
           limit: LEADS_PAGE_SIZE + 1,
           offset: page * LEADS_PAGE_SIZE,
@@ -139,7 +149,13 @@ export function CrmLeadsPage() {
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!company) throw new Error("No organisation");
-      const checked = validateCrmLeadForm({ firstName, lastName, organizationName, email, estimatedMajor });
+      const checked = validateCrmLeadForm({
+        firstName,
+        lastName,
+        organizationName,
+        email,
+        estimatedMajor,
+      });
       if (!checked.valid) throw new Error(checked.message);
       if (!duplicateCheckReady) throw new Error("Complete the duplicate check before saving.");
       if (dupMatches.length > 0 && !ackDuplicates) {
@@ -200,10 +216,13 @@ export function CrmLeadsPage() {
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "Leads" }]}
       actions={
         canManage && settings.data?.enabled ? (
-          <Button type="button" onClick={() => {
-            setShowForm((v) => !v);
-            setAckDuplicates(false);
-          }}>
+          <Button
+            type="button"
+            onClick={() => {
+              setShowForm((v) => !v);
+              setAckDuplicates(false);
+            }}
+          >
             {showForm ? "Close form" : "New lead"}
           </Button>
         ) : undefined
@@ -219,7 +238,9 @@ export function CrmLeadsPage() {
           action={
             can("crm.admin" as Permission) ? (
               <Button asChild>
-                <Link to="/crm/$section" params={{ section: "settings" }}>CRM Settings</Link>
+                <Link to="/crm/$section" params={{ section: "settings" }}>
+                  CRM Settings
+                </Link>
               </Button>
             ) : undefined
           }
@@ -236,18 +257,29 @@ export function CrmLeadsPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="lead-first">First name</Label>
-                  <Input id="lead-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                  <Input
+                    id="lead-first"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lead-last">Last name</Label>
-                  <Input id="lead-last" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                  <Input
+                    id="lead-last"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="lead-org">Organisation</Label>
                   <Input
                     id="lead-org"
                     value={organizationName}
-                    onChange={(e) => { setOrganizationName(e.target.value); setAckDuplicates(false); }}
+                    onChange={(e) => {
+                      setOrganizationName(e.target.value);
+                      setAckDuplicates(false);
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -256,16 +288,29 @@ export function CrmLeadsPage() {
                     id="lead-email"
                     type="email"
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); setAckDuplicates(false); }}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setAckDuplicates(false);
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lead-phone">Phone</Label>
-                  <Input id="lead-phone" value={phone} onChange={(e) => { setPhone(e.target.value); setAckDuplicates(false); }} />
+                  <Input
+                    id="lead-phone"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      setAckDuplicates(false);
+                    }}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Source</Label>
-                  <Select value={sourceId || "__none"} onValueChange={(v) => setSourceId(v === "__none" ? "" : v)}>
+                  <RecordLookupSelect
+                    value={sourceId || "__none"}
+                    onValueChange={(v) => setSourceId(v === "__none" ? "" : v)}
+                  >
                     <SelectTrigger aria-label="Lead source">
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
@@ -277,7 +322,7 @@ export function CrmLeadsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lead-value">Estimated value ({company.base_currency})</Label>
@@ -295,13 +340,29 @@ export function CrmLeadsPage() {
                       <AlertTitle>Possible duplicate leads</AlertTitle>
                       <AlertDescription>
                         <ul className="mt-2 list-disc space-y-1 pl-4">
-                          {dupMatches.slice(0, 5).map((match: { id: string; lead_number?: string; leadNumber?: string; email?: string | null; status?: string }, idx: number) => (
-                            <li key={String(match["id"] ?? idx)}>
-                              {String(match["lead_number"] ?? match["leadNumber"] ?? match["id"] ?? "Lead")}
-                              {match["email"] ? ` · ${String(match["email"])}` : ""}
-                              {match["status"] ? ` (${String(match["status"])})` : ""}
-                            </li>
-                          ))}
+                          {dupMatches.slice(0, 5).map(
+                            (
+                              match: {
+                                id: string;
+                                lead_number?: string;
+                                leadNumber?: string;
+                                email?: string | null;
+                                status?: string;
+                              },
+                              idx: number,
+                            ) => (
+                              <li key={String(match["id"] ?? idx)}>
+                                {String(
+                                  match["lead_number"] ??
+                                    match["leadNumber"] ??
+                                    match["id"] ??
+                                    "Lead",
+                                )}
+                                {match["email"] ? ` · ${String(match["email"])}` : ""}
+                                {match["status"] ? ` (${String(match["status"])})` : ""}
+                              </li>
+                            ),
+                          )}
                         </ul>
                         <label className="mt-3 flex items-center gap-2 text-sm">
                           <input
@@ -317,7 +378,9 @@ export function CrmLeadsPage() {
                 ) : null}
                 <div className="sm:col-span-2">
                   {!validation.valid ? (
-                    <p role="alert" className="mb-3 text-sm text-destructive">{validation.message}</p>
+                    <p role="alert" className="mb-3 text-sm text-destructive">
+                      {validation.message}
+                    </p>
                   ) : null}
                   {duplicateCheckRequired && !duplicateCheckReady && !dupQuery.isError ? (
                     <p role="status" className="mb-3 text-sm text-muted-foreground">
@@ -351,7 +414,9 @@ export function CrmLeadsPage() {
           ) : null}
 
           <div className="flex flex-wrap items-center gap-3">
-            <Label htmlFor="lead-search" className="sr-only">Search loaded leads</Label>
+            <Label htmlFor="lead-search" className="sr-only">
+              Search loaded leads
+            </Label>
             <Input
               id="lead-search"
               type="search"
@@ -363,7 +428,13 @@ export function CrmLeadsPage() {
             <Label htmlFor="lead-status-filter" className="sr-only">
               Status filter
             </Label>
-            <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(0); }}>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value);
+                setPage(0);
+              }}
+            >
               <SelectTrigger id="lead-status-filter" className="w-48" aria-label="Filter leads">
                 <SelectValue />
               </SelectTrigger>
@@ -382,17 +453,26 @@ export function CrmLeadsPage() {
 
           {leads.isSuccess ? (
             <p className="text-xs text-muted-foreground" role="status">
-              Page {page + 1}: showing {rows.length} leads, searched and filtered securely on the server. {hasNextPage ? "More results available." : "No further results."}
+              Page {page + 1}: showing {rows.length} leads, searched and filtered securely on the
+              server. {hasNextPage ? "More results available." : "No further results."}
             </p>
           ) : null}
           {leads.isLoading ? <LoadingState /> : null}
           {leads.isError ? (
-            <ErrorState title="Could not load leads" description={friendlyAuthError(leads.error)} onRetry={() => leads.refetch()} />
+            <ErrorState
+              title="Could not load leads"
+              description={friendlyAuthError(leads.error)}
+              onRetry={() => leads.refetch()}
+            />
           ) : null}
           {leads.isSuccess && rows.length === 0 ? (
             <EmptyState
               title={appliedSearch ? "No matching leads" : "No leads in this view"}
-              description={appliedSearch ? "Try a different search or status filter." : "Create a lead to start the CRM lifecycle."}
+              description={
+                appliedSearch
+                  ? "Try a different search or status filter."
+                  : "Create a lead to start the CRM lifecycle."
+              }
             />
           ) : null}
           {rows.length > 0 ? (
@@ -429,7 +509,9 @@ export function CrmLeadsPage() {
                           {displayLeadName(lead)}
                         </Link>
                       </TableCell>
-                      <TableCell><CrmStatusBadge status={lead.status} /></TableCell>
+                      <TableCell>
+                        <CrmStatusBadge status={lead.status} />
+                      </TableCell>
                       <TableCell>{lead.email ?? "—"}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatCrmMinor(lead.estimatedValueMinor, lead.currencyCode)}
@@ -444,13 +526,26 @@ export function CrmLeadsPage() {
             </div>
           ) : null}
           {leads.isSuccess && (page > 0 || hasNextPage) ? (
-            <nav aria-label="Lead list pages" className="flex flex-wrap items-center justify-between gap-3">
+            <nav
+              aria-label="Lead list pages"
+              className="flex flex-wrap items-center justify-between gap-3"
+            >
               <p className="text-sm text-muted-foreground">Page {page + 1}</p>
               <div className="flex gap-2">
-                <Button type="button" variant="secondary" disabled={page === 0 || leads.isFetching} onClick={() => setPage((value) => Math.max(0, value - 1))}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={page === 0 || leads.isFetching}
+                  onClick={() => setPage((value) => Math.max(0, value - 1))}
+                >
                   Previous
                 </Button>
-                <Button type="button" variant="secondary" disabled={!hasNextPage || leads.isFetching} onClick={() => setPage((value) => value + 1)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!hasNextPage || leads.isFetching}
+                  onClick={() => setPage((value) => value + 1)}
+                >
                   Next
                 </Button>
               </div>

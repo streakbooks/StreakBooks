@@ -67,7 +67,12 @@ export function MessagesBell({ companyId }: { companyId: string | null }) {
           {enabled && inbox.isError && (
             <div role="alert" className="p-4 text-sm">
               Could not load conversations.
-              <Button size="sm" variant="outline" className="ml-2" onClick={() => void inbox.refetch()}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-2"
+                onClick={() => void inbox.refetch()}
+              >
                 Retry
               </Button>
             </div>
@@ -91,14 +96,19 @@ export function MessagesBell({ companyId }: { companyId: string | null }) {
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">
                       {conversation.title ||
-                        (conversation.conversation_type === "dm" ? "Direct message" : "Conversation")}
+                        (conversation.conversation_type === "dm"
+                          ? "Direct message"
+                          : "Conversation")}
                     </div>
                     <p className="truncate text-xs text-muted-foreground">
                       {conversation.last_message_preview || "No messages yet"}
                     </p>
                   </div>
                   {conversation.unread && (
-                    <span className="mt-1 size-2 shrink-0 rounded-full bg-primary" aria-label="Unread" />
+                    <span
+                      className="mt-1 size-2 shrink-0 rounded-full bg-primary"
+                      aria-label="Unread"
+                    />
                   )}
                 </div>
               </Link>

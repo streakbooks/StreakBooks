@@ -171,7 +171,7 @@ describe("Action Center triage and overview", () => {
       "high-new",
       "low",
     ]);
-    expect(sortable[0]!.id).toBe("low");
+    expect(sortable[0]?.id).toBe("low");
   });
 
   it("counts only active, unread, critical and completed alerts in the loaded window", () => {
@@ -187,14 +187,20 @@ describe("Action Center triage and overview", () => {
 
 describe("Smart Action Center history and bookmarkable filters", () => {
   it("deduplicates changing offset pages without mutating source data", () => {
-    const first = [{ id: "a", value: 1 }, { id: "b", value: 2 }];
-    const second = [{ id: "b", value: 99 }, { id: "c", value: 3 }];
+    const first = [
+      { id: "a", value: 1 },
+      { id: "b", value: 2 },
+    ];
+    const second = [
+      { id: "b", value: 99 },
+      { id: "c", value: 3 },
+    ];
     expect(mergeNotificationPages([first, second])).toEqual([
       { id: "a", value: 1 },
       { id: "b", value: 2 },
       { id: "c", value: 3 },
     ]);
-    expect(second[0]!.value).toBe(99);
+    expect(second[0]?.value).toBe(99);
   });
 
   it("restores whitelisted URL filters and drops unsafe or unexpected values", () => {

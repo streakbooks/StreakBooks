@@ -41,19 +41,19 @@ export function AppStoreReviewsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Ratings & Reviews" description="App Store"
-    >
-      <EmptyState title="No access" description="Requires appstore.view." />
-    </ListWorkspace>
+      <ListWorkspace title="Ratings & Reviews" description="App Store">
+        <EmptyState title="No access" description="Requires appstore.view." />
+      </ListWorkspace>
     );
   }
 
   const apps = catalogue.data?.apps ?? [];
 
   return (
-      <ListWorkspace title="Ratings & Reviews"
-        description="Genuine customer ratings only. Fabricated or seeded star ratings are never shown."
-      subnav={<AppStoreSubnav current="reviews"/>}
+    <ListWorkspace
+      title="Ratings & Reviews"
+      description="Genuine customer ratings only. Fabricated or seeded star ratings are never shown."
+      subnav={<AppStoreSubnav current="reviews" />}
     >
       <Alert className="mb-6">
         <AlertTitle>No fabricated reviews</AlertTitle>
@@ -103,5 +103,5 @@ export function AppStoreReviewsPage() {
         )
       ) : null}
     </ListWorkspace>
-    );
+  );
 }

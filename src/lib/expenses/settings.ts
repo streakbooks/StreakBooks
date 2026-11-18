@@ -76,8 +76,7 @@ export function mapExpenseManagementSettings(
     enabled: Boolean(row.enabled),
     claimNumberPrefix: String(row.claim_number_prefix ?? row.claimNumberPrefix ?? "EXP-"),
     defaultClaimCurrency: (row.default_claim_currency ?? row.defaultClaimCurrency ?? null) as
-      | string
-      | null,
+      string | null,
     employeePayableAccountId: (row.employee_payable_account_id ??
       row.employeePayableAccountId ??
       null) as string | null,
@@ -85,8 +84,7 @@ export function mapExpenseManagementSettings(
       row.employeeAdvanceAccountId ??
       null) as string | null,
     pettyCashAccountId: (row.petty_cash_account_id ?? row.pettyCashAccountId ?? null) as
-      | string
-      | null,
+      string | null,
     rebillingIncomeAccountId: (row.rebilling_income_account_id ??
       row.rebillingIncomeAccountId ??
       null) as string | null,
@@ -101,9 +99,7 @@ export function mapExpenseManagementSettings(
     allowMultiCurrencyClaims: Boolean(
       row.allow_multi_currency_claims ?? row.allowMultiCurrencyClaims ?? true,
     ),
-    preventSelfApproval: Boolean(
-      row.prevent_self_approval ?? row.preventSelfApproval ?? true,
-    ),
+    preventSelfApproval: Boolean(row.prevent_self_approval ?? row.preventSelfApproval ?? true),
     defaultDistanceUnit: asDistanceUnit(
       row.default_distance_unit ?? row.defaultDistanceUnit ?? "km",
     ),

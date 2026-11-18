@@ -85,9 +85,7 @@ const ExpenseManagementTravelPage = lazy(() =>
   })),
 );
 
-const LEGACY_LINKS: Partial<
-  Record<ExpenseManagementSectionKey, { label: string; to: string }>
-> = {
+const LEGACY_LINKS: Partial<Record<ExpenseManagementSectionKey, { label: string; to: string }>> = {
   budgets: { label: "Open Budgets module", to: "/budgets" },
 };
 
@@ -218,31 +216,33 @@ export function ExpenseManagementSectionPage({
   const allowed = section.anyOf.some((permission) => can(permission as Permission));
   if (!allowed) {
     return (
-      <ListWorkspace title={section.label} description="Expenses"
-      subnav={<ExpenseManagementSubnav current={sectionKey}/>}
-    >
-      <EmptyState
-          title="No access"
-          description="Your role cannot open this Expenses section."
-        />
-    </ListWorkspace>
+      <ListWorkspace
+        title={section.label}
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current={sectionKey} />}
+      >
+        <EmptyState title="No access" description="Your role cannot open this Expenses section." />
+      </ListWorkspace>
     );
   }
 
   const legacy = LEGACY_LINKS[sectionKey];
 
   return (
-      <ListWorkspace title={section.label}
-        description="Part of the Expenses module."
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management">Back to overview</Link>
-          </Button>
-        }
-      subnav={<ExpenseManagementSubnav current={sectionKey}/>}
+    <ListWorkspace
+      title={section.label}
+      description="Part of the Expenses module."
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/expense-management">Back to overview</Link>
+        </Button>
+      }
+      subnav={<ExpenseManagementSubnav current={sectionKey} />}
     >
       <Alert className="mb-6">
-        <AlertTitle>{section.label} is scheduled for {section.batch}</AlertTitle>
+        <AlertTitle>
+          {section.label} is scheduled for {section.batch}
+        </AlertTitle>
         <AlertDescription>
           This tab is wired into navigation with permission checks. End-to-end workflows for this
           area are delivered in {section.batch}. No simulated actions are offered here.
@@ -264,5 +264,5 @@ export function ExpenseManagementSectionPage({
         }
       />
     </ListWorkspace>
-    );
+  );
 }

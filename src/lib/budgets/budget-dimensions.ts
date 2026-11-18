@@ -41,7 +41,8 @@ export function validateBudgetAllocations(input: {
       !Number.isSafeInteger(row.amountMinor) ||
       row.amountMinor < 0 ||
       row.amountMinor > 900_000_000_000_000
-    ) throw new Error("Allocations require nonnegative, safe minor-unit amounts.");
+    )
+      throw new Error("Allocations require nonnegative, safe minor-unit amounts.");
     const key = `${row.optionId}|${row.accountId}|${row.month}`;
     if (seen.has(key)) throw new Error("Duplicate option/account/month allocation.");
     seen.add(key);
@@ -66,9 +67,7 @@ export function validateBudgetAllocations(input: {
   return { rows, remaining };
 }
 
-export function allocationAnnualTotals(
-  rows: readonly AllocationCell[],
-): Map<string, number> {
+export function allocationAnnualTotals(rows: readonly AllocationCell[]): Map<string, number> {
   const totals = new Map<string, number>();
   for (const row of rows) {
     if (!Number.isSafeInteger(row.amountMinor))

@@ -20,7 +20,10 @@ export function filterPayrollClearingAccounts(
   candidates: readonly PayrollClearingCandidate[],
   linkedBanks: readonly PayrollLinkedBank[],
   payrollCurrency: string,
-): { accounts: Array<{ id: string; code: string; name: string; currency_code: string | null }>; excluded: number } {
+): {
+  accounts: Array<{ id: string; code: string; name: string; currency_code: string | null }>;
+  excluded: number;
+} {
   const active = linkedBanks.filter((bank) => bank.is_active);
   const bankGlIds = new Set(active.map((bank) => bank.gl_account_id));
   const bankCurrencies = new Map<string, Array<string | null>>();
@@ -34,12 +37,13 @@ export function filterPayrollClearingAccounts(
     isBankOrCashAccount(account, bankGlIds),
   );
   const accounts = bankOrCashAccounts
-    .filter((account) =>
-      !payrollClearingCurrencyMismatch(
-        payrollCurrency,
-        account.currency_code,
-        bankCurrencies.get(account.id) ?? [],
-      ),
+    .filter(
+      (account) =>
+        !payrollClearingCurrencyMismatch(
+          payrollCurrency,
+          account.currency_code,
+          bankCurrencies.get(account.id) ?? [],
+        ),
     )
     .map(({ id, code, name, currency_code }) => ({ id, code, name, currency_code }));
 

@@ -16,8 +16,7 @@ const restrictedEmail = process.env.E2E_FIRM_RESTRICTED_EMAIL;
 const restrictedPassword = process.env.E2E_FIRM_RESTRICTED_PASSWORD;
 const taskCanary = process.env.E2E_FIRM_TASK_CSV_CANARY;
 const hasRestricted = Boolean(
-  restrictedEmail && restrictedPassword && taskCanary &&
-    restrictedEmail !== primaryEmail,
+  restrictedEmail && restrictedPassword && taskCanary && restrictedEmail !== primaryEmail,
 );
 
 async function signIn(page: Page, email: string, password: string) {
@@ -26,10 +25,9 @@ async function signIn(page: Page, email: string, password: string) {
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await page.waitForURL(
-    (url) => url.hostname === stagingHost && url.pathname === "/firm",
-    { timeout: 30_000 },
-  );
+  await page.waitForURL((url) => url.hostname === stagingHost && url.pathname === "/firm", {
+    timeout: 30_000,
+  });
   await expect(page.getByRole("heading", { name: "Firm & clients" })).toBeVisible();
 }
 
@@ -50,7 +48,9 @@ test.describe("Firm onboarding release gates — dedicated staging only", () => 
     if (
       process.env.E2E_STAGING_ENABLED !== "true" ||
       process.env.E2E_FIRM_ONBOARDING_ENABLED !== "true" ||
-      !process.env.E2E_BASE_URL || !primaryEmail || !primaryPassword
+      !process.env.E2E_BASE_URL ||
+      !primaryEmail ||
+      !primaryPassword
     ) {
       throw new Error(
         "Explicit staging + onboarding activation and dedicated credentials are required.",
@@ -68,24 +68,36 @@ test.describe("Firm onboarding release gates — dedicated staging only", () => 
     page.on("pageerror", (error) => errors.push(error.message));
     await signIn(page, primaryEmail!, primaryPassword!);
     const report = await openOnboarding(page);
-    await expect(page.getByRole("region", {
-      name: "Onboarding progress dashboard",
-    })).toBeVisible();
-    await expect(page.getByRole("region", {
-      name: "Staff onboarding workload and task queue",
-    })).toBeVisible();
-    await expect(report.getByRole("combobox", {
-      name: "Filter onboarding report by client",
-    })).toBeVisible();
-    await expect(report.getByRole("combobox", {
-      name: "Filter overdue ageing",
-    })).toBeVisible();
-    await expect(report.getByRole("button", {
-      name: "Export filtered tasks (CSV)",
-    })).toBeVisible();
-    await expect(report.getByRole("button", {
-      name: "Export observed trends (CSV)",
-    })).toBeVisible();
+    await expect(
+      page.getByRole("region", {
+        name: "Onboarding progress dashboard",
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("region", {
+        name: "Staff onboarding workload and task queue",
+      }),
+    ).toBeVisible();
+    await expect(
+      report.getByRole("combobox", {
+        name: "Filter onboarding report by client",
+      }),
+    ).toBeVisible();
+    await expect(
+      report.getByRole("combobox", {
+        name: "Filter overdue ageing",
+      }),
+    ).toBeVisible();
+    await expect(
+      report.getByRole("button", {
+        name: "Export filtered tasks (CSV)",
+      }),
+    ).toBeVisible();
+    await expect(
+      report.getByRole("button", {
+        name: "Export observed trends (CSV)",
+      }),
+    ).toBeVisible();
     expect(errors).toEqual([]);
   });
 
@@ -128,7 +140,9 @@ test.describe("Firm onboarding release gates — dedicated staging only", () => 
     const downloadPromise = page.waitForEvent("download");
     await exportButton.click();
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toMatch(/^firm-onboarding-operations-\d{4}-\d{2}-\d{2}\.csv$/);
+    expect(download.suggestedFilename()).toMatch(
+      /^firm-onboarding-operations-\d{4}-\d{2}-\d{2}\.csv$/,
+    );
     const csv = await readFile(await download.path(), "utf8");
     expect(csv.charCodeAt(0)).toBe(0xfeff);
     expect(csv).toContain("Days overdue");
@@ -140,12 +154,16 @@ test.describe("Firm onboarding release gates — dedicated staging only", () => 
     await page.setViewportSize({ width: 390, height: 844 });
     await signIn(page, primaryEmail!, primaryPassword!);
     const report = await openOnboarding(page);
-    await expect(report.getByRole("combobox", {
-      name: "Filter overdue ageing",
-    })).toBeVisible();
-    await expect(report.getByRole("button", {
-      name: "Export filtered tasks (CSV)",
-    })).toBeVisible();
+    await expect(
+      report.getByRole("combobox", {
+        name: "Filter overdue ageing",
+      }),
+    ).toBeVisible();
+    await expect(
+      report.getByRole("button", {
+        name: "Export filtered tasks (CSV)",
+      }),
+    ).toBeVisible();
     const age = report.getByRole("combobox", { name: "Filter overdue ageing" });
     await age.focus();
     await page.keyboard.press("Enter");
@@ -154,9 +172,7 @@ test.describe("Firm onboarding release gates — dedicated staging only", () => 
     await expect(age).toBeFocused();
   });
 
-  test("onboarding reporting region has no serious accessibility violations", async ({
-    page,
-  }) => {
+  test("onboarding reporting region has no serious accessibility violations", async ({ page }) => {
     await signIn(page, primaryEmail!, primaryPassword!);
     await openOnboarding(page);
     const results = await new AxeBuilder({ page })
@@ -171,7 +187,9 @@ test.describe("Firm onboarding release gates — dedicated staging only", () => 
 
   test("a second, restricted firm colleague cannot see another client's task canary", async ({
     browser,
-  }: { browser: Browser }) => {
+  }: {
+    browser: Browser;
+  }) => {
     test.skip(
       !hasRestricted,
       "Use two distinct staging users, a shared firm and a restricted client canary.",

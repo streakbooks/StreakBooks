@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -12,13 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -57,10 +52,7 @@ export function ExpenseManagementTravelPage() {
   const today = new Date().toISOString().slice(0, 10);
   const canSubmit = can("expenses.submit" as Permission);
   const canAdmin = can("expenses.admin" as Permission);
-  const canView =
-    canSubmit ||
-    canAdmin ||
-    can("expenses.view" as Permission);
+  const canView = canSubmit || canAdmin || can("expenses.view" as Permission);
 
   const [rateName, setRateName] = useState("Domestic overnight");
   const [rateLocation, setRateLocation] = useState("");
@@ -80,8 +72,7 @@ export function ExpenseManagementTravelPage() {
 
   const ratesQ = useQuery({
     queryKey: ["expense-per-diem-rates", company?.id],
-    queryFn: () =>
-      fetchRates({ data: { companyId: company!.id, activeOnly: false } }),
+    queryFn: () => fetchRates({ data: { companyId: company!.id, activeOnly: false } }),
     enabled: Boolean(company?.id) && canView,
   });
 
@@ -94,10 +85,7 @@ export function ExpenseManagementTravelPage() {
   const expenseAccounts = useMemo(
     () =>
       (accountsQ.data ?? []).filter(
-        (account) =>
-          account.is_active &&
-          account.is_postable &&
-          account.account_type === "expense",
+        (account) => account.is_active && account.is_postable && account.account_type === "expense",
       ),
     [accountsQ.data],
   );
@@ -197,30 +185,34 @@ export function ExpenseManagementTravelPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Travel" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="travel"/>}
-    >
-      <EmptyState
+      <ListWorkspace
+        title="Travel"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="travel" />}
+      >
+        <EmptyState
           title="No access"
           description="Your role cannot open travel or per diem rates."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
   const migrationMissing =
-    ratesQ.error &&
-    String(ratesQ.error.message ?? "").includes(EXPENSE_TRAVEL_MIGRATION);
+    ratesQ.error && String(ratesQ.error.message ?? "").includes(EXPENSE_TRAVEL_MIGRATION);
 
   return (
-      <ListWorkspace title="Travel"
-        description="Configure per diem rates and create travel claim drafts."
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>My expenses</Link>
-          </Button>
-        }
-      subnav={<ExpenseManagementSubnav current="travel"/>}
+    <ListWorkspace
+      title="Travel"
+      description="Configure per diem rates and create travel claim drafts."
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
+            My expenses
+          </Link>
+        </Button>
+      }
+      subnav={<ExpenseManagementSubnav current="travel" />}
     >
       <Alert className="mb-6">
         <AlertTitle>Per diem trips only in this release</AlertTitle>
@@ -249,8 +241,8 @@ export function ExpenseManagementTravelPage() {
         <section className="mb-10 space-y-4 rounded-lg border p-4">
           <h2 className="text-lg font-medium">New travel trip (per diem)</h2>
           <p className="text-sm text-muted-foreground">
-            Creates a draft employee-paid claim with one per diem line. Inclusive calendar
-            days × daily rate.
+            Creates a draft employee-paid claim with one per diem line. Inclusive calendar days ×
+            daily rate.
           </p>
           {activeRates.length === 0 ? (
             <EmptyState
@@ -283,7 +275,7 @@ export function ExpenseManagementTravelPage() {
               </div>
               <div className="grid gap-2">
                 <Label>Per diem rate</Label>
-                <Select value={tripRateId} onValueChange={setTripRateId}>
+                <RecordLookupSelect value={tripRateId} onValueChange={setTripRateId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select rate" />
                   </SelectTrigger>
@@ -296,7 +288,7 @@ export function ExpenseManagementTravelPage() {
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="trip-dest">Destination</Label>
@@ -336,11 +328,7 @@ export function ExpenseManagementTravelPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="pd-name">Name</Label>
-              <Input
-                id="pd-name"
-                value={rateName}
-                onChange={(e) => setRateName(e.target.value)}
-              />
+              <Input id="pd-name" value={rateName} onChange={(e) => setRateName(e.target.value)} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="pd-loc">Location</Label>
@@ -419,14 +407,10 @@ export function ExpenseManagementTravelPage() {
                   <TableCell>
                     <div className="font-medium">{rate.name}</div>
                     {rate.locationLabel ? (
-                      <div className="text-xs text-muted-foreground">
-                        {rate.locationLabel}
-                      </div>
+                      <div className="text-xs text-muted-foreground">{rate.locationLabel}</div>
                     ) : null}
                   </TableCell>
-                  <TableCell>
-                    {fromMinorUnits(rate.rateMinorPerDay, rate.currencyCode)}
-                  </TableCell>
+                  <TableCell>{fromMinorUnits(rate.rateMinorPerDay, rate.currencyCode)}</TableCell>
                   <TableCell>
                     {rate.effectiveFrom}
                     {rate.effectiveTo ? ` → ${rate.effectiveTo}` : " onward"}
@@ -443,5 +427,5 @@ export function ExpenseManagementTravelPage() {
         )}
       </section>
     </ListWorkspace>
-    );
+  );
 }

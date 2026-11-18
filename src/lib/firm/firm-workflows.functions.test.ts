@@ -74,19 +74,24 @@ describe("onboarding plan validation", () => {
   };
   it("accepts a valid assigned plan, cleared assignee and blank due date", () => {
     expect(planningInput.safeParse(plan).success).toBe(true);
-    expect(planningInput.safeParse({
-      ...plan,
-      due_date: null,
-      depends_on_task_key: null,
-      assignee_id: valid.firmId,
-    }).success).toBe(true);
+    expect(
+      planningInput.safeParse({
+        ...plan,
+        due_date: null,
+        depends_on_task_key: null,
+        assignee_id: valid.firmId,
+      }).success,
+    ).toBe(true);
   });
   it("rejects invalid dates, forged versions, self-dependency and unknown inputs", () => {
     expect(planningInput.safeParse({ ...plan, due_date: "2026-02-30" }).success).toBe(false);
     expect(planningInput.safeParse({ ...plan, version: 0 }).success).toBe(false);
-    expect(planningInput.safeParse({
-      ...plan, depends_on_task_key: "opening_records",
-    }).success).toBe(false);
+    expect(
+      planningInput.safeParse({
+        ...plan,
+        depends_on_task_key: "opening_records",
+      }).success,
+    ).toBe(false);
     expect(planningInput.safeParse({ ...plan, unexplained: true }).success).toBe(false);
   });
 });

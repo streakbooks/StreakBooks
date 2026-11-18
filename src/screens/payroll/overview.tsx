@@ -154,9 +154,7 @@ export function PayrollOverviewPage() {
                           <Circle
                             className={cn(
                               "mt-0.5 h-4 w-4 shrink-0",
-                              isFirstUndone
-                                ? "text-warning-ink"
-                                : "text-muted-foreground",
+                              isFirstUndone ? "text-warning-ink" : "text-muted-foreground",
                             )}
                             aria-hidden
                           />

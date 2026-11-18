@@ -264,73 +264,73 @@ function QuoteDetailPage() {
           </div>
         }
       >
-      <div className="mb-4 flex flex-wrap gap-3 text-sm">
-        <StatusBadge status={q.status} />
-        <span>#{q.quote_number ?? "—"}</span>
-        <span>Total {money(q.total_minor, cur)}</span>
-        {q.sent_at ? <span>Sent {q.sent_at.slice(0, 10)}</span> : null}
-        {q.accepted_at ? <span>Accepted {q.accepted_at.slice(0, 10)}</span> : null}
-      </div>
-      {!convertible.ok && !q.converted_invoice_id && q.status !== "void" ? (
-        <p className="mb-4 text-sm text-muted-foreground">{convertible.reason}</p>
-      ) : null}
-      {q.price_list_name_snapshot ? (
-        <p className="mb-3 text-sm text-muted-foreground print:hidden">
-          Selected sales price list at save: {q.price_list_name_snapshot}
-        </p>
-      ) : null}
-      {q.memo ? <p className="mb-4 text-sm text-muted-foreground">{q.memo}</p> : null}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Description</TableHead>
-            <TableHead className="text-right">Qty</TableHead>
-            <TableHead className="text-right">Unit price</TableHead>
-            <TableHead className="text-right">Discount</TableHead>
-            <TableHead className="text-right">Tax %</TableHead>
-            <TableHead className="text-right">Net</TableHead>
-            <TableHead className="text-right">Tax</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {lines.map((l) => (
-            <TableRow key={l.id}>
-              <TableCell>
-                {l.description}
-                {l.pricing_snapshot?.source === "price_list" ? (
-                  <p className="mt-1 text-xs text-muted-foreground print:hidden">
-                    List pricing: {l.pricing_snapshot.basis.replace("_", " ")}
-                    {l.pricing_snapshot.discount_bps
-                      ? ` · ${(l.pricing_snapshot.discount_bps / 100).toFixed(2)}% rule`
-                      : ""}
-                    {" · "}priced {l.pricing_snapshot.pricing_date}
-                  </p>
-                ) : null}
-              </TableCell>
-              <TableCell className="text-right">{l.quantity}</TableCell>
-              <TableCell className="text-right">{money(l.unit_price_minor, cur)}</TableCell>
-              <TableCell className="text-right">{money(l.discount_minor, cur)}</TableCell>
-              <TableCell className="text-right">{bpsToPercentString(l.tax_rate_bps)}%</TableCell>
-              <TableCell className="text-right">{money(l.net_minor, cur)}</TableCell>
-              <TableCell className="text-right">{money(l.tax_minor, cur)}</TableCell>
+        <div className="mb-4 flex flex-wrap gap-3 text-sm">
+          <StatusBadge status={q.status} />
+          <span>#{q.quote_number ?? "—"}</span>
+          <span>Total {money(q.total_minor, cur)}</span>
+          {q.sent_at ? <span>Sent {q.sent_at.slice(0, 10)}</span> : null}
+          {q.accepted_at ? <span>Accepted {q.accepted_at.slice(0, 10)}</span> : null}
+        </div>
+        {!convertible.ok && !q.converted_invoice_id && q.status !== "void" ? (
+          <p className="mb-4 text-sm text-muted-foreground">{convertible.reason}</p>
+        ) : null}
+        {q.price_list_name_snapshot ? (
+          <p className="mb-3 text-sm text-muted-foreground print:hidden">
+            Selected sales price list at save: {q.price_list_name_snapshot}
+          </p>
+        ) : null}
+        {q.memo ? <p className="mb-4 text-sm text-muted-foreground">{q.memo}</p> : null}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Qty</TableHead>
+              <TableHead className="text-right">Unit price</TableHead>
+              <TableHead className="text-right">Discount</TableHead>
+              <TableHead className="text-right">Tax %</TableHead>
+              <TableHead className="text-right">Net</TableHead>
+              <TableHead className="text-right">Tax</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <div className="mt-4 ml-auto w-64 space-y-1 text-sm">
-        <div className="flex justify-between">
-          <span>Subtotal</span>
-          <span>{money(q.subtotal_minor, cur)}</span>
+          </TableHeader>
+          <TableBody>
+            {lines.map((l) => (
+              <TableRow key={l.id}>
+                <TableCell>
+                  {l.description}
+                  {l.pricing_snapshot?.source === "price_list" ? (
+                    <p className="mt-1 text-xs text-muted-foreground print:hidden">
+                      List pricing: {l.pricing_snapshot.basis.replace("_", " ")}
+                      {l.pricing_snapshot.discount_bps
+                        ? ` · ${(l.pricing_snapshot.discount_bps / 100).toFixed(2)}% rule`
+                        : ""}
+                      {" · "}priced {l.pricing_snapshot.pricing_date}
+                    </p>
+                  ) : null}
+                </TableCell>
+                <TableCell className="text-right">{l.quantity}</TableCell>
+                <TableCell className="text-right">{money(l.unit_price_minor, cur)}</TableCell>
+                <TableCell className="text-right">{money(l.discount_minor, cur)}</TableCell>
+                <TableCell className="text-right">{bpsToPercentString(l.tax_rate_bps)}%</TableCell>
+                <TableCell className="text-right">{money(l.net_minor, cur)}</TableCell>
+                <TableCell className="text-right">{money(l.tax_minor, cur)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <div className="mt-4 ml-auto w-64 space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span>Subtotal</span>
+            <span>{money(q.subtotal_minor, cur)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Tax</span>
+            <span>{money(q.tax_minor, cur)}</span>
+          </div>
+          <div className="flex justify-between font-medium">
+            <span>Total</span>
+            <span>{money(q.total_minor, cur)}</span>
+          </div>
         </div>
-        <div className="flex justify-between">
-          <span>Tax</span>
-          <span>{money(q.tax_minor, cur)}</span>
-        </div>
-        <div className="flex justify-between font-medium">
-          <span>Total</span>
-          <span>{money(q.total_minor, cur)}</span>
-        </div>
-      </div>
       </RecordWorkspace>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>

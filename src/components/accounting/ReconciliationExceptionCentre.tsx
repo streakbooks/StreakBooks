@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { PersistentReconciliationReviews } from "@/components/accounting/PersistentReconciliationReviews";
 import { Link } from "@tanstack/react-router";
@@ -12,12 +13,18 @@ import { listDeferrals } from "@/lib/accounting/deferrals.functions";
 import { getFxOverview } from "@/lib/accounting/fx.functions";
 import { getPayrollLiabilityRollforward } from "@/lib/accounting/payroll-liability-rollforward.functions";
 import {
-  auditAssetDepreciationPosting, auditAssetDisposalPosting,
+  auditAssetDepreciationPosting,
+  auditAssetDisposalPosting,
 } from "@/lib/accounting/fixed-asset-posting-evidence.functions";
 import { listFixedAssetPostingAuditTargets } from "@/lib/accounting/fixed-asset-audit-targets.functions";
 import {
-  createExceptionSnapshot, exceptionSnapshotCsv, filterExceptionFindings,
-  type AuditCapture, type ExceptionFilter, type ExceptionSource, type FixedAssetExceptionAudit,
+  createExceptionSnapshot,
+  exceptionSnapshotCsv,
+  filterExceptionFindings,
+  type AuditCapture,
+  type ExceptionFilter,
+  type ExceptionSource,
+  type FixedAssetExceptionAudit,
 } from "@/lib/accounting/reconciliation-exceptions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import type { HealthReport } from "@/lib/accounting/ledger-health";
@@ -43,11 +50,16 @@ const SOURCES: { key: ExceptionSource; name: string }[] = [
 function capture<T>(result: T | undefined, isError: boolean, error: unknown): AuditCapture<T> {
   return isError
     ? { state: "unavailable", message: friendlyAuthError(error) }
-    : result ? { state: "checked", result } : { state: "not_run" };
+    : result
+      ? { state: "checked", result }
+      : { state: "not_run" };
 }
 function scopeTab(source: ExceptionSource): "health" | "fx" | "deferrals" {
-  return source === "fx_realised" || source === "fx_revaluation" ? "fx"
-    : source === "deferrals" ? "deferrals" : "health";
+  return source === "fx_realised" || source === "fx_revaluation"
+    ? "fx"
+    : source === "deferrals"
+      ? "deferrals"
+      : "health";
 }
 
 /**
@@ -107,28 +119,44 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
   const [reviewed, setReviewed] = useState<Set<string>>(() => new Set());
 
   const ledgerPayload = ledger.data && "report" in ledger.data ? ledger.data.report : undefined;
-  const ledgerCapture: AuditCapture<HealthReport> = ledger.data && "unavailable" in ledger.data
-    ? { state: "unavailable", message: ledger.data.unavailable }
-    : capture(ledgerPayload, ledger.isError, ledger.error);
+  const ledgerCapture: AuditCapture<HealthReport> =
+    ledger.data && "unavailable" in ledger.data
+      ? { state: "unavailable", message: ledger.data.unavailable }
+      : capture(ledgerPayload, ledger.isError, ledger.error);
   const realisedCapture: AuditCapture<FxRealisedAuditResult> = capture(
-    realised.data, realised.isError, realised.error,
+    realised.data,
+    realised.isError,
+    realised.error,
   );
   const revalCapture: AuditCapture<FxRunAuditReport> = capture(
-    revaluation.data, revaluation.isError, revaluation.error,
+    revaluation.data,
+    revaluation.isError,
+    revaluation.error,
   );
   const deferralCapture: AuditCapture<DeferralAuditResult> = capture(
-    deferrals.data, deferrals.isError, deferrals.error,
+    deferrals.data,
+    deferrals.isError,
+    deferrals.error,
   );
   const payrollCapture: AuditCapture<LiabilityRollforwardResult> = canPayroll
     ? capture(payroll.data, payroll.isError, payroll.error)
-    : { state: "unavailable", message: "Requires both Payroll and Accounting viewing permissions." };
+    : {
+        state: "unavailable",
+        message: "Requires both Payroll and Accounting viewing permissions.",
+      };
   const fixedAssetsCapture: AuditCapture<FixedAssetExceptionAudit> =
     fixedAuditKind === "depreciation"
-      ? capture<FixedAssetExceptionAudit>(depreciation.data ? { kind: "depreciation", evidence: depreciation.data } : undefined,
-          depreciation.isError, depreciation.error)
+      ? capture<FixedAssetExceptionAudit>(
+          depreciation.data ? { kind: "depreciation", evidence: depreciation.data } : undefined,
+          depreciation.isError,
+          depreciation.error,
+        )
       : fixedAuditKind === "disposal"
-        ? capture<FixedAssetExceptionAudit>(disposal.data ? { kind: "disposal", evidence: disposal.data } : undefined,
-            disposal.isError, disposal.error)
+        ? capture<FixedAssetExceptionAudit>(
+            disposal.data ? { kind: "disposal", evidence: disposal.data } : undefined,
+            disposal.isError,
+            disposal.error,
+          )
         : { state: "not_run" };
   const snapshot = createExceptionSnapshot({
     ledger: ledgerCapture,
@@ -138,23 +166,39 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
     payroll: payrollCapture,
     fixedAssets: fixedAssetsCapture,
   });
-  const filtered = filterExceptionFindings(snapshot.findings, {
-    source, severity, search, review: reviewFilter,
-  }, reviewed);
-  const reviewedCount = snapshot.findings.filter(row => reviewed.has(row.key)).length;
-  const hasPending = ledger.isPending || realised.isPending || revaluation.isPending ||
-    deferrals.isPending || payroll.isPending ||
-    recentSchedules.isPending || recentRevaluations.isPending ||
-    depreciation.isPending || disposal.isPending || fixedTargets.isPending;
+  const filtered = filterExceptionFindings(
+    snapshot.findings,
+    {
+      source,
+      severity,
+      search,
+      review: reviewFilter,
+    },
+    reviewed,
+  );
+  const reviewedCount = snapshot.findings.filter((row) => reviewed.has(row.key)).length;
+  const hasPending =
+    ledger.isPending ||
+    realised.isPending ||
+    revaluation.isPending ||
+    deferrals.isPending ||
+    payroll.isPending ||
+    recentSchedules.isPending ||
+    recentRevaluations.isPending ||
+    depreciation.isPending ||
+    disposal.isPending ||
+    fixedTargets.isPending;
   const clearReviews = () => setReviewed(new Set());
   const exportCsv = () => {
     const csv = exceptionSnapshotCsv(snapshot, reviewed);
-    const url = URL.createObjectURL(new Blob([String.fromCharCode(0xfeff), csv], {
-      type: "text/csv;charset=utf-8",
-    }));
+    const url = URL.createObjectURL(
+      new Blob([String.fromCharCode(0xfeff), csv], {
+        type: "text/csv;charset=utf-8",
+      }),
+    );
     const a = document.createElement("a");
     a.href = url;
-    a.download = "linkbooks-reconciliation-exceptions-" + companyId.slice(0,8) + ".csv";
+    a.download = "linkbooks-reconciliation-exceptions-" + companyId.slice(0, 8) + ".csv";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -164,21 +208,36 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
         <CardHeader>
           <CardTitle className="text-base">Reconciliation Exception Centre</CardTitle>
           <CardDescription>
-            Consolidate verified findings from existing read-only Accounting audits.
-            Checks run only when requested, not automatically on page load.
+            Consolidate verified findings from existing read-only Accounting audits. Checks run only
+            when requested, not automatically on page load.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" onClick={() => {
-              clearReviews();
-              ledger.mutate();
-              realised.mutate();
-            }} disabled={hasPending}>
-              {ledger.isPending || realised.isPending ? "Checking books…" : "Run core ledger and realised FX checks"}
+            <Button
+              type="button"
+              onClick={() => {
+                clearReviews();
+                ledger.mutate();
+                realised.mutate();
+              }}
+              disabled={hasPending}
+            >
+              {ledger.isPending || realised.isPending
+                ? "Checking books…"
+                : "Run core ledger and realised FX checks"}
             </Button>
-            <Button type="button" variant="outline" disabled={snapshot.findings.length === 0 && snapshot.coverage.every(x => x.state === "not_run")}
-              onClick={exportCsv}>Export findings and coverage CSV</Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                snapshot.findings.length === 0 &&
+                snapshot.coverage.every((x) => x.state === "not_run")
+              }
+              onClick={exportCsv}
+            >
+              Export findings and coverage CSV
+            </Button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-2 rounded-md border p-3">
@@ -186,18 +245,45 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
               <div className="flex flex-wrap gap-2">
                 <div className="space-y-1">
                   <Label htmlFor="exc-from">From</Label>
-                  <Input id="exc-from" type="date" className="max-w-40" value={rangeFrom}
-                    onChange={e => { setRangeFrom(e.target.value); payroll.reset(); clearReviews(); }}/>
+                  <Input
+                    id="exc-from"
+                    type="date"
+                    className="max-w-40"
+                    value={rangeFrom}
+                    onChange={(e) => {
+                      setRangeFrom(e.target.value);
+                      payroll.reset();
+                      clearReviews();
+                    }}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="exc-to">To</Label>
-                  <Input id="exc-to" type="date" className="max-w-40" value={rangeTo}
-                    onChange={e => { setRangeTo(e.target.value); payroll.reset(); clearReviews(); }}/>
+                  <Input
+                    id="exc-to"
+                    type="date"
+                    className="max-w-40"
+                    value={rangeTo}
+                    onChange={(e) => {
+                      setRangeTo(e.target.value);
+                      payroll.reset();
+                      clearReviews();
+                    }}
+                  />
                 </div>
               </div>
-              <Button type="button" variant="outline" size="sm" disabled={
-                !canPayroll || !rangeFrom || !rangeTo || rangeFrom > rangeTo || hasPending
-              } onClick={() => { clearReviews(); payroll.mutate({ from: rangeFrom, to: rangeTo }); }}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={
+                  !canPayroll || !rangeFrom || !rangeTo || rangeFrom > rangeTo || hasPending
+                }
+                onClick={() => {
+                  clearReviews();
+                  payroll.mutate({ from: rangeFrom, to: rangeTo });
+                }}
+              >
                 Audit selected Payroll period
               </Button>
               <p className="text-xs text-muted-foreground">
@@ -207,78 +293,157 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
             <div className="space-y-2 rounded-md border p-3">
               <p className="text-sm font-semibold">Deferral recognition</p>
               <Label htmlFor="exc-schedule">Schedule ID</Label>
-              <Input id="exc-schedule" value={scheduleId} placeholder="Select or enter schedule UUID"
-                onChange={e => { setScheduleId(e.target.value); deferrals.reset(); clearReviews(); }}/>
-              <Button type="button" variant="ghost" size="sm" disabled={hasPending}
-                onClick={() => recentSchedules.mutate()}>
+              <Input
+                id="exc-schedule"
+                value={scheduleId}
+                placeholder="Select or enter schedule UUID"
+                onChange={(e) => {
+                  setScheduleId(e.target.value);
+                  deferrals.reset();
+                  clearReviews();
+                }}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={hasPending}
+                onClick={() => recentSchedules.mutate()}
+              >
                 {recentSchedules.isPending ? "Loading schedules…" : "Load recent schedules"}
               </Button>
               {recentSchedules.data ? (
-                <select aria-label="Recent deferral schedules" value=""
-                  className="w-full rounded-md border bg-background p-2 text-xs"
-                  onChange={e => { setScheduleId(e.target.value); deferrals.reset(); clearReviews(); }}>
+                <RecordLookupSelect
+                  aria-label="Recent deferral schedules"
+                  value=""
+                  className="w-full"
+                  onValueChange={(nextValue) => {
+                    setScheduleId(nextValue);
+                    deferrals.reset();
+                    clearReviews();
+                  }}
+                >
                   <option value="">Choose a schedule</option>
-                  {recentSchedules.data.rows.map(row => (
-                    <option value={row.id} key={row.id}>{row.name} · {row.reference}</option>
+                  {recentSchedules.data.rows.map((row) => (
+                    <option value={row.id} key={row.id}>
+                      {row.name} · {row.reference}
+                    </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               ) : null}
-              {recentSchedules.isError ? <p role="alert" className="text-xs text-destructive">
-                Schedules unavailable: {friendlyAuthError(recentSchedules.error)}
-              </p> : null}
-              {recentSchedules.data && recentSchedules.data.total > recentSchedules.data.rows.length ? (
+              {recentSchedules.isError ? (
+                <p role="alert" className="text-xs text-destructive">
+                  Schedules unavailable: {friendlyAuthError(recentSchedules.error)}
+                </p>
+              ) : null}
+              {recentSchedules.data &&
+              recentSchedules.data.total > recentSchedules.data.rows.length ? (
                 <p className="text-xs text-muted-foreground">
                   Showing latest {recentSchedules.data.rows.length} of {recentSchedules.data.total}.
                   Older schedules can be entered by UUID.
                 </p>
               ) : null}
-              <Button type="button" variant="outline" size="sm" disabled={!UUID.test(scheduleId) || hasPending}
-                onClick={() => { clearReviews(); deferrals.mutate(scheduleId); }}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!UUID.test(scheduleId) || hasPending}
+                onClick={() => {
+                  clearReviews();
+                  deferrals.mutate(scheduleId);
+                }}
+              >
                 Audit selected schedule
               </Button>
               <p className="text-xs text-muted-foreground">
-                Find schedules in <Link to="/accounting" search={{ tab: "deferrals" }} className="underline">Prepayments & deferred income</Link>.
+                Find schedules in{" "}
+                <Link to="/accounting" search={{ tab: "deferrals" }} className="underline">
+                  Prepayments & deferred income
+                </Link>
+                .
               </p>
             </div>
             <div className="space-y-2 rounded-md border p-3">
               <p className="text-sm font-semibold">Unrealised FX</p>
               <Label htmlFor="exc-reval">Revaluation run ID</Label>
-              <Input id="exc-reval" value={revalId} placeholder="Select or enter revaluation UUID"
-                onChange={e => { setRevalId(e.target.value); revaluation.reset(); clearReviews(); }}/>
-              <Button type="button" variant="ghost" size="sm" disabled={hasPending}
-                onClick={() => recentRevaluations.mutate()}>
+              <Input
+                id="exc-reval"
+                value={revalId}
+                placeholder="Select or enter revaluation UUID"
+                onChange={(e) => {
+                  setRevalId(e.target.value);
+                  revaluation.reset();
+                  clearReviews();
+                }}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={hasPending}
+                onClick={() => recentRevaluations.mutate()}
+              >
                 {recentRevaluations.isPending ? "Loading FX runs…" : "Load recent FX runs"}
               </Button>
               {recentRevaluations.data?.available ? (
-                <select aria-label="Recent FX revaluation runs" value=""
-                  className="w-full rounded-md border bg-background p-2 text-xs"
-                  onChange={e => { setRevalId(e.target.value); revaluation.reset(); clearReviews(); }}>
+                <RecordLookupSelect
+                  aria-label="Recent FX revaluation runs"
+                  value=""
+                  className="w-full"
+                  onValueChange={(nextValue) => {
+                    setRevalId(nextValue);
+                    revaluation.reset();
+                    clearReviews();
+                  }}
+                >
                   <option value="">Choose a revaluation</option>
-                  {recentRevaluations.data.runs.map(row => (
-                    <option value={row.id} key={row.id}>{row.as_of_date} · Run {row.seq}</option>
+                  {recentRevaluations.data.runs.map((row) => (
+                    <option value={row.id} key={row.id}>
+                      {row.as_of_date} · Run {row.seq}
+                    </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               ) : null}
               {recentRevaluations.isError || recentRevaluations.data?.unavailableReason ? (
                 <p role="alert" className="text-xs text-destructive">
-                  FX runs unavailable: {recentRevaluations.data?.unavailableReason ??
+                  FX runs unavailable:{" "}
+                  {recentRevaluations.data?.unavailableReason ??
                     friendlyAuthError(recentRevaluations.error)}
                 </p>
               ) : null}
-              <Button type="button" variant="outline" size="sm" disabled={!UUID.test(revalId) || hasPending}
-                onClick={() => { clearReviews(); revaluation.mutate(revalId); }}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!UUID.test(revalId) || hasPending}
+                onClick={() => {
+                  clearReviews();
+                  revaluation.mutate(revalId);
+                }}
+              >
                 Audit selected revaluation
               </Button>
               <p className="text-xs text-muted-foreground">
-                Find runs in <Link to="/accounting" search={{ tab: "fx" }} className="underline">FX & reversals</Link>.
+                Find runs in{" "}
+                <Link to="/accounting" search={{ tab: "fx" }} className="underline">
+                  FX & reversals
+                </Link>
+                .
               </p>
             </div>
             <div className="space-y-2 rounded-md border p-3 sm:col-span-2 lg:col-span-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-semibold">Fixed Assets — individual posting evidence</p>
-                <Button type="button" variant="ghost" size="sm"
-                  disabled={hasPending} onClick={() => fixedTargets.mutate()}>
-                  {fixedTargets.isPending ? "Loading recent assets…" : "Load recent run and disposal options"}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={hasPending}
+                  onClick={() => fixedTargets.mutate()}
+                >
+                  {fixedTargets.isPending
+                    ? "Loading recent assets…"
+                    : "Load recent run and disposal options"}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -293,35 +458,53 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="exc-asset-run">Depreciation run UUID</Label>
-                  <Input id="exc-asset-run" value={selectedDepreciationId}
+                  <Input
+                    id="exc-asset-run"
+                    value={selectedDepreciationId}
                     placeholder="Select a run or paste its UUID"
-                    onChange={e => {
+                    onChange={(e) => {
                       setSelectedDepreciationId(e.target.value.trim());
-                      setFixedAuditKind(null); depreciation.reset(); clearReviews();
-                    }}/>
+                      setFixedAuditKind(null);
+                      depreciation.reset();
+                      clearReviews();
+                    }}
+                  />
                   {fixedTargets.data ? (
-                    <select aria-label="Recent depreciation runs" value=""
-                      className="w-full rounded-md border bg-background p-2 text-xs"
-                      onChange={e => {
-                        setSelectedDepreciationId(e.target.value);
-                        setFixedAuditKind(null); depreciation.reset(); clearReviews();
-                      }}>
+                    <RecordLookupSelect
+                      aria-label="Recent depreciation runs"
+                      value=""
+                      className="w-full"
+                      onValueChange={(nextValue) => {
+                        setSelectedDepreciationId(nextValue);
+                        setFixedAuditKind(null);
+                        depreciation.reset();
+                        clearReviews();
+                      }}
+                    >
                       <option value="">Select a recent depreciation run</option>
-                      {fixedTargets.data.runs.map(run => (
+                      {fixedTargets.data.runs.map((run) => (
                         <option key={run.id} value={run.id}>
                           {run.period_end} · {run.asset_count} assets
                           {run.journal_id ? "" : " · no linked journal"}
                         </option>
                       ))}
-                    </select>
+                    </RecordLookupSelect>
                   ) : null}
-                  <Button type="button" variant="outline" size="sm"
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     disabled={!UUID.test(selectedDepreciationId) || hasPending}
                     onClick={() => {
-                      clearReviews(); disposal.reset(); setFixedAuditKind("depreciation");
+                      clearReviews();
+                      disposal.reset();
+                      setFixedAuditKind("depreciation");
                       depreciation.mutate(selectedDepreciationId);
-                    }}>
-                    {depreciation.isPending ? "Auditing depreciation…" : "Audit selected depreciation run"}
+                    }}
+                  >
+                    {depreciation.isPending
+                      ? "Auditing depreciation…"
+                      : "Audit selected depreciation run"}
                   </Button>
                   {fixedTargets.data?.runsHasMore ? (
                     <p className="text-xs text-muted-foreground">
@@ -331,113 +514,178 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="exc-asset-disposal">Disposed asset UUID</Label>
-                  <Input id="exc-asset-disposal" value={selectedDisposalId}
+                  <Input
+                    id="exc-asset-disposal"
+                    value={selectedDisposalId}
                     placeholder="Select an asset or paste its UUID"
-                    onChange={e => {
+                    onChange={(e) => {
                       setSelectedDisposalId(e.target.value.trim());
-                      setFixedAuditKind(null); disposal.reset(); clearReviews();
-                    }}/>
+                      setFixedAuditKind(null);
+                      disposal.reset();
+                      clearReviews();
+                    }}
+                  />
                   {fixedTargets.data ? (
-                    <select aria-label="Recent disposed fixed assets" value=""
-                      className="w-full rounded-md border bg-background p-2 text-xs"
-                      onChange={e => {
-                        setSelectedDisposalId(e.target.value);
-                        setFixedAuditKind(null); disposal.reset(); clearReviews();
-                      }}>
+                    <RecordLookupSelect
+                      aria-label="Recent disposed fixed assets"
+                      value=""
+                      className="w-full"
+                      onValueChange={(nextValue) => {
+                        setSelectedDisposalId(nextValue);
+                        setFixedAuditKind(null);
+                        disposal.reset();
+                        clearReviews();
+                      }}
+                    >
                       <option value="">Select a recently disposed asset</option>
-                      {fixedTargets.data.disposals.map(asset => (
+                      {fixedTargets.data.disposals.map((asset) => (
                         <option key={asset.id} value={asset.id}>
                           {asset.asset_number} · {asset.name}
                           {asset.disposal_journal_id ? "" : " · no journal"}
                         </option>
                       ))}
-                    </select>
+                    </RecordLookupSelect>
                   ) : null}
-                  <Button type="button" variant="outline" size="sm"
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     disabled={!UUID.test(selectedDisposalId) || hasPending}
                     onClick={() => {
-                      clearReviews(); depreciation.reset(); setFixedAuditKind("disposal");
+                      clearReviews();
+                      depreciation.reset();
+                      setFixedAuditKind("disposal");
                       disposal.mutate(selectedDisposalId);
-                    }}>
+                    }}
+                  >
                     {disposal.isPending ? "Auditing disposal…" : "Audit selected asset disposal"}
                   </Button>
                   {fixedTargets.data?.disposalsHasMore ? (
                     <p className="text-xs text-muted-foreground">
-                      Only the latest 100 disposals are listed. Enter an older asset UUID to audit it.
+                      Only the latest 100 disposals are listed. Enter an older asset UUID to audit
+                      it.
                     </p>
                   ) : null}
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                <Link to="/fixed-assets" className="underline">Open Fixed Assets</Link> for the register.
-                Each posted GL audit requires Accounting viewing permission and never modifies a journal.
+                <Link to="/fixed-assets" className="underline">
+                  Open Fixed Assets
+                </Link>{" "}
+                for the register. Each posted GL audit requires Accounting viewing permission and
+                never modifies a journal.
               </p>
             </div>
           </div>
           <div className="space-y-2">
             <h3 className="text-sm font-semibold">Audit coverage</h3>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {snapshot.coverage.map(row => (
+              {snapshot.coverage.map((row) => (
                 <div key={row.source} className="rounded-md border p-3 text-xs">
                   <div className="flex flex-wrap justify-between gap-2">
                     <span className="font-medium">{row.label}</span>
-                    <span className={row.state === "unavailable" ? "text-destructive" : "text-muted-foreground"}>
-                      {row.state === "not_run" ? "Not checked" :
-                        row.state === "checked" ? "Checked" :
-                          row.state === "partial" ? "Partial coverage" : "Unavailable"}
+                    <span
+                      className={
+                        row.state === "unavailable" ? "text-destructive" : "text-muted-foreground"
+                      }
+                    >
+                      {row.state === "not_run"
+                        ? "Not checked"
+                        : row.state === "checked"
+                          ? "Checked"
+                          : row.state === "partial"
+                            ? "Partial coverage"
+                            : "Unavailable"}
                     </span>
                   </div>
                   <p className="mt-1 text-muted-foreground">{row.note}</p>
-                  {row.checkedCount !== null ? <p className="mt-1">Records or checks evaluated: {row.checkedCount}</p> : null}
+                  {row.checkedCount !== null ? (
+                    <p className="mt-1">Records or checks evaluated: {row.checkedCount}</p>
+                  ) : null}
                 </div>
               ))}
             </div>
           </div>
           <div className="flex flex-wrap gap-3 text-sm" role="status">
-            <span><strong>{snapshot.errors}</strong> error findings</span>
-            <span><strong>{snapshot.warnings}</strong> warning findings</span>
-            <span><strong>{reviewedCount}/{snapshot.findings.length}</strong> reviewed in this session</span>
-            <span>{snapshot.coverage.filter(row => row.state === "checked").length} fully checked source(s) of {snapshot.coverage.length}</span>
+            <span>
+              <strong>{snapshot.errors}</strong> error findings
+            </span>
+            <span>
+              <strong>{snapshot.warnings}</strong> warning findings
+            </span>
+            <span>
+              <strong>
+                {reviewedCount}/{snapshot.findings.length}
+              </strong>{" "}
+              reviewed in this session
+            </span>
+            <span>
+              {snapshot.coverage.filter((row) => row.state === "checked").length} fully checked
+              source(s) of {snapshot.coverage.length}
+            </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            A zero finding count is not an all-clear when audits are not run, partial, or unavailable.
-            Session review checkmarks are local to this screen: not persisted and not an approval or accounting sign-off.
-            Rerunning an audit clears these checkmarks.
+            A zero finding count is not an all-clear when audits are not run, partial, or
+            unavailable. Session review checkmarks are local to this screen: not persisted and not
+            an approval or accounting sign-off. Rerunning an audit clears these checkmarks.
           </p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Exception review</CardTitle>
-          <CardDescription>Search, filter, inspect and acknowledge findings for this browser session.</CardDescription>
+          <CardDescription>
+            Search, filter, inspect and acknowledge findings for this browser session.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-48 flex-1 space-y-1">
               <Label htmlFor="exc-search">Search findings</Label>
-              <Input id="exc-search" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Reference, journal, message, or module"/>
+              <Input
+                id="exc-search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Reference, journal, message, or module"
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="exc-source">Source</Label>
-              <select id="exc-source" className="h-9 rounded-md border bg-background px-2 text-sm" value={source}
-                onChange={e => setSource(e.target.value as ExceptionFilter["source"])}>
+              <RecordLookupSelect
+                id="exc-source"
+                className="h-9 px-2"
+                value={source}
+                onValueChange={(nextValue) => setSource(nextValue as ExceptionFilter["source"])}
+              >
                 <option value="all">All modules</option>
-                {SOURCES.map(x => <option key={x.key} value={x.key}>{x.name}</option>)}
-              </select>
+                {SOURCES.map((x) => (
+                  <option key={x.key} value={x.key}>
+                    {x.name}
+                  </option>
+                ))}
+              </RecordLookupSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="exc-severity">Severity</Label>
-              <select id="exc-severity" className="h-9 rounded-md border bg-background px-2 text-sm" value={severity}
-                onChange={e => setSeverity(e.target.value as ExceptionFilter["severity"])}>
-                <option value="all">All severities</option><option value="error">Errors</option>
+              <select
+                id="exc-severity"
+                className="h-9 rounded-md border bg-background px-2 text-sm"
+                value={severity}
+                onChange={(e) => setSeverity(e.target.value as ExceptionFilter["severity"])}
+              >
+                <option value="all">All severities</option>
+                <option value="error">Errors</option>
                 <option value="warning">Warnings</option>
               </select>
             </div>
             <div className="space-y-1">
               <Label htmlFor="exc-review">Review status</Label>
-              <select id="exc-review" className="h-9 rounded-md border bg-background px-2 text-sm" value={reviewFilter}
-                onChange={e => setReviewFilter(e.target.value as ExceptionFilter["review"])}>
+              <select
+                id="exc-review"
+                className="h-9 rounded-md border bg-background px-2 text-sm"
+                value={reviewFilter}
+                onChange={(e) => setReviewFilter(e.target.value as ExceptionFilter["review"])}
+              >
                 <option value="unreviewed">Not reviewed</option>
                 <option value="reviewed">Reviewed this session</option>
                 <option value="all">All findings</option>
@@ -445,8 +693,8 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
             </div>
           </div>
           <p role="status" className="text-xs text-muted-foreground">
-            Showing {filtered.length} of {snapshot.findings.length} exception findings. One Ledger Health
-            row may represent more than one underlying finding; see its displayed count.
+            Showing {filtered.length} of {snapshot.findings.length} exception findings. One Ledger
+            Health row may represent more than one underlying finding; see its displayed count.
           </p>
           {filtered.length === 0 ? (
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
@@ -456,37 +704,67 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
             </div>
           ) : (
             <ul className="divide-y rounded-md border">
-              {filtered.map(item => (
+              {filtered.map((item) => (
                 <li key={item.key} className="space-y-2 p-3">
                   <div className="flex flex-wrap items-start gap-3">
-                    <Checkbox aria-label={"Reviewed in this session: " + item.title}
+                    <Checkbox
+                      aria-label={"Reviewed in this session: " + item.title}
                       checked={reviewed.has(item.key)}
-                      onCheckedChange={checked => setReviewed(old => {
-                        const next = new Set(old);
-                        if (checked === true) next.add(item.key); else next.delete(item.key);
-                        return next;
-                      })}
+                      onCheckedChange={(checked) =>
+                        setReviewed((old) => {
+                          const next = new Set(old);
+                          if (checked === true) next.add(item.key);
+                          else next.delete(item.key);
+                          return next;
+                        })
+                      }
                     />
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm">
-                        <span className={item.severity === "error" ? "text-destructive" : "text-amber-700 dark:text-amber-300"}>
+                        <span
+                          className={
+                            item.severity === "error"
+                              ? "text-destructive"
+                              : "text-amber-700 dark:text-amber-300"
+                          }
+                        >
                           {item.severity === "error" ? "Error" : "Review"}
                         </span>
-                        {" · "}{item.title} {item.findingCount > 1 ? "(" + item.findingCount + " findings)" : ""}
+                        {" · "}
+                        {item.title}{" "}
+                        {item.findingCount > 1 ? "(" + item.findingCount + " findings)" : ""}
                       </p>
-                      <p className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">{item.detail}</p>
-                      {item.reference ? <p className="mt-1 break-all font-mono text-xs text-muted-foreground">Source: {item.reference}</p> : null}
+                      <p className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">
+                        {item.detail}
+                      </p>
+                      {item.reference ? (
+                        <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
+                          Source: {item.reference}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex flex-col gap-1 text-xs">
                       {item.journalId ? (
-                        <Link to="/accounting" search={{ tab: "journals", journal: item.journalId }}
-                          className="text-primary underline">Open journal</Link>
+                        <Link
+                          to="/accounting"
+                          search={{ tab: "journals", journal: item.journalId }}
+                          className="text-primary underline"
+                        >
+                          Open journal
+                        </Link>
                       ) : null}
                       {item.source === "fixed_assets" ? (
-                        <Link to="/fixed-assets" className="text-primary underline">Review Fixed Assets</Link>
+                        <Link to="/fixed-assets" className="text-primary underline">
+                          Review Fixed Assets
+                        </Link>
                       ) : (
-                        <Link to="/accounting" search={{ tab: scopeTab(item.source) }}
-                          className="text-primary underline">Open module</Link>
+                        <Link
+                          to="/accounting"
+                          search={{ tab: scopeTab(item.source) }}
+                          className="text-primary underline"
+                        >
+                          Open module
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -497,7 +775,9 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
           <div className="text-xs text-muted-foreground">
             Fixed Assets checks cover a single selected depreciation run or asset disposal;
             account-level register-to-GL reconciliation is separate.
-            <Link to="/fixed-assets" className="ml-1 underline">Open Fixed Assets.</Link>
+            <Link to="/fixed-assets" className="ml-1 underline">
+              Open Fixed Assets.
+            </Link>
           </div>
         </CardContent>
       </Card>

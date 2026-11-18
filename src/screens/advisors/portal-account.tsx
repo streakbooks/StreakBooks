@@ -95,13 +95,13 @@ export function AdvisorsPortalAccountPage() {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <ListWorkspace title="Account" description="Contact details and service requests.">
-        <ErrorState
-          title="Account unavailable"
-          description={friendlyAuthError(homeQuery.error)}
-          onRetry={() => void homeQuery.refetch()}
-        />
-          </ListWorkspace>
-  </main>
+          <ErrorState
+            title="Account unavailable"
+            description={friendlyAuthError(homeQuery.error)}
+            onRetry={() => void homeQuery.refetch()}
+          />
+        </ListWorkspace>
+      </main>
     );
   }
 
@@ -114,95 +114,95 @@ export function AdvisorsPortalAccountPage() {
         description="Update permitted contact details, notifications, and plan or cancellation requests."
         subnav={<AdvisorsPortalSubnav />}
       >
-      <section className="space-y-3 rounded-lg border border-border p-4">
-        <h2 className="text-lg font-medium">Contact</h2>
-        <p className="text-sm text-muted-foreground">
-          Sign-in email stays {client.email}. Ask your advisor if you need that changed.
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label htmlFor="portal-name">Name</Label>
-            <Input id="portal-name" value={name} onChange={(e) => setName(e.target.value)} />
+        <section className="space-y-3 rounded-lg border border-border p-4">
+          <h2 className="text-lg font-medium">Contact</h2>
+          <p className="text-sm text-muted-foreground">
+            Sign-in email stays {client.email}. Ask your advisor if you need that changed.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="portal-name">Name</Label>
+              <Input id="portal-name" value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="portal-business">Business</Label>
+              <Input
+                id="portal-business"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="portal-phone">Phone</Label>
+              <Input id="portal-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="portal-business">Business</Label>
-            <Input
-              id="portal-business"
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-            />
+          <Button disabled={saveM.isPending} onClick={() => saveM.mutate()}>
+            Save contact
+          </Button>
+        </section>
+
+        <section className="space-y-3 rounded-lg border border-border p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-medium">Notifications</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={readM.isPending}
+              onClick={() => readM.mutate()}
+            >
+              Mark all read
+            </Button>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="portal-phone">Phone</Label>
-            <Input id="portal-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <ul className="space-y-2">
+            {(notesQuery.data ?? []).map((item) => (
+              <li key={item.id} className="rounded-md border border-border p-3 text-sm">
+                <p className="font-medium">
+                  {item.title}
+                  {!item.readAt ? <span className="ml-2 text-xs text-primary">new</span> : null}
+                </p>
+                <p className="text-muted-foreground">{item.body}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="space-y-3 rounded-lg border border-border p-4">
+          <h2 className="text-lg font-medium">Plan change or cancellation</h2>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant={requestKind === "plan_change" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setRequestKind("plan_change")}
+            >
+              Plan change
+            </Button>
+            <Button
+              type="button"
+              variant={requestKind === "cancellation" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setRequestKind("cancellation")}
+            >
+              Cancellation
+            </Button>
           </div>
-        </div>
-        <Button disabled={saveM.isPending} onClick={() => saveM.mutate()}>
-          Save contact
-        </Button>
-      </section>
-
-      <section className="space-y-3 rounded-lg border border-border p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-medium">Notifications</h2>
+          <Textarea
+            value={requestDetails}
+            onChange={(e) => setRequestDetails(e.target.value)}
+            rows={4}
+            placeholder="Tell us what you need"
+          />
           <Button
-            variant="outline"
-            size="sm"
-            disabled={readM.isPending}
-            onClick={() => readM.mutate()}
+            disabled={requestM.isPending || requestDetails.trim().length < 3}
+            onClick={() => requestM.mutate()}
           >
-            Mark all read
+            Submit request
           </Button>
-        </div>
-        <ul className="space-y-2">
-          {(notesQuery.data ?? []).map((item) => (
-            <li key={item.id} className="rounded-md border border-border p-3 text-sm">
-              <p className="font-medium">
-                {item.title}
-                {!item.readAt ? <span className="ml-2 text-xs text-primary">new</span> : null}
-              </p>
-              <p className="text-muted-foreground">{item.body}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
+        </section>
 
-      <section className="space-y-3 rounded-lg border border-border p-4">
-        <h2 className="text-lg font-medium">Plan change or cancellation</h2>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant={requestKind === "plan_change" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setRequestKind("plan_change")}
-          >
-            Plan change
-          </Button>
-          <Button
-            type="button"
-            variant={requestKind === "cancellation" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setRequestKind("cancellation")}
-          >
-            Cancellation
-          </Button>
-        </div>
-        <Textarea
-          value={requestDetails}
-          onChange={(e) => setRequestDetails(e.target.value)}
-          rows={4}
-          placeholder="Tell us what you need"
-        />
-        <Button
-          disabled={requestM.isPending || requestDetails.trim().length < 3}
-          onClick={() => requestM.mutate()}
-        >
-          Submit request
-        </Button>
-      </section>
-
-      <p className="text-xs text-muted-foreground">{homeQuery.data.calendarOAuth.note}</p>
-        </ListWorkspace>
-  </main>
+        <p className="text-xs text-muted-foreground">{homeQuery.data.calendarOAuth.note}</p>
+      </ListWorkspace>
+    </main>
   );
 }

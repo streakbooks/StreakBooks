@@ -35,11 +35,7 @@ describe("posted bill capitalisation review", () => {
       ],
       "USD",
     );
-    expect(rows.map((row) => row.status)).toEqual([
-      "unlinked",
-      "partially_linked",
-      "linked",
-    ]);
+    expect(rows.map((row) => row.status)).toEqual(["unlinked", "partially_linked", "linked"]);
     expect(rows[0]?.indicativeUnlinkedMinor).toBe("11000");
     expect(rows[1]?.indicativeUnlinkedMinor).toBe("6000");
     expect(totals).toMatchObject({
@@ -62,9 +58,10 @@ describe("posted bill capitalisation review", () => {
   });
 
   it("requires FX review even when a foreign-currency bill line is currently unlinked", () => {
-    const { rows, totals } = reviewCapitalisableLines([
-      base("foreign-unlinked", { currency: "EUR", registeredMinor: 0 }),
-    ], "USD");
+    const { rows, totals } = reviewCapitalisableLines(
+      [base("foreign-unlinked", { currency: "EUR", registeredMinor: 0 })],
+      "USD",
+    );
     expect(rows[0]).toMatchObject({
       status: "fx_review",
       indicativeUnlinkedMinor: null,
@@ -74,20 +71,22 @@ describe("posted bill capitalisation review", () => {
   });
 
   it("treats zero/negative-net, tax-only bill lines as non-purchases", () => {
-    const { rows } = reviewCapitalisableLines([
-      base("zero-net", { netMinor: 0, taxMinor: 100 }),
-      base("negative-net", { netMinor: -20, taxMinor: 100 }),
-    ], "USD");
+    const { rows } = reviewCapitalisableLines(
+      [
+        base("zero-net", { netMinor: 0, taxMinor: 100 }),
+        base("negative-net", { netMinor: -20, taxMinor: 100 }),
+      ],
+      "USD",
+    );
     expect(rows.map((row) => row.status)).toEqual(["non_purchase", "non_purchase"]);
-    expect(rows.every((row) => !capitalisationReviewGuidance(row.status).canPrepareNewAsset)).toBe(true);
+    expect(rows.every((row) => !capitalisationReviewGuidance(row.status).canPrepareNewAsset)).toBe(
+      true,
+    );
   });
 
   it("exposes overlinked and non-purchase cases instead of claiming a match", () => {
     const { rows, totals } = reviewCapitalisableLines(
-      [
-        base("over", { registeredMinor: 12000 }),
-        base("credit", { netMinor: -100, taxMinor: 0 }),
-      ],
+      [base("over", { registeredMinor: 12000 }), base("credit", { netMinor: -100, taxMinor: 0 })],
       "USD",
     );
     expect(rows.map((row) => row.status)).toEqual(["overlinked", "non_purchase"]);
@@ -166,8 +165,10 @@ describe("posted bill capitalisation review", () => {
       })),
     ).rejects.toThrow("DB unavailable");
     await expect(
-      pageCapitalisationBillLines(["a", ...Array.from({ length: 50 }, () => "b")],
-        async (_ids, from) => ({ data: from === 0 ? [{ id: "repeat" }] : [], error: null })),
+      pageCapitalisationBillLines(
+        ["a", ...Array.from({ length: 50 }, () => "b")],
+        async (_ids, from) => ({ data: from === 0 ? [{ id: "repeat" }] : [], error: null }),
+      ),
     ).rejects.toThrow(/duplicate/i);
   });
 
@@ -187,12 +188,14 @@ describe("posted bill capitalisation review", () => {
     });
     expect(selected.map((r) => r.lineId)).toEqual(["recent", "old"]);
     expect(
-      selectCapitalisationReviewRows(rows, { status: "all", query: "Other", accountId: "a2" })
-        .map((r) => r.lineId),
+      selectCapitalisationReviewRows(rows, { status: "all", query: "Other", accountId: "a2" }).map(
+        (r) => r.lineId,
+      ),
     ).toEqual(["recent"]);
     expect(
-      selectCapitalisationReviewRows(rows, { status: "unlinked", query: "", accountId: "a1" })
-        .map((r) => r.lineId),
+      selectCapitalisationReviewRows(rows, { status: "unlinked", query: "", accountId: "a1" }).map(
+        (r) => r.lineId,
+      ),
     ).toEqual(["old"]);
   });
 });

@@ -70,7 +70,7 @@ export async function tryRpc<T>(
 }
 
 /**
- * Audit trail via the SECURITY DEFINER helper `record_audit_event` (audit_events has no client INSERT policy,
+ * Audit trail via the unambiguous invoker RPC, which delegates to the checked audit helper (audit_events has no client INSERT policy,
  * so direct inserts silently failed — BK-13). Failures are logged, not thrown.
  */
 export async function recordAudit(
@@ -84,7 +84,7 @@ export async function recordAudit(
   },
 ): Promise<void> {
   const { error } = await supabase.rpc(
-    "record_audit_event" as never,
+    "record_app_audit_event" as never,
     {
       _company_id: args.companyId,
       _action: args.action,

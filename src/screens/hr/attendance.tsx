@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -18,13 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -179,7 +174,10 @@ export function HrAttendancePage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Attendance" breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Attendance" }]}>
+      <ListWorkspace
+        title="Attendance"
+        breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Attendance" }]}
+      >
         <HrSubnav current="attendance" />
         <EmptyState title="No access" description="You need hr.view to open attendance." />
       </ListWorkspace>
@@ -270,8 +268,12 @@ export function HrAttendancePage() {
                     <div className="text-muted-foreground text-xs">{row.employeeNumber}</div>
                   </TableCell>
                   <TableCell>{row.workDate}</TableCell>
-                  <TableCell>{row.checkInAt ? new Date(row.checkInAt).toLocaleString() : "—"}</TableCell>
-                  <TableCell>{row.checkOutAt ? new Date(row.checkOutAt).toLocaleString() : "—"}</TableCell>
+                  <TableCell>
+                    {row.checkInAt ? new Date(row.checkInAt).toLocaleString() : "—"}
+                  </TableCell>
+                  <TableCell>
+                    {row.checkOutAt ? new Date(row.checkOutAt).toLocaleString() : "—"}
+                  </TableCell>
                   <TableCell>
                     <StatusBadge status={row.status} />
                   </TableCell>
@@ -353,7 +355,7 @@ export function HrAttendancePage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              <Select value={employeeId} onValueChange={setEmployeeId}>
+              <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
@@ -364,7 +366,7 @@ export function HrAttendancePage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Work date</Label>
@@ -388,7 +390,7 @@ export function HrAttendancePage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Status</Label>
-              <Select value={status} onValueChange={setStatus}>
+              <RecordLookupSelect value={status} onValueChange={setStatus}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -399,7 +401,7 @@ export function HrAttendancePage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Notes</Label>
@@ -429,7 +431,7 @@ export function HrAttendancePage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              <Select value={employeeId} onValueChange={setEmployeeId}>
+              <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
@@ -440,7 +442,7 @@ export function HrAttendancePage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-1.5">
               <Label>Work date</Label>
@@ -448,11 +450,19 @@ export function HrAttendancePage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Requested check-in</Label>
-              <Input type="datetime-local" value={reqIn} onChange={(e) => setReqIn(e.target.value)} />
+              <Input
+                type="datetime-local"
+                value={reqIn}
+                onChange={(e) => setReqIn(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Requested check-out</Label>
-              <Input type="datetime-local" value={reqOut} onChange={(e) => setReqOut(e.target.value)} />
+              <Input
+                type="datetime-local"
+                value={reqOut}
+                onChange={(e) => setReqOut(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Reason</Label>

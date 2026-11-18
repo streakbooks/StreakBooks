@@ -4,14 +4,11 @@ import { AiAssistantPage } from "@/screens/ai-assistant";
 
 export const Route = createFileRoute("/_authenticated/ai-assistant")({
   validateSearch: (raw: Record<string, unknown>): { reviewCase?: string } => {
-    const reviewCaseRaw = raw["reviewCase"];
-    if (
-      typeof reviewCaseRaw === "string" &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reviewCaseRaw)
-    ) {
-      return { reviewCase: reviewCaseRaw };
-    }
-    return {};
+    const reviewCase = raw["reviewCase"];
+    return typeof reviewCase === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reviewCase)
+      ? { reviewCase }
+      : {};
   },
   head: () => ({
     meta: [

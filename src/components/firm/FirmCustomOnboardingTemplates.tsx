@@ -124,20 +124,24 @@ export function FirmCustomOnboardingTemplates({
               <Button
                 size="sm"
                 disabled={
-                  saveM.isPending || title.trim().length < 2 ||
+                  saveM.isPending ||
+                  title.trim().length < 2 ||
                   (dueInDays !== "" &&
                     (!Number.isInteger(Number(dueInDays)) ||
-                      Number(dueInDays) < 0 || Number(dueInDays) > 365))
+                      Number(dueInDays) < 0 ||
+                      Number(dueInDays) > 365))
                 }
-                onClick={() => saveM.mutate({
-                  firmId,
-                  ...(editing ? { task_key: editing.task_key, version: editing.version } : {}),
-                  title: title.trim(),
-                  is_active: editing?.is_active ?? true,
-                  sort_order: editing?.sort_order ?? 100,
-                  due_in_days: dueInDays === "" ? null : Number(dueInDays),
-                  reminders_enabled: remindersEnabled,
-                })}
+                onClick={() =>
+                  saveM.mutate({
+                    firmId,
+                    ...(editing ? { task_key: editing.task_key, version: editing.version } : {}),
+                    title: title.trim(),
+                    is_active: editing?.is_active ?? true,
+                    sort_order: editing?.sort_order ?? 100,
+                    due_in_days: dueInDays === "" ? null : Number(dueInDays),
+                    reminders_enabled: remindersEnabled,
+                  })
+                }
               >
                 {editing ? "Save step" : "Add step"}
               </Button>
@@ -174,7 +178,8 @@ export function FirmCustomOnboardingTemplates({
                     {step.due_in_days === null
                       ? "No default due date"
                       : `Due ${step.due_in_days} days after application`}
-                    {" · "}{step.reminders_enabled ? "Reminders on" : "Reminders off"}
+                    {" · "}
+                    {step.reminders_enabled ? "Reminders on" : "Reminders off"}
                   </p>
                 </div>
                 <Badge variant={step.is_active ? "secondary" : "outline"}>
@@ -199,16 +204,18 @@ export function FirmCustomOnboardingTemplates({
                       size="sm"
                       variant="outline"
                       disabled={saveM.isPending}
-                      onClick={() => saveM.mutate({
-                        firmId,
-                        task_key: step.task_key,
-                        version: step.version,
-                        title: step.title,
-                        is_active: !step.is_active,
-                        sort_order: step.sort_order,
-                        due_in_days: step.due_in_days,
-                        reminders_enabled: step.reminders_enabled,
-                      })}
+                      onClick={() =>
+                        saveM.mutate({
+                          firmId,
+                          task_key: step.task_key,
+                          version: step.version,
+                          title: step.title,
+                          is_active: !step.is_active,
+                          sort_order: step.sort_order,
+                          due_in_days: step.due_in_days,
+                          reminders_enabled: step.reminders_enabled,
+                        })
+                      }
                     >
                       {step.is_active ? "Archive" : "Restore"}
                     </Button>

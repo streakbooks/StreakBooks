@@ -13,12 +13,10 @@ describe("messaging performance budgets", () => {
   });
 
   it("detects latency and size budget breaches", () => {
-    expect(
-      isWithinMessagingLatencyBudget({ operation: "inboxListMs", elapsedMs: 100 }),
-    ).toBe(true);
-    expect(
-      isWithinMessagingLatencyBudget({ operation: "threadLoadMs", elapsedMs: 5_000 }),
-    ).toBe(false);
+    expect(isWithinMessagingLatencyBudget({ operation: "inboxListMs", elapsedMs: 100 })).toBe(true);
+    expect(isWithinMessagingLatencyBudget({ operation: "threadLoadMs", elapsedMs: 5_000 })).toBe(
+      false,
+    );
     expect(isWithinMessagingSizeBudget("maxMessagesPerThreadFetch", 200)).toBe(true);
     expect(isWithinMessagingSizeBudget("maxMessagesPerThreadFetch", 201)).toBe(false);
     expect(

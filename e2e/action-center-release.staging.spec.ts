@@ -17,7 +17,10 @@ const secondaryEmail = process.env.E2E_ACTION_SECONDARY_EMAIL;
 const secondaryPassword = process.env.E2E_ACTION_SECONDARY_PASSWORD;
 const privateCanary = process.env.E2E_ACTION_PRIVATE_CANARY;
 const hasSecondaryFixture = Boolean(
-  secondaryEmail && secondaryPassword && privateCanary && privateCanary.length >= 16 &&
+  secondaryEmail &&
+  secondaryPassword &&
+  privateCanary &&
+  privateCanary.length >= 16 &&
   secondaryEmail !== primaryEmail,
 );
 const hasLargeHistory = process.env.E2E_ACTION_LARGE_HISTORY === "true";
@@ -28,10 +31,9 @@ async function signIn(page: Page, email: string, password: string) {
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL(
-    (url) => url.hostname === host && url.pathname === "/notifications",
-    { timeout: 30_000 },
-  );
+  await page.waitForURL((url) => url.hostname === host && url.pathname === "/notifications", {
+    timeout: 30_000,
+  });
   await expect(page.getByRole("heading", { name: "Smart Action Center" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Search notifications" })).toBeVisible();
 }
@@ -45,8 +47,12 @@ async function searchFor(page: Page, query: string) {
 
 test.describe("Action Center production readiness gates — dedicated staging only", () => {
   test.beforeAll(() => {
-    if (process.env.E2E_STAGING_ENABLED !== "true" ||
-        !process.env.E2E_BASE_URL || !primaryEmail || !primaryPassword) {
+    if (
+      process.env.E2E_STAGING_ENABLED !== "true" ||
+      !process.env.E2E_BASE_URL ||
+      !primaryEmail ||
+      !primaryPassword
+    ) {
       throw new Error("Explicit staging activation, URL and dedicated credentials required");
     }
     validateStagingTarget({
@@ -56,12 +62,12 @@ test.describe("Action Center production readiness gates — dedicated staging on
     });
   });
 
-  test("serious and critical accessibility violations are absent in the Action Center", async ({ page }) => {
+  test("serious and critical accessibility violations are absent in the Action Center", async ({
+    page,
+  }) => {
     await signIn(page, primaryEmail!, primaryPassword!);
     // Scan the module only, so unrelated app navigation cannot mask module issues.
-    const result = await new AxeBuilder({ page })
-      .include("[data-action-center-root]")
-      .analyze();
+    const result = await new AxeBuilder({ page }).include("[data-action-center-root]").analyze();
     // Avoid including customer-specific DOM snippets in test logs.
     const blocking = result.violations
       .filter((violation) => violation.impact === "critical" || violation.impact === "serious")
@@ -69,9 +75,13 @@ test.describe("Action Center production readiness gates — dedicated staging on
     expect(blocking).toEqual([]);
   });
 
-  test("another user cannot search a private alert belonging to the primary user", async ({ browser }) => {
-    test.skip(!hasSecondaryFixture,
-      "Two dedicated staging accounts and a private alert canary are required");
+  test("another user cannot search a private alert belonging to the primary user", async ({
+    browser,
+  }) => {
+    test.skip(
+      !hasSecondaryFixture,
+      "Two dedicated staging accounts and a private alert canary are required",
+    );
     const one = await browser.newContext({ baseURL: process.env.E2E_BASE_URL });
     const two = await browser.newContext({ baseURL: process.env.E2E_BASE_URL });
     try {
@@ -95,15 +105,19 @@ test.describe("Action Center production readiness gates — dedicated staging on
   });
 
   test("more than 100 alerts paginate without duplicate record IDs", async ({ page }) => {
-    test.skip(!hasLargeHistory,
-      "Dedicated staging user needs over 100 accessible alerts for this read-only fixture");
+    test.skip(
+      !hasLargeHistory,
+      "Dedicated staging user needs over 100 accessible alerts for this read-only fixture",
+    );
     await signIn(page, primaryEmail!, primaryPassword!);
     const seen = new Set<string>();
     for (let currentPage = 1; currentPage <= 6; currentPage++) {
       await expect(page.getByText(new RegExp(`Page ${currentPage} of`))).toBeVisible();
-      const ids = await page.locator("[data-action-notification-id]").evaluateAll(
-        (elements) => elements.map((element) => element.getAttribute("data-action-notification-id")),
-      );
+      const ids = await page
+        .locator("[data-action-notification-id]")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action-notification-id")),
+        );
       expect(ids.length).toBeGreaterThan(0);
       for (const id of ids) {
         expect(id).toBeTruthy();

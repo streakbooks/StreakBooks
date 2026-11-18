@@ -92,7 +92,7 @@ try {
     ),
   );
   for (const name of ["public.assert_journal_date_unlocked", "public.post_journal"])
-    sql(fn("supabase/migrations/20261022180000_settings_centre_foundation.sql", name));
+    sql(fn("supabase/migrations/20261022125237_settings_centre_foundation.sql", name));
   const migrations = readdirSync(path.join(root, "supabase/migrations")).filter((name) =>
     name.endsWith("_accounting_workflow_depth.sql"),
   );
@@ -109,7 +109,7 @@ try {
   sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
   sql(
     fn(
-      "supabase/migrations/20261022180000_settings_centre_foundation.sql",
+      "supabase/migrations/20261022125237_settings_centre_foundation.sql",
       "public.set_organisation_feature",
     ),
   );
@@ -122,7 +122,7 @@ try {
   sql(read("tests/fixtures/workflows/settings-lock-policy-cas-baseline.sql"));
   sql(
     fn(
-      "supabase/migrations/20261022180000_settings_centre_foundation.sql",
+      "supabase/migrations/20261022125237_settings_centre_foundation.sql",
       "public.set_organisation_lock_policy",
     ),
   );
@@ -164,7 +164,7 @@ try {
     );
   await Promise.all([1, 2, 3, 4].map(contactRace));
   sql(
-    `DO $ DECLARE nums text[]; BEGIN
+    `DO $$ DECLARE nums text[]; BEGIN
       SELECT array_agg(account_number ORDER BY account_number) INTO nums
       FROM public.contacts WHERE name LIKE 'Numbering Concurrent %';
       IF nums IS DISTINCT FROM ARRAY['C1005','C1006','C1007','C1008']::text[]
@@ -172,7 +172,7 @@ try {
             WHERE company_id='10000000-0000-4000-8000-000000000001') <> 1009 THEN
         RAISE EXCEPTION 'Parallel contact creation duplicated or skipped numbers';
       END IF;
-    END $;`,
+    END $$;`,
   );
   console.log("Four concurrent contact creates received C1005–C1008, no duplicates or gaps.");
   console.log(

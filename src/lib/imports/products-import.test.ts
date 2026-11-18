@@ -89,10 +89,7 @@ describe("products catalogue CSV import validation", () => {
 
   it("rejects archived report rows instead of silently reactivating them", () => {
     expect(() =>
-      prepareProductsCsv(
-        `${extended}\nITEM-1,Archive,service,10.00,0,,each,0,0,Archived,,`,
-        "USD",
-      ),
+      prepareProductsCsv(`${extended}\nITEM-1,Archive,service,10.00,0,,each,0,0,Archived,,`, "USD"),
     ).toThrow(/Row 2.*Only Active items/);
   });
 
@@ -105,25 +102,28 @@ describe("products catalogue CSV import validation", () => {
         ),
       ).toThrow(/Row 2.*Sales Tax/);
     }
-    expect(prepareProductsCsv(
-      `${extended}\nITEM-1,Tax,service,10,0,,each,0.01,100,Active,,`,
-      "USD",
-    )[0]?.purchaseTaxRateBps).toBe(10000);
+    expect(
+      prepareProductsCsv(`${extended}\nITEM-1,Tax,service,10,0,,each,0.01,100,Active,,`, "USD")[0]
+        ?.purchaseTaxRateBps,
+    ).toBe(10000);
   });
 
   it("rejects invalid account identifiers and excessively long item metadata", () => {
-    expect(() => prepareProductsCsv(
-      `${extended}\nITEM-1,Name,service,10,0,,each,0,0,Active,wrong-id,`,
-      "USD",
-    )).toThrow(/Income Account ID.*UUID/);
-    expect(() => prepareProductsCsv(
-      `${extended}\nITEM-1,Name,service,10,0,,${"x".repeat(41)},0,0,Active,,`,
-      "USD",
-    )).toThrow(/Unit exceeds/);
-    expect(() => prepareProductsCsv(
-      `${extended}\nITEM-1,Name,service,10,0,${"x".repeat(2001)},each,0,0,Active,,`,
-      "USD",
-    )).toThrow(/Description exceeds/);
+    expect(() =>
+      prepareProductsCsv(`${extended}\nITEM-1,Name,service,10,0,,each,0,0,Active,wrong-id,`, "USD"),
+    ).toThrow(/Income Account ID.*UUID/);
+    expect(() =>
+      prepareProductsCsv(
+        `${extended}\nITEM-1,Name,service,10,0,,${"x".repeat(41)},0,0,Active,,`,
+        "USD",
+      ),
+    ).toThrow(/Unit exceeds/);
+    expect(() =>
+      prepareProductsCsv(
+        `${extended}\nITEM-1,Name,service,10,0,${"x".repeat(2001)},each,0,0,Active,,`,
+        "USD",
+      ),
+    ).toThrow(/Description exceeds/);
   });
 
   it("rejects duplicate SKUs even when case differs", () => {

@@ -12,6 +12,7 @@ test("blocks committed local env files regardless of directory", () => {
 test("blocks generated packages and deployment folders", () => {
   for (const path of [
     "node_modules/a/index.js",
+    "work/local-api-session.json",
     ".output/server/index.mjs",
     ".vercel/cache/config",
     ".wrangler/tmp/a",

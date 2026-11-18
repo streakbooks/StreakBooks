@@ -178,7 +178,7 @@ async function recordBillAudit(
     actorName = "";
   }
   await (supabase as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> }).rpc(
-    "record_audit_event",
+    "record_app_audit_event",
     {
       _company_id: companyId,
       _action: action,
@@ -6227,7 +6227,7 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
     }
     if (outcome.createdDrafts > 0) {
       const { error } = await supabase.rpc(
-        "record_audit_event" as never,
+        "record_app_audit_event" as never,
         {
           _company_id: data.companyId,
           _action: "purchases.bills.import",

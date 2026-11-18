@@ -77,7 +77,11 @@ for (const match of moduleBlocks) {
   const catalogue = [...permissionKeys].filter((p) => p === ns || p.startsWith(prefix));
   if (catalogue.length === 0) {
     failures.push(
-      'Module "' + id + '" has no permissions in src/lib/permissions.ts under namespace "' + prefix + '"',
+      'Module "' +
+        id +
+        '" has no permissions in src/lib/permissions.ts under namespace "' +
+        prefix +
+        '"',
     );
     continue;
   }
@@ -90,12 +94,14 @@ for (const match of moduleBlocks) {
   const seededForNs = [...seeded].filter((p) => p === ns || p.startsWith(prefix));
   if (seededForNs.length === 0) {
     failures.push(
-      'Module "' + id + '" has no role_permissions seed in supabase/migrations for namespace "' + prefix + '"',
+      'Module "' +
+        id +
+        '" has no role_permissions seed in supabase/migrations for namespace "' +
+        prefix +
+        '"',
     );
   } else if (!seededForNs.includes(viewKey)) {
-    failures.push(
-      'Module "' + id + '" migration seeds missing view key "' + viewKey + '"',
-    );
+    failures.push('Module "' + id + '" migration seeds missing view key "' + viewKey + '"');
   }
   checked += 1;
 }

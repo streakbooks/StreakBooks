@@ -47,21 +47,28 @@ export function buildAssetPortfolioSnapshot(
     if (!Number.isSafeInteger(asset.cost_minor) || asset.cost_minor <= 0) {
       throw new Error("Asset dashboard requires exact positive register costs.");
     }
-    if (!Number.isSafeInteger(asset.residual_minor) || asset.residual_minor < 0 ||
-        asset.residual_minor > asset.cost_minor ||
-        !Number.isSafeInteger(asset.opening_accumulated_minor) ||
-        asset.opening_accumulated_minor < 0 ||
-        asset.opening_accumulated_minor > asset.cost_minor ||
-        BigInt(asset.residual_minor) + BigInt(asset.opening_accumulated_minor) >
-          BigInt(asset.cost_minor)) {
-      throw new Error("Asset portfolio contains inconsistent residual or opening depreciation amounts.");
+    if (
+      !Number.isSafeInteger(asset.residual_minor) ||
+      asset.residual_minor < 0 ||
+      asset.residual_minor > asset.cost_minor ||
+      !Number.isSafeInteger(asset.opening_accumulated_minor) ||
+      asset.opening_accumulated_minor < 0 ||
+      asset.opening_accumulated_minor > asset.cost_minor ||
+      BigInt(asset.residual_minor) + BigInt(asset.opening_accumulated_minor) >
+        BigInt(asset.cost_minor)
+    ) {
+      throw new Error(
+        "Asset portfolio contains inconsistent residual or opening depreciation amounts.",
+      );
     }
     const amount = BigInt(asset.cost_minor);
     cost += amount;
     const key = asset.asset_type_id ?? "unclassified";
     const category = group.get(key) ?? {
       key,
-      name: asset.asset_type_id ? (names.get(asset.asset_type_id) ?? "Unlisted type") : "Unclassified",
+      name: asset.asset_type_id
+        ? (names.get(asset.asset_type_id) ?? "Unlisted type")
+        : "Unclassified",
       count: 0,
       cost: 0n,
     };
@@ -72,8 +79,10 @@ export function buildAssetPortfolioSnapshot(
     if (completeBalances) {
       const charge = accumulatedByAsset?.get(asset.id);
       if (
-        charge === undefined || !Number.isSafeInteger(charge) ||
-        charge < asset.opening_accumulated_minor || charge > asset.cost_minor - asset.residual_minor
+        charge === undefined ||
+        !Number.isSafeInteger(charge) ||
+        charge < asset.opening_accumulated_minor ||
+        charge > asset.cost_minor - asset.residual_minor
       ) {
         completeBalances = false;
       } else {
@@ -92,7 +101,7 @@ export function buildAssetPortfolioSnapshot(
   }
 
   const categoryRows = [...group.values()]
-    .sort((a, b) => a.cost === b.cost ? a.name.localeCompare(b.name) : a.cost > b.cost ? -1 : 1)
+    .sort((a, b) => (a.cost === b.cost ? a.name.localeCompare(b.name) : a.cost > b.cost ? -1 : 1))
     .map((row) => ({
       key: row.key,
       name: row.name,
@@ -104,9 +113,8 @@ export function buildAssetPortfolioSnapshot(
   return {
     activeCount: active.length,
     disposedCount: disposed.length,
-    acquiredThisMonth: assets.filter(
-      (a) => a.purchase_date >= month && a.purchase_date <= asOf,
-    ).length,
+    acquiredThisMonth: assets.filter((a) => a.purchase_date >= month && a.purchase_date <= asOf)
+      .length,
     disposedThisMonth: disposed.filter(
       (a) => a.disposal_date !== null && a.disposal_date >= month && a.disposal_date <= asOf,
     ).length,
@@ -117,8 +125,11 @@ export function buildAssetPortfolioSnapshot(
     categoryRows,
     recentAcquisitions: assets
       .filter((a) => a.purchase_date <= asOf)
-      .sort((a, b) => b.purchase_date.localeCompare(a.purchase_date) ||
-        b.asset_number.localeCompare(a.asset_number))
+      .sort(
+        (a, b) =>
+          b.purchase_date.localeCompare(a.purchase_date) ||
+          b.asset_number.localeCompare(a.asset_number),
+      )
       .slice(0, 6),
   };
 }

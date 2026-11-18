@@ -16,15 +16,16 @@ test.describe("Contacts: preserving the originating directory view", () => {
     test.skip(!email || !password, "Requires an authorised E2E test account");
   });
 
-  test("a contact preserves the Suppliers view across detail tabs and Directory return", async ({ page }) => {
+  test("a contact preserves the Suppliers view across detail tabs and Directory return", async ({
+    page,
+  }) => {
     await signIn(page, "/contacts?view=suppliers");
     await expect(page.getByRole("tab", { name: "Suppliers" })).toHaveAttribute(
-      "aria-selected", "true",
+      "aria-selected",
+      "true",
     );
 
-    const record = page.locator(
-      'tbody a[href*="/contacts/"][href*="fromView=suppliers"]',
-    ).first();
+    const record = page.locator('tbody a[href*="/contacts/"][href*="fromView=suppliers"]').first();
     test.skip((await record.count()) === 0, "Requires an authorised seeded supplier contact");
     await record.click();
 
@@ -37,11 +38,14 @@ test.describe("Contacts: preserving the originating directory view", () => {
     await page.getByRole("link", { name: "Directory" }).click();
     await expect(page).toHaveURL(/\/contacts(?:\/)?\?view=suppliers/);
     await expect(page.getByRole("tab", { name: "Suppliers" })).toHaveAttribute(
-      "aria-selected", "true",
+      "aria-selected",
+      "true",
     );
   });
 
-  test("direct contact links without origin still return to the default directory", async ({ page }) => {
+  test("direct contact links without origin still return to the default directory", async ({
+    page,
+  }) => {
     await signIn(page, "/contacts?view=all");
     const record = page.locator('tbody a[href*="/contacts/"]').first();
     test.skip((await record.count()) === 0, "Requires at least one authorised contact fixture");
@@ -49,22 +53,16 @@ test.describe("Contacts: preserving the originating directory view", () => {
     await expect(page.getByRole("link", { name: "Directory" })).toBeVisible();
     await page.getByRole("link", { name: "Directory" }).click();
     await expect(page).toHaveURL(/\/contacts/);
-    await expect(page.getByRole("tab", { name: "All" })).toHaveAttribute(
-      "aria-selected", "true",
-    );
+    await expect(page.getByRole("tab", { name: "All" })).toHaveAttribute("aria-selected", "true");
   });
 
   test("contact directory deep-link query and sorting survive refresh and role tabs", async ({
     page,
   }) => {
     await signIn(page, "/contacts?view=customers&q=consulting&sort=name_desc&page=0");
-    await expect(page.getByRole("textbox", { name: "Search contacts" })).toHaveValue(
-      "consulting",
-    );
+    await expect(page.getByRole("textbox", { name: "Search contacts" })).toHaveValue("consulting");
     await page.reload();
-    await expect(page.getByRole("textbox", { name: "Search contacts" })).toHaveValue(
-      "consulting",
-    );
+    await expect(page.getByRole("textbox", { name: "Search contacts" })).toHaveValue("consulting");
     await page.getByRole("tab", { name: "Suppliers" }).click();
     const params = new URL(page.url()).searchParams;
     expect(params.get("view")).toBe("suppliers");
@@ -76,9 +74,7 @@ test.describe("Contacts: preserving the originating directory view", () => {
     page,
   }) => {
     await signIn(page, "/contacts?view=all&sort=name_desc&page=0");
-    const contact = page.locator(
-      'tbody a[href*="/contacts/"][href*="returnContext="]',
-    ).first();
+    const contact = page.locator('tbody a[href*="/contacts/"][href*="returnContext="]').first();
     test.skip((await contact.count()) === 0, "Requires an authorised contact fixture");
     await contact.click();
     await expect(page).toHaveURL(/\/contacts\/[^/?]+/);
@@ -89,5 +85,4 @@ test.describe("Contacts: preserving the originating directory view", () => {
     expect(params.get("sort")).toBe("name_desc");
     expect(params.get("page")).toBe("0");
   });
-
 });

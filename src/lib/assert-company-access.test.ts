@@ -1,13 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 
 const companyId = "11111111-1111-4111-8111-111111111111";
 
 function mockClient(rpcResult: { data: unknown; error: { message: string } | null }) {
-  const rpc = vi.fn().mockResolvedValue(rpcResult);
-  return { rpc } as unknown as SupabaseClient<Database>;
+  const client = { rpc: vi.fn().mockResolvedValue(rpcResult) };
+  return client as typeof client & Parameters<typeof assertCompanyPermission>[0];
 }
 
 describe("assertCompanyPermission", () => {
@@ -24,18 +22,16 @@ describe("assertCompanyPermission", () => {
 
   it("denies with a clear organisation-scoped message when the RPC returns false", async () => {
     const supabase = mockClient({ data: false, error: null });
-    await expect(
-      assertCompanyPermission(supabase, companyId, "sales.authorise"),
-    ).rejects.toThrow(
+    await expect(assertCompanyPermission(supabase, companyId, "sales.authorise")).rejects.toThrow(
       "You do not have permission to perform this action for this organisation.",
     );
   });
 
   it("surfaces RPC failures instead of treating them as grants", async () => {
     const supabase = mockClient({ data: null, error: { message: "rpc unavailable" } });
-    await expect(
-      assertCompanyPermission(supabase, companyId, "sales.view"),
-    ).rejects.toThrow("rpc unavailable");
+    await expect(assertCompanyPermission(supabase, companyId, "sales.view")).rejects.toThrow(
+      "rpc unavailable",
+    );
   });
 });
 
@@ -65,4 +61,3 @@ describe("assertCompanyMember", () => {
     );
   });
 });
-

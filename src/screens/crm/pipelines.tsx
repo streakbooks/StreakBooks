@@ -227,7 +227,10 @@ export function CrmPipelinesPage() {
     >
       <CrmSubnav current="pipelines" />
       {settings.data && !settings.data.enabled ? (
-        <EmptyState title="CRM is disabled" description="Enable CRM to seed the default Sales pipeline." />
+        <EmptyState
+          title="CRM is disabled"
+          description="Enable CRM to seed the default Sales pipeline."
+        />
       ) : null}
       {pipelines.isLoading ? <LoadingState /> : null}
       {pipelines.isError ? (
@@ -295,7 +298,9 @@ export function CrmPipelinesPage() {
                           {pipeline.isDefault ? " (default)" : ""}
                           {!pipeline.isActive ? " · inactive" : ""}
                         </CardTitle>
-                        <CardDescription>{pipeline.description ?? "Pipeline stages"}</CardDescription>
+                        <CardDescription>
+                          {pipeline.description ?? "Pipeline stages"}
+                        </CardDescription>
                       </div>
                       {canAdmin && !pipeline.isDefault && pipeline.isActive ? (
                         <Button

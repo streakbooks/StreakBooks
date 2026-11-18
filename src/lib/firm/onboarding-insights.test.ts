@@ -9,7 +9,6 @@ import {
 
 const parent = {
   task_key: "details",
-  title: "Company details",
   completed_at: null,
   due_date: "2026-11-04",
   assignee_id: null,
@@ -17,7 +16,6 @@ const parent = {
 };
 const child = {
   task_key: "records",
-  title: "Records setup",
   completed_at: null,
   due_date: "2026-11-06",
   assignee_id: "staff",
@@ -25,7 +23,6 @@ const child = {
 };
 const final = {
   task_key: "approval",
-  title: "Partner approval",
   completed_at: null,
   due_date: "2026-11-12",
   assignee_id: "staff",
@@ -38,11 +35,15 @@ describe("firm onboarding workflow insights", () => {
     expect(onboardingBlocked(child, steps)).toBe(true);
     expect(onboardingCanComplete(child, steps)).toBe(false);
     expect(onboardingCanComplete(parent, steps)).toBe(true);
-    expect(onboardingCanComplete(child, [{ ...parent, completed_at: "2026-11-05" }, child]))
-      .toBe(true);
+    expect(onboardingCanComplete(child, [{ ...parent, completed_at: "2026-11-05" }, child])).toBe(
+      true,
+    );
   });
   it("prevents reopening a prerequisite while dependent work is complete", () => {
-    const steps = [{ ...parent, completed_at: "2026-11-05" }, { ...child, completed_at: "2026-11-05" }];
+    const steps = [
+      { ...parent, completed_at: "2026-11-05" },
+      { ...child, completed_at: "2026-11-05" },
+    ];
     expect(onboardingCanReopen(steps[0]!, steps)).toBe(false);
     expect(onboardingCanReopen(steps[1]!, steps)).toBe(true);
   });
@@ -55,10 +56,17 @@ describe("firm onboarding workflow insights", () => {
   it("counts overdue, due soon, blocked and unassigned only for open tasks", () => {
     const counts = onboardingStepSummary([parent, child, final], "2026-11-06");
     expect(counts).toEqual({
-      total: 3, completed: 0, open: 3, overdue: 1, dueSoon: 1, blocked: 2, unassigned: 1,
+      total: 3,
+      completed: 0,
+      open: 3,
+      overdue: 1,
+      dueSoon: 1,
+      blocked: 2,
+      unassigned: 1,
     });
-    expect(onboardingStepSummary([{ ...parent, completed_at: "2026-11-05" }], "2026-11-06"))
-      .toMatchObject({ completed: 1, open: 0, overdue: 0, unassigned: 0 });
+    expect(
+      onboardingStepSummary([{ ...parent, completed_at: "2026-11-05" }], "2026-11-06"),
+    ).toMatchObject({ completed: 1, open: 0, overdue: 0, unassigned: 0 });
   });
   it("never treats an unscheduled task as overdue", () => {
     expect(onboardingStepSummary([{ ...parent, due_date: null }], "2026-11-06").overdue).toBe(0);

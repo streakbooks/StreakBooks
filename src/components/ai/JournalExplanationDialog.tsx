@@ -59,14 +59,22 @@ export function AiJournalExplanationDialog({
     if (!result) return;
     const notes = [
       result.summary,
-      ...result.lines.map(
-        (line) =>
-          [line.account_code, line.account_name, line.debit_display, line.credit_display, line.meaning].join(" | "),
+      ...result.lines.map((line) =>
+        [
+          line.account_code,
+          line.account_name,
+          line.debit_display,
+          line.credit_display,
+          line.meaning,
+        ].join(" | "),
       ),
       "Review items (not approvals):",
-      ...result.actions.map((action) =>
-        (reviewed[action.id] ? "[reviewed this session] " : "[not reviewed] ") +
-        action.title + ": " + action.detail,
+      ...result.actions.map(
+        (action) =>
+          (reviewed[action.id] ? "[reviewed this session] " : "[not reviewed] ") +
+          action.title +
+          ": " +
+          action.detail,
       ),
       ...result.limitations,
     ].join("\n");
@@ -84,8 +92,8 @@ export function AiJournalExplanationDialog({
         <DialogHeader>
           <DialogTitle>Explain this posted journal</DialogTitle>
           <DialogDescription>
-            Account-direction explanation based on recorded journal lines, with source links
-            and a session-only review checklist. No AI model, posting or approval action.
+            Account-direction explanation based on recorded journal lines, with source links and a
+            session-only review checklist. No AI model, posting or approval action.
           </DialogDescription>
         </DialogHeader>
         {query.isPending ? (
@@ -97,7 +105,9 @@ export function AiJournalExplanationDialog({
             <AlertTitle>Could not explain this journal</AlertTitle>
             <AlertDescription>
               {friendlyAuthError(query.error)}{" "}
-              <Button variant="outline" size="sm" onClick={() => void query.refetch()}>Retry</Button>
+              <Button variant="outline" size="sm" onClick={() => void query.refetch()}>
+                Retry
+              </Button>
             </AlertDescription>
           </Alert>
         ) : result ? (
@@ -110,18 +120,18 @@ export function AiJournalExplanationDialog({
               <span className="text-sm text-muted-foreground">{result.journal.journal_date}</span>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm">
-              <JournalLink
-                journalId={result.journal.id}
-                number={result.journal.journal_number}
-              />
+              <JournalLink journalId={result.journal.id} number={result.journal.journal_number} />
               <SourceLink type={result.journal.source_type} id={result.journal.source_id} />
               {result.journal.reverses_journal_id ? (
-                <span className="text-xs text-muted-foreground">Reversal of another journal — verify its original entry</span>
+                <span className="text-xs text-muted-foreground">
+                  Reversal of another journal — verify its original entry
+                </span>
               ) : null}
             </div>
             <p className="text-sm leading-relaxed">{result.summary}</p>
             <p className="rounded-md bg-muted/40 p-3 text-sm">
-              <strong>Recorded memo:</strong> {result.journal.memo?.trim() || "No journal header memo recorded."}
+              <strong>Recorded memo:</strong>{" "}
+              {result.journal.memo?.trim() || "No journal header memo recorded."}
             </p>
 
             <div className="overflow-x-auto">
@@ -147,7 +157,9 @@ export function AiJournalExplanationDialog({
                           </p>
                         ) : null}
                         {line.account_active === false ? (
-                          <p className="mt-1 text-xs text-destructive">Currently inactive account — review historical use</p>
+                          <p className="mt-1 text-xs text-destructive">
+                            Currently inactive account — review historical use
+                          </p>
                         ) : null}
                         <Link
                           className="mt-1 inline-flex text-xs text-primary underline-offset-2 hover:underline"
@@ -192,7 +204,10 @@ export function AiJournalExplanationDialog({
                 </span>
               </div>
               {result.actions.map((action) => (
-                <div key={action.id} className="flex items-start gap-3 border-t pt-3 first:border-0 first:pt-0">
+                <div
+                  key={action.id}
+                  className="flex items-start gap-3 border-t pt-3 first:border-0 first:pt-0"
+                >
                   <Checkbox
                     id={"ai-review-" + action.id}
                     checked={Boolean(reviewed[action.id])}
@@ -202,10 +217,19 @@ export function AiJournalExplanationDialog({
                     aria-label={"Mark review item: " + action.title}
                   />
                   <div className="space-y-1">
-                    <label htmlFor={"ai-review-" + action.id} className="cursor-pointer text-sm font-medium">
+                    <label
+                      htmlFor={"ai-review-" + action.id}
+                      className="cursor-pointer text-sm font-medium"
+                    >
                       {action.title}
                     </label>
-                    <p className={action.severity === "review" ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+                    <p
+                      className={
+                        action.severity === "review"
+                          ? "text-xs text-destructive"
+                          : "text-xs text-muted-foreground"
+                      }
+                    >
                       {action.detail}
                     </p>
                   </div>
@@ -213,20 +237,26 @@ export function AiJournalExplanationDialog({
               ))}
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="size-4 shrink-0" />
-                Checking these items only tracks this browser session. It does not record
-                sign-off, change a journal, or bypass organisation approval rules.
+                Checking these items only tracks this browser session. It does not record sign-off,
+                change a journal, or bypass organisation approval rules.
               </p>
             </div>
             <details className="rounded-md border p-3 text-xs text-muted-foreground">
-              <summary className="cursor-pointer font-medium">Source limitations and assumptions</summary>
+              <summary className="cursor-pointer font-medium">
+                Source limitations and assumptions
+              </summary>
               <ul className="mt-2 list-inside list-disc space-y-2">
-                {result.limitations.map((item) => <li key={item}>{item}</li>)}
+                {result.limitations.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
               </ul>
             </details>
           </div>
         ) : null}
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
           <Button disabled={!result} onClick={() => void copyReviewNotes()}>
             <ClipboardCopy className="size-4" /> Copy review notes
           </Button>

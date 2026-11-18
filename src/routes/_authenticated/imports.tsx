@@ -520,11 +520,11 @@ function ImportCentre() {
             <p className="text-sm">
               Catalogue import creates non-inventory products and services only; it never posts
               stock, COGS, invoices or journals. Optional description, unit, sales/purchase tax
-              rates and account IDs are supported. Account IDs must belong to this organisation
-              and reference eligible active accounts. Only Active records can be imported:
-              filter out Archived rows before exporting or importing. Existing active SKUs are
-              skipped case-insensitively. Maximum 250 rows per file; database failures can
-              produce a partial import.
+              rates and account IDs are supported. Account IDs must belong to this organisation and
+              reference eligible active accounts. Only Active records can be imported: filter out
+              Archived rows before exporting or importing. Existing active SKUs are skipped
+              case-insensitively. Maximum 250 rows per file; database failures can produce a partial
+              import.
             </p>
             <Button
               type="button"

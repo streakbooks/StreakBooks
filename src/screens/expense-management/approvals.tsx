@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -13,13 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -33,10 +28,7 @@ import { useCan } from "@/hooks/use-can";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { listCompanyMembers } from "@/lib/company.functions";
-import {
-  isDelegationActive,
-  userHasActiveIncomingDelegation,
-} from "@/lib/expenses/delegation";
+import { isDelegationActive, userHasActiveIncomingDelegation } from "@/lib/expenses/delegation";
 import type { ExpenseClaimSummary } from "@/lib/expenses/claims";
 import { formatEscalationRefreshSummary } from "@/lib/expenses/escalation";
 import {
@@ -66,10 +58,8 @@ export function ExpenseManagementApprovalsPage() {
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
   const queryClient = useQueryClient();
-  const canApprove =
-    can("expenses.approve" as Permission) || can("expenses.admin" as Permission);
-  const canPost =
-    can("expenses.post" as Permission) || can("expenses.admin" as Permission);
+  const canApprove = can("expenses.approve" as Permission) || can("expenses.admin" as Permission);
+  const canPost = can("expenses.post" as Permission) || can("expenses.admin" as Permission);
   const canListMembers = can("members.view" as Permission) || can("expenses.admin" as Permission);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [activeDecision, setActiveDecision] = useState<{
@@ -114,8 +104,7 @@ export function ExpenseManagementApprovalsPage() {
   });
 
   const actingAsDelegate = useMemo(
-    () =>
-      userHasActiveIncomingDelegation(delegationsQ.data ?? [], user.id, today),
+    () => userHasActiveIncomingDelegation(delegationsQ.data ?? [], user.id, today),
     [delegationsQ.data, user.id, today],
   );
   const canActAsApprover = canApprove || actingAsDelegate;
@@ -324,42 +313,42 @@ export function ExpenseManagementApprovalsPage() {
 
   if (delegationProbePending) {
     return (
-      <ListWorkspace title="Approvals" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="approvals"/>}
-    >
-      <LoadingState />
-    </ListWorkspace>
+      <ListWorkspace
+        title="Approvals"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="approvals" />}
+      >
+        <LoadingState />
+      </ListWorkspace>
     );
   }
 
   if (!canActAsApprover && !canPost) {
     return (
-      <ListWorkspace title="Approvals"
-      subnav={<ExpenseManagementSubnav current="approvals"/>}
-    >
-      <EmptyState
+      <ListWorkspace title="Approvals" subnav={<ExpenseManagementSubnav current="approvals" />}>
+        <EmptyState
           title="No access"
           description="Ask an administrator for expenses.approve or expenses.post, or request temporary approval cover."
         />
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
   if ((canActAsApprover && queueQ.isLoading) || (canPost && readyToPostQ.isLoading)) {
     return (
-      <ListWorkspace title="Approvals" description="Expenses"
-      subnav={<ExpenseManagementSubnav current="approvals"/>}
-    >
-      <LoadingState />
-    </ListWorkspace>
+      <ListWorkspace
+        title="Approvals"
+        description="Expenses"
+        subnav={<ExpenseManagementSubnav current="approvals" />}
+      >
+        <LoadingState />
+      </ListWorkspace>
     );
   }
   if (canActAsApprover && queueQ.isError) {
     const message = friendlyAuthError(queueQ.error);
     return (
-      <ListWorkspace title="Approvals"
-      subnav={<ExpenseManagementSubnav current="approvals"/>}
-    >
-      {message.includes("20261107135000") || message.includes("20261107123000") ? (
+      <ListWorkspace title="Approvals" subnav={<ExpenseManagementSubnav current="approvals" />}>
+        {message.includes("20261107135000") || message.includes("20261107123000") ? (
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
             <AlertDescription>{EXPENSE_APPROVAL_MIGRATION}</AlertDescription>
@@ -371,7 +360,7 @@ export function ExpenseManagementApprovalsPage() {
             onRetry={() => queueQ.refetch()}
           />
         )}
-    </ListWorkspace>
+      </ListWorkspace>
     );
   }
 
@@ -397,9 +386,7 @@ export function ExpenseManagementApprovalsPage() {
           Approving records one approval step. When the organisation requires multiple distinct
           approvers, the claim stays in review until the final step, then becomes ready to post.
           Self-approval is blocked when organisation settings require it.
-          {actingAsDelegate
-            ? " You are currently acting as a delegated approver."
-            : ""}
+          {actingAsDelegate ? " You are currently acting as a delegated approver." : ""}
         </AlertDescription>
       </Alert>
 
@@ -433,8 +420,8 @@ export function ExpenseManagementApprovalsPage() {
             <div>
               <h2 className="text-base font-semibold">Stale approval escalation</h2>
               <p className="text-sm text-muted-foreground">
-                Claims waiting longer than the threshold get a critical Action Center alert.
-                Set days to 0 to disable.
+                Claims waiting longer than the threshold get a critical Action Center alert. Set
+                days to 0 to disable.
               </p>
             </div>
             {canApprove ? (
@@ -550,7 +537,7 @@ export function ExpenseManagementApprovalsPage() {
                 <div className="grid gap-2 md:col-span-2">
                   <Label>Delegate</Label>
                   {canListMembers ? (
-                    <Select value={delegateUserId} onValueChange={setDelegateUserId}>
+                    <RecordLookupSelect value={delegateUserId} onValueChange={setDelegateUserId}>
                       <SelectTrigger aria-label="Choose approval delegate">
                         <SelectValue placeholder="Select member" />
                       </SelectTrigger>
@@ -563,7 +550,7 @@ export function ExpenseManagementApprovalsPage() {
                             </SelectItem>
                           ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       Member picker needs members.view.
@@ -686,10 +673,7 @@ export function ExpenseManagementApprovalsPage() {
                     <div className="font-medium">{claim.claimNumber || "Claim"}</div>
                     <div className="text-sm text-muted-foreground">{claim.title}</div>
                     <Button asChild variant="link" className="h-auto px-0" size="sm">
-                      <Link
-                        to="/expense-management/claims/$claimId"
-                        params={{ claimId: claim.id }}
-                      >
+                      <Link to="/expense-management/claims/$claimId" params={{ claimId: claim.id }}>
                         Open detail
                       </Link>
                     </Button>
@@ -709,9 +693,7 @@ export function ExpenseManagementApprovalsPage() {
                             size="sm"
                             variant="outline"
                             disabled={runDecision.isPending}
-                            onClick={() =>
-                              runDecision.mutate({ claim, action: "review" })
-                            }
+                            onClick={() => runDecision.mutate({ claim, action: "review" })}
                           >
                             Start review
                           </Button>

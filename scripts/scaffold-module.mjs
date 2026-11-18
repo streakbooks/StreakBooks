@@ -47,9 +47,7 @@ if (!KINDS.has(kind)) {
 const root = process.cwd();
 const routeDir = path.join(root, "src", "routes", "_authenticated", id);
 const screenDir = path.join(root, "src", "screens", id);
-const routeFile = nested
-  ? path.join(routeDir, `${nested}.tsx`)
-  : path.join(routeDir, "index.tsx");
+const routeFile = nested ? path.join(routeDir, `${nested}.tsx`) : path.join(routeDir, "index.tsx");
 const screenFile = nested
   ? path.join(screenDir, `${nested}.tsx`)
   : path.join(screenDir, "index.tsx");

@@ -1,6 +1,6 @@
 # Create New checklist
 
-Source of truth: `src/lib/create-new/registry.ts`. All 29 commands stay in the menu. A command opens when `availability` is `ready` and the role has its permission.
+Source of truth: `src/lib/create-new/registry.ts`. All 30 commands stay in the menu. A command opens when `availability` is `ready` and the role has its permission.
 
 ## Enabled (full-page workspaces)
 

@@ -15,9 +15,9 @@ import {
 } from "@/lib/create-new/preferences";
 
 describe("create new registry", () => {
-  it("lists the 29 specified commands once", () => {
-    expect(CREATE_ACTIONS).toHaveLength(29);
-    expect(new Set(CREATE_ACTIONS.map((action) => action.id)).size).toBe(29);
+  it("lists the 30 specified commands once", () => {
+    expect(CREATE_ACTIONS).toHaveLength(30);
+    expect(new Set(CREATE_ACTIONS.map((action) => action.id)).size).toBe(30);
   });
 
   it("keeps verified commands runnable and holds the rest", () => {
@@ -26,7 +26,7 @@ describe("create new registry", () => {
     );
     expect(blocked).toEqual([]);
     expect(CREATE_ACTIONS.every((action) => action.component)).toBe(true);
-    expect(runnableCreateActions("owner")).toHaveLength(29);
+    expect(runnableCreateActions("owner")).toHaveLength(30);
     expect(runnableCreateActions("read_only")).toHaveLength(1);
   });
 
@@ -95,11 +95,12 @@ describe("create full-page destinations", () => {
     expect(recurringJournal && opensCreateAsFullPage(recurringJournal)).toBe(true);
   });
 
-  it("preserves create intent for product and expense claim deep links", () => {
+  it("preserves create intent for product, sales order and expense claim deep links", () => {
     const product = CREATE_ACTIONS.find((a) => a.id === "product")!;
     const claim = CREATE_ACTIONS.find((a) => a.id === "reimbursement")!;
     const journal = CREATE_ACTIONS.find((a) => a.id === "manual_journal")!;
     const salesReceipt = CREATE_ACTIONS.find((a) => a.id === "sales_receipt")!;
+    const salesOrder = CREATE_ACTIONS.find((a) => a.id === "sales_order")!;
     expect(createNavTarget(product)).toEqual({
       kind: "route",
       to: "/products-services",
@@ -120,6 +121,11 @@ describe("create full-page destinations", () => {
       kind: "route",
       to: "/banking/money-documents/new",
       search: { kind: "sales_receipt" },
+    });
+    expect(createNavTarget(salesOrder)).toEqual({
+      kind: "route",
+      to: "/sales/orders",
+      search: { create: true },
     });
   });
 });

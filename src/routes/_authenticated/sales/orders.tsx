@@ -1,5 +1,5 @@
 import { salesOrderLinesFromForm } from "@/lib/sales/sales-order-lines";
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -42,8 +42,15 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/sales/orders")({
-  validateSearch: (raw: Record<string, unknown>): { order?: string } =>
-    typeof raw["order"] === "string" ? { order: raw["order"] } : {},
+  validateSearch: (raw: Record<string, unknown>): { order?: string; create?: boolean } => {
+    const order = typeof raw["order"] === "string" ? raw["order"] : undefined;
+    const create =
+      raw["create"] === true || raw["create"] === "true" || raw["create"] === "1" || raw["create"] === 1;
+    return {
+      ...(order ? { order } : {}),
+      ...(create ? { create: true } : {}),
+    };
+  },
   component: SalesOrders,
 });
 function SalesOrders() {
@@ -55,7 +62,7 @@ function SalesOrders() {
   );
 }
 function OrdersWorkspace({ companyId, currency }: { companyId: string; currency: string }) {
-  const { order: orderId } = Route.useSearch();
+  const { order: orderId, create: forceCreate } = Route.useSearch();
   const navigate = Route.useNavigate();
   const fmt = useFormat();
   const { can } = useCan();
@@ -67,7 +74,13 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
-  const [editing, setEditing] = useState<"new" | "edit" | null>(null);
+  const canDraft = can("sales.draft");
+  const [editing, setEditing] = useState<"new" | "edit" | null>(forceCreate && canDraft ? "new" : null);
+  useEffect(() => {
+    if (!forceCreate || !canDraft) return;
+    setEditing("new");
+    void navigate({ search: (prev) => ({ ...prev, create: undefined }), replace: true });
+  }, [forceCreate, canDraft, navigate]);
   const q = useQuery({
     queryKey: ["sales-orders", companyId, search, status, page],
     queryFn: () => list({ data: { companyId, q: search, status, page } }),
@@ -141,8 +154,7 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
           <Button
             size="sm"
             onClick={() => {
-              void navigate({ search: {} });
-              setEditing("new");
+              void navigate({ search: { create: true } });
             }}
           >
             New sales order
@@ -314,8 +326,7 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
                 <Button
                   size="sm"
                   onClick={() => {
-                    void navigate({ search: {} });
-                    setEditing("new");
+                    void navigate({ search: { create: true } });
                   }}
                 >
                   New sales order

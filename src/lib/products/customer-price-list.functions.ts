@@ -210,7 +210,7 @@ export const saveCustomerPriceListDefault = createServerFn({ method: "POST" })
       if (deleteError) throw new Error(deleteError.message);
     }
     const { error: auditError } = await context.supabase.rpc(
-      "record_audit_event" as never,
+      "record_app_audit_event" as never,
       {
         _company_id: data.companyId,
         _action: "products.customer_price_list_default",

@@ -480,7 +480,7 @@ export const applyAiSuggestion = createServerFn({ method: "POST" })
       .eq("company_id" as never, data.companyId as never);
 
     await context.supabase.rpc(
-      "record_audit_event" as never,
+      "record_app_audit_event" as never,
       {
         _company_id: data.companyId,
         _action: "ai.suggestion_applied",

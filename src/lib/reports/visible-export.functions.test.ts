@@ -70,7 +70,7 @@ describe("permission-bound unified report downloads", () => {
     expect(assertCompanyPermission).toHaveBeenCalledWith({}, request.companyId, "reports.export");
     expect(callRpc).toHaveBeenCalledWith(
       {},
-      "record_audit_event",
+      "record_app_audit_event",
       expect.objectContaining({
         _action: "report.exported",
       }),

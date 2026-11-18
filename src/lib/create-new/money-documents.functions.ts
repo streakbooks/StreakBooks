@@ -45,7 +45,7 @@ async function audit(
     supabase as unknown as {
       rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
     }
-  ).rpc("record_audit_event", {
+  ).rpc("record_app_audit_event", {
     _company_id: companyId,
     _action: action,
     _entity_type: entityType,

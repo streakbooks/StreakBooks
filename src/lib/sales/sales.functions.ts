@@ -1782,7 +1782,7 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
     }
     if (outcome.createdDrafts > 0) {
       const { error } = await supabase.rpc(
-        "record_audit_event" as never,
+        "record_app_audit_event" as never,
         {
           _company_id: data.companyId,
           _action: "sales.invoices.import",

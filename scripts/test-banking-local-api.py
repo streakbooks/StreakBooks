@@ -5,6 +5,10 @@ Creates synthetic users/companies only on localhost; never accepts a hosted URL.
 Session output contains local test credentials and must remain under ignored work/.
 """
 import argparse
+import base64
+import hashlib
+import hmac
+import time
 from datetime import datetime, timezone
 import json
 import os
@@ -18,7 +22,9 @@ import uuid
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--env-file', required=True, type=Path)
 parser.add_argument('--state-out', type=Path, default=Path('work/banking-local-api-session.json'))
-parser.add_argument('--reverse', action='store_true', help='Verify reversals for an existing synthetic session.')
+mode = parser.add_mutually_exclusive_group()
+mode.add_argument('--reverse', action='store_true', help='Verify reversals for an existing synthetic session.')
+mode.add_argument('--mfa', action='store_true', help='Verify real TOTP enrollment and AAL2 enforcement; run last.')
 args = parser.parse_args()
 values = dict(line.split('=', 1) for line in args.env_file.read_text().splitlines() if '=' in line)
 values = {key: value.strip().strip('"') for key, value in values.items()}
@@ -78,7 +84,40 @@ def create_user():
     return {'email': email, 'password': password, 'id': user['id'], 'access_token': session['access_token'], 'refresh_token': session['refresh_token']}
 
 
-if args.reverse:
+if args.mfa:
+    state = json.loads(args.state_out.read_text())
+    check(state['api_url'] == base, 'MFA remains on the same explicit local endpoint')
+    owner = state['owner']
+    token = sign_in(owner['email'], owner['password'])['access_token']
+    events_path = '/rest/v1/bank_coding_events?company_id=eq.' + state['company_id'] + '&select=id'
+    before = request(events_path, token=token)
+    check(len(before) >= 1, 'Normal password session can read its fixture evidence before enrollment')
+    factor = request('/auth/v1/factors', 'POST', {'factor_type': 'totp', 'friendly_name': 'Isolated readiness TOTP'}, token=token)
+    factor_path = '/auth/v1/factors/' + factor['id']
+    challenge = request(factor_path + '/challenge', 'POST', {}, token=token)
+    secret = factor['totp']['secret']
+    key = base64.b32decode(secret + '=' * ((8 - len(secret) % 8) % 8), casefold=True)
+    digest = hmac.new(key, (int(time.time()) // 30).to_bytes(8, 'big'), hashlib.sha1).digest()
+    offset = digest[-1] & 15
+    code = str((int.from_bytes(digest[offset:offset + 4], 'big') & 0x7fffffff) % 1000000).zfill(6)
+    verified = request(factor_path + '/verify', 'POST', {'challenge_id': challenge['id'], 'code': code}, token=token)
+    elevated = verified['access_token']
+    claim_segment = elevated.split('.')[1]
+    claims = json.loads(base64.urlsafe_b64decode(claim_segment + '=' * ((4 - len(claim_segment) % 4) % 4)))
+    check(claims['aal'] == 'aal2', 'Real Auth enrollment and challenge return an AAL2 session')
+    identity = {'_company_id': state['company_id'], '_bank_transaction_id': state['transaction_ids'][1]}
+    rpc('get_bank_coding_memory', identity, token, expected=403)
+    check(request(events_path, token=token) == [], 'Old AAL1 session cannot read evidence after verified enrollment')
+    check(request(events_path, token=elevated) == before, 'Verified AAL2 session restores only its existing company evidence')
+    check(isinstance(rpc('get_bank_coding_memory', identity, elevated), list), 'Coding Memory RPC accepts the real AAL2 session')
+    request('/rest/v1/bank_coding_events', 'POST', {'company_id': state['company_id']}, token=elevated, expected=403)
+    check(True, 'AAL2 does not permit direct learning-event forgery')
+    audit_args = {'_company_id': state['company_id'], '_action': 'readiness.mfa.audit', '_entity_type': 'bank_transaction'}
+    rpc('record_app_audit_event', audit_args, token, expected=403)
+    rpc('record_audit_event', audit_args, token, expected=403)
+    check(isinstance(rpc('record_app_audit_event', audit_args, elevated), str), 'Both app and legacy audit endpoints enforce MFA while AAL2 audit writes succeed')
+
+elif args.reverse:
     state = json.loads(args.state_out.read_text())
     check(state['api_url'] == base, 'Reversal remains on the same local endpoint')
     owner = state['owner']
@@ -127,7 +166,32 @@ else:
     check(request('/rest/v1/bank_coding_events?company_id=eq.' + company + '&select=id', token=other['access_token']) == [], 'Real RLS hides another company learning evidence')
     request('/rest/v1/bank_coding_events', 'POST', {'company_id': company}, token=token, expected=403)
     check(True, 'Direct learning-event forgery is denied')
-    state = {'api_url': base, 'anon_key': values['ANON_KEY'], 'company_id': company, 'bank_id': bank_id, 'bank_gl_id': bank_gl, 'offset_account_id': offset, 'journal_id': journal, 'transaction_ids': transactions, 'owner': owner, 'other': other}
+    audit_args = {'_company_id': company, '_action': 'readiness.audit.probe', '_entity_type': 'bank_transaction', '_entity_id': transactions[1], '_details': {'password': 'remove-me', 'token': 'remove-me', 'context': 'safe'}}
+    audit_id = rpc('record_app_audit_event', audit_args, token)
+    audit = request('/rest/v1/audit_events?id=eq.' + audit_id + '&select=entity_id,actor_user_id,details', token=token)[0]
+    check(audit['entity_id'] == transactions[1] and audit['actor_user_id'] == owner['id'] and audit['details'] == {'context': 'safe'}, 'App audit RPC resolves UUID strings and preserves the actor while removing secret fields')
+    ref_id = rpc('record_app_audit_event', {**audit_args, '_entity_id': 'fixture:external-reference'}, token)
+    ref = request('/rest/v1/audit_events?id=eq.' + ref_id + '&select=entity_id,details', token=token)[0]
+    check(ref['entity_id'] is None and ref['details'] == {'context': 'safe', 'entity_ref': 'fixture:external-reference'}, 'App audit RPC preserves non-UUID entity references')
+    rpc('record_app_audit_event', audit_args, other['access_token'], expected=403)
+    check(True, 'App audit RPC rejects another company user')
+    request('/rest/v1/rpc/record_app_audit_event', 'POST', audit_args, expected=401)
+    check(True, 'Anonymous app audit writes are denied')
+    second_company = rpc('create_company', {'_name': 'Isolated Empty Switch Target', '_country_code': 'GB', '_base_currency': 'GBP', '_fy_end_month': 3, '_fy_end_day': 31, '_timezone': 'UTC', '_legal_name': 'Synthetic test data'}, token)
+    check(isinstance(second_company, str) and second_company != company, 'Same owner has a second isolated company for real UI switching')
+    request('/rest/v1/profiles?id=eq.' + owner['id'], 'PATCH', {'last_company_id': company}, token=token)
+    reader = create_user()
+    request('/rest/v1/company_members', 'POST', {'company_id': company, 'user_id': reader['id'], 'role': 'read_only', 'status': 'active'}, token=token, expected=201)
+    check(len(rpc('get_bank_coding_memory', identity, reader['access_token'])) == 1, 'Real read-only company member can view coding memory')
+    rpc('record_bank_coding_feedback', feedback, reader['access_token'], expected=403)
+    check(True, 'Real read-only member cannot submit coding feedback')
+    rpc('set_bank_coding_memory_preference', {**identity, '_history_id': history_id, '_enabled': False}, reader['access_token'], expected=403)
+    check(True, 'Real read-only member cannot change memory preferences')
+    denied = rpc('post_journal', {'payload': {**payload, 'idempotency_key': 'local-denied:' + str(uuid.uuid4())}}, reader['access_token'], expected=400)
+    check('permission to post journals' in denied.get('message', ''), 'Real read-only member cannot bypass the UI to post a journal')
+    existing = request('/rest/v1/journals?company_id=eq.' + company + '&source_id=eq.' + transactions[0] + '&select=id', token=token)
+    check(len(existing) == 1 and existing[0]['id'] == journal, 'Denied posting leaves the original journal unchanged')
+    state = {'api_url': base, 'anon_key': values['ANON_KEY'], 'company_id': company, 'other_company_id': second_company, 'bank_id': bank_id, 'bank_gl_id': bank_gl, 'offset_account_id': offset, 'journal_id': journal, 'transaction_ids': transactions, 'owner': owner, 'other': other, 'reader': reader}
     args.state_out.parent.mkdir(parents=True, exist_ok=True)
     args.state_out.write_text(json.dumps(state))
     os.chmod(args.state_out, 0o600)

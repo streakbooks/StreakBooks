@@ -106,7 +106,7 @@ export const setMemberStatus = createServerFn({ method: "POST" })
       throw new Error("That person's status could not be changed.");
     }
     await context.supabase.rpc(
-      "record_audit_event" as never,
+      "record_app_audit_event" as never,
       {
         _company_id: data.companyId,
         _action: data.status === "suspended" ? "members.suspend" : "members.reactivate",
@@ -138,7 +138,7 @@ export const removeCompanyMember = createServerFn({ method: "POST" })
       throw new Error("That person could not be removed.");
     }
     await context.supabase.rpc(
-      "record_audit_event" as never,
+      "record_app_audit_event" as never,
       {
         _company_id: data.companyId,
         _action: "members.remove",

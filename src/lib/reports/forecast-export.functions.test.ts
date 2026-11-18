@@ -84,7 +84,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-11-03T00:00:00Z"));
   vi.mocked(callRpc).mockImplementation(async (_sb, name, args) => {
-    if (name === "record_audit_event") return true;
+    if (name === "record_app_audit_event") return true;
     const a = args as { _from: string; _to: string };
     return facts(a._from, a._to);
   });
@@ -118,7 +118,7 @@ describe("authoritative forecast downloads", () => {
     ]);
     expect(callRpc).toHaveBeenLastCalledWith(
       {},
-      "record_audit_event",
+      "record_app_audit_event",
       expect.objectContaining({ _company_id: testCompany, _action: "report.exported" }),
       expect.any(String),
     );
@@ -160,7 +160,9 @@ describe("authoritative forecast downloads", () => {
         return f;
       });
       await expect(execute(request)).rejects.toThrow();
-      expect(vi.mocked(callRpc).mock.calls.some((c) => c[1] === "record_audit_event")).toBe(false);
+      expect(vi.mocked(callRpc).mock.calls.some((c) => c[1] === "record_app_audit_event")).toBe(
+        false,
+      );
     },
   );
   it("rejects incomplete baseline periods before requesting accounting data", async () => {

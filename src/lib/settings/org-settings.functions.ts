@@ -37,7 +37,7 @@ async function audit(
   entityId: string | null,
   details: Record<string, unknown>,
 ) {
-  await supabase.rpc("record_audit_event", {
+  await supabase.rpc("record_app_audit_event", {
     _company_id: companyId,
     _action: action,
     _entity_type: entityType,

@@ -45,7 +45,7 @@ export const recordVoiceDraftOutcome = createServerFn({ method: "POST" })
     if ((record as { status: string }).status !== "draft")
       throw new Error("The document is no longer a draft; review its activity.");
     const result = await context.supabase.rpc(
-      "record_audit_event" as never,
+      "record_app_audit_event" as never,
       {
         _company_id: data.companyId,
         _action: "voice_draft_saved",

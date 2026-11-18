@@ -53,7 +53,16 @@ Remaining non-`/new` destinations that are intentional (list/tooling, not comple
 - Recurring Sheets deleted (Batch 48).
 - Create nav intent helper `createNavTarget` (Batch 49).
 
+## Batch 50 follow-ups (this programme)
+
+- My Expenses list no longer dual-renders half-width create (list-only; `?create=true` → workspace).
+- Command palette Create intents aligned (claim `create=true`, sales receipt vs receive payment).
+- Empty CTAs: PO / supplier CN / bills recurring / fixed assets / sales orders / projects.
+- Sales order create/edit uses TransactionWorkspace (route still `/sales/orders` until dedicated `/new`).
+
 ## Still deferred
 
 - Authenticated Playwright create-flow smoke (blocked without staging E2E credentials).
 - Multi-account Spend/Receive allocation lines (posting engine constraint).
+- Fixed-assets full-page `/fixed-assets/new` (header/empty CTAs open Dialog for now).
+- Products/Services full-page create (Dialog kept for narrow entity).

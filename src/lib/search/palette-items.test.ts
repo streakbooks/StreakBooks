@@ -17,6 +17,19 @@ describe("command palette (U-07)", () => {
     // link-only reports are not duplicated as runner reports
     expect(actions.some((a) => a.id === "report-bank-reconciliation")).toBe(false);
   });
+
+  it("keeps Create destinations aligned with createNavTarget intents", () => {
+    const claim = actions.find((a) => a.id === "new-expense-claim");
+    expect(claim?.href).toBe("/expense-management/my-expenses");
+    expect(claim?.search).toEqual({ create: "true" });
+    const salesReceipt = actions.find((a) => a.id === "new-sales-receipt");
+    expect(salesReceipt?.href).toBe("/banking/money-documents/new");
+    expect(salesReceipt?.search).toEqual({ kind: "sales_receipt" });
+    const receivePayment = actions.find((a) => a.id === "new-receive-payment");
+    expect(receivePayment?.href).toBe("/sales/receipts/new");
+    expect(actions.some((a) => a.id === "new-manual-journal")).toBe(true);
+    expect(actions.some((a) => a.id === "new-bank-transfer")).toBe(true);
+  });
   it("matches every word against label and keywords", () => {
     expect(filterPaletteActions(actions, "new bill").map((a) => a.id)).toContain("new-bill");
     expect(

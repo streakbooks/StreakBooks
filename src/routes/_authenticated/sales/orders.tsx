@@ -24,6 +24,7 @@ import { validateSalesLines, sumLines } from "@/lib/sales/line-helpers";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { ContactLookup } from "@/components/lookup";
 import { OrderEntryLines } from "@/components/orders/OrderEntryLines";
@@ -109,6 +110,28 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
     setEditing(null);
     void navigate({ search: { order: id } });
   };
+  if (editing) {
+    return (
+      <TransactionWorkspace
+        title={editing === "edit" ? "Edit sales order" : "New sales order"}
+        description="Agree the customer order. Saving a draft has no ledger impact until you confirm and invoice."
+        breadcrumbs={[
+          { label: "Sales", to: "/sales" },
+          { label: "Orders", to: "/sales/orders" },
+          { label: editing === "edit" ? "Edit" : "New" },
+        ]}
+      >
+        <SalesOrderForm
+          key={`${editing}:${orderId ?? "new"}`}
+          companyId={companyId}
+          currency={currency}
+          initial={editing === "edit" ? detail.data : undefined}
+          onSaved={(id) => open(id)}
+          onCancel={() => setEditing(null)}
+        />
+      </TransactionWorkspace>
+    );
+  }
   return (
     <ListWorkspace
       title="Sales orders"
@@ -127,16 +150,7 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
         ) : null
       }
     >
-      {editing ? (
-        <SalesOrderForm
-          key={`${editing}:${orderId ?? "new"}`}
-          companyId={companyId}
-          currency={currency}
-          initial={editing === "edit" ? detail.data : undefined}
-          onSaved={(id) => open(id)}
-          onCancel={() => setEditing(null)}
-        />
-      ) : orderId ? (
+      {orderId ? (
         detail.isPending ? (
           <LoadingState />
         ) : detail.isError ? (
@@ -290,6 +304,24 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
             onRetry={() => void q.refetch()}
             title="Could not load sales orders"
             description={friendlyAuthError(q.error)}
+          />
+        ) : !q.data.total && !search && status === "all" ? (
+          <EmptyState
+            title="No sales orders"
+            description="Create a customer order, then confirm and convert it to a draft invoice."
+            action={
+              can("sales.draft") ? (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    void navigate({ search: {} });
+                    setEditing("new");
+                  }}
+                >
+                  New sales order
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <>
@@ -462,8 +494,7 @@ function SalesOrderForm({
       />
     );
   return (
-    <fieldset disabled={mutation.isPending} className="mb-6 space-y-4 rounded-lg border p-4">
-      <h2 className="font-semibold">{initial ? "Edit draft sales order" : "New sales order"}</h2>
+    <fieldset disabled={mutation.isPending} className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Customer</Label>

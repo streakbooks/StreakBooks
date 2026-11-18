@@ -26,4 +26,4 @@ Jobs complete in ~2 seconds with annotation:
 | Product/claim Create looked broken | Registry routes are path-only; Create menu must append `?create=true` (special-cased). Bare `action.route` consumers land on lists |
 | Banking hub felt incomplete | Hub actions were Import CSV only; Spend/Receive/Transfer creates lived only in Create menu / subnav |
 
-Batch 48 closes these. Remaining programme work is module DoD / Playwright staging, not these create-route regressions.
+Batches 48–50 close these create-route regressions. Remaining programme work is module DoD / Playwright staging / FA+product full-page creates.

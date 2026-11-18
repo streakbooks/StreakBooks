@@ -189,7 +189,25 @@ export function HrTrainingPage() {
               Courses
             </h2>
             {courses.length === 0 ? (
-              <EmptyState title="No courses" description="Create a course catalogue entry." />
+              <EmptyState
+                title="No courses"
+                description="Create a course catalogue entry."
+                action={
+                  canManage ? (
+                    <Button
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        setCode("");
+                        setName("");
+                        setCourseOpen(true);
+                      }}
+                    >
+                      New course
+                    </Button>
+                  ) : undefined
+                }
+              />
             ) : (
               <TableCard>
                 <Table>
@@ -223,6 +241,34 @@ export function HrTrainingPage() {
               <EmptyState
                 title="No enrollments"
                 description="Enroll employees into active courses."
+                action={
+                  canManage && active.length > 0 ? (
+                    <Button
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        setCourseId(active[0]?.id ?? "");
+                        setEmployeeId("");
+                        setEnrollOpen(true);
+                      }}
+                    >
+                      Enroll
+                    </Button>
+                  ) : canManage ? (
+                    <Button
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setCode("");
+                        setName("");
+                        setCourseOpen(true);
+                      }}
+                    >
+                      New course first
+                    </Button>
+                  ) : undefined
+                }
               />
             ) : (
               <TableCard>

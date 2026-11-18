@@ -13,7 +13,7 @@ import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState } from "@/components/common/states";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
-import { FormGrid } from "@/components/common/form-layout";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import {
@@ -139,24 +139,24 @@ export function NewExpense() {
         </Button>
       }
       details={
-        <FormGrid columns={3}>
-          <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+        <FormGrid columns={4}>
+          <FormControlShell width="contact">
             <Label>Payee</Label>
             <Input value={payeeName} onChange={(e) => setPayeeName(e.target.value)} />
-          </div>
-          <div className="space-y-1">
+          </FormControlShell>
+          <FormControlShell width="date">
             <Label>Date</Label>
             <Input
               type="date"
               value={expenseDate}
               onChange={(e) => setExpenseDate(e.target.value)}
             />
-          </div>
-          <div className="space-y-1">
+          </FormControlShell>
+          <FormControlShell>
             <Label>Reference</Label>
             <Input value={reference} onChange={(e) => setReference(e.target.value)} />
-          </div>
-          <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+          </FormControlShell>
+          <FormControlShell width="contact">
             <Label>Expense account</Label>
             <AccountLookup
               ariaLabel="Expense account"
@@ -168,8 +168,8 @@ export function NewExpense() {
               placeholder="Select account"
               allowClear={false}
             />
-          </div>
-          <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+          </FormControlShell>
+          <FormControlShell width="contact">
             <Label>Payment account (bank)</Label>
             <AccountLookup
               ariaLabel="Payment account"
@@ -181,8 +181,8 @@ export function NewExpense() {
               placeholder="Select bank account"
               allowClear={false}
             />
-          </div>
-          <div className="space-y-1">
+          </FormControlShell>
+          <FormControlShell width="money">
             <Label>Net ({currency})</Label>
             <Input
               value={amount}
@@ -190,8 +190,8 @@ export function NewExpense() {
               aria-invalid={amountInvalid}
               onChange={(e) => setAmount(e.target.value)}
             />
-          </div>
-          <div className="space-y-1">
+          </FormControlShell>
+          <FormControlShell width="money">
             <Label>Tax ({currency})</Label>
             <Input
               value={tax}
@@ -199,16 +199,16 @@ export function NewExpense() {
               aria-invalid={taxInvalid}
               onChange={(e) => setTax(e.target.value)}
             />
-          </div>
-          <div className="space-y-1 sm:col-span-2 xl:col-span-3">
+          </FormControlShell>
+          <FormControlShell width="full" className="sm:col-span-2 xl:col-span-4">
             <Label>Memo</Label>
             <Textarea
               value={memo}
-              rows={2}
-              className="lb-spreadsheet-wrap min-h-16"
+              rows={1}
+              className="lb-spreadsheet-wrap min-h-8"
               onChange={(e) => setMemo(e.target.value)}
             />
-          </div>
+          </FormControlShell>
         </FormGrid>
       }
       totals={

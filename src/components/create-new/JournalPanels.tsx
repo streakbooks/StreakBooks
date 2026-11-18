@@ -29,7 +29,7 @@ import { AccountLookup } from "@/components/lookup";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
-import { FormGrid } from "@/components/common/form-layout";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
@@ -344,9 +344,9 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                 {error}
               </p>
             ) : null}
-            <FormGrid columns={2}>
+            <FormGrid columns={4}>
               {mode === "template" ? (
-                <div className="space-y-1.5 sm:col-span-2">
+                <FormControlShell className="sm:col-span-2">
                   <Label htmlFor="journal-name">Template name</Label>
                   <Input
                     id="journal-name"
@@ -354,9 +354,9 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
-                </div>
+                </FormControlShell>
               ) : null}
-              <div className="space-y-1.5">
+              <FormControlShell width="date">
                 <Label htmlFor="journal-date">{mode === "template" ? "First date" : "Date"}</Label>
                 <Input
                   id="journal-date"
@@ -365,13 +365,13 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                 />
-              </div>
-              <div className="space-y-1.5">
+              </FormControlShell>
+              <FormControlShell className="sm:col-span-2">
                 <Label htmlFor="journal-memo">Narration</Label>
                 <Input id="journal-memo" value={memo} onChange={(e) => setMemo(e.target.value)} />
-              </div>
+              </FormControlShell>
               {mode === "post" ? (
-                <div className="space-y-1.5">
+                <FormControlShell width="date">
                   <Label htmlFor="journal-auto-reverse">Reverse automatically on (optional)</Label>
                   <Input
                     id="journal-auto-reverse"
@@ -385,11 +385,11 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                     Accounting → FX &amp; reversals.
                   </p>
                   {reverseError ? <p className="text-xs text-destructive">{reverseError}</p> : null}
-                </div>
+                </FormControlShell>
               ) : null}
               {mode === "template" ? (
                 <>
-                  <div className="space-y-1.5">
+                  <FormControlShell width="money">
                     <Label htmlFor="journal-interval">Repeat every (months)</Label>
                     <Input
                       id="journal-interval"
@@ -399,8 +399,8 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                       value={intervalMonths}
                       onChange={(e) => setIntervalMonths(e.target.value)}
                     />
-                  </div>
-                  <div className="space-y-1.5">
+                  </FormControlShell>
+                  <FormControlShell width="money">
                     <Label htmlFor="journal-max">Stop after (occurrences, optional)</Label>
                     <Input
                       id="journal-max"
@@ -409,7 +409,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                       value={maxOccurrences}
                       onChange={(e) => setMaxOccurrences(e.target.value)}
                     />
-                  </div>
+                  </FormControlShell>
                 </>
               ) : null}
             </FormGrid>
@@ -481,7 +481,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                     aria-label={`Line ${index + 1} description`}
                     placeholder="Description"
                     value={line.description}
-                    rows={2}
+                    rows={1}
                     className="lb-spreadsheet-wrap min-h-8"
                     onChange={(e) => updateLine(index, { description: e.target.value })}
                     onKeyDown={(e) => onLineKeyDown(e, index, 1)}

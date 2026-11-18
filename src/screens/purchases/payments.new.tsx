@@ -20,7 +20,7 @@ import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/compone
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState } from "@/components/common/states";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
-import { FormGrid } from "@/components/common/form-layout";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { AccountLookup } from "@/components/lookup";
@@ -193,8 +193,8 @@ export function NewPayment() {
         </Button>
       }
       details={
-        <FormGrid columns={3}>
-          <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+        <FormGrid columns={4}>
+          <FormControlShell width="contact">
             <Label>Supplier</Label>
             <EntityCombobox
               options={supplierOptions}
@@ -216,16 +216,16 @@ export function NewPayment() {
                   : undefined
               }
             />
-          </div>
-          <div className="space-y-1">
+          </FormControlShell>
+          <FormControlShell width="date">
             <Label>Date</Label>
             <Input
               type="date"
               value={paymentDate}
               onChange={(e) => setPaymentDate(e.target.value)}
             />
-          </div>
-          <div className="space-y-1">
+          </FormControlShell>
+          <FormControlShell width="money">
             <Label>Amount ({currency})</Label>
             <Input
               value={amount}
@@ -236,8 +236,8 @@ export function NewPayment() {
             {amountInvalid ? (
               <p className="text-xs text-destructive">Enter a number, e.g. 1,250.00</p>
             ) : null}
-          </div>
-          <div className="space-y-1">
+          </FormControlShell>
+          <FormControlShell width="currency">
             <Label>Currency</Label>
             <RecordLookupSelect
               value={currency}
@@ -266,9 +266,9 @@ export function NewPayment() {
             <p className="text-xs text-muted-foreground">
               A payment can only be allocated to bills in its own currency.
             </p>
-          </div>
+          </FormControlShell>
           {currency !== baseCurrency ? (
-            <div className="space-y-1 sm:col-span-2">
+            <FormControlShell width="money">
               <Label>
                 Exchange rate ({currency} → {baseCurrency}), optional
               </Label>
@@ -278,9 +278,9 @@ export function NewPayment() {
                 placeholder="Leave blank to use the bill's rate"
                 onChange={(e) => setFxRate(e.target.value)}
               />
-            </div>
+            </FormControlShell>
           ) : null}
-          <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+          <FormControlShell width="contact">
             <Label>Bank / cash account</Label>
             <AccountLookup
               ariaLabel="Bank / cash account"
@@ -293,11 +293,11 @@ export function NewPayment() {
               placeholder="Paid from (bank or cash account)"
               allowClear={false}
             />
-          </div>
-          <div className="space-y-1">
+          </FormControlShell>
+          <FormControlShell>
             <Label>Reference</Label>
             <Input value={reference} onChange={(e) => setReference(e.target.value)} />
-          </div>
+          </FormControlShell>
         </FormGrid>
       }
       lines={

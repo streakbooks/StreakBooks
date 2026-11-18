@@ -43,7 +43,7 @@ import { validateVoiceDraft } from "@/lib/ai-voice/form-adapter";
 import { recordVoiceDraftOutcome } from "@/lib/ai-voice/voice-audit.functions";
 import { LoadingState, EmptyState } from "@/components/common/states";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
-import { FormGrid } from "@/components/common/form-layout";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { SplitButton } from "@/components/ui/split-button";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
@@ -857,8 +857,8 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                 <AlertDescription>{formError}</AlertDescription>
               </Alert>
             ) : null}
-            <FormGrid columns={3}>
-              <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+            <FormGrid columns={4}>
+              <FormControlShell width="contact">
                 <Label className="text-xs font-medium text-muted-foreground">Customer</Label>
                 <EntityCombobox
                   voiceField={{ key: "contactId", label: "Customer", order: 10 }}
@@ -885,9 +885,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                     if (Number.isFinite(terms)) setSecondDate(addDaysIso(docDate || today, terms));
                   }}
                 />
-              </div>
+              </FormControlShell>
               {kind === "credit_note" ? (
-                <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+                <FormControlShell width="contact">
                   <Label>Credit against invoice (optional)</Label>
                   <EntityCombobox
                     aria-label="Source invoice"
@@ -904,9 +904,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                     placeholder={contactId ? "None — standalone credit" : "Choose a customer first"}
                     disabled={!contactId}
                   />
-                </div>
+                </FormControlShell>
               ) : null}
-              <div className="space-y-1">
+              <FormControlShell width="date">
                 <Label>{copy.dateLabel}</Label>
                 <Input
                   type="date"
@@ -919,9 +919,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                   value={docDate}
                   onChange={(e) => onDocumentDateChange(e.target.value)}
                 />
-              </div>
+              </FormControlShell>
               {copy.secondLabel ? (
-                <div className="space-y-1">
+                <FormControlShell width="date">
                   <Label>{copy.secondLabel}</Label>
                   <Input
                     type="date"
@@ -934,9 +934,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                     value={secondDate}
                     onChange={(e) => setSecondDate(e.target.value)}
                   />
-                </div>
+                </FormControlShell>
               ) : null}
-              <div className="space-y-1">
+              <FormControlShell>
                 <Label>{copy.numberLabel}</Label>
                 <Input
                   voiceField={{
@@ -954,8 +954,8 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                   onChange={(e) => setNumber(e.target.value)}
                   placeholder="Leave blank to auto-number"
                 />
-              </div>
-              <div className="space-y-1">
+              </FormControlShell>
+              <FormControlShell width="currency">
                 <Label>Currency</Label>
                 <VoiceSelect
                   voiceField={{ key: "currency", label: "Currency", order: 50 }}
@@ -971,9 +971,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                     </option>
                   ))}
                 </VoiceSelect>
-              </div>
+              </FormControlShell>
               {isForeign ? (
-                <div className="space-y-1">
+                <FormControlShell width="money">
                   <Label>
                     Exchange rate (1 {currency} = ? {base})
                   </Label>
@@ -983,13 +983,13 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                     inputMode="decimal"
                     placeholder="e.g. 0.79"
                   />
-                </div>
+                </FormControlShell>
               ) : null}
             </FormGrid>
           {isSalesDraft ? (
             <div className="space-y-3 rounded-md border p-3">
-              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-                <div className="space-y-1">
+              <div className="flex flex-wrap items-end gap-3">
+                <FormControlShell width="contact">
                   <Label htmlFor="sales-price-list">Sales price list (optional)</Label>
                   <RecordLookupSelect
                     value={selectedPriceListId || "none"}
@@ -1019,7 +1019,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                         ))}
                     </SelectContent>
                   </RecordLookupSelect>
-                </div>
+                </FormControlShell>
                 <Button
                   variant="outline"
                   size="sm"

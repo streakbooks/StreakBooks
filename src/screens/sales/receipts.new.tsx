@@ -20,7 +20,7 @@ import {
 } from "@/components/documents/DocumentRecordPanel";
 import { LoadingState, EmptyState } from "@/components/common/states";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
-import { FormGrid } from "@/components/common/form-layout";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { AccountLookup } from "@/components/lookup";
@@ -278,8 +278,8 @@ function ReceiptForm({
               </AlertDescription>
             </Alert>
           ) : null}
-          <FormGrid columns={3}>
-            <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+          <FormGrid columns={4}>
+            <FormControlShell width="contact">
               <Label>Customer</Label>
               <EntityCombobox
                 aria-label="Customer"
@@ -300,16 +300,16 @@ function ReceiptForm({
                     : undefined
                 }
               />
-            </div>
-            <div className="space-y-1">
+            </FormControlShell>
+            <FormControlShell width="date">
               <Label>Receipt date</Label>
               <Input
                 type="date"
                 value={receiptDate}
                 onChange={(e) => setReceiptDate(e.target.value)}
               />
-            </div>
-            <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+            </FormControlShell>
+            <FormControlShell width="contact">
               <Label>Deposit to (bank / cash account)</Label>
               <AccountLookup
                 ariaLabel="Deposit account"
@@ -322,8 +322,8 @@ function ReceiptForm({
                 placeholder="Choose bank or cash account"
                 allowClear={false}
               />
-            </div>
-            <div className="space-y-1">
+            </FormControlShell>
+            <FormControlShell width="currency">
               <Label>Currency</Label>
               <RecordLookupSelect
                 className="h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-2.5 text-sm"
@@ -343,9 +343,9 @@ function ReceiptForm({
                   </option>
                 ))}
               </RecordLookupSelect>
-            </div>
+            </FormControlShell>
             {isForeign ? (
-              <div className="space-y-1">
+              <FormControlShell width="money">
                 <Label>
                   Rate (1 {cur} = ? {base})
                 </Label>
@@ -354,24 +354,24 @@ function ReceiptForm({
                   onChange={(e) => setFxRate(e.target.value)}
                   inputMode="decimal"
                 />
-              </div>
+              </FormControlShell>
             ) : null}
-            <div className="space-y-1">
+            <FormControlShell width="money">
               <Label>Amount received ({cur})</Label>
               <Input
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 inputMode="decimal"
               />
-            </div>
-            <div className="space-y-1">
+            </FormControlShell>
+            <FormControlShell>
               <Label>Reference</Label>
               <Input value={reference} onChange={(e) => setReference(e.target.value)} />
-            </div>
-            <div className="space-y-1 sm:col-span-2 xl:col-span-3">
+            </FormControlShell>
+            <FormControlShell className="sm:col-span-2">
               <Label>Memo</Label>
               <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
-            </div>
+            </FormControlShell>
           </FormGrid>
         </div>
       }

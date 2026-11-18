@@ -28,7 +28,8 @@
 | Excel-like line grids Batch 36 | Merged | PR #282 → `1cc8a3bb` |
 | Full-page Create + compact density Batch 37 | Merged | PR #283 → `fd080f6a` |
 | Remove redundant line move arrows | Merged | PR #284 → `fc605a7c` |
-| Remaining New screens + money/journal routes Batch 39 | In progress | Expense/receipt/payment TransactionWorkspace; money+journal full-page Create |
+| Remaining New screens + money/journal routes Batch 39 | Merged | PR #285 → `f20967ac` |
+| Density acceptance Batch 40 | In progress | `FormControlShell` widths, 2 default lines, Playwright density suite |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

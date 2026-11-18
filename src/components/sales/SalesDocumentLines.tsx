@@ -444,7 +444,7 @@ export function SalesDocumentLines({
                       value={line.description}
                       disabled={disabled}
                       onChange={(e) => update(idx, { description: e.target.value })}
-                      rows={2}
+                      rows={1}
                       className="lb-spreadsheet-wrap min-h-8"
                     />
                   </div>

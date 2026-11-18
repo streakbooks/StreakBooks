@@ -24,7 +24,7 @@ import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
-import { FormGrid } from "@/components/common/form-layout";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -290,8 +290,8 @@ function OrderForm({
               </Link>
             </div>
           ) : null}
-          <FormGrid columns={3}>
-            <div className="space-y-2 sm:col-span-2 xl:col-span-1">
+          <FormGrid columns={4}>
+            <FormControlShell width="contact">
               <Label>Supplier</Label>
               <ContactLookup
                 ariaLabel="Supplier"
@@ -309,8 +309,8 @@ function OrderForm({
                     : undefined
                 }
               />
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell width="date">
               <Label htmlFor="order-date">Order date</Label>
               <Input
                 id="order-date"
@@ -318,8 +318,8 @@ function OrderForm({
                 value={orderDate}
                 onChange={(e) => setOrderDate(e.target.value)}
               />
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell width="currency">
               <Label>Order currency</Label>
               <LookupSelect
                 ariaLabel="Order currency"
@@ -333,7 +333,7 @@ function OrderForm({
               <p className="text-xs text-muted-foreground">
                 Changing currency keeps numeric prices. Review each line before saving.
               </p>
-            </div>
+            </FormControlShell>
           </FormGrid>
           <p className="text-sm text-muted-foreground">
             Currency <strong className="text-foreground">{currency}</strong>. Prices exclude tax.
@@ -399,7 +399,7 @@ function OrderForm({
                     aria-label={`Line ${index + 1} description`}
                     value={line.description}
                     maxLength={2000}
-                    rows={2}
+                    rows={1}
                     className="lb-spreadsheet-wrap min-h-8"
                     onChange={(e) => updateLine(line.key, { description: e.target.value })}
                   />

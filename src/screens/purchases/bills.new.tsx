@@ -80,6 +80,7 @@ import {
 import { cleanupBlankPurchaseLines, incompletePurchaseLines } from "@/lib/purchases/blank-lines";
 import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { AccountLookup } from "@/components/lookup";
 import {
   DocumentRecordPanel,
@@ -1858,7 +1859,7 @@ export function NewBill({
         ) : null}
 
         <div className="grid gap-3">
-          <div className="space-y-1.5">
+          <FormControlShell width="contact">
             <Label>Supplier</Label>
             <EntityCombobox
               voiceField={{
@@ -1890,7 +1891,7 @@ export function NewBill({
             >
               Open full supplier details form…
             </button>
-          </div>
+          </FormControlShell>
 
           <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
             <CollapsibleTrigger asChild>
@@ -1938,8 +1939,8 @@ export function NewBill({
             </CollapsibleContent>
           </Collapsible>
 
-          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            <div className="space-y-2">
+          <FormGrid columns={4}>
+            <FormControlShell width="date">
               <Label>Bill date</Label>
               <Input
                 type="date"
@@ -1961,8 +1962,8 @@ export function NewBill({
                   applyDueFromTerms(e.target.value, paymentTermId);
                 }}
               />
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell>
               <Label>Payment terms</Label>
               <EntityCombobox
                 voiceField={{
@@ -1991,8 +1992,8 @@ export function NewBill({
                 onAddNew={() => setNewTermOpen(true)}
                 addNewLabel="+ Add new payment terms…"
               />
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell width="date">
               <Label>
                 Due date
                 {dueDateManualOverride ? (
@@ -2026,8 +2027,8 @@ export function NewBill({
                   Return to automatic calculation
                 </Button>
               ) : null}
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell>
               <Label>Supplier invoice #</Label>
               <Input
                 voiceField={{
@@ -2050,8 +2051,8 @@ export function NewBill({
                 }}
                 placeholder="Supplier reference"
               />
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell className="sm:col-span-2">
               <Label>Memo / internal reference</Label>
               <Input
                 voiceField={{
@@ -2069,8 +2070,8 @@ export function NewBill({
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
               />
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell width="currency">
               <Label>Currency</Label>
               <RecordLookupSelect value={currencyCode} onValueChange={setCurrencyCode}>
                 <SelectTrigger>
@@ -2089,8 +2090,8 @@ export function NewBill({
                   Rate {fxRate} ({fxSource}) · {currencyCode} → {baseCurrency}
                 </p>
               ) : null}
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell>
               <Label>Tax calculation</Label>
               <Select
                 value={taxCalculation}
@@ -2105,8 +2106,8 @@ export function NewBill({
                   <SelectItem value="none">No tax</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </div>
+            </FormControlShell>
+          </FormGrid>
 
           <PurchasesDocumentLines
             lines={lines}

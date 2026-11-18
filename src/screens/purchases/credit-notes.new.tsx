@@ -27,7 +27,7 @@ import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState } from "@/components/common/states";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
-import { FormGrid } from "@/components/common/form-layout";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
 import { AccountLookup, ContactLookup, LookupSelect } from "@/components/lookup";
@@ -275,8 +275,8 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
         { label: "New" },
       ]}
       details={
-        <FormGrid>
-          <div className="space-y-2">
+        <FormGrid columns={4}>
+          <FormControlShell width="contact">
             <Label>Supplier</Label>
             <ContactLookup
               ariaLabel="Supplier"
@@ -300,12 +300,12 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
                 setBillCurrency(null);
               }}
             />
-          </div>
-          <div className="space-y-2">
+          </FormControlShell>
+          <FormControlShell width="date">
             <Label>Date</Label>
             <Input type="date" value={creditDate} onChange={(e) => setCreditDate(e.target.value)} />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
+          </FormControlShell>
+          <FormControlShell width="contact" className="sm:col-span-2">
             <Label>Credit from a bill (optional)</Label>
             <LookupSelect
               ariaLabel="Credit from bill"
@@ -341,9 +341,9 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
                 ).
               </p>
             ) : null}
-          </div>
+          </FormControlShell>
           {foreign ? (
-            <div className="space-y-2">
+            <FormControlShell width="money">
               <Label>
                 Exchange rate ({currency} to {baseCurrency})
               </Label>
@@ -354,18 +354,18 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
                 aria-invalid={fxInvalid}
                 onChange={(e) => setFxRate(e.target.value)}
               />
-            </div>
+            </FormControlShell>
           ) : null}
-          <div className="space-y-2 sm:col-span-2">
+          <FormControlShell width="full" className="sm:col-span-2 xl:col-span-4">
             <Label>Memo</Label>
             <Textarea
               value={memo}
               maxLength={500}
-              rows={2}
-              className="lb-spreadsheet-wrap min-h-16"
+              rows={1}
+              className="lb-spreadsheet-wrap min-h-8"
               onChange={(e) => setMemo(e.target.value)}
             />
-          </div>
+          </FormControlShell>
         </FormGrid>
       }
       lines={
@@ -388,7 +388,7 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
                   aria-label={`Line ${i + 1} description`}
                   placeholder="Description"
                   value={l.description}
-                  rows={2}
+                  rows={1}
                   className="lb-spreadsheet-wrap min-h-8"
                   onChange={(e) => update(l.key, { description: e.target.value })}
                 />

@@ -97,14 +97,19 @@
   --shadow-raised: 0 1px 2px oklch(0.2 0.03 250 / 0.06), 0 8px 24px oklch(0.2 0.03 250 / 0.1);
   --shadow-overlay: 0 4px 6px oklch(0.2 0.03 250 / 0.05), 0 16px 40px oklch(0.2 0.03 250 / 0.16);
 
-  /* Density / chrome layout (Batch 25). Additive — consumers opt in. */
+  /* Density / chrome layout (Batch 25 + Batch 40 field widths). */
   --lb-sidebar-width: 16rem;
   --lb-sidebar-width-collapsed: 4.5rem;
   --lb-header-height: 4rem;
   --lb-brand-bar-height: 3.5rem;
-  --lb-control-height: 2.25rem;
+  --lb-control-height: 2.25rem; /* 36px — standard inputs/buttons */
   --lb-control-height-coarse: 2.5rem;
-  --lb-table-row-height: 2.75rem;
+  --lb-table-control-height: 2rem; /* 32px — spreadsheet cells */
+  --lb-table-row-height: 2.5rem; /* 40px — within 36–44px band */
+  --lb-field-contact-max: 26.25rem; /* 420px */
+  --lb-field-date-max: 11.25rem; /* 180px */
+  --lb-field-money-max: 10rem; /* 160px */
+  --lb-field-currency-max: 7.5rem; /* 120px */
   --lb-space-1: 0.25rem;
   --lb-space-2: 0.5rem;
   --lb-space-3: 0.75rem;
@@ -124,7 +129,12 @@
   --lb-brand-bar-height: 3.5rem;
   --lb-control-height: 2.25rem;
   --lb-control-height-coarse: 2.5rem;
-  --lb-table-row-height: 2.75rem;
+  --lb-table-control-height: 2rem;
+  --lb-table-row-height: 2.5rem;
+  --lb-field-contact-max: 26.25rem;
+  --lb-field-date-max: 11.25rem;
+  --lb-field-money-max: 10rem;
+  --lb-field-currency-max: 7.5rem;
   --lb-space-1: 0.25rem;
   --lb-space-2: 0.5rem;
   --lb-space-3: 0.75rem;
@@ -1465,8 +1475,8 @@
   background: color-mix(in oklab, var(--muted) 35%, var(--card));
 }
 .lb-spreadsheet-table :where(input, button[role="combobox"], [data-slot="select-trigger"]) {
-  height: 2rem;
-  min-height: 2rem;
+  height: var(--lb-table-control-height);
+  min-height: var(--lb-table-control-height);
   border-radius: 0;
   border-color: transparent;
   background: transparent;
@@ -1496,14 +1506,14 @@
 .lb-spreadsheet-wrap {
   display: block;
   width: 100%;
-  min-height: 2rem;
+  min-height: var(--lb-table-control-height);
   height: auto;
   resize: vertical;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
-  line-height: 1.35;
-  padding: 0.35rem 0.5rem;
+  line-height: 1.3;
+  padding: 0.25rem 0.5rem;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -1515,7 +1525,28 @@
   background: var(--background);
 }
 
+/* Intelligent field widths — never stretch contact/date/money across the full content row. */
+.lb-field-contact {
+  max-width: min(100%, var(--lb-field-contact-max));
+}
+.lb-field-date {
+  max-width: min(100%, var(--lb-field-date-max));
+}
+.lb-field-money {
+  max-width: min(100%, var(--lb-field-money-max));
+}
+.lb-field-currency {
+  max-width: min(100%, var(--lb-field-currency-max));
+}
+.lb-field-full {
+  max-width: none;
+  width: 100%;
+}
+
 /* Compact transaction header labels — professional density without oversized chrome. */
+.lb-transaction-workspace [data-slot="transaction-details"] {
+  padding-block: 0.75rem;
+}
 .lb-transaction-workspace [data-slot="transaction-details"] :where(label) {
   font-size: 0.75rem;
   font-weight: 550;
@@ -1524,4 +1555,7 @@
 }
 .lb-transaction-workspace [data-slot="transaction-details"] :where(.space-y-1 > label, .space-y-2 > label) {
   margin-bottom: 0;
+}
+.lb-transaction-workspace [data-slot="form-control-shell"] :where(button[role="combobox"], [data-slot="select-trigger"], input:not([type="checkbox"]):not([type="radio"])) {
+  max-width: 100%;
 }

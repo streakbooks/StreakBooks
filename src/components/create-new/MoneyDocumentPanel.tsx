@@ -23,7 +23,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
-import { FormGrid } from "@/components/common/form-layout";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
+import type { FormControlWidth } from "@/lib/ui/form-density";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
@@ -244,8 +245,8 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
         details={
           <div className="space-y-4">
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            <FormGrid columns={2}>
-        <Field label="Date">
+            <FormGrid columns={4}>
+        <Field label="Date" width="date">
           <Input type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
         <Field label="Reference">
@@ -253,6 +254,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
         </Field>
         {needsContact ? (
           <Field
+            width="contact"
             label={
               kind === "supplier_refund"
                 ? "Supplier"
@@ -283,7 +285,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
           </Field>
         ) : null}
         {kind !== "bank_deposit" ? (
-          <Field label="Amount">
+          <Field label="Amount" width="money">
             <Input
               required
               inputMode="decimal"
@@ -293,7 +295,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
           </Field>
         ) : null}
         {needsIncome ? (
-          <Field label="Tax">
+          <Field label="Tax" width="money">
             <Input
               inputMode="decimal"
               value={taxAmount}
@@ -301,7 +303,10 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
             />
           </Field>
         ) : null}
-        <Field label={kind === "card_payment" ? "Pay from bank" : "Bank or clearing account"}>
+        <Field
+          width="contact"
+          label={kind === "card_payment" ? "Pay from bank" : "Bank or clearing account"}
+        >
           <AccountLookup
             ariaLabel={kind === "card_payment" ? "Pay from bank" : "Bank or clearing account"}
             accounts={banks}
@@ -318,7 +323,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
           />
         </Field>
         {needsIncome ? (
-          <Field label="Income account">
+          <Field label="Income account" width="contact">
             <AccountLookup
               ariaLabel="Income account"
               accounts={postable}
@@ -336,7 +341,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
           </Field>
         ) : null}
         {kind === "card_payment" ? (
-          <Field label="Credit card liability">
+          <Field label="Credit card liability" width="contact">
             <AccountLookup
               ariaLabel="Credit card liability"
               accounts={liabilities}
@@ -366,7 +371,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
                 ]}
               />
             </Field>
-            <Field label="Offset account">
+            <Field label="Offset account" width="contact">
               <AccountLookup
                 ariaLabel="Offset account"
                 accounts={postable}
@@ -454,12 +459,20 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({
+  label,
+  children,
+  width = "default",
+}: {
+  label: string;
+  children: ReactNode;
+  width?: FormControlWidth;
+}) {
   return (
-    <label className="space-y-1.5 text-sm">
+    <FormControlShell width={width}>
       <Label>{label}</Label>
       {children}
-    </label>
+    </FormControlShell>
   );
 }
 

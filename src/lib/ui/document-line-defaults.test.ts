@@ -5,9 +5,9 @@ import {
 } from "@/lib/ui/document-line-defaults";
 
 describe("document-line-defaults", () => {
-  it("creates five empty rows by default", () => {
+  it("creates two empty rows by default", () => {
     const rows = createEmptyDocumentLines(() => ({ id: "x" }));
     expect(rows).toHaveLength(DEFAULT_DOCUMENT_LINE_ROWS);
-    expect(DEFAULT_DOCUMENT_LINE_ROWS).toBe(5);
+    expect(DEFAULT_DOCUMENT_LINE_ROWS).toBe(2);
   });
 });

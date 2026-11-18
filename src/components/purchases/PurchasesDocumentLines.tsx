@@ -619,7 +619,7 @@ export function PurchasesDocumentLines({
                         value={line.description}
                         onChange={(e) => update(idx, { description: e.target.value })}
                         placeholder="Description"
-                        rows={2}
+                        rows={1}
                         className="lb-spreadsheet-wrap min-h-8"
                       />
                     </td>

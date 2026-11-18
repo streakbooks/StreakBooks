@@ -78,7 +78,7 @@ export function TransactionWorkspace({
           ) : null}
 
           {lines ? (
-            <div data-slot="transaction-lines" className="min-w-0">
+            <div data-slot="transaction-lines" className="min-w-0 overflow-x-auto">
               {lines}
             </div>
           ) : null}

@@ -24,6 +24,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
 import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
 import { emptySalesLine, type SalesLineFormState } from "@/lib/sales/line-form-state";
@@ -283,12 +284,12 @@ export function RecurringInvoices() {
       {formOpen ? (
         <div className="mb-8 grid max-w-4xl gap-3 rounded-md border p-4">
           <Label className="text-base">{editingId ? "Edit schedule" : "Create schedule"}</Label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1">
+          <FormGrid columns={4}>
+            <FormControlShell>
               <Label>Name</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="space-y-1">
+            </FormControlShell>
+            <FormControlShell width="contact">
               <Label>Customer</Label>
               <EntityCombobox
                 aria-label="Customer"
@@ -306,11 +307,11 @@ export function RecurringInvoices() {
                     : undefined
                 }
               />
-            </div>
-            <div className="space-y-1">
+            </FormControlShell>
+            <FormControlShell>
               <Label>Frequency</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className="h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value)}
               >
@@ -322,12 +323,12 @@ export function RecurringInvoices() {
                   </option>
                 ))}
               </select>
-            </div>
-            <div className="space-y-1">
+            </FormControlShell>
+            <FormControlShell width="date">
               <Label>Next invoice date</Label>
               <Input type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} />
-            </div>
-            <div className="space-y-1">
+            </FormControlShell>
+            <FormControlShell width="date">
               <Label>End date (optional)</Label>
               <Input
                 type="date"
@@ -335,24 +336,24 @@ export function RecurringInvoices() {
                 min={nextDue}
                 onChange={(e) => setEndDate(e.target.value)}
               />
-            </div>
-            <div className="space-y-1">
+            </FormControlShell>
+            <FormControlShell width="money">
               <Label>Stop after N invoices (optional)</Label>
               <Input
                 value={maxOcc}
                 inputMode="numeric"
                 onChange={(e) => setMaxOcc(e.target.value)}
               />
-            </div>
-            <div className="space-y-1">
+            </FormControlShell>
+            <FormControlShell width="money">
               <Label>Payment terms, days (blank = customer terms)</Label>
               <Input value={terms} inputMode="numeric" onChange={(e) => setTerms(e.target.value)} />
-            </div>
-            <div className="space-y-1">
+            </FormControlShell>
+            <FormControlShell className="sm:col-span-2">
               <Label>Memo</Label>
               <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
-            </div>
-          </div>
+            </FormControlShell>
+          </FormGrid>
           <SalesDocumentLines
             lines={lines}
             onChange={setLines}

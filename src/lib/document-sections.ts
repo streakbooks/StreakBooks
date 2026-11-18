@@ -5,6 +5,7 @@ export const PURCHASES_SECTIONS = [
   { to: "/purchases/suppliers", label: "Suppliers" },
   { to: "/purchases/payments", label: "Payments" },
   { to: "/purchases/credit-notes", label: "Credit notes" },
+  { to: "/purchases/requisitions", label: "Requisitions" },
   { to: "/purchases/orders", label: "Purchase orders" },
   { to: "/purchases/recurring", label: "Recurring" },
   { to: "/purchases/employee-expenses", label: "Employee expenses" },

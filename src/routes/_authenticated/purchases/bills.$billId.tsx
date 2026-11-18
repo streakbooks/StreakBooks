@@ -21,6 +21,7 @@ import {
   listSuppliers,
   rejectBillApproval,
   saveBillDraft,
+  updatePurchaseOrderBillDetails,
   submitBillForApproval,
   voidBill,
 } from "@/lib/purchases/purchases.functions";
@@ -103,6 +104,8 @@ export const Route = createFileRoute("/_authenticated/purchases/bills/$billId")(
 
 type BillPayload = {
   id: string;
+  purchase_order_id: string | null;
+  updated_at: string;
   status: string;
   bill_date: string;
   due_date: string;
@@ -197,6 +200,7 @@ function BillDocumentWorkspace() {
   const checkDup = useServerFn(checkDuplicateSupplierBill);
   const { can } = useCan();
   const saveDraft = useServerFn(saveBillDraft);
+  const savePoDetails = useServerFn(updatePurchaseOrderBillDetails);
   const doAuthorise = useServerFn(authoriseBill);
   const fetchPoMatch = useServerFn(getBillPurchaseOrderMatch);
   const doVoid = useServerFn(voidBill);
@@ -401,14 +405,30 @@ function BillDocumentWorkspace() {
   const saveIfDirty = async () => {
     if (!canEdit) return;
     if (!isBillEditorDirty(editorState, baselineRef.current)) return;
-    await saveDraft({ data: buildSavePayload() });
+    await persistDraft();
     baselineRef.current = billEditorSnapshot(editorState);
   };
+
+  const persistDraft = () =>
+    bill?.purchase_order_id
+      ? savePoDetails({
+          data: {
+            companyId: companyId!,
+            billId,
+            billDate,
+            dueDate,
+            supplierInvoiceNumber,
+            memo,
+            fxRateToBase: fxRate.trim() ? Number(fxRate) : null,
+            expectedUpdatedAt: bill.updated_at,
+          },
+        })
+      : saveDraft({ data: buildSavePayload() });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       setFormError(null);
-      const result = await saveDraft({ data: buildSavePayload() });
+      const result = await persistDraft();
       baselineRef.current = billEditorSnapshot(editorState);
       return result;
     },
@@ -763,8 +783,8 @@ function BillDocumentWorkspace() {
               <AlertDescription>
                 Historical read-only
                 {bill.void_date ? ` from ${bill.void_date}` : ""}
-                {bill.void_reason ? `: ${bill.void_reason}` : ""}. Posted journals were reversed when
-                present.
+                {bill.void_reason ? `: ${bill.void_reason}` : ""}. Posted journals were reversed
+                when present.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -772,161 +792,161 @@ function BillDocumentWorkspace() {
       }
       actions={
         <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/purchases/bills" search={backSearch}>
+              Back to Bills
+            </Link>
+          </Button>
+          <RecordDiscussButton
+            companyId={companyId ?? null}
+            recordType="purchase_bill"
+            recordId={billId}
+            title={bill.bill_number ? `Bill ${bill.bill_number}` : "Bill discussion"}
+            label="Discuss"
+          />
+          {neighbors?.previousId ? (
             <Button variant="outline" size="sm" asChild>
-              <Link to="/purchases/bills" search={backSearch}>
-                Back to Bills
-              </Link>
-            </Button>
-            <RecordDiscussButton
-              companyId={companyId ?? null}
-              recordType="purchase_bill"
-              recordId={billId}
-              title={bill.bill_number ? `Bill ${bill.bill_number}` : "Bill discussion"}
-              label="Discuss"
-            />
-            {neighbors?.previousId ? (
-              <Button variant="outline" size="sm" asChild>
-                <Link
-                  to="/purchases/bills/$billId"
-                  params={{ billId: neighbors.previousId }}
-                  search={search}
-                >
-                  <ChevronLeft className="size-4" />
-                  Previous
-                </Link>
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" disabled>
+              <Link
+                to="/purchases/bills/$billId"
+                params={{ billId: neighbors.previousId }}
+                search={search}
+              >
                 <ChevronLeft className="size-4" />
                 Previous
-              </Button>
-            )}
-            {neighbors?.nextId ? (
-              <Button variant="outline" size="sm" asChild>
-                <Link
-                  to="/purchases/bills/$billId"
-                  params={{ billId: neighbors.nextId }}
-                  search={search}
-                >
-                  Next
-                  <ChevronRight className="size-4" />
-                </Link>
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" disabled>
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              <ChevronLeft className="size-4" />
+              Previous
+            </Button>
+          )}
+          {neighbors?.nextId ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                to="/purchases/bills/$billId"
+                params={{ billId: neighbors.nextId }}
+                search={search}
+              >
                 Next
                 <ChevronRight className="size-4" />
-              </Button>
-            )}
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="mr-1 size-4" />
-              Print / PDF
+              </Link>
             </Button>
-            <BillAttachmentsButton
-              count={bill.attachments?.length ?? 0}
-              onClick={() => setFilesOpen(true)}
-            />
-            {canEdit ? (
-              <>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              Next
+              <ChevronRight className="size-4" />
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Printer className="mr-1 size-4" />
+            Print / PDF
+          </Button>
+          <BillAttachmentsButton
+            count={bill.attachments?.length ?? 0}
+            onClick={() => setFilesOpen(true)}
+          />
+          {canEdit ? (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={saveMutation.isPending || !can("purchases.draft")}
+                onClick={() => saveMutation.mutate()}
+              >
+                {saveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                Save{isDirty ? " *" : ""}
+              </Button>
+              {bill.status === "draft" ? (
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={saveMutation.isPending || !can("purchases.draft")}
-                  onClick={() => saveMutation.mutate()}
+                  disabled={submitMutation.isPending || !can("purchases.draft")}
+                  onClick={() => submitMutation.mutate()}
                 >
-                  {saveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                  Save{isDirty ? " *" : ""}
+                  Submit for approval
                 </Button>
-                {bill.status === "draft" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={submitMutation.isPending || !can("purchases.draft")}
-                    onClick={() => submitMutation.mutate()}
-                  >
-                    Submit for approval
-                  </Button>
-                ) : null}
-                {bill.status === "awaiting_approval" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={rejectMutation.isPending || !can("purchases.authorise")}
-                    onClick={() => rejectMutation.mutate()}
-                  >
-                    Return for correction
-                  </Button>
-                ) : null}
+              ) : null}
+              {bill.status === "awaiting_approval" ? (
                 <Button
                   size="sm"
-                  disabled={
-                    authoriseMutation.isPending ||
-                    !can("purchases.authorise") ||
-                    Boolean(
-                      poMatchQ.data?.required &&
-                        poMatchQ.data.match.applicable &&
-                        poMatchQ.data.match.status !== "pass",
-                    )
-                  }
-                  title={
-                    !can("purchases.authorise")
-                      ? "You do not have permission to authorise bills"
-                      : poMatchQ.data?.required &&
-                          poMatchQ.data.match.applicable &&
-                          poMatchQ.data.match.status !== "pass"
-                        ? "Three-way matching must pass before authorising"
-                        : undefined
-                  }
-                  onClick={() => authoriseMutation.mutate()}
+                  variant="outline"
+                  disabled={rejectMutation.isPending || !can("purchases.authorise")}
+                  onClick={() => rejectMutation.mutate()}
                 >
-                  {authoriseMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                  {bill.status === "awaiting_approval" ? "Approve & authorise" : "Authorise & post"}
+                  Return for correction
                 </Button>
+              ) : null}
+              <Button
+                size="sm"
+                disabled={
+                  authoriseMutation.isPending ||
+                  !can("purchases.authorise") ||
+                  Boolean(
+                    poMatchQ.data?.required &&
+                    poMatchQ.data.match.applicable &&
+                    poMatchQ.data.match.status !== "pass",
+                  )
+                }
+                title={
+                  !can("purchases.authorise")
+                    ? "You do not have permission to authorise bills"
+                    : poMatchQ.data?.required &&
+                        poMatchQ.data.match.applicable &&
+                        poMatchQ.data.match.status !== "pass"
+                      ? "Three-way matching must pass before authorising"
+                      : undefined
+                }
+                onClick={() => authoriseMutation.mutate()}
+              >
+                {authoriseMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                {bill.status === "awaiting_approval" ? "Approve & authorise" : "Authorise & post"}
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={deleteMutation.isPending || !can("purchases.draft")}
+                onClick={() => {
+                  if (confirm("Delete this unposted bill?")) deleteMutation.mutate();
+                }}
+              >
+                Delete
+              </Button>
+            </>
+          ) : (
+            <>
+              {["authorised", "partly_paid"].includes(bill.status) &&
+              outstanding > 0 &&
+              can("purchases.payment") ? (
+                <Button
+                  size="sm"
+                  className="bg-emerald-700 text-white hover:bg-emerald-800"
+                  onClick={() => {
+                    document.getElementById("make-payment")?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                  }}
+                >
+                  Make a payment
+                </Button>
+              ) : null}
+              {bill.status !== "void" &&
+              bill.status !== "paid" &&
+              bill.amount_paid_minor === 0 &&
+              bill.amount_credited_minor === 0 &&
+              can("purchases.authorise") ? (
                 <Button
                   size="sm"
                   variant="destructive"
-                  disabled={deleteMutation.isPending || !can("purchases.draft")}
-                  onClick={() => {
-                    if (confirm("Delete this unposted bill?")) deleteMutation.mutate();
-                  }}
+                  disabled={voidMutation.isPending}
+                  onClick={() => setVoidOpen(true)}
                 >
-                  Delete
+                  Void
                 </Button>
-              </>
-            ) : (
-              <>
-                {["authorised", "partly_paid"].includes(bill.status) &&
-                outstanding > 0 &&
-                can("purchases.payment") ? (
-                  <Button
-                    size="sm"
-                    className="bg-emerald-700 text-white hover:bg-emerald-800"
-                    onClick={() => {
-                      document.getElementById("make-payment")?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      });
-                    }}
-                  >
-                    Make a payment
-                  </Button>
-                ) : null}
-                {bill.status !== "void" &&
-                bill.status !== "paid" &&
-                bill.amount_paid_minor === 0 &&
-                bill.amount_credited_minor === 0 &&
-                can("purchases.authorise") ? (
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    disabled={voidMutation.isPending}
-                    onClick={() => setVoidOpen(true)}
-                  >
-                    Void
-                  </Button>
-                ) : null}
-              </>
-            )}
+              ) : null}
+            </>
+          )}
         </div>
       }
     >
@@ -974,8 +994,7 @@ function BillDocumentWorkspace() {
           <AlertDescription>
             {poMatchQ.data.match.status === "pass"
               ? "Order, goods receipt and bill quantities/amounts agree."
-              : (poMatchQ.data.match.issues[0] ??
-                "Order, receipt and bill do not yet agree.")}
+              : (poMatchQ.data.match.issues[0] ?? "Order, receipt and bill do not yet agree.")}
             {poMatchQ.data.required
               ? " Authorisation is blocked until matching passes."
               : " Enable purchases three-way matching in Settings to enforce this at authorise."}
@@ -1005,472 +1024,517 @@ function BillDocumentWorkspace() {
       ) : null}
 
       <div className="space-y-4">
-          {canEdit ? (
-            <section className="space-y-4 rounded-lg border border-border bg-background p-4">
-              <h2 className="text-sm font-semibold">Bill details</h2>
+        {canEdit && bill.purchase_order_id ? (
+          <section className="space-y-4 rounded-lg border border-border bg-background p-4">
+            <h2 className="text-sm font-semibold">Supplier invoice details</h2>
+            <p className="text-sm text-muted-foreground">
+              Quantities and amounts are allocated from the purchase order. Delete this unposted
+              bill and regenerate it from the order to revise the allocation.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="bill-supplier">Supplier</Label>
-                <EntityCombobox
-                  aria-label="Supplier"
-                  options={supplierOptions}
-                  value={contactId}
-                  onChange={setContactId}
-                  allowClear={false}
-                  companyId={companyId}
-                  canAddNew={can("contacts.manage")}
-                  createTitle="New supplier"
-                  renderCreate={
-                    can("contacts.manage")
-                      ? (ctx) => (
-                          <ContactCreateForm companyId={companyId} kind="supplier" ctx={ctx} />
-                        )
-                      : undefined
-                  }
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="bill-date">Bill date</Label>
-                  <Input
-                    id="bill-date"
-                    type="date"
-                    value={billDate}
-                    onChange={(e) => {
-                      setBillDate(e.target.value);
-                      applyDueFromTerms(e.target.value, paymentTermId);
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="due-date">
-                    Due date
-                    {dueDateManualOverride ? (
-                      <span className="ml-2 text-xs font-normal text-amber-700">
-                        (manual override)
-                      </span>
-                    ) : null}
-                  </Label>
-                  <Input
-                    id="due-date"
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => {
-                      setDueDate(e.target.value);
-                      setDueDateManualOverride(true);
-                    }}
-                  />
-                  {dueDateManualOverride && paymentTermId ? (
-                    <Button
-                      type="button"
-                      variant="link"
-                      className="h-auto p-0 text-xs"
-                      onClick={() => {
-                        setDueDateManualOverride(false);
-                        applyDueFromTerms(billDate, paymentTermId, true);
-                      }}
-                    >
-                      Return to automatic calculation
-                    </Button>
-                  ) : null}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="supplier-invoice">Supplier invoice #</Label>
-                  <Input
-                    id="supplier-invoice"
-                    value={supplierInvoiceNumber}
-                    onChange={(e) => {
-                      setSupplierInvoiceNumber(e.target.value);
-                      setAcknowledgeDuplicate(false);
-                    }}
-                    placeholder="Supplier's invoice reference"
-                  />
-                </div>
-              </div>
-
-              {dupQ.data?.duplicate ? (
-                <Alert variant="destructive">
-                  <AlertTitle>Possible duplicate supplier bill</AlertTitle>
-                  <AlertDescription className="space-y-2">
-                    <p>
-                      Another bill uses supplier invoice # <strong>{supplierInvoiceNumber}</strong>{" "}
-                      for this supplier.
-                    </p>
-                    <ul className="list-disc pl-5 text-sm">
-                      {dupQ.data.matches.map((m) => (
-                        <li key={m.id}>
-                          <Link
-                            to="/purchases/bills/$billId"
-                            params={{ billId: m.id }}
-                            className="underline"
-                          >
-                            {m.bill_number ?? m.id.slice(0, 8)} — {m.status} — {m.bill_date}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={acknowledgeDuplicate}
-                        onChange={(e) => setAcknowledgeDuplicate(e.target.checked)}
-                      />
-                      I have reviewed the existing bill and want to keep this as a separate bill
-                    </label>
-                  </AlertDescription>
-                </Alert>
-              ) : null}
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label>Payment terms</Label>
-                  <EntityCombobox
-                    options={terms.map((t) => ({
-                      value: t.id,
-                      label: t.name,
-                      description: `${t.days}d · ${t.calculation_method}`,
-                    }))}
-                    value={paymentTermId}
-                    onChange={(id) => {
-                      setPaymentTermId(id);
-                      const t = terms.find((x) => x.id === id);
-                      setPaymentTermsDays(t ? t.days : null);
-                      applyDueFromTerms(billDate, id);
-                    }}
-                    placeholder="Select terms"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Amounts are</Label>
-                  <Select
-                    value={taxCalculation}
-                    onValueChange={(v) => setTaxCalculation(v as TaxCalculationMode)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="exclusive">Tax exclusive</SelectItem>
-                      <SelectItem value="inclusive">Tax inclusive</SelectItem>
-                      <SelectItem value="none">No tax</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Currency</Label>
-                  <Input value={currency} disabled readOnly />
-                  {currency.toUpperCase() !== baseCurrency.toUpperCase() ? (
-                    <div className="space-y-1">
-                      <Label htmlFor="bill-fx" className="text-xs text-muted-foreground">
-                        Rate ({currency} → {baseCurrency})
-                      </Label>
-                      <Input
-                        id="bill-fx"
-                        inputMode="decimal"
-                        value={fxRate}
-                        onChange={(e) => setFxRate(e.target.value)}
-                        placeholder="e.g. 1.2650"
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <button
-                    type="button"
-                    className="text-sm font-medium underline-offset-2 hover:underline"
-                  >
-                    Supplier address on this bill
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {(
-                    [
-                      ["line1", "Address line 1"],
-                      ["line2", "Address line 2"],
-                      ["city", "City"],
-                      ["region", "Region"],
-                      ["postal", "Postal code"],
-                      ["country", "Country"],
-                    ] as const
-                  ).map(([key, label]) => (
-                    <Input
-                      key={key}
-                      placeholder={label}
-                      aria-label={label}
-                      value={address[key]}
-                      onChange={(e) => setAddress((a) => ({ ...a, [key]: e.target.value }))}
-                    />
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
-              <div className="space-y-2">
-                <Label htmlFor="bill-memo">Memo / notes</Label>
+                <Label htmlFor="po-bill-date">Bill date</Label>
                 <Input
-                  id="bill-memo"
-                  value={memo}
-                  onChange={(e) => setMemo(e.target.value)}
-                  placeholder="Optional memo"
+                  id="po-bill-date"
+                  type="date"
+                  value={billDate}
+                  onChange={(e) => setBillDate(e.target.value)}
                 />
               </div>
-
-              <Separator />
-
-              <h2 className="text-sm font-semibold">Line items</h2>
-              <PurchasesDocumentLines
-                lines={lines}
-                onChange={setLines}
-                products={(productsQ.data ?? []) as never}
-                accounts={expenseAccounts}
-                currency={currency}
-                taxCalculation={taxCalculation}
-                taxCodes={taxCodes}
-                classOptions={optionsForKind("class")}
-                locationOptions={optionsForKind("location")}
-                projectOptions={optionsForKind("project")}
-                customers={customerOptions}
-                showClass={optionsForKind("class").length > 0}
-                showLocation={optionsForKind("location").length > 0}
-                showProject={optionsForKind("project").length > 0}
-                showCustomer={customerOptions.length > 0}
-                toMinor={(d) => toMinorUnits(d, currency)}
+              <div className="space-y-2">
+                <Label htmlFor="po-bill-due">Due date</Label>
+                <Input
+                  id="po-bill-due"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="po-bill-reference">Supplier invoice number</Label>
+                <Input
+                  id="po-bill-reference"
+                  value={supplierInvoiceNumber}
+                  onChange={(e) => setSupplierInvoiceNumber(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="po-bill-fx">Exchange rate to {baseCurrency}</Label>
+                <Input
+                  id="po-bill-fx"
+                  inputMode="decimal"
+                  value={fxRate}
+                  onChange={(e) => setFxRate(e.target.value)}
+                  disabled={bill.currency_code === baseCurrency}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="po-bill-memo">Memo</Label>
+              <Textarea id="po-bill-memo" value={memo} onChange={(e) => setMemo(e.target.value)} />
+            </div>
+          </section>
+        ) : null}
+        {canEdit && !bill.purchase_order_id ? (
+          <section className="space-y-4 rounded-lg border border-border bg-background p-4">
+            <h2 className="text-sm font-semibold">Bill details</h2>
+            <div className="space-y-2">
+              <Label htmlFor="bill-supplier">Supplier</Label>
+              <EntityCombobox
+                aria-label="Supplier"
+                options={supplierOptions}
+                value={contactId}
+                onChange={setContactId}
+                allowClear={false}
                 companyId={companyId}
-                baseCurrency={baseCurrency}
+                canAddNew={can("contacts.manage")}
+                createTitle="New supplier"
+                renderCreate={
+                  can("contacts.manage")
+                    ? (ctx) => <ContactCreateForm companyId={companyId} kind="supplier" ctx={ctx} />
+                    : undefined
+                }
               />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="bill-date">Bill date</Label>
+                <Input
+                  id="bill-date"
+                  type="date"
+                  value={billDate}
+                  onChange={(e) => {
+                    setBillDate(e.target.value);
+                    applyDueFromTerms(e.target.value, paymentTermId);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="due-date">
+                  Due date
+                  {dueDateManualOverride ? (
+                    <span className="ml-2 text-xs font-normal text-amber-700">
+                      (manual override)
+                    </span>
+                  ) : null}
+                </Label>
+                <Input
+                  id="due-date"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => {
+                    setDueDate(e.target.value);
+                    setDueDateManualOverride(true);
+                  }}
+                />
+                {dueDateManualOverride && paymentTermId ? (
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => {
+                      setDueDateManualOverride(false);
+                      applyDueFromTerms(billDate, paymentTermId, true);
+                    }}
+                  >
+                    Return to automatic calculation
+                  </Button>
+                ) : null}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="supplier-invoice">Supplier invoice #</Label>
+                <Input
+                  id="supplier-invoice"
+                  value={supplierInvoiceNumber}
+                  onChange={(e) => {
+                    setSupplierInvoiceNumber(e.target.value);
+                    setAcknowledgeDuplicate(false);
+                  }}
+                  placeholder="Supplier's invoice reference"
+                />
+              </div>
+            </div>
 
-              <div className="flex flex-wrap gap-2 pt-2">
-                <Button
-                  size="sm"
-                  disabled={saveMutation.isPending || !can("purchases.draft")}
-                  onClick={() => saveMutation.mutate()}
+            {dupQ.data?.duplicate ? (
+              <Alert variant="destructive">
+                <AlertTitle>Possible duplicate supplier bill</AlertTitle>
+                <AlertDescription className="space-y-2">
+                  <p>
+                    Another bill uses supplier invoice # <strong>{supplierInvoiceNumber}</strong>{" "}
+                    for this supplier.
+                  </p>
+                  <ul className="list-disc pl-5 text-sm">
+                    {dupQ.data.matches.map((m) => (
+                      <li key={m.id}>
+                        <Link
+                          to="/purchases/bills/$billId"
+                          params={{ billId: m.id }}
+                          className="underline"
+                        >
+                          {m.bill_number ?? m.id.slice(0, 8)} — {m.status} — {m.bill_date}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={acknowledgeDuplicate}
+                      onChange={(e) => setAcknowledgeDuplicate(e.target.checked)}
+                    />
+                    I have reviewed the existing bill and want to keep this as a separate bill
+                  </label>
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Payment terms</Label>
+                <EntityCombobox
+                  options={terms.map((t) => ({
+                    value: t.id,
+                    label: t.name,
+                    description: `${t.days}d · ${t.calculation_method}`,
+                  }))}
+                  value={paymentTermId}
+                  onChange={(id) => {
+                    setPaymentTermId(id);
+                    const t = terms.find((x) => x.id === id);
+                    setPaymentTermsDays(t ? t.days : null);
+                    applyDueFromTerms(billDate, id);
+                  }}
+                  placeholder="Select terms"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Amounts are</Label>
+                <Select
+                  value={taxCalculation}
+                  onValueChange={(v) => setTaxCalculation(v as TaxCalculationMode)}
                 >
-                  {saveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                  Save changes
-                </Button>
-                <Button size="sm" variant="outline" asChild>
-                  <Link to="/purchases/bills" search={backSearch}>
-                    Cancel
-                  </Link>
-                </Button>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="exclusive">Tax exclusive</SelectItem>
+                    <SelectItem value="inclusive">Tax inclusive</SelectItem>
+                    <SelectItem value="none">No tax</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </section>
-          ) : (
-            <section className="rounded-lg border border-border bg-background p-4">
-              <h2 className="mb-3 text-sm font-semibold">Line items</h2>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Qty</TableHead>
-                    <TableHead className="text-right">Unit</TableHead>
-                    <TableHead className="text-right">Discount</TableHead>
-                    <TableHead className="text-right">Net</TableHead>
-                    <TableHead className="text-right">Tax</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bill.purchase_bill_lines.map((l) => (
-                    <TableRow key={l.id}>
-                      <TableCell>
-                        <div>{l.description}</div>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{l.quantity}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fromMinorUnits(BigInt(l.unit_price_minor ?? 0), currency)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fromMinorUnits(BigInt(l.discount_minor ?? 0), currency)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fromMinorUnits(BigInt(l.net_minor), currency)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fromMinorUnits(BigInt(l.tax_minor), currency)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <div className="mt-4 flex flex-col items-end gap-1 text-sm">
-                <div className="flex w-56 justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="tabular-nums">
-                    {fromMinorUnits(BigInt(bill.subtotal_minor), currency)}
-                  </span>
-                </div>
-                <div className="flex w-56 justify-between">
-                  <span className="text-muted-foreground">Tax</span>
-                  <span className="tabular-nums">
-                    {fromMinorUnits(BigInt(bill.tax_minor), currency)}
-                  </span>
-                </div>
-                <div className="flex w-56 justify-between font-semibold">
-                  <span>Total</span>
-                  <span className="tabular-nums">
-                    {fromMinorUnits(BigInt(bill.total_minor), currency)}
-                  </span>
-                </div>
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <Input value={currency} disabled readOnly />
+                {currency.toUpperCase() !== baseCurrency.toUpperCase() ? (
+                  <div className="space-y-1">
+                    <Label htmlFor="bill-fx" className="text-xs text-muted-foreground">
+                      Rate ({currency} → {baseCurrency})
+                    </Label>
+                    <Input
+                      id="bill-fx"
+                      inputMode="decimal"
+                      value={fxRate}
+                      onChange={(e) => setFxRate(e.target.value)}
+                      placeholder="e.g. 1.2650"
+                    />
+                  </div>
+                ) : null}
               </div>
-              {bill.memo ? (
-                <p className="mt-4 rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">
-                  {bill.memo}
-                </p>
-              ) : null}
-            </section>
-          )}
+            </div>
 
-          <div id="make-payment" className={can("purchases.payment") ? undefined : "hidden"}>
-            <BillMakePaymentPanel
-              companyId={companyId}
-              billId={billId}
-              contactId={bill.contact_id}
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="text-sm font-medium underline-offset-2 hover:underline"
+                >
+                  Supplier address on this bill
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2 grid gap-2 sm:grid-cols-2">
+                {(
+                  [
+                    ["line1", "Address line 1"],
+                    ["line2", "Address line 2"],
+                    ["city", "City"],
+                    ["region", "Region"],
+                    ["postal", "Postal code"],
+                    ["country", "Country"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <Input
+                    key={key}
+                    placeholder={label}
+                    aria-label={label}
+                    value={address[key]}
+                    onChange={(e) => setAddress((a) => ({ ...a, [key]: e.target.value }))}
+                  />
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+            <div className="space-y-2">
+              <Label htmlFor="bill-memo">Memo / notes</Label>
+              <Input
+                id="bill-memo"
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder="Optional memo"
+              />
+            </div>
+
+            <Separator />
+
+            <h2 className="text-sm font-semibold">Line items</h2>
+            <PurchasesDocumentLines
+              lines={lines}
+              onChange={setLines}
+              products={(productsQ.data ?? []) as never}
+              accounts={expenseAccounts}
               currency={currency}
-              billStatus={bill.status}
-              outstandingMinor={outstanding}
+              taxCalculation={taxCalculation}
+              taxCodes={taxCodes}
+              classOptions={optionsForKind("class")}
+              locationOptions={optionsForKind("location")}
+              projectOptions={optionsForKind("project")}
+              customers={customerOptions}
+              showClass={optionsForKind("class").length > 0}
+              showLocation={optionsForKind("location").length > 0}
+              showProject={optionsForKind("project").length > 0}
+              showCustomer={customerOptions.length > 0}
+              toMinor={(d) => toMinorUnits(d, currency)}
+              companyId={companyId}
+              baseCurrency={baseCurrency}
             />
-          </div>
 
-          <section className="rounded-lg border border-border bg-background p-4">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="flex items-center gap-2 text-sm font-semibold">
-                <Paperclip className="size-4" />
-                Attachments ({bill.attachments?.length ?? 0})
-              </h2>
-              <Button size="sm" variant="outline" onClick={() => setFilesOpen(true)}>
-                Open related files
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Button
+                size="sm"
+                disabled={saveMutation.isPending || !can("purchases.draft")}
+                onClick={() => saveMutation.mutate()}
+              >
+                {saveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                Save changes
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/purchases/bills" search={backSearch}>
+                  Cancel
+                </Link>
               </Button>
             </div>
-            {(bill.attachments ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No attachments.</p>
-            ) : (
-              <ul className="space-y-2">
-                {bill.attachments.map((a) => (
-                  <li
-                    key={a.id}
-                    className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
-                  >
-                    <button
-                      type="button"
-                      className="min-w-0 flex-1 text-left"
-                      onClick={() => setFilesOpen(true)}
-                    >
-                      <p className="truncate font-medium underline-offset-2 hover:underline">
-                        {a.file_name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {a.content_type ?? "file"}
-                        {a.size_bytes != null ? ` · ${Math.round(a.size_bytes / 1024)} KB` : ""}
-                        {" · click to preview"}
-                      </p>
-                    </button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => void downloadAttachment(a.id)}
-                    >
-                      Download
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
           </section>
+        ) : (
+          <section className="rounded-lg border border-border bg-background p-4">
+            <h2 className="mb-3 text-sm font-semibold">Line items</h2>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
+                  <TableHead className="text-right">Unit</TableHead>
+                  <TableHead className="text-right">Discount</TableHead>
+                  <TableHead className="text-right">Net</TableHead>
+                  <TableHead className="text-right">Tax</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {bill.purchase_bill_lines.map((l) => (
+                  <TableRow key={l.id}>
+                    <TableCell>
+                      <div>{l.description}</div>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{l.quantity}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {fromMinorUnits(BigInt(l.unit_price_minor ?? 0), currency)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {fromMinorUnits(BigInt(l.discount_minor ?? 0), currency)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {fromMinorUnits(BigInt(l.net_minor), currency)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {fromMinorUnits(BigInt(l.tax_minor), currency)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="mt-4 flex flex-col items-end gap-1 text-sm">
+              <div className="flex w-56 justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="tabular-nums">
+                  {fromMinorUnits(BigInt(bill.subtotal_minor), currency)}
+                </span>
+              </div>
+              <div className="flex w-56 justify-between">
+                <span className="text-muted-foreground">Tax</span>
+                <span className="tabular-nums">
+                  {fromMinorUnits(BigInt(bill.tax_minor), currency)}
+                </span>
+              </div>
+              <div className="flex w-56 justify-between font-semibold">
+                <span>Total</span>
+                <span className="tabular-nums">
+                  {fromMinorUnits(BigInt(bill.total_minor), currency)}
+                </span>
+              </div>
+            </div>
+            {bill.memo ? (
+              <p className="mt-4 rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">
+                {bill.memo}
+              </p>
+            ) : null}
+          </section>
+        )}
 
-          <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
-            <section className="overflow-hidden rounded-lg border border-border bg-background">
-              <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-                <CollapsibleTrigger asChild>
+        <div id="make-payment" className={can("purchases.payment") ? undefined : "hidden"}>
+          <BillMakePaymentPanel
+            companyId={companyId}
+            billId={billId}
+            contactId={bill.contact_id}
+            currency={currency}
+            billStatus={bill.status}
+            outstandingMinor={outstanding}
+          />
+        </div>
+
+        <section className="rounded-lg border border-border bg-background p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <Paperclip className="size-4" />
+              Attachments ({bill.attachments?.length ?? 0})
+            </h2>
+            <Button size="sm" variant="outline" onClick={() => setFilesOpen(true)}>
+              Open related files
+            </Button>
+          </div>
+          {(bill.attachments ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No attachments.</p>
+          ) : (
+            <ul className="space-y-2">
+              {bill.attachments.map((a) => (
+                <li
+                  key={a.id}
+                  className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
+                >
                   <button
                     type="button"
-                    className="flex items-center gap-2 text-left text-sm font-semibold"
+                    className="min-w-0 flex-1 text-left"
+                    onClick={() => setFilesOpen(true)}
                   >
-                    <ChevronDown
-                      className={`size-4 text-muted-foreground transition-transform ${historyOpen ? "" : "-rotate-90"}`}
-                    />
-                    History and notes
+                    <p className="truncate font-medium underline-offset-2 hover:underline">
+                      {a.file_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {a.content_type ?? "file"}
+                      {a.size_bytes != null ? ` · ${Math.round(a.size_bytes / 1024)} KB` : ""}
+                      {" · click to preview"}
+                    </p>
                   </button>
-                </CollapsibleTrigger>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!noteDraft.trim() || noteMutation.isPending}
-                  onClick={() => noteMutation.mutate()}
+                  <Button size="sm" variant="outline" onClick={() => void downloadAttachment(a.id)}>
+                    Download
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
+          <section className="overflow-hidden rounded-lg border border-border bg-background">
+            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 text-left text-sm font-semibold"
                 >
-                  Add note
-                </Button>
-              </div>
-              <CollapsibleContent>
-                <div className="border-b border-border bg-muted/20 px-4 py-3">
-                  <Textarea
-                    value={noteDraft}
-                    onChange={(e) => setNoteDraft(e.target.value)}
-                    placeholder="Add an internal note…"
-                    rows={2}
-                    className="min-h-16 bg-background"
+                  <ChevronDown
+                    className={`size-4 text-muted-foreground transition-transform ${historyOpen ? "" : "-rotate-90"}`}
                   />
-                </div>
-                {activityQ.isPending ? (
-                  <p className="px-4 py-6 text-sm text-muted-foreground">Loading history…</p>
-                ) : activityQ.isError ? (
-                  <p className="px-4 py-6 text-sm text-destructive">History could not be loaded.</p>
-                ) : historyRows.length === 0 ? (
-                  <p className="px-4 py-6 text-sm text-muted-foreground">No history yet.</p>
-                ) : (
-                  <div className="max-h-[32rem] overflow-auto">
-                    <Table className="min-w-[44rem]">
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="w-[13rem] text-xs font-medium tracking-wide text-muted-foreground">
-                            Date ({historyZone})
-                          </TableHead>
-                          <TableHead className="w-[11rem] text-xs font-medium tracking-wide text-muted-foreground">
-                            User
-                          </TableHead>
-                          <TableHead className="w-[9rem] text-xs font-medium tracking-wide text-muted-foreground">
-                            Action
-                          </TableHead>
-                          <TableHead className="text-xs font-medium tracking-wide text-muted-foreground">
-                            Detail
-                          </TableHead>
+                  History and notes
+                </button>
+              </CollapsibleTrigger>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!noteDraft.trim() || noteMutation.isPending}
+                onClick={() => noteMutation.mutate()}
+              >
+                Add note
+              </Button>
+            </div>
+            <CollapsibleContent>
+              <div className="border-b border-border bg-muted/20 px-4 py-3">
+                <Textarea
+                  value={noteDraft}
+                  onChange={(e) => setNoteDraft(e.target.value)}
+                  placeholder="Add an internal note…"
+                  rows={2}
+                  className="min-h-16 bg-background"
+                />
+              </div>
+              {activityQ.isPending ? (
+                <p className="px-4 py-6 text-sm text-muted-foreground">Loading history…</p>
+              ) : activityQ.isError ? (
+                <p className="px-4 py-6 text-sm text-destructive">History could not be loaded.</p>
+              ) : historyRows.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-muted-foreground">No history yet.</p>
+              ) : (
+                <div className="max-h-[32rem] overflow-auto">
+                  <Table className="min-w-[44rem]">
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="w-[13rem] text-xs font-medium tracking-wide text-muted-foreground">
+                          Date ({historyZone})
+                        </TableHead>
+                        <TableHead className="w-[11rem] text-xs font-medium tracking-wide text-muted-foreground">
+                          User
+                        </TableHead>
+                        <TableHead className="w-[9rem] text-xs font-medium tracking-wide text-muted-foreground">
+                          Action
+                        </TableHead>
+                        <TableHead className="text-xs font-medium tracking-wide text-muted-foreground">
+                          Detail
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {historyRows.map((row) => (
+                        <TableRow key={row.id}>
+                          <TableCell className="whitespace-nowrap align-top text-sm text-muted-foreground">
+                            {formatHistoryTimestamp(row.at, company?.timezone || "UTC")}
+                          </TableCell>
+                          <TableCell className="align-top text-sm font-medium">
+                            {row.user}
+                          </TableCell>
+                          <TableCell className="align-top text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                            {row.action}
+                          </TableCell>
+                          <TableCell className="align-top text-sm leading-relaxed">
+                            {row.paymentId ? (
+                              <Link
+                                to="/purchases/payments/$paymentId"
+                                params={{ paymentId: row.paymentId }}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline-offset-2 hover:underline"
+                              >
+                                {row.detail || "Open payment"}
+                              </Link>
+                            ) : (
+                              row.detail || "—"
+                            )}
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {historyRows.map((row) => (
-                          <TableRow key={row.id}>
-                            <TableCell className="whitespace-nowrap align-top text-sm text-muted-foreground">
-                              {formatHistoryTimestamp(row.at, company?.timezone || "UTC")}
-                            </TableCell>
-                            <TableCell className="align-top text-sm font-medium">
-                              {row.user}
-                            </TableCell>
-                            <TableCell className="align-top text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                              {row.action}
-                            </TableCell>
-                            <TableCell className="align-top text-sm leading-relaxed">
-                              {row.paymentId ? (
-                                <Link
-                                  to="/purchases/payments/$paymentId"
-                                  params={{ paymentId: row.paymentId }}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary underline-offset-2 hover:underline"
-                                >
-                                  {row.detail || "Open payment"}
-                                </Link>
-                              ) : (
-                                row.detail || "—"
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CollapsibleContent>
-            </section>
-          </Collapsible>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CollapsibleContent>
+          </section>
+        </Collapsible>
       </div>
 
       <DocumentActions kind="purchase_bill" id={billId} />

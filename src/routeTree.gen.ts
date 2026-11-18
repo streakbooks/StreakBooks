@@ -109,6 +109,7 @@ import { Route as AuthenticatedPurchasesIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedPurchasesEmployeeExpensesRouteImport } from './routes/_authenticated/purchases/employee-expenses'
 import { Route as AuthenticatedPurchasesPortalInboxRouteImport } from './routes/_authenticated/purchases/portal-inbox'
 import { Route as AuthenticatedPurchasesRecurringRouteImport } from './routes/_authenticated/purchases/recurring'
+import { Route as AuthenticatedPurchasesRequisitionsRouteImport } from './routes/_authenticated/purchases/requisitions'
 import { Route as AuthenticatedPurchasesSettingsRouteImport } from './routes/_authenticated/purchases/settings'
 import { Route as AuthenticatedPurchasesStatementsRouteImport } from './routes/_authenticated/purchases/statements'
 import { Route as AuthenticatedPurchasesSuppliersRouteImport } from './routes/_authenticated/purchases/suppliers'
@@ -761,6 +762,12 @@ const AuthenticatedPurchasesRecurringRoute =
     path: '/recurring',
     getParentRoute: () => AuthenticatedPurchasesRouteRoute,
   } as any)
+const AuthenticatedPurchasesRequisitionsRoute =
+  AuthenticatedPurchasesRequisitionsRouteImport.update({
+    id: '/requisitions',
+    path: '/requisitions',
+    getParentRoute: () => AuthenticatedPurchasesRouteRoute,
+  } as any)
 const AuthenticatedPurchasesSettingsRoute =
   AuthenticatedPurchasesSettingsRouteImport.update({
     id: '/settings',
@@ -1346,6 +1353,7 @@ export interface FileRoutesByFullPath {
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
+  '/purchases/requisitions': typeof AuthenticatedPurchasesRequisitionsRoute
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
   '/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
@@ -1525,6 +1533,7 @@ export interface FileRoutesByTo {
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
+  '/purchases/requisitions': typeof AuthenticatedPurchasesRequisitionsRoute
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
   '/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
@@ -1711,6 +1720,7 @@ export interface FileRoutesById {
   '/_authenticated/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/_authenticated/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/_authenticated/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
+  '/_authenticated/purchases/requisitions': typeof AuthenticatedPurchasesRequisitionsRoute
   '/_authenticated/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/_authenticated/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
   '/_authenticated/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
@@ -1900,6 +1910,7 @@ export interface FileRouteTypes {
     | '/purchases/employee-expenses'
     | '/purchases/portal-inbox'
     | '/purchases/recurring'
+    | '/purchases/requisitions'
     | '/purchases/settings'
     | '/purchases/statements'
     | '/purchases/suppliers'
@@ -2079,6 +2090,7 @@ export interface FileRouteTypes {
     | '/purchases/employee-expenses'
     | '/purchases/portal-inbox'
     | '/purchases/recurring'
+    | '/purchases/requisitions'
     | '/purchases/settings'
     | '/purchases/statements'
     | '/purchases/suppliers'
@@ -2264,6 +2276,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchases/employee-expenses'
     | '/_authenticated/purchases/portal-inbox'
     | '/_authenticated/purchases/recurring'
+    | '/_authenticated/purchases/requisitions'
     | '/_authenticated/purchases/settings'
     | '/_authenticated/purchases/statements'
     | '/_authenticated/purchases/suppliers'
@@ -3089,6 +3102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchasesRecurringRouteImport
       parentRoute: typeof AuthenticatedPurchasesRouteRoute
     }
+    '/_authenticated/purchases/requisitions': {
+      id: '/_authenticated/purchases/requisitions'
+      path: '/requisitions'
+      fullPath: '/purchases/requisitions'
+      preLoaderRoute: typeof AuthenticatedPurchasesRequisitionsRouteImport
+      parentRoute: typeof AuthenticatedPurchasesRouteRoute
+    }
     '/_authenticated/purchases/settings': {
       id: '/_authenticated/purchases/settings'
       path: '/settings'
@@ -3791,6 +3811,7 @@ interface AuthenticatedPurchasesRouteRouteChildren {
   AuthenticatedPurchasesEmployeeExpensesRoute: typeof AuthenticatedPurchasesEmployeeExpensesRoute
   AuthenticatedPurchasesPortalInboxRoute: typeof AuthenticatedPurchasesPortalInboxRoute
   AuthenticatedPurchasesRecurringRoute: typeof AuthenticatedPurchasesRecurringRoute
+  AuthenticatedPurchasesRequisitionsRoute: typeof AuthenticatedPurchasesRequisitionsRoute
   AuthenticatedPurchasesSettingsRoute: typeof AuthenticatedPurchasesSettingsRoute
   AuthenticatedPurchasesStatementsRoute: typeof AuthenticatedPurchasesStatementsRoute
   AuthenticatedPurchasesSuppliersRoute: typeof AuthenticatedPurchasesSuppliersRoute
@@ -3823,6 +3844,8 @@ const AuthenticatedPurchasesRouteRouteChildren: AuthenticatedPurchasesRouteRoute
     AuthenticatedPurchasesPortalInboxRoute:
       AuthenticatedPurchasesPortalInboxRoute,
     AuthenticatedPurchasesRecurringRoute: AuthenticatedPurchasesRecurringRoute,
+    AuthenticatedPurchasesRequisitionsRoute:
+      AuthenticatedPurchasesRequisitionsRoute,
     AuthenticatedPurchasesSettingsRoute: AuthenticatedPurchasesSettingsRoute,
     AuthenticatedPurchasesStatementsRoute:
       AuthenticatedPurchasesStatementsRoute,

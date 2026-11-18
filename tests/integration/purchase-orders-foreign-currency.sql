@@ -1,0 +1,31 @@
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',false);
+DO $$
+DECLARE c uuid:='10000000-0000-4000-8000-000000000001'; o jsonb; result jsonb; b public.purchase_bills; line_id uuid; source_journal uuid; reversal_journal uuid; stamp timestamptz;
+BEGIN
+ o:=public.save_purchase_order_atomic(c,jsonb_build_object('requestId',gen_random_uuid(),'contactId','30000000-0000-4000-8000-000000000001','orderDate','2026-11-18','currencyCode','USD','lines',jsonb_build_array(jsonb_build_object('description','Imported equipment','accountId','20000000-0000-4000-8000-000000000001','quantity',2,'unitPriceMinor',1000,'discountMinor',0,'taxRateBps',2000))));
+ o:=public.manage_purchase_order(c,(o->>'id')::uuid,1,'submit');
+ PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000003"}',true);
+ o:=public.manage_purchase_order(c,(o->>'id')::uuid,2,'approve');
+ PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',true);
+ o:=public.manage_purchase_order(c,(o->>'id')::uuid,3,'send');
+ SELECT id INTO line_id FROM public.purchase_order_lines WHERE order_id=(o->>'id')::uuid;
+ PERFORM public.receive_purchase_order(c,(o->>'id')::uuid,gen_random_uuid(),'2026-11-18','USD-GR',jsonb_build_array(jsonb_build_object('lineId',line_id,'receiveQuantity',2)));
+ result:=public.convert_purchase_order_atomic(c,(o->>'id')::uuid);
+ SELECT * INTO b FROM public.purchase_bills WHERE id=(result->>'billId')::uuid;
+ PERFORM public.po_test_assert(b.currency_code='USD' AND b.subtotal_minor=2000 AND b.tax_minor=400 AND b.total_minor=2400,'foreign PO conversion preserves document currency and amounts');
+ PERFORM public.po_test_error(format('SELECT public.authorise_purchase_order_bill_atomic(%L,%L)',c,b.id),'%No exchange rate%','foreign PO authorisation fails closed without stored or historical rate');
+ PERFORM public.po_test_assert(NOT EXISTS(SELECT 1 FROM public.journals WHERE source_id=b.id) AND (SELECT status='draft' AND posted_journal_id IS NULL FROM public.purchase_bills WHERE id=b.id),'missing FX posting leaves foreign bill unposted');
+ stamp:=b.updated_at;
+ PERFORM public.update_po_bill_details(c,b.id,jsonb_build_object('expectedUpdatedAt',stamp,'billDate','2026-11-18','dueDate','2026-12-18','supplierInvoiceNumber','USD-INVOICE','memo','Foreign equipment','fxRateToBase',1.2));
+ PERFORM public.po_test_assert((SELECT fx_rate_to_base=1.2 AND currency_code='USD' AND supplier_invoice_number='USD-INVOICE' FROM public.purchase_bills WHERE id=b.id),'foreign invoice header stores reviewed FX without changing currency');
+ PERFORM public.po_test_error(format('SELECT public.update_po_bill_details(%L,%L,%L)',c,b.id,jsonb_build_object('expectedUpdatedAt',stamp,'billDate','2026-11-18','dueDate','2026-12-18','fxRateToBase',1.3)::text),'%reload%','foreign invoice header rejects stale FX edits');
+ result:=public.authorise_purchase_order_bill_atomic(c,b.id);
+ source_journal:=(result->>'journalId')::uuid;
+ PERFORM public.po_test_assert(EXISTS(SELECT 1 FROM public.journals WHERE id=source_journal AND currency_code='USD' AND fx_rate_to_base=1.2) AND (SELECT sum(debit_minor)=2400 AND sum(credit_minor)=2400 FROM public.journal_lines WHERE journal_id=source_journal),'foreign authorisation posts balanced document amounts at stored exchange rate');
+ result:=public.void_purchase_order_bill_atomic(c,b.id,'Foreign supplier cancellation','2026-11-18');
+ reversal_journal:=(result->>'journalId')::uuid;
+ PERFORM public.po_test_assert(EXISTS(SELECT 1 FROM public.journals WHERE id=reversal_journal AND reverses_journal_id=source_journal AND currency_code='USD' AND fx_rate_to_base=1.2),'foreign reversal retains original currency and exchange rate');
+ PERFORM public.po_test_assert(NOT EXISTS(SELECT 1 FROM public.journal_lines WHERE journal_id IN(source_journal,reversal_journal) GROUP BY account_id HAVING sum(debit_minor)<>sum(credit_minor)) AND (SELECT quantity_billed FROM public.purchase_order_lines WHERE id=line_id)=0,'foreign void reverses each source account and restores billable quantity');
+END $$;
+RESET ROLE;

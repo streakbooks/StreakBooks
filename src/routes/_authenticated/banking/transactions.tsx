@@ -482,6 +482,15 @@ function BankTransactions() {
           <Button size="sm" variant="outline" asChild>
             <Link to="/banking/cash-coding">Open cash coding</Link>
           </Button>
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/banking/receive-money">Receive money</Link>
+          </Button>
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/banking/spend-money">Spend money</Link>
+          </Button>
+          <Button size="sm" asChild>
+            <Link to="/banking/transfers/new">New transfer</Link>
+          </Button>
         </>
       }
     >

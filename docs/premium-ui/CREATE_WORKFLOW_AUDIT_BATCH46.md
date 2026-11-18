@@ -46,8 +46,14 @@ Remaining non-`/new` destinations that are intentional (list/tooling, not comple
 | Expenses | Expense claim | Create menu → `/expense-management/my-expenses?create=true` focuses full-width draft |
 | Tooling | `check:navigation` / browsing manifest | Recurring + transfers + money/journal routes synced (163 routes) |
 
+## Superseded by later batches
+
+- Recurring bill/invoice **edit** → full-page `/$id/edit` (Batch 47).
+- Transfer create → `/banking/transfers/new`; Banking hub New CTAs (Batches 46–49).
+- Recurring Sheets deleted (Batch 48).
+- Create nav intent helper `createNavTarget` (Batch 49).
+
 ## Still deferred
 
 - Authenticated Playwright create-flow smoke (blocked without staging E2E credentials).
 - Multi-account Spend/Receive allocation lines (posting engine constraint).
-- Recurring bill/invoice **edit** still uses overlay / in-place workspace (create is full-page).

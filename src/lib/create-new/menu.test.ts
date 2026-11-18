@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CREATE_ACTIONS } from "@/lib/create-new/registry";
 import {
   actionIsRunnable,
+  createNavTarget,
   opensCreateAsFullPage,
   runnableCreateActions,
   searchCreateActions,
@@ -92,5 +93,33 @@ describe("create full-page destinations", () => {
     expect(recurringInvoice && opensCreateAsFullPage(recurringInvoice)).toBe(true);
     expect(recurringBill && opensCreateAsFullPage(recurringBill)).toBe(true);
     expect(recurringJournal && opensCreateAsFullPage(recurringJournal)).toBe(true);
+  });
+
+  it("preserves create intent for product and expense claim deep links", () => {
+    const product = CREATE_ACTIONS.find((a) => a.id === "product")!;
+    const claim = CREATE_ACTIONS.find((a) => a.id === "reimbursement")!;
+    const journal = CREATE_ACTIONS.find((a) => a.id === "manual_journal")!;
+    const salesReceipt = CREATE_ACTIONS.find((a) => a.id === "sales_receipt")!;
+    expect(createNavTarget(product)).toEqual({
+      kind: "route",
+      to: "/products-services",
+      search: { create: true },
+    });
+    expect(createNavTarget(claim)).toEqual({
+      kind: "route",
+      to: "/expense-management/$section",
+      params: { section: "my-expenses" },
+      search: { create: true },
+    });
+    expect(createNavTarget(journal)).toEqual({
+      kind: "route",
+      to: "/accounting/journals/new",
+      search: { mode: "post" },
+    });
+    expect(createNavTarget(salesReceipt)).toEqual({
+      kind: "route",
+      to: "/banking/money-documents/new",
+      search: { kind: "sales_receipt" },
+    });
   });
 });

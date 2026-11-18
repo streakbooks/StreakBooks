@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -49,7 +50,14 @@ const TITLES: Record<Kind, string> = {
   bank_adjustment: "Bank adjustment",
 };
 
-export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
+export function MoneyDocumentPanel({
+  kind,
+  initialBankAccountId,
+}: {
+  kind: Kind;
+  /** Prefill bank account from Banking account context or deep link. */
+  initialBankAccountId?: string;
+}) {
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
@@ -64,7 +72,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
 
   const [date, setDate] = useState(today);
   const [contactId, setContactId] = useState("");
-  const [bankAccountId, setBankAccountId] = useState("");
+  const [bankAccountId, setBankAccountId] = useState(initialBankAccountId ?? "");
   const [counterAccountId, setCounterAccountId] = useState("");
   const [amount, setAmount] = useState("");
   const [taxAmount, setTaxAmount] = useState("0");
@@ -82,6 +90,10 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
   useEffect(() => {
     setRecordId(null);
   }, [kind]);
+
+  useEffect(() => {
+    if (initialBankAccountId) setBankAccountId(initialBankAccountId);
+  }, [initialBankAccountId]);
 
   const accountsQ = useQuery({
     queryKey: ["accounts", companyId],
@@ -218,16 +230,30 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
       <TransactionWorkspace
         title={TITLES[kind]}
         description={help}
-        breadcrumbs={[
-          { label: "Banking", to: "/banking" },
-          { label: "Bank documents", to: "/banking/money-documents" },
-          { label: TITLES[kind] },
-        ]}
+        breadcrumbs={
+          kind === "receive_money"
+            ? [
+                { label: "Banking", to: "/banking" },
+                { label: "Receive money" },
+              ]
+            : [
+                { label: "Banking", to: "/banking" },
+                { label: "Bank documents", to: "/banking/money-documents" },
+                { label: TITLES[kind] },
+              ]
+        }
         meta={<StatusBadge status={recordId ? "posted" : "draft"} />}
         stickyActions={
-          <Button type="submit" disabled={saveM.isPending}>
-            {saveM.isPending ? "Posting…" : "Post"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {kind === "receive_money" ? (
+              <Button type="button" variant="outline" size="sm" asChild>
+                <Link to="/banking">Cancel</Link>
+              </Button>
+            ) : null}
+            <Button type="submit" size="sm" disabled={saveM.isPending}>
+              {saveM.isPending ? "Posting…" : "Save & post"}
+            </Button>
+          </div>
         }
         totals={
           moneyTotals && kind !== "bank_deposit" ? (

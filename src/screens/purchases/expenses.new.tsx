@@ -1,6 +1,6 @@
 import { QueryErrorState } from "@/components/common/QueryErrorState";
-import { useRef, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -27,7 +27,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { fromMinorUnits } from "@/lib/accounting/money";
 
-export function NewExpense() {
+export function NewExpense({
+  ownership = "purchases",
+  initialBankAccountId,
+  returnTo,
+}: {
+  /** Banking owns Spend Money UX; Purchases keep legacy deep links until fully redirected. */
+  ownership?: "banking" | "purchases";
+  initialBankAccountId?: string;
+  /** Safe in-app path to return after post (e.g. /expense-management). */
+  returnTo?: string;
+} = {}) {
   const { company } = useActiveCompany();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -38,6 +48,7 @@ export function NewExpense() {
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
   const today = new Date().toISOString().slice(0, 10);
+  const isBanking = ownership === "banking";
 
   const accountsQ = useQuery({
     queryKey: ["accounts", companyId],
@@ -70,12 +81,18 @@ export function NewExpense() {
   const [payeeName, setPayeeName] = useState("");
   const [expenseDate, setExpenseDate] = useState(today);
   const [expenseAccountId, setExpenseAccountId] = useState("");
-  const [paymentAccountId, setPaymentAccountId] = useState("");
+  const [paymentAccountId, setPaymentAccountId] = useState(initialBankAccountId ?? "");
   const [amount, setAmount] = useState("0.00");
   const [tax, setTax] = useState("0.00");
   const [reference, setReference] = useState("");
   const [memo, setMemo] = useState("");
   const recordRef = useRef<DocumentRecordHandle>(null);
+  const addAnotherPending = useRef(false);
+
+  useEffect(() => {
+    if (initialBankAccountId) setPaymentAccountId(initialBankAccountId);
+  }, [initialBankAccountId]);
+
   const amountInvalid = tryParseMinor(amount || "0", currency) === null;
   const taxInvalid = tryParseMinor(tax || "0", currency) === null;
 
@@ -108,8 +125,36 @@ export function NewExpense() {
         toast.error(`Saved, but notes or files could not be stored: ${friendlyAuthError(e)}`);
       }
       await queryClient.invalidateQueries({ queryKey: ["expenses", companyId] });
-      toast.success(result.journalId ? "Expense posted to ledger" : "Expense draft saved");
-      navigate({ to: "/purchases/expenses/$expenseId", params: { expenseId: result.id } });
+      toast.success(
+        result.journalId
+          ? isBanking
+            ? "Spend money posted to ledger"
+            : "Expense posted to ledger"
+          : isBanking
+            ? "Spend money draft saved"
+            : "Expense draft saved",
+      );
+      if (addAnotherPending.current) {
+        addAnotherPending.current = false;
+        setPayeeName("");
+        setExpenseDate(today);
+        setExpenseAccountId("");
+        setPaymentAccountId(initialBankAccountId ?? "");
+        setAmount("0.00");
+        setTax("0.00");
+        setReference("");
+        setMemo("");
+        return;
+      }
+      if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+        void navigate({ to: returnTo as never });
+        return;
+      }
+      if (isBanking) {
+        void navigate({ to: "/purchases/expenses/$expenseId", params: { expenseId: result.id } });
+        return;
+      }
+      void navigate({ to: "/purchases/expenses/$expenseId", params: { expenseId: result.id } });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -125,17 +170,35 @@ export function NewExpense() {
 
   return (
     <TransactionWorkspace
-      title="New direct expense"
-      description="Pays immediately (DR expense / CR bank). Use Bills for supplier invoices paid later."
-      breadcrumbs={[
-        { label: "Purchases", to: "/purchases" },
-        { label: "Expenses", to: "/purchases/expenses" },
-        { label: "New" },
-      ]}
+      title={isBanking ? "Spend money" : "New direct expense"}
+      description={
+        isBanking
+          ? "Pays immediately from a bank account (DR expense / CR bank). Supplier bills stay in Purchases."
+          : "Pays immediately (DR expense / CR bank). Use Bills for supplier invoices paid later."
+      }
+      breadcrumbs={
+        isBanking
+          ? [{ label: "Banking", to: "/banking" }, { label: "Spend money" }]
+          : [
+              { label: "Purchases", to: "/purchases" },
+              { label: "Expenses", to: "/purchases/expenses" },
+              { label: "New" },
+            ]
+      }
       meta={<StatusBadge status="draft" />}
       actions={
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/purchases/expenses">Back</Link>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+              void navigate({ to: returnTo as never });
+              return;
+            }
+            void navigate({ to: isBanking ? "/banking" : "/purchases/expenses" });
+          }}
+        >
+          {isBanking ? "Back to Banking" : "Back"}
         </Button>
       }
       details={
@@ -248,15 +311,33 @@ export function NewExpense() {
             size="sm"
             variant="outline"
             disabled={blocked}
-            onClick={() => mutation.mutate(false)}
+            onClick={() => {
+              addAnotherPending.current = false;
+              mutation.mutate(false);
+            }}
           >
             Save draft
           </Button>
           <Button
             size="sm"
+            variant="outline"
             disabled={blocked || !canPost}
             title={canPost ? undefined : "You do not have permission to post expenses"}
-            onClick={() => mutation.mutate(true)}
+            onClick={() => {
+              addAnotherPending.current = true;
+              mutation.mutate(true);
+            }}
+          >
+            Save & add another
+          </Button>
+          <Button
+            size="sm"
+            disabled={blocked || !canPost}
+            title={canPost ? undefined : "You do not have permission to post expenses"}
+            onClick={() => {
+              addAnotherPending.current = false;
+              mutation.mutate(true);
+            }}
           >
             {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
             Save & post

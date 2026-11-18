@@ -24,6 +24,8 @@ export function BankingSubnav() {
         { to: "/banking/reconcile", label: "Reconcile" },
         { to: "/banking/cash-coding", label: "Cash coding" },
         { to: "/banking/transfers", label: "Transfers" },
+        { to: "/banking/receive-money", label: "Receive money" },
+        { to: "/banking/spend-money", label: "Spend money" },
         { to: "/banking/money-documents", label: "Bank documents" },
         { to: "/banking/rules", label: "Rules" },
         { to: "/banking/import", label: "Import CSV" },

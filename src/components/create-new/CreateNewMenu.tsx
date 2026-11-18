@@ -168,11 +168,18 @@ export function CreateNewMenu() {
         void navigate({ to: "/accounting/journals/new", search: { mode: "template" } });
         return;
       }
+      if (action.id === "receive_money") {
+        void navigate({ to: "/banking/receive-money" });
+        return;
+      }
+      if (action.id === "expense") {
+        void navigate({ to: "/banking/spend-money" });
+        return;
+      }
       const moneyKinds = new Set([
         "sales_receipt",
         "customer_refund",
         "supplier_refund",
-        "receive_money",
         "bank_deposit",
         "card_payment",
         "bank_adjustment",

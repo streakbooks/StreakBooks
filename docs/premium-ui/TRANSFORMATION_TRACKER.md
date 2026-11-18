@@ -30,7 +30,8 @@
 | Remove redundant line move arrows | Merged | PR #284 → `fc605a7c` |
 | Remaining New screens + money/journal routes Batch 39 | Merged | PR #285 → `f20967ac` |
 | Density acceptance Batch 40 | Merged | PR #286 → `b106f471` |
-| Grouped module nav Batch 41 | In progress | PR #287 — HR eight-group IA + shared GroupedModuleSubnav; CRM/PM/Expenses |
+| Grouped module nav Batch 41 | Merged | PR #287 → `8280a5b7` — HR eight-group IA + shared GroupedModuleSubnav; CRM/PM/Expenses |
+| Full-width fluid line grids Batch 42 | In progress | `feature/premium-ui-batch42-fullwidth-line-grids` — fluid Description/Item columns, compact price-list chrome, density fill assert ≤24px |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 
@@ -52,8 +53,8 @@
 | Dashboard | `/` | partial | N/A | partial | IN PROGRESS |
 | Banking | `/banking` | in-progress | Money docs TransactionWorkspace + TotalsSummary | partial | IN PROGRESS |
 | Point of Sale | `/pos` | in-progress | specialized | unverified | IN PROGRESS |
-| Sales | `/sales` | in-progress | TransactionWorkspace + spreadsheet lines (5 default rows, hide/resize columns, bottom tax) | partial | IN PROGRESS |
-| Purchases | `/purchases` | in-progress | Sticky actions + spreadsheet bill lines (5 rows, Columns menu, resize, vertical tax) | partial | IN PROGRESS |
+| Sales | `/sales` | in-progress | TransactionWorkspace + full-width fluid spreadsheet lines (2 default rows, hide/resize, bottom tax, compact price list) | partial | IN PROGRESS |
+| Purchases | `/purchases` | in-progress | Sticky actions + full-width fluid bill lines (Columns, resize, vertical tax) | partial | IN PROGRESS |
 | Expenses | `/expense-management` | in-progress | Enable toggle persists via PersistedSwitch | partial | IN PROGRESS |
 | CRM | `/crm` | in-progress | N/A kanban | partial | IN PROGRESS |
 | Property Management | `/property-management` | in-progress | later | partial | IN PROGRESS |

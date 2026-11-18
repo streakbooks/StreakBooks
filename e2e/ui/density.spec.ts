@@ -66,6 +66,26 @@ for (const viewport of viewports) {
     expect(tableInput.height).toBeGreaterThanOrEqual(FORM_DENSITY.tableControlHeightMin - 1);
     expect(tableInput.height).toBeLessThanOrEqual(FORM_DENSITY.tableControlHeightMax + 2);
 
+    if (viewport.width >= 1280) {
+      const fill = await page.locator('[data-slot="editable-line-item-grid"]').evaluate((grid) => {
+        const scroll =
+          grid.querySelector('[data-slot="table-scroll"]') ??
+          grid.querySelector('[data-slot="line-grid-scroll"]') ??
+          grid;
+        const table = grid.querySelector("table");
+        if (!table) return { gap: 999, scroll: 0, table: 0 };
+        const scrollBox = scroll.getBoundingClientRect();
+        const tableBox = table.getBoundingClientRect();
+        return {
+          gap: Math.abs(scrollBox.width - tableBox.width),
+          scroll: scrollBox.width,
+          table: tableBox.width,
+        };
+      });
+      expect(fill.table).toBeGreaterThan(0);
+      expect(fill.gap).toBeLessThanOrEqual(24);
+    }
+
     await assertNoPageOverflow(page);
   });
 }

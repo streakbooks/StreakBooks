@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
     <div
+      data-slot="table-scroll"
       className="relative w-full min-w-0 overflow-auto overscroll-x-contain rounded-[inherit] focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
       tabIndex={0}
       role="region"

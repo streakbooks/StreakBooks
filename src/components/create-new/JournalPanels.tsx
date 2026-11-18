@@ -452,8 +452,14 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
           <EditableLineItemGrid
             aria-label="Journal lines"
             columns={[
-              { id: "account", header: "Account", widthPx: 220, minWidthPx: 140 },
-              { id: "description", header: "Description", widthPx: 260, minWidthPx: 160 },
+              { id: "account", header: "Account", widthPx: 200, minWidthPx: 140 },
+              {
+                id: "description",
+                header: "Description",
+                widthPx: 280,
+                minWidthPx: 200,
+                fluid: true,
+              },
               { id: "debit", header: "Debit", align: "right", widthPx: 112, minWidthPx: 88 },
               { id: "credit", header: "Credit", align: "right", widthPx: 112, minWidthPx: 88 },
               { id: "actions", header: "", widthPx: 48, minWidthPx: 40, resizable: false },

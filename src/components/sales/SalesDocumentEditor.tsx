@@ -987,10 +987,10 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               ) : null}
             </FormGrid>
           {isSalesDraft ? (
-            <div className="space-y-3 rounded-md border p-3">
-              <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-end gap-2">
                 <FormControlShell width="contact">
-                  <Label htmlFor="sales-price-list">Sales price list (optional)</Label>
+                  <Label htmlFor="sales-price-list">Sales price list</Label>
                   <RecordLookupSelect
                     value={selectedPriceListId || "none"}
                     onValueChange={(value) => {
@@ -1026,33 +1026,32 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                   disabled={!draftPricesReady || !pricePreview?.changed || mutation.isPending}
                   onClick={() => setApplyPriceListOpen(true)}
                 >
-                  Preview existing-line prices
+                  Preview line prices
                 </Button>
+                <details className="min-w-0 max-w-xl text-xs text-muted-foreground">
+                  <summary className="cursor-pointer select-none text-foreground/80 hover:text-foreground">
+                    How price lists apply
+                  </summary>
+                  <p className="mt-1.5 leading-relaxed">
+                    Price lists match the document currency. New catalogue picks use quantity tiers
+                    and date rules; existing lines never reprice silently — preview and confirm
+                    changes. The list selection itself is not stored on the saved document.
+                  </p>
+                </details>
               </div>
-              <p className="text-xs text-muted-foreground">
-                The selected price list and genuine line pricing sources are recorded when you save
-                this draft. Price lists are available in their own currency only. New catalogue
-                selections use the applicable quantity tier and document date, then a fixed or
-                catalogue price. A single eligible percentage rule can reduce that unit price before
-                separate line discount amounts and tax. Changing quantity or date never silently
-                reprices existing lines: review and confirm any price changes. Saved documents
-                retain line prices; the list selection itself is not stored on the document.
-              </p>
               {customerDefaultPending ? (
-                <p className="text-xs text-muted-foreground">
-                  Checking the selected customer's default price list…
-                </p>
+                <p className="text-xs text-muted-foreground">Checking customer default price list…</p>
               ) : null}
               {manualPriceListId === null && customerDefaultQ.data?.reason === "available" ? (
                 <p className="text-xs text-muted-foreground">
-                  Customer default selected for this new draft. You can choose a different list.
+                  Customer default selected for this draft.
                 </p>
               ) : null}
               {manualPriceListId === null &&
               customerDefaultQ.data?.reason === "unavailable_or_currency_mismatch" ? (
                 <p className="text-xs text-muted-foreground">
-                  The customer has a default list, but it is archived or uses another currency.
-                  Catalogue pricing will apply unless you choose an eligible list.
+                  Customer default list is archived or in another currency — catalogue pricing
+                  applies unless you choose another list.
                 </p>
               ) : null}
               {manualPriceListId === null && customerDefaultQ.isError ? (
@@ -1072,12 +1071,11 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               ) : null}
               {priceListTooLarge && selectedPriceListId ? (
                 <p role="alert" className="text-sm text-destructive">
-                  Too many different products to resolve this list (maximum 250). Reduce the
-                  catalogue selection before using a price list.
+                  Too many different products to resolve this list (maximum 250).
                 </p>
               ) : null}
               {selectedPriceListId && draftPricesQ.isPending && !priceListTooLarge ? (
-                <p className="text-sm text-muted-foreground">Loading price-list amounts…</p>
+                <p className="text-xs text-muted-foreground">Loading price-list amounts…</p>
               ) : null}
               {selectedPriceListId && draftPricesQ.isError ? (
                 <div role="alert" className="flex flex-wrap items-center gap-2">
@@ -1091,14 +1089,13 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               ) : null}
               {selectedPriceListId && !selectedPriceList && !priceListsQ.isPending ? (
                 <p role="alert" className="text-sm text-destructive">
-                  This price list is archived or does not match the document currency. Choose
-                  another list or the default catalogue prices.
+                  This price list is archived or does not match the document currency.
                 </p>
               ) : null}
               {pricePreview ? (
                 <p className="text-xs text-muted-foreground" aria-live="polite">
-                  {pricePreview.matched} current line(s) have eligible list prices;
-                  {pricePreview.changed} price(s) differ. No existing line is automatically changed.
+                  {pricePreview.matched} line(s) eligible; {pricePreview.changed} differ — none
+                  change until you confirm.
                 </p>
               ) : null}
             </div>

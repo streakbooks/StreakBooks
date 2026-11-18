@@ -39,6 +39,7 @@ import {
   PURCHASE_LINE_COLUMN_OPTIONS,
   type PurchaseLineColumnKey,
 } from "@/lib/ui/document-line-column-widths";
+import { lineGridTableMinWidth } from "@/lib/ui/line-grid-layout";
 import {
   Select,
   SelectContent,
@@ -236,15 +237,22 @@ export function PurchasesDocumentLines({
     id,
     children,
     align,
+    fluid,
   }: {
     id: string;
     children: ReactNode;
     align?: "right" | "center";
+    fluid?: boolean;
   }) => (
     <th
       className={cn("relative", align === "right" && "text-right", align === "center" && "text-center")}
       scope="col"
-      style={{ width: w(id), minWidth: w(id), maxWidth: w(id) }}
+      data-fluid={fluid ? "true" : undefined}
+      style={
+        fluid
+          ? { minWidth: w(id), width: "auto" }
+          : { width: w(id), minWidth: w(id) }
+      }
     >
       {children}
       <span
@@ -486,12 +494,19 @@ export function PurchasesDocumentLines({
         </div>
       </div>
 
-      <div className="lb-editable-line-item-grid overflow-hidden rounded-xl border border-border bg-card">
-        <div className="overflow-x-auto">
+      <div className="lb-editable-line-item-grid w-full min-w-0 overflow-hidden rounded-xl border border-border bg-card">
+        <div className="w-full min-w-0 overflow-x-auto" data-slot="line-grid-scroll">
         <table
           className="lb-spreadsheet-table text-sm"
           style={{
-            minWidth: Object.values(widths).reduce((sum, value) => sum + value, 0),
+            width: "100%",
+            minWidth: lineGridTableMinWidth(
+              Object.entries(widths).map(([id, widthPx]) => ({
+                widthPx,
+                minWidthPx: widthPx,
+                ...(id === "description" ? { fluid: true as const } : {}),
+              })),
+            ),
           }}
         >
           <thead className="sticky top-0 z-10">
@@ -500,7 +515,11 @@ export function PurchasesDocumentLines({
                 <span className="sr-only">Reorder</span>
               </Th>
               {col("item") ? <Th id="item">Item / service</Th> : null}
-              {col("description") ? <Th id="description">Description</Th> : null}
+              {col("description") ? (
+                <Th id="description" fluid>
+                  Description
+                </Th>
+              ) : null}
               {col("quantity") ? <Th id="quantity">Qty</Th> : null}
               {col("unitPrice") ? <Th id="unitPrice">Unit price</Th> : null}
               {col("discount") ? <Th id="discount">Discount</Th> : null}

@@ -78,10 +78,11 @@ import {
 
 export function ProductsPage({
   forceCreate = false,
-  onForceCreateConsumed,
+  onCreateClosed,
 }: {
   forceCreate?: boolean;
-  onForceCreateConsumed?: () => void;
+  /** Cleared after create workspace closes (Cancel / successful Save). Keeps URL sticky while open. */
+  onCreateClosed?: () => void;
 } = {}) {
   const { company, isPending } = useActiveCompany();
   if (isPending) return <LoadingState />;
@@ -105,7 +106,7 @@ export function ProductsPage({
           companyId={company.id}
           currency={company.base_currency}
           forceCreate={forceCreate}
-          {...(onForceCreateConsumed ? { onForceCreateConsumed } : {})}
+          {...(onCreateClosed ? { onCreateClosed } : {})}
         />
       </TabsContent>
       <TabsContent value="categories">
@@ -122,12 +123,12 @@ function ProductsWorkspace({
   companyId,
   currency,
   forceCreate = false,
-  onForceCreateConsumed,
+  onCreateClosed,
 }: {
   companyId: string;
   currency: string;
   forceCreate?: boolean;
-  onForceCreateConsumed?: () => void;
+  onCreateClosed?: () => void;
 }) {
   const queryClient = useQueryClient();
   const fmt = useFormat();
@@ -352,7 +353,7 @@ function ProductsWorkspace({
         );
       }
       toast.success(editing ? "Product updated" : "Product created");
-      setOpen(false);
+      closeWorkspace();
       setEditing(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["products", companyId] }),
@@ -462,12 +463,21 @@ function ProductsWorkspace({
     setOpen(true);
   }
 
+  function closeWorkspace() {
+    setOpen(false);
+    if (!editing) onCreateClosed?.();
+  }
+
   useEffect(() => {
-    if (!forceCreate || !canManage || forceCreateOpened.current) return;
+    if (!forceCreate) {
+      forceCreateOpened.current = false;
+      return;
+    }
+    if (!canManage || forceCreateOpened.current) return;
     forceCreateOpened.current = true;
     openCreate();
-    onForceCreateConsumed?.();
-  }, [forceCreate, canManage, onForceCreateConsumed]);
+    // Keep create URL sticky until Cancel / successful Save (onCreateClosed).
+  }, [forceCreate, canManage]);
 
   function openEdit(p: ProductRow) {
     setEditing(p);
@@ -703,7 +713,7 @@ function ProductsWorkspace({
         ]}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" disabled={saveMut.isPending} onClick={() => setOpen(false)}>
+            <Button variant="outline" size="sm" disabled={saveMut.isPending} onClick={closeWorkspace}>
               Cancel
             </Button>
             <Button size="sm" onClick={() => saveMut.mutate()} disabled={productSaveDisabled}>

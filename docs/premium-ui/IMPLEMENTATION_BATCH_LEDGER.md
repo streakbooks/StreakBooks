@@ -48,6 +48,7 @@
 | 52 | Phase 3 | Requisition workspace; product create clear; contacts/projects/palette honesty | `feature/premium-ui-batch52-create-honesty` | [PR #301](https://github.com/linkbusinessadvisory/LinkBooks/pull/301) → `fe0ed927` | purchases + products + contacts + palette | merged (CI billing skipped; local gates PASS) |
 | 53 | Phase 3 | Sales orders /new; requisition CREATE; customers/suppliers/budgets/CRM honesty | `feature/premium-ui-batch53-create-routes` | [PR #303](https://github.com/linkbusinessadvisory/LinkBooks/pull/303) → `7f098686` | sales + purchases + budgets + CRM | merged (CI billing skipped; local gates PASS) |
 | 54 | Phase 3 | Product/FA/payroll RecordWorkspace creates; CRM empty CTAs; fixed_asset CREATE | `feature/premium-ui-batch54-create-workspaces` | [PR #305](https://github.com/linkbusinessadvisory/LinkBooks/pull/305) → `cf20b0a0` | products + FA + payroll + CRM | merged (CI billing skipped; local gates PASS) |
-| 55+ | Phase 4–10 | Remaining module DoD, staging runtime evidence | TBD | — | all modules | planned |
+| 55 | Phase 3 | Directive V2 gap consolidation only: New Account label; `/products-services/new`; sticky FA/product create URLs; gap matrix | `feature/premium-ui-batch55-directive-gaps` | pending | products + FA + create registry + docs | in progress |
+| 56+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do create Batches 46–55) | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { ProductsPage } from "@/screens/products-services";
 
-export const Route = createFileRoute("/_authenticated/products-services")({
+export const Route = createFileRoute("/_authenticated/products-services/")({
   validateSearch: (search: Record<string, unknown>) =>
     z
       .object({
@@ -36,7 +36,7 @@ function ProductsPageRoute() {
   return (
     <ProductsPage
       forceCreate={Boolean(create)}
-      onForceCreateConsumed={() => {
+      onCreateClosed={() => {
         void navigate({ search: { create: undefined }, replace: true });
       }}
     />

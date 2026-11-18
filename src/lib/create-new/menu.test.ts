@@ -103,8 +103,7 @@ describe("create full-page destinations", () => {
     const salesOrder = CREATE_ACTIONS.find((a) => a.id === "sales_order")!;
     expect(createNavTarget(product)).toEqual({
       kind: "route",
-      to: "/products-services",
-      search: { create: true },
+      to: "/products-services/new",
     });
     expect(createNavTarget(claim)).toEqual({
       kind: "route",

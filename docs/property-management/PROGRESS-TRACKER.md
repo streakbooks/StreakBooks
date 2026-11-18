@@ -2,20 +2,20 @@
 
 **Updated:** 2026-11-18  
 **Baseline SHA:** `0ca84bef58d9783dd993c21eb72e145d979d1ab7`  
-**Current branch:** `feature/pm-00-01-property-management-foundation`  
-**Current phase:** Phase 0–2 / PR batch PM-00 + PM-01  
-**Current PR:** (opening)
+**Current branch:** `feature/pm-02-ownership-agreements-polish`  
+**Current phase:** Phase 0–3 / PR batches PM-00…PM-02  
+**Current PRs:** [#267](https://github.com/linkbusinessadvisory/LinkBooks/pull/267), [#268](https://github.com/linkbusinessadvisory/LinkBooks/pull/268)
 
 ## Overall progress
 
 | Metric | Value |
 | --- | --- |
-| Completed tasks | 5 (audit, gap matrix, docs, nav/permissions, master-data foundation) |
+| Completed tasks | 6 (audit, gap matrix, docs, nav/permissions, master-data, ownership UI) |
 | Total tracked tasks (PR batches) | 15 |
-| Percentage complete | ~13% (foundation only; **not** production-ready) |
-| Failed checks | Full-repo `tsc` has pre-existing non-PM errors (firm/hr); PM mappers fixed |
+| Percentage complete | ~15% (foundation only; **not** production-ready) |
+| Failed checks | Full-repo `tsc` has pre-existing non-PM errors (firm/hr) |
 | Blocked tasks | Staging/prod migration apply (MC-07) |
-| Next action | Open PM-00/01 PR; continue PM-02 ownership UI + agreement polish |
+| Next action | Review/merge #267→#268; continue PM-03 leases/rent or PM-05 accounting allocations design |
 
 ## Verification dimensions
 

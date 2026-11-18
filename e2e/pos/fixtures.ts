@@ -17,6 +17,7 @@ const products = [
 ];
 export const useServerFn = <T>(fn: T): T => fn;
 export const useCanDo = () => new URLSearchParams(location.search).get("denied") !== "true";
+export const useCan = () => ({ can: useCanDo, ready: true });
 export function useActiveCompany() {
   const [activeId, setActiveId] = useState(companyId);
   (window as unknown as { switchPosCompany: () => void }).switchPosCompany = () =>

@@ -9,7 +9,7 @@ import { useCanDo } from "@/hooks/use-can";
 import { upsertContact, upsertContactPerson } from "@/lib/contacts/contacts.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EmptyState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -422,9 +422,13 @@ export function NewContact({
   );
   if (embedded) return workspace;
   return (
-    <ListWorkspace
+    <RecordWorkspace
       title="New contact"
       description="Create a shared customer or supplier profile with accounting defaults."
+      breadcrumbs={[
+        { label: "Contacts", to: "/contacts" },
+        { label: "New" },
+      ]}
       actions={
         <Button variant="outline" asChild>
           <Link to="/contacts" search={{ view: undefined }}>
@@ -434,6 +438,6 @@ export function NewContact({
       }
     >
       {workspace}
-    </ListWorkspace>
+    </RecordWorkspace>
   );
 }

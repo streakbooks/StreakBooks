@@ -32,6 +32,11 @@ describe("command palette (U-07)", () => {
     const salesOrder = actions.find((a) => a.id === "new-sales-order");
     expect(salesOrder?.href).toBe("/sales/orders");
     expect(salesOrder?.search).toEqual({ create: "true" });
+    expect(actions.find((a) => a.id === "new-product")?.search).toEqual({ create: "true" });
+    expect(actions.find((a) => a.id === "new-customer")?.search).toEqual({ kind: "customer" });
+    expect(actions.find((a) => a.id === "new-recurring-invoice")?.href).toBe(
+      "/sales/recurring/new",
+    );
   });
   it("matches every word against label and keywords", () => {
     expect(filterPaletteActions(actions, "new bill").map((a) => a.id)).toContain("new-bill");

@@ -4,7 +4,24 @@
  * detail page shows "Awaiting payment" or "Overdue" in the same colour and words.
  */
 
-export type StatusTone = "neutral" | "warning" | "info" | "success" | "complete" | "danger";
+/**
+ * Semantic presentation tones (Batch 29):
+ * - neutral: draft / void / inactive
+ * - warning: pending / awaiting attention (amber)
+ * - info: approved / sent / partially paid / connected (blue)
+ * - success: paid / active positive completion (green)
+ * - complete: reconciled / settled / processing-complete (teal)
+ * - danger: overdue / rejected / failed (red)
+ * - ai: AI suggestions only — never document money lifecycle
+ */
+export type StatusTone =
+  | "neutral"
+  | "warning"
+  | "info"
+  | "success"
+  | "complete"
+  | "danger"
+  | "ai";
 
 export type StatusDisplay = {
   label: string;
@@ -20,9 +37,9 @@ const MAP: Record<string, StatusDisplay> = {
   pending: { label: "Pending", tone: "warning" },
   authorised: { label: "Awaiting payment", tone: "info" },
   awaiting_payment: { label: "Awaiting payment", tone: "info" },
-  approved: { label: "Approved", tone: "success" },
+  approved: { label: "Approved", tone: "info" },
   partly_paid: { label: "Partly paid", tone: "info" },
-  paid: { label: "Paid", tone: "complete" },
+  paid: { label: "Paid", tone: "success" },
   overdue: { label: "Overdue", tone: "danger" },
   void: { label: "Void", tone: "neutral", muted: true },
   voided: { label: "Void", tone: "neutral", muted: true },
@@ -59,15 +76,18 @@ const MAP: Record<string, StatusDisplay> = {
   open: { label: "Open", tone: "info" },
   resolved: { label: "Resolved", tone: "complete" },
   delivered: { label: "Delivered", tone: "complete" },
-  confirmed: { label: "Confirmed", tone: "success" },
+  confirmed: { label: "Confirmed", tone: "info" },
   partially_completed: { label: "Partially completed", tone: "info" },
-  validated: { label: "Validated for review", tone: "info" },
+  validated: { label: "Validated for review", tone: "ai" },
   invalid: { label: "Invalid", tone: "danger" },
   applied: { label: "Applied", tone: "complete" },
   pending_review: { label: "Pending review", tone: "warning" },
   completed: { label: "Completed", tone: "complete" },
   complete: { label: "Complete", tone: "complete" },
   settled: { label: "Settled", tone: "complete" },
+  suggested: { label: "AI suggestion", tone: "ai" },
+  ai_suggested: { label: "AI suggestion", tone: "ai" },
+  ai_review: { label: "AI review", tone: "ai" },
   failed: { label: "Failed", tone: "danger" },
   error: { label: "Error", tone: "danger" },
   cancelled: { label: "Cancelled", tone: "neutral", muted: true },

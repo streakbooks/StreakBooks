@@ -57,6 +57,8 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
   --color-brand: var(--primary);
+  --color-ai: var(--ai);
+  --color-ai-foreground: var(--ai-foreground);
   --color-money-in: var(--money-in);
   --color-money-out: var(--money-out);
   --color-success-soft: var(--success-soft);
@@ -71,6 +73,8 @@
   --color-destructive-ink: var(--destructive-ink);
   --color-neutral-soft: var(--neutral-soft);
   --color-neutral-ink: var(--neutral-ink);
+  --color-ai-soft: var(--ai-soft);
+  --color-ai-ink: var(--ai-ink);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -161,13 +165,16 @@
   --warning-foreground: oklch(0.25 0.05 75);
   --info: oklch(0.52 0.13 245);
   --info-foreground: oklch(0.99 0.005 245);
+  /* AI assistance only — never use for document lifecycle or money direction. */
+  --ai: oklch(0.52 0.16 305);
+  --ai-foreground: oklch(0.99 0.004 305);
 
   /* Semantic: money direction + soft status surfaces (text "ink" is AA on its "soft" bg). */
   --money-in: oklch(0.45 0.12 155);
   --money-out: oklch(0.5 0.17 25);
   --success-soft: oklch(0.95 0.045 155);
   --success-ink: oklch(0.4 0.1 155);
-  /* Persisted completed/paid/reconciled states use teal, distinct from approval green. */
+  /* Teal complete: reconciled/settled/processing-complete — distinct from paid green and approved blue. */
   --complete-soft: oklch(0.946 0.052 194);
   --complete-ink: oklch(0.36 0.092 195);
   --warning-soft: oklch(0.96 0.06 85);
@@ -178,6 +185,16 @@
   --destructive-ink: oklch(0.45 0.17 25);
   --neutral-soft: oklch(0.945 0.006 250);
   --neutral-ink: oklch(0.4 0.03 255);
+  --ai-soft: oklch(0.95 0.04 305);
+  --ai-ink: oklch(0.42 0.14 305);
+  /* Sidebar module-group icon accents (inactive only; never override status semantics). */
+  --nav-group-money: #7eb6ff;
+  --nav-group-records: #6ec9c0;
+  --nav-group-accounting: #9aa7ff;
+  --nav-group-practice: #e0b07a;
+  --nav-group-tools: #c4a0ef;
+  --nav-group-overview: #9cdbff;
+  --nav-group-footer: #a8b6cb;
 
   --border: oklch(0.91 0.008 250);
   --input: oklch(0.88 0.01 250);
@@ -231,6 +248,8 @@
   --warning-foreground: oklch(0.2 0.04 75);
   --info: oklch(0.7 0.12 245);
   --info-foreground: oklch(0.16 0.03 245);
+  --ai: oklch(0.72 0.14 305);
+  --ai-foreground: oklch(0.16 0.04 305);
 
   --money-in: oklch(0.78 0.14 155);
   --money-out: oklch(0.75 0.14 25);
@@ -246,6 +265,15 @@
   --destructive-ink: oklch(0.82 0.11 25);
   --neutral-soft: oklch(0.3 0.02 258);
   --neutral-ink: oklch(0.82 0.015 252);
+  --ai-soft: oklch(0.32 0.07 305 / 0.55);
+  --ai-ink: oklch(0.86 0.1 305);
+  --nav-group-money: #8fc4ff;
+  --nav-group-records: #7ad4cb;
+  --nav-group-accounting: #b0baff;
+  --nav-group-practice: #e8c08a;
+  --nav-group-tools: #d2b4f5;
+  --nav-group-overview: #9cdbff;
+  --nav-group-footer: #b7c4d8;
 
   --border: oklch(1 0 0 / 11%);
   --input: oklch(1 0 0 / 16%);
@@ -701,6 +729,37 @@
 
 .lb-nav-link[data-active="true"]:hover {
   filter: brightness(1.08);
+}
+
+/* Colourful module icons by nav group — inactive only; active uses sidebar-active chrome. */
+.lb-nav-link:not([data-active="true"]) svg {
+  color: var(--nav-group-icon, var(--sidebar-foreground));
+  opacity: 0.92;
+}
+.lb-nav-link[data-nav-group="overview"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-overview);
+}
+.lb-nav-link[data-nav-group="money"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-money);
+}
+.lb-nav-link[data-nav-group="records"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-records);
+}
+.lb-nav-link[data-nav-group="accounting"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-accounting);
+}
+.lb-nav-link[data-nav-group="practice"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-practice);
+}
+.lb-nav-link[data-nav-group="tools"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-tools);
+}
+.lb-nav-link[data-nav-group="footer"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-footer);
+}
+/* AI Assistant keeps tools group tint but may be marked data-nav-accent="ai". */
+.lb-nav-link[data-nav-accent="ai"]:not([data-active="true"]) {
+  --nav-group-icon: var(--ai-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {

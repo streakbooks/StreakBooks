@@ -15,6 +15,7 @@ export const badgeVariants = cva(
         info: "border-transparent bg-info-soft text-info-ink",
         danger: "border-transparent bg-destructive-soft text-destructive-ink",
         neutral: "border-transparent bg-neutral-soft text-neutral-ink",
+        ai: "border-transparent bg-ai-soft text-ai-ink",
       },
     },
     defaultVariants: {

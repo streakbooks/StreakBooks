@@ -186,6 +186,8 @@ function NavLink({
       aria-label={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
       data-active={active ? "true" : undefined}
+      data-nav-group={item.group}
+      {...(item.to === "/ai-assistant" ? { "data-nav-accent": "ai" } : {})}
       className={cn(
         "lb-nav-link group relative flex min-h-10 min-w-0 flex-1 items-center gap-3 rounded-lg border border-transparent px-3 py-2 text-sm font-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar motion-reduce:transition-none pointer-coarse:min-h-11",
         collapsed && "justify-center px-0",

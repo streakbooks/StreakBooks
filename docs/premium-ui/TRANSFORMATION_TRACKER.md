@@ -17,7 +17,8 @@
 | Shared foundation Batch 25 | Merged | PR #271 → `2aafc864` |
 | Transaction workspace Batch 26 | Merged | PR #272 → `c370c99c` |
 | Line-grid keyboard + journals Batch 27 | Merged | PR #273 → `3697f35a` |
-| Originality + Purchases PO Batch 28 | In progress | originality policy + PO TransactionWorkspace |
+| Originality + Purchases PO Batch 28 | On main | `a610f1a5` (direct push) |
+| Semantic colourful system Batch 29 | In progress | AI purple tokens, status map, nav group icon accents |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

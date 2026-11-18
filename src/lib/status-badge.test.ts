@@ -9,14 +9,16 @@ describe("statusDisplay", () => {
       tone: "warning",
     });
     expect(statusDisplay("authorised")).toMatchObject({ label: "Awaiting payment", tone: "info" });
-    expect(statusDisplay("paid")).toMatchObject({ label: "Paid", tone: "complete" });
+    expect(statusDisplay("paid")).toMatchObject({ label: "Paid", tone: "success" });
     expect(statusDisplay("overdue")).toMatchObject({ label: "Overdue", tone: "danger" });
     expect(statusDisplay("void")).toMatchObject({ label: "Void", muted: true });
   });
-  it("distinguishes approved green, completed teal, pending amber and overdue red", () => {
-    expect(statusDisplay("approved")).toMatchObject({ tone: "success", label: "Approved" });
+  it("maps approved to blue info, paid to green success, completed/reconciled to teal", () => {
+    expect(statusDisplay("approved")).toMatchObject({ tone: "info", label: "Approved" });
+    expect(statusDisplay("confirmed")).toMatchObject({ tone: "info", label: "Confirmed" });
     expect(statusDisplay("posted")).toMatchObject({ tone: "success", label: "Posted" });
-    for (const status of ["paid", "completed", "reconciled", "reimbursed"]) {
+    expect(statusDisplay("paid").tone).toBe("success");
+    for (const status of ["completed", "reconciled", "reimbursed", "settled"]) {
       expect(statusDisplay(status).tone).toBe("complete");
     }
     expect(statusDisplay("partly_paid").tone).toBe("info");
@@ -50,8 +52,10 @@ describe("statusDisplay", () => {
   it("distinguishes AI suggestions ready for review from actually applied", () => {
     expect(statusDisplay("validated")).toMatchObject({
       label: "Validated for review",
-      tone: "info",
+      tone: "ai",
     });
+    expect(statusDisplay("suggested")).toMatchObject({ label: "AI suggestion", tone: "ai" });
+    expect(statusDisplay("ai_review")).toMatchObject({ label: "AI review", tone: "ai" });
     expect(statusDisplay("applied")).toMatchObject({ label: "Applied", tone: "complete" });
     expect(statusDisplay("invalid")).toMatchObject({ label: "Invalid", tone: "danger" });
     expect(statusDisplay("pending")).toMatchObject({ label: "Pending", tone: "warning" });
@@ -80,7 +84,7 @@ describe("statusDisplay", () => {
       tone: "neutral",
       muted: true,
     });
-    expect(statusDisplay("paid")).toMatchObject({ label: "Paid", tone: "complete" });
+    expect(statusDisplay("paid")).toMatchObject({ label: "Paid", tone: "success" });
   });
 
   it("covers bank statement line statuses", () => {

@@ -1,6 +1,6 @@
 # LinkBooks design system
 
-**Version:** 2026-11-18 Batch 25 (density foundation). Extends existing tokens — does not introduce a second design system.
+**Version:** 2026-11-18 Batch 29 (semantic colourful system). Extends existing tokens — does not introduce a second design system.
 
 ## Foundations
 
@@ -33,6 +33,7 @@
 - Coarse pointers: ≥44px interactive height where shared buttons apply.
 - Dense financial tables remain scannable; amounts use `.numeric` / `.money`.
 - Transaction entry follows [TRANSACTION_WORKSPACE_UX.md](./TRANSACTION_WORKSPACE_UX.md).
+- Semantic colour meaning follows [SEMANTIC_COLOUR_SYSTEM.md](./SEMANTIC_COLOUR_SYSTEM.md); originality rules in [ORIGINALITY_AND_REFERENCE_POLICY.md](./ORIGINALITY_AND_REFERENCE_POLICY.md).
 
 ## Component inventory (contracts)
 

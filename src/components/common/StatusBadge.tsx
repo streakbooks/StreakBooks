@@ -7,6 +7,7 @@ import {
   Clock3,
   LoaderCircle,
   MinusCircle,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { badgeVariants } from "@/components/ui/badge-variants";
@@ -20,6 +21,7 @@ const TONE_ICONS: Record<StatusTone, LucideIcon> = {
   success: CheckCircle2,
   complete: CheckCircle2,
   danger: AlertCircle,
+  ai: Sparkles,
 };
 
 const TONE_TEXT: Record<StatusTone, string> = {
@@ -29,6 +31,7 @@ const TONE_TEXT: Record<StatusTone, string> = {
   success: "text-success-ink",
   complete: "text-complete-ink",
   danger: "text-destructive-ink",
+  ai: "text-ai-ink",
 };
 
 export interface StatusVisualProps extends Omit<React.HTMLAttributes<HTMLSpanElement>, "children"> {

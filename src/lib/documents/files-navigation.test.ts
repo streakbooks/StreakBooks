@@ -63,6 +63,14 @@ describe("Files workspace native browsing state", () => {
       .toEqual({ q: "फ़ाइल 文件" });
   });
 
+  it("rejects noncanonical pagination while retaining independent filters", () => {
+    for (const page of ["00", "03", " 3", "+3", "1e2", "0x10", "0000000", "10000000"]) {
+      expect(parseFilesListSearch({ page, sort: "name" })).toEqual({ sort: "name" });
+    }
+    expect(parseFilesListSearch({ page: "0" })).toEqual({ page: 0 });
+    expect(parseFilesListSearch({ page: "9999999" })).toEqual({ page: 1_000_000 });
+  });
+
   it("accepts only known file record types", () => {
     for (const type of ["all", "company", "contact", "sales_invoice", "journal"]) {
       expect(parseFilesListSearch({ type })).toEqual({ type });

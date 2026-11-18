@@ -102,7 +102,7 @@ try {
   );
   sql(
     fn(
-      "supabase/migrations/20261022180000_settings_centre_foundation.sql",
+      "supabase/migrations/20261022125237_settings_centre_foundation.sql",
       "public.assert_journal_date_unlocked",
     ),
   );

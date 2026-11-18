@@ -481,9 +481,7 @@ function ContactDetail() {
           />
           {isCustomer ? (
             <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts" search={backSearch}>
-                Directory
-              </Link>
+              <Link to="/sales/invoices/new">New invoice</Link>
             </Button>
           ) : null}
           {isSupplier ? (
@@ -501,7 +499,7 @@ function ContactDetail() {
             {archived ? "Restore" : "Archive"}
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link to="/contacts" search={{ view: undefined }}>
+            <Link to="/contacts" search={backSearch}>
               Directory
             </Link>
           </Button>

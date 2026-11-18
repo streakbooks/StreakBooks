@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,6 +9,7 @@ import {
   deleteDraftExpense,
   getExpense,
   postDraftExpense,
+  voidPurchaseExpense,
 } from "@/lib/purchases/purchases.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -16,6 +18,7 @@ import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { StatusBadge } from "@/components/common/stat-card";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
+import { ReasonDialog } from "@/components/sales/ReasonDialog";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/purchases/expenses/$expenseId")({
@@ -28,11 +31,14 @@ function ExpenseDetail() {
   const fetchExpense = useServerFn(getExpense);
   const doPost = useServerFn(postDraftExpense);
   const doDelete = useServerFn(deleteDraftExpense);
+  const doVoid = useServerFn(voidPurchaseExpense);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { can } = useCan();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
+  const today = new Date().toISOString().slice(0, 10);
+  const [voidOpen, setVoidOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ["expense", companyId, expenseId],
@@ -55,6 +61,24 @@ function ExpenseDetail() {
       await queryClient.invalidateQueries({ queryKey: ["expenses", companyId] });
       toast.success("Draft expense deleted");
       navigate({ to: "/purchases/expenses" });
+    },
+    onError: (err) => toast.error(friendlyAuthError(err)),
+  });
+  const voidM = useMutation({
+    mutationFn: (input: { reason: string; date: string }) =>
+      doVoid({
+        data: {
+          companyId: companyId!,
+          expenseId,
+          reason: input.reason,
+          voidDate: input.date,
+        },
+      }),
+    onSuccess: async () => {
+      setVoidOpen(false);
+      await queryClient.invalidateQueries({ queryKey: ["expense", companyId, expenseId] });
+      await queryClient.invalidateQueries({ queryKey: ["expenses", companyId] });
+      toast.success("Expense voided — reversing journal posted");
     },
     onError: (err) => toast.error(friendlyAuthError(err)),
   });
@@ -82,6 +106,8 @@ function ExpenseDetail() {
     memo: string | null;
     posted_journal_id: string | null;
   };
+  const canVoid =
+    e.status === "paid" && Boolean(e.posted_journal_id) && can("purchases.authorise");
 
   return (
     <RecordWorkspace
@@ -144,6 +170,17 @@ function ExpenseDetail() {
               </Button>
             </>
           ) : null}
+          {canVoid ? (
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={voidM.isPending}
+              title="Reverse the posted journal and mark this expense void"
+              onClick={() => setVoidOpen(true)}
+            >
+              Void
+            </Button>
+          ) : null}
           <Button variant="outline" size="sm" asChild>
             <Link to="/purchases/expenses">Back</Link>
           </Button>
@@ -170,6 +207,18 @@ function ExpenseDetail() {
           audience="supplier"
         />
       </div>
+      <ReasonDialog
+        open={voidOpen}
+        onOpenChange={setVoidOpen}
+        title="Void this expense?"
+        description="Posted journals will be reversed. A reason is required. The void date dates the reversing journal (this document has no void_date column)."
+        confirmLabel="Void expense"
+        dateLabel="Void date"
+        minDate={e.expense_date}
+        defaultDate={today}
+        pending={voidM.isPending}
+        onConfirm={(input) => voidM.mutate(input)}
+      />
     </RecordWorkspace>
   );
 }

@@ -72,6 +72,8 @@ import {
   type SupplierCreditLimitAssessment,
   type SupplierCreditLimitBill,
 } from "@/lib/purchases/supplier-credit-limit";
+import { assertHeaderMatchesLines } from "@/lib/purchases/authorise-totals";
+import { JournalPostedUnlinkedError } from "@/lib/accounting/journal-posted-unlinked";
 
 export const SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED = "SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED";
 
@@ -1697,6 +1699,54 @@ export const saveBillDraft = createServerFn({ method: "POST" })
   .inputValidator(parseBillDraftInput)
   .handler(async ({ data, context }) => saveBillDraftCore(data, context));
 
+/**
+ * Save and authorise in ONE call (AP parity with AR-11). The draft is saved first; if authorising
+ * then fails the draft id is returned with the error so the browser opens that draft instead of
+ * creating a second one on the next click.
+ */
+export const saveAndAuthoriseBill = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: Parameters<typeof parseBillDraftInput>[0] & { acknowledgeCreditLimit?: boolean }) => ({
+      ...parseBillDraftInput(input),
+      acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const { acknowledgeCreditLimit, ...draft } = data;
+    const saved = await saveBillDraftCore(draft, context);
+    try {
+      const res = await authoriseBillInternal(
+        context.supabase,
+        context.userId,
+        draft.companyId,
+        saved.id,
+        acknowledgeCreditLimit,
+      );
+      return {
+        id: saved.id,
+        journalId: res.journalId,
+        authoriseError: null as string | null,
+        statusHint: null as "posted_unauthorised" | null,
+      };
+    } catch (e) {
+      if (e instanceof JournalPostedUnlinkedError) {
+        return {
+          id: saved.id,
+          journalId: e.journalId,
+          authoriseError: e.message,
+          statusHint: e.statusHint,
+        };
+      }
+      return {
+        id: saved.id,
+        journalId: null as string | null,
+        authoriseError: e instanceof Error ? e.message : "Could not authorise the bill",
+        statusHint: null as "posted_unauthorised" | null,
+      };
+    }
+  });
+
 /** Copy a bill into a NEW draft dated today with the supplier's payment terms. */
 export const copyBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1825,6 +1875,8 @@ export async function authoriseBillInternal(
     bill_date: string;
     currency_code: string;
     memo: string | null;
+    subtotal_minor: number;
+    tax_minor: number;
     total_minor: number;
     amount_paid_minor?: number;
     amount_credited_minor?: number;
@@ -1841,12 +1893,19 @@ export async function authoriseBillInternal(
   if (b.status !== "draft" && b.status !== "awaiting_approval") {
     throw new Error("Only draft or awaiting-approval bills can be authorised");
   }
+  if (b.posted_journal_id) throw new Error("Bill already posted");
+  assertHeaderMatchesLines({
+    documentLabel: "Bill",
+    subtotalMinor: Number(b.subtotal_minor) || 0,
+    taxMinor: Number(b.tax_minor) || 0,
+    totalMinor: Number(b.total_minor) || 0,
+    lines: b.purchase_bill_lines,
+  });
   const taxCodes = await loadTaxCodeInfo(
     supabase,
     companyId,
     b.purchase_bill_lines.map((l) => l.tax_code_id ?? ""),
   );
-  if (b.posted_journal_id) throw new Error("Bill already posted");
 
   const credit = await loadSupplierCreditLimitAssessment(supabase, companyId, {
     id: b.id,
@@ -1931,7 +1990,8 @@ export async function authoriseBillInternal(
     if (!upErr) linkError = { message: "The bill changed while it was being authorised" };
   }
   if (linkError) {
-    throw new Error(
+    throw new JournalPostedUnlinkedError(
+      journalId,
       `The journal was posted but the bill could not be marked authorised (${linkError.message}). Open the bill and click Authorise again - it will not post twice.`,
     );
   }
@@ -2296,6 +2356,98 @@ export const deleteDraftExpense = createServerFn({ method: "POST" })
       throw new Error("Only unposted draft expenses can be deleted");
     }
     return { ok: true };
+  });
+
+/**
+ * Void a posted direct expense: reverse its journal and mark status void.
+ * Drafts use deleteDraftExpense. Reason + void journal id are stored on the audit event
+ * (purchase_expenses has no void_* columns yet — status enum already includes void).
+ */
+export const voidPurchaseExpense = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; expenseId: string; reason: string; voidDate?: string }) => {
+      const reason = String(input.reason ?? "").trim();
+      if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
+      const voidDate =
+        input.voidDate && String(input.voidDate).trim() ? String(input.voidDate).trim() : null;
+      if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
+        throw new Error("Void date must be YYYY-MM-DD");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        expenseId: assertUuid(input.expenseId, "expense"),
+        reason: reason.slice(0, 500),
+        voidDate,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.authorise");
+    const { data: row, error } = await supabase
+      .from("purchase_expenses" as never)
+      .select("id, status, expense_date, posted_journal_id" as never)
+      .eq("id" as never, data.expenseId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Expense not found");
+    const e = row as {
+      status: string;
+      expense_date: string;
+      posted_journal_id: string | null;
+    };
+    if (e.status === "void") throw new Error("Expense already void");
+    if (e.status === "draft" || !e.posted_journal_id) {
+      throw new Error("Only posted expenses can be voided — delete the draft instead");
+    }
+    if (e.status !== "paid") {
+      throw new Error(`Cannot void an expense in status ${e.status.replace(/_/g, " ")}`);
+    }
+    const { assertExpenseVoidDate } = await import("@/lib/purchases/expense-void");
+    const today = new Date().toISOString().slice(0, 10);
+    const voidDate = assertExpenseVoidDate({
+      expenseDate: e.expense_date,
+      voidDate: data.voidDate ?? today,
+      today,
+    });
+    const voidJournalId = await voidPostedDocument(
+      supabase,
+      e.posted_journal_id,
+      `purchase_expense:${data.expenseId}:void`,
+      voidDate,
+    );
+    const { data: marked, error: upErr } = await supabase
+      .from("purchase_expenses" as never)
+      .update({
+        status: "void",
+        updated_at: new Date().toISOString(),
+      } as never)
+      .eq("id" as never, data.expenseId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("status" as never, "paid" as never)
+      .select("id");
+    if (upErr) throw new Error(upErr.message);
+    if (!marked || (marked as unknown[]).length === 0) {
+      throw new Error(
+        `The reversing journal was posted (${voidJournalId.slice(0, 8)}…) but the expense status could not be marked void. Reload and click Void again — it will not reverse twice.`,
+      );
+    }
+    await recordBillAudit(
+      supabase,
+      data.companyId,
+      "expense.void",
+      data.expenseId,
+      {
+        void_journal_id: voidJournalId,
+        void_date: voidDate,
+        reason: data.reason,
+        posted_journal_id: e.posted_journal_id,
+      },
+      "purchase_expense",
+    );
+    return { voidJournalId, voidDate };
   });
 
 // ---- Supplier payments ----
@@ -2837,7 +2989,7 @@ async function loadCreditNote(supabase: SupabaseDb, companyId: string, creditNot
   const { data, error } = await supabase
     .from("purchase_credit_notes" as never)
     .select(
-      "id, status, contact_id, currency_code, credit_date, credit_number, memo, total_minor, amount_allocated_minor, posted_journal_id, purchase_credit_note_lines(*)" as never,
+      "id, status, contact_id, currency_code, credit_date, credit_number, memo, subtotal_minor, tax_minor, total_minor, amount_allocated_minor, posted_journal_id, purchase_credit_note_lines(*)" as never,
     )
     .eq("id" as never, creditNoteId as never)
     .eq("company_id" as never, companyId as never)
@@ -2852,6 +3004,8 @@ async function loadCreditNote(supabase: SupabaseDb, companyId: string, creditNot
     credit_date: string;
     credit_number: string | null;
     memo: string | null;
+    subtotal_minor: number;
+    tax_minor: number;
     total_minor: number;
     amount_allocated_minor: number;
     posted_journal_id: string | null;
@@ -2875,6 +3029,14 @@ async function authoriseCreditNoteInternal(
   await assertCompanyPermission(supabase, companyId, "purchases.authorise");
   const credit = await loadCreditNote(supabase, companyId, creditNoteId);
   if (credit.status !== "draft") throw new Error("Only draft credit notes can be authorised");
+  if (credit.posted_journal_id) throw new Error("Credit note already posted");
+  assertHeaderMatchesLines({
+    documentLabel: "Supplier credit",
+    subtotalMinor: Number(credit.subtotal_minor) || 0,
+    taxMinor: Number(credit.tax_minor) || 0,
+    totalMinor: Number(credit.total_minor) || 0,
+    lines: credit.purchase_credit_note_lines,
+  });
 
   // Validate the allocations BEFORE posting so a bad request never leaves a half-done credit.
   if (allocations.length) {
@@ -2935,7 +3097,8 @@ async function authoriseCreditNoteInternal(
     .eq("status" as never, "draft" as never)
     .select("id");
   if (markErr || !marked || (marked as unknown[]).length === 0) {
-    throw new Error(
+    throw new JournalPostedUnlinkedError(
+      journalId,
       `The journal was posted but the credit note could not be marked authorised (${markErr?.message ?? "it changed while saving"}). Open it and click Authorise again - it will not post twice.`,
     );
   }
@@ -2972,6 +3135,8 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       companyId: string;
+      /** When set, updates this draft instead of allocating a new credit number. */
+      creditNoteId?: string;
       contactId: string;
       creditDate: string;
       currencyCode: string;
@@ -2991,6 +3156,9 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
       return {
         fxRateToBase: fx !== null && fx !== 1 ? fx : null,
         companyId: assertUuid(input.companyId),
+        creditNoteId: input.creditNoteId
+          ? assertUuid(input.creditNoteId, "credit note")
+          : null,
         contactId: assertUuid(input.contactId, "supplier"),
         creditDate: input.creditDate,
         currencyCode: (input.currencyCode ?? "").toUpperCase(),
@@ -3032,12 +3200,68 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
     if (supplierErr) throw new Error(supplierErr.message);
     if (!supplier) throw new Error("Supplier not found in this organisation");
 
+    let creditId: string;
+    let creditNumberLabel = "draft";
+
+    if (data.creditNoteId) {
+      const existing = await loadCreditNote(supabase, data.companyId, data.creditNoteId);
+      if (existing.status !== "draft") {
+        throw new Error("Only draft credit notes can be updated from this form");
+      }
+      creditId = existing.id;
+      creditNumberLabel = existing.credit_number ?? creditId.slice(0, 8);
+      const priorLines = existing.purchase_credit_note_lines.map((l) => ({
+        company_id: data.companyId,
+        credit_note_id: creditId,
+        ...l,
+      }));
+      const newLines = data.lines.map((l, i) => ({
+        company_id: data.companyId,
+        credit_note_id: creditId,
+        line_no: i + 1,
+        description: l.description,
+        account_id: l.accountId,
+        net_minor: l.netMinor,
+        tax_minor: l.taxMinor,
+      }));
+      const { error: delErr } = await supabase
+        .from("purchase_credit_note_lines" as never)
+        .delete()
+        .eq("company_id" as never, data.companyId as never)
+        .eq("credit_note_id" as never, creditId as never);
+      if (delErr) throw new Error(delErr.message);
+      const { error: insErr } = await supabase
+        .from("purchase_credit_note_lines" as never)
+        .insert(newLines as never);
+      if (insErr) {
+        await supabase.from("purchase_credit_note_lines" as never).insert(priorLines as never);
+        throw new Error(`Could not save credit note lines: ${insErr.message}`);
+      }
+      const { error: upErr } = await supabase
+        .from("purchase_credit_notes" as never)
+        .update({
+          contact_id: data.contactId,
+          credit_date: data.creditDate,
+          currency_code: data.currencyCode,
+          memo: data.memo,
+          subtotal_minor: subtotal,
+          tax_minor: tax,
+          total_minor: total,
+          updated_at: new Date().toISOString(),
+          ...(data.fxRateToBase != null ? { fx_rate_to_base: data.fxRateToBase } : {}),
+        } as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("id" as never, creditId as never)
+        .eq("status" as never, "draft" as never);
+      if (upErr) throw new Error(upErr.message);
+    } else {
     const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
     const creditNumber = await allocateDocumentNumber(
       supabase as never,
       data.companyId,
       "purchase_credit_note",
     );
+      creditNumberLabel = creditNumber;
 
     const { data: cn, error } = await supabase
       .from("purchase_credit_notes" as never)
@@ -3065,7 +3289,7 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
       }
       throw new Error(error.message);
     }
-    const creditId = (cn as { id: string }).id;
+      creditId = (cn as { id: string }).id;
     const { error: lineErr } = await supabase.from("purchase_credit_note_lines" as never).insert(
       data.lines.map((l, i) => ({
         company_id: data.companyId,
@@ -3086,12 +3310,15 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
         .eq("status" as never, "draft" as never);
       throw new Error(`Could not save credit note lines: ${lineErr.message}`);
     }
+    }
 
     if (!data.authorise)
       return {
         id: creditId,
         journalId: null as string | null,
         allocationError: null as string | null,
+        authoriseError: null as string | null,
+        statusHint: null as "posted_unauthorised" | null,
       };
 
     try {
@@ -3101,11 +3328,30 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
         creditId,
         data.allocations,
       );
-      return { id: creditId, journalId: result.journalId, allocationError: result.allocationError };
+      return {
+        id: creditId,
+        journalId: result.journalId,
+        allocationError: result.allocationError,
+        authoriseError: null as string | null,
+        statusHint: null as "posted_unauthorised" | null,
+      };
     } catch (authoriseError) {
-      throw new Error(
-        `The credit note was saved as draft ${creditNumber} but could not be authorised: ${(authoriseError as Error).message}`,
-      );
+      if (authoriseError instanceof JournalPostedUnlinkedError) {
+        return {
+          id: creditId,
+          journalId: authoriseError.journalId,
+          allocationError: null as string | null,
+          authoriseError: authoriseError.message,
+          statusHint: authoriseError.statusHint,
+        };
+      }
+      return {
+        id: creditId,
+        journalId: null as string | null,
+        allocationError: null as string | null,
+        authoriseError: `The credit note was saved as draft ${creditNumberLabel} but could not be authorised: ${(authoriseError as Error).message}`,
+        statusHint: null as "posted_unauthorised" | null,
+      };
     }
   });
 
@@ -3922,6 +4168,81 @@ export const savePurchaseOrder = createServerFn({ method: "POST" })
       context.supabase,
       "save_purchase_order_atomic",
       { _company: companyId, _payload: payload },
+    );
+  });
+
+/** Copy a purchase order into a NEW draft dated today (receipt/bill state is not copied). */
+export const copyPurchaseOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; orderId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    orderId: assertUuid(input.orderId, "order"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+    const { data: row, error } = await supabase
+      .from("purchase_orders" as never)
+      .select(
+        "contact_id, memo, currency_code, purchase_order_lines(description, account_id, quantity, unit_price_minor, net_minor, tax_rate_bps, line_no)" as never,
+      )
+      .eq("id" as never, data.orderId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("purchase_order_lines.company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Purchase order not found");
+
+    const src = row as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      purchase_order_lines: Array<{
+        description: string;
+        account_id: string | null;
+        quantity: number;
+        unit_price_minor: number;
+        net_minor: number;
+        tax_rate_bps?: number | null;
+        line_no?: number | null;
+      }>;
+    };
+
+    const { mapPurchaseOrderLinesForCopy } = await import("@/lib/purchases/copy-purchase-order");
+    const mapped = mapPurchaseOrderLinesForCopy(src.purchase_order_lines ?? []);
+    if (!mapped.length) throw new Error("Purchase order has no lines to copy");
+
+    const currencyCode = String(src.currency_code || "")
+      .trim()
+      .toUpperCase();
+    if (!/^[A-Z]{3}$/.test(currencyCode)) throw new Error("Choose a valid currency");
+
+    const lines = validatePurchaseOrderLines(mapped).map(
+      ({ description, accountId, quantity, unitPriceMinor, discountMinor, taxRateBps }) => ({
+        description,
+        accountId,
+        quantity,
+        unitPriceMinor,
+        discountMinor,
+        taxRateBps,
+      }),
+    );
+    const today = new Date().toISOString().slice(0, 10);
+    const payload = {
+      contactId: assertUuid(src.contact_id, "supplier"),
+      orderDate: assertOrderDate(today),
+      currencyCode,
+      memo: (src.memo ?? "").trim().slice(0, 500),
+      lines,
+      requestId: crypto.randomUUID(),
+      orderId: null,
+      version: null,
+    };
+
+    return workflowRpc<{ id: string; orderNumber: string; version: number }>(
+      supabase,
+      "save_purchase_order_atomic",
+      { _company: data.companyId, _payload: payload },
     );
   });
 

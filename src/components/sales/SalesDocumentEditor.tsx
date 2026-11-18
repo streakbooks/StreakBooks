@@ -524,10 +524,22 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           };
           if (alsoAuthorise) {
             const r = await saveAndAuthorise({ data });
-            return { id: r.id, authoriseError: r.authoriseError, authorised: !r.authoriseError };
+            return {
+              id: r.id,
+              authoriseError: r.authoriseError,
+              authorised: !r.authoriseError,
+              statusHint: r.statusHint,
+              journalId: r.journalId,
+            };
           }
           const r = await saveInvoice({ data });
-          return { id: r.id, authoriseError: null as string | null, authorised: false };
+          return {
+            id: r.id,
+            authoriseError: null as string | null,
+            authorised: false,
+            statusHint: null as "posted_unauthorised" | null,
+            journalId: null as string | null,
+          };
         }
         if (kind === "quote") {
           const r = await saveQuote({
@@ -539,7 +551,13 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               quoteNumber: number,
             },
           });
-          return { id: r.id, authoriseError: null as string | null, authorised: false };
+          return {
+            id: r.id,
+            authoriseError: null as string | null,
+            authorised: false,
+            statusHint: null as "posted_unauthorised" | null,
+            journalId: null as string | null,
+          };
         }
         const r = await saveCredit({
           data: {
@@ -553,12 +571,30 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
         if (alsoAuthorise) {
           try {
             await authoriseCredit({ data: { companyId, creditNoteId: r.id } });
-            return { id: r.id, authoriseError: null as string | null, authorised: true };
+            return {
+              id: r.id,
+              authoriseError: null as string | null,
+              authorised: true,
+              statusHint: null as "posted_unauthorised" | null,
+              journalId: null as string | null,
+            };
           } catch (e) {
-            return { id: r.id, authoriseError: friendlyAuthError(e), authorised: false };
+            return {
+              id: r.id,
+              authoriseError: friendlyAuthError(e),
+              authorised: false,
+              statusHint: null as "posted_unauthorised" | null,
+              journalId: null as string | null,
+            };
           }
         }
-        return { id: r.id, authoriseError: null as string | null, authorised: false };
+        return {
+          id: r.id,
+          authoriseError: null as string | null,
+          authorised: false,
+          statusHint: null as "posted_unauthorised" | null,
+          journalId: null as string | null,
+        };
       } finally {
         savingRef.current = false;
       }
@@ -578,6 +614,14 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
       await qc.invalidateQueries({ queryKey: [copy.queryKey, companyId] });
       await qc.invalidateQueries({ queryKey: ["sales-invoice", companyId, res.id] });
       if (res.authoriseError) {
+        if (res.statusHint === "posted_unauthorised") {
+          setFormError(
+            `The journal was posted but the invoice status was not linked${res.journalId ? ` (${res.journalId.slice(0, 8)}…)` : ""}. Open the invoice and click Authorise again — it will not post twice. ${res.authoriseError}`,
+          );
+          toast.error("Journal posted — retry Authorise to link status");
+          navigate({ to: "/sales/invoices/$invoiceId", params: { invoiceId: res.id } });
+          return;
+        }
         setFormError(`Saved as a draft, but it could not be authorised: ${res.authoriseError}`);
         toast.error("Saved as draft — authorise failed");
         return;

@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { fetchAllPages } from "@/lib/banking/fetch-all";
+import { assertBankMatchPermissionGranted } from "@/lib/banking/match-permission";
 import { DEFAULT_MATCH_WINDOW_DAYS, MAX_MATCH_LINES, rankCandidates } from "@/lib/banking/matching";
 import { callRpc } from "@/lib/banking/rpc";
 import {
@@ -13,6 +14,27 @@ import {
 } from "@/lib/banking/server-helpers";
 
 type RpcMatchResult = { linked: number; bank_transaction_ids: string[] };
+
+/** Fail closed before the match RPC (categorise OR reconcile — same as SQL). */
+async function assertCanMatchBank(supabase: AnyClient, companyId: string): Promise<void> {
+  const [{ data: hasCategorise, error: catErr }, { data: hasReconcile, error: reconErr }] =
+    await Promise.all([
+      supabase.rpc("has_company_permission" as never, {
+        _company_id: companyId,
+        _permission: "banking.categorise",
+      } as never),
+      supabase.rpc("has_company_permission" as never, {
+        _company_id: companyId,
+        _permission: "banking.reconcile",
+      } as never),
+    ]);
+  if (catErr) throw new Error(catErr.message);
+  if (reconErr) throw new Error(reconErr.message);
+  assertBankMatchPermissionGranted({
+    hasCategorise: Boolean(hasCategorise),
+    hasReconcile: Boolean(hasReconcile),
+  });
+}
 
 /**
  * BK-01: undo coding / matching of a statement line (reverses a bank-originated journal, removes the link,
@@ -189,7 +211,7 @@ export const matchBankTransaction = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as AnyClient;
-    await assertCompanyMember(supabase, data.companyId);
+    await assertCanMatchBank(supabase, data.companyId);
     const r = await callRpc<RpcMatchResult>(supabase, "match_bank_transaction", {
       _company_id: data.companyId,
       _bank_transaction_id: data.bankTransactionId,
@@ -218,7 +240,7 @@ export const matchStatementLinesToJournalLine = createServerFn({ method: "POST" 
   )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as AnyClient;
-    await assertCompanyMember(supabase, data.companyId);
+    await assertCanMatchBank(supabase, data.companyId);
     const r = await callRpc<RpcMatchResult>(supabase, "match_bank_transactions_to_journal_line", {
       _company_id: data.companyId,
       _bank_transaction_ids: data.bankTransactionIds,

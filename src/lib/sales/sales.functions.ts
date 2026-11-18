@@ -46,6 +46,8 @@ import {
 } from "@/lib/sales/list-filters";
 import { fetchAllPages } from "@/lib/sales/fetch-all";
 import { minorToDecimalString, toCsv } from "@/lib/sales/csv";
+import { assertHeaderMatchesLines } from "@/lib/purchases/authorise-totals";
+import { JournalPostedUnlinkedError } from "@/lib/accounting/journal-posted-unlinked";
 import {
   assertQuoteTransition,
   isQuoteConvertible,
@@ -782,13 +784,13 @@ async function authoriseInvoiceCore(
   };
   if (b.status !== "draft") throw new Error("Only draft invoices can be authorised");
   if (b.posted_journal_id) throw new Error("Invoice already posted");
-  if (!b.sales_invoice_lines.length) throw new Error("Invoice has no lines");
-  const lineNet = b.sales_invoice_lines.reduce((s, l) => s + Number(l.net_minor), 0);
-  const lineTax = b.sales_invoice_lines.reduce((s, l) => s + Number(l.tax_minor), 0);
-  if (lineNet !== Number(b.subtotal_minor) || lineTax !== Number(b.tax_minor)) {
-    throw new Error("Invoice totals do not match its lines — re-save the draft before authorising");
-  }
-  if (!(Number(b.total_minor) > 0)) throw new Error("Invoice total must be greater than zero");
+  assertHeaderMatchesLines({
+    documentLabel: "Invoice",
+    subtotalMinor: Number(b.subtotal_minor) || 0,
+    taxMinor: Number(b.tax_minor) || 0,
+    totalMinor: Number(b.total_minor) || 0,
+    lines: b.sales_invoice_lines,
+  });
 
   const credit = await loadCreditLimitAssessment(supabase as SalesClient, companyId, {
     id: b.id,
@@ -841,7 +843,8 @@ async function authoriseInvoiceCore(
     .eq("status" as never, "draft" as never)
     .select("id");
   if (upErr) {
-    throw new Error(
+    throw new JournalPostedUnlinkedError(
+      journalId,
       `The journal was posted but the invoice could not be marked authorised (${upErr.message}). Retry authorise — it is safe to repeat.`,
     );
   }
@@ -851,6 +854,8 @@ async function authoriseInvoiceCore(
   }
   return { journalId, invoiceNumber: number, alreadyAuthorised: false };
 }
+
+export { JournalPostedUnlinkedError } from "@/lib/accounting/journal-posted-unlinked";
 
 export const authoriseInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -877,12 +882,26 @@ export const saveAndAuthoriseInvoice = createServerFn({ method: "POST" })
     const saved = await saveInvoiceDraftCore(context, data);
     try {
       const res = await authoriseInvoiceCore(context, data.companyId, saved.id);
-      return { id: saved.id, journalId: res.journalId, authoriseError: null as string | null };
+      return {
+        id: saved.id,
+        journalId: res.journalId,
+        authoriseError: null as string | null,
+        statusHint: null as "posted_unauthorised" | null,
+      };
     } catch (e) {
+      if (e instanceof JournalPostedUnlinkedError) {
+        return {
+          id: saved.id,
+          journalId: e.journalId,
+          authoriseError: e.message,
+          statusHint: e.statusHint,
+        };
+      }
       return {
         id: saved.id,
         journalId: null as string | null,
         authoriseError: e instanceof Error ? e.message : "Could not authorise the invoice",
+        statusHint: null as "posted_unauthorised" | null,
       };
     }
   });
@@ -1075,6 +1094,89 @@ export const copyInvoice = createServerFn({ method: "POST" })
       contactId: src.contact_id,
       docDate: today,
       dueDate: addDaysIso(today, terms),
+      memo: src.memo,
+      currencyCode,
+      fxRateToBase,
+      lines,
+    });
+    return { id: saved.id };
+  });
+
+/** Copy a quote into a NEW draft dated today (keeps expiry span when present). */
+export const copyQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; quoteId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    quoteId: assertUuid(input.quoteId, "quote"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "sales.draft");
+    const { data: quote, error } = await supabase
+      .from("sales_quotes" as never)
+      .select(
+        "contact_id, memo, currency_code, fx_rate_to_base, quote_date, expiry_date, sales_quote_lines(*)" as never,
+      )
+      .eq("id" as never, data.quoteId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!quote) throw new Error("Quote not found");
+    const src = quote as unknown as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      fx_rate_to_base?: number | null;
+      quote_date: string;
+      expiry_date: string | null;
+      sales_quote_lines: Array<{
+        line_order: number;
+        description: string;
+        account_id: string;
+        quantity: number;
+        unit_price_minor: number;
+        discount_minor: number;
+        tax_rate_bps: number;
+        tax_code_id: string | null;
+        product_id: string | null;
+      }>;
+    };
+    const defaults = await loadCompanyDefaults(supabase, data.companyId);
+    const today = defaults.today;
+    const { currencyCode, fxRateToBase } = normaliseCurrencyAndFx(
+      src.currency_code,
+      defaults.baseCurrency,
+      src.fx_rate_to_base ?? 1,
+    );
+    const { copiedQuoteExpiryDate } = await import("@/lib/sales/copy-quote");
+    const expiryDate = copiedQuoteExpiryDate(today, src.quote_date, src.expiry_date);
+    const { loadSalesTaxCodes } = await import("@/lib/sales/tax-codes");
+    const available = new Set(
+      (await loadSalesTaxCodes(supabase, data.companyId, today)).map((c) => c.id),
+    );
+    const lines = await prepareSalesLines(
+      supabase,
+      data.companyId,
+      sortLines(src.sales_quote_lines).map((l) => ({
+        description: l.description,
+        accountId: l.account_id,
+        quantity: Number(l.quantity),
+        unitPriceMinor: Number(l.unit_price_minor),
+        discountMinor: Number(l.discount_minor),
+        taxRateBps: Number(l.tax_rate_bps),
+        taxCodeId: l.tax_code_id && available.has(l.tax_code_id) ? l.tax_code_id : null,
+        productId: l.product_id ?? null,
+      })),
+      today,
+    );
+    if (!lines.length) throw new Error("Quote has no lines to copy");
+    const saved = await saveSalesDocument(supabase, {
+      kind: "quote",
+      companyId: data.companyId,
+      userId,
+      contactId: src.contact_id,
+      docDate: today,
+      expiryDate,
       memo: src.memo,
       currencyCode,
       fxRateToBase,

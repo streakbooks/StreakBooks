@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -59,6 +59,7 @@ export function MoneyDocumentPanel({
   initialBankAccountId?: string;
 }) {
   const { company } = useActiveCompany();
+  const navigate = useNavigate();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
   const today = new Date().toISOString().slice(0, 10);
@@ -86,6 +87,7 @@ export function MoneyDocumentPanel({
   const [recordId, setRecordId] = useState<string | null>(null);
   const recordRef = useRef<DocumentRecordHandle>(null);
   const recordMeta = moneyRecordMeta(kind);
+  const addAnotherPending = useRef(false);
 
   useEffect(() => {
     setRecordId(null);
@@ -169,7 +171,15 @@ export function MoneyDocumentPanel({
       }
       setRecordId(result.id);
       toast.success(result.replayed ? "This document was already saved" : `${TITLES[kind]} posted`);
-      // Start the next document with a fresh key so it is never mistaken for a replay.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["money-documents", companyId] }),
+        qc.invalidateQueries({ queryKey: ["undeposited", companyId] }),
+        qc.invalidateQueries({ queryKey: ["banking-counts", companyId] }),
+        qc.invalidateQueries({ queryKey: ["bank-transactions"] }),
+      ]);
+      const stayOpen = addAnotherPending.current;
+      addAnotherPending.current = false;
+      // Fresh key so the next post is never mistaken for a replay.
       idempotencyKey.current = crypto.randomUUID();
       setAmount("");
       setTaxAmount("0");
@@ -177,12 +187,10 @@ export function MoneyDocumentPanel({
       setReference("");
       setMemo("");
       setSourceIds([]);
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["money-documents", companyId] }),
-        qc.invalidateQueries({ queryKey: ["undeposited", companyId] }),
-        qc.invalidateQueries({ queryKey: ["banking-counts", companyId] }),
-        qc.invalidateQueries({ queryKey: ["bank-transactions"] }),
-      ]);
+      setRecordId(null);
+      if (!stayOpen) {
+        void navigate({ to: "/banking/money-documents" });
+      }
     },
     onError: (e) => setError(friendlyAuthError(e)),
   });
@@ -223,6 +231,7 @@ export function MoneyDocumentPanel({
       className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
+        addAnotherPending.current = kind === "receive_money";
         setError(null);
         saveM.mutate();
       }}
@@ -250,7 +259,29 @@ export function MoneyDocumentPanel({
                 <Link to="/banking">Cancel</Link>
               </Button>
             ) : null}
-            <Button type="submit" size="sm" disabled={saveM.isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={saveM.isPending}
+              onClick={() => {
+                addAnotherPending.current = true;
+                setError(null);
+                saveM.mutate();
+              }}
+            >
+              Save & add another
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={saveM.isPending}
+              onClick={() => {
+                addAnotherPending.current = false;
+                setError(null);
+                saveM.mutate();
+              }}
+            >
               {saveM.isPending ? "Posting…" : "Save & post"}
             </Button>
           </div>

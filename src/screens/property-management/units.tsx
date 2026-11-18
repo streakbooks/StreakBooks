@@ -103,8 +103,9 @@ export function PmUnitsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Units" description="Unit register.">
-        <PmSubnav current="units" />
+      <ListWorkspace title="Units" description="Unit register."
+      subnav={<PmSubnav current="units" />}
+    >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -127,8 +128,8 @@ export function PmUnitsPage() {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current="units" />}
     >
-      <PmSubnav current="units" />
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="Module disabled"

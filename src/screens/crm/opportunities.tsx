@@ -284,8 +284,8 @@ export function CrmOpportunitiesPage() {
           ) : null}
         </div>
       }
+      subnav={<CrmSubnav current="opportunities" />}
     >
-      <CrmSubnav current="opportunities" />
 
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (

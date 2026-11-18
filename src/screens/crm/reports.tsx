@@ -78,8 +78,8 @@ export function CrmReportsPage() {
           </Link>
         </Button>
       }
+      subnav={<CrmSubnav current="reports" />}
     >
-      <CrmSubnav current="reports" />
 
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before running reports." />

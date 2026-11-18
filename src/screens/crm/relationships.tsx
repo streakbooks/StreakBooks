@@ -71,8 +71,8 @@ export function CrmRelationshipsPage() {
           <Link to="/sales/invoices">Open Sales invoices</Link>
         </Button>
       }
+      subnav={<CrmSubnav current="relationships" />}
     >
-      <CrmSubnav current="relationships" />
 
       {settings.data && !settings.data.enabled ? (
         <EmptyState

@@ -41,8 +41,9 @@ export function PmTrustAccountingPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Trust Accounting" description="Client-money readiness summary.">
-        <PmSubnav current="trust-accounting" />
+      <ListWorkspace title="Trust Accounting" description="Client-money readiness summary."
+      subnav={<PmSubnav current="trust-accounting" />}
+    >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -65,8 +66,8 @@ export function PmTrustAccountingPage() {
           </Link>
         </Button>
       }
+      subnav={<PmSubnav current="trust-accounting" />}
     >
-      <PmSubnav current="trust-accounting" />
       {!settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (

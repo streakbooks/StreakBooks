@@ -141,8 +141,9 @@ export function PmOwnerPayoutsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Owner Payouts" description="Owner distributions and ledger payouts.">
-        <PmSubnav current="owner-payouts" />
+      <ListWorkspace title="Owner Payouts" description="Owner distributions and ledger payouts."
+      subnav={<PmSubnav current="owner-payouts" />}
+    >
         <EmptyState title="No access" description="Ask an administrator for payout permissions." />
       </ListWorkspace>
     );
@@ -163,8 +164,8 @@ export function PmOwnerPayoutsPage() {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current="owner-payouts" />}
     >
-      <PmSubnav current="owner-payouts" />
       {!settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (

@@ -102,8 +102,8 @@ export function PmOverviewPage() {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current="overview" />}
     >
-      <PmSubnav current="overview" />
 
       {settings.isError ? (
         <ErrorState

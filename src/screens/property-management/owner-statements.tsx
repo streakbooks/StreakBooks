@@ -161,8 +161,9 @@ export function PmOwnerStatementsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Owner Statements" description="Owner settlement statements.">
-        <PmSubnav current="owner-statements" />
+      <ListWorkspace title="Owner Statements" description="Owner settlement statements."
+      subnav={<PmSubnav current="owner-statements" />}
+    >
         <EmptyState
           title="No access"
           description="Ask an administrator for property.statements.view."
@@ -189,8 +190,8 @@ export function PmOwnerStatementsPage() {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current="owner-statements" />}
     >
-      <PmSubnav current="owner-statements" />
       <Alert className="mb-4">
         <AlertTitle>Accounting boundary</AlertTitle>
         <AlertDescription>

@@ -87,8 +87,8 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
           <Link to="/contacts">Open Contacts</Link>
         </Button>
       }
+      subnav={<CrmSubnav current={current} />}
     >
-      <CrmSubnav current={current} />
 
       {settings.isLoading ? <LoadingState /> : null}
       {settings.data && !settings.data.enabled ? (

@@ -77,8 +77,8 @@ export function CrmForecastingPage() {
           </Link>
         </Button>
       }
+      subnav={<CrmSubnav current="forecasting" />}
     >
-      <CrmSubnav current="forecasting" />
 
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before reviewing forecasts." />

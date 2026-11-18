@@ -88,8 +88,8 @@ export function CrmContactsPage() {
           </Button>
         ) : undefined
       }
+      subnav={<CrmSubnav current="contacts" />}
     >
-      <CrmSubnav current="contacts" />
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
         <ErrorState

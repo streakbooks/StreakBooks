@@ -96,8 +96,9 @@ export function PmTenantsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Tenants & Guests" description="Tenant overlays on Contacts.">
-        <PmSubnav current="tenants-guests" />
+      <ListWorkspace title="Tenants & Guests" description="Tenant overlays on Contacts."
+      subnav={<PmSubnav current="tenants-guests" />}
+    >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -118,8 +119,8 @@ export function PmTenantsPage() {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current="tenants-guests" />}
     >
-      <PmSubnav current="tenants-guests" />
       {!settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (

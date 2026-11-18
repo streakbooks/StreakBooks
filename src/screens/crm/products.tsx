@@ -72,8 +72,8 @@ export function CrmProductsPage() {
           <Link to="/products-services">Open Products & Services</Link>
         </Button>
       }
+      subnav={<CrmSubnav current="products" />}
     >
-      <CrmSubnav current="products" />
 
       {settings.data && !settings.data.enabled ? (
         <EmptyState

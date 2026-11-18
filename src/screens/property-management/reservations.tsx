@@ -114,8 +114,9 @@ export function PmReservationsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Reservations" description="Short-term bookings.">
-        <PmSubnav current="reservations" />
+      <ListWorkspace title="Reservations" description="Short-term bookings."
+      subnav={<PmSubnav current="reservations" />}
+    >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -136,8 +137,8 @@ export function PmReservationsPage() {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current="reservations" />}
     >
-      <PmSubnav current="reservations" />
       {!settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (

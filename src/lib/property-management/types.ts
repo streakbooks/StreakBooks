@@ -18,8 +18,25 @@ export type PmSettings = {
   defaultBusinessModel: PmBusinessModel;
   propertyNumberPrefix: string;
   requireOwnershipHundredPct: boolean;
+  rentIncomeAccountId: string | null;
+  rentReceivableAccountId: string | null;
+  ownerPayableAccountId: string | null;
+  commissionIncomeAccountId: string | null;
+  trustBankAccountId: string | null;
+  depositLiabilityAccountId: string | null;
+  operatingBankAccountId: string | null;
   version: number;
   updatedAt: string | null;
+};
+
+export type PmAccountMappings = {
+  rentIncomeAccountId: string | null;
+  rentReceivableAccountId: string | null;
+  ownerPayableAccountId: string | null;
+  commissionIncomeAccountId: string | null;
+  trustBankAccountId: string | null;
+  depositLiabilityAccountId: string | null;
+  operatingBankAccountId: string | null;
 };
 
 export type PmDashboardKpis = {

@@ -33,7 +33,9 @@ import type { Permission } from "@/lib/permissions";
 import { toast } from "sonner";
 
 function monthStartEnd(isoMonth: string): { start: string; end: string } {
-  const [y, m] = isoMonth.split("-").map(Number);
+  const parts = isoMonth.split("-").map(Number);
+  const y = parts[0] ?? new Date().getUTCFullYear();
+  const m = parts[1] ?? 1;
   const start = `${y}-${String(m).padStart(2, "0")}-01`;
   const end = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
   return { start, end };

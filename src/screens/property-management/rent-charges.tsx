@@ -25,11 +25,14 @@ import {
   listPmLeases,
   listPmRentCharges,
 } from "@/lib/property-management/pm-ops.functions";
+import { postPmRentCharge } from "@/lib/property-management/pm-posting.functions";
 import type { Permission } from "@/lib/permissions";
 import { toast } from "sonner";
 
 function monthBounds(isoMonth: string): { start: string; end: string; due: string } {
-  const [y, m] = isoMonth.split("-").map(Number);
+  const parts = isoMonth.split("-").map(Number);
+  const y = parts[0] ?? new Date().getUTCFullYear();
+  const m = parts[1] ?? 1;
   const start = `${y}-${String(m).padStart(2, "0")}-01`;
   const endDate = new Date(Date.UTC(y, m, 0));
   const end = endDate.toISOString().slice(0, 10);
@@ -46,6 +49,7 @@ export function PmRentChargesPage() {
   const fetchLeases = useServerFn(listPmLeases);
   const fetchCharges = useServerFn(listPmRentCharges);
   const generateCharge = useServerFn(generatePmRentCharge);
+  const postCharge = useServerFn(postPmRentCharge);
 
   const [leaseId, setLeaseId] = useState("");
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -85,8 +89,24 @@ export function PmRentChargesPage() {
       });
     },
     onSuccess: async () => {
-      toast.success("Rent charge generated (draft — not posted to ledger yet)");
+      toast.success("Rent charge generated as draft");
       setShowForm(false);
+      await queryClient.invalidateQueries({ queryKey: ["pm-rent-charges", company?.id] });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const postMutation = useMutation({
+    mutationFn: async (chargeId: string) => {
+      if (!company) throw new Error("No company");
+      return postCharge({ data: { companyId: company.id, chargeId } });
+    },
+    onSuccess: async (result) => {
+      toast.success(
+        result.journalId
+          ? `Rent charge posted (${result.journalId.slice(0, 8)}…)`
+          : "Rent charge posted",
+      );
       await queryClient.invalidateQueries({ queryKey: ["pm-rent-charges", company?.id] });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -108,7 +128,7 @@ export function PmRentChargesPage() {
   return (
     <ListWorkspace
       title="Rent & Charges"
-      description="Idempotent period charges. Draft charges are not ledger postings until a later accounting batch."
+      description="Generate draft period charges, then post to the ledger once COA mappings are configured."
       breadcrumbs={[
         { label: "Property Management", to: "/property-management" },
         { label: "Rent & Charges" },
@@ -197,6 +217,7 @@ export function PmRentChargesPage() {
                     <th className="px-3 py-2 font-medium">Due</th>
                     <th className="px-3 py-2 font-medium">Amount</th>
                     <th className="px-3 py-2 font-medium">Status</th>
+                    <th className="px-3 py-2 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -211,6 +232,22 @@ export function PmRentChargesPage() {
                         {(charge.amountMinor / 100).toFixed(2)} {charge.currencyCode}
                       </td>
                       <td className="px-3 py-2">{charge.status}</td>
+                      <td className="px-3 py-2">
+                        {charge.status === "draft" && canManage ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={postMutation.isPending}
+                            onClick={() => postMutation.mutate(charge.id)}
+                          >
+                            Post to ledger
+                          </Button>
+                        ) : charge.journalId ? (
+                          <span className="text-muted-foreground tabular-nums">
+                            {charge.journalId.slice(0, 8)}
+                          </span>
+                        ) : null}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

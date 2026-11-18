@@ -52,6 +52,21 @@ export function mapPmSettings(raw: unknown): PmSettings {
     requireOwnershipHundredPct: Boolean(
       pick(row, "requireOwnershipHundredPct", "require_ownership_hundred_pct") ?? true,
     ),
+    rentIncomeAccountId: strOrNull(pick(row, "rentIncomeAccountId", "rent_income_account_id")),
+    rentReceivableAccountId: strOrNull(
+      pick(row, "rentReceivableAccountId", "rent_receivable_account_id"),
+    ),
+    ownerPayableAccountId: strOrNull(pick(row, "ownerPayableAccountId", "owner_payable_account_id")),
+    commissionIncomeAccountId: strOrNull(
+      pick(row, "commissionIncomeAccountId", "commission_income_account_id"),
+    ),
+    trustBankAccountId: strOrNull(pick(row, "trustBankAccountId", "trust_bank_account_id")),
+    depositLiabilityAccountId: strOrNull(
+      pick(row, "depositLiabilityAccountId", "deposit_liability_account_id"),
+    ),
+    operatingBankAccountId: strOrNull(
+      pick(row, "operatingBankAccountId", "operating_bank_account_id"),
+    ),
     version: Number(pick(row, "version") ?? 1),
     updatedAt: strOrNull(pick(row, "updatedAt", "updated_at")),
   };

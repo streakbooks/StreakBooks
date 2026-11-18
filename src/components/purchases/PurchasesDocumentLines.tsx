@@ -1,6 +1,6 @@
 "use client";
 
-import { type KeyboardEvent } from "react";
+import { type ClipboardEvent, type KeyboardEvent } from "react";
 import { type PurchaseLineFormState, emptyPurchaseLine } from "@/lib/purchases/line-form-state";
 
 import { useVoiceSession } from "@/components/ai-voice/voice-context";
@@ -22,6 +22,7 @@ import {
 } from "@/components/lookup/create-forms";
 import { useCan } from "@/hooks/use-can";
 import { interpretLineGridKey } from "@/lib/ui/line-grid-keyboard";
+import { parseLineGridClipboard } from "@/lib/ui/line-grid-paste";
 import {
   Select,
   SelectContent,
@@ -229,6 +230,32 @@ export function PurchasesDocumentLines({
       );
       target?.focus();
     }
+  };
+
+  const onNumericPaste = (
+    event: ClipboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colKey: "quantity" | "unitPrice" | "discount",
+  ) => {
+    const text = event.clipboardData.getData("text");
+    const grid = parseLineGridClipboard(text);
+    if (grid.length <= 1 && (grid[0]?.length ?? 0) <= 1) return;
+    event.preventDefault();
+    const startCol = numericCols.indexOf(colKey);
+    if (startCol < 0) return;
+    const next = lines.map((line) => ({ ...line }));
+    for (let r = 0; r < grid.length; r++) {
+      const targetRow = rowIndex + r;
+      while (next.length <= targetRow) next.push(emptyPurchaseLine());
+      const row = grid[r] ?? [];
+      for (let c = 0; c < row.length; c++) {
+        const key = numericCols[startCol + c];
+        if (!key) break;
+        next[targetRow] = { ...next[targetRow]!, [key]: row[c] ?? "" };
+      }
+    }
+    voice?.clearField();
+    onChange(next);
   };
 
   const update = (idx: number, patch: Partial<PurchaseLineFormState>) => {
@@ -541,6 +568,7 @@ export function PurchasesDocumentLines({
                         value={line.quantity}
                         onChange={(e) => update(idx, { quantity: e.target.value })}
                         onKeyDown={(e) => onNumericKeyDown(e, idx, "quantity")}
+                        onPaste={(e) => onNumericPaste(e, idx, "quantity")}
                         inputMode="decimal"
                         className="h-9"
                       />
@@ -561,6 +589,7 @@ export function PurchasesDocumentLines({
                         value={line.unitPrice}
                         onChange={(e) => update(idx, { unitPrice: e.target.value })}
                         onKeyDown={(e) => onNumericKeyDown(e, idx, "unitPrice")}
+                        onPaste={(e) => onNumericPaste(e, idx, "unitPrice")}
                         inputMode="decimal"
                         className="h-9"
                       />
@@ -581,6 +610,7 @@ export function PurchasesDocumentLines({
                         value={line.discount}
                         onChange={(e) => update(idx, { discount: e.target.value })}
                         onKeyDown={(e) => onNumericKeyDown(e, idx, "discount")}
+                        onPaste={(e) => onNumericPaste(e, idx, "discount")}
                         inputMode="decimal"
                         className="h-9"
                       />

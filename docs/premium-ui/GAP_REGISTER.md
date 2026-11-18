@@ -9,8 +9,8 @@ Labels: `missing` | `partial` | `existing` | `blocked` | `drift`
 | --- | --- | --- | --- | --- |
 | G01 | No shared `TransactionWorkspace` | High | 25–26 | scaffold in 25; adoption 26 |
 | G02 | No spreadsheet `EditableLineItemGrid` (keyboard/paste/sticky) | High | 25–27 | chrome in 25; behaviour 27 |
-| G03 | `SalesDocumentLines` card stack ≠ dense table UX | High | 26–27 | pending |
-| G04 | `PurchasesDocumentLines` lacks sticky header / keyboard / paste | High | 26–30 | sticky header + numeric keyboard in 30; paste still open |
+| G03 | `SalesDocumentLines` card stack ≠ dense table UX | High | 26–31 | EditableLineItemGrid + numeric keyboard/paste in 31 |
+| G04 | `PurchasesDocumentLines` lacks sticky header / keyboard / paste | High | 26–31 | sticky header + numeric keyboard/paste closed in 30–31 |
 | G05 | Missing shared `TotalsSummary` / `SplitButton` | Medium | 25–26 | scaffolded 25 |
 | G06 | Density tokens absent; AppShell hardcoded widths | Medium | 25 | addressed 25 |
 | G07 | Browsing manifest stale (21 vs 29 sidebar) | Medium | 30 | closed — synced to 29/156 |

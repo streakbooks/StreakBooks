@@ -23,7 +23,8 @@
 | 27 | Phase 3 | Line-grid keyboard helpers + Manual/Recurring journal TransactionWorkspace | `feature/premium-ui-batch27-line-grid-keyboard-journals` | [PR #273](https://github.com/linkbusinessadvisory/LinkBooks/pull/273) → `3697f35a` | journals + keyboard helpers | merged |
 | 28 | Phase 3–4 | Originality policy + PO TransactionWorkspace + Bill shell token polish | (landed on main) | `a610f1a5` | docs + purchases orders | on main |
 | 29 | Phase 1–5 | Semantic colourful tokens (AI purple), status tone realignment, nav group icon accents, button success/warning variants | `feature/premium-ui-batch29-semantic-colour-system` | [PR #274](https://github.com/linkbusinessadvisory/LinkBooks/pull/274) → `4a16970c` | styles + status-badge + AppShell | merged |
-| 30 | Phase 3–5 | Bill sticky actions; purchase line keyboard; MeasuredProgress + PersistedSwitch; browsing manifest sync (29 modules / 156 routes) | `feature/premium-ui-batch30-bill-sticky-browsing` | open | bills + purchases lines + firm/CRM/banking + docs/ux | in progress |
-| 31+ | Phase 4–10 | Remaining modules DoD + paste/reorder parity + browsing runtime evidence | TBD | — | all modules | planned |
+| 30 | Phase 3–5 | Bill sticky actions; purchase line keyboard; MeasuredProgress + PersistedSwitch; browsing manifest sync (29 modules / 156 routes) | `feature/premium-ui-batch30-bill-sticky-browsing` | [PR #275](https://github.com/linkbusinessadvisory/LinkBooks/pull/275) → `d193bb0e` | bills + purchases lines + firm/CRM/banking + docs/ux | merged |
+| 31 | Phase 3 | Sales + purchases numeric paste; sales line keyboard; tracker sync | `feature/premium-ui-batch31-sales-line-keyboard` | open | sales/purchases lines + paste helper | in progress |
+| 32+ | Phase 4–10 | Remaining modules DoD + browsing runtime evidence | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

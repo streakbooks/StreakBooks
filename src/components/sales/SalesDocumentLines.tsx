@@ -1,5 +1,6 @@
 "use client";
 
+import { type ClipboardEvent, type KeyboardEvent } from "react";
 import { type SalesLineFormState, emptySalesLine } from "@/lib/sales/line-form-state";
 
 import { useVoiceSession } from "@/components/ai-voice/voice-context";
@@ -27,6 +28,8 @@ import {
   TaxCodeCreateForm,
 } from "@/components/lookup/create-forms";
 import { useCan } from "@/hooks/use-can";
+import { interpretLineGridKey } from "@/lib/ui/line-grid-keyboard";
+import { parseLineGridClipboard } from "@/lib/ui/line-grid-paste";
 import { Trash2 } from "lucide-react";
 
 type ProductOption = {
@@ -132,6 +135,66 @@ export function SalesDocumentLines({
   const update = (idx: number, patch: Partial<SalesLineFormState>) => {
     const next = [...lines];
     next[idx] = withManualPricing(lines[idx]!, patch);
+    onChange(next);
+  };
+
+  const numericCols = ["quantity", "unitPrice", "discount"] as const;
+
+  const onNumericKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colKey: (typeof numericCols)[number],
+  ) => {
+    if (disabled) return;
+    const colIndex = numericCols.indexOf(colKey);
+    const action = interpretLineGridKey(event.key, {
+      shiftKey: event.shiftKey,
+      atLastRow: rowIndex === lines.length - 1,
+      atLastCol: colIndex === numericCols.length - 1,
+    });
+    if (action.type === "none") return;
+    if (action.type === "add-row") {
+      event.preventDefault();
+      voice?.clearField();
+      onChange([...lines, emptySalesLine()]);
+      return;
+    }
+    if (
+      action.type === "move" &&
+      (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp")
+    ) {
+      event.preventDefault();
+      const nextRow = Math.max(0, Math.min(lines.length - 1, rowIndex + action.rowDelta));
+      const nextCol = Math.max(0, Math.min(numericCols.length - 1, colIndex + action.colDelta));
+      const targetKey = numericCols[nextCol];
+      if (!targetKey) return;
+      document.querySelector<HTMLElement>(`[data-sales-cell="${nextRow}-${targetKey}"]`)?.focus();
+    }
+  };
+
+  const onNumericPaste = (
+    event: ClipboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colKey: (typeof numericCols)[number],
+  ) => {
+    if (disabled) return;
+    const text = event.clipboardData.getData("text");
+    const grid = parseLineGridClipboard(text);
+    if (grid.length <= 1 && (grid[0]?.length ?? 0) <= 1) return;
+    event.preventDefault();
+    const startCol = numericCols.indexOf(colKey);
+    const next = lines.map((line) => ({ ...line }));
+    for (let r = 0; r < grid.length; r++) {
+      const targetRow = rowIndex + r;
+      while (next.length <= targetRow) next.push(emptySalesLine());
+      const row = grid[r] ?? [];
+      for (let c = 0; c < row.length; c++) {
+        const key = numericCols[startCol + c];
+        if (!key) break;
+        next[targetRow] = withManualPricing(next[targetRow]!, { [key]: row[c] ?? "" });
+      }
+    }
+    voice?.clearField();
     onChange(next);
   };
 
@@ -315,6 +378,7 @@ export function SalesDocumentLines({
               </TableCell>
               <TableCell className="align-top">
                 <Input
+                  data-sales-cell={`${idx}-quantity`}
                   voiceField={{
                     key: "quantity",
                     label: "Quantity",
@@ -325,12 +389,15 @@ export function SalesDocumentLines({
                   value={line.quantity}
                   disabled={disabled}
                   onChange={(e) => update(idx, { quantity: e.target.value })}
+                  onKeyDown={(e) => onNumericKeyDown(e, idx, "quantity")}
+                  onPaste={(e) => onNumericPaste(e, idx, "quantity")}
                   inputMode="decimal"
                   className="text-right"
                 />
               </TableCell>
               <TableCell className="align-top">
                 <Input
+                  data-sales-cell={`${idx}-unitPrice`}
                   voiceField={{
                     key: "unitPrice",
                     label: "Unit price",
@@ -341,12 +408,15 @@ export function SalesDocumentLines({
                   value={line.unitPrice}
                   disabled={disabled}
                   onChange={(e) => update(idx, { unitPrice: e.target.value })}
+                  onKeyDown={(e) => onNumericKeyDown(e, idx, "unitPrice")}
+                  onPaste={(e) => onNumericPaste(e, idx, "unitPrice")}
                   inputMode="decimal"
                   className="text-right"
                 />
               </TableCell>
               <TableCell className="align-top">
                 <Input
+                  data-sales-cell={`${idx}-discount`}
                   voiceField={{
                     key: "discount",
                     label: "Discount",
@@ -357,6 +427,8 @@ export function SalesDocumentLines({
                   value={line.discount}
                   disabled={disabled}
                   onChange={(e) => update(idx, { discount: e.target.value })}
+                  onKeyDown={(e) => onNumericKeyDown(e, idx, "discount")}
+                  onPaste={(e) => onNumericPaste(e, idx, "discount")}
                   inputMode="decimal"
                   className="text-right"
                 />

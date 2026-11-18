@@ -229,6 +229,7 @@ export function ExpenseManagementSpendingRequestsPage() {
 
       {canSubmit ? (
         <form
+          id="em-sr-form"
           className="mb-8 grid max-w-xl gap-3 rounded-lg border p-4"
           onSubmit={(event) => {
             event.preventDefault();
@@ -283,6 +284,22 @@ export function ExpenseManagementSpendingRequestsPage() {
         <EmptyState
           title="No spending requests"
           description="Create a draft above when you need pre-spend approval."
+          action={
+            canSubmit ? (
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => {
+                  document
+                    .getElementById("em-sr-form")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  document.getElementById("em-sr-title")?.focus();
+                }}
+              >
+                New spending request
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <Table>

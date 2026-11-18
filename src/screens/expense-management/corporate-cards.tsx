@@ -312,7 +312,7 @@ export function ExpenseManagementCorporateCardsPage() {
       ) : null}
 
       {canManage ? (
-        <section className="mb-8 space-y-4 rounded-lg border p-4">
+        <section id="em-card-register" className="mb-8 space-y-4 rounded-lg border p-4">
           <h2 className="text-lg font-medium">Register card</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
@@ -375,6 +375,21 @@ export function ExpenseManagementCorporateCardsPage() {
           <EmptyState
             title="No corporate cards"
             description="Register a card with its liability account to start matching spend."
+            action={
+              canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById("em-card-register")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                >
+                  Register card
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <Table>

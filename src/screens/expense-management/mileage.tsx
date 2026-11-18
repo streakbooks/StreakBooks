@@ -248,6 +248,21 @@ export function ExpenseManagementMileagePage() {
                   ? "Add an active rate below for this currency and date."
                   : "Ask an expense admin to configure mileage rates."
               }
+              action={
+                canAdmin ? (
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={() =>
+                      document
+                        .getElementById("em-mileage-rate")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                    }
+                  >
+                    Add mileage rate
+                  </Button>
+                ) : undefined
+              }
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
@@ -324,7 +339,7 @@ export function ExpenseManagementMileagePage() {
       ) : null}
 
       {canAdmin ? (
-        <section className="mb-10 space-y-4 rounded-lg border p-4">
+        <section id="em-mileage-rate" className="mb-10 space-y-4 rounded-lg border p-4">
           <h2 className="text-lg font-medium">Add mileage rate</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
@@ -398,6 +413,22 @@ export function ExpenseManagementMileagePage() {
           <EmptyState
             title="No mileage rates yet"
             description="Expense admins can add rates for vehicles and periods."
+            action={
+              canAdmin ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    document
+                      .getElementById("em-mileage-rate")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    document.getElementById("rate-name")?.focus();
+                  }}
+                >
+                  Add mileage rate
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <Table>

@@ -103,3 +103,12 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Messages conversation empties | New message / New group CTAs |
 | CRM quotes / relationships / forecasting empties | Links to opportunities / quotes / pipelines |
 
+## Batch 61 (empty CTA wave 4)
+
+| Gap | Action |
+| --- | --- |
+| HR assets / documents empties | Open New asset type / Assign / Add document dialogs |
+| EM cards / spending / petty / exit | Scroll-to-form EmptyState CTAs |
+| EM mileage / travel rate empties | Scroll to rate admin forms |
+| CRM team No members | Link to Settings users |
+

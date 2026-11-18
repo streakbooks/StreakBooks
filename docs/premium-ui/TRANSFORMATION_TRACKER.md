@@ -50,6 +50,7 @@
 | Empty CTA honesty Batch 58 | Merged | PR #313 → `3060d166` — HR/CRM/PM empty New CTAs |
 | Empty CTA wave 2 Batch 59 | Merged | PR #315 → `5847e317` — remaining HR/PM/CRM empty New CTAs |
 | Empty CTA wave 3 Batch 60 | Done | [PR #317](https://github.com/linkbusinessadvisory/LinkBooks/pull/317) → `b52e1c88` |
+| Empty CTA wave 4 Batch 61 | In progress | HR assets/docs; EM rate/float/card forms; CRM users bridge |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

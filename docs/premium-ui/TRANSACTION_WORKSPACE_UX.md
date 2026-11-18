@@ -1,32 +1,42 @@
 # LinkBooks Transaction Workspace UX Contract
 
-**Version:** Batch 25 (2026-11-18)  
-**Originality:** LinkBooks design language. Competitor screenshots are usability references only — do not copy branding, distinctive layouts, icons, or assets.
+**Version:** Batch 28 (2026-11-18)  
+**Originality:** See [ORIGINALITY_AND_REFERENCE_POLICY.md](./ORIGINALITY_AND_REFERENCE_POLICY.md). Competitor screens (invoice, quote, bill, PO, receive/spend money, journal) are **usability references only** — never visual templates.
 
-## Layout
+## LinkBooks composition (original)
 
 ```
-[ Breadcrumbs ]
-[ Title + number ] [ StatusBadge ] ............ [ Save split ] [ Approve ] [ More ]
-[ Details FormGrid: Contact | Date | Due | Reference | Currency/Tax | … ]
-[ EditableLineItemGrid — sticky header, inline cells, add row ]
-[ ........................ TotalsSummary (subtotal, tax, total) ]
-[ Support: Notes | Attachments | History | Related ]
-[ Sticky action bar when scrolling ]
+AppShell (navy sidebar) → ModuleSubnav → TransactionWorkspace
+  [ Breadcrumbs as native Links ]
+  [ Title ] [ StatusBadge ] ........ [ SplitButton Save ] [ Primary post/approve ] [ More ]
+  [ FormGrid: contact · dates · reference · currency · tax treatment ]
+  [ EditableLineItemGrid — sticky header · Lucide row actions · Add line ]
+  [ TotalsSummary bottom-right — engine values, tabular mono ]
+  [ Support panels: Notes / History / Attachments / Related ]
+  [ Sticky action bar using LinkBooks primary/outline buttons ]
 ```
 
-## Principles
+This composition is **sidebar-first**, token-driven, and distinct from top-nav / boxed-card competitor shells.
 
-1. Full-page create/edit for primary documents (invoice, bill, journal, money docs).
-2. Sticky primary actions remain reachable on long line tables.
-3. Compact 3–4 column header fields with muted labels.
-4. Spreadsheet-like lines: Item, Description, Qty, Price, Account, Tax, Amount.
-5. Totals bottom-right; values from the calculation engine only — never animate misleading intermediate totals.
-6. Support content in tabs/panels under the fold.
-7. Semantic LinkBooks status colours; preserve 8+ theme presets.
-8. Native TanStack Router links; preserve list return context.
-9. Drawers/dialogs for secondary edits only.
-10. Fail closed: no dummy Save/Approve/Post.
+## Capability principles (not visual copying)
+
+| Principle | LinkBooks implementation |
+| --- | --- |
+| Full-page entry | Authenticated routes + `TransactionWorkspace` |
+| Reachable actions while scrolling | `stickyActions` slot — LinkBooks Button / SplitButton only |
+| Dense header fields | `FormGrid` + existing lookups |
+| Spreadsheet lines | `EditableLineItemGrid` + domain cell editors |
+| Clear totals | `TotalsSummary` (no animated money) |
+| Supporting context | Existing `DocumentRecordPanel` / attachments / notes |
+| Browser-like | TanStack `Link`, URL search state, return context |
+
+## Visual differentiation checklist
+
+- No competitor green/purple as default action colours
+- No status “chevron ribbon” motifs from third-party ERPs
+- No field leading-icon clusters that reproduce a competitor form look
+- No boxed “floating card on grey canvas” as the only composition when AppShell already provides the workspace
+- Tracking / class / location columns use LinkBooks dimension labels — never mimic a third-party custom column brand name
 
 ## Component mapping
 
@@ -34,10 +44,10 @@
 | --- | --- |
 | Shell | `TransactionWorkspace` |
 | Fields | `FormGrid` + `FormField` |
-| Lines | `EditableLineItemGrid` (+ domain cell editors) |
+| Lines | `EditableLineItemGrid` |
 | Totals | `TotalsSummary` |
 | Save menu | `SplitButton` |
-| Attachments | existing `AttachmentsPanel` |
+| Attachments / notes | existing document panels |
 | Insights | `WorkspaceInsights` |
 
 ## Out of scope for visual batches

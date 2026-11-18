@@ -37,7 +37,8 @@ type Props = {
 };
 
 /**
- * Premium three-pane New Bill shell: header + expanding main workspace + right supplier sidebar.
+ * LinkBooks original three-pane New Bill shell: header + expanding main workspace + supplier
+ * insight sidebar. Uses AppShell density tokens and LinkBooks surfaces — not a competitor layout.
  * Closing/collapsing the sidebar expands the main form without remounting children.
  */
 export function BillWorkspaceLayout({
@@ -62,8 +63,14 @@ export function BillWorkspaceLayout({
     if (wide) setMobileSummaryOpen(false);
   }, [wide]);
   return (
-    <div className={cn("flex min-h-[calc(100vh-4rem)] min-w-0 flex-col", className)}>
-      <div className="shrink-0 border-b border-border/75 bg-gradient-to-r from-card via-card to-accent/20 px-2 pb-4 pt-1 sm:px-3">
+    <div
+      data-slot="bill-workspace-layout"
+      className={cn(
+        "flex min-h-[calc(100vh-var(--lb-header-height,4rem))] min-w-0 flex-col",
+        className,
+      )}
+    >
+      <div className="shrink-0 border-b border-border/75 bg-card px-2 pb-4 pt-1 sm:px-3">
         {header}
         {sidebarState === "closed" ? (
           <div className="mt-2 hidden items-center gap-3 xl:flex">

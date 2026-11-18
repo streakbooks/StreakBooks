@@ -20,8 +20,8 @@
 | 24 | 8–9 | Staging smoke (when E2E creds), live RBAC, manual a11y, release close-out | TBD | — | | planned |
 | 25 | Phase 1 | Density tokens, AppShell wiring, TransactionWorkspace/TotalsSummary/SplitButton/EditableLineItemGrid/FormGrid scaffolds, central tracker | `feature/premium-ui-batch25-phase1-foundation` | [PR #271](https://github.com/linkbusinessadvisory/LinkBooks/pull/271) → `2aafc864` | shared chrome + docs | merged (CI blocked by org billing; local gates PASS) |
 | 26 | Phase 3 | Sales TransactionWorkspace + spreadsheet lines; money docs workspace; purchases sticky headers | `feature/premium-ui-batch26-transaction-workspaces` | [PR #272](https://github.com/linkbusinessadvisory/LinkBooks/pull/272) → `c370c99c` | sales/banking money/purchases lines | merged |
-| 27 | Phase 3 | Line-grid keyboard helpers + Manual/Recurring journal TransactionWorkspace | `feature/premium-ui-batch27-line-grid-keyboard-journals` | open | journals + keyboard helpers | in progress |
-| 28 | Phase 3–4 | Remaining banking/PO/requisition/expense transaction polish | TBD | — | banking/purchases/expenses | planned |
+| 27 | Phase 3 | Line-grid keyboard helpers + Manual/Recurring journal TransactionWorkspace | `feature/premium-ui-batch27-line-grid-keyboard-journals` | [PR #273](https://github.com/linkbusinessadvisory/LinkBooks/pull/273) → `3697f35a` | journals + keyboard helpers | merged |
+| 28 | Phase 3–4 | Originality policy + PO TransactionWorkspace + Bill shell token polish | `feature/premium-ui-batch28-originality-purchases-money` | open | docs + purchases orders/bills | in progress |
 | 29+ | Phase 4–10 | Remaining modules DoD + browsing manifest refresh | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

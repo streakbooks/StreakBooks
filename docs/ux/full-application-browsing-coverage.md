@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll payment records table accessibility (2026-11-18)
+
+- `src/screens/payroll/payments.tsx`: add `aria-label="Payroll payment records"` to the payment records table so assistive technology can identify the table independently of adjacent filters. Source commit `54f915dc76363fad343ec955b1c4034861ee0b0f`. **SOURCE ONLY; NOT RUN.** No payment, reversal or journal operations changed.
+- `docs/ux/all-module-browsing-manifest.json`: record partial Payroll evidence and pending assistive-technology verification; commit `24f11405b883e29818b17fb6638b7838690c62af`.
+- **NOT RUN:** local inventory guard, TypeScript, lint, unit/integration, build, authenticated browser/screen reader, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No main changes, manual CI, production DB or deployment.
+
 ### Payroll payment allocation list accessibility (2026-11-18)
 
 - `src/screens/payroll/payments.tsx`: add an accessible name to the payment-details payslip allocation list, preserving existing allocation display and accounting operations. Source commit `fa411208b4cd3f56647f3f1448a3b2a48eb96806`. **SOURCE ONLY; NOT RUN.**

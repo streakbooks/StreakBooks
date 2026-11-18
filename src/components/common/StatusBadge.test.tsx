@@ -4,17 +4,17 @@ import { StatusBadge, StatusIndicator, StatusTimeline } from "./StatusBadge";
 import { StatusBadge as ExistingStatusBadge } from "./stat-card";
 
 describe("Live LinkBooks semantic status visuals", () => {
-  it("renders a backend paid state in the distinct teal completion tone", () => {
+  it("renders a backend paid state in the green payment tone", () => {
     const markup = renderToStaticMarkup(<StatusBadge status="paid" />);
-    expect(markup).toContain('data-tone="complete"');
+    expect(markup).toContain('data-tone="success"');
     expect(markup).toContain("Paid");
-    expect(markup).toContain("bg-complete-soft");
+    expect(markup).toContain("bg-success-soft");
     expect(markup).toContain('aria-hidden="true"');
   });
 
   it("differentiates approval, processing, rejection and draft", () => {
     for (const [status, tone] of [
-      ["approved", "success"],
+      ["approved", "info"],
       ["posted", "success"],
       ["partly_paid", "info"],
       ["awaiting_approval", "warning"],
@@ -40,7 +40,7 @@ describe("Live LinkBooks semantic status visuals", () => {
     const pending = renderToStaticMarkup(<StatusBadge status="pending" />);
     const paid = renderToStaticMarkup(<StatusBadge status="paid" />);
     expect(pending).toContain('data-tone="warning"');
-    expect(paid).toContain('data-tone="complete"');
+    expect(paid).toContain('data-tone="success"');
     expect(renderToStaticMarkup(<StatusBadge status="unrecognised_status" />)).toContain(
       'data-tone="neutral"',
     );

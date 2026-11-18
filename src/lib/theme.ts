@@ -49,7 +49,7 @@ export const PALETTE_OPTIONS: readonly {
     id: "classic",
     name: "LinkBooks Signature",
     description: "Soft premium blue",
-    primary: "#4f7df3",
+    primary: "#3866db",
     sidebar: "#ffffff",
     surface: "#f7fafc",
   },
@@ -264,17 +264,13 @@ export function computeCustomTokens(colors: CustomPalette, dark: boolean): Recor
     "--sidebar-bottom": lightSidebar
       ? blend(sidebar, canvas, 0.35)
       : blend(sidebar, "#000000", 0.09),
-    "--sidebar-foreground": lightSidebar
-      ? readable("#5b6b7f", sidebar, 4.5)
-      : ink(sidebar),
+    "--sidebar-foreground": lightSidebar ? readable("#5b6b7f", sidebar, 4.5) : ink(sidebar),
     "--sidebar-primary": primary,
     "--sidebar-primary-foreground": ink(primary),
     "--sidebar-accent": lightSidebar
       ? tint(sidebar, primary, readable("#1f2a37", sidebar, 4.5))
       : tint(sidebar, ink(sidebar), ink(sidebar)),
-    "--sidebar-accent-foreground": lightSidebar
-      ? readable("#1f2a37", sidebar, 4.5)
-      : ink(sidebar),
+    "--sidebar-accent-foreground": lightSidebar ? readable("#1f2a37", sidebar, 4.5) : ink(sidebar),
     "--sidebar-border": lightSidebar
       ? blend(sidebar, "#1f2a37", 0.1)
       : blend(sidebar, ink(sidebar), 0.25),

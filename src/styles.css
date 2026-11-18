@@ -103,7 +103,7 @@
   --lb-header-height: 4rem;
   --lb-brand-bar-height: 3.5rem;
   --lb-control-height: 2.25rem; /* 36px — standard inputs/buttons */
-  --lb-control-height-coarse: 2.5rem;
+  --lb-control-height-coarse: 2.75rem;
   --lb-table-control-height: 2rem; /* 32px — spreadsheet cells */
   --lb-table-row-height: 2.5rem; /* 40px — within 36–44px band */
   --lb-field-contact-max: 26.25rem; /* 420px */
@@ -128,7 +128,7 @@
   --lb-header-height: 4rem;
   --lb-brand-bar-height: 3.5rem;
   --lb-control-height: 2.25rem;
-  --lb-control-height-coarse: 2.5rem;
+  --lb-control-height-coarse: 2.75rem;
   --lb-table-control-height: 2rem;
   --lb-table-row-height: 2.5rem;
   --lb-field-contact-max: 26.25rem;
@@ -155,7 +155,7 @@
   --popover-foreground: #1f2a37;
 
   /* Soft pastel primary blue — saturated only on actions/selection. */
-  --primary: #4f7df3;
+  --primary: #3866db;
   --primary-foreground: #ffffff;
 
   --secondary: #fbfdff;
@@ -184,18 +184,18 @@
   --money-in: #2f8f57;
   --money-out: #c94a4a;
   --success-soft: #eaf8ef;
-  --success-ink: #2f8f57;
+  --success-ink: #226b40;
   /* Teal complete: reconciled/settled/processing-complete — distinct from paid green and approved blue. */
   --complete-soft: #e7f7f6;
-  --complete-ink: #2a8f88;
+  --complete-ink: #206c67;
   --warning-soft: #fff6e8;
-  --warning-ink: #b7791f;
+  --warning-ink: #83520f;
   --info-soft: #eef4ff;
-  --info-ink: #3d6ad6;
+  --info-ink: #315cbe;
   --destructive-soft: #fdedee;
-  --destructive-ink: #c94a4a;
+  --destructive-ink: #ad343c;
   --neutral-soft: #f3f6fa;
-  --neutral-ink: #6b7a8c;
+  --neutral-ink: #546377;
   --ai-soft: #f4eefb;
   --ai-ink: #6b4f96;
   /* Sidebar module-group icon accents (inactive only; never override status semantics). */

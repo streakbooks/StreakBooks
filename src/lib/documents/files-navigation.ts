@@ -18,11 +18,13 @@ const VIEWS = new Set(["all", "to-file", "review"]);
 /** Bound and allowlist all URL fields. Never interpret any field as a redirect. */
 export function parseFilesListSearch(raw: Record<string, unknown>): FilesListSearch {
   const result: FilesListSearch = {};
+  // URL state must contain only explicit query entries, never prototype-inherited fields.
+  const own = (key: string): unknown => Object.prototype.hasOwnProperty.call(raw, key) ? raw[key] : undefined;
   for (const key of ["folder", "file"] as const) {
-    const id = raw[key];
+    const id = own(key);
     if (typeof id === "string" && UUID.test(id)) result[key] = id;
   }
-  const q = raw["q"];
+  const q = own("q");
   // Normalize bookmarked searches, but reject invisible controls that can spoof file names.
   if (typeof q === "string") {
     const normalized = q.trim();
@@ -31,18 +33,18 @@ export function parseFilesListSearch(raw: Record<string, unknown>): FilesListSea
       result.q = normalized;
   }
 
-  const type = raw["type"];
+  const type = own("type");
   if (type === "all" || isAttachmentEntityType(type)) result.type = type;
 
-  const sort = raw["sort"];
+  const sort = own("sort");
   if (typeof sort === "string" && SORT.has(sort))
     result.sort = sort as FilesListSearch["sort"];
 
-  const view = raw["view"];
+  const view = own("view");
   if (typeof view === "string" && VIEWS.has(view))
     result.view = view as FilesListSearch["view"];
 
-  const page = raw["page"];
+  const page = own("page");
   if (
     (typeof page === "number" && Number.isSafeInteger(page) && page >= 0) ||
     (typeof page === "string" && /^(0|[1-9]\d{0,6})$/.test(page))

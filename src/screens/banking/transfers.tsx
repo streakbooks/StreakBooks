@@ -3,6 +3,7 @@ import type { Search } from "@/lib/navigation/workspace-search";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useRef, useState } from "react";
 
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -27,6 +28,8 @@ import {
 import { BankLookup } from "@/components/lookup";
 import { LoadingState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,18 +45,18 @@ import {
 
 const EMPTY_PREFILL: Search = {};
 
-export function Transfers({
+/** Full-page transfer create used by Create menu and Banking → Transfers → New. */
+export function NewTransfer({
   initialSearch = EMPTY_PREFILL,
 }: { initialSearch?: Search | undefined } = {}) {
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const search = initialSearch;
+  const navigate = useNavigate();
   const today = new Date().toISOString().slice(0, 10);
   const qc = useQueryClient();
   const fetchAccounts = useServerFn(listBankAccounts);
-  const fetchTransfers = useServerFn(listBankTransfers);
   const doTransfer = useServerFn(createTransfer);
-  const doVoid = useServerFn(voidTransfer);
   const [fromId, setFromId] = useState(
     search.direction === "out" ? (search.bankAccountId ?? "") : "",
   );
@@ -75,11 +78,6 @@ export function Transfers({
     queryKey: ["bank-accounts", companyId],
     enabled: Boolean(companyId),
     queryFn: () => fetchAccounts({ data: { companyId: companyId! } }),
-  });
-  const transfersQ = useQuery({
-    queryKey: ["bank-transfers", companyId],
-    enabled: Boolean(companyId),
-    queryFn: () => fetchTransfers({ data: { companyId: companyId! } }),
   });
 
   const accounts = accountsQ.data ?? [];
@@ -133,15 +131,187 @@ export function Transfers({
       } else {
         toast.success("Transfer posted. One journal only.");
       }
-      setAmount("");
-      setReceived("");
-      setMemo("");
       await qc.invalidateQueries({ queryKey: ["bank-transfers", companyId] });
       await qc.invalidateQueries({ queryKey: ["bank-account-summaries", companyId] });
       await qc.invalidateQueries({ queryKey: ["bank-transactions", companyId] });
       await qc.invalidateQueries({ queryKey: ["bank-match-candidates", companyId] });
+      void navigate({ to: "/banking/transfers" });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
+  if (accountsQ.isError && accountsQ.data === undefined)
+    return <QueryErrorState queries={[accountsQ]} title="Could not load bank accounts" />;
+
+  if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
+  if (accountsQ.isPending) return <LoadingState />;
+
+  return (
+    <TransactionWorkspace
+      title="Transfer money"
+      description={
+        typeof search.bankTransactionId === "string"
+          ? "Moves money between your bank/cash accounts with a single DR/CR journal. The source statement line will be matched automatically after posting."
+          : "Moves money between your bank/cash accounts with a single DR/CR journal, so nothing is counted twice. Match the statement lines on both accounts to it afterwards."
+      }
+      breadcrumbs={[
+        { label: "Banking", to: "/banking" },
+        { label: "Transfers", to: "/banking/transfers" },
+        { label: "New" },
+      ]}
+      stickyActions={
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" asChild>
+            <Link to="/banking/transfers">Cancel</Link>
+          </Button>
+          <ConfirmButton
+            variant="default"
+            size="sm"
+            title="Post this bank transfer?"
+            description={
+              <span>
+                Transfer {amount} {currency} from {fromAcc?.name ?? "source account"} to{" "}
+                {toAcc?.name ?? "destination account"} on {date}.
+                {currencyMismatch ? ` Destination receives ${received} ${toCurrency}.` : ""} This
+                creates a ledger journal; corrections require a reversal.
+              </span>
+            }
+            confirmLabel="Post transfer"
+            disabled={mutation.isPending || !canPost}
+            onConfirm={() => {
+              if (canPost && !mutation.isPending) mutation.mutate();
+            }}
+          >
+            {mutation.isPending ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : null}
+            Post transfer
+          </ConfirmButton>
+        </div>
+      }
+      details={
+        <FormGrid columns={4}>
+          <FormControlShell width="contact" className="sm:col-span-2">
+            <Label>From</Label>
+            <BankLookup
+              ariaLabel="From account"
+              accounts={accounts}
+              value={fromId}
+              onChange={setFromId}
+              companyId={companyId}
+              excludeId={toId || undefined}
+              placeholder="Source"
+              allowClear={false}
+            />
+          </FormControlShell>
+          <FormControlShell width="contact" className="sm:col-span-2">
+            <Label>To</Label>
+            <BankLookup
+              ariaLabel="To account"
+              accounts={accounts}
+              value={toId}
+              onChange={setToId}
+              companyId={companyId}
+              excludeId={fromId || undefined}
+              placeholder="Destination"
+              allowClear={false}
+            />
+          </FormControlShell>
+          {currencyMismatch ? (
+            <FormControlShell className="sm:col-span-4">
+              <p className="text-sm text-muted-foreground">
+                These accounts are in different currencies. Enter what each side shows on the
+                statement. The difference against the stored exchange rates is posted to FX
+                gain/loss.
+              </p>
+            </FormControlShell>
+          ) : null}
+          <FormControlShell width="date">
+            <Label>Date</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </FormControlShell>
+          <FormControlShell width="money">
+            <Label>Amount ({currency})</Label>
+            <MoneyField
+              label="Transfer amount"
+              value={amount}
+              currency={currency}
+              options={{ allowNegative: false }}
+              onChange={setAmount}
+            />
+          </FormControlShell>
+          {currencyMismatch ? (
+            <FormControlShell width="money">
+              <Label>Amount received ({toCurrency})</Label>
+              <MoneyField
+                label="Amount received"
+                value={received}
+                currency={toCurrency}
+                options={{ allowNegative: false }}
+                onChange={setReceived}
+              />
+            </FormControlShell>
+          ) : null}
+          <FormControlShell className="sm:col-span-2">
+            <Label>Memo</Label>
+            <Input value={memo} maxLength={500} onChange={(e) => setMemo(e.target.value)} />
+          </FormControlShell>
+        </FormGrid>
+      }
+      support={
+        <DocumentRecordPanel
+          ref={recordRef}
+          entityType="bank_transfer"
+          entityId={recordId}
+          audience="internal"
+        />
+      }
+    />
+  );
+}
+
+export function Transfers({
+  initialSearch = EMPTY_PREFILL,
+}: { initialSearch?: Search | undefined } = {}) {
+  const { company } = useActiveCompany();
+  const companyId = company?.id;
+  const search = initialSearch;
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const fetchTransfers = useServerFn(listBankTransfers);
+  const doVoid = useServerFn(voidTransfer);
+
+  // Prefill from reconcile "Create transfer" → dedicated create workspace.
+  useEffect(() => {
+    if (
+      search.bankAccountId ||
+      search.amount ||
+      search.direction ||
+      search.bankTransactionId
+    ) {
+      void navigate({
+        to: "/banking/transfers/new",
+        search: {
+          ...(typeof search.bankAccountId === "string"
+            ? { bankAccountId: search.bankAccountId }
+            : {}),
+          ...(typeof search.amount === "string" ? { amount: search.amount } : {}),
+          ...(search.direction === "in" || search.direction === "out"
+            ? { direction: search.direction }
+            : {}),
+          ...(typeof search.bankTransactionId === "string"
+            ? { bankTransactionId: search.bankTransactionId }
+            : {}),
+        },
+        replace: true,
+      });
+    }
+  }, [navigate, search.amount, search.bankAccountId, search.bankTransactionId, search.direction]);
+
+  const transfersQ = useQuery({
+    queryKey: ["bank-transfers", companyId],
+    enabled: Boolean(companyId),
+    queryFn: () => fetchTransfers({ data: { companyId: companyId! } }),
   });
 
   const voidM = useMutation({
@@ -153,120 +323,35 @@ export function Transfers({
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  const requiredQueries = [accountsQ, transfersQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
-    return <QueryErrorState queries={requiredQueries} title="Could not load bank transfers" />;
+  if (transfersQ.isError && transfersQ.data === undefined)
+    return <QueryErrorState queries={[transfersQ]} title="Could not load bank transfers" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
-  if (accountsQ.isPending) return <LoadingState />;
+
+  const currency = company?.base_currency ?? "GBP";
 
   return (
     <ListWorkspace
       title="Transfers"
-      description={
-        typeof search.bankTransactionId === "string"
-          ? "Moves money between your bank/cash accounts with a single DR/CR journal. The source statement line will be matched automatically after posting."
-          : "Moves money between your bank/cash accounts with a single DR/CR journal, so nothing is counted twice. Match the statement lines on both accounts to it afterwards."
+      description="History of bank/cash transfers. Create a transfer to move money with a single DR/CR journal."
+      actions={
+        <Button size="sm" asChild>
+          <Link to="/banking/transfers/new">New transfer</Link>
+        </Button>
       }
     >
-      <div className="grid max-w-md gap-3">
-        <div className="space-y-1">
-          <Label>From</Label>
-          <BankLookup
-            ariaLabel="From account"
-            accounts={accounts}
-            value={fromId}
-            onChange={setFromId}
-            companyId={companyId}
-            excludeId={toId || undefined}
-            placeholder="Source"
-            allowClear={false}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label>To</Label>
-          <BankLookup
-            ariaLabel="To account"
-            accounts={accounts}
-            value={toId}
-            onChange={setToId}
-            companyId={companyId}
-            excludeId={fromId || undefined}
-            placeholder="Destination"
-            allowClear={false}
-          />
-        </div>
-        {currencyMismatch ? (
-          <p className="text-sm text-muted-foreground">
-            These accounts are in different currencies. Enter what each side shows on the statement.
-            The difference against the stored exchange rates is posted to FX gain/loss.
-          </p>
-        ) : null}
-        <div className="space-y-1">
-          <Label>Date</Label>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </div>
-        <div className="space-y-1">
-          <Label>Amount ({currency})</Label>
-          <MoneyField
-            label="Transfer amount"
-            value={amount}
-            currency={currency}
-            options={{ allowNegative: false }}
-            onChange={setAmount}
-          />
-        </div>
-        {currencyMismatch ? (
-          <div className="space-y-1">
-            <Label>Amount received ({toCurrency})</Label>
-            <MoneyField
-              label="Amount received"
-              value={received}
-              currency={toCurrency}
-              options={{ allowNegative: false }}
-              onChange={setReceived}
-            />
-          </div>
-        ) : null}
-        <div className="space-y-1">
-          <Label>Memo</Label>
-          <Input value={memo} maxLength={500} onChange={(e) => setMemo(e.target.value)} />
-        </div>
-        <DocumentRecordPanel
-          ref={recordRef}
-          entityType="bank_transfer"
-          entityId={recordId}
-          audience="internal"
-        />
-        <ConfirmButton
-          variant="default"
-          title="Post this bank transfer?"
-          description={
-            <span>
-              Transfer {amount} {currency} from {fromAcc?.name ?? "source account"} to{" "}
-              {toAcc?.name ?? "destination account"} on {date}.
-              {currencyMismatch ? ` Destination receives ${received} ${toCurrency}.` : ""} This
-              creates a ledger journal; corrections require a reversal.
-            </span>
-          }
-          confirmLabel="Post transfer"
-          disabled={mutation.isPending || !canPost}
-          onConfirm={() => {
-            if (canPost && !mutation.isPending) mutation.mutate();
-          }}
-        >
-          {mutation.isPending ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          ) : null}
-          Post transfer
-        </ConfirmButton>
-      </div>
-
-      <h2 className="mb-2 mt-8 text-lg font-semibold">Transfer history</h2>
       {transfersQ.isPending ? (
         <LoadingState />
       ) : (transfersQ.data ?? []).length === 0 ? (
-        <p className="text-sm text-muted-foreground">No transfers yet.</p>
+        <EmptyState
+          title="No transfers yet"
+          description="Post a transfer between your bank or cash accounts."
+          action={
+            <Button size="sm" asChild>
+              <Link to="/banking/transfers/new">New transfer</Link>
+            </Button>
+          }
+        />
       ) : (
         <Table>
           <TableHeader>

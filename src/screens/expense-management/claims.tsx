@@ -71,7 +71,13 @@ function parseMinorNumber(value: string, label: string): number {
   return Number(parseMinorOrThrow(value, label));
 }
 
-export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "claims" }) {
+export function ExpenseManagementClaimsPage({
+  mode,
+  forceCreate = false,
+}: {
+  mode: "my-expenses" | "claims";
+  forceCreate?: boolean;
+}) {
   const sectionKey: ExpenseManagementSectionKey = mode;
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
@@ -94,6 +100,13 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
   const [lines, setLines] = useState<ExpenseDraftLineForm[]>(() =>
     Array.from({ length: 5 }, () => emptyDraftLine(today)),
   );
+
+  useEffect(() => {
+    if (!forceCreate || mode !== "my-expenses") return;
+    const node = document.getElementById("expense-claim-create");
+    node?.scrollIntoView({ behavior: "smooth", block: "start" });
+    node?.querySelector<HTMLInputElement>("input, textarea, select")?.focus();
+  }, [forceCreate, mode]);
   const [splitLineKey, setSplitLineKey] = useState<string | null>(null);
   const [splitAccountA, setSplitAccountA] = useState("");
   const [splitAccountB, setSplitAccountB] = useState("");
@@ -546,7 +559,12 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
     >
       {mode === "my-expenses" && canSubmit ? (
         <form
-          className="mb-8 grid max-w-4xl gap-4 rounded-lg border p-4"
+          id="expense-claim-create"
+          className={
+            forceCreate
+              ? "mb-8 grid gap-4 rounded-lg border border-border/70 bg-card/80 p-4 sm:p-5"
+              : "mb-8 grid max-w-4xl gap-4 rounded-lg border p-4"
+          }
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate();

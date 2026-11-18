@@ -34,9 +34,9 @@ export const CREATE_GROUP_LABEL: Record<CreateGroup, string> = {
 /** Shown until a signed-in save against the live ledger has been checked. */
 export const CREATE_PENDING_DATABASE = "Unavailable until a signed-in save is verified.";
 
-/** Shown on the new journal flyover. Journals on the Accounting page stay available. */
+/** Legacy flyover blocker copy — journals now open at /accounting/journals/new. */
 export const CREATE_PENDING_JOURNAL =
-  "Unavailable until this journal flyover is verified. Post journals from Accounting in the meantime.";
+  "Unavailable until this journal workspace is verified. Post journals from Accounting → Journals in the meantime.";
 
 export const CREATE_ACTIONS: readonly CreateAction[] = [
   {
@@ -129,11 +129,11 @@ export const CREATE_ACTIONS: readonly CreateAction[] = [
     group: "sales",
     aliases: ["repeating invoice", "sales schedule"],
     permission: "sales.draft",
-    status: "PARTIAL",
+    status: "REUSABLE",
     availability: "ready",
     width: "wide",
-    route: "/sales/recurring",
-    component: "RecurringInvoices",
+    route: "/sales/recurring/new",
+    component: "NewRecurringInvoice",
     backend: "saveRecurringInvoice",
     blocker: null,
   },
@@ -171,10 +171,10 @@ export const CREATE_ACTIONS: readonly CreateAction[] = [
     group: "purchases",
     aliases: ["repeating bill", "bill template"],
     permission: "purchases.draft",
-    status: "PARTIAL",
+    status: "REUSABLE",
     availability: "ready",
     width: "wide",
-    route: "/purchases/recurring",
+    route: "/purchases/recurring/new",
     component: "NewBill template",
     backend: "saveRecurringBill",
     blocker: null,
@@ -300,8 +300,8 @@ export const CREATE_ACTIONS: readonly CreateAction[] = [
     status: "REUSABLE",
     availability: "ready",
     width: "wide",
-    route: "/banking/transfers",
-    component: "Transfers",
+    route: "/banking/transfers/new",
+    component: "NewTransfer",
     backend: "createTransfer",
     blocker: null,
   },

@@ -75,7 +75,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function ProductsPage() {
+export function ProductsPage({ forceCreate = false }: { forceCreate?: boolean } = {}) {
   const { company, isPending } = useActiveCompany();
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -94,7 +94,11 @@ export function ProductsPage() {
         <TabsTrigger value="price-lists">Price Lists</TabsTrigger>
       </TabsList>
       <TabsContent value="catalogue">
-        <ProductsWorkspace companyId={company.id} currency={company.base_currency} />
+        <ProductsWorkspace
+          companyId={company.id}
+          currency={company.base_currency}
+          forceCreate={forceCreate}
+        />
       </TabsContent>
       <TabsContent value="categories">
         <CategoriesWorkspace companyId={company.id} currency={company.base_currency} />
@@ -106,7 +110,15 @@ export function ProductsPage() {
   );
 }
 
-function ProductsWorkspace({ companyId, currency }: { companyId: string; currency: string }) {
+function ProductsWorkspace({
+  companyId,
+  currency,
+  forceCreate = false,
+}: {
+  companyId: string;
+  currency: string;
+  forceCreate?: boolean;
+}) {
   const queryClient = useQueryClient();
   const fmt = useFormat();
   const fetchProducts = useServerFn(listProductsPage);
@@ -146,6 +158,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const [open, setOpen] = useState(false);
   const productRecordRef = useRef<DocumentRecordHandle>(null);
   const [editing, setEditing] = useState<ProductRow | null>(null);
+  const forceCreateOpened = useRef(false);
 
   const [form, setForm] = useState({
     kind: "service",
@@ -438,6 +451,12 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
     });
     setOpen(true);
   }
+
+  useEffect(() => {
+    if (!forceCreate || !canManage || forceCreateOpened.current) return;
+    forceCreateOpened.current = true;
+    openCreate();
+  }, [forceCreate, canManage]);
 
   function openEdit(p: ProductRow) {
     setEditing(p);

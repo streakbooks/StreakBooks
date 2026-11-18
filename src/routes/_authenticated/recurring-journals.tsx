@@ -100,6 +100,11 @@ function RecurringJournalsPage() {
           <Button size="sm" variant="outline" asChild>
             <Link to="/accounting">Accounting</Link>
           </Button>
+          <Button size="sm" asChild disabled={!canPost}>
+            <Link to="/accounting/journals/new" search={{ mode: "template" }}>
+              New recurring journal
+            </Link>
+          </Button>
           <Button
             size="sm"
             disabled={!canPost || runMutation.isPending || dueCount === 0}
@@ -131,7 +136,14 @@ function RecurringJournalsPage() {
       ) : rows.length === 0 ? (
         <EmptyState
           title="No recurring journals"
-          description="Create one from Create new → Recurring journal."
+          description="Create a recurring journal template to schedule rent, depreciation, or accruals."
+          action={
+            <Button size="sm" asChild disabled={!canPost}>
+              <Link to="/accounting/journals/new" search={{ mode: "template" }}>
+                New recurring journal
+              </Link>
+            </Button>
+          }
         />
       ) : (
         <Table>

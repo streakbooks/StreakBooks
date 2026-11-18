@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Transfers } from "@/screens/banking/transfers";
 
-export const Route = createFileRoute("/_authenticated/banking/transfers")({
+export const Route = createFileRoute("/_authenticated/banking/transfers/")({
   // Prefill from "Create transfer from this line": the statement line's account is the destination for money in
   // and the source for money out.
   validateSearch: (s: Record<string, unknown>): Search => {

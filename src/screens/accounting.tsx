@@ -4,7 +4,7 @@ import { type AccountingTab } from "@/lib/navigation/workspace-search";
 import { DeferralsPanel } from "@/components/accounting/DeferralsPanel";
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { TransactionCorrections } from "@/components/accounting/corrections/TransactionCorrections";
-import { Link } from "@tanstack/react-router";
+import { Link, Navigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -17,7 +17,6 @@ import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import { ChartAccountsPanel } from "@/components/accounting/ChartAccountsPanel";
 import { ConversionBalancesPanel } from "@/components/accounting/ConversionBalancesPanel";
@@ -29,7 +28,6 @@ import { ReconciliationExceptionCentre } from "@/components/accounting/Reconcili
 import { JournalsPanel } from "@/components/accounting/JournalsPanel";
 import { PeriodClosePanel } from "@/components/accounting/PeriodClosePanel";
 
-import { ManualJournalPanel } from "@/components/create-new/JournalPanels";
 const routeApi = getRouteApi("/_authenticated/accounting");
 
 export function Accounting() {
@@ -192,11 +190,10 @@ export function AccountingWorkspace({
           <Link
             className={nativeTabLinkClass}
             role="tab"
-            aria-selected={tab === "post"}
-            data-state={tab === "post" ? "active" : "inactive"}
-            to="/accounting"
-            search={{ tab: "post" }}
-            resetScroll={false}
+            aria-selected={false}
+            data-state="inactive"
+            to="/accounting/journals/new"
+            search={{ mode: "post" }}
           >
             Post manual journal
           </Link>
@@ -315,14 +312,8 @@ export function AccountingWorkspace({
         </TabsContent>
 
         <TabsContent value="post" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Manual journal</CardTitle>
-            </CardHeader>
-            <CardContent className="max-w-4xl">
-              <ManualJournalPanel key={companyId} />
-            </CardContent>
-          </Card>
+          {/* Legacy deep link /accounting?tab=post → canonical full-page create */}
+          <Navigate to="/accounting/journals/new" search={{ mode: "post" }} />
         </TabsContent>
 
         <TabsContent value="periods" className="mt-4">

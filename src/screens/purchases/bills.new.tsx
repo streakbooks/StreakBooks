@@ -1423,7 +1423,9 @@ export function NewBill({
   const headerBar: ReactNode = (
     <div className="flex flex-wrap items-center gap-2">
       <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-semibold tracking-tight">New bill</h1>
+        <h1 className="text-xl font-semibold tracking-tight">
+          {isTemplate ? "Recurring bill template" : "New bill"}
+        </h1>
         <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
           {isTemplate
             ? `Template · Status: ${templateId ? (scheduleActive ? "Active schedule" : "Saved template") : "Unsaved"} · Not posted · View: `

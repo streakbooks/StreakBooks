@@ -47,7 +47,7 @@
 | Directive gap consolidation Batch 55 | Merged | PR #307 → `28933021` — New Account; product `/new`; sticky create URLs; gap matrix; payroll import fix |
 | Production typecheck + FA /new Batch 56 | Merged | PR #309 → `8e990f85` — typecheck green; FA /new; sticky project create |
 | Sticky create honesty Batch 57 | Merged | main `5684bd7a` — budgets/payroll/requisitions sticky create; EM cancel |
-| Empty CTA honesty Batch 58 | In progress | HR/CRM/PM empty New CTAs |
+| Empty CTA honesty Batch 58 | Merged | PR #313 → `3060d166` — HR/CRM/PM empty New CTAs |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

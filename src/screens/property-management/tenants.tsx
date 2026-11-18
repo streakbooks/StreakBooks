@@ -195,7 +195,17 @@ export function PmTenantsPage() {
             />
           ) : null}
           {tenants.data?.length === 0 ? (
-            <EmptyState title="No tenants linked" description="Link a contact as a tenant." />
+            <EmptyState
+              title="No tenants linked"
+              description="Link a contact as a tenant."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    Link tenant
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : null}
           {tenants.data && tenants.data.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-border">

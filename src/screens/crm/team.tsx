@@ -240,6 +240,13 @@ export function CrmTeamPage() {
                 <EmptyState
                   title="No territories yet"
                   description="Create a territory to track regional ownership. Auto-assignment rules arrive later."
+                  action={
+                    policy?.canManageTerritories ? (
+                      <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                        New territory
+                      </Button>
+                    ) : undefined
+                  }
                 />
               ) : null}
               {territoryRows.length > 0 ? (

@@ -78,3 +78,11 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Expense claim Cancel | Clears `create` search so form does not reopen |
 | Products create clear | exactOptional-safe omit (no `create: undefined`) |
 
+## Batch 58 (empty CTA honesty)
+
+| Gap | Action |
+| --- | --- |
+| HR training / performance / onboarding empty lists | EmptyState actions mirror header New controls |
+| CRM territories empty | New territory CTA |
+| PM properties / units / tenants empty | New property / unit / Link tenant CTAs |
+

@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Settings section-derived destination allowlist (2026-11-18)
+
+- `src/lib/settings/panels.ts`: section-derived `/settings` destinations now pass through `parseSettingsPanel`, rejecting invalid runtime sections rather than generating unrecognized `category:*` panels. Code commit `d396baf3c72ac163da84a50536cc17cc4fc8eb1c`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/settings/panels.test.ts`: add invalid section and valid banking category regression cases, commit `bde74e52edae4a1ee3aec33398085ed74e457def`. **WRITTEN, NOT RUN.**
+- Manifest updated; no module or acceptance criterion fully verified. **NOT RUN:** browsing inventory guard, TypeScript, lint, Vitest, build, authenticated browser, accessibility, security/RLS, accounting regression. Baseline 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No `main` changes, manual CI, production DB or deployment.
+
+
 ### Settings explicit destination panel allowlist (2026-11-18)
 
 - `src/lib/settings/panels.ts`: validate `destination.panel` at runtime through `parseSettingsPanel` rather than trusting a TypeScript annotation; source commit `878ffd1256d37ed160fa10c304a622d62c965bc2`. **SOURCE ONLY; NOT RUN.**

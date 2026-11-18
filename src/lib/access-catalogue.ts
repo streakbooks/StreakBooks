@@ -374,6 +374,128 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     ],
   },
   {
+    id: "property-management",
+    label: "Property Management",
+    description: "Portfolios, owners, rentals, statements and settlement controls.",
+    items: [
+      {
+        permission: "property.view",
+        label: "View Property Management",
+        detail: "Open portfolio dashboards and registers.",
+      },
+      {
+        permission: "property.manage",
+        label: "Manage properties and units",
+        detail: "Create and update properties, units and agreements.",
+      },
+      {
+        permission: "property.owner.view",
+        label: "View owners",
+        detail: "View owner overlays and ownership shares.",
+      },
+      {
+        permission: "property.owner.manage",
+        label: "Manage owners",
+        detail: "Link contacts as owners and maintain ownership.",
+      },
+      {
+        permission: "property.tenant.manage",
+        label: "Manage tenants",
+        detail: "Maintain tenant and guest records.",
+      },
+      {
+        permission: "property.lease.manage",
+        label: "Manage leases",
+        detail: "Create and update long-term leases.",
+      },
+      {
+        permission: "property.reservation.manage",
+        label: "Manage reservations",
+        detail: "Create and update short-term reservations.",
+      },
+      {
+        permission: "property.rent.manage",
+        label: "Manage rent and charges",
+        detail: "Schedule rent, adjustments and collections.",
+      },
+      {
+        permission: "property.expenses.manage",
+        label: "Manage property expenses",
+        detail: "Allocate expenses and maintenance costs.",
+      },
+      {
+        permission: "property.commission.manage",
+        label: "Manage commissions",
+        detail: "Configure and calculate management fees.",
+      },
+      {
+        permission: "property.statements.view",
+        label: "View owner statements",
+        detail: "Open owner statement history and previews.",
+      },
+      {
+        permission: "property.statements.generate",
+        label: "Generate owner statements",
+        detail: "Create draft owner statements.",
+      },
+      {
+        permission: "property.statements.approve",
+        label: "Approve owner statements",
+        detail: "Approve and lock statement snapshots.",
+      },
+      {
+        permission: "property.statements.publish",
+        label: "Publish owner statements",
+        detail: "Publish statements to portals and delivery.",
+      },
+      {
+        permission: "property.payouts.prepare",
+        label: "Prepare owner payouts",
+        detail: "Calculate eligible distributions.",
+      },
+      {
+        permission: "property.payouts.approve",
+        label: "Approve owner payouts",
+        detail: "Authorise distribution amounts.",
+      },
+      {
+        permission: "property.payouts.record",
+        label: "Record owner payouts",
+        detail: "Post paid distributions and reconciliations.",
+      },
+      {
+        permission: "property.trust.reconcile",
+        label: "Reconcile trust accounts",
+        detail: "Run trust and beneficiary reconciliations.",
+      },
+      {
+        permission: "property.reports.view",
+        label: "View property reports",
+        detail: "Open property and portfolio reports.",
+      },
+      {
+        permission: "property.reports.export",
+        label: "Export property reports",
+        detail: "Export property and owner reports.",
+      },
+      {
+        permission: "property.integrations.manage",
+        label: "Manage PM integrations",
+        detail: "Configure PMS connections and imports.",
+      },
+      {
+        permission: "property.settings.manage",
+        label: "Property Management settings",
+        detail: "Enable the module and configure policies.",
+      },
+      {
+        permission: "property.audit.view",
+        label: "View property audit",
+        detail: "Inspect property audit evidence.",
+      },
+    ],
+  },
+  {
     id: "crm",
     label: "CRM",
     description: "Leads, opportunities, campaigns and sales pipeline workflows.",

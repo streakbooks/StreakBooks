@@ -4,6 +4,7 @@ import { EXPENSE_MANAGEMENT_SECTIONS } from "@/lib/expenses/sections";
 import { APP_STORE_SECTIONS, DEVELOPER_PORTAL_SECTIONS } from "@/lib/app-store/sections";
 import { CRM_SUBNAV } from "@/lib/crm/sections";
 import { HR_SUBNAV } from "@/lib/hr/sections";
+import { PM_SUBNAV } from "@/lib/property-management/sections";
 import {
   DEFAULT_AUTHENTICATED_EXPERIENCE,
   DEFAULT_PUBLIC_EXPERIENCE,
@@ -184,6 +185,22 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
     premiumStatus: "in-progress",
     notes: "CRM-02 foundation: navigation, settings, leads, opportunities, dashboard KPIs.",
+  },
+  {
+    id: "property-management",
+    label: "Property Management",
+    description: "Portfolios, owners, rentals and owner settlement",
+    path: "/property-management",
+    group: "records",
+    inSidebar: true,
+    pageKind: "dashboard",
+    subnav: PM_SUBNAV,
+    viewModes: ["list", "calendar", "mobile-card"],
+    screenRoot: "src/screens/property-management",
+    experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
+    premiumStatus: "in-progress",
+    notes:
+      "PM-01 foundation: navigation, permissions, settings, properties, units, owners, agreements. Not production-ready for statements/payouts.",
   },
   {
     id: "hr",

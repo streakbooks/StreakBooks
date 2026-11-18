@@ -10,9 +10,10 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
       const m = await import("@/screens/sales/quotes.new");
       return m.NewQuote;
     }
-    case "sales_order":
-      // Full-page via createNavTarget (/sales/orders?create=true); no flyover form.
-      throw new Error("Sales order opens at /sales/orders?create=true");
+    case "sales_order": {
+      const m = await import("@/screens/sales/orders.new");
+      return m.NewSalesOrder;
+    }
     case "receive_payment": {
       const m = await import("@/screens/sales/receipts.new");
       return m.NewReceipt;
@@ -42,6 +43,12 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
     case "purchase_order": {
       const m = await import("@/screens/purchases/orders.new");
       return m.NewOrder;
+    }
+    case "purchase_requisition": {
+      const m = await import("@/screens/purchases/requisitions");
+      return function RequisitionCreatePanel() {
+        return <m.PurchasesRequisitionsScreen forceCreate />;
+      };
     }
     case "pay_bill": {
       const m = await import("@/screens/purchases/payments.new");

@@ -15,9 +15,9 @@ import {
 } from "@/lib/create-new/preferences";
 
 describe("create new registry", () => {
-  it("lists the 30 specified commands once", () => {
-    expect(CREATE_ACTIONS).toHaveLength(30);
-    expect(new Set(CREATE_ACTIONS.map((action) => action.id)).size).toBe(30);
+  it("lists the 31 specified commands once", () => {
+    expect(CREATE_ACTIONS).toHaveLength(31);
+    expect(new Set(CREATE_ACTIONS.map((action) => action.id)).size).toBe(31);
   });
 
   it("keeps verified commands runnable and holds the rest", () => {
@@ -26,7 +26,7 @@ describe("create new registry", () => {
     );
     expect(blocked).toEqual([]);
     expect(CREATE_ACTIONS.every((action) => action.component)).toBe(true);
-    expect(runnableCreateActions("owner")).toHaveLength(30);
+    expect(runnableCreateActions("owner")).toHaveLength(31);
     expect(runnableCreateActions("read_only")).toHaveLength(1);
   });
 
@@ -124,7 +124,12 @@ describe("create full-page destinations", () => {
     });
     expect(createNavTarget(salesOrder)).toEqual({
       kind: "route",
-      to: "/sales/orders",
+      to: "/sales/orders/new",
+    });
+    const requisition = CREATE_ACTIONS.find((a) => a.id === "purchase_requisition")!;
+    expect(createNavTarget(requisition)).toEqual({
+      kind: "route",
+      to: "/purchases/requisitions",
       search: { create: true },
     });
   });

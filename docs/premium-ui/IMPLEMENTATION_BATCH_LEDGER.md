@@ -46,6 +46,7 @@
 | 50 | Phase 3 | EM list-only create; palette intent; FA/PO/CN/SO empty CTAs; SO TransactionWorkspace | `feature/premium-ui-batch50-create-hardening` | [PR #298](https://github.com/linkbusinessadvisory/LinkBooks/pull/298) → `e0f0d8c0` | EM + palette + FA + purchases + sales orders | merged (CI billing skipped; local gates PASS) |
 | 51 | Phase 3 | Sales order CREATE_ACTIONS + create=true; FA create dialog deep-link | `feature/premium-ui-batch51-create-intents` | [PR #299](https://github.com/linkbusinessadvisory/LinkBooks/pull/299) → `0be7b88f` | create menu + sales orders + fixed assets | merged (CI billing skipped; local gates PASS) |
 | 52 | Phase 3 | Requisition workspace; product create clear; contacts/projects/palette honesty | `feature/premium-ui-batch52-create-honesty` | [PR #301](https://github.com/linkbusinessadvisory/LinkBooks/pull/301) → `fe0ed927` | purchases + products + contacts + palette | merged (CI billing skipped; local gates PASS) |
-| 53+ | Phase 4–10 | Remaining module DoD, staging runtime evidence, FA full-page create | TBD | — | all modules | planned |
+| 53 | Phase 3 | Sales orders /new; requisition CREATE; customers/suppliers/budgets/CRM honesty | `feature/premium-ui-batch53-create-routes` | pending | sales + purchases + budgets + CRM | in progress |
+| 54+ | Phase 4–10 | Remaining module DoD, staging runtime evidence, FA/product full-page create | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

@@ -41,7 +41,7 @@
 | Create surfaces Batch 49 | Merged | PR #297 → `de6913c6` — transactions New CTAs; createNavTarget; EM claim TransactionWorkspace |
 | Create hardening Batch 50 | Merged | PR #298 → `e0f0d8c0` — EM list-only; palette intent; empty CTAs; SO workspace |
 | Create intents Batch 51 | Merged | PR #299 → `0be7b88f` — sales_order CREATE; FA/SO `?create=true` |
-| Create honesty Batch 52 | In progress | `feature/premium-ui-batch52-create-honesty` — requisitions workspace; product/contacts/projects/palette |
+| Create honesty Batch 52 | Merged | PR #301 → `fe0ed927` — requisitions workspace; product/contacts/projects/palette |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

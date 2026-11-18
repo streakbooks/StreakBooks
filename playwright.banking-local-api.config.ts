@@ -7,6 +7,7 @@ const executablePath =
 /** Real API tests require an explicitly started, isolated localhost app/Supabase. */
 export default defineConfig({
   testDir: "./e2e/banking-local-api",
+  globalSetup: "./e2e/banking-local-api/setup.ts",
   workers: 1,
   retries: 0,
   timeout: 120_000,

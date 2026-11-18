@@ -52,7 +52,8 @@
     "test:banking:ui": "playwright test --config playwright.coding-memory.config.ts",
     "check:migrations": "node scripts/check-migration-identities.mjs && node --test scripts/check-migration-identities.test.mjs",
     "test:banking:local-api": "python3 scripts/test-banking-local-api.py",
-    "test:banking:local-ui": "playwright test --config playwright.banking-local-api.config.ts"
+    "test:banking:local-ui": "playwright test --config playwright.banking-local-api.config.ts",
+    "dev:banking:local": "python3 scripts/start-banking-local-app.py"
   },
   "overrides": {
     "rolldown": "1.2.1"

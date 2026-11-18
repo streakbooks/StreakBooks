@@ -428,7 +428,7 @@ export function mapPurchaseOrder(
     issueDate: String(row["order_date"]),
     dueDate: null,
     expiryDate: null,
-    reference: null,
+    reference: str(row["supplier_reference"]),
     party: supplierParty("Supplier", contact),
     lines: sortedLines(lines, "line_no").map((line) =>
       salesLine({
@@ -452,10 +452,23 @@ export function mapPurchaseOrder(
     allocations: [],
     allocationsTitle: null,
     paymentAmountMinor: null,
-    extraMeta: [],
-    notes: str(row["memo"]),
+    extraMeta: [
+      ...(str(row["expected_delivery_date"])
+        ? [{ label: "Expected delivery", value: String(row["expected_delivery_date"]) }]
+        : []),
+      ...(str(row["acknowledged_on"])
+        ? [{ label: "Supplier acknowledged", value: String(row["acknowledged_on"]) }]
+        : []),
+    ],
+    notes:
+      [
+        str(row["memo"]),
+        str(row["delivery_address"]) ? `Delivery address:\n${str(row["delivery_address"])}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n\n") || null,
     showPaymentDetails: false,
-    paymentTermsText: null,
+    paymentTermsText: str(row["terms"]),
     partyEmail: str(contact?.["email"]),
     partyId: str(row["contact_id"]),
   });

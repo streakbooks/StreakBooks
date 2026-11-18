@@ -88,9 +88,9 @@ export function AdvisorsAdminDocumentsPage() {
             <Label htmlFor="doc-status">Status</Label>
             <RecordLookupSelect
               id="doc-status"
-              className="flex h-10 border-input px-3"
+              className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
               value={status}
-              onValueChange={(nextValue) => setStatus(nextValue as (typeof STATUSES)[number])}
+              onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
             >
               {STATUSES.map((item) => (
                 <option key={item} value={item}>

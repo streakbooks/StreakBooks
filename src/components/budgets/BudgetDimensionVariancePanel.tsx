@@ -179,9 +179,9 @@ export function BudgetDimensionVariancePanel({
               <Label htmlFor="dim-report-through">As of</Label>
               <RecordLookupSelect
                 id="dim-report-through"
-                className="flex h-10 border-input px-3"
+                className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
                 value={throughChoice}
-                onValueChange={(nextValue) => setThroughChoice(nextValue)}
+                onValueChange={(e) => setThroughChoice(e)}
               >
                 <option value="">Latest completed month (default)</option>
                 {canShowPartial ? (
@@ -199,8 +199,8 @@ export function BudgetDimensionVariancePanel({
               <RecordLookupSelect
                 id="dim-report-view"
                 value={viewMonth}
-                onValueChange={(nextValue) => setViewMonth(nextValue)}
-                className="flex h-10 border-input px-3"
+                onValueChange={(e) => setViewMonth(e)}
+                className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
               >
                 <option value="ytd">Year to date</option>
                 {(report?.months ?? []).map((m, i) => (

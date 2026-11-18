@@ -5,12 +5,12 @@ import type { ExceptionFinding } from "./reconciliation-exceptions";
  * NOT a signature, authorization token, source attestation, or proof of resolution.
  * Changed source evidence intentionally creates a separate review case.
  */
-export function reconciliationFindingFingerprint<
-  T extends Pick<
+export function reconciliationFindingFingerprint(
+  finding: Pick<
     ExceptionFinding,
     "source" | "title" | "detail" | "severity" | "reference" | "journalId"
   >,
->(finding: T): string {
+): string {
   const material = [
     finding.source,
     finding.reference ?? "",
@@ -68,7 +68,7 @@ export type ReconciliationReviewEvent = {
   actor_id: string;
   action: string;
   note: string;
-  old_state: Record<string, Json> | null;
-  new_state: Record<string, Json>;
+  old_state: Json | null;
+  new_state: Json;
   created_at: string;
 };

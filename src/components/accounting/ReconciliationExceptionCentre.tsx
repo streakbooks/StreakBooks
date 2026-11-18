@@ -316,9 +316,9 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                 <RecordLookupSelect
                   aria-label="Recent deferral schedules"
                   value=""
-                  className="w-full"
-                  onValueChange={(nextValue) => {
-                    setScheduleId(nextValue);
+                  className="w-full rounded-md border bg-background p-2 text-xs"
+                  onValueChange={(e) => {
+                    setScheduleId(e);
                     deferrals.reset();
                     clearReviews();
                   }}
@@ -389,9 +389,9 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                 <RecordLookupSelect
                   aria-label="Recent FX revaluation runs"
                   value=""
-                  className="w-full"
-                  onValueChange={(nextValue) => {
-                    setRevalId(nextValue);
+                  className="w-full rounded-md border bg-background p-2 text-xs"
+                  onValueChange={(e) => {
+                    setRevalId(e);
                     revaluation.reset();
                     clearReviews();
                   }}
@@ -473,9 +473,9 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                     <RecordLookupSelect
                       aria-label="Recent depreciation runs"
                       value=""
-                      className="w-full"
-                      onValueChange={(nextValue) => {
-                        setSelectedDepreciationId(nextValue);
+                      className="w-full rounded-md border bg-background p-2 text-xs"
+                      onValueChange={(e) => {
+                        setSelectedDepreciationId(e);
                         setFixedAuditKind(null);
                         depreciation.reset();
                         clearReviews();
@@ -529,9 +529,9 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                     <RecordLookupSelect
                       aria-label="Recent disposed fixed assets"
                       value=""
-                      className="w-full"
-                      onValueChange={(nextValue) => {
-                        setSelectedDisposalId(nextValue);
+                      className="w-full rounded-md border bg-background p-2 text-xs"
+                      onValueChange={(e) => {
+                        setSelectedDisposalId(e);
                         setFixedAuditKind(null);
                         disposal.reset();
                         clearReviews();
@@ -653,9 +653,9 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
               <Label htmlFor="exc-source">Source</Label>
               <RecordLookupSelect
                 id="exc-source"
-                className="h-9 px-2"
+                className="h-9 rounded-md border bg-background px-2 text-sm"
                 value={source}
-                onValueChange={(nextValue) => setSource(nextValue as ExceptionFilter["source"])}
+                onValueChange={(e) => setSource(e as ExceptionFilter["source"])}
               >
                 <option value="all">All modules</option>
                 {SOURCES.map((x) => (

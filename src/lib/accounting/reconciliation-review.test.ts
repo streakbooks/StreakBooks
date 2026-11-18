@@ -22,7 +22,7 @@ describe("persistent reconciliation review identity", () => {
       reconciliationFindingFingerprint({
         ...finding,
         key: "fixed_assets:depreciation:run-1:issue:99",
-      }),
+      } as ExceptionFinding),
     );
   });
   it("keeps identical audit evidence associated with the same case across refreshes", () => {

@@ -365,11 +365,9 @@ export function BudgetForecastPanel({
                 <Label htmlFor="forecast-cutoff">Actuals through</Label>
                 <RecordLookupSelect
                   id="forecast-cutoff"
-                  className="flex h-10 w-full border-input px-3"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={cutoff === null ? "latest" : String(cutoff)}
-                  onValueChange={(nextValue) =>
-                    setCutoff(nextValue === "latest" ? null : Number(nextValue))
-                  }
+                  onValueChange={(e) => setCutoff(e === "latest" ? null : Number(e))}
                 >
                   <option value="latest">Latest completed month</option>
                   <option value="-1">No completed months</option>

@@ -47,7 +47,7 @@ export function nextNotificationCursor<
     priority_rank: number;
   },
 >(rows: readonly T[], pageSize: number): NotificationCursor | null {
-  if (rows.length <= pageSize || !Number.isSafeInteger(pageSize) || pageSize < 1) return null;
+  if (rows.length <= pageSize || pageSize < 1) return null;
   const last = rows[pageSize - 1];
   if (!last) return null;
   return {

@@ -1,0 +1,50 @@
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',false);
+DO $$
+DECLARE
+ c uuid:='10000000-0000-4000-8000-000000000001'; r jsonb; again jsonb; payload jsonb; n integer;
+BEGIN
+ payload:=jsonb_build_object('requestId',gen_random_uuid(),'title','Replacement workstations','justification','Replace equipment','contactId','30000000-0000-4000-8000-000000000001','requestedOn','2026-11-18','requiredOn','2026-12-01','currencyCode','GBP','lines',jsonb_build_array(jsonb_build_object('description','Workstation','accountId','20000000-0000-4000-8000-000000000001','quantity',2,'unitPriceMinor',10000,'discountMinor',1,'taxRateBps',2000)));
+ r:=public.save_purchase_requisition(c,payload);
+ again:=public.save_purchase_requisition(c,payload);
+ PERFORM public.po_test_assert(r->>'id'=again->>'id' AND (r->>'total_minor')::bigint=23999,'requisition save computes totals and replays identity');
+ PERFORM public.po_test_error(format('SELECT public.save_purchase_requisition(%L,%L)',c,(payload||'{"title":"Changed replay"}')::text),'%different data%','requisition conflicting replay rejected');
+ r:=public.save_purchase_requisition(c,payload||jsonb_build_object('id',r->>'id','version',1,'title','Updated request'));
+ PERFORM public.po_test_assert((r->>'version')::int=2 AND r->>'title'='Updated request','requisition draft edit persists and versions');
+ PERFORM public.po_test_error(format('SELECT public.manage_purchase_requisition(%L,%L,1,%L)',c,r->>'id','submit'),'%reload%','requisition stale action rejected');
+ PERFORM public.po_test_error(format('SELECT public.manage_purchase_requisition(%L,%L,2,%L)',c,r->>'id','convert'),'%no longer allowed%','unapproved requisition cannot convert');
+ r:=public.manage_purchase_requisition(c,(r->>'id')::uuid,2,'submit');
+ PERFORM public.po_test_error(format('SELECT public.manage_purchase_requisition(%L,%L,3,%L)',c,r->>'id','approve'),'%different authorised person%','requisition submitter cannot self approve');
+ PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000003"}',true);
+ r:=public.manage_purchase_requisition(c,(r->>'id')::uuid,3,'reject','Need budget evidence');
+ PERFORM public.po_test_assert(r->>'status'='rejected' AND r->>'decision_comment'='Need budget evidence','requisition reject records reason');
+ PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',true);
+ r:=public.manage_purchase_requisition(c,(r->>'id')::uuid,4,'reset');
+ PERFORM public.po_test_assert(r->>'status'='draft' AND r->>'submitted_by' IS NULL,'requisition reset clears submission');
+ r:=public.manage_purchase_requisition(c,(r->>'id')::uuid,5,'submit');
+ PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000003"}',true);
+ r:=public.manage_purchase_requisition(c,(r->>'id')::uuid,6,'approve','Budget confirmed');
+ PERFORM public.po_test_assert(r->>'status'='approved' AND r->>'approved_by'='00000000-0000-4000-8000-000000000003','requisition independent approval persisted');
+ SELECT count(*) INTO n FROM public.purchase_orders;
+ PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',true);
+ r:=public.manage_purchase_requisition(c,(r->>'id')::uuid,7,'convert');
+ again:=public.manage_purchase_requisition(c,(r->>'id')::uuid,7,'convert');
+ PERFORM public.po_test_assert(r->>'status'='ordered' AND r->>'order_id'=again->>'order_id' AND (SELECT count(*) FROM public.purchase_orders)=n+1,'approved requisition converts once with safe retry');
+ PERFORM public.po_test_assert(EXISTS(SELECT 1 FROM public.purchase_orders WHERE id=(r->>'order_id')::uuid AND status='draft' AND total_minor=23999),'requisition creates unposted draft PO at approved totals');
+ PERFORM public.po_test_error(format('SELECT public.manage_purchase_requisition(%L,%L,8,%L)',c,r->>'id','reset'),'%no longer allowed%','ordered requisition immutable');
+ PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000004"}',true);
+ PERFORM public.po_test_error(format('SELECT public.save_purchase_requisition(%L,%L)',c,payload::text),'%access denied%','view-only user cannot save requisition');
+ PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000002"}',true);
+ PERFORM public.po_test_assert(NOT EXISTS(SELECT 1 FROM public.purchase_requisitions),'requisition rows hidden across tenant');
+ PERFORM public.po_test_error(format('SELECT public.manage_purchase_requisition(%L,%L,8,%L)',c,r->>'id','convert'),'%access denied%','cross-tenant requisition mutation denied');
+ -- Prepare a separately approved request for three real competing conversions.
+ PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',true);
+ r:=public.save_purchase_requisition(c,payload||jsonb_build_object('requestId',gen_random_uuid(),'title','Concurrent requisition'));
+ r:=public.manage_purchase_requisition(c,(r->>'id')::uuid,1,'submit');
+ PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000003"}',true);
+ r:=public.manage_purchase_requisition(c,(r->>'id')::uuid,2,'approve');
+ INSERT INTO public.po_test_context VALUES('race_requisition',(r->>'id')::uuid);
+END $$;
+RESET ROLE;
+SELECT public.po_test_assert(NOT has_table_privilege('authenticated','public.purchase_requisitions','UPDATE'),'direct requisition mutation denied');
+SELECT public.po_test_assert(NOT has_function_privilege('anon','public.save_purchase_requisition(uuid,jsonb)','EXECUTE'),'anonymous requisition RPC denied');

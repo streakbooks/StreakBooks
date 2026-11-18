@@ -144,9 +144,9 @@ export function AdvisorsAdminInquiriesPage() {
             <Label htmlFor="inquiry-status">Status</Label>
             <RecordLookupSelect
               id="inquiry-status"
-              className="flex h-10 border-input px-3"
+              className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
               value={status}
-              onValueChange={(nextValue) => setStatus(nextValue as (typeof STATUSES)[number])}
+              onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
             >
               {STATUSES.map((item) => (
                 <option key={item} value={item}>
@@ -232,12 +232,12 @@ export function AdvisorsAdminInquiriesPage() {
                   <Label htmlFor="assign-advisor">Assigned advisor</Label>
                   <RecordLookupSelect
                     id="assign-advisor"
-                    className="flex h-10 w-full border-input px-3"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={selected.assignedAdvisorId ?? ""}
-                    onValueChange={(nextValue) =>
+                    onValueChange={(event) =>
                       updateM.mutate({
                         inquiryId: selected.id,
-                        assignedAdvisorId: nextValue || null,
+                        assignedAdvisorId: event || null,
                       })
                     }
                   >

@@ -12,7 +12,7 @@ export type OnboardingStepSummary = {
 
 type RelevantStep = Pick<
   FirmOnboardingStep,
-  "task_key" | "completed_at" | "due_date" | "assignee_id" | "depends_on_task_key"
+  "task_key" | "title" | "completed_at" | "due_date" | "assignee_id" | "depends_on_task_key"
 >;
 
 export function onboardingBlocked(step: RelevantStep, steps: RelevantStep[]): boolean {
@@ -33,10 +33,10 @@ export function onboardingCanReopen(step: RelevantStep, steps: RelevantStep[]): 
 }
 
 /** Candidates must not be this step or any of its transitive dependents. */
-export function onboardingDependencyChoices<T extends RelevantStep>(
+export function onboardingDependencyChoices(
   step: RelevantStep,
-  steps: T[],
-): T[] {
+  steps: RelevantStep[],
+): RelevantStep[] {
   function leadsBack(candidateKey: string): boolean {
     const seen = new Set<string>();
     let current: string | null = candidateKey;

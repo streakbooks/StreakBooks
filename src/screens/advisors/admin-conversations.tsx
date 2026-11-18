@@ -120,9 +120,9 @@ export function AdvisorsAdminConversationsPage() {
             <Label htmlFor="conversation-status">Status</Label>
             <RecordLookupSelect
               id="conversation-status"
-              className="flex h-10 border-input px-3"
+              className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
               value={status}
-              onValueChange={(nextValue) => setStatus(nextValue as (typeof STATUSES)[number])}
+              onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
             >
               {STATUSES.map((item) => (
                 <option key={item} value={item}>
@@ -219,12 +219,12 @@ export function AdvisorsAdminConversationsPage() {
                   <Label htmlFor="conversation-assign">Assigned advisor</Label>
                   <RecordLookupSelect
                     id="conversation-assign"
-                    className="flex h-10 w-full border-input px-3"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={detail.assignedAdvisorId ?? ""}
-                    onValueChange={(nextValue) =>
+                    onValueChange={(event) =>
                       updateM.mutate({
                         conversationId: detail.id,
-                        assignedAdvisorId: nextValue || null,
+                        assignedAdvisorId: event || null,
                       })
                     }
                   >

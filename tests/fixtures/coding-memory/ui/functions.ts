@@ -1,4 +1,3 @@
-import type { AnchorHTMLAttributes } from "react";
 declare global {
   interface Window {
     memoryFixture: {
@@ -13,19 +12,8 @@ declare global {
   }
 }
 export const useCanDo = () => window.memoryFixture.canCode;
-export const useServerFn = <T,>(fn: T) => fn;
+export const useServerFn = <T>(fn: T) => fn;
 export const friendlyAuthError = (error: Error) => error.message;
-export function Link({
-  children,
-  ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement> & { to?: string; params?: unknown }) {
-  const { to: _to, params: _params, ...rest } = props;
-  return (
-    <a {...rest} href="#posting">
-      {children}
-    </a>
-  );
-}
 async function request(input: { data: Record<string, unknown> }) {
   window.memoryFixture.calls.push(input.data);
   await new Promise((r) => setTimeout(r, window.memoryFixture.delay));

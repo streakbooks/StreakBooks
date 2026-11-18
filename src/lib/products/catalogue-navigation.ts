@@ -34,7 +34,7 @@ export function parseCatalogueSearch(raw: Record<string, unknown>): CatalogueSea
 
   const kind = raw["kind"];
   if (typeof kind === "string" && KINDS.has(kind))
-    out.kind = kind as NonNullable<CatalogueSearch["kind"]>;
+    out.kind = kind as "all" | "service" | "product" | "non_inventory";
 
   const category = raw["category"];
   if (
@@ -46,11 +46,11 @@ export function parseCatalogueSearch(raw: Record<string, unknown>): CatalogueSea
 
   const status = raw["status"];
   if (typeof status === "string" && STATUSES.has(status))
-    out.status = status as NonNullable<CatalogueSearch["status"]>;
+    out.status = status as "active" | "archived" | "all";
 
   const sort = raw["sort"];
   if (typeof sort === "string" && SORTS.has(sort))
-    out.sort = sort as NonNullable<CatalogueSearch["sort"]>;
+    out.sort = sort as "name" | "name_desc" | "code" | "price_asc" | "price_desc" | "recent";
 
   const page = raw["page"];
   if (typeof page === "number" && Number.isSafeInteger(page) && page >= 1)
@@ -63,7 +63,7 @@ export function parseCatalogueSearch(raw: Record<string, unknown>): CatalogueSea
     (typeof pageSize === "string" || typeof pageSize === "number") &&
     PAGE_SIZES.has(Number(pageSize))
   )
-    out.pageSize = Number(pageSize) as NonNullable<CatalogueSearch["pageSize"]>;
+    out.pageSize = Number(pageSize) as 25 | 50 | 100;
 
   return out;
 }

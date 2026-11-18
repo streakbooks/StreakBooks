@@ -22,6 +22,7 @@ import {
   listSuppliers,
   rejectBillApproval,
   saveBillDraft,
+  updatePurchaseOrderBillDetails,
   submitBillForApproval,
   SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED,
   voidBill,
@@ -106,6 +107,8 @@ export const Route = createFileRoute("/_authenticated/purchases/bills/$billId")(
 
 type BillPayload = {
   id: string;
+  purchase_order_id: string | null;
+  updated_at: string;
   status: string;
   bill_date: string;
   due_date: string;
@@ -120,7 +123,6 @@ type BillPayload = {
   due_date_manual_override?: boolean | null;
   tax_calculation?: string | null;
   duplicate_override?: boolean | null;
-  purchase_order_id?: string | null;
   supplier_address_line1?: string | null;
   supplier_address_line2?: string | null;
   supplier_address_city?: string | null;
@@ -203,6 +205,7 @@ function BillDocumentWorkspace() {
   const checkDup = useServerFn(checkDuplicateSupplierBill);
   const { can } = useCan();
   const saveDraft = useServerFn(saveBillDraft);
+  const savePoDetails = useServerFn(updatePurchaseOrderBillDetails);
   const doAuthorise = useServerFn(authoriseBill);
   const fetchPoMatch = useServerFn(getBillPurchaseOrderMatch);
   const doVoid = useServerFn(voidBill);
@@ -409,14 +412,30 @@ function BillDocumentWorkspace() {
   const saveIfDirty = async () => {
     if (!canEdit) return;
     if (!isBillEditorDirty(editorState, baselineRef.current)) return;
-    await saveDraft({ data: buildSavePayload() });
+    await persistDraft();
     baselineRef.current = billEditorSnapshot(editorState);
   };
+
+  const persistDraft = () =>
+    bill?.purchase_order_id
+      ? savePoDetails({
+          data: {
+            companyId: companyId!,
+            billId,
+            billDate,
+            dueDate,
+            supplierInvoiceNumber,
+            memo,
+            fxRateToBase: fxRate.trim() ? Number(fxRate) : null,
+            expectedUpdatedAt: bill.updated_at,
+          },
+        })
+      : saveDraft({ data: buildSavePayload() });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       setFormError(null);
-      const result = await saveDraft({ data: buildSavePayload() });
+      const result = await persistDraft();
       baselineRef.current = billEditorSnapshot(editorState);
       return result;
     },
@@ -1076,7 +1095,58 @@ function BillDocumentWorkspace() {
       ) : null}
 
       <div className="space-y-4">
-        {canEdit ? (
+        {canEdit && bill.purchase_order_id ? (
+          <section className="space-y-4 rounded-lg border border-border bg-background p-4">
+            <h2 className="text-sm font-semibold">Supplier invoice details</h2>
+            <p className="text-sm text-muted-foreground">
+              Quantities and amounts are allocated from the purchase order. Delete this unposted
+              bill and regenerate it from the order to revise the allocation.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="po-bill-date">Bill date</Label>
+                <Input
+                  id="po-bill-date"
+                  type="date"
+                  value={billDate}
+                  onChange={(e) => setBillDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="po-bill-due">Due date</Label>
+                <Input
+                  id="po-bill-due"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="po-bill-reference">Supplier invoice number</Label>
+                <Input
+                  id="po-bill-reference"
+                  value={supplierInvoiceNumber}
+                  onChange={(e) => setSupplierInvoiceNumber(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="po-bill-fx">Exchange rate to {baseCurrency}</Label>
+                <Input
+                  id="po-bill-fx"
+                  inputMode="decimal"
+                  value={fxRate}
+                  onChange={(e) => setFxRate(e.target.value)}
+                  disabled={bill.currency_code === baseCurrency}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="po-bill-memo">Memo</Label>
+              <Textarea id="po-bill-memo" value={memo} onChange={(e) => setMemo(e.target.value)} />
+            </div>
+          </section>
+        ) : null}
+        {canEdit && !bill.purchase_order_id ? (
           <section className="space-y-4 rounded-lg border border-border bg-background p-4">
             <h2 className="text-sm font-semibold">Bill details</h2>
             <div className="space-y-2">

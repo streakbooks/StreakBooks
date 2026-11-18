@@ -111,6 +111,21 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     notes: "Batch 2: ListWorkspace on accounts, transfers, bank documents.",
   },
   {
+    id: "pos",
+    label: "Point of Sale",
+    description: "Catalogue cash checkout, register setup and drawer sessions",
+    path: "/pos",
+    group: "money",
+    inSidebar: true,
+    pageKind: "list",
+    viewModes: ["list", "mobile-card"],
+    screenRoot: "src/screens/pos",
+    experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
+    premiumStatus: "in-progress",
+    notes:
+      "Cash checkout for non-stock catalogue items, location-scoped register sessions and controlled drawer movements; migration not live until separately authorized.",
+  },
+  {
     id: "sales",
     label: "Sales",
     description: "Invoices and customer payments",

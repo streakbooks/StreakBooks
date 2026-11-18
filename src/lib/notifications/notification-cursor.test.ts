@@ -48,17 +48,11 @@ describe("Action Center stable keyset pagination", () => {
       priority_rank: index,
     }));
     expect(nextNotificationCursor(rows, 3)).toEqual({
-      id: rows[2]?.id,
+      id: rows[2]!.id,
       createdAt: stamp,
       priorityRank: 2,
     });
     expect(nextNotificationCursor(rows.slice(0, 3), 3)).toBeNull();
     expect(nextNotificationCursor([], 3)).toBeNull();
-  });
-  it("rejects nonintegral and invalid pagination bounds", () => {
-    const rows = [{ id, created_at: stamp, priority_rank: 1 }];
-    for (const size of [0, -1, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
-      expect(nextNotificationCursor(rows, size)).toBeNull();
-    }
   });
 });

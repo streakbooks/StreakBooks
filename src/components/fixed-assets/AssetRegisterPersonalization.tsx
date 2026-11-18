@@ -217,11 +217,11 @@ export function FixedAssetSavedFilterViews({
         <Save className="mr-2 size-4" /> Save view
       </Button>
       <RecordLookupSelect
-        className="h-9 min-w-36 max-w-full px-3"
+        className="h-9 min-w-36 max-w-full rounded-md border bg-background px-3 text-sm"
         aria-label="Select a saved fixed assets filter view"
         value={selected}
         disabled={!storageKey || loading || views.length === 0}
-        onValueChange={(nextValue) => setSelected(nextValue)}
+        onValueChange={(event) => setSelected(event)}
       >
         <option value="">Saved views ({views.length})</option>
         {views.map((view) => (

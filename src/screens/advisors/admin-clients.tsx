@@ -197,9 +197,9 @@ export function AdvisorsAdminClientsPage() {
             <Label htmlFor="client-status-filter">Status</Label>
             <RecordLookupSelect
               id="client-status-filter"
-              className="flex h-10 border-input px-3"
+              className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
               value={status}
-              onValueChange={(nextValue) => setStatus(nextValue as (typeof STATUSES)[number])}
+              onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
             >
               {STATUSES.map((item) => (
                 <option key={item} value={item}>
@@ -304,12 +304,12 @@ export function AdvisorsAdminClientsPage() {
                 <Label htmlFor="client-status">Status</Label>
                 <RecordLookupSelect
                   id="client-status"
-                  className="flex h-10 w-full border-input px-3"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={form.status}
-                  onValueChange={(nextValue) =>
+                  onValueChange={(event) =>
                     setForm((prev) => ({
                       ...prev,
-                      status: nextValue as AdvisorsClientStatus,
+                      status: event as AdvisorsClientStatus,
                     }))
                   }
                 >
@@ -342,10 +342,10 @@ export function AdvisorsAdminClientsPage() {
                 <Label htmlFor="client-advisor">Assigned advisor</Label>
                 <RecordLookupSelect
                   id="client-advisor"
-                  className="flex h-10 w-full border-input px-3"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={form.assignedAdvisorId}
-                  onValueChange={(nextValue) =>
-                    setForm((prev) => ({ ...prev, assignedAdvisorId: nextValue }))
+                  onValueChange={(event) =>
+                    setForm((prev) => ({ ...prev, assignedAdvisorId: event }))
                   }
                 >
                   <option value="">Unassigned</option>

@@ -1,7 +1,6 @@
 "use client";
 
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-
 import { VoiceFields, VoiceSelect } from "@/components/ai-voice/voice-fields";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -62,7 +61,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
 import { Label } from "@/components/ui/label";
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,

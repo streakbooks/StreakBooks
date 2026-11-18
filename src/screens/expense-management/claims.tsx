@@ -578,10 +578,11 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                 <Label htmlFor="em-template">Load template</Label>
                 <RecordLookupSelect
                   id="em-template"
-                  className="flex h-10 border-input px-3"
-                  value=""
-                  onValueChange={(nextValue) => {
-                    if (nextValue) applyTemplate(nextValue);
+                  className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  defaultValue=""
+                  onValueChange={(event) => {
+                    if (event) applyTemplate(event);
+                    event = "";
                   }}
                 >
                   <option value="">Select template</option>
@@ -638,9 +639,9 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                 <Label htmlFor="em-claim-advance">Cash advance</Label>
                 <RecordLookupSelect
                   id="em-claim-advance"
-                  className="flex h-10 w-full border-input px-3 py-2"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={cashAdvanceId}
-                  onValueChange={(nextValue) => setCashAdvanceId(nextValue)}
+                  onValueChange={(event) => setCashAdvanceId(event)}
                 >
                   <option value="">Select issued advance</option>
                   {openAdvances.map((adv) => (
@@ -657,9 +658,9 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                 <Label htmlFor="em-claim-petty">Petty cash float</Label>
                 <RecordLookupSelect
                   id="em-claim-petty"
-                  className="flex h-10 w-full border-input px-3 py-2"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={pettyCashFloatId}
-                  onValueChange={(nextValue) => setPettyCashFloatId(nextValue)}
+                  onValueChange={(event) => setPettyCashFloatId(event)}
                 >
                   <option value="">Select float with balance</option>
                   {openPettyFloats.map((float) => (
@@ -676,9 +677,9 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                 <Label htmlFor="em-claim-card">Corporate card</Label>
                 <RecordLookupSelect
                   id="em-claim-card"
-                  className="flex h-10 w-full border-input px-3 py-2"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={corporateCardId}
-                  onValueChange={(nextValue) => setCorporateCardId(nextValue)}
+                  onValueChange={(event) => setCorporateCardId(event)}
                 >
                   <option value="">Select card</option>
                   {openCards.map((card) => (

@@ -105,10 +105,13 @@ import { Route as AuthenticatedPlatformIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedPlatformAutomationRouteImport } from './routes/_authenticated/platform.automation'
 import { Route as AuthenticatedPlatformBillingRouteImport } from './routes/_authenticated/platform.billing'
 import { Route as AuthenticatedPlatformOperationsRouteImport } from './routes/_authenticated/platform.operations'
+import { Route as AuthenticatedPosIndexRouteImport } from './routes/_authenticated/pos/index'
+import { Route as AuthenticatedPosRegistersRouteImport } from './routes/_authenticated/pos/registers'
 import { Route as AuthenticatedPurchasesIndexRouteImport } from './routes/_authenticated/purchases/index'
 import { Route as AuthenticatedPurchasesEmployeeExpensesRouteImport } from './routes/_authenticated/purchases/employee-expenses'
 import { Route as AuthenticatedPurchasesPortalInboxRouteImport } from './routes/_authenticated/purchases/portal-inbox'
 import { Route as AuthenticatedPurchasesRecurringRouteImport } from './routes/_authenticated/purchases/recurring'
+import { Route as AuthenticatedPurchasesRequisitionsRouteImport } from './routes/_authenticated/purchases/requisitions'
 import { Route as AuthenticatedPurchasesSettingsRouteImport } from './routes/_authenticated/purchases/settings'
 import { Route as AuthenticatedPurchasesStatementsRouteImport } from './routes/_authenticated/purchases/statements'
 import { Route as AuthenticatedPurchasesSuppliersRouteImport } from './routes/_authenticated/purchases/suppliers'
@@ -737,6 +740,17 @@ const AuthenticatedPlatformOperationsRoute =
     path: '/operations',
     getParentRoute: () => AuthenticatedPlatformRoute,
   } as any)
+const AuthenticatedPosIndexRoute = AuthenticatedPosIndexRouteImport.update({
+  id: '/pos/',
+  path: '/pos/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPosRegistersRoute =
+  AuthenticatedPosRegistersRouteImport.update({
+    id: '/pos/registers',
+    path: '/pos/registers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPurchasesIndexRoute =
   AuthenticatedPurchasesIndexRouteImport.update({
     id: '/',
@@ -759,6 +773,12 @@ const AuthenticatedPurchasesRecurringRoute =
   AuthenticatedPurchasesRecurringRouteImport.update({
     id: '/recurring',
     path: '/recurring',
+    getParentRoute: () => AuthenticatedPurchasesRouteRoute,
+  } as any)
+const AuthenticatedPurchasesRequisitionsRoute =
+  AuthenticatedPurchasesRequisitionsRouteImport.update({
+    id: '/requisitions',
+    path: '/requisitions',
     getParentRoute: () => AuthenticatedPurchasesRouteRoute,
   } as any)
 const AuthenticatedPurchasesSettingsRoute =
@@ -1343,9 +1363,11 @@ export interface FileRoutesByFullPath {
   '/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/platform/operations': typeof AuthenticatedPlatformOperationsRoute
+  '/pos/registers': typeof AuthenticatedPosRegistersRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
+  '/purchases/requisitions': typeof AuthenticatedPurchasesRequisitionsRoute
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
   '/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
@@ -1386,6 +1408,7 @@ export interface FileRoutesByFullPath {
   '/messages/': typeof AuthenticatedMessagesIndexRoute
   '/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/platform/': typeof AuthenticatedPlatformIndexRoute
+  '/pos/': typeof AuthenticatedPosIndexRoute
   '/purchases/': typeof AuthenticatedPurchasesIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
   '/sales/': typeof AuthenticatedSalesIndexRoute
@@ -1522,9 +1545,11 @@ export interface FileRoutesByTo {
   '/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/platform/operations': typeof AuthenticatedPlatformOperationsRoute
+  '/pos/registers': typeof AuthenticatedPosRegistersRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
+  '/purchases/requisitions': typeof AuthenticatedPurchasesRequisitionsRoute
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
   '/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
@@ -1565,6 +1590,7 @@ export interface FileRoutesByTo {
   '/messages': typeof AuthenticatedMessagesIndexRoute
   '/payroll': typeof AuthenticatedPayrollIndexRoute
   '/platform': typeof AuthenticatedPlatformIndexRoute
+  '/pos': typeof AuthenticatedPosIndexRoute
   '/purchases': typeof AuthenticatedPurchasesIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
   '/sales': typeof AuthenticatedSalesIndexRoute
@@ -1708,9 +1734,11 @@ export interface FileRoutesById {
   '/_authenticated/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/_authenticated/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/_authenticated/platform/operations': typeof AuthenticatedPlatformOperationsRoute
+  '/_authenticated/pos/registers': typeof AuthenticatedPosRegistersRoute
   '/_authenticated/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/_authenticated/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/_authenticated/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
+  '/_authenticated/purchases/requisitions': typeof AuthenticatedPurchasesRequisitionsRoute
   '/_authenticated/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/_authenticated/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
   '/_authenticated/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
@@ -1751,6 +1779,7 @@ export interface FileRoutesById {
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
   '/_authenticated/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/_authenticated/platform/': typeof AuthenticatedPlatformIndexRoute
+  '/_authenticated/pos/': typeof AuthenticatedPosIndexRoute
   '/_authenticated/purchases/': typeof AuthenticatedPurchasesIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/sales/': typeof AuthenticatedSalesIndexRoute
@@ -1897,9 +1926,11 @@ export interface FileRouteTypes {
     | '/platform/automation'
     | '/platform/billing'
     | '/platform/operations'
+    | '/pos/registers'
     | '/purchases/employee-expenses'
     | '/purchases/portal-inbox'
     | '/purchases/recurring'
+    | '/purchases/requisitions'
     | '/purchases/settings'
     | '/purchases/statements'
     | '/purchases/suppliers'
@@ -1940,6 +1971,7 @@ export interface FileRouteTypes {
     | '/messages/'
     | '/payroll/'
     | '/platform/'
+    | '/pos/'
     | '/purchases/'
     | '/reports/'
     | '/sales/'
@@ -2076,9 +2108,11 @@ export interface FileRouteTypes {
     | '/platform/automation'
     | '/platform/billing'
     | '/platform/operations'
+    | '/pos/registers'
     | '/purchases/employee-expenses'
     | '/purchases/portal-inbox'
     | '/purchases/recurring'
+    | '/purchases/requisitions'
     | '/purchases/settings'
     | '/purchases/statements'
     | '/purchases/suppliers'
@@ -2119,6 +2153,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/payroll'
     | '/platform'
+    | '/pos'
     | '/purchases'
     | '/reports'
     | '/sales'
@@ -2261,9 +2296,11 @@ export interface FileRouteTypes {
     | '/_authenticated/platform/automation'
     | '/_authenticated/platform/billing'
     | '/_authenticated/platform/operations'
+    | '/_authenticated/pos/registers'
     | '/_authenticated/purchases/employee-expenses'
     | '/_authenticated/purchases/portal-inbox'
     | '/_authenticated/purchases/recurring'
+    | '/_authenticated/purchases/requisitions'
     | '/_authenticated/purchases/settings'
     | '/_authenticated/purchases/statements'
     | '/_authenticated/purchases/suppliers'
@@ -2304,6 +2341,7 @@ export interface FileRouteTypes {
     | '/_authenticated/messages/'
     | '/_authenticated/payroll/'
     | '/_authenticated/platform/'
+    | '/_authenticated/pos/'
     | '/_authenticated/purchases/'
     | '/_authenticated/reports/'
     | '/_authenticated/sales/'
@@ -3061,6 +3099,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlatformOperationsRouteImport
       parentRoute: typeof AuthenticatedPlatformRoute
     }
+    '/_authenticated/pos/': {
+      id: '/_authenticated/pos/'
+      path: '/pos'
+      fullPath: '/pos/'
+      preLoaderRoute: typeof AuthenticatedPosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pos/registers': {
+      id: '/_authenticated/pos/registers'
+      path: '/pos/registers'
+      fullPath: '/pos/registers'
+      preLoaderRoute: typeof AuthenticatedPosRegistersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/purchases/': {
       id: '/_authenticated/purchases/'
       path: '/'
@@ -3087,6 +3139,13 @@ declare module '@tanstack/react-router' {
       path: '/recurring'
       fullPath: '/purchases/recurring'
       preLoaderRoute: typeof AuthenticatedPurchasesRecurringRouteImport
+      parentRoute: typeof AuthenticatedPurchasesRouteRoute
+    }
+    '/_authenticated/purchases/requisitions': {
+      id: '/_authenticated/purchases/requisitions'
+      path: '/requisitions'
+      fullPath: '/purchases/requisitions'
+      preLoaderRoute: typeof AuthenticatedPurchasesRequisitionsRouteImport
       parentRoute: typeof AuthenticatedPurchasesRouteRoute
     }
     '/_authenticated/purchases/settings': {
@@ -3791,6 +3850,7 @@ interface AuthenticatedPurchasesRouteRouteChildren {
   AuthenticatedPurchasesEmployeeExpensesRoute: typeof AuthenticatedPurchasesEmployeeExpensesRoute
   AuthenticatedPurchasesPortalInboxRoute: typeof AuthenticatedPurchasesPortalInboxRoute
   AuthenticatedPurchasesRecurringRoute: typeof AuthenticatedPurchasesRecurringRoute
+  AuthenticatedPurchasesRequisitionsRoute: typeof AuthenticatedPurchasesRequisitionsRoute
   AuthenticatedPurchasesSettingsRoute: typeof AuthenticatedPurchasesSettingsRoute
   AuthenticatedPurchasesStatementsRoute: typeof AuthenticatedPurchasesStatementsRoute
   AuthenticatedPurchasesSuppliersRoute: typeof AuthenticatedPurchasesSuppliersRoute
@@ -3823,6 +3883,8 @@ const AuthenticatedPurchasesRouteRouteChildren: AuthenticatedPurchasesRouteRoute
     AuthenticatedPurchasesPortalInboxRoute:
       AuthenticatedPurchasesPortalInboxRoute,
     AuthenticatedPurchasesRecurringRoute: AuthenticatedPurchasesRecurringRoute,
+    AuthenticatedPurchasesRequisitionsRoute:
+      AuthenticatedPurchasesRequisitionsRoute,
     AuthenticatedPurchasesSettingsRoute: AuthenticatedPurchasesSettingsRoute,
     AuthenticatedPurchasesStatementsRoute:
       AuthenticatedPurchasesStatementsRoute,
@@ -4090,6 +4152,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHrSectionRoute: typeof AuthenticatedHrSectionRoute
   AuthenticatedInviteTokenRoute: typeof AuthenticatedInviteTokenRoute
   AuthenticatedMessagesSettingsRoute: typeof AuthenticatedMessagesSettingsRoute
+  AuthenticatedPosRegistersRoute: typeof AuthenticatedPosRegistersRoute
   AuthenticatedReportsReportIdRoute: typeof AuthenticatedReportsReportIdRoute
   AuthenticatedAdvisorsPortalIndexRoute: typeof AuthenticatedAdvisorsPortalIndexRoute
   AuthenticatedAppStoreIndexRoute: typeof AuthenticatedAppStoreIndexRoute
@@ -4100,6 +4163,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExpenseManagementIndexRoute: typeof AuthenticatedExpenseManagementIndexRoute
   AuthenticatedHrIndexRoute: typeof AuthenticatedHrIndexRoute
   AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
+  AuthenticatedPosIndexRoute: typeof AuthenticatedPosIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
   AuthenticatedAppStoreAppsAppCodeRoute: typeof AuthenticatedAppStoreAppsAppCodeRoute
   AuthenticatedCrmLeadsLeadIdRoute: typeof AuthenticatedCrmLeadsLeadIdRoute
@@ -4159,6 +4223,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHrSectionRoute: AuthenticatedHrSectionRoute,
   AuthenticatedInviteTokenRoute: AuthenticatedInviteTokenRoute,
   AuthenticatedMessagesSettingsRoute: AuthenticatedMessagesSettingsRoute,
+  AuthenticatedPosRegistersRoute: AuthenticatedPosRegistersRoute,
   AuthenticatedReportsReportIdRoute: AuthenticatedReportsReportIdRoute,
   AuthenticatedAdvisorsPortalIndexRoute: AuthenticatedAdvisorsPortalIndexRoute,
   AuthenticatedAppStoreIndexRoute: AuthenticatedAppStoreIndexRoute,
@@ -4170,6 +4235,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedExpenseManagementIndexRoute,
   AuthenticatedHrIndexRoute: AuthenticatedHrIndexRoute,
   AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
+  AuthenticatedPosIndexRoute: AuthenticatedPosIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedAppStoreAppsAppCodeRoute: AuthenticatedAppStoreAppsAppCodeRoute,
   AuthenticatedCrmLeadsLeadIdRoute: AuthenticatedCrmLeadsLeadIdRoute,

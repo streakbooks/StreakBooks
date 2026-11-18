@@ -189,10 +189,10 @@ export function useCan() {
   return { can: useCanDo, role: "owner", ready: true };
 }
 
-// New unified portal messaging stays non-operational in this isolated UI fixture.
+// Unconfigured messaging mutations must fail rather than reaching a real backend.
 export async function portalOpenInvoiceDiscussion() {
-  throw new Error("Fixture prevents portal messaging writes");
+  throw new Error("Messaging discussion is not configured in this browser fixture");
 }
 export async function portalSendMessagingMessage() {
-  throw new Error("Fixture prevents portal messaging writes");
+  throw new Error("Messaging send is not configured in this browser fixture");
 }

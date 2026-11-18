@@ -186,10 +186,10 @@ export function PersistentReconciliationReviews({
             <Label htmlFor="exc-track-current">Select an audited exception</Label>
             <RecordLookupSelect
               id="exc-track-current"
-              className="w-full"
+              className="w-full rounded-md border bg-background p-2 text-sm"
               value={selectedKey}
-              onValueChange={(nextValue) => {
-                const key = nextValue;
+              onValueChange={(e) => {
+                const key = e;
                 setSelectedKey(key);
                 setSelectedSavedId("");
                 setNote("");
@@ -235,10 +235,10 @@ export function PersistentReconciliationReviews({
             <Label htmlFor="exc-saved-review">Saved cases in this organisation</Label>
             <RecordLookupSelect
               id="exc-saved-review"
-              className="w-full"
+              className="w-full rounded-md border bg-background p-2 text-sm"
               value={selectedSavedId}
-              onValueChange={(nextValue) => {
-                setSelectedSavedId(nextValue);
+              onValueChange={(e) => {
+                setSelectedSavedId(e);
                 setSelectedKey("");
                 setNote("");
               }}
@@ -325,8 +325,8 @@ export function PersistentReconciliationReviews({
                   <RecordLookupSelect
                     aria-label="Active organisation members"
                     value=""
-                    className="w-full"
-                    onValueChange={(nextValue) => setAssignedTo(nextValue)}
+                    className="w-full rounded-md border bg-background p-2 text-xs"
+                    onValueChange={(e) => setAssignedTo(e)}
                   >
                     <option value="">Choose an active member</option>
                     {people.data.members.map((row) => (

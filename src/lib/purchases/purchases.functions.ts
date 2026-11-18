@@ -178,7 +178,7 @@ async function recordBillAudit(
     actorName = "";
   }
   await (supabase as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> }).rpc(
-    "record_app_audit_event",
+    "record_audit_event",
     {
       _company_id: companyId,
       _action: action,
@@ -951,7 +951,7 @@ export const submitBillForApproval = createServerFn({ method: "POST" })
     if ((bill as { status: string }).status !== "draft") {
       throw new Error("Only draft bills can be submitted for approval");
     }
-    const { error: upErr } = await context.supabase
+    const { data: updated, error: upErr } = await context.supabase
       .from("purchase_bills" as never)
       .update({
         status: "awaiting_approval",
@@ -960,8 +960,14 @@ export const submitBillForApproval = createServerFn({ method: "POST" })
         approval_comment: data.comment,
         updated_at: new Date().toISOString(),
       } as never)
-      .eq("id" as never, data.billId as never);
+      .eq("id" as never, data.billId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("status" as never, "draft" as never)
+      .is("posted_journal_id" as never, null as never)
+      .select("id");
     if (upErr) throw new Error(upErr.message);
+    if (!updated || (updated as unknown[]).length === 0)
+      throw new Error("The bill changed while saving. Reload and try again.");
     await recordBillAudit(context.supabase, data.companyId, "bill.submit_approval", data.billId, {
       comment: data.comment,
     });
@@ -988,7 +994,7 @@ export const rejectBillApproval = createServerFn({ method: "POST" })
     if ((bill as { status: string }).status !== "awaiting_approval") {
       throw new Error("Only bills awaiting approval can be rejected");
     }
-    const { error: upErr } = await context.supabase
+    const { data: updated, error: upErr } = await context.supabase
       .from("purchase_bills" as never)
       .update({
         status: "draft",
@@ -997,8 +1003,14 @@ export const rejectBillApproval = createServerFn({ method: "POST" })
         rejection_reason: data.reason,
         updated_at: new Date().toISOString(),
       } as never)
-      .eq("id" as never, data.billId as never);
+      .eq("id" as never, data.billId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("status" as never, "awaiting_approval" as never)
+      .is("posted_journal_id" as never, null as never)
+      .select("id");
     if (upErr) throw new Error(upErr.message);
+    if (!updated || (updated as unknown[]).length === 0)
+      throw new Error("The bill changed while saving. Reload and try again.");
     await recordBillAudit(context.supabase, data.companyId, "bill.reject_approval", data.billId, {
       reason: data.reason,
     });
@@ -1015,13 +1027,23 @@ export const deleteDraftBill = createServerFn({ method: "POST" })
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.draft");
     const { data: bill, error } = await context.supabase
       .from("purchase_bills" as never)
-      .select("id, status, posted_journal_id" as never)
+      .select("id, status, posted_journal_id, purchase_order_id" as never)
       .eq("id" as never, data.billId as never)
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!bill) throw new Error("Bill not found");
-    const b = bill as { status: string; posted_journal_id: string | null };
+    const b = bill as {
+      status: string;
+      posted_journal_id: string | null;
+      purchase_order_id?: string | null;
+    };
+    if (b.purchase_order_id) {
+      return workflowRpc<{ ok: boolean }>(context.supabase, "delete_purchase_order_bill_atomic", {
+        _company: data.companyId,
+        _bill: data.billId,
+      });
+    }
     if (b.status !== "draft" && b.status !== "awaiting_approval") {
       throw new Error("Only unposted draft/awaiting-approval bills can be deleted");
     }
@@ -1040,6 +1062,53 @@ export const deleteDraftBill = createServerFn({ method: "POST" })
     if (delErr) throw new Error(delErr.message);
     await recordBillAudit(context.supabase, data.companyId, "bill.draft.delete", data.billId, {});
     return { ok: true };
+  });
+
+/** Header-only edits preserve the source quantities and cumulative rounding allocation. */
+export const updatePurchaseOrderBillDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      billId: string;
+      billDate: string;
+      dueDate: string;
+      supplierInvoiceNumber: string;
+      memo: string;
+      fxRateToBase: number | null;
+      expectedUpdatedAt: string;
+    }) => {
+      if (!input.expectedUpdatedAt || !Number.isFinite(Date.parse(input.expectedUpdatedAt)))
+        throw new Error("Reload the bill before saving");
+      if (
+        input.fxRateToBase !== null &&
+        (!Number.isFinite(input.fxRateToBase) || input.fxRateToBase <= 0)
+      )
+        throw new Error("Enter a positive exchange rate");
+      return {
+        companyId: assertUuid(input.companyId),
+        billId: assertUuid(input.billId, "bill"),
+        billDate: assertOrderDate(input.billDate),
+        dueDate: assertOrderDate(input.dueDate),
+        supplierInvoiceNumber: input.supplierInvoiceNumber.trim().slice(0, 80),
+        memo: input.memo.trim().slice(0, 500),
+        fxRateToBase: input.fxRateToBase,
+        expectedUpdatedAt: input.expectedUpdatedAt,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "purchases.draft");
+    const { companyId, billId, ...payload } = data;
+    return workflowRpc<{ id: string; updatedAt: string }>(
+      context.supabase,
+      "update_po_bill_details",
+      {
+        _company: companyId,
+        _bill: billId,
+        _payload: payload,
+      },
+    );
   });
 
 export const getBill = createServerFn({ method: "GET" })
@@ -1098,6 +1167,8 @@ export const getBill = createServerFn({ method: "GET" })
       supplier_address_postal: string | null;
       supplier_address_country: string | null;
       posted_journal_id: string | null;
+      purchase_order_id: string | null;
+      updated_at: string;
       contact_id: string;
       approval_comment: string | null;
       rejection_reason: string | null;
@@ -1202,6 +1273,8 @@ export const getBill = createServerFn({ method: "GET" })
       amount_paid_minor: paid,
       amount_credited_minor: credited,
       posted_journal_id: b.posted_journal_id,
+      purchase_order_id: b.purchase_order_id ?? null,
+      updated_at: b.updated_at,
       contact_id: b.contact_id,
       approval_comment: b.approval_comment ?? null,
       rejection_reason: b.rejection_reason ?? null,
@@ -1455,6 +1528,7 @@ async function saveBillDraftCore(
 
   type ExistingBill = {
     id: string;
+    purchase_order_id?: string | null;
     status: string;
     contact_id: string;
     bill_date: string;
@@ -1479,6 +1553,11 @@ async function saveBillDraftCore(
     if (!row) throw new Error("Bill not found");
     priorHeader = row as Record<string, unknown>;
     existing = row as unknown as ExistingBill;
+    if (existing.purchase_order_id) {
+      throw new Error(
+        "Purchase-order bill lines are fixed. Edit invoice details separately, or delete the unposted bill and regenerate it from the order.",
+      );
+    }
     if (existing.status !== "draft" && existing.status !== "awaiting_approval") {
       throw new Error("Only draft or awaiting-approval bills can be edited");
     }
@@ -1872,6 +1951,7 @@ export async function authoriseBillInternal(
     id: string;
     contact_id: string;
     status: string;
+    purchase_order_id?: string | null;
     bill_date: string;
     currency_code: string;
     memo: string | null;
@@ -1890,6 +1970,12 @@ export async function authoriseBillInternal(
       tax_rate_bps?: number | null;
     }>;
   };
+  if (b.purchase_order_id) {
+    return workflowRpc<{ journalId: string }>(supabase, "authorise_purchase_order_bill_atomic", {
+      _company: companyId,
+      _bill: billId,
+    });
+  }
   if (b.status !== "draft" && b.status !== "awaiting_approval") {
     throw new Error("Only draft or awaiting-approval bills can be authorised");
   }
@@ -1935,6 +2021,7 @@ export async function authoriseBillInternal(
   };
   const threeWayRequired = await loadThreeWayMatchingRequired(supabase, companyId);
   const threeWay = await loadBillThreeWayMatch(supabase, companyId, {
+    id: billId,
     purchase_order_id: billWithPo.purchase_order_id,
     purchase_bill_lines: billWithPo.purchase_bill_lines,
   });
@@ -2030,7 +2117,7 @@ export const getBillPurchaseOrderMatch = createServerFn({ method: "GET" })
     const { data: bill, error } = await context.supabase
       .from("purchase_bills" as never)
       .select(
-        "purchase_order_id, purchase_bill_lines(line_no, description, account_id, quantity, net_minor)" as never,
+        "id, purchase_order_id, purchase_bill_lines(line_no, description, account_id, quantity, net_minor)" as never,
       )
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.billId as never)
@@ -2042,6 +2129,7 @@ export const getBillPurchaseOrderMatch = createServerFn({ method: "GET" })
       context.supabase,
       data.companyId,
       bill as {
+        id: string;
         purchase_order_id: string | null;
         purchase_bill_lines: Array<{
           line_no?: number | null;
@@ -2080,7 +2168,7 @@ export const voidBill = createServerFn({ method: "POST" })
     const { data: bill, error } = await supabase
       .from("purchase_bills" as never)
       .select(
-        "id, status, bill_date, posted_journal_id, amount_paid_minor, amount_credited_minor" as never,
+        "id, status, bill_date, posted_journal_id, amount_paid_minor, amount_credited_minor, purchase_order_id" as never,
       )
       .eq("id" as never, data.billId as never)
       .eq("company_id" as never, data.companyId as never)
@@ -2089,11 +2177,20 @@ export const voidBill = createServerFn({ method: "POST" })
     if (!bill) throw new Error("Bill not found");
     const b = bill as {
       status: string;
+      purchase_order_id?: string | null;
       bill_date: string;
       posted_journal_id: string | null;
       amount_paid_minor: number;
       amount_credited_minor: number;
     };
+    if (b.purchase_order_id) {
+      return workflowRpc<{ ok: boolean }>(supabase, "void_purchase_order_bill_atomic", {
+        _company: data.companyId,
+        _bill: data.billId,
+        _reason: data.reason,
+        _date: data.voidDate ?? new Date().toISOString().slice(0, 10),
+      });
+    }
     if (b.status === "void") throw new Error("Bill already void");
     if (b.amount_paid_minor > 0 || b.amount_credited_minor > 0) {
       throw new Error("Cannot void a bill with payments or credits; reverse those first");
@@ -4065,6 +4162,11 @@ export const listPurchaseOrders = createServerFn({ method: "GET" })
         total_minor: number;
         billed_bill_id: string | null;
         version: number;
+        approval_state: "draft" | "pending" | "approved" | "rejected";
+        supplier_reference: string | null;
+        expected_delivery_date: string | null;
+        acknowledged_on: string | null;
+        billable_quantity: number;
         contacts: { name: string } | null;
       }>;
       total: number;
@@ -6125,7 +6227,7 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
     }
     if (outcome.createdDrafts > 0) {
       const { error } = await supabase.rpc(
-        "record_app_audit_event" as never,
+        "record_audit_event" as never,
         {
           _company_id: data.companyId,
           _action: "purchases.bills.import",

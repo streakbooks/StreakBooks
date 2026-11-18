@@ -1,4 +1,3 @@
-import type { Json } from "@/integrations/supabase/types";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -190,7 +189,10 @@ export const listHrAutomationRules = createServerFn({ method: "GET" })
           name: str(pick(r, "name")),
           triggerKind: str(pick(r, "triggerKind")),
           isEnabled: bool(pick(r, "isEnabled"), true),
-          config: cfg && typeof cfg === "object" ? (cfg as Record<string, Json>) : {},
+          config:
+            cfg && typeof cfg === "object"
+              ? (cfg as import("@/integrations/supabase/types").Json)
+              : {},
           lastRunAt: strOrNull(pick(r, "lastRunAt")),
           lastRunStatus: strOrNull(pick(r, "lastRunStatus")),
           lastRunSummary: strOrNull(pick(r, "lastRunSummary")),

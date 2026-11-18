@@ -253,9 +253,7 @@ function AiAssistantWorkspace({
           injectionFlagged: result.injectionFlagged,
           facts: result.facts ?? [],
           suggestionId: result.suggestionId,
-          ...("disclaimer" in result && result.disclaimer !== undefined
-            ? { disclaimer: result.disclaimer }
-            : {}),
+          ...("disclaimer" in result && result.disclaimer ? { disclaimer: result.disclaimer } : {}),
         },
       ]);
       setMessage("");

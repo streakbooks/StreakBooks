@@ -1455,6 +1455,14 @@ export function NewBill({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <Button size="sm" variant="ghost" onClick={handleCancel}>
+        Cancel
+      </Button>
+    </div>
+  );
+
+  const stickySaveActions: ReactNode = (
+    <>
       <Button
         size="sm"
         variant="outline"
@@ -1511,10 +1519,7 @@ export function NewBill({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <Button size="sm" variant="ghost" onClick={handleCancel}>
-        Cancel
-      </Button>
-    </div>
+    </>
   );
 
   return (
@@ -1532,6 +1537,7 @@ export function NewBill({
           void savePrefsPatch({ sidebarWidthPx: w });
         }}
         onSidebarTabChange={(t) => void savePrefsPatch({ sidebarTab: t })}
+        stickyActions={stickySaveActions}
         attachments={(attachmentsQ.data ?? []).map(
           (a: { id: string; file_name: string; content_type: string | null }) => ({
             id: a.id,
@@ -2360,7 +2366,7 @@ export function NewBill({
           </Tabs>
 
           <div className="flex flex-wrap gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
-            Keyboard: Tab between fields · Save actions also in the header.
+            Keyboard: Tab between fields · Save actions stay visible in the sticky footer.
           </div>
         </div>
       </BillWorkspaceLayout>

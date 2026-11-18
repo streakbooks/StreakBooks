@@ -10,11 +10,11 @@ Labels: `missing` | `partial` | `existing` | `blocked` | `drift`
 | G01 | No shared `TransactionWorkspace` | High | 25–26 | scaffold in 25; adoption 26 |
 | G02 | No spreadsheet `EditableLineItemGrid` (keyboard/paste/sticky) | High | 25–27 | chrome in 25; behaviour 27 |
 | G03 | `SalesDocumentLines` card stack ≠ dense table UX | High | 26–27 | pending |
-| G04 | `PurchasesDocumentLines` lacks sticky header / keyboard / paste | High | 26–27 | pending |
+| G04 | `PurchasesDocumentLines` lacks sticky header / keyboard / paste | High | 26–30 | sticky header + numeric keyboard in 30; paste still open |
 | G05 | Missing shared `TotalsSummary` / `SplitButton` | Medium | 25–26 | scaffolded 25 |
 | G06 | Density tokens absent; AppShell hardcoded widths | Medium | 25 | addressed 25 |
-| G07 | Browsing manifest stale (21 vs 29 sidebar) | Medium | 29+ | open |
-| G08 | `check:browsing-coverage` not on main package.json | Medium | 29+ | open |
+| G07 | Browsing manifest stale (21 vs 29 sidebar) | Medium | 30 | closed — synced to 29/156 |
+| G08 | `check:browsing-coverage` not on main package.json | Medium | 30 | closed — npm script added |
 | G09 | Inventory docs omit POS/CRM/PM/HR/Messages | Medium | 25 | refresh in 25 |
 | G10 | Finished-screen DoD incomplete all modules | High | 26–29+ | open |
 | G11 | Staging E2E / Section 18 | Blocker | 24 | blocked — no creds |

@@ -22,7 +22,8 @@
 | 26 | Phase 3 | Sales TransactionWorkspace + spreadsheet lines; money docs workspace; purchases sticky headers | `feature/premium-ui-batch26-transaction-workspaces` | [PR #272](https://github.com/linkbusinessadvisory/LinkBooks/pull/272) → `c370c99c` | sales/banking money/purchases lines | merged |
 | 27 | Phase 3 | Line-grid keyboard helpers + Manual/Recurring journal TransactionWorkspace | `feature/premium-ui-batch27-line-grid-keyboard-journals` | [PR #273](https://github.com/linkbusinessadvisory/LinkBooks/pull/273) → `3697f35a` | journals + keyboard helpers | merged |
 | 28 | Phase 3–4 | Originality policy + PO TransactionWorkspace + Bill shell token polish | (landed on main) | `a610f1a5` | docs + purchases orders | on main |
-| 29 | Phase 1–5 | Semantic colourful tokens (AI purple), status tone realignment, nav group icon accents, button success/warning variants | `feature/premium-ui-batch29-semantic-colour-system` | open | styles + status-badge + AppShell | in progress |
-| 30+ | Phase 4–10 | Remaining modules DoD + colourful controls (toggles/progress) + browsing manifest | TBD | — | all modules | planned |
+| 29 | Phase 1–5 | Semantic colourful tokens (AI purple), status tone realignment, nav group icon accents, button success/warning variants | `feature/premium-ui-batch29-semantic-colour-system` | [PR #274](https://github.com/linkbusinessadvisory/LinkBooks/pull/274) → `4a16970c` | styles + status-badge + AppShell | merged |
+| 30 | Phase 3–5 | Bill sticky actions; purchase line keyboard; MeasuredProgress + PersistedSwitch; browsing manifest sync (29 modules / 156 routes) | `feature/premium-ui-batch30-bill-sticky-browsing` | open | bills + purchases lines + firm/CRM/banking + docs/ux | in progress |
+| 31+ | Phase 4–10 | Remaining modules DoD + paste/reorder parity + browsing runtime evidence | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

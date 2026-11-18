@@ -1,5 +1,6 @@
 "use client";
 
+import { type KeyboardEvent } from "react";
 import { type PurchaseLineFormState, emptyPurchaseLine } from "@/lib/purchases/line-form-state";
 
 import { useVoiceSession } from "@/components/ai-voice/voice-context";
@@ -20,6 +21,7 @@ import {
   TaxCodeCreateForm,
 } from "@/components/lookup/create-forms";
 import { useCan } from "@/hooks/use-can";
+import { interpretLineGridKey } from "@/lib/ui/line-grid-keyboard";
 import {
   Select,
   SelectContent,
@@ -184,6 +186,50 @@ export function PurchasesDocumentLines({
     label: c.name,
   }));
   const addItem = onAddNewItem ?? onCreateItem;
+
+  /** Numeric spreadsheet cells: qty → unit price → discount (when visible). */
+  const numericCols = (
+    [
+      col("quantity") ? "quantity" : null,
+      col("unitPrice") ? "unitPrice" : null,
+      col("discount") ? "discount" : null,
+    ] as const
+  ).filter((key): key is "quantity" | "unitPrice" | "discount" => key !== null);
+
+  const onNumericKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colKey: "quantity" | "unitPrice" | "discount",
+  ) => {
+    const colIndex = numericCols.indexOf(colKey);
+    if (colIndex < 0) return;
+    const action = interpretLineGridKey(event.key, {
+      shiftKey: event.shiftKey,
+      atLastRow: rowIndex === lines.length - 1,
+      atLastCol: colIndex === numericCols.length - 1,
+    });
+    if (action.type === "none") return;
+    if (action.type === "add-row") {
+      event.preventDefault();
+      voice?.clearField();
+      onChange([...lines, emptyPurchaseLine()]);
+      return;
+    }
+    if (
+      action.type === "move" &&
+      (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp")
+    ) {
+      event.preventDefault();
+      const nextRow = Math.max(0, Math.min(lines.length - 1, rowIndex + action.rowDelta));
+      const nextCol = Math.max(0, Math.min(numericCols.length - 1, colIndex + action.colDelta));
+      const targetKey = numericCols[nextCol];
+      if (!targetKey) return;
+      const target = document.querySelector<HTMLElement>(
+        `[data-purchase-cell="${nextRow}-${targetKey}"]`,
+      );
+      target?.focus();
+    }
+  };
 
   const update = (idx: number, patch: Partial<PurchaseLineFormState>) => {
     const next = [...lines];
@@ -484,6 +530,7 @@ export function PurchasesDocumentLines({
                     <td className="p-1">
                       <Input
                         aria-label={`Line ${idx + 1} quantity`}
+                        data-purchase-cell={`${idx}-quantity`}
                         voiceField={{
                           key: "quantity",
                           label: "Quantity",
@@ -493,6 +540,7 @@ export function PurchasesDocumentLines({
                         }}
                         value={line.quantity}
                         onChange={(e) => update(idx, { quantity: e.target.value })}
+                        onKeyDown={(e) => onNumericKeyDown(e, idx, "quantity")}
                         inputMode="decimal"
                         className="h-9"
                       />
@@ -502,6 +550,7 @@ export function PurchasesDocumentLines({
                     <td className="p-1">
                       <Input
                         aria-label={`Line ${idx + 1} unit price`}
+                        data-purchase-cell={`${idx}-unitPrice`}
                         voiceField={{
                           key: "unitPrice",
                           label: "Unit price",
@@ -511,6 +560,7 @@ export function PurchasesDocumentLines({
                         }}
                         value={line.unitPrice}
                         onChange={(e) => update(idx, { unitPrice: e.target.value })}
+                        onKeyDown={(e) => onNumericKeyDown(e, idx, "unitPrice")}
                         inputMode="decimal"
                         className="h-9"
                       />
@@ -520,6 +570,7 @@ export function PurchasesDocumentLines({
                     <td className="p-1">
                       <Input
                         aria-label={`Line ${idx + 1} discount`}
+                        data-purchase-cell={`${idx}-discount`}
                         voiceField={{
                           key: "discount",
                           label: "Discount",
@@ -529,6 +580,7 @@ export function PurchasesDocumentLines({
                         }}
                         value={line.discount}
                         onChange={(e) => update(idx, { discount: e.target.value })}
+                        onKeyDown={(e) => onNumericKeyDown(e, idx, "discount")}
                         inputMode="decimal"
                         className="h-9"
                       />

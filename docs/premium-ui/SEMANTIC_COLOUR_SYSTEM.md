@@ -50,4 +50,4 @@ Unknown statuses render **neutral + humanised label** — never auto-success.
 | `Button` | `default` primary blue; `destructive`; `success`/`warning` only when outcome matches |
 | `StatusBadge` / `badgeVariants` | tone → soft surface + ink |
 | Sidebar icons | `data-nav-group` / `data-nav-accent="ai"` |
-| Progress / toggles | Must bind to real counts or persisted settings (enforced in feature batches) |
+| Progress / toggles | `MeasuredProgress` (completed/total only); `PersistedSwitch` (save + rollback) |

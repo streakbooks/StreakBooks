@@ -34,6 +34,7 @@ import {
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getFirmClientName, type FirmClientRow } from "@/lib/firm/client-portfolio";
 import { FirmCustomOnboardingTemplates } from "@/components/firm/FirmCustomOnboardingTemplates";
+import { MeasuredProgress } from "@/components/common/MeasuredProgress";
 
 type StepPlan = Omit<FirmOnboardingPlanInput, "firmId" | "companyId" | "task_key" | "version">;
 
@@ -234,14 +235,15 @@ export function FirmOnboardingPanel({
           ) : (
             <>
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-4">
-                <div>
-                  <p className="font-semibold">
-                    {metrics.completed} of {steps.length} checklist items completed
-                  </p>
+                <div className="min-w-[16rem] flex-1 space-y-2">
+                  <MeasuredProgress
+                    completed={metrics.completed}
+                    total={steps.length}
+                    unit="checklist items"
+                    emptyLabel="No checklist created for this client yet."
+                  />
                   <p className="text-sm text-muted-foreground">
-                    {steps.length === 0
-                      ? "No checklist created for this client yet."
-                      : "Checklists are operational evidence, not automatic accounting approval."}
+                    Checklists are operational evidence, not automatic accounting approval.
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {metrics.overdue} overdue · {metrics.dueSoon} due within 3 days ·{" "}

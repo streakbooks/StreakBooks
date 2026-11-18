@@ -18,7 +18,8 @@
 | Transaction workspace Batch 26 | Merged | PR #272 → `c370c99c` |
 | Line-grid keyboard + journals Batch 27 | Merged | PR #273 → `3697f35a` |
 | Originality + Purchases PO Batch 28 | On main | `a610f1a5` (direct push) |
-| Semantic colourful system Batch 29 | In progress | AI purple tokens, status map, nav group icon accents |
+| Semantic colourful system Batch 29 | Merged | PR #274 → `4a16970c` |
+| Bill sticky + honest controls + browsing Batch 30 | In progress | sticky bill actions, MeasuredProgress, PersistedSwitch, manifest 29/156 |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 
@@ -41,7 +42,7 @@
 | Banking | `/banking` | in-progress | Batch 28 planned | partial | IN PROGRESS |
 | Point of Sale | `/pos` | in-progress | specialized | unverified | IN PROGRESS |
 | Sales | `/sales` | in-progress | TransactionWorkspace on invoice/quote/credit editors; spreadsheet line grid | partial | IN PROGRESS |
-| Purchases | `/purchases` | in-progress | Sticky line headers; BillWorkspaceLayout retained | partial | IN PROGRESS |
+| Purchases | `/purchases` | in-progress | Sticky line headers + sticky save actions; numeric line keyboard | partial | IN PROGRESS |
 | Expenses | `/expense-management` | in-progress | later | partial | IN PROGRESS |
 | CRM | `/crm` | in-progress | N/A kanban | partial | IN PROGRESS |
 | Property Management | `/property-management` | in-progress | later | partial | IN PROGRESS |
@@ -82,7 +83,8 @@
 | SplitButton | scaffolded | 25 |
 | EditableLineItemGrid | chrome scaffold | 25 |
 | FormGrid | added | 25 |
-| Spreadsheet keyboard/paste | pending | 27 |
+| Spreadsheet keyboard/paste | keyboard helpers + bill/journal/purchase numeric | 27–30 |
+| MeasuredProgress / PersistedSwitch | added | 30 |
 
 ## Batch ledger pointer
 

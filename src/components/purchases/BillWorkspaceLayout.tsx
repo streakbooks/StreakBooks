@@ -32,6 +32,8 @@ type Props = {
   attachments?: AttachmentPreview[] | undefined;
   onDownloadAttachment?: ((id: string) => void) | undefined;
   header: ReactNode;
+  /** Sticky save / authorise bar — remains visible while scrolling line entry. */
+  stickyActions?: ReactNode;
   children: ReactNode;
   className?: string | undefined;
 };
@@ -54,6 +56,7 @@ export function BillWorkspaceLayout({
   attachments,
   onDownloadAttachment,
   header,
+  stickyActions,
   children,
   className,
 }: Props) {
@@ -67,6 +70,7 @@ export function BillWorkspaceLayout({
       data-slot="bill-workspace-layout"
       className={cn(
         "flex min-h-[calc(100vh-var(--lb-header-height,4rem))] min-w-0 flex-col",
+        stickyActions ? "pb-24" : undefined,
         className,
       )}
     >
@@ -105,7 +109,12 @@ export function BillWorkspaceLayout({
         ) : null}
       </div>
       <Sheet open={mobileSummaryOpen} onOpenChange={setMobileSummaryOpen}>
-        <div className="sticky bottom-0 z-10 border-t border-border/80 bg-card/95 p-3 shadow-raised xl:hidden print:hidden">
+        <div
+          className={cn(
+            "sticky z-10 border-t border-border/80 bg-card/95 p-3 shadow-raised xl:hidden print:hidden",
+            stickyActions ? "bottom-16" : "bottom-0",
+          )}
+        >
           <SheetTrigger asChild>
             <Button
               type="button"
@@ -139,6 +148,16 @@ export function BillWorkspaceLayout({
           />
         </SheetContent>
       </Sheet>
+      {stickyActions ? (
+        <div
+          data-slot="bill-sticky-actions"
+          className="fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-card/95 px-3 py-3 backdrop-blur-sm supports-[backdrop-filter]:bg-card/85 lg:left-[var(--lb-sidebar-current-width,var(--lb-sidebar-width))] print:hidden"
+        >
+          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2">
+            {stickyActions}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

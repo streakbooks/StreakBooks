@@ -1,5 +1,7 @@
 # LinkBooks financial intelligence programme — 17 November 2026
 
+Latest continuation: [Batch 04 shared lookups, audit/permission repairs and real verification](BATCH-04-LOOKUPS-AND-VERIFICATION.md). The original audit matrix below is historical; use the current batch evidence for executed gate results. Full programme acceptance remains 0/53.
+
 ## Result and baseline
 
 PARTIALLY COMPLETED. Phase 0 is a preliminary audit with unresolved gates; Phase 1 has a focused suggestion-safety batch. Phases 2–7 have not been implemented by this batch. No full feature acceptance or production-readiness claim is made.

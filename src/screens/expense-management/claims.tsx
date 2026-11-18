@@ -892,7 +892,11 @@ export function ExpenseManagementClaimsPage({
         stickyActions={
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" asChild>
-              <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
+              <Link
+                to="/expense-management/$section"
+                params={{ section: "my-expenses" }}
+                search={{}}
+              >
                 Cancel
               </Link>
             </Button>

@@ -65,9 +65,8 @@ function ProjectsPage() {
     if (!forceCreate) return;
     void navigate({
       search: (prev) => {
-        const next = { ...prev };
-        delete next.create;
-        return next;
+        const { create: _create, ...rest } = prev;
+        return rest;
       },
       replace: true,
     });

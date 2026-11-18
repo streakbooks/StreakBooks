@@ -51,7 +51,13 @@ const STATUS_LABEL: Record<PayrollRunStatus, string> = {
   void: "Void",
 };
 
-export function PayrollRunsPage() {
+export function PayrollRunsPage({
+  forceCreate = false,
+  onCreateClosed,
+}: {
+  forceCreate?: boolean;
+  onCreateClosed?: () => void;
+} = {}) {
   const { company, isPending } = useActiveCompany();
   const canView = useCanDo("payroll.view");
   const canPrepare = useCanDo("payroll.run.prepare");
@@ -111,6 +117,17 @@ export function PayrollRunsPage() {
     },
     onError: (err) => toast.error(friendlyAuthError(err)),
   });
+
+  function closeCreate() {
+    setCreateOpen(false);
+    if (forceCreate) onCreateClosed?.();
+  }
+
+  useEffect(() => {
+    if (!forceCreate || !canPrepare || createOpen) return;
+    setUserEditedDates(false);
+    setCreateOpen(true);
+  }, [forceCreate, canPrepare, createOpen]);
 
   useEffect(() => {
     if (!createOpen || !scheduleId || userEditedDates) return;
@@ -213,7 +230,7 @@ export function PayrollRunsPage() {
         ]}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setCreateOpen(false)}>
+            <Button variant="outline" size="sm" onClick={closeCreate}>
               Cancel
             </Button>
             <Button

@@ -67,3 +67,14 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Project create sticky URL + close on save | Refresh-safe; `ProjectPanel onSaved` closes panel |
 | Production build | Local `vite build` PASS on this batch |
 
+## Batch 57 (sticky create honesty)
+
+| Gap | Action |
+| --- | --- |
+| Shared create-search helpers | `parseCreateSearchFlag` + omit pattern (exactOptional-safe) |
+| Budgets deep-link create | Sticky `?create=true` until Close |
+| Payroll employee/run create deep links | Sticky `?create=true` opens RecordWorkspace |
+| Requisition create URL sticky | Clear only when editor Cancel/Save |
+| Expense claim Cancel | Clears `create` search so form does not reopen |
+| Products create clear | exactOptional-safe omit (no `create: undefined`) |
+

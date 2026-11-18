@@ -45,7 +45,7 @@ export function parseFilesListSearch(raw: Record<string, unknown>): FilesListSea
   const page = raw["page"];
   if (
     (typeof page === "number" && Number.isSafeInteger(page) && page >= 0) ||
-    (typeof page === "string" && /^\d{1,7}$/.test(page))
+    (typeof page === "string" && /^(0|[1-9]\d{0,6})$/.test(page))
   ) result.page = Math.min(Number(page), 1_000_000);
 
   return result;

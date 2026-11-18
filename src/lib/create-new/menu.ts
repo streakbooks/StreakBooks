@@ -59,6 +59,8 @@ export function createNavTarget(action: CreateAction): CreateNavTarget {
       return { kind: "route", to: "/banking/transfers/new" };
     case "product":
       return { kind: "route", to: "/products-services", search: { create: true } };
+    case "fixed_asset":
+      return { kind: "route", to: "/fixed-assets", search: { create: true } };
     case "sales_order":
       return { kind: "route", to: "/sales/orders/new" };
     case "purchase_requisition":

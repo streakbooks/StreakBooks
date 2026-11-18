@@ -25,6 +25,7 @@ import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -268,6 +269,47 @@ export function PayrollEmployeesPage() {
     }
   };
 
+  if (addOpen && newDraft) {
+    return (
+      <RecordWorkspace
+        title="Add payroll employee"
+        description="Create an employee profile with payment details for payroll runs."
+        breadcrumbs={[
+          { label: "Payroll", to: "/payroll" },
+          { label: "Employees", to: "/payroll/employees" },
+          { label: "New" },
+        ]}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setAddOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={createM.isPending}
+              onClick={() => {
+                const parsed = parsePayrollEmployeeDraft(newDraft);
+                if (!parsed.ok) {
+                  toast.error(parsed.error);
+                  return;
+                }
+                createM.mutate(newDraft);
+              }}
+            >
+              {createM.isPending ? "Saving…" : "Save employee"}
+            </Button>
+          </div>
+        }
+      >
+        <EmployeeForm
+          draft={newDraft}
+          onChange={setNewDraft}
+          schedules={settings?.schedules ?? []}
+        />
+      </RecordWorkspace>
+    );
+  }
+
   return (
     <ListWorkspace
       title="Payroll employees"
@@ -482,39 +524,6 @@ export function PayrollEmployeesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Add payroll employee</DialogTitle>
-          </DialogHeader>
-          {newDraft ? (
-            <EmployeeForm
-              draft={newDraft}
-              onChange={setNewDraft}
-              schedules={settings?.schedules ?? []}
-            />
-          ) : null}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              disabled={createM.isPending || !newDraft}
-              onClick={() => {
-                if (!newDraft) return;
-                const parsed = parsePayrollEmployeeDraft(newDraft);
-                if (!parsed.ok) {
-                  toast.error(parsed.error);
-                  return;
-                }
-                createM.mutate(newDraft);
-              }}
-            >
-              Save employee
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </ListWorkspace>
   );
 }

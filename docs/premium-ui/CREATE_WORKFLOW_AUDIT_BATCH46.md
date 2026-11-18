@@ -67,11 +67,16 @@ Remaining non-`/new` destinations that are intentional (list/tooling, not comple
 - Customers/suppliers lists route to Contacts create (no half-width inline forms).
 - Budgets/CRM lead empty CTAs; budgets create on demand.
 
+## Batch 54 follow-ups
+
+- Product create → RecordWorkspace (edit remains Dialog).
+- Fixed asset create → RecordWorkspace via `layout="workspace"` + CREATE `fixed_asset`.
+- Payroll employee/run create → RecordWorkspace.
+- CRM opportunities/activities empty New CTAs.
+
 ## Still deferred
 
 - Authenticated Playwright create-flow smoke (blocked without staging E2E credentials).
 - Multi-account Spend/Receive allocation lines (posting engine constraint).
-- Fixed-assets full-page `/fixed-assets/new` (header/empty CTAs open Dialog for now).
-- Products/Services full-page create (Dialog kept for narrow entity).
-- Payroll Dialog → RecordWorkspace.
+- Dedicated `/fixed-assets/new` and `/products-services/new` URL routes (workspace via `?create=true` / in-page state for now).
 - Module finished-screen DoD (0/34 COMPLETE).

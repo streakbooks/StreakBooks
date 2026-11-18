@@ -517,6 +517,17 @@ export function CrmActivitiesPage({
                     : "No activities"
               }
               description="Create a task, meeting or activity linked to a lead or opportunity."
+              action={
+                canManage && settings.data?.enabled ? (
+                  <Button type="button" size="sm" onClick={() => setShowForm(true)}>
+                    {sectionKey === "calendar"
+                      ? "New meeting"
+                      : sectionKey === "tasks"
+                        ? "New task"
+                        : "New activity"}
+                  </Button>
+                ) : undefined
+              }
             />
           ) : null}
           {rows.length > 0 ? (

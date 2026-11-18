@@ -39,6 +39,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 
 const selectCls =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60";
@@ -463,6 +464,7 @@ export function AssetDialog({
   editing,
   fromBillLine,
   frozen,
+  layout = "dialog",
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -474,6 +476,8 @@ export function AssetDialog({
   fromBillLine: CapitaliseLine | null;
   /** True once depreciation is posted: only descriptive fields can change. */
   frozen: boolean;
+  /** Full-page create/edit shell for New asset; Dialog remains for edit from register. */
+  layout?: "dialog" | "workspace";
 }) {
   const queryClient = useQueryClient();
   const canAccounts = useCanDo("accounts.manage");
@@ -596,16 +600,26 @@ export function AssetDialog({
   });
 
   const lock = frozen;
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editing ? `Edit ${editing.asset_number}` : "New fixed asset"}</DialogTitle>
-          <DialogDescription>
-            Registering an asset does not post a journal: the purchase is already in your books
-            (bill, expense or journal). The register records what to depreciate.
-          </DialogDescription>
-        </DialogHeader>
+  const assetTitle = editing ? `Edit ${editing.asset_number}` : "New fixed asset";
+  const assetDescription =
+    "Registering an asset does not post a journal: the purchase is already in your books (bill, expense or journal). The register records what to depreciate.";
+  const assetActions = (
+    <div className="flex flex-wrap gap-2">
+      <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+        Cancel
+      </Button>
+      <Button
+        size="sm"
+        disabled={m.isPending || !name.trim() || !feedback.valid}
+        onClick={() => m.mutate()}
+      >
+        {m.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
+        Save asset
+      </Button>
+    </div>
+  );
+  const assetBody = (
+    <>
         {frozen ? (
           <Alert>
             <AlertDescription>
@@ -884,18 +898,35 @@ export function AssetDialog({
             </AlertDescription>
           </Alert>
         ) : null}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            disabled={m.isPending || !name.trim() || !feedback.valid}
-            onClick={() => m.mutate()}
-          >
-            {m.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
-            Save asset
-          </Button>
-        </DialogFooter>
+    </>
+  );
+
+  if (layout === "workspace") {
+    if (!open) return null;
+    return (
+      <RecordWorkspace
+        title={assetTitle}
+        description={assetDescription}
+        breadcrumbs={[
+          { label: "Fixed assets", to: "/fixed-assets" },
+          { label: editing ? "Edit" : "New" },
+        ]}
+        actions={assetActions}
+      >
+        <div className="max-w-3xl space-y-3">{assetBody}</div>
+      </RecordWorkspace>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{assetTitle}</DialogTitle>
+          <DialogDescription>{assetDescription}</DialogDescription>
+        </DialogHeader>
+        {assetBody}
+        <DialogFooter>{assetActions}</DialogFooter>
       </DialogContent>
     </Dialog>
   );

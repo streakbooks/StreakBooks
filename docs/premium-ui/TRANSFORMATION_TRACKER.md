@@ -43,6 +43,7 @@
 | Create intents Batch 51 | Merged | PR #299 → `0be7b88f` — sales_order CREATE; FA/SO `?create=true` |
 | Create honesty Batch 52 | Merged | PR #301 → `fe0ed927` — requisitions workspace; product/contacts/projects/palette |
 | Create routes Batch 53 | Merged | PR #303 → `7f098686` — SO /new; requisition CREATE; customers/suppliers/budgets/CRM |
+| Create workspaces Batch 54 | In progress | `feature/premium-ui-batch54-create-workspaces` — product/FA/payroll workspaces; CRM CTAs |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

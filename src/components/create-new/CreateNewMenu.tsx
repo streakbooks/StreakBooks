@@ -83,6 +83,7 @@ const MENU_ORDER = [
   "card_payment",
   "manual_journal",
   "recurring_journal",
+  "fixed_asset",
   "account",
   "product",
   "project",

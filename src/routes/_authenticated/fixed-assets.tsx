@@ -231,6 +231,25 @@ function FixedAssetsPage() {
     Boolean(assetTypeId) ||
     Boolean(assetAccountId);
 
+  // New asset opens as a full-page RecordWorkspace (not a Dialog over the register).
+  if (dialog?.kind === "asset" && !dialog.editing) {
+    return (
+      <AssetDialog
+        key={dialog.fromBillLine?.lineId ?? "new"}
+        open
+        layout="workspace"
+        onOpenChange={(o) => !o && setDialog(null)}
+        companyId={companyId}
+        currency={currency}
+        accounts={d.accounts}
+        types={d.types}
+        editing={null}
+        fromBillLine={dialog.fromBillLine}
+        frozen={false}
+      />
+    );
+  }
+
   return (
     <>
       <ListWorkspace
@@ -704,6 +723,7 @@ function FixedAssetsPage() {
         <AssetDialog
           key={dialog.editing?.id ?? dialog.fromBillLine?.lineId ?? "new"}
           open
+          layout={dialog.editing ? "dialog" : "workspace"}
           onOpenChange={(o) => !o && setDialog(null)}
           companyId={companyId}
           currency={currency}

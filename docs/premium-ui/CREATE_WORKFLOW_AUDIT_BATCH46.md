@@ -37,8 +37,17 @@ Remaining non-`/new` destinations that are intentional (list/tooling, not comple
 4. Sales recurring inline max-width card → full-page `/sales/recurring/new` TransactionWorkspace.
 5. Template bill title still said “New bill” → “Recurring bill template”.
 
-## Next batch candidates (P0-D+)
+## Follow-up closed on same branch (production hardening)
 
-- Product / Statement / Transfer create destinations that still land on lists.
+| Module | Action | Fix |
+| --- | --- | --- |
+| Banking | Transfer money | `/banking/transfers/new` TransactionWorkspace; list is history-only |
+| Products | Product / Service | Create menu → `/products-services?create=true` opens New item dialog |
+| Expenses | Expense claim | Create menu → `/expense-management/my-expenses?create=true` focuses full-width draft |
+| Tooling | `check:navigation` / browsing manifest | Recurring + transfers + money/journal routes synced (163 routes) |
+
+## Still deferred
+
 - Authenticated Playwright create-flow smoke (blocked without staging E2E credentials).
-- Multi-account Spend/Receive allocation lines (deferred; posting engine constraint).
+- Multi-account Spend/Receive allocation lines (posting engine constraint).
+- Recurring bill/invoice **edit** still uses overlay / in-place workspace (create is full-page).

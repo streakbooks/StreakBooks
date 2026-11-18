@@ -35,7 +35,7 @@
 | HR five-group nav + Payroll grouped Batch 43 | Merged | PR #290 → `b0e824e5` — 5-group HR IA, Workforce Insights, ListWorkspace `subnav`, Payroll GroupedModuleSubnav |
 | Money routing ownership Batch 44 | Merged | PR #291 → `8fef011c` — Banking Spend/Receive Money canonical routes + entry-point audit |
 | Money editor + CRM/PM subnav Batch 45 | Merged | PR #292 → `e186afd5` — Spend Money spreadsheet roll-up; Receive Save & add another; CRM/PM ListWorkspace subnav |
-| Create workflows Batch 46 | In progress | `feature/premium-ui-batch46-create-workflows` — journal/recurring full-page creates; create-route guards; see CREATE_WORKFLOW_AUDIT_BATCH46.md |
+| Create workflows Batch 46 | Ready | PR #293 — journal/recurring/transfer full-page creates; product/claim Create deep-links; local gates PASS; CI blocked by org billing |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

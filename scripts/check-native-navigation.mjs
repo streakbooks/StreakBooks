@@ -27,7 +27,7 @@ const required = [
     ['to="/purchases/bills"', 'to="/purchases/bills/$billId"'],
   ],
   [
-    "src/routes/_authenticated/purchases/recurring.tsx",
+    "src/routes/_authenticated/purchases/recurring.index.tsx",
     ['to="/purchases/recurring"', 'role="tab"'],
   ],
   ["src/routes/_authenticated/accounting.tsx", ['to="/accounting"', 'role="tab"']],
@@ -75,7 +75,7 @@ for (const file of [
   "src/routes/_authenticated/contacts/$contactId.tsx",
   "src/routes/_authenticated/tax.tsx",
   "src/routes/_authenticated/fixed-assets.tsx",
-  "src/routes/_authenticated/purchases/recurring.tsx",
+  "src/routes/_authenticated/purchases/recurring.index.tsx",
   "src/routes/_authenticated/settings.tsx",
 ]) {
   const source = read(file);

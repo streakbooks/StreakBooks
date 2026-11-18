@@ -77,7 +77,6 @@ import { Route as AuthenticatedBankingReconcileRouteImport } from './routes/_aut
 import { Route as AuthenticatedBankingRulesRouteImport } from './routes/_authenticated/banking/rules'
 import { Route as AuthenticatedBankingSpendMoneyRouteImport } from './routes/_authenticated/banking/spend-money'
 import { Route as AuthenticatedBankingTransactionsRouteImport } from './routes/_authenticated/banking/transactions'
-import { Route as AuthenticatedBankingTransfersRouteImport } from './routes/_authenticated/banking/transfers'
 import { Route as AuthenticatedBudgetsIndexRouteImport } from './routes/_authenticated/budgets/index'
 import { Route as AuthenticatedBudgetsBudgetIdRouteImport } from './routes/_authenticated/budgets/$budgetId'
 import { Route as AuthenticatedContactsIndexRouteImport } from './routes/_authenticated/contacts/index'
@@ -150,6 +149,8 @@ import { Route as AuthenticatedAppStoreAppsAppCodeRouteImport } from './routes/_
 import { Route as AuthenticatedBankingJournalJournalIdRouteImport } from './routes/_authenticated/banking/journal.$journalId'
 import { Route as AuthenticatedBankingMoneyDocumentsNewRouteImport } from './routes/_authenticated/banking/money-documents.new'
 import { Route as AuthenticatedBankingReconciliationReportSessionIdRouteImport } from './routes/_authenticated/banking/reconciliation-report.$sessionId'
+import { Route as AuthenticatedBankingTransfersIndexRouteImport } from './routes/_authenticated/banking/transfers.index'
+import { Route as AuthenticatedBankingTransfersNewRouteImport } from './routes/_authenticated/banking/transfers.new'
 import { Route as AuthenticatedCrmLeadsLeadIdRouteImport } from './routes/_authenticated/crm/leads.$leadId'
 import { Route as AuthenticatedExpenseManagementClaimsClaimIdRouteImport } from './routes/_authenticated/expense-management/claims.$claimId'
 import { Route as AuthenticatedHrEmployeesEmployeeIdRouteImport } from './routes/_authenticated/hr/employees.$employeeId'
@@ -584,12 +585,6 @@ const AuthenticatedBankingTransactionsRoute =
     path: '/transactions',
     getParentRoute: () => AuthenticatedBankingRouteRoute,
   } as any)
-const AuthenticatedBankingTransfersRoute =
-  AuthenticatedBankingTransfersRouteImport.update({
-    id: '/transfers',
-    path: '/transfers',
-    getParentRoute: () => AuthenticatedBankingRouteRoute,
-  } as any)
 const AuthenticatedBudgetsIndexRoute =
   AuthenticatedBudgetsIndexRouteImport.update({
     id: '/budgets/',
@@ -999,6 +994,18 @@ const AuthenticatedBankingReconciliationReportSessionIdRoute =
     path: '/reconciliation-report/$sessionId',
     getParentRoute: () => AuthenticatedBankingRouteRoute,
   } as any)
+const AuthenticatedBankingTransfersIndexRoute =
+  AuthenticatedBankingTransfersIndexRouteImport.update({
+    id: '/transfers/',
+    path: '/transfers/',
+    getParentRoute: () => AuthenticatedBankingRouteRoute,
+  } as any)
+const AuthenticatedBankingTransfersNewRoute =
+  AuthenticatedBankingTransfersNewRouteImport.update({
+    id: '/transfers/new',
+    path: '/transfers/new',
+    getParentRoute: () => AuthenticatedBankingRouteRoute,
+  } as any)
 const AuthenticatedCrmLeadsLeadIdRoute =
   AuthenticatedCrmLeadsLeadIdRouteImport.update({
     id: '/crm/leads/$leadId',
@@ -1400,7 +1407,6 @@ export interface FileRoutesByFullPath {
   '/banking/rules': typeof AuthenticatedBankingRulesRoute
   '/banking/spend-money': typeof AuthenticatedBankingSpendMoneyRoute
   '/banking/transactions': typeof AuthenticatedBankingTransactionsRoute
-  '/banking/transfers': typeof AuthenticatedBankingTransfersRoute
   '/budgets/$budgetId': typeof AuthenticatedBudgetsBudgetIdRoute
   '/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
   '/contacts/duplicates': typeof AuthenticatedContactsDuplicatesRoute
@@ -1477,6 +1483,7 @@ export interface FileRoutesByFullPath {
   '/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/banking/money-documents/new': typeof AuthenticatedBankingMoneyDocumentsNewRoute
   '/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
+  '/banking/transfers/new': typeof AuthenticatedBankingTransfersNewRoute
   '/crm/leads/$leadId': typeof AuthenticatedCrmLeadsLeadIdRoute
   '/expense-management/claims/$claimId': typeof AuthenticatedExpenseManagementClaimsClaimIdRoute
   '/hr/employees/$employeeId': typeof AuthenticatedHrEmployeesEmployeeIdRoute
@@ -1508,6 +1515,7 @@ export interface FileRoutesByFullPath {
   '/sales/recurring/new': typeof AuthenticatedSalesRecurringNewRoute
   '/advisors/portal/invite/$token': typeof AdvisorsPortalInviteTokenRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
+  '/banking/transfers/': typeof AuthenticatedBankingTransfersIndexRoute
   '/payroll/employees/': typeof AuthenticatedPayrollEmployeesIndexRoute
   '/payroll/payments/': typeof AuthenticatedPayrollPaymentsIndexRoute
   '/payroll/payslips/': typeof AuthenticatedPayrollPayslipsIndexRoute
@@ -1590,7 +1598,6 @@ export interface FileRoutesByTo {
   '/banking/rules': typeof AuthenticatedBankingRulesRoute
   '/banking/spend-money': typeof AuthenticatedBankingSpendMoneyRoute
   '/banking/transactions': typeof AuthenticatedBankingTransactionsRoute
-  '/banking/transfers': typeof AuthenticatedBankingTransfersRoute
   '/budgets/$budgetId': typeof AuthenticatedBudgetsBudgetIdRoute
   '/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
   '/contacts/duplicates': typeof AuthenticatedContactsDuplicatesRoute
@@ -1667,6 +1674,7 @@ export interface FileRoutesByTo {
   '/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/banking/money-documents/new': typeof AuthenticatedBankingMoneyDocumentsNewRoute
   '/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
+  '/banking/transfers/new': typeof AuthenticatedBankingTransfersNewRoute
   '/crm/leads/$leadId': typeof AuthenticatedCrmLeadsLeadIdRoute
   '/expense-management/claims/$claimId': typeof AuthenticatedExpenseManagementClaimsClaimIdRoute
   '/hr/employees/$employeeId': typeof AuthenticatedHrEmployeesEmployeeIdRoute
@@ -1695,6 +1703,7 @@ export interface FileRoutesByTo {
   '/sales/recurring/new': typeof AuthenticatedSalesRecurringNewRoute
   '/advisors/portal/invite/$token': typeof AdvisorsPortalInviteTokenRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
+  '/banking/transfers': typeof AuthenticatedBankingTransfersIndexRoute
   '/payroll/employees': typeof AuthenticatedPayrollEmployeesIndexRoute
   '/payroll/payments': typeof AuthenticatedPayrollPaymentsIndexRoute
   '/payroll/payslips': typeof AuthenticatedPayrollPayslipsIndexRoute
@@ -1787,7 +1796,6 @@ export interface FileRoutesById {
   '/_authenticated/banking/rules': typeof AuthenticatedBankingRulesRoute
   '/_authenticated/banking/spend-money': typeof AuthenticatedBankingSpendMoneyRoute
   '/_authenticated/banking/transactions': typeof AuthenticatedBankingTransactionsRoute
-  '/_authenticated/banking/transfers': typeof AuthenticatedBankingTransfersRoute
   '/_authenticated/budgets/$budgetId': typeof AuthenticatedBudgetsBudgetIdRoute
   '/_authenticated/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
   '/_authenticated/contacts/duplicates': typeof AuthenticatedContactsDuplicatesRoute
@@ -1864,6 +1872,7 @@ export interface FileRoutesById {
   '/_authenticated/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/_authenticated/banking/money-documents/new': typeof AuthenticatedBankingMoneyDocumentsNewRoute
   '/_authenticated/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
+  '/_authenticated/banking/transfers/new': typeof AuthenticatedBankingTransfersNewRoute
   '/_authenticated/crm/leads/$leadId': typeof AuthenticatedCrmLeadsLeadIdRoute
   '/_authenticated/expense-management/claims/$claimId': typeof AuthenticatedExpenseManagementClaimsClaimIdRoute
   '/_authenticated/hr/employees/$employeeId': typeof AuthenticatedHrEmployeesEmployeeIdRoute
@@ -1895,6 +1904,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/recurring/new': typeof AuthenticatedSalesRecurringNewRoute
   '/advisors_/portal/invite/$token': typeof AdvisorsPortalInviteTokenRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
+  '/_authenticated/banking/transfers/': typeof AuthenticatedBankingTransfersIndexRoute
   '/_authenticated/payroll/employees/': typeof AuthenticatedPayrollEmployeesIndexRoute
   '/_authenticated/payroll/payments/': typeof AuthenticatedPayrollPaymentsIndexRoute
   '/_authenticated/payroll/payslips/': typeof AuthenticatedPayrollPayslipsIndexRoute
@@ -1987,7 +1997,6 @@ export interface FileRouteTypes {
     | '/banking/rules'
     | '/banking/spend-money'
     | '/banking/transactions'
-    | '/banking/transfers'
     | '/budgets/$budgetId'
     | '/contacts/$contactId'
     | '/contacts/duplicates'
@@ -2064,6 +2073,7 @@ export interface FileRouteTypes {
     | '/banking/journal/$journalId'
     | '/banking/money-documents/new'
     | '/banking/reconciliation-report/$sessionId'
+    | '/banking/transfers/new'
     | '/crm/leads/$leadId'
     | '/expense-management/claims/$claimId'
     | '/hr/employees/$employeeId'
@@ -2095,6 +2105,7 @@ export interface FileRouteTypes {
     | '/sales/recurring/new'
     | '/advisors/portal/invite/$token'
     | '/portal/app/invoices/$invoiceId'
+    | '/banking/transfers/'
     | '/payroll/employees/'
     | '/payroll/payments/'
     | '/payroll/payslips/'
@@ -2177,7 +2188,6 @@ export interface FileRouteTypes {
     | '/banking/rules'
     | '/banking/spend-money'
     | '/banking/transactions'
-    | '/banking/transfers'
     | '/budgets/$budgetId'
     | '/contacts/$contactId'
     | '/contacts/duplicates'
@@ -2254,6 +2264,7 @@ export interface FileRouteTypes {
     | '/banking/journal/$journalId'
     | '/banking/money-documents/new'
     | '/banking/reconciliation-report/$sessionId'
+    | '/banking/transfers/new'
     | '/crm/leads/$leadId'
     | '/expense-management/claims/$claimId'
     | '/hr/employees/$employeeId'
@@ -2282,6 +2293,7 @@ export interface FileRouteTypes {
     | '/sales/recurring/new'
     | '/advisors/portal/invite/$token'
     | '/portal/app/invoices/$invoiceId'
+    | '/banking/transfers'
     | '/payroll/employees'
     | '/payroll/payments'
     | '/payroll/payslips'
@@ -2373,7 +2385,6 @@ export interface FileRouteTypes {
     | '/_authenticated/banking/rules'
     | '/_authenticated/banking/spend-money'
     | '/_authenticated/banking/transactions'
-    | '/_authenticated/banking/transfers'
     | '/_authenticated/budgets/$budgetId'
     | '/_authenticated/contacts/$contactId'
     | '/_authenticated/contacts/duplicates'
@@ -2450,6 +2461,7 @@ export interface FileRouteTypes {
     | '/_authenticated/banking/journal/$journalId'
     | '/_authenticated/banking/money-documents/new'
     | '/_authenticated/banking/reconciliation-report/$sessionId'
+    | '/_authenticated/banking/transfers/new'
     | '/_authenticated/crm/leads/$leadId'
     | '/_authenticated/expense-management/claims/$claimId'
     | '/_authenticated/hr/employees/$employeeId'
@@ -2481,6 +2493,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/recurring/new'
     | '/advisors_/portal/invite/$token'
     | '/portal/app/invoices/$invoiceId'
+    | '/_authenticated/banking/transfers/'
     | '/_authenticated/payroll/employees/'
     | '/_authenticated/payroll/payments/'
     | '/_authenticated/payroll/payslips/'
@@ -3007,13 +3020,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBankingTransactionsRouteImport
       parentRoute: typeof AuthenticatedBankingRouteRoute
     }
-    '/_authenticated/banking/transfers': {
-      id: '/_authenticated/banking/transfers'
-      path: '/transfers'
-      fullPath: '/banking/transfers'
-      preLoaderRoute: typeof AuthenticatedBankingTransfersRouteImport
-      parentRoute: typeof AuthenticatedBankingRouteRoute
-    }
     '/_authenticated/budgets/': {
       id: '/_authenticated/budgets/'
       path: '/budgets'
@@ -3518,6 +3524,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBankingReconciliationReportSessionIdRouteImport
       parentRoute: typeof AuthenticatedBankingRouteRoute
     }
+    '/_authenticated/banking/transfers/': {
+      id: '/_authenticated/banking/transfers/'
+      path: '/transfers'
+      fullPath: '/banking/transfers/'
+      preLoaderRoute: typeof AuthenticatedBankingTransfersIndexRouteImport
+      parentRoute: typeof AuthenticatedBankingRouteRoute
+    }
+    '/_authenticated/banking/transfers/new': {
+      id: '/_authenticated/banking/transfers/new'
+      path: '/transfers/new'
+      fullPath: '/banking/transfers/new'
+      preLoaderRoute: typeof AuthenticatedBankingTransfersNewRouteImport
+      parentRoute: typeof AuthenticatedBankingRouteRoute
+    }
     '/_authenticated/crm/leads/$leadId': {
       id: '/_authenticated/crm/leads/$leadId'
       path: '/crm/leads/$leadId'
@@ -3938,10 +3958,11 @@ interface AuthenticatedBankingRouteRouteChildren {
   AuthenticatedBankingRulesRoute: typeof AuthenticatedBankingRulesRoute
   AuthenticatedBankingSpendMoneyRoute: typeof AuthenticatedBankingSpendMoneyRoute
   AuthenticatedBankingTransactionsRoute: typeof AuthenticatedBankingTransactionsRoute
-  AuthenticatedBankingTransfersRoute: typeof AuthenticatedBankingTransfersRoute
   AuthenticatedBankingIndexRoute: typeof AuthenticatedBankingIndexRoute
   AuthenticatedBankingJournalJournalIdRoute: typeof AuthenticatedBankingJournalJournalIdRoute
   AuthenticatedBankingReconciliationReportSessionIdRoute: typeof AuthenticatedBankingReconciliationReportSessionIdRoute
+  AuthenticatedBankingTransfersNewRoute: typeof AuthenticatedBankingTransfersNewRoute
+  AuthenticatedBankingTransfersIndexRoute: typeof AuthenticatedBankingTransfersIndexRoute
 }
 
 const AuthenticatedBankingRouteRouteChildren: AuthenticatedBankingRouteRouteChildren =
@@ -3958,12 +3979,15 @@ const AuthenticatedBankingRouteRouteChildren: AuthenticatedBankingRouteRouteChil
     AuthenticatedBankingSpendMoneyRoute: AuthenticatedBankingSpendMoneyRoute,
     AuthenticatedBankingTransactionsRoute:
       AuthenticatedBankingTransactionsRoute,
-    AuthenticatedBankingTransfersRoute: AuthenticatedBankingTransfersRoute,
     AuthenticatedBankingIndexRoute: AuthenticatedBankingIndexRoute,
     AuthenticatedBankingJournalJournalIdRoute:
       AuthenticatedBankingJournalJournalIdRoute,
     AuthenticatedBankingReconciliationReportSessionIdRoute:
       AuthenticatedBankingReconciliationReportSessionIdRoute,
+    AuthenticatedBankingTransfersNewRoute:
+      AuthenticatedBankingTransfersNewRoute,
+    AuthenticatedBankingTransfersIndexRoute:
+      AuthenticatedBankingTransfersIndexRoute,
   }
 
 const AuthenticatedBankingRouteRouteWithChildren =

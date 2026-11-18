@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { z } from "zod";
 import {
   isExpenseManagementSectionKey,
   type ExpenseManagementSectionKey,
@@ -6,6 +7,20 @@ import {
 import { ExpenseManagementSectionPage } from "@/screens/expense-management/section";
 
 export const Route = createFileRoute("/_authenticated/expense-management/$section")({
+  validateSearch: (search: Record<string, unknown>) =>
+    z
+      .object({
+        create: z.boolean().optional(),
+      })
+      .parse({
+        create:
+          search["create"] === true ||
+          search["create"] === "true" ||
+          search["create"] === "1" ||
+          search["create"] === 1
+            ? true
+            : undefined,
+      }),
   head: ({ params }) => ({
     meta: [
       {
@@ -23,7 +38,13 @@ export const Route = createFileRoute("/_authenticated/expense-management/$sectio
 
 function ExpenseManagementSectionRoute() {
   const { section } = Route.useParams();
-  return <ExpenseManagementSectionPage sectionKey={section as ExpenseManagementSectionKey} />;
+  const { create } = Route.useSearch();
+  return (
+    <ExpenseManagementSectionPage
+      sectionKey={section as ExpenseManagementSectionKey}
+      forceCreate={Boolean(create)}
+    />
+  );
 }
 
 function formatSectionTitle(section: string): string {

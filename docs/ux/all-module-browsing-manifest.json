@@ -13,7 +13,7 @@
   "invariant": "Every top-level sidebar item and every authenticated route file must appear exactly once in this manifest. New ones require an explicit coverage entry. Inventory inclusion is not implementation verification.",
   "counts": {
     "sidebarModules": 29,
-    "authenticatedRouteFiles": 156,
+    "authenticatedRouteFiles": 163,
     "supportingRouteFiles": 15
   },
   "acceptanceCriteria": [
@@ -79,12 +79,16 @@
         "banking/index.tsx",
         "banking/journal.$journalId.tsx",
         "banking/money-documents.tsx",
+        "banking/money-documents.new.tsx",
+        "banking/receive-money.tsx",
         "banking/reconcile.tsx",
         "banking/reconciliation-report.$sessionId.tsx",
         "banking/route.tsx",
         "banking/rules.tsx",
+        "banking/spend-money.tsx",
         "banking/transactions.tsx",
-        "banking/transfers.tsx"
+        "banking/transfers.index.tsx",
+        "banking/transfers.new.tsx"
       ],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
@@ -127,7 +131,8 @@
         "sales/receipts.$receiptId.tsx",
         "sales/receipts.index.tsx",
         "sales/receipts.new.tsx",
-        "sales/recurring.tsx",
+        "sales/recurring.index.tsx",
+        "sales/recurring.new.tsx",
         "sales/reminders.tsx",
         "sales/route.tsx",
         "sales/settings.tsx",
@@ -169,7 +174,8 @@
         "purchases/payments.index.tsx",
         "purchases/payments.new.tsx",
         "purchases/portal-inbox.tsx",
-        "purchases/recurring.tsx",
+        "purchases/recurring.index.tsx",
+        "purchases/recurring.new.tsx",
         "purchases/requisitions.tsx",
         "purchases/route.tsx",
         "purchases/settings.tsx",
@@ -274,7 +280,8 @@
       "label": "Accounting",
       "href": "/accounting",
       "routeFiles": [
-        "accounting.tsx"
+        "accounting.tsx",
+        "accounting/journals.new.tsx"
       ],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
@@ -283,6 +290,7 @@
         "src/routes/_authenticated/accounting.tsx and src/lib/navigation/workspace-search.ts — typed route state",
         "src/components/accounting/JournalsPanel.tsx — URL-backed list filters and sort",
         "src/screens/accounting.tsx — retain journal list context across 13 native tabs",
+        "src/routes/_authenticated/accounting/journals.new.tsx — full-page manual/recurring journal create",
         "src/routes/_authenticated/recurring-journals.tsx — return to Journals workspace",
         "src/lib/accounting/journal-browsing.test.ts — 8 unit cases WRITTEN, NOT RUN",
         "e2e/accounting-journal-native-browsing.spec.ts — 3 browser cases WRITTEN, NOT RUN"

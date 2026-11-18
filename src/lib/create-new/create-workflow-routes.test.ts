@@ -15,6 +15,7 @@ describe("create workflow routes (Batch 46)", () => {
     recurring_bill: "/purchases/recurring/new",
     receive_money: MONEY_OWNERSHIP.receiveMoney.createRoute,
     expense: MONEY_OWNERSHIP.spendMoney.createRoute,
+    bank_transfer: "/banking/transfers/new",
     invoice: "/sales/invoices/new",
     bill: "/purchases/bills/new",
   };

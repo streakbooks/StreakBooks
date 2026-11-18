@@ -184,6 +184,22 @@ export function CreateNewMenu() {
         void navigate({ to: "/banking/spend-money" });
         return;
       }
+      if (action.id === "bank_transfer") {
+        void navigate({ to: "/banking/transfers/new" });
+        return;
+      }
+      if (action.id === "product") {
+        void navigate({ to: "/products-services", search: { create: true } });
+        return;
+      }
+      if (action.id === "reimbursement") {
+        void navigate({
+          to: "/expense-management/$section",
+          params: { section: "my-expenses" },
+          search: { create: true },
+        });
+        return;
+      }
       const moneyKinds = [
         "sales_receipt",
         "customer_refund",

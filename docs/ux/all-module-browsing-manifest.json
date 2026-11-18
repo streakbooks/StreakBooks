@@ -657,7 +657,9 @@
         "2026-11-18: src/lib/settings/panels.ts now allowlist-validates section-derived /settings destinations, rejecting malformed runtime section identifiers; commit d396baf3c72ac163da84a50536cc17cc4fc8eb1c; SOURCE ONLY, NOT RUN.",
         "2026-11-18: src/lib/settings/panels.test.ts adds invalid and valid section destination regressions; commit bde74e52edae4a1ee3aec33398085ed74e457def; WRITTEN, NOT RUN.",
         "2026-11-18: src/lib/settings/panels.ts rejects malformed runtime openSettingsPanel targets without changing URL state; code commit 89d051fc2fb770acd30c8e25785c529306b6010f; SOURCE ONLY, NOT RUN.",
-        "2026-11-18: src/lib/settings/panels.test.ts adds invalid runtime target and valid nested return regression; commit df65d56ad367e77188b439135a80ae8866631208; WRITTEN, NOT RUN."
+        "2026-11-18: src/lib/settings/panels.test.ts adds invalid runtime target and valid nested return regression; commit df65d56ad367e77188b439135a80ae8866631208; WRITTEN, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.ts persists the allowlist-validated safePanel rather than the untrusted argument; commit 7b1cb44dd65bccc05a4b08a3d31b1b91ff33e589; SOURCE ONLY, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.test.ts adds validated panel, URL search retention and contextual close regression; commit f3a4e87d972a2a51dd2d9037ceb1a8732ae3b761; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Verify plan deep links, billing redirects, Back/Forward, permissions, and valid existing plan identifiers with authenticated fixtures",
@@ -673,7 +675,8 @@
         "Execute sparse Settings trail regression and authenticated nested Settings deep-link/refresh/Back/Forward tests; inventory guard, typecheck, lint, build, accessibility and RLS NOT RUN.",
         "Execute explicit destination panel allowlist regression, check:browsing-coverage, TypeScript, authenticated navigation, accessibility, and RLS/accounting tests; NOT RUN.",
         "Run new section destination regressions, browsing inventory guard, typecheck, lint, build, authenticated navigation, accessibility and RLS/accounting tests; NOT RUN.",
-        "Run runtime invalid-target regression and all 12 Settings acceptance checks; local inventory guard, typecheck, lint, build, authenticated browser, RLS/accounting tests NOT RUN."
+        "Run runtime invalid-target regression and all 12 Settings acceptance checks; local inventory guard, typecheck, lint, build, authenticated browser, RLS/accounting tests NOT RUN.",
+        "Execute Settings validated URL state regression and browser refresh/back/forward checks; inventory guard, typecheck, build, security and accounting tests NOT RUN."
       ]
     },
     {

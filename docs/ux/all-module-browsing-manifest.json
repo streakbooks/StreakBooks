@@ -274,13 +274,16 @@
         "src/lib/documents/files-navigation.test.ts — 7 unit cases WRITTEN, NOT RUN",
         "e2e/files-native-browsing.spec.ts — 3 browser scenarios WRITTEN, NOT RUN",
         "2026-11-18: src/lib/documents/files-navigation.ts trims URL-restored Files search, rejects invisible/control characters, preserves unrelated filters; code commit 91dfacb202ba895bad4e9e1e96bc4bbf22767af4; SOURCE ONLY, NOT RUN.",
-        "2026-11-18: src/lib/documents/files-navigation.test.ts adds whitespace, boundary, Unicode and control regressions; test commit 531d8901d9bf4f5e1eb5107929ab9b4fc0231101; WRITTEN, NOT RUN."
+        "2026-11-18: src/lib/documents/files-navigation.test.ts adds whitespace, boundary, Unicode and control regressions; test commit 531d8901d9bf4f5e1eb5107929ab9b4fc0231101; WRITTEN, NOT RUN.",
+        "2026-11-18: src/lib/documents/files-navigation.ts rejects padded/leading-zero noncanonical page strings; commit 084bc882ebc8bc6e238ebb3e2c8ee4848ff41c71; SOURCE ONLY, NOT RUN.",
+        "2026-11-18: src/lib/documents/files-navigation.test.ts adds canonical pagination cases and corrects control-character fixtures to JS runtime escapes; commits ee46dc2d7e94edac49c4f24c71d12e1dbd92297c, c599a321941681e12c2e9d56867f116f474815a9; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Run actual app typecheck, lint, build, Vitest and authenticated Playwright",
         "Review folder actions, document uploads, previews and selection permissions with seeded data",
         "Verify folder navigation, large lists, mobile, keyboard and performance on staging",
-        "Execute Files search regression, inventory guard, typecheck, lint, build, authenticated browser and RLS/accounting verification; NOT RUN."
+        "Execute Files search regression, inventory guard, typecheck, lint, build, authenticated browser and RLS/accounting verification; NOT RUN.",
+        "Run Files canonical-page and invisible-control regressions; inventory guard, typecheck, lint, build, authenticated browser, accessibility and security/accounting tests NOT RUN."
       ]
     },
     {

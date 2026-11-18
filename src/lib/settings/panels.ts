@@ -113,7 +113,7 @@ export function openSettingsPanel(
     const existing = trail.indexOf(panel);
     trail = existing >= 0 ? trail.slice(0, existing) : [...trail, previous].slice(-8);
   }
-  const next = { ...search, settingsPanel: panel };
+  const next = { ...search, settingsPanel: safePanel };
   if (trail.length) return { ...next, settingsTrail: trail };
   delete (next as Record<string, unknown>)["settingsTrail"];
   return next;

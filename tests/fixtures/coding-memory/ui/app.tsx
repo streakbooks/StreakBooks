@@ -14,7 +14,7 @@ window.memoryFixture = {
   reset: () => {},
 };
 const client = new QueryClient();
-function App() {
+export function App() {
   const [companyId, setCompanyId] = useState("11111111-1111-4111-8111-111111111111");
   const [enabled, setEnabled] = useState(true);
   const [canCode, setCanCode] = useState(true);

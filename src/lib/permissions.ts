@@ -19,6 +19,12 @@ export const PERMISSIONS = [
   "accounting.post",
   "audit.view",
   "demo.reset",
+  "pos.view",
+  "pos.settings.manage",
+  "pos.register.open",
+  "pos.register.close",
+  "pos.cash.count",
+  "pos.audit.view",
   "sales.view",
   "sales.draft",
   "sales.authorise",
@@ -131,6 +137,13 @@ export type Permission = (typeof PERMISSIONS)[number];
 export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> = {
   owner: PERMISSIONS,
   admin: [
+    "pos.view",
+    "pos.settings.manage",
+    "pos.register.open",
+    "pos.register.close",
+    "pos.cash.count",
+    "pos.audit.view",
+
     "company.view",
     "company.settings.edit",
     "members.view",
@@ -247,6 +260,9 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "messaging.manage_retention",
   ],
   accountant: [
+    "pos.view",
+    "pos.audit.view",
+
     "company.view",
     "members.view",
     "accounting.view",
@@ -338,6 +354,11 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "messaging.link_records",
   ],
   bookkeeper: [
+    "pos.view",
+    "pos.register.open",
+    "pos.register.close",
+    "pos.cash.count",
+
     "company.view",
     "members.view",
     "accounting.view",
@@ -388,6 +409,11 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "messaging.link_records",
   ],
   staff: [
+    "pos.view",
+    "pos.register.open",
+    "pos.register.close",
+    "pos.cash.count",
+
     "company.view",
     "accounting.view",
     "sales.view",
@@ -418,6 +444,8 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "messaging.share_files",
   ],
   read_only: [
+    "pos.view",
+
     "company.view",
     "accounting.view",
     "sales.view",

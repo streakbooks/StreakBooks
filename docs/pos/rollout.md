@@ -1,0 +1,7 @@
+# Rollout and rollback plan
+
+Batch 1 added a read-only preview. Batch 2 adds the pending register/session migration and dedicated permissions, with an in-progress sidebar entry. Review and CI, full-schema upgrade rehearsal and authenticated staging are required before release; merge, live migration and deployment need separate authorization. The register UI fails closed when the database upgrade is absent. An opening float declaration does not create a journal, and only unchanged-float sessions can close. No checkout is available. Reverting UI code must preserve register/session/audit history.
+
+Future schema changes are additive and versioned with old-client compatibility; validate local migration order against concurrent purchasing work. Roll out configuration then controlled non-stock cash pilots using test organizations. Monitor posting failures, orphaned payments, duplicate-operation conflicts, cash variances, stock sync and settlements. Stop acceptance when required posting or provider reconciliation cannot be established.
+
+For financial rollbacks, disable new acceptance and preserve sale/journal/audit history. Correct posted transactions only through approved reversals. Never drop populated POS financial tables to revert UI. Document backup/restore and outbox recovery rehearsal before transactional release. No automatic deployment, merge or live data correction is authorized by this document.

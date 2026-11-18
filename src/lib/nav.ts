@@ -53,6 +53,13 @@ export const NAV_GROUPS: { id: NavGroup; label: string | null }[] = [
 
 export const navItems: NavItem[] = [
   {
+    label: "Point of Sale",
+    to: "/pos",
+    icon: Store,
+    group: "money",
+    description: "Catalogue preview and register sessions",
+  },
+  {
     label: "Dashboard",
     to: "/",
     icon: LayoutDashboard,

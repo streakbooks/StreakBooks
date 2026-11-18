@@ -114,9 +114,9 @@ export function TransactionWorkspace({
       {stickyActions ? (
         <div
           data-slot="transaction-sticky-actions"
-          className="fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-card/95 px-3 py-3 backdrop-blur-sm supports-[backdrop-filter]:bg-card/85 lg:left-[var(--lb-sidebar-current-width,var(--lb-sidebar-width))] print:hidden"
+          className="fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-card/95 px-3 py-3 backdrop-blur-sm supports-[backdrop-filter]:bg-card/85 sm:px-4 lg:left-[var(--lb-sidebar-current-width,var(--lb-sidebar-width))] lg:px-6 print:hidden"
         >
-          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2">
+          <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-end gap-2">
             {stickyActions}
           </div>
         </div>

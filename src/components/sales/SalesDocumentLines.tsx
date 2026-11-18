@@ -311,7 +311,8 @@ export function SalesDocumentLines({
           id: "item",
           header: "Item / description",
           widthPx: widths["item"],
-          minWidthPx: 140,
+          minWidthPx: 220,
+          fluid: true,
         }
       : null,
     show("account")
@@ -371,19 +372,17 @@ export function SalesDocumentLines({
         onColumnWidthChange={(id, widthPx) =>
           setWidths((current) => ({ ...current, [id]: clampColumnWidth(widthPx) }))
         }
-        toolbar={
-          <div className="ml-auto">
-            <LineGridColumnMenu
-              columns={[...SALES_COLUMN_OPTIONS]}
-              visibleIds={visibleColumns}
-              onChange={(next) =>
-                setVisibleColumns([
-                  ...(next as SalesColumnId[]),
-                  ...(next.includes("actions") ? [] : (["actions"] as SalesColumnId[])),
-                ])
-              }
-            />
-          </div>
+        footerStart={
+          <LineGridColumnMenu
+            columns={[...SALES_COLUMN_OPTIONS]}
+            visibleIds={visibleColumns}
+            onChange={(next) =>
+              setVisibleColumns([
+                ...(next as SalesColumnId[]),
+                ...(next.includes("actions") ? [] : (["actions"] as SalesColumnId[])),
+              ])
+            }
+          />
         }
         {...(!disabled
           ? {

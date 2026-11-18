@@ -356,7 +356,13 @@ function OrderForm({
             aria-label="Order lines"
             columns={[
               { id: "reorder", header: "", widthPx: 36, minWidthPx: 36, resizable: false },
-              { id: "description", header: "Description", widthPx: 240, minWidthPx: 160 },
+              {
+                id: "description",
+                header: "Description",
+                widthPx: 280,
+                minWidthPx: 200,
+                fluid: true,
+              },
               { id: "account", header: "Account", widthPx: 180, minWidthPx: 140 },
               { id: "qty", header: "Qty", align: "right", widthPx: 72, minWidthPx: 64 },
               { id: "price", header: "Price", align: "right", widthPx: 100, minWidthPx: 80 },

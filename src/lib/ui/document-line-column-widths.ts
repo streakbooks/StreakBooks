@@ -17,12 +17,13 @@ export type PurchaseLineColumnKey =
 export const DEFAULT_PURCHASE_LINE_COLUMN_WIDTHS = {
   reorder: 36,
   item: 168,
-  description: 200,
+  /** Fluid column preferred min — leftover container width is absorbed here. */
+  description: 280,
   quantity: 72,
   unitPrice: 100,
   discount: 88,
-  account: 188,
-  tax: 148,
+  account: 168,
+  tax: 140,
   class: 120,
   location: 120,
   customer: 148,
@@ -32,15 +33,20 @@ export const DEFAULT_PURCHASE_LINE_COLUMN_WIDTHS = {
 } as const;
 
 export const DEFAULT_SALES_LINE_COLUMN_WIDTHS = {
-  item: 220,
-  account: 168,
+  /** Fluid column preferred min — leftover container width is absorbed here. */
+  item: 280,
+  account: 160,
   qty: 72,
   price: 100,
   discount: 88,
-  tax: 160,
+  tax: 148,
   rate: 72,
   actions: 48,
 } as const;
+
+/** Columns that expand to fill unused transaction-table width. */
+export const FLUID_PURCHASE_LINE_COLUMNS = ["description"] as const;
+export const FLUID_SALES_LINE_COLUMNS = ["item"] as const;
 
 export const PURCHASE_LINE_COLUMN_OPTIONS: Array<{
   id: PurchaseLineColumnKey;

@@ -1445,12 +1445,25 @@
   }
 }
 
-/* Spreadsheet-style document line grids: fixed widths, quiet cells, no autofit collapse. */
+/* Spreadsheet-style document line grids: fill the container; fluid columns absorb leftover width. */
 .lb-spreadsheet-table {
   table-layout: fixed;
-  width: max-content;
+  width: 100%;
   min-width: 100%;
   border-collapse: collapse;
+}
+.lb-editable-line-item-grid {
+  width: 100%;
+  min-width: 0;
+}
+.lb-editable-line-item-grid [data-slot="line-grid-scroll"],
+.lb-editable-line-item-grid [data-slot="table-scroll"] {
+  width: 100%;
+  min-width: 0;
+}
+.lb-spreadsheet-table th[data-fluid="true"],
+.lb-spreadsheet-table td[data-fluid="true"] {
+  width: auto;
 }
 .lb-spreadsheet-table th,
 .lb-spreadsheet-table td {

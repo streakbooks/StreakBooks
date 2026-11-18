@@ -34,7 +34,8 @@
 | 38 | Phase 3 | Remove redundant line up/down arrows; keep drag reorder | `feature/premium-ui-batch38-remove-line-move-arrows` | [PR #284](https://github.com/linkbusinessadvisory/LinkBooks/pull/284) → `fc605a7c` | purchases lines + PO | merged |
 | 39 | Phase 3 | Expense/receipt/payment TransactionWorkspace; money+journal Create routes | eature/premium-ui-batch39-fullpage-remaining-new | [PR #285](https://github.com/linkbusinessadvisory/LinkBooks/pull/285) → 20967ac | purchases/sales/banking/accounting | merged |
 | 40 | Phase 3 | Measurable density acceptance: field widths, 2 default lines, viewport Playwright | eature/premium-ui-batch40-density-acceptance | [PR #286](https://github.com/linkbusinessadvisory/LinkBooks/pull/286) → 106f471 | shared form density + sales/purchases/money/journals | merged |
-| 41 | Phase 4 | Grouped module nav: HR IA + shared GroupedModuleSubnav; CRM/PM/Expenses | eature/premium-ui-batch41-grouped-module-nav | open | hr/crm/pm/expenses + ModuleSubnav density | in progress |
-| 42+ | Phase 4–10 | Remaining modules DoD + staging runtime evidence | TBD | — | all modules | planned |
+| 41 | Phase 4 | Grouped module nav: HR IA + shared GroupedModuleSubnav; CRM/PM/Expenses | `feature/premium-ui-batch41-grouped-module-nav` | [PR #287](https://github.com/linkbusinessadvisory/LinkBooks/pull/287) → `8280a5b7` | hr/crm/pm/expenses + ModuleSubnav density | merged |
+| 42 | Phase 3 | Full-width fluid line grids; compact sales price-list; sticky actions align; density ≤24px fill | `feature/premium-ui-batch42-fullwidth-line-grids` | pending | EditableLineItemGrid + sales/purchases/journals | in progress |
+| 43+ | Phase 4–10 | Remaining modules DoD + staging runtime evidence | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

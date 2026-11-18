@@ -372,7 +372,13 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
         <EditableLineItemGrid
           aria-label="Credit note lines"
           columns={[
-            { id: "description", header: "Description", widthPx: 260, minWidthPx: 160 },
+            {
+              id: "description",
+              header: "Description",
+              widthPx: 280,
+              minWidthPx: 200,
+              fluid: true,
+            },
             { id: "account", header: "Account", widthPx: 200, minWidthPx: 140 },
             { id: "net", header: "Net", align: "right", widthPx: 110, minWidthPx: 88 },
             { id: "tax", header: "Tax", align: "right", widthPx: 110, minWidthPx: 88 },

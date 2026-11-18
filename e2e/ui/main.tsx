@@ -35,6 +35,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
+import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import {
   Dialog,
   DialogContent,
@@ -274,28 +276,46 @@ function DensityFixture() {
           </FormGrid>
         }
         lines={
-          <div className="overflow-x-auto">
-            <table className="lb-spreadsheet-table" aria-label="Line items">
-              <thead>
-                <tr>
-                  <th>Description</th>
-                  <th>Qty</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lines.map((line, index) => (
-                  <tr key={line.id}>
-                    <td>
-                      <Input aria-label={`Line ${index + 1} description`} defaultValue="" />
-                    </td>
-                    <td>
-                      <Input aria-label={`Line ${index + 1} qty`} defaultValue="" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <EditableLineItemGrid
+            aria-label="Line items"
+            columns={[
+              {
+                id: "description",
+                header: "Description",
+                widthPx: 280,
+                minWidthPx: 200,
+                fluid: true,
+              },
+              { id: "qty", header: "Qty", align: "right", widthPx: 72, minWidthPx: 64 },
+              { id: "price", header: "Price", align: "right", widthPx: 100, minWidthPx: 80 },
+              { id: "actions", header: "", widthPx: 48, minWidthPx: 40, resizable: false },
+            ]}
+            onAddRow={() => undefined}
+            footer={
+              <TotalsSummary
+                lines={[
+                  { id: "subtotal", label: "Subtotal", value: "0.00" },
+                  { id: "tax", label: "Total tax", value: "0.00" },
+                  { id: "total", label: "Total", value: "0.00", emphasis: "total" },
+                ]}
+              />
+            }
+          >
+            {lines.map((line, index) => (
+              <TableRow key={line.id}>
+                <TableCell className="p-0">
+                  <Input aria-label={`Line ${index + 1} description`} defaultValue="" />
+                </TableCell>
+                <TableCell className="p-0">
+                  <Input aria-label={`Line ${index + 1} qty`} defaultValue="" className="text-right" />
+                </TableCell>
+                <TableCell className="p-0">
+                  <Input aria-label={`Line ${index + 1} price`} defaultValue="" className="text-right" />
+                </TableCell>
+                <TableCell className="p-0" />
+              </TableRow>
+            ))}
+          </EditableLineItemGrid>
         }
       />
       <output aria-label="Default line count">{lines.length}</output>

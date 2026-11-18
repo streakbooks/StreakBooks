@@ -1,6 +1,6 @@
 import { cva } from "class-variance-authority";
 export const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium cursor-pointer transition-[background-color,border-color,color,box-shadow] duration-[var(--lb-duration-fast)] ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed aria-busy:cursor-wait [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer transition-[background-color,border-color,color,box-shadow] duration-[var(--lb-duration-fast)] ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed aria-busy:cursor-wait [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -17,9 +17,9 @@ export const buttonVariants = cva(
       },
       size: {
         default:
-          "h-[var(--lb-control-height)] px-4 py-2 pointer-coarse:min-h-[var(--lb-control-height-coarse)]",
-        sm: "h-[var(--lb-control-height)] rounded-lg px-3 text-sm pointer-coarse:min-h-[var(--lb-control-height-coarse)]",
-        lg: "h-10 rounded-md px-8 pointer-coarse:min-h-[var(--lb-control-height-coarse)]",
+          "h-[var(--lb-control-height)] px-3.5 py-1.5 pointer-coarse:min-h-[var(--lb-control-height-coarse)]",
+        sm: "h-[var(--lb-control-height)] rounded-md px-2.5 text-sm pointer-coarse:min-h-[var(--lb-control-height-coarse)]",
+        lg: "h-10 rounded-md px-6 pointer-coarse:min-h-[var(--lb-control-height-coarse)]",
         icon: "h-[var(--lb-control-height)] w-[var(--lb-control-height)] pointer-coarse:min-h-[var(--lb-control-height-coarse)] pointer-coarse:min-w-[var(--lb-control-height-coarse)]",
       },
     },

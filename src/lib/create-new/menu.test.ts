@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CREATE_ACTIONS } from "@/lib/create-new/registry";
 import {
   actionIsRunnable,
+  opensCreateAsFullPage,
   runnableCreateActions,
   searchCreateActions,
 } from "@/lib/create-new/menu";
@@ -64,5 +65,16 @@ describe("scoped permission hints", () => {
     if (!action) throw new Error("No ready action");
     expect(actionIsRunnable(action, "read_only", [action.permission])).toBe(true);
     expect(actionIsRunnable(action, "owner", [])).toBe(false);
+  });
+});
+
+describe("create full-page destinations", () => {
+  it("opens invoice and bill as full pages, not flyovers", () => {
+    const invoice = CREATE_ACTIONS.find((a) => a.id === "invoice");
+    const bill = CREATE_ACTIONS.find((a) => a.id === "bill");
+    const journal = CREATE_ACTIONS.find((a) => a.id === "manual_journal");
+    expect(invoice && opensCreateAsFullPage(invoice)).toBe(true);
+    expect(bill && opensCreateAsFullPage(bill)).toBe(true);
+    expect(journal && opensCreateAsFullPage(journal)).toBe(false);
   });
 });

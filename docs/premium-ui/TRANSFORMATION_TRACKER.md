@@ -25,7 +25,8 @@
 | Light premium palette Batch 33 | On main | `21bb1311` — soft pastel blue, light sidebar, white surfaces |
 | Soft interactions + money/journals Batch 34 | Merged | PR #280 → `2e268fb8` |
 | Soft controls Batch 35 | Merged | PR #281 → soft alerts/badges/tooltips; HR enable PersistedSwitch |
-| Excel-like line grids Batch 36 | In progress | 5 rows + hide/resize + wrap text + bottom tax across New bill/invoice/quote/credit/PO/journal/claim |
+| Excel-like line grids Batch 36 | Merged | PR #282 → `1cc8a3bb` |
+| Full-page Create + compact density Batch 37 | In progress | Create menu navigates to full pages; compact control height 2.25rem |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

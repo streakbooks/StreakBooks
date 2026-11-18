@@ -28,6 +28,7 @@ This composition is **sidebar-first**, token-driven, and distinct from top-nav /
 | Spreadsheet lines | `EditableLineItemGrid` + domain cell editors on **every New/+ transaction route** (sales, purchases, journals, credits, POs, claims); **≥5 empty rows** (`DEFAULT_DOCUMENT_LINE_ROWS`); **fixed column widths** (no autofit); **resize handles**; **Columns** menu where optional fields exist; quiet cell chrome; **wrap text** on description cells (`lb-spreadsheet-wrap` / `VoiceTextarea`) |
 | Clear totals | `TotalsSummary` vertical stack bottom-right under the grid (subtotal → tax → total; no animated money) |
 | Single-page entry | `TransactionWorkspace` for New screens opened from Create menu, module subnav, and list “New” actions — header fields + grid + bottom tax on one page (no separate input tab/block) |
+| Full-page Create | Create menu **navigates** to document routes (invoice, bill, quote, PO, …) with browser history — not a half-screen Sheet. Compact `--lb-control-height` (2.25rem) keeps Customer / dates / price list controls dense |
 | Supporting context | Existing `DocumentRecordPanel` / attachments / notes |
 | Browser-like | TanStack `Link`, URL search state, return context |
 

@@ -102,8 +102,8 @@
   --lb-sidebar-width-collapsed: 4.5rem;
   --lb-header-height: 4rem;
   --lb-brand-bar-height: 3.5rem;
-  --lb-control-height: 2.5rem;
-  --lb-control-height-coarse: 2.75rem;
+  --lb-control-height: 2.25rem;
+  --lb-control-height-coarse: 2.5rem;
   --lb-table-row-height: 2.75rem;
   --lb-space-1: 0.25rem;
   --lb-space-2: 0.5rem;
@@ -122,8 +122,8 @@
   --lb-sidebar-width-collapsed: 4.5rem;
   --lb-header-height: 4rem;
   --lb-brand-bar-height: 3.5rem;
-  --lb-control-height: 2.5rem;
-  --lb-control-height-coarse: 2.75rem;
+  --lb-control-height: 2.25rem;
+  --lb-control-height-coarse: 2.5rem;
   --lb-table-row-height: 2.75rem;
   --lb-space-1: 0.25rem;
   --lb-space-2: 0.5rem;
@@ -1513,4 +1513,15 @@
   outline: none;
   box-shadow: inset 0 0 0 1.5px var(--ring);
   background: var(--background);
+}
+
+/* Compact transaction header labels — professional density without oversized chrome. */
+.lb-transaction-workspace [data-slot="transaction-details"] :where(label) {
+  font-size: 0.75rem;
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  color: var(--muted-foreground);
+}
+.lb-transaction-workspace [data-slot="transaction-details"] :where(.space-y-1 > label, .space-y-2 > label) {
+  margin-bottom: 0;
 }

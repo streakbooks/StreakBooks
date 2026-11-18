@@ -29,7 +29,8 @@
 | 33 | Phase 1 | Light premium palette correction — soft pastels, white/light sidebar, eye-friendly surfaces | (landed on main) | `21bb1311` | styles.css + theme.ts + docs | on main |
 | 34 | Phase 3–5 | Soft tabs/subnav/cards; money TotalsSummary; journal paste; messaging PersistedSwitch; wider workspace adoption | `feature/premium-ui-batch34-soft-interactions-money` | [PR #280](https://github.com/linkbusinessadvisory/LinkBooks/pull/280) → `2e268fb8` | shared chrome + money/journals/messages | merged |
 | 35 | Phase 4–5 | Soft alerts/badges/tooltips; HR enable PersistedSwitch | `feature/premium-ui-batch35-module-soft-controls` | [PR #281](https://github.com/linkbusinessadvisory/LinkBooks/pull/281) | ui primitives + hr settings | merged |
-| 36 | Phase 3 | Excel-like document lines: 5 default rows, hide/resize columns, bottom tax, quiet cells | `feature/premium-ui-batch36-excel-line-grids` | open | purchases/sales lines + defaults | in progress |
-| 37+ | Phase 4–10 | Remaining modules DoD + browsing runtime evidence | TBD | — | all modules | planned |
+| 36 | Phase 3 | Excel-like document lines: 5 default rows, hide/resize columns, bottom tax, quiet cells | `feature/premium-ui-batch36-excel-line-grids` | [PR #282](https://github.com/linkbusinessadvisory/LinkBooks/pull/282) → `1cc8a3bb` | purchases/sales lines + defaults | merged |
+| 37 | Phase 3 | Full-page Create navigation + compact field density | `feature/premium-ui-batch37-fullpage-create-compact` | open | Create menu + control tokens + sales editor | in progress |
+| 38+ | Phase 4–10 | Remaining modules DoD + browsing runtime evidence | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

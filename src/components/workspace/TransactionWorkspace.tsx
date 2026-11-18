@@ -51,7 +51,7 @@ export function TransactionWorkspace({
     <section
       data-slot="transaction-workspace"
       aria-label={title}
-      className={cn("lb-transaction-workspace flex min-w-0 flex-col gap-4 pb-24", className)}
+      className={cn("lb-transaction-workspace flex min-w-0 flex-col gap-3 pb-20", className)}
     >
       <PageHeader
         title={title}
@@ -63,15 +63,15 @@ export function TransactionWorkspace({
 
       <div
         className={cn(
-          "lb-transaction-workspace-body grid min-w-0 gap-4",
+          "lb-transaction-workspace-body grid min-w-0 gap-3",
           insights ? "xl:grid-cols-[minmax(0,1fr)_18rem]" : undefined,
         )}
       >
-        <div className="lb-transaction-workspace-main flex min-w-0 flex-col gap-4">
+        <div className="lb-transaction-workspace-main flex min-w-0 flex-col gap-3">
           {details ? (
             <div
               data-slot="transaction-details"
-              className="rounded-xl border border-border/70 bg-card/80 p-4 sm:p-5"
+              className="rounded-lg border border-border/70 bg-card/80 p-3 sm:p-4"
             >
               {details}
             </div>

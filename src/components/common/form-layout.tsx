@@ -116,7 +116,7 @@ export function FormGrid({
     <div
       data-slot="form-grid"
       className={cn(
-        "grid min-w-0 gap-3 sm:gap-4",
+        "lb-form-grid grid min-w-0 gap-2.5 sm:gap-3",
         columns === 2 && "sm:grid-cols-2",
         columns === 3 && "sm:grid-cols-2 xl:grid-cols-3",
         columns === 4 && "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",

@@ -851,15 +851,15 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           </>
         }
         details={
-          <div className="space-y-4">
+          <div className="space-y-3">
             {formError ? (
               <Alert variant="destructive">
                 <AlertDescription>{formError}</AlertDescription>
               </Alert>
             ) : null}
             <FormGrid columns={3}>
-              <div className="space-y-2 sm:col-span-2 xl:col-span-1">
-                <Label>Customer</Label>
+              <div className="space-y-1 sm:col-span-2 xl:col-span-1">
+                <Label className="text-xs font-medium text-muted-foreground">Customer</Label>
                 <EntityCombobox
                   voiceField={{ key: "contactId", label: "Customer", order: 10 }}
                   aria-label="Customer"
@@ -887,7 +887,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                 />
               </div>
               {kind === "credit_note" ? (
-                <div className="space-y-2 sm:col-span-2 xl:col-span-1">
+                <div className="space-y-1 sm:col-span-2 xl:col-span-1">
                   <Label>Credit against invoice (optional)</Label>
                   <EntityCombobox
                     aria-label="Source invoice"
@@ -906,7 +906,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                   />
                 </div>
               ) : null}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>{copy.dateLabel}</Label>
                 <Input
                   type="date"
@@ -921,7 +921,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                 />
               </div>
               {copy.secondLabel ? (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label>{copy.secondLabel}</Label>
                   <Input
                     type="date"
@@ -936,7 +936,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                   />
                 </div>
               ) : null}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>{copy.numberLabel}</Label>
                 <Input
                   voiceField={{
@@ -955,7 +955,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                   placeholder="Leave blank to auto-number"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label>Currency</Label>
                 <VoiceSelect
                   voiceField={{ key: "currency", label: "Currency", order: 50 }}
@@ -973,7 +973,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                 </VoiceSelect>
               </div>
               {isForeign ? (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label>
                     Exchange rate (1 {currency} = ? {base})
                   </Label>
@@ -989,7 +989,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           {isSalesDraft ? (
             <div className="space-y-3 rounded-md border p-3">
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="sales-price-list">Sales price list (optional)</Label>
                   <RecordLookupSelect
                     value={selectedPriceListId || "none"}
@@ -1103,7 +1103,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               ) : null}
             </div>
           ) : null}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label>Memo / customer message</Label>
             <Input
               voiceField={{
@@ -1190,7 +1190,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             prices on matching lines in this draft. Quantity, tax, discount, account and unlisted
             item prices are retained.
           </p>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {lines.map((line, index) => {
               const newPrice = pricePreview?.lines[index]?.unitPrice;
               if (newPrice === undefined || newPrice === line.unitPrice) return null;

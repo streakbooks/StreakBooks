@@ -88,7 +88,7 @@ export const PM_SECTIONS = [
     path: `${PM_BASE}/collections`,
     group: "money",
     anyOf: ["property.view", "property.rent.manage"] as const,
-    batch: "PM-03",
+    batch: "PM-09",
   },
   {
     key: "expenses",

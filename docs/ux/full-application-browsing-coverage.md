@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Files canonical pagination and regression fixture correction (2026-11-18)
+
+- `src/lib/documents/files-navigation.ts`: reject padded and leading-zero page query strings while retaining the existing page cap and independent filters; commit `084bc882ebc8bc6e238ebb3e2c8ee4848ff41c71`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: add canonical page regressions and replace escaped literal backslash sequences with actual runtime control-character test inputs; commits `ee46dc2d7e94edac49c4f24c71d12e1dbd92297c`, `c599a321941681e12c2e9d56867f116f474815a9`. **WRITTEN, NOT RUN.**
+- **NOT RUN:** inventory guard, TypeScript, lint, Vitest, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main changes, manually triggered CI, production DB changes or deployment.
+
 ### Files search deep-link validation (2026-11-18)
 
 - `src/lib/documents/files-navigation.ts`: trim effective Files search and reject control, bidi and invisible characters while retaining independent sort/view/page filters; commit `91dfacb202ba895bad4e9e1e96bc4bbf22767af4`. **SOURCE ONLY; NOT RUN.**

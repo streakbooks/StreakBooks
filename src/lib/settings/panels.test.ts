@@ -146,6 +146,9 @@ describe("in-place settings routing", () => {
     expect(panelForDestination({ to: "/settings", section: "documents" })).toBe("numbering");
     expect(panelForDestination({ to: "/banking/rules" })).toBe("bank-rules");
     expect(panelForDestination({ to: "/purchases/bills/new" })).toBeUndefined();
+    expect(panelForDestination({ to: "/settings", section: "unknown" as never })).toBeUndefined();
+    expect(panelForDestination({ to: "/settings", section: "../../admin" as never })).toBeUndefined();
+    expect(panelForDestination({ to: "/settings", section: "banking" })).toBe("category:banking");
     // A malformed runtime descriptor must not bypass the panel allowlist.
     expect(panelForDestination({ to: "/settings", panel: "javascript:alert(1)" as never })).toBeUndefined();
     expect(panelForDestination({ to: "/settings", panel: "category:unknown" as never })).toBeUndefined();

@@ -411,10 +411,10 @@ export const CREATE_ACTIONS: readonly CreateAction[] = [
     permission: "products.manage",
     status: "REUSABLE",
     availability: "ready",
-    width: "wide",
+    width: "narrow",
     route: "/products-services",
     component: "ProductsPage",
-    backend: "upsertProduct",
+    backend: "upsertProduct (dialog on catalogue; ?create=true opens New item)",
     blocker: null,
   },
   {

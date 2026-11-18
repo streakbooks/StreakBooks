@@ -10,6 +10,9 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
       const m = await import("@/screens/sales/quotes.new");
       return m.NewQuote;
     }
+    case "sales_order":
+      // Full-page via createNavTarget (/sales/orders?create=true); no flyover form.
+      throw new Error("Sales order opens at /sales/orders?create=true");
     case "receive_payment": {
       const m = await import("@/screens/sales/receipts.new");
       return m.NewReceipt;
@@ -126,7 +129,9 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
     }
     case "product": {
       const m = await import("@/screens/products-services");
-      return m.ProductsPage;
+      return function ProductCreatePanel() {
+        return <m.ProductsPage forceCreate />;
+      };
     }
     case "account": {
       const m = await import("@/components/create-new/NewAccountPanel");

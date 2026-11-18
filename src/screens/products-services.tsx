@@ -75,7 +75,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function ProductsPage({ forceCreate = false }: { forceCreate?: boolean } = {}) {
+export function ProductsPage({
+  forceCreate = false,
+  onForceCreateConsumed,
+}: {
+  forceCreate?: boolean;
+  onForceCreateConsumed?: () => void;
+} = {}) {
   const { company, isPending } = useActiveCompany();
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -98,6 +104,7 @@ export function ProductsPage({ forceCreate = false }: { forceCreate?: boolean } 
           companyId={company.id}
           currency={company.base_currency}
           forceCreate={forceCreate}
+          {...(onForceCreateConsumed ? { onForceCreateConsumed } : {})}
         />
       </TabsContent>
       <TabsContent value="categories">
@@ -114,10 +121,12 @@ function ProductsWorkspace({
   companyId,
   currency,
   forceCreate = false,
+  onForceCreateConsumed,
 }: {
   companyId: string;
   currency: string;
   forceCreate?: boolean;
+  onForceCreateConsumed?: () => void;
 }) {
   const queryClient = useQueryClient();
   const fmt = useFormat();
@@ -456,7 +465,8 @@ function ProductsWorkspace({
     if (!forceCreate || !canManage || forceCreateOpened.current) return;
     forceCreateOpened.current = true;
     openCreate();
-  }, [forceCreate, canManage]);
+    onForceCreateConsumed?.();
+  }, [forceCreate, canManage, onForceCreateConsumed]);
 
   function openEdit(p: ProductRow) {
     setEditing(p);

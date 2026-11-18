@@ -1496,6 +1496,13 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               icon={Users}
               title="No contacts"
               description="Use New contact to create a contact, or import a CSV."
+              action={
+                <Button size="sm" asChild>
+                  <Link to="/contacts/new" search={{ kind: "customer" }}>
+                    New contact
+                  </Link>
+                </Button>
+              }
             />
           ) : (
             <TableCard>

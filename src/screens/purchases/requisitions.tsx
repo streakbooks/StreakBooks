@@ -25,6 +25,7 @@ import {
   type RequisitionStatus,
 } from "@/lib/purchases/requisitions.functions";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { ContactLookup } from "@/components/lookup";
 import { OrderEntryLines } from "@/components/orders/OrderEntryLines";
@@ -115,6 +116,37 @@ function RequisitionsWorkspace({
         description="Purchase viewing permission is required."
       />
     );
+  if (editor) {
+    return (
+      <TransactionWorkspace
+        title={editor === "new" ? "New purchase requisition" : "Edit requisition"}
+        description="Amounts and supplier details become fixed when submitted. Changes require a new approval."
+        breadcrumbs={[
+          { label: "Purchases", to: "/purchases" },
+          { label: "Requisitions", to: "/purchases/requisitions" },
+          { label: editor === "new" ? "New" : "Edit" },
+        ]}
+        stickyActions={
+          <Button size="sm" variant="outline" onClick={() => setEditor(null)}>
+            Cancel
+          </Button>
+        }
+      >
+        <RequisitionEditor
+          key={editor === "new" ? "new" : editor.id}
+          companyId={companyId}
+          baseCurrency={baseCurrency}
+          initial={editor === "new" ? undefined : editor}
+          onSaved={async (row) => {
+            setEditor(null);
+            setSelected(row);
+            await client.invalidateQueries({ queryKey: ["purchase-requisitions", companyId] });
+          }}
+          onCancel={() => setEditor(null)}
+        />
+      </TransactionWorkspace>
+    );
+  }
   const actionButton = (action: RequisitionAction, label: string) => (
     <Button
       key={action}
@@ -187,6 +219,13 @@ function RequisitionsWorkspace({
             search || status !== "all"
               ? "Change the search or status filter."
               : "Create a requisition when a purchase needs independent approval."
+          }
+          action={
+            !search && status === "all" && can("purchases.draft") ? (
+              <Button size="sm" onClick={() => setEditor("new")}>
+                New requisition
+              </Button>
+            ) : undefined
           }
         />
       ) : (
@@ -371,37 +410,6 @@ function RequisitionsWorkspace({
           ) : null}
         </DialogContent>
       </Dialog>
-      <Dialog
-        open={Boolean(editor)}
-        onOpenChange={(open) => {
-          if (!open) setEditor(null);
-        }}
-      >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editor === "new" ? "New purchase requisition" : "Edit requisition"}
-            </DialogTitle>
-            <DialogDescription>
-              Amounts and supplier details become fixed when submitted. Changes require a new
-              approval.
-            </DialogDescription>
-          </DialogHeader>
-          {editor ? (
-            <RequisitionEditor
-              key={editor === "new" ? "new" : editor.id}
-              companyId={companyId}
-              baseCurrency={baseCurrency}
-              initial={editor === "new" ? undefined : editor}
-              onSaved={async (row) => {
-                setEditor(null);
-                setSelected(row);
-                await client.invalidateQueries({ queryKey: ["purchase-requisitions", companyId] });
-              }}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
     </ListWorkspace>
   );
 }
@@ -410,11 +418,13 @@ function RequisitionEditor({
   baseCurrency,
   initial,
   onSaved,
+  onCancel,
 }: {
   companyId: string;
   baseCurrency: string;
   initial: Requisition | undefined;
   onSaved: (row: Requisition) => Promise<void>;
+  onCancel?: () => void;
 }) {
   const { can } = useCan();
   const save = useServerFn(savePurchaseRequisition);
@@ -573,9 +583,16 @@ function RequisitionEditor({
           ).filter((account) => account.is_active && account.is_postable)}
         />
       </fieldset>
-      <Button disabled={mutation.isPending || !can("purchases.draft")} type="submit">
-        {mutation.isPending ? "Saving…" : "Save draft"}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        {onCancel ? (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        ) : null}
+        <Button disabled={mutation.isPending || !can("purchases.draft")} type="submit">
+          {mutation.isPending ? "Saving…" : "Save draft"}
+        </Button>
+      </div>
     </form>
   );
 }

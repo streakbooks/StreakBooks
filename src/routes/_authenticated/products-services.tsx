@@ -32,5 +32,13 @@ export const Route = createFileRoute("/_authenticated/products-services")({
 
 function ProductsPageRoute() {
   const { create } = Route.useSearch();
-  return <ProductsPage forceCreate={Boolean(create)} />;
+  const navigate = Route.useNavigate();
+  return (
+    <ProductsPage
+      forceCreate={Boolean(create)}
+      onForceCreateConsumed={() => {
+        void navigate({ search: { create: undefined }, replace: true });
+      }}
+    />
+  );
 }

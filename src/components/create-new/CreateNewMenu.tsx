@@ -59,6 +59,7 @@ const MENU_ORDER = [
   "invoice",
   "recurring_invoice",
   "quote",
+  "sales_order",
   "sales_receipt",
   "customer_credit",
   "receive_payment",

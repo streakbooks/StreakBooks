@@ -45,10 +45,7 @@ const nextModules = sidebar.map((entry) => {
     routeFiles = moduleRoutes.filter((r) => r === "index.tsx");
   } else if (prefix) {
     routeFiles = moduleRoutes.filter(
-      (r) =>
-        r === `${prefix}.tsx` ||
-        r.startsWith(`${prefix}/`) ||
-        r.startsWith(`${prefix}.`),
+      (r) => r === `${prefix}.tsx` || r.startsWith(`${prefix}/`) || r.startsWith(`${prefix}.`),
     );
   }
   // Purchases also owns legacy expense-management nested under purchases/
@@ -62,17 +59,18 @@ const nextModules = sidebar.map((entry) => {
     label: entry.label,
     href: entry.href,
     routeFiles: routeFiles.sort(),
-    browsingImplementation:
-      existing?.browsingImplementation ?? "partial_code_not_runtime_verified",
+    browsingImplementation: existing?.browsingImplementation ?? "partial_code_not_runtime_verified",
     fullyVerified: false,
     ...(existing?.currentEvidence ? { currentEvidence: existing.currentEvidence } : {}),
-    ...(existing?.remaining ? { remaining: existing.remaining } : {
-      remaining: [
-        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
-        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
-        "Run authenticated browser, unit and coverage acceptance suites",
-      ],
-    }),
+    ...(existing?.remaining
+      ? { remaining: existing.remaining }
+      : {
+          remaining: [
+            "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+            "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+            "Run authenticated browser, unit and coverage acceptance suites",
+          ],
+        }),
     ...(existing?.tests ? { tests: existing.tests } : { tests: "NOT RUN" }),
   };
 });

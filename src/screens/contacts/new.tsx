@@ -425,10 +425,7 @@ export function NewContact({
     <RecordWorkspace
       title="New contact"
       description="Create a shared customer or supplier profile with accounting defaults."
-      breadcrumbs={[
-        { label: "Contacts", to: "/contacts" },
-        { label: "New" },
-      ]}
+      breadcrumbs={[{ label: "Contacts", to: "/contacts" }, { label: "New" }]}
       actions={
         <Button variant="outline" asChild>
           <Link to="/contacts" search={{ view: undefined }}>

@@ -606,7 +606,9 @@ function FixedAssetsPage() {
                   canManage ? (
                     <Button
                       size="sm"
-                      onClick={() => setDialog({ kind: "asset", editing: null, fromBillLine: null })}
+                      onClick={() =>
+                        setDialog({ kind: "asset", editing: null, fromBillLine: null })
+                      }
                     >
                       Add asset
                     </Button>

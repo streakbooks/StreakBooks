@@ -598,7 +598,9 @@ export function SalesDocumentLines({
                     }
                     inputMode="decimal"
                     className={cn(CELL_INPUT, "text-right tabular-nums")}
-                    title={code ? "Rate comes from the tax code" : "Custom rate in percent, e.g. 20"}
+                    title={
+                      code ? "Rate comes from the tax code" : "Custom rate in percent, e.g. 20"
+                    }
                   />
                 </TableCell>
               ) : null}

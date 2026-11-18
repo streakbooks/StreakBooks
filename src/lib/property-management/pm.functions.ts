@@ -115,11 +115,13 @@ export const getPmDashboardKpis = createServerFn({ method: "GET" })
 
 export const listPmProperties = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; search?: string | null; status?: string | null }) => ({
-    companyId: companyIdOf(input),
-    search: input.search?.trim() || null,
-    status: input.status?.trim() || null,
-  }))
+  .inputValidator(
+    (input: { companyId: string; search?: string | null; status?: string | null }) => ({
+      companyId: companyIdOf(input),
+      search: input.search?.trim() || null,
+      status: input.status?.trim() || null,
+    }),
+  )
   .handler(async ({ data, context }): Promise<PmProperty[]> => {
     await requirePmMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(

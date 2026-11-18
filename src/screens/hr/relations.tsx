@@ -106,8 +106,8 @@ export function HrRelationsPage() {
       <ListWorkspace
         title="Employee Relations"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Relations" }]}
-      subnav={<HrSubnav current="relations" />}
-    >
+        subnav={<HrSubnav current="relations" />}
+      >
         <EmptyState title="No access" description="You need hr.view to open employee relations." />
       </ListWorkspace>
     );

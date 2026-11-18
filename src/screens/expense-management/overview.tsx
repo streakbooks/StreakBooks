@@ -146,10 +146,7 @@ export function ExpenseManagementOverviewPage() {
             </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link
-              to="/banking/spend-money"
-              search={{ returnTo: "/expense-management" }}
-            >
+            <Link to="/banking/spend-money" search={{ returnTo: "/expense-management" }}>
               Spend money
             </Link>
           </Button>
@@ -253,10 +250,7 @@ export function ExpenseManagementOverviewPage() {
             </Link>
           </Button>
           <Button asChild variant="secondary" size="sm">
-            <Link
-              to="/banking/spend-money"
-              search={{ returnTo: "/expense-management" }}
-            >
+            <Link to="/banking/spend-money" search={{ returnTo: "/expense-management" }}>
               Record spend money
             </Link>
           </Button>

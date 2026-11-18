@@ -2,10 +2,13 @@ import { expect, test, type Page } from "@playwright/test";
 import { FORM_DENSITY } from "../../src/lib/ui/form-density";
 
 async function measure(page: Page, locator: string) {
-  return page.locator(locator).first().evaluate((el) => {
-    const box = el.getBoundingClientRect();
-    return { width: box.width, height: box.height };
-  });
+  return page
+    .locator(locator)
+    .first()
+    .evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return { width: box.width, height: box.height };
+    });
 }
 
 async function assertNoPageOverflow(page: Page) {
@@ -34,7 +37,9 @@ for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await page.goto("/?flow=density");
 
-    await expect(page.getByRole("heading", { name: "New bill density", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "New bill density", exact: true }),
+    ).toBeVisible();
     await expect(page.getByLabel("Default line count")).toHaveText("2");
 
     const supplier = await measure(page, '[data-slot="form-control-shell"][data-width="contact"]');

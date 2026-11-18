@@ -212,7 +212,7 @@ export function ExpenseManagementCashAdvancesPage() {
       description="Issue employee floats, settle via cash-advance claims, and reclaim unused balances."
       actions={
         <>
-          {(canSubmit || canManage) ? (
+          {canSubmit || canManage ? (
             <Button
               size="sm"
               onClick={() =>

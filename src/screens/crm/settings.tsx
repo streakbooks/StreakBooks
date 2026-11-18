@@ -101,9 +101,11 @@ export function CrmSettingsPage() {
   }
   if (!canAdmin) {
     return (
-      <ListWorkspace title="CRM Settings" description="Organisation CRM configuration."
-      subnav={<CrmSubnav current="settings" />}
-    >
+      <ListWorkspace
+        title="CRM Settings"
+        description="Organisation CRM configuration."
+        subnav={<CrmSubnav current="settings" />}
+      >
         <EmptyState
           title="Administrator access required"
           description="Only users with crm.admin can change CRM settings."

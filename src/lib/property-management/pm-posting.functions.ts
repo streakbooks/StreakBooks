@@ -179,21 +179,23 @@ export const postPmRentCharge = createServerFn({ method: "POST" })
     companyId: companyIdOf(input),
     chargeId: String(input.chargeId),
   }))
-  .handler(async ({ data, context }): Promise<{ charge: PmRentCharge; journalId: string | null }> => {
-    await assertCompanyMember(context.supabase, data.companyId);
-    await assertCompanyPermission(context.supabase, data.companyId, "property.rent.manage");
-    const raw = await callRpc<unknown>(
-      context.supabase,
-      "post_pm_rent_charge",
-      { _company_id: data.companyId, _charge_id: data.chargeId },
-      PM_POSTING_MIGRATION,
-    );
-    const row = (raw ?? {}) as Record<string, unknown>;
-    return {
-      charge: mapRentCharge(pick(row, "charge") ?? raw),
-      journalId: strOrNull(pick(row, "journalId", "journal_id")),
-    };
-  });
+  .handler(
+    async ({ data, context }): Promise<{ charge: PmRentCharge; journalId: string | null }> => {
+      await assertCompanyMember(context.supabase, data.companyId);
+      await assertCompanyPermission(context.supabase, data.companyId, "property.rent.manage");
+      const raw = await callRpc<unknown>(
+        context.supabase,
+        "post_pm_rent_charge",
+        { _company_id: data.companyId, _charge_id: data.chargeId },
+        PM_POSTING_MIGRATION,
+      );
+      const row = (raw ?? {}) as Record<string, unknown>;
+      return {
+        charge: mapRentCharge(pick(row, "charge") ?? raw),
+        journalId: strOrNull(pick(row, "journalId", "journal_id")),
+      };
+    },
+  );
 
 export const postPmCommission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

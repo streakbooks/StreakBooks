@@ -76,9 +76,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   const [name, setName] = useState("");
   const [memo, setMemo] = useState("");
   const [autoReverseOn, setAutoReverseOn] = useState("");
-  const [lines, setLines] = useState<Line[]>(() =>
-    Array.from({ length: 5 }, () => emptyLine()),
-  );
+  const [lines, setLines] = useState<Line[]>(() => Array.from({ length: 5 }, () => emptyLine()));
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [intervalMonths, setIntervalMonths] = useState("1");
   const [maxOccurrences, setMaxOccurrences] = useState("");
@@ -414,7 +412,10 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
               ) : null}
             </FormGrid>
             {mode === "post" ? (
-              <section aria-label="Import manual journal CSV" className="space-y-2 rounded-md border p-4">
+              <section
+                aria-label="Import manual journal CSV"
+                className="space-y-2 rounded-md border p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Label htmlFor="journal-csv-import">Import manual journal lines (CSV)</Label>
                   <Button type="button" size="sm" variant="outline" onClick={downloadCsvTemplate}>

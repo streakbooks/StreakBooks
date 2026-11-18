@@ -523,7 +523,6 @@ export function PayrollEmployeesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </ListWorkspace>
   );
 }

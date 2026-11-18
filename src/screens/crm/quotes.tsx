@@ -93,7 +93,6 @@ export function CrmQuotesPage() {
       }
       subnav={<CrmSubnav current="quotes" />}
     >
-
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
         <ErrorState

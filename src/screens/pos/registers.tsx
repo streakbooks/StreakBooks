@@ -75,11 +75,11 @@ function RegistersWorkspace({ companyId }: { companyId: string }) {
       subnav={<PosNavigation />}
     >
       <p className="mb-4 rounded-lg border border-border bg-muted/40 p-3 text-sm">
-        Opening float records cash already held; it does not create a transfer or journal. Cash sales
-        increase expected drawer cash; controlled cash in/out adjusts the expected balance without
-        posting a sale. Close only after physically counting to the expected cash amount shown for
-        the session. A variance keeps the session open until an approved accounting adjustment is
-        available.
+        Opening float records cash already held; it does not create a transfer or journal. Cash
+        sales increase expected drawer cash; controlled cash in/out adjusts the expected balance
+        without posting a sale. Close only after physically counting to the expected cash amount
+        shown for the session. A variance keeps the session open until an approved accounting
+        adjustment is available.
       </p>
       <QueryErrorState queries={[query]} />
       {query.isPending ? (
@@ -566,7 +566,9 @@ function LocationAccess({ companyId, workspace }: { companyId: string; workspace
               "Inactive location";
             return (
               <li key={target} className="flex flex-wrap items-center justify-between gap-3">
-                <span>{member} · {location}</span>
+                <span>
+                  {member} · {location}
+                </span>
                 {revokeTarget === target ? (
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-muted-foreground">

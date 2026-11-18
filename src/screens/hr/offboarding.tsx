@@ -131,8 +131,8 @@ export function HrOffboardingPage() {
       <ListWorkspace
         title="Offboarding"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Offboarding" }]}
-      subnav={<HrSubnav current="offboarding" />}
-    >
+        subnav={<HrSubnav current="offboarding" />}
+      >
         <EmptyState title="No access" description="You need hr.view." />
       </ListWorkspace>
     );

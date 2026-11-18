@@ -144,7 +144,6 @@ export function CrmTeamPage() {
       }
       subnav={<CrmSubnav current="team" />}
     >
-
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"

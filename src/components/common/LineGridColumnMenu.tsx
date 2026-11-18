@@ -35,8 +35,7 @@ export function LineGridColumnMenu({
   const visible = new Set(visibleIds);
   const hideable = columns.filter((column) => !column.required);
   const hiddenCount = hideable.filter((column) => !visible.has(column.id)).length;
-  const triggerLabel =
-    hiddenCount > 0 ? `${label} (${hiddenCount} hidden)` : `${label} (0 hidden)`;
+  const triggerLabel = hiddenCount > 0 ? `${label} (${hiddenCount} hidden)` : `${label} (0 hidden)`;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

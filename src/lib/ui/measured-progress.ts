@@ -13,8 +13,7 @@ export function clampMeasuredProgress({
   total,
 }: MeasuredProgressValues): MeasuredProgressValues {
   const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
-  const safeCompleted =
-    Number.isFinite(completed) && completed > 0 ? Math.floor(completed) : 0;
+  const safeCompleted = Number.isFinite(completed) && completed > 0 ? Math.floor(completed) : 0;
   return {
     completed: safeTotal === 0 ? 0 : Math.min(safeCompleted, safeTotal),
     total: safeTotal,

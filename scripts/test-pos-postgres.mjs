@@ -29,7 +29,9 @@ const posMigrations = readdirSync(path.join(root, "supabase/migrations"))
   .filter((file) => file.includes("_pos_"))
   .sort();
 if (posMigrations.length < 2) {
-  throw Error(`Expected POS migrations; found ${posMigrations.length}: ${posMigrations.join(", ")}`);
+  throw Error(
+    `Expected POS migrations; found ${posMigrations.length}: ${posMigrations.join(", ")}`,
+  );
 }
 const claims = `SET ROLE authenticated; SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001"}',false);`;
 const company = "20000000-0000-4000-8000-000000000001";

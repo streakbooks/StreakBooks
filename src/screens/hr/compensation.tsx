@@ -102,8 +102,8 @@ export function HrCompensationPage() {
       <ListWorkspace
         title="Compensation & Benefits"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Compensation & Benefits" }]}
-      subnav={<HrSubnav current="compensation" />}
-    >
+        subnav={<HrSubnav current="compensation" />}
+      >
         <EmptyState title="No access" description="Missing permission: hr.employees.sensitive." />
       </ListWorkspace>
     );

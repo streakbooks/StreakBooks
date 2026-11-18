@@ -129,8 +129,8 @@ export function HrTrainingPage() {
       <ListWorkspace
         title="Training & Development"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Training & Development" }]}
-      subnav={<HrSubnav current="training" />}
-    >
+        subnav={<HrSubnav current="training" />}
+      >
         <EmptyState title="No access" description="You need hr.view." />
       </ListWorkspace>
     );

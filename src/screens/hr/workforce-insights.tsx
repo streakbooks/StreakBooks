@@ -78,7 +78,10 @@ export function HrWorkforceInsightsPage() {
         description="Headcount and lifecycle signals for the shared employee identity."
         subnav={<HrSubnav current="workforce-insights" />}
       >
-        <EmptyState title="No HR access" description="Ask an administrator for hr.view or hr.reports.view." />
+        <EmptyState
+          title="No HR access"
+          description="Ask an administrator for hr.view or hr.reports.view."
+        />
       </ListWorkspace>
     );
   }

@@ -551,333 +551,324 @@ export function ExpenseManagementClaimsPage({
   // List is list-only. Create opens only via ?create=true → TransactionWorkspace.
   const createForm =
     mode === "my-expenses" && canSubmit && forceCreate ? (
-        <form
-          id="expense-claim-create"
-          className="grid gap-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            create.mutate();
-          }}
-        >
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 className="text-base font-semibold">New multi-line draft</h2>
-            {isOffline ? (
-              <Alert className="mb-2">
-                <AlertTitle>You are offline</AlertTitle>
-                <AlertDescription>
-                  Saving stores this draft on this device until you sync.
-                </AlertDescription>
-              </Alert>
-            ) : null}
-            {offlineDrafts.length > 0 ? (
-              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm">
-                <span>{offlineDrafts.length} offline draft(s) waiting to sync.</span>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={syncOffline.isPending || isOffline}
-                  onClick={() => syncOffline.mutate()}
-                >
-                  {syncOffline.isPending ? "Syncing…" : "Sync now"}
-                </Button>
-              </div>
-            ) : null}
-            {(templatesQ.data?.length ?? 0) > 0 ? (
-              <div className="grid gap-1">
-                <Label htmlFor="em-template">Load template</Label>
-                <RecordLookupSelect
-                  id="em-template"
-                  className="flex h-[var(--lb-control-height)] rounded-md border border-input bg-background px-3 text-sm"
-                  defaultValue=""
-                  onValueChange={(event) => {
-                    if (event) applyTemplate(event);
-                    event = "";
-                  }}
-                >
-                  <option value="">Select template</option>
-                  {(templatesQ.data ?? []).map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </RecordLookupSelect>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="em-claim-title">Title</Label>
-              <Input
-                id="em-claim-title"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                required
-              />
+      <form
+        id="expense-claim-create"
+        className="grid gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          create.mutate();
+        }}
+      >
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h2 className="text-base font-semibold">New multi-line draft</h2>
+          {isOffline ? (
+            <Alert className="mb-2">
+              <AlertTitle>You are offline</AlertTitle>
+              <AlertDescription>
+                Saving stores this draft on this device until you sync.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          {offlineDrafts.length > 0 ? (
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm">
+              <span>{offlineDrafts.length} offline draft(s) waiting to sync.</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={syncOffline.isPending || isOffline}
+                onClick={() => syncOffline.mutate()}
+              >
+                {syncOffline.isPending ? "Syncing…" : "Sync now"}
+              </Button>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="em-claim-desc">Description</Label>
-              <Input
-                id="em-claim-desc"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="em-claim-source">Payment source</Label>
-              <select
-                id="em-claim-source"
-                className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={paymentSource}
-                onChange={(event) => {
-                  const next = event.target.value as ExpensePaymentSource;
-                  setPaymentSource(next);
-                  if (next !== "cash_advance") setCashAdvanceId("");
-                  if (next !== "company_paid") setPettyCashFloatId("");
-                  if (next !== "corporate_card") setCorporateCardId("");
+          ) : null}
+          {(templatesQ.data?.length ?? 0) > 0 ? (
+            <div className="grid gap-1">
+              <Label htmlFor="em-template">Load template</Label>
+              <RecordLookupSelect
+                id="em-template"
+                className="flex h-[var(--lb-control-height)] rounded-md border border-input bg-background px-3 text-sm"
+                defaultValue=""
+                onValueChange={(event) => {
+                  if (event) applyTemplate(event);
+                  event = "";
                 }}
               >
-                <option value="employee_paid">Employee paid (reimburse)</option>
-                <option value="cash_advance">Cash advance (settle float)</option>
-                <option value="company_paid">Petty cash (company paid)</option>
-                <option value="corporate_card">Corporate card</option>
-              </select>
+                <option value="">Select template</option>
+                {(templatesQ.data ?? []).map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </RecordLookupSelect>
             </div>
-            {paymentSource === "cash_advance" ? (
-              <div className="grid gap-2">
-                <Label htmlFor="em-claim-advance">Cash advance</Label>
-                <RecordLookupSelect
-                  id="em-claim-advance"
-                  className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={cashAdvanceId}
-                  onValueChange={(event) => setCashAdvanceId(event)}
-                >
-                  <option value="">Select issued advance</option>
-                  {openAdvances.map((adv) => (
-                    <option key={adv.id} value={adv.id}>
-                      {adv.advanceNumber} — remaining{" "}
-                      {fromMinorUnits(adv.remainingMinor, adv.currencyCode)}
-                    </option>
-                  ))}
-                </RecordLookupSelect>
-              </div>
-            ) : null}
-            {paymentSource === "company_paid" ? (
-              <div className="grid gap-2">
-                <Label htmlFor="em-claim-petty">Petty cash float</Label>
-                <RecordLookupSelect
-                  id="em-claim-petty"
-                  className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={pettyCashFloatId}
-                  onValueChange={(event) => setPettyCashFloatId(event)}
-                >
-                  <option value="">Select float with balance</option>
-                  {openPettyFloats.map((float) => (
-                    <option key={float.id} value={float.id}>
-                      {float.floatNumber} — {float.name} (
-                      {fromMinorUnits(float.balanceMinor, float.currencyCode)})
-                    </option>
-                  ))}
-                </RecordLookupSelect>
-              </div>
-            ) : null}
-            {paymentSource === "corporate_card" ? (
-              <div className="grid gap-2">
-                <Label htmlFor="em-claim-card">Corporate card</Label>
-                <RecordLookupSelect
-                  id="em-claim-card"
-                  className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={corporateCardId}
-                  onValueChange={(event) => setCorporateCardId(event)}
-                >
-                  <option value="">Select card</option>
-                  {openCards.map((card) => (
-                    <option key={card.id} value={card.id}>
-                      {card.label} ****{card.last4}
-                    </option>
-                  ))}
-                </RecordLookupSelect>
-              </div>
-            ) : null}
-          </div>
+          ) : null}
+        </div>
 
-          <div className="space-y-3">
-            {lines.map((line, index) => (
-              <div key={line.key} className="grid gap-3 rounded-md border p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium">Line {index + 1}</p>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setSplitLineKey(line.key)}
-                    >
-                      Split equally
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      disabled={lines.length === 1}
-                      onClick={() =>
-                        setLines((current) => current.filter((row) => row.key !== line.key))
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Remove line</span>
-                    </Button>
-                  </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="em-claim-title">Title</Label>
+            <Input
+              id="em-claim-title"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              required
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="em-claim-desc">Description</Label>
+            <Input
+              id="em-claim-desc"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="em-claim-source">Payment source</Label>
+            <select
+              id="em-claim-source"
+              className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={paymentSource}
+              onChange={(event) => {
+                const next = event.target.value as ExpensePaymentSource;
+                setPaymentSource(next);
+                if (next !== "cash_advance") setCashAdvanceId("");
+                if (next !== "company_paid") setPettyCashFloatId("");
+                if (next !== "corporate_card") setCorporateCardId("");
+              }}
+            >
+              <option value="employee_paid">Employee paid (reimburse)</option>
+              <option value="cash_advance">Cash advance (settle float)</option>
+              <option value="company_paid">Petty cash (company paid)</option>
+              <option value="corporate_card">Corporate card</option>
+            </select>
+          </div>
+          {paymentSource === "cash_advance" ? (
+            <div className="grid gap-2">
+              <Label htmlFor="em-claim-advance">Cash advance</Label>
+              <RecordLookupSelect
+                id="em-claim-advance"
+                className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={cashAdvanceId}
+                onValueChange={(event) => setCashAdvanceId(event)}
+              >
+                <option value="">Select issued advance</option>
+                {openAdvances.map((adv) => (
+                  <option key={adv.id} value={adv.id}>
+                    {adv.advanceNumber} — remaining{" "}
+                    {fromMinorUnits(adv.remainingMinor, adv.currencyCode)}
+                  </option>
+                ))}
+              </RecordLookupSelect>
+            </div>
+          ) : null}
+          {paymentSource === "company_paid" ? (
+            <div className="grid gap-2">
+              <Label htmlFor="em-claim-petty">Petty cash float</Label>
+              <RecordLookupSelect
+                id="em-claim-petty"
+                className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={pettyCashFloatId}
+                onValueChange={(event) => setPettyCashFloatId(event)}
+              >
+                <option value="">Select float with balance</option>
+                {openPettyFloats.map((float) => (
+                  <option key={float.id} value={float.id}>
+                    {float.floatNumber} — {float.name} (
+                    {fromMinorUnits(float.balanceMinor, float.currencyCode)})
+                  </option>
+                ))}
+              </RecordLookupSelect>
+            </div>
+          ) : null}
+          {paymentSource === "corporate_card" ? (
+            <div className="grid gap-2">
+              <Label htmlFor="em-claim-card">Corporate card</Label>
+              <RecordLookupSelect
+                id="em-claim-card"
+                className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={corporateCardId}
+                onValueChange={(event) => setCorporateCardId(event)}
+              >
+                <option value="">Select card</option>
+                {openCards.map((card) => (
+                  <option key={card.id} value={card.id}>
+                    {card.label} ****{card.last4}
+                  </option>
+                ))}
+              </RecordLookupSelect>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="space-y-3">
+          {lines.map((line, index) => (
+            <div key={line.key} className="grid gap-3 rounded-md border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium">Line {index + 1}</p>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSplitLineKey(line.key)}
+                  >
+                    Split equally
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={lines.length === 1}
+                    onClick={() =>
+                      setLines((current) => current.filter((row) => row.key !== line.key))
+                    }
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Remove line</span>
+                  </Button>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label>Date</Label>
-                    <Input
-                      type="date"
-                      value={line.expenseDate}
-                      onChange={(event) =>
-                        updateLine(line.key, { expenseDate: event.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Merchant</Label>
-                    <Input
-                      value={line.merchantName}
-                      onChange={(event) =>
-                        updateLine(line.key, { merchantName: event.target.value })
-                      }
-                    />
-                  </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label>Date</Label>
+                  <Input
+                    type="date"
+                    value={line.expenseDate}
+                    onChange={(event) => updateLine(line.key, { expenseDate: event.target.value })}
+                  />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Description</Label>
-                  <Textarea
-                    value={line.description}
-                    rows={2}
-                    className="lb-spreadsheet-wrap min-h-16"
-                    onChange={(event) => updateLine(line.key, { description: event.target.value })}
+                  <Label>Merchant</Label>
+                  <Input
+                    value={line.merchantName}
+                    onChange={(event) => updateLine(line.key, { merchantName: event.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={line.description}
+                  rows={2}
+                  className="lb-spreadsheet-wrap min-h-16"
+                  onChange={(event) => updateLine(line.key, { description: event.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Expense account</Label>
+                <AccountLookup
+                  ariaLabel={`Expense account for line ${index + 1}`}
+                  purpose="expense"
+                  accounts={expenseAccounts}
+                  value={line.accountId}
+                  onChange={(value) => updateLine(line.key, { accountId: value })}
+                  companyId={company.id}
+                  placeholder="Select expense account"
+                  allowClear={false}
+                />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label>Net ({currency})</Label>
+                  <Input
+                    value={line.netInput}
+                    onChange={(event) => updateLine(line.key, { netInput: event.target.value })}
                     required
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Expense account</Label>
-                  <AccountLookup
-                    ariaLabel={`Expense account for line ${index + 1}`}
-                    purpose="expense"
-                    accounts={expenseAccounts}
-                    value={line.accountId}
-                    onChange={(value) => updateLine(line.key, { accountId: value })}
-                    companyId={company.id}
-                    placeholder="Select expense account"
-                    allowClear={false}
+                  <Label>Tax</Label>
+                  <Input
+                    value={line.taxInput}
+                    onChange={(event) => updateLine(line.key, { taxInput: event.target.value })}
                   />
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label>Net ({currency})</Label>
-                    <Input
-                      value={line.netInput}
-                      onChange={(event) => updateLine(line.key, { netInput: event.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Tax</Label>
-                    <Input
-                      value={line.taxInput}
-                      onChange={(event) => updateLine(line.key, { taxInput: event.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {splitLineKey ? (
-            <div className="grid gap-3 rounded-md border border-dashed p-3">
-              <p className="text-sm font-medium">Equal split across two accounts</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label>Account A</Label>
-                  <AccountLookup
-                    ariaLabel="Split account A"
-                    purpose="expense"
-                    accounts={expenseAccounts}
-                    value={splitAccountA}
-                    onChange={setSplitAccountA}
-                    companyId={company.id}
-                    placeholder="Select account A"
-                    allowClear={false}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Account B</Label>
-                  <AccountLookup
-                    ariaLabel="Split account B"
-                    purpose="expense"
-                    accounts={expenseAccounts}
-                    value={splitAccountB}
-                    onChange={setSplitAccountB}
-                    companyId={company.id}
-                    placeholder="Select account B"
-                    allowClear={false}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button type="button" size="sm" onClick={applySplit}>
-                  Apply split
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setSplitLineKey(null)}
-                >
-                  Cancel
-                </Button>
               </div>
             </div>
-          ) : null}
+          ))}
+        </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setLines((current) => [...current, emptyDraftLine(today)])}
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Add line
-            </Button>
-            <Button type="submit" disabled={create.isPending}>
-              {create.isPending ? "Saving…" : "Save draft"}
-            </Button>
-          </div>
-
-          <div className="grid gap-2 border-t pt-4 sm:grid-cols-[1fr_auto] sm:items-end">
-            <div className="grid gap-2">
-              <Label htmlFor="em-template-name">Save current lines as template</Label>
-              <Input
-                id="em-template-name"
-                value={templateName}
-                onChange={(event) => setTemplateName(event.target.value)}
-                placeholder="Template name"
-              />
+        {splitLineKey ? (
+          <div className="grid gap-3 rounded-md border border-dashed p-3">
+            <p className="text-sm font-medium">Equal split across two accounts</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label>Account A</Label>
+                <AccountLookup
+                  ariaLabel="Split account A"
+                  purpose="expense"
+                  accounts={expenseAccounts}
+                  value={splitAccountA}
+                  onChange={setSplitAccountA}
+                  companyId={company.id}
+                  placeholder="Select account A"
+                  allowClear={false}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Account B</Label>
+                <AccountLookup
+                  ariaLabel="Split account B"
+                  purpose="expense"
+                  accounts={expenseAccounts}
+                  value={splitAccountB}
+                  onChange={setSplitAccountB}
+                  companyId={company.id}
+                  placeholder="Select account B"
+                  allowClear={false}
+                />
+              </div>
             </div>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={saveAsTemplate.isPending || !templateName.trim()}
-              onClick={() => saveAsTemplate.mutate()}
-            >
-              {saveAsTemplate.isPending ? "Saving…" : "Save template"}
-            </Button>
+            <div className="flex gap-2">
+              <Button type="button" size="sm" onClick={applySplit}>
+                Apply split
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setSplitLineKey(null)}>
+                Cancel
+              </Button>
+            </div>
           </div>
-        </form>
-      ) : null;
+        ) : null}
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setLines((current) => [...current, emptyDraftLine(today)])}
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            Add line
+          </Button>
+          <Button type="submit" disabled={create.isPending}>
+            {create.isPending ? "Saving…" : "Save draft"}
+          </Button>
+        </div>
+
+        <div className="grid gap-2 border-t pt-4 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div className="grid gap-2">
+            <Label htmlFor="em-template-name">Save current lines as template</Label>
+            <Input
+              id="em-template-name"
+              value={templateName}
+              onChange={(event) => setTemplateName(event.target.value)}
+              placeholder="Template name"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={saveAsTemplate.isPending || !templateName.trim()}
+            onClick={() => saveAsTemplate.mutate()}
+          >
+            {saveAsTemplate.isPending ? "Saving…" : "Save template"}
+          </Button>
+        </div>
+      </form>
+    ) : null;
 
   if (forceCreate && createForm) {
     return (
@@ -896,11 +887,7 @@ export function ExpenseManagementClaimsPage({
                 Cancel
               </Link>
             </Button>
-            <Button
-              size="sm"
-              disabled={create.isPending}
-              onClick={() => create.mutate()}
-            >
+            <Button size="sm" disabled={create.isPending} onClick={() => create.mutate()}>
               {create.isPending ? "Saving…" : "Save draft"}
             </Button>
           </div>

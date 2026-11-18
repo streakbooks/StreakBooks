@@ -30,7 +30,8 @@ export function validateSettingsPanelSearch(search: Record<string, unknown>): {
   return panel ? { settingsPanel: panel, ...(trail.length ? { settingsTrail: trail } : {}) } : {};
 }
 export function panelForDestination(destination: SettingsDestination): SettingsPanelId | undefined {
-  if (destination.panel) return destination.panel;
+  // Treat runtime navigation descriptors as untrusted even when their TypeScript type is narrow.
+  if (destination.panel !== undefined) return parseSettingsPanel(destination.panel);
   if (destination.to === "/documents/branding") return "branding";
   if (destination.to === "/contacts/settings") return "contact-settings";
   if (destination.to === "/sales/settings") return "sales-defaults";

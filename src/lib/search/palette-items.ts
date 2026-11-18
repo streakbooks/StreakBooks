@@ -45,6 +45,7 @@ const CREATE: PaletteAction[] = [
     label: "New expense claim",
     keywords: "employee claim reimbursement mileage expense management",
     href: "/expense-management/my-expenses",
+    search: { create: "true" },
   },
   {
     id: "new-quote",
@@ -61,11 +62,19 @@ const CREATE: PaletteAction[] = [
     href: "/sales/credit-notes/new",
   },
   {
+    id: "new-receive-payment",
+    group: "Create",
+    label: "Receive customer payment",
+    keywords: "customer payment received ar receipt allocate invoice",
+    href: "/sales/receipts/new",
+  },
+  {
     id: "new-sales-receipt",
     group: "Create",
     label: "New sales receipt",
-    keywords: "customer payment received",
-    href: "/sales/receipts/new",
+    keywords: "cash sale sales receipt money document",
+    href: "/banking/money-documents/new",
+    search: { kind: "sales_receipt" },
   },
   {
     id: "new-purchase-order",
@@ -80,6 +89,21 @@ const CREATE: PaletteAction[] = [
     label: "New supplier payment",
     keywords: "pay bill payment",
     href: "/purchases/payments/new",
+  },
+  {
+    id: "new-manual-journal",
+    group: "Create",
+    label: "New manual journal",
+    keywords: "journal post accounting",
+    href: "/accounting/journals/new",
+    search: { mode: "post" },
+  },
+  {
+    id: "new-bank-transfer",
+    group: "Create",
+    label: "New bank transfer",
+    keywords: "transfer between accounts banking",
+    href: "/banking/transfers/new",
   },
 ];
 

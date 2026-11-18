@@ -92,7 +92,15 @@ function OrdersList() {
           description={friendlyAuthError(query.error)}
         />
       ) : !query.data?.total && !search && status === "all" ? (
-        <EmptyState title="No purchase orders" description="Create a PO for a supplier." />
+        <EmptyState
+          title="No purchase orders"
+          description="Create a PO for a supplier."
+          action={
+            <Button size="sm" asChild>
+              <Link to="/purchases/orders/new">New order</Link>
+            </Button>
+          }
+        />
       ) : (
         <>
           <div className="mb-3 max-w-xs">

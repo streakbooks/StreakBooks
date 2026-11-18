@@ -175,7 +175,7 @@ export function ExpenseManagementOverviewPage() {
         <KpiCard
           label="Pending legacy claims"
           value={kpis.legacySubmittedClaims}
-          hint="Submitted on the current employee-expenses path"
+          hint="Legacy Purchases list — submit new claims from My Expenses"
           href={{ kind: "absolute", to: "/purchases/employee-expenses" }}
         />
         <KpiCard

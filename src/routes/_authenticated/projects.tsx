@@ -108,7 +108,17 @@ function ProjectsPage() {
       ) : rows.length === 0 ? (
         <EmptyState
           title="No projects yet"
-          description="Create one below, then tag documents to it."
+          description="Use New project below, then tag invoices, bills and bank lines to it."
+          action={
+            <Button
+              size="sm"
+              onClick={() =>
+                document.getElementById("projects-new-panel")?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              New project
+            </Button>
+          }
         />
       ) : (
         <Table>
@@ -173,7 +183,7 @@ function ProjectsPage() {
         </Link>
       </p>
 
-      <div className="mt-8 max-w-md">
+      <div id="projects-new-panel" className="mt-8 max-w-md scroll-mt-24">
         <h2 className="mb-2 text-lg font-semibold">New project</h2>
         <ProjectPanel />
       </div>

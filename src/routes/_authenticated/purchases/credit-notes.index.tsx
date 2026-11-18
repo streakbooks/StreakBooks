@@ -68,7 +68,15 @@ function CreditNotesList() {
           description={friendlyAuthError(query.error)}
         />
       ) : (query.data ?? []).length === 0 ? (
-        <EmptyState title="No credit notes" description="Create a supplier credit note." />
+        <EmptyState
+          title="No credit notes"
+          description="Create a supplier credit note."
+          action={
+            <Button size="sm" asChild>
+              <Link to="/purchases/credit-notes/new">New credit note</Link>
+            </Button>
+          }
+        />
       ) : (
         <>
           <ListToolbar

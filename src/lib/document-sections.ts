@@ -8,7 +8,7 @@ export const PURCHASES_SECTIONS = [
   { to: "/purchases/requisitions", label: "Requisitions" },
   { to: "/purchases/orders", label: "Purchase orders" },
   { to: "/purchases/recurring", label: "Recurring" },
-  { to: "/purchases/employee-expenses", label: "Employee expenses" },
+  { to: "/purchases/employee-expenses", label: "Legacy reimbursements" },
   { to: "/purchases/statements", label: "Statements" },
   { to: "/purchases/portal-inbox", label: "Portal inbox" },
   { to: "/purchases/settings", label: "Settings" },

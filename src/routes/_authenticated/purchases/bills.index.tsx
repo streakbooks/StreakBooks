@@ -1657,6 +1657,11 @@ function RecurringPane({
         <EmptyState
           title="No recurring templates"
           description="Create a recurring bill schedule in the Recurring module."
+          action={
+            <Button size="sm" asChild>
+              <Link to="/purchases/recurring/new">New recurring bill</Link>
+            </Button>
+          }
         />
       ) : (
         <div className="overflow-x-auto rounded-lg border">

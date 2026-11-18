@@ -219,6 +219,13 @@ function FixedAssetsPage() {
         description="Keep a register of what you own, post monthly depreciation and record disposals. Every posting goes through the same journal engine as the rest of your books."
         actions={
           <>
+            <Button
+              size="sm"
+              disabled={!canManage}
+              onClick={() => setDialog({ kind: "asset", editing: null, fromBillLine: null })}
+            >
+              Add asset
+            </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/reports/$reportId" params={{ reportId: "fixed-asset-register" }}>
                 Register report
@@ -549,6 +556,16 @@ function FixedAssetsPage() {
               <EmptyState
                 title="No fixed assets"
                 description="Add an asset, or capitalise a line from a posted bill."
+                action={
+                  canManage ? (
+                    <Button
+                      size="sm"
+                      onClick={() => setDialog({ kind: "asset", editing: null, fromBillLine: null })}
+                    >
+                      Add asset
+                    </Button>
+                  ) : undefined
+                }
               />
             ) : visibleAssets.length === 0 ? (
               <EmptyState

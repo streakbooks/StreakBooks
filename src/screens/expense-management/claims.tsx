@@ -548,11 +548,12 @@ export function ExpenseManagementClaimsPage({
 
   const claims = claimsQ.data ?? [];
 
+  // List is list-only. Create opens only via ?create=true → TransactionWorkspace.
   const createForm =
-    mode === "my-expenses" && canSubmit ? (
+    mode === "my-expenses" && canSubmit && forceCreate ? (
         <form
           id="expense-claim-create"
-          className="grid gap-4 rounded-lg border border-border/70 bg-card/80 p-4 sm:p-5"
+          className="grid gap-4"
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate();
@@ -933,8 +934,6 @@ export function ExpenseManagementClaimsPage({
         ) : undefined
       }
     >
-      {createForm ? <div className="mb-8">{createForm}</div> : null}
-
       {claims.length === 0 ? (
         <EmptyState
           title="No claims yet"

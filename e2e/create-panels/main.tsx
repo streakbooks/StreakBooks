@@ -11,7 +11,10 @@ import { queryClient } from "../voice/fixture-state";
 import { CreateNewMenu } from "@/components/create-new/CreateNewMenu";
 import { Route as OrderRoute } from "@/routes/_authenticated/purchases/orders.new";
 import { Route as CreditRoute } from "@/routes/_authenticated/purchases/credit-notes.new";
-import { Route as TransferRoute } from "@/routes/_authenticated/banking/transfers";
+import { Route as TransferRoute } from "@/routes/_authenticated/banking/transfers.new";
+import { Route as JournalRoute } from "@/routes/_authenticated/accounting/journals.new";
+import { Route as SpendRoute } from "@/routes/_authenticated/banking/spend-money";
+import { Route as ReceiveRoute } from "@/routes/_authenticated/banking/receive-money";
 import "../../src/styles.css";
 export function Home() {
   return (
@@ -54,11 +57,28 @@ const credit = CreditRoute.update({
 } as never);
 const transfer = TransferRoute.update({
   getParentRoute: () => auth,
-  id: "/banking/transfers",
-  path: "/banking/transfers",
+  id: "/banking/transfers/new",
+  path: "/banking/transfers/new",
+} as never);
+const journal = JournalRoute.update({
+  getParentRoute: () => auth,
+  id: "/accounting/journals/new",
+  path: "/accounting/journals/new",
+} as never);
+const spend = SpendRoute.update({
+  getParentRoute: () => auth,
+  id: "/banking/spend-money",
+  path: "/banking/spend-money",
+} as never);
+const receive = ReceiveRoute.update({
+  getParentRoute: () => auth,
+  id: "/banking/receive-money",
+  path: "/banking/receive-money",
 } as never);
 const router = createRouter({
-  routeTree: root.addChildren([auth.addChildren([home, order, credit, transfer])]),
+  routeTree: root.addChildren([
+    auth.addChildren([home, order, credit, transfer, journal, spend, receive]),
+  ]),
 });
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>

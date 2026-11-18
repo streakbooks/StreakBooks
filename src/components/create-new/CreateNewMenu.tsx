@@ -7,7 +7,7 @@ import {
   type ComponentType,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { useNavigate, useRouteContext } from "@tanstack/react-router";
+import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
 import {
   Calculator,
   ChevronRight,
@@ -139,11 +139,15 @@ export function CreateNewMenu() {
     writeCreatePrefs(window.localStorage, user.id, next);
   }
 
-  function openAction(action: CreateAction) {
-    if (!actionIsRunnable(action, role, company?.permissions)) return;
+  function rememberSelection(action: CreateAction) {
     persist(rememberAction(prefs, action.id));
     setMenuOpen(false);
     setQuery("");
+  }
+
+  function openAction(action: CreateAction) {
+    if (!actionIsRunnable(action, role, company?.permissions)) return;
+    rememberSelection(action);
 
     // Document editors open as full-page workspaces with real browser history (Back works).
     const target = createNavTarget(action);
@@ -280,6 +284,7 @@ export function CreateNewMenu() {
                     permissions={company?.permissions}
                     prefs={prefs}
                     onOpen={openAction}
+                    onFollow={rememberSelection}
                     onToggle={(id) => persist(toggleFavourite(prefs, id))}
                   />
                   <ActionCard
@@ -290,6 +295,7 @@ export function CreateNewMenu() {
                     permissions={company?.permissions}
                     prefs={prefs}
                     onOpen={openAction}
+                    onFollow={rememberSelection}
                     onToggle={(id) => persist(toggleFavourite(prefs, id))}
                   />
                 </div>
@@ -307,6 +313,7 @@ export function CreateNewMenu() {
                     activeId={results[activeIndex]?.id}
                     menuId={menuId}
                     onOpen={openAction}
+                    onFollow={rememberSelection}
                     onToggle={(id) => persist(toggleFavourite(prefs, id))}
                   />
                 ))}
@@ -373,6 +380,7 @@ function ActionCard({
   activeId,
   menuId,
   onOpen,
+  onFollow,
   onToggle,
 }: {
   title: string;
@@ -384,6 +392,7 @@ function ActionCard({
   activeId?: string | undefined;
   menuId?: string;
   onOpen: (action: CreateAction) => void;
+  onFollow: (action: CreateAction) => void;
   onToggle: (id: string) => void;
 }) {
   if (actions.length === 0) return null;
@@ -396,6 +405,15 @@ function ActionCard({
       <ul>
         {actions.map((action) => {
           const runnable = actionIsRunnable(action, role, permissions);
+          const target = createNavTarget(action);
+          const actionClass =
+            "flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted";
+          const actionLabel = (
+            <>
+              <span className="truncate">{action.label}</span>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            </>
+          );
           const allowed = (permissions ?? permissionsForRole(role)).includes(action.permission);
           const reason = allowed
             ? (action.blocker ?? "This action is unavailable.")
@@ -406,17 +424,42 @@ function ActionCard({
                 id={menuId ? `${menuId}-${action.id}` : undefined}
                 className={cn("flex items-center rounded-lg", activeId === action.id && "bg-muted")}
               >
-                <button
-                  type="button"
-                  disabled={!runnable}
-                  title={runnable ? action.label : reason}
-                  className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:text-muted-foreground"
-                  onClick={() => onOpen(action)}
-                >
-                  <span className="truncate">{action.label}</span>
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-                  {!runnable ? <span className="sr-only">{reason}</span> : null}
-                </button>
+                {runnable && target.kind === "route" ? (
+                  <Link
+                    to={target.to as never}
+                    {...(target.params ? { params: target.params as never } : {})}
+                    search={(target.search ?? {}) as never}
+                    className={actionClass}
+                    onClick={(event) => {
+                      if (
+                        !event.defaultPrevented &&
+                        event.button === 0 &&
+                        !event.ctrlKey &&
+                        !event.metaKey &&
+                        !event.altKey &&
+                        !event.shiftKey
+                      ) {
+                        onFollow(action);
+                      }
+                    }}
+                  >
+                    {actionLabel}
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={!runnable}
+                    title={runnable ? action.label : reason}
+                    className={cn(
+                      actionClass,
+                      "disabled:cursor-not-allowed disabled:text-muted-foreground",
+                    )}
+                    onClick={() => onOpen(action)}
+                  >
+                    {actionLabel}
+                    {!runnable ? <span className="sr-only">{reason}</span> : null}
+                  </button>
+                )}
                 <button
                   type="button"
                   aria-label={

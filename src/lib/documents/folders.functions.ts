@@ -24,12 +24,15 @@ export const listDocumentFolders = createServerFn({ method: "GET" })
   .inputValidator((v: { companyId: string }) => ({ companyId: assertUuid(v.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error, count } = await context.supabase
       .from("document_folders" as never)
-      .select("id, name, parent_id, created_at, updated_at" as never)
+      .select("id, name, parent_id, created_at, updated_at" as never, { count: "exact" })
       .eq("company_id" as never, data.companyId as never)
-      .order("name" as never, { ascending: true });
+      .order("name" as never, { ascending: true })
+      .limit(1000);
     if (error) throw new Error(error.message);
+    if (count == null || count > 1000 || count !== (rows ?? []).length)
+      throw new Error("Folder list is incomplete. Contact your administrator.");
     return rows ?? [];
   });
 export const createDocumentFolder = createServerFn({ method: "POST" })
@@ -116,6 +119,7 @@ export const moveDocumentToFolder = createServerFn({ method: "POST" })
       .update({ folder_id: data.folderId } as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
       .select("id" as never);
     if (error) throw new Error(error.message);
     if (!rows || (rows as unknown[]).length !== 1)

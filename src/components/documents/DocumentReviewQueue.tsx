@@ -5,6 +5,8 @@ import { ClipboardCheck, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { DocumentOcrPanel } from "@/components/documents/DocumentOcrPanel";
+import { fillBlankReviewFields, type OcrSuggestions } from "@/lib/documents/ocr-model";
 import { getAttachmentDownload, getAttachmentPreview } from "@/lib/documents/attachments.functions";
 import { ATTACHMENT_ENTITIES, formatFileSize } from "@/lib/documents/attachments";
 import { downloadBase64 } from "@/lib/documents/upload-client";
@@ -150,6 +152,11 @@ export function DocumentReviewQueue({
   const pages = Math.max(1, Math.ceil((queue.data?.total ?? 0) / 25));
   const update = (changes: Partial<ReviewFields>) =>
     setEdit((previous) => (previous ? { ...previous, ...changes } : null));
+  const applyOcrSuggestions = (suggestions: OcrSuggestions) => {
+    if (!canManage) return;
+    setEdit((previous) => previous ? fillBlankReviewFields(previous, suggestions) : null);
+    toast.info("Suggestions filled only into blank fields. Verify and save the review manually.");
+  };
 
   return (
     <section aria-label="Document review queue" className="space-y-4">
@@ -358,6 +365,13 @@ export function DocumentReviewQueue({
               save.mutate();
             }}
           >
+            {canManage && (selected.status === "needs_review" || selected.status === "ready") ? (
+              <DocumentOcrPanel
+                companyId={companyId}
+                attachmentId={selected.attachment_id}
+                onApply={applyOcrSuggestions}
+              />
+            ) : null}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="review-type">Document type</Label>

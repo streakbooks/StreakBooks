@@ -87,6 +87,7 @@ export const listDocumentReviewQueue = createServerFn({ method: "GET" })
       .select("id, file_name, content_type, size_bytes, created_at" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("entity_type" as never, "company" as never)
+      .is("deleted_at" as never, null)
       .in("id" as never, reviews.map((row) => row.attachment_id) as never);
     if (attachments.error) throw new Error(attachments.error.message);
     const attachmentRows = (attachments.data ?? []) as unknown as Array<{

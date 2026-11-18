@@ -14,7 +14,18 @@ import {
 } from "@/lib/documents/attachments";
 import { entityManagePermissions, entityViewPermissions } from "@/lib/documents/record-activity";
 import { escapeLikeLiteral } from "@/lib/sales/list-filters";
-import { filePreviewKind, fileSortOrder, parseFileSort } from "@/lib/documents/file-workspace";
+import {
+  fileFormatMimeTypes,
+  fileListProjection,
+  filePreviewKind,
+  safeFilePage,
+  fileSortOrder,
+  parseFileFormat,
+  parseFileSort,
+  validateFileRename,
+} from "@/lib/documents/file-workspace";
+import { folderDescendantIds } from "@/lib/documents/folder-tree";
+import { parseFileCategory } from "@/lib/documents/file-classification";
 
 const MIGRATION_HINT =
   "File storage needs a database update that has not been applied yet (migration 20261025200100). Ask an administrator to apply the latest migrations.";
@@ -30,10 +41,11 @@ export type AttachmentRow = {
   uploaded_by: string | null;
   storage_bucket: string | null;
   folder_id: string | null;
+  retention_hold: boolean;
 };
 
 const COLUMNS =
-  "id, entity_type, entity_id, file_name, content_type, size_bytes, created_at, uploaded_by, storage_bucket, folder_id";
+  "id, entity_type, entity_id, file_name, content_type, size_bytes, created_at, uploaded_by, storage_bucket, folder_id, retention_hold";
 
 /** View or manage, matching ATTACHMENT_ENTITIES. Any listed permission is enough. */
 export async function assertEntityAccess(
@@ -84,6 +96,7 @@ export const listAttachments = createServerFn({ method: "GET" })
       .eq("company_id" as never, data.companyId as never)
       .eq("entity_type" as never, data.entityType as never)
       .eq("entity_id" as never, data.entityId as never)
+      .is("deleted_at" as never, null)
       .order("created_at" as never, { ascending: false } as never);
     if (error) {
       if (error.code === "42703") throw new Error(MIGRATION_HINT);
@@ -208,6 +221,7 @@ export const getAttachmentDownload = createServerFn({ method: "GET" })
       .select("id, file_name, content_type, storage_path, storage_bucket, content_base64" as never)
       .eq("id" as never, data.attachmentId as never)
       .eq("company_id" as never, data.companyId as never)
+      .is("deleted_at" as never, null)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("File not found");
@@ -251,6 +265,7 @@ export const getAttachmentPreview = createServerFn({ method: "GET" })
       .select("file_name, content_type, storage_path, storage_bucket, content_base64" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("File not found");
@@ -281,6 +296,10 @@ export const getAttachmentPreview = createServerFn({ method: "GET" })
     };
   });
 
+/**
+ * Recycle instead of physically deleting. All prior versions and review evidence
+ * remain intact for an authorized restore. Permanent purging is a separate RPC.
+ */
 export const deleteAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; attachmentId: string }) => ({
@@ -290,46 +309,124 @@ export const deleteAttachment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyMember(supabase, data.companyId);
-    const { data: row } = await supabase
+    const { data: row, error: readError } = await supabase
       .from("document_attachments" as never)
-      .select("id, entity_type, entity_id, file_name, storage_path, storage_bucket" as never)
-      .eq("id" as never, data.attachmentId as never)
+      .select("id, entity_type, entity_id, file_name" as never)
       .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
       .maybeSingle();
-    if (!row) throw new Error("File not found");
-    const r = row as unknown as {
+    if (readError) {
+      if (readError.code === "42703") throw new Error(
+        "Recycle Bin migration 20261106183000_files_recycle_retention_cleanup is required.",
+      );
+      throw new Error(readError.message);
+    }
+    if (!row) throw new Error("File not found, already recycled or access denied.");
+    const file = row as unknown as {
       entity_type: string;
       entity_id: string;
       file_name: string;
-      storage_path: string;
-      storage_bucket: string | null;
     };
-    // RLS only lets a user with the right "manage" permission delete: confirm a row went away.
-    const { data: deleted, error } = await supabase
+    if (!isAttachmentEntityType(file.entity_type))
+      throw new Error("Unsupported file entity type.");
+    await assertEntityAccess(supabase, data.companyId, file.entity_type, "manage");
+    const { data: recycled, error } = await supabase
       .from("document_attachments" as never)
-      .delete()
-      .eq("id" as never, data.attachmentId as never)
+      .update({ deleted_at: new Date().toISOString() } as never)
       .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
+      .select("id, purge_after" as never);
+    if (error) throw new Error(error.message);
+    if ((recycled ?? []).length !== 1)
+      throw new Error("This file changed or you no longer have permission. Refresh and retry.");
+    const purgeAfter = (recycled![0] as { purge_after: string }).purge_after;
+    try {
+      await (
+        supabase as unknown as {
+          rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
+        }
+      ).rpc("record_audit_event", {
+        _company_id: data.companyId,
+        _action: "document.attachment.recycle",
+        _entity_type: file.entity_type,
+        _entity_id: file.entity_id,
+        _details: {
+          attachment_id: data.attachmentId,
+          file_name: file.file_name,
+          purge_after: purgeAfter,
+        },
+      });
+    } catch {
+      // Moving to Recycle Bin is already committed; report the actual result.
+    }
+    return { ok: true as const, recycled: true as const, purgeAfter };
+  });
+
+
+/**
+ * Rename the displayed/downloaded filename only. The private Storage object stays at
+ * its original immutable key; moving objects is not required and existing links survive.
+ */
+export const renameAttachment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; attachmentId: string; fileName: string }) => ({
+    companyId: assertUuid(input.companyId),
+    attachmentId: assertUuid(input.attachmentId, "file"),
+    fileName: input.fileName ?? "",
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyMember(supabase, data.companyId);
+    const { data: row, error: readError } = await supabase
+      .from("document_attachments" as never)
+      .select("id, entity_type, entity_id, file_name" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
+      .maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!row) throw new Error("File not found or access denied");
+    const current = row as unknown as {
+      entity_type: string;
+      entity_id: string;
+      file_name: string;
+    };
+    if (!isAttachmentEntityType(current.entity_type))
+      throw new Error("This file type cannot be renamed here.");
+    await assertEntityAccess(supabase, data.companyId, current.entity_type, "manage");
+    const fileName = validateFileRename(current.file_name, data.fileName);
+    if (fileName === current.file_name) return { fileName };
+
+    const { data: updated, error } = await supabase
+      .from("document_attachments" as never)
+      .update({ file_name: fileName } as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.attachmentId as never)
+      .eq("file_name" as never, current.file_name as never)
+      .is("deleted_at" as never, null)
       .select("id" as never);
     if (error) throw new Error(error.message);
-    if (!deleted || (deleted as unknown[]).length === 0) {
-      throw new Error("You do not have permission to delete this file.");
-    }
-    if (r.storage_bucket === COMPANY_DOCUMENTS_BUCKET) {
-      await supabase.storage.from(COMPANY_DOCUMENTS_BUCKET).remove([r.storage_path]);
-    }
+    if (!updated || (updated as unknown[]).length !== 1)
+      throw new Error("The file was changed or you do not have permission. Refresh and retry.");
+
     await (
       supabase as unknown as {
         rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
       }
     ).rpc("record_app_audit_event", {
       _company_id: data.companyId,
-      _action: "document.attachment.delete",
-      _entity_type: r.entity_type,
-      _entity_id: r.entity_id,
-      _details: { attachment_id: data.attachmentId, file_name: r.file_name },
+      _action: "document.attachment.rename",
+      _entity_type: current.entity_type,
+      _entity_id: current.entity_id,
+      _details: {
+        attachment_id: data.attachmentId,
+        old_file_name: current.file_name,
+        new_file_name: fileName,
+      },
     });
-    return { ok: true as const };
+    return { fileName };
   });
 
 const REF_TABLES: Record<string, { table: string; column: string }> = {
@@ -353,6 +450,98 @@ export type CompanyFileRow = AttachmentRow & {
   entityPath: string | null;
 };
 
+
+/** Resolve one file independently of pagination; RLS still gates record-level visibility. */
+export const getCompanyFile = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    attachmentId: assertUuid(input.attachmentId, "file"),
+  }))
+  .handler(async ({ data, context }): Promise<CompanyFileRow> => {
+    const { supabase } = context;
+    await assertCompanyMember(supabase, data.companyId);
+    const { data: row, error } = await supabase
+      .from("document_attachments" as never)
+      .select(COLUMNS as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("File not found or access denied");
+    const attachment = row as unknown as AttachmentRow;
+    let entityRef: string | null = null;
+    const ref = REF_TABLES[attachment.entity_type];
+    if (ref) {
+      const { data: record, error: refError } = await supabase
+        .from(ref.table as never)
+        .select(`id, ${ref.column}` as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("id" as never, attachment.entity_id as never)
+        .maybeSingle();
+      if (refError) throw new Error(refError.message);
+      const name = (record as unknown as Record<string, string | null> | null)?.[ref.column];
+      entityRef = name || null;
+    }
+    return {
+      ...attachment,
+      entityLabel: entityLabel(attachment.entity_type),
+      entityRef,
+      entityPath: entityPath(attachment.entity_type, attachment.entity_id),
+    };
+  });
+
+/**
+ * Advisory duplicate preflight. Equal filename and byte count is only a possible
+ * duplicate signal; bytes are never read and no upload is rejected by this API.
+ *
+ * Queries use the signed-in user's RLS permissions for document_attachments:
+ * restricted records are neither inspected nor disclosed to the caller.
+ */
+export const checkPossibleFileDuplicates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    companyId: string;
+    candidates: Array<{ fileName: string; sizeBytes: number }>;
+  }) => {
+    const companyId = assertUuid(input.companyId);
+    if (!Array.isArray(input.candidates) || input.candidates.length < 1 || input.candidates.length > 25)
+      throw new Error("Check between 1 and 25 files at once.");
+    const candidates = input.candidates.map((candidate) => {
+      const fileName = String(candidate.fileName ?? "").trim();
+      const sizeBytes = Number(candidate.sizeBytes);
+      if (
+        fileName.length < 1 ||
+        fileName.length > 255 ||
+        !Number.isSafeInteger(sizeBytes) ||
+        sizeBytes < 1 ||
+        sizeBytes > MAX_FILE_BYTES
+      )
+        throw new Error("Invalid file name or size for duplicate review.");
+      return { fileName, sizeBytes };
+    });
+    return { companyId, candidates };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyMember(supabase, data.companyId);
+    const possibleMatches: boolean[] = [];
+    for (const candidate of data.candidates) {
+      const { data: rows, error } = await supabase
+        .from("document_attachments" as never)
+        .select("id" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("size_bytes" as never, candidate.sizeBytes as never)
+        .is("deleted_at" as never, null)
+        .ilike("file_name" as never, escapeLikeLiteral(candidate.fileName) as never)
+        .limit(1);
+      if (error) throw new Error(error.message);
+      possibleMatches.push((rows ?? []).length > 0);
+    }
+    return { possibleMatches };
+  });
+
 /** Organisation-wide Files list (RLS limits it to what the user may view). */
 export const listCompanyFiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -362,6 +551,10 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       search?: string;
       entityType?: string;
       sort?: string;
+      format?: string;
+      includeSubfolders?: boolean;
+      category?: string;
+      tagId?: string;
       page?: number;
       pageSize?: number;
       folderId?: string | null;
@@ -370,23 +563,64 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       companyId: assertUuid(input.companyId),
       search: (input.search ?? "").trim().slice(0, 80),
       sort: parseFileSort(input.sort),
+      format: parseFileFormat(input.format),
+      includeSubfolders: input.includeSubfolders === true,
+      category:
+        input.category && input.category !== "all"
+          ? parseFileCategory(input.category)
+          : null,
+      tagId: input.tagId ? assertUuid(input.tagId, "tag") : null,
       entityType: input.entityType && input.entityType !== "all" ? input.entityType : null,
       folderId: input.folderId ? assertUuid(input.folderId) : null,
       unfiledOnly: input.unfiledOnly === true,
-      page: Math.max(0, Math.floor(Number(input.page) || 0)),
+      page: safeFilePage(input.page),
       pageSize: Math.min(100, Math.max(5, Math.floor(Number(input.pageSize) || 25))),
     }),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyMember(supabase, data.companyId);
+    // Use PostgREST's RLS-aware inner relationship filter instead of materializing
+    // thousands of UUIDs into a URL-sized .in() clause. Filtering happens before
+    // ordering and pagination, even for large company tag collections.
+    const columns = fileListProjection(COLUMNS, data.tagId);
     let q = supabase
       .from("document_attachments" as never)
-      .select(COLUMNS as never, { count: "exact" })
-      .eq("company_id" as never, data.companyId as never);
+      .select(columns as never, { count: "exact" })
+      .eq("company_id" as never, data.companyId as never)
+      .is("deleted_at" as never, null);
     if (data.entityType) q = q.eq("entity_type" as never, data.entityType as never);
-    if (data.folderId) q = q.eq("folder_id" as never, data.folderId as never);
-    else if (data.unfiledOnly) q = q.is("folder_id" as never, null);
+    if (data.category)
+      q = q.eq("document_category" as never, data.category as never);
+    if (data.tagId)
+      q = q.eq("tag_match.tag_id" as never, data.tagId as never);
+    const mimeTypes = fileFormatMimeTypes(data.format);
+    if (mimeTypes.length) q = q.in("content_type" as never, [...mimeTypes] as never);
+    if (data.folderId && data.includeSubfolders) {
+      // Never trust a client-provided list of descendants or traverse outside this company.
+      const { data: folderRows, error: folderError, count: folderCount } = await supabase
+        .from("document_folders" as never)
+        .select("id, parent_id" as never, { count: "exact" })
+        .eq("company_id" as never, data.companyId as never)
+        .limit(1000);
+      if (folderError) throw new Error(folderError.message);
+      if (
+        folderCount == null ||
+        folderCount > 1000 ||
+        folderCount !== (folderRows ?? []).length
+      )
+        throw new Error("Folder list is too large or incomplete for a recursive search.");
+      const ids = folderDescendantIds(
+        (folderRows ?? []) as unknown as Array<{ id: string; parent_id: string | null }>,
+        data.folderId,
+      );
+      if (!ids.length) throw new Error("Folder not found in this organisation.");
+      q = q.in("folder_id" as never, ids as never);
+    } else if (data.folderId) {
+      q = q.eq("folder_id" as never, data.folderId as never);
+    } else if (data.unfiledOnly) {
+      q = q.is("folder_id" as never, null);
+    }
     if (data.search)
       q = q.ilike("file_name" as never, `%${escapeLikeLiteral(data.search)}%` as never);
     const from = data.page * data.pageSize;

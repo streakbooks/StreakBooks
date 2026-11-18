@@ -43,3 +43,144 @@ export function filePreviewKind(
     return "text";
   return null;
 }
+
+/**
+ * Rename only the display/download filename, never the immutable Storage object key.
+ * Keeping the extension avoids disguising an existing file as a different format.
+ */
+export function validateFileRename(currentName: string, requestedName: string): string {
+  const name = requestedName.trim();
+  if (
+    !name ||
+    name.length > 255 ||
+    name === "." ||
+    name === ".." ||
+    /[\\/:*?"<>|\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/u.test(name) ||
+    name.endsWith(".")
+  )
+    throw new Error("Use a valid file name (1–255 characters, without path or control characters).");
+
+  const extension = (fileName: string) => {
+    const dot = fileName.lastIndexOf(".");
+    return dot > 0 ? fileName.slice(dot + 1).toLowerCase() : "";
+  };
+  if (extension(name) !== extension(currentName))
+    throw new Error("Keep the original file extension when renaming.");
+  return name;
+}
+
+
+/** Fixed, non-user-defined MIME groups; never build a database filter from arbitrary text. */
+export const FILE_FORMATS = ["all", "pdf", "images", "spreadsheets", "word", "text"] as const;
+export type FileFormat = (typeof FILE_FORMATS)[number];
+
+export function parseFileFormat(value: unknown): FileFormat {
+  return FILE_FORMATS.find((format) => format === value) ?? "all";
+}
+
+export function fileFormatMimeTypes(format: FileFormat): readonly string[] {
+  switch (format) {
+    case "pdf":
+      return ["application/pdf"];
+    case "images":
+      return ["image/png", "image/jpeg", "image/gif", "image/webp", "image/heic", "image/heif"];
+    case "spreadsheets":
+      return [
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/csv",
+      ];
+    case "word":
+      return [
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+    case "text":
+      return ["text/plain"];
+    default:
+      return [];
+  }
+}
+
+
+/**
+ * An internal deep link, never a signed Storage URL or a public share token.
+ * The server still checks the recipient's membership and record permissions.
+ */
+export function internalFileUrl(origin: string, attachmentId: string): string {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(attachmentId))
+    throw new Error("Invalid file identifier.");
+  const url = new URL("/files", origin);
+  if (!["http:", "https:"].includes(url.protocol)) throw new Error("Invalid application origin.");
+  url.searchParams.set("file", attachmentId);
+  return url.toString();
+}
+
+
+/**
+ * Preflight upload review is deliberately conservative: equal name + byte size
+ * signals only a POSSIBLE duplicate, not identical file contents.
+ * Earlier items in the same picker batch are kept; later matches are flagged.
+ */
+export function repeatedUploadFlags(
+  files: readonly { name: string; size: number }[],
+): boolean[] {
+  const seen = new Set<string>();
+  return files.map((file) => {
+    const key = `${file.name.trim().normalize("NFKC").toLocaleLowerCase("en-US")}\u0000${file.size}`;
+    const repeated = seen.has(key);
+    seen.add(key);
+    return repeated;
+  });
+}
+
+/** Keep all candidate indexes when explicitly permitted, or only unflagged ones. */
+export function selectUploadIndexes(
+  flags: readonly boolean[],
+  includePossibleDuplicates: boolean,
+): number[] {
+  return flags.flatMap((flag, index) =>
+    includePossibleDuplicates || !flag ? [index] : [],
+  );
+}
+
+
+/** Merge in-batch and visible-existing metadata flags in the same picker order. */
+export function combinePossibleDuplicateFlags(
+  withinBatch: readonly boolean[],
+  amongExisting: readonly boolean[],
+): boolean[] {
+  if (withinBatch.length !== amongExisting.length)
+    throw new Error("The file comparison was incomplete. Review before uploading.");
+  return withinBatch.map((flag, index) => flag || amongExisting[index] === true);
+}
+
+
+/**
+ * RLS-aware tag filtering uses a related table inner-join (PostgREST).
+ * It avoids expensive, URL-length-limited client-generated .in() UUID lists.
+ */
+export function fileListProjection(
+  baseColumns: string,
+  tagId: string | null,
+): string {
+  return tagId
+    ? `${baseColumns}, tag_match:document_attachment_tags!inner(tag_id)`
+    : baseColumns;
+}
+
+
+/** Bound offset pagination to prevent an untrusted page index from creating huge queries. */
+export function safeFilePage(value: unknown, maxPage = 1000): number {
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number >= 0
+    ? Math.min(number, maxPage)
+    : 0;
+}
+
+/** A deleted or filtered page cannot remain selected after result counts shrink. */
+export function lastFilePage(total: number, pageSize: number): number {
+  if (!Number.isSafeInteger(total) || total < 0 ||
+      !Number.isSafeInteger(pageSize) || pageSize < 1) return 0;
+  return Math.max(0, Math.ceil(total / pageSize) - 1);
+}

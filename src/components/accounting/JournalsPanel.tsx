@@ -165,7 +165,8 @@ export function JournalsPanel({
   });
 
   const reverseM = useMutation({
-    mutationFn: (journalId: string) => reverse({ data: { journalId } }),
+    mutationFn: (journalId: string) =>
+      reverse({ data: { companyId, journalId } }),
     onSuccess: async () => {
       toast.success("Reversing journal posted");
       await qc.invalidateQueries({ queryKey: ["journals", companyId] });

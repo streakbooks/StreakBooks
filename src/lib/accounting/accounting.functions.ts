@@ -302,13 +302,32 @@ export const postManualJournal = createServerFn({ method: "POST" })
     return result;
   });
 
+const DIRECT_REVERSE_SOURCES = new Set(["manual", "opening_balance"]);
+
 export const reversePostedJournal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { journalId: string; idempotencyKey?: string }) => ({
+  .inputValidator((input: { companyId: string; journalId: string; idempotencyKey?: string }) => ({
+    companyId: assertUuid(input.companyId),
     journalId: assertUuid(input?.journalId, "journal"),
     idempotencyKey: (input.idempotencyKey ?? "").trim() || undefined,
   }))
   .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "journals.manual");
+    const { data: journal, error } = await context.supabase
+      .from("journals" as never)
+      .select("id, company_id, status, source_type" as never)
+      .eq("id" as never, data.journalId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!journal) throw new Error("Journal not found");
+    const row = journal as { id: string; status: string; source_type: string };
+    if (row.status !== "posted") throw new Error("Only posted journals can be reversed");
+    if (!DIRECT_REVERSE_SOURCES.has(row.source_type)) {
+      throw new Error(
+        "This journal belongs to a document. Void or reverse that document instead of reversing the journal directly.",
+      );
+    }
     return reverseJournal(context.supabase, data.journalId, data.idempotencyKey);
   });
 

@@ -1,0 +1,15 @@
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',false);
+SELECT public.po_test_error('SELECT public.reset_demo_company(''10000000-0000-4000-8000-000000000001'')','%not a demo%','PO reset refuses a real company');
+SELECT public.po_test_assert(NOT has_table_privilege('authenticated','private.po_reset_context','INSERT') AND NOT has_function_privilege('authenticated','private.po_reset_active(uuid)','EXECUTE'),'authenticated callers cannot forge trusted reset context');
+RESET ROLE;
+UPDATE public.companies SET is_demo=true WHERE id='10000000-0000-4000-8000-000000000001';
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000004"}',false);
+SELECT public.po_test_error('SELECT public.reset_demo_company(''10000000-0000-4000-8000-000000000001'')','%access denied%','PO reset refuses a view-only user');
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',false);
+SELECT public.reset_demo_company('10000000-0000-4000-8000-000000000001');
+RESET ROLE;
+SELECT public.po_test_assert(NOT EXISTS(SELECT 1 FROM public.purchase_requisitions) AND NOT EXISTS(SELECT 1 FROM public.purchase_order_receipts) AND NOT EXISTS(SELECT 1 FROM public.purchase_order_events) AND NOT EXISTS(SELECT 1 FROM public.purchase_orders) AND NOT EXISTS(SELECT 1 FROM public.purchase_order_lines) AND NOT EXISTS(SELECT 1 FROM public.purchase_bills) AND NOT EXISTS(SELECT 1 FROM public.purchase_bill_lines),'guarded reset clears requisition receipt and billing dependencies');
+SELECT public.po_test_assert(NOT EXISTS(SELECT 1 FROM private.po_reset_context) AND (SELECT count(*) FROM public.journals)=0,'trusted reset context clears and legacy journal cleanup still runs');
+SELECT public.po_test_assert(EXISTS(SELECT 1 FROM public.contacts WHERE id='30000000-0000-4000-8000-000000000003'),'guarded reset preserves the other tenant');

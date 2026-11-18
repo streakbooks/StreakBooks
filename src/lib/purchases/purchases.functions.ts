@@ -73,6 +73,7 @@ import {
   type SupplierCreditLimitBill,
 } from "@/lib/purchases/supplier-credit-limit";
 import { assertHeaderMatchesLines } from "@/lib/purchases/authorise-totals";
+import { JournalPostedUnlinkedError } from "@/lib/accounting/journal-posted-unlinked";
 
 export const SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED = "SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED";
 
@@ -950,7 +951,7 @@ export const submitBillForApproval = createServerFn({ method: "POST" })
     if ((bill as { status: string }).status !== "draft") {
       throw new Error("Only draft bills can be submitted for approval");
     }
-    const { error: upErr } = await context.supabase
+    const { data: updated, error: upErr } = await context.supabase
       .from("purchase_bills" as never)
       .update({
         status: "awaiting_approval",
@@ -959,8 +960,14 @@ export const submitBillForApproval = createServerFn({ method: "POST" })
         approval_comment: data.comment,
         updated_at: new Date().toISOString(),
       } as never)
-      .eq("id" as never, data.billId as never);
+      .eq("id" as never, data.billId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("status" as never, "draft" as never)
+      .is("posted_journal_id" as never, null as never)
+      .select("id");
     if (upErr) throw new Error(upErr.message);
+    if (!updated || (updated as unknown[]).length === 0)
+      throw new Error("The bill changed while saving. Reload and try again.");
     await recordBillAudit(context.supabase, data.companyId, "bill.submit_approval", data.billId, {
       comment: data.comment,
     });
@@ -987,7 +994,7 @@ export const rejectBillApproval = createServerFn({ method: "POST" })
     if ((bill as { status: string }).status !== "awaiting_approval") {
       throw new Error("Only bills awaiting approval can be rejected");
     }
-    const { error: upErr } = await context.supabase
+    const { data: updated, error: upErr } = await context.supabase
       .from("purchase_bills" as never)
       .update({
         status: "draft",
@@ -996,8 +1003,14 @@ export const rejectBillApproval = createServerFn({ method: "POST" })
         rejection_reason: data.reason,
         updated_at: new Date().toISOString(),
       } as never)
-      .eq("id" as never, data.billId as never);
+      .eq("id" as never, data.billId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("status" as never, "awaiting_approval" as never)
+      .is("posted_journal_id" as never, null as never)
+      .select("id");
     if (upErr) throw new Error(upErr.message);
+    if (!updated || (updated as unknown[]).length === 0)
+      throw new Error("The bill changed while saving. Reload and try again.");
     await recordBillAudit(context.supabase, data.companyId, "bill.reject_approval", data.billId, {
       reason: data.reason,
     });
@@ -1014,13 +1027,23 @@ export const deleteDraftBill = createServerFn({ method: "POST" })
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.draft");
     const { data: bill, error } = await context.supabase
       .from("purchase_bills" as never)
-      .select("id, status, posted_journal_id" as never)
+      .select("id, status, posted_journal_id, purchase_order_id" as never)
       .eq("id" as never, data.billId as never)
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!bill) throw new Error("Bill not found");
-    const b = bill as { status: string; posted_journal_id: string | null };
+    const b = bill as {
+      status: string;
+      posted_journal_id: string | null;
+      purchase_order_id?: string | null;
+    };
+    if (b.purchase_order_id) {
+      return workflowRpc<{ ok: boolean }>(context.supabase, "delete_purchase_order_bill_atomic", {
+        _company: data.companyId,
+        _bill: data.billId,
+      });
+    }
     if (b.status !== "draft" && b.status !== "awaiting_approval") {
       throw new Error("Only unposted draft/awaiting-approval bills can be deleted");
     }
@@ -1039,6 +1062,53 @@ export const deleteDraftBill = createServerFn({ method: "POST" })
     if (delErr) throw new Error(delErr.message);
     await recordBillAudit(context.supabase, data.companyId, "bill.draft.delete", data.billId, {});
     return { ok: true };
+  });
+
+/** Header-only edits preserve the source quantities and cumulative rounding allocation. */
+export const updatePurchaseOrderBillDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      billId: string;
+      billDate: string;
+      dueDate: string;
+      supplierInvoiceNumber: string;
+      memo: string;
+      fxRateToBase: number | null;
+      expectedUpdatedAt: string;
+    }) => {
+      if (!input.expectedUpdatedAt || !Number.isFinite(Date.parse(input.expectedUpdatedAt)))
+        throw new Error("Reload the bill before saving");
+      if (
+        input.fxRateToBase !== null &&
+        (!Number.isFinite(input.fxRateToBase) || input.fxRateToBase <= 0)
+      )
+        throw new Error("Enter a positive exchange rate");
+      return {
+        companyId: assertUuid(input.companyId),
+        billId: assertUuid(input.billId, "bill"),
+        billDate: assertOrderDate(input.billDate),
+        dueDate: assertOrderDate(input.dueDate),
+        supplierInvoiceNumber: input.supplierInvoiceNumber.trim().slice(0, 80),
+        memo: input.memo.trim().slice(0, 500),
+        fxRateToBase: input.fxRateToBase,
+        expectedUpdatedAt: input.expectedUpdatedAt,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "purchases.draft");
+    const { companyId, billId, ...payload } = data;
+    return workflowRpc<{ id: string; updatedAt: string }>(
+      context.supabase,
+      "update_po_bill_details",
+      {
+        _company: companyId,
+        _bill: billId,
+        _payload: payload,
+      },
+    );
   });
 
 export const getBill = createServerFn({ method: "GET" })
@@ -1097,6 +1167,8 @@ export const getBill = createServerFn({ method: "GET" })
       supplier_address_postal: string | null;
       supplier_address_country: string | null;
       posted_journal_id: string | null;
+      purchase_order_id: string | null;
+      updated_at: string;
       contact_id: string;
       approval_comment: string | null;
       rejection_reason: string | null;
@@ -1201,6 +1273,8 @@ export const getBill = createServerFn({ method: "GET" })
       amount_paid_minor: paid,
       amount_credited_minor: credited,
       posted_journal_id: b.posted_journal_id,
+      purchase_order_id: b.purchase_order_id ?? null,
+      updated_at: b.updated_at,
       contact_id: b.contact_id,
       approval_comment: b.approval_comment ?? null,
       rejection_reason: b.rejection_reason ?? null,
@@ -1454,6 +1528,7 @@ async function saveBillDraftCore(
 
   type ExistingBill = {
     id: string;
+    purchase_order_id?: string | null;
     status: string;
     contact_id: string;
     bill_date: string;
@@ -1478,6 +1553,11 @@ async function saveBillDraftCore(
     if (!row) throw new Error("Bill not found");
     priorHeader = row as Record<string, unknown>;
     existing = row as unknown as ExistingBill;
+    if (existing.purchase_order_id) {
+      throw new Error(
+        "Purchase-order bill lines are fixed. Edit invoice details separately, or delete the unposted bill and regenerate it from the order.",
+      );
+    }
     if (existing.status !== "draft" && existing.status !== "awaiting_approval") {
       throw new Error("Only draft or awaiting-approval bills can be edited");
     }
@@ -1698,6 +1778,54 @@ export const saveBillDraft = createServerFn({ method: "POST" })
   .inputValidator(parseBillDraftInput)
   .handler(async ({ data, context }) => saveBillDraftCore(data, context));
 
+/**
+ * Save and authorise in ONE call (AP parity with AR-11). The draft is saved first; if authorising
+ * then fails the draft id is returned with the error so the browser opens that draft instead of
+ * creating a second one on the next click.
+ */
+export const saveAndAuthoriseBill = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: Parameters<typeof parseBillDraftInput>[0] & { acknowledgeCreditLimit?: boolean }) => ({
+      ...parseBillDraftInput(input),
+      acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const { acknowledgeCreditLimit, ...draft } = data;
+    const saved = await saveBillDraftCore(draft, context);
+    try {
+      const res = await authoriseBillInternal(
+        context.supabase,
+        context.userId,
+        draft.companyId,
+        saved.id,
+        acknowledgeCreditLimit,
+      );
+      return {
+        id: saved.id,
+        journalId: res.journalId,
+        authoriseError: null as string | null,
+        statusHint: null as "posted_unauthorised" | null,
+      };
+    } catch (e) {
+      if (e instanceof JournalPostedUnlinkedError) {
+        return {
+          id: saved.id,
+          journalId: e.journalId,
+          authoriseError: e.message,
+          statusHint: e.statusHint,
+        };
+      }
+      return {
+        id: saved.id,
+        journalId: null as string | null,
+        authoriseError: e instanceof Error ? e.message : "Could not authorise the bill",
+        statusHint: null as "posted_unauthorised" | null,
+      };
+    }
+  });
+
 /** Copy a bill into a NEW draft dated today with the supplier's payment terms. */
 export const copyBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1823,6 +1951,7 @@ export async function authoriseBillInternal(
     id: string;
     contact_id: string;
     status: string;
+    purchase_order_id?: string | null;
     bill_date: string;
     currency_code: string;
     memo: string | null;
@@ -1841,6 +1970,12 @@ export async function authoriseBillInternal(
       tax_rate_bps?: number | null;
     }>;
   };
+  if (b.purchase_order_id) {
+    return workflowRpc<{ journalId: string }>(supabase, "authorise_purchase_order_bill_atomic", {
+      _company: companyId,
+      _bill: billId,
+    });
+  }
   if (b.status !== "draft" && b.status !== "awaiting_approval") {
     throw new Error("Only draft or awaiting-approval bills can be authorised");
   }
@@ -1886,6 +2021,7 @@ export async function authoriseBillInternal(
   };
   const threeWayRequired = await loadThreeWayMatchingRequired(supabase, companyId);
   const threeWay = await loadBillThreeWayMatch(supabase, companyId, {
+    id: billId,
     purchase_order_id: billWithPo.purchase_order_id,
     purchase_bill_lines: billWithPo.purchase_bill_lines,
   });
@@ -1941,7 +2077,8 @@ export async function authoriseBillInternal(
     if (!upErr) linkError = { message: "The bill changed while it was being authorised" };
   }
   if (linkError) {
-    throw new Error(
+    throw new JournalPostedUnlinkedError(
+      journalId,
       `The journal was posted but the bill could not be marked authorised (${linkError.message}). Open the bill and click Authorise again - it will not post twice.`,
     );
   }
@@ -1980,7 +2117,7 @@ export const getBillPurchaseOrderMatch = createServerFn({ method: "GET" })
     const { data: bill, error } = await context.supabase
       .from("purchase_bills" as never)
       .select(
-        "purchase_order_id, purchase_bill_lines(line_no, description, account_id, quantity, net_minor)" as never,
+        "id, purchase_order_id, purchase_bill_lines(line_no, description, account_id, quantity, net_minor)" as never,
       )
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.billId as never)
@@ -1992,6 +2129,7 @@ export const getBillPurchaseOrderMatch = createServerFn({ method: "GET" })
       context.supabase,
       data.companyId,
       bill as {
+        id: string;
         purchase_order_id: string | null;
         purchase_bill_lines: Array<{
           line_no?: number | null;
@@ -2030,7 +2168,7 @@ export const voidBill = createServerFn({ method: "POST" })
     const { data: bill, error } = await supabase
       .from("purchase_bills" as never)
       .select(
-        "id, status, bill_date, posted_journal_id, amount_paid_minor, amount_credited_minor" as never,
+        "id, status, bill_date, posted_journal_id, amount_paid_minor, amount_credited_minor, purchase_order_id" as never,
       )
       .eq("id" as never, data.billId as never)
       .eq("company_id" as never, data.companyId as never)
@@ -2039,11 +2177,20 @@ export const voidBill = createServerFn({ method: "POST" })
     if (!bill) throw new Error("Bill not found");
     const b = bill as {
       status: string;
+      purchase_order_id?: string | null;
       bill_date: string;
       posted_journal_id: string | null;
       amount_paid_minor: number;
       amount_credited_minor: number;
     };
+    if (b.purchase_order_id) {
+      return workflowRpc<{ ok: boolean }>(supabase, "void_purchase_order_bill_atomic", {
+        _company: data.companyId,
+        _bill: data.billId,
+        _reason: data.reason,
+        _date: data.voidDate ?? new Date().toISOString().slice(0, 10),
+      });
+    }
     if (b.status === "void") throw new Error("Bill already void");
     if (b.amount_paid_minor > 0 || b.amount_credited_minor > 0) {
       throw new Error("Cannot void a bill with payments or credits; reverse those first");
@@ -2306,6 +2453,98 @@ export const deleteDraftExpense = createServerFn({ method: "POST" })
       throw new Error("Only unposted draft expenses can be deleted");
     }
     return { ok: true };
+  });
+
+/**
+ * Void a posted direct expense: reverse its journal and mark status void.
+ * Drafts use deleteDraftExpense. Reason + void journal id are stored on the audit event
+ * (purchase_expenses has no void_* columns yet — status enum already includes void).
+ */
+export const voidPurchaseExpense = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; expenseId: string; reason: string; voidDate?: string }) => {
+      const reason = String(input.reason ?? "").trim();
+      if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
+      const voidDate =
+        input.voidDate && String(input.voidDate).trim() ? String(input.voidDate).trim() : null;
+      if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
+        throw new Error("Void date must be YYYY-MM-DD");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        expenseId: assertUuid(input.expenseId, "expense"),
+        reason: reason.slice(0, 500),
+        voidDate,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.authorise");
+    const { data: row, error } = await supabase
+      .from("purchase_expenses" as never)
+      .select("id, status, expense_date, posted_journal_id" as never)
+      .eq("id" as never, data.expenseId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Expense not found");
+    const e = row as {
+      status: string;
+      expense_date: string;
+      posted_journal_id: string | null;
+    };
+    if (e.status === "void") throw new Error("Expense already void");
+    if (e.status === "draft" || !e.posted_journal_id) {
+      throw new Error("Only posted expenses can be voided — delete the draft instead");
+    }
+    if (e.status !== "paid") {
+      throw new Error(`Cannot void an expense in status ${e.status.replace(/_/g, " ")}`);
+    }
+    const { assertExpenseVoidDate } = await import("@/lib/purchases/expense-void");
+    const today = new Date().toISOString().slice(0, 10);
+    const voidDate = assertExpenseVoidDate({
+      expenseDate: e.expense_date,
+      voidDate: data.voidDate ?? today,
+      today,
+    });
+    const voidJournalId = await voidPostedDocument(
+      supabase,
+      e.posted_journal_id,
+      `purchase_expense:${data.expenseId}:void`,
+      voidDate,
+    );
+    const { data: marked, error: upErr } = await supabase
+      .from("purchase_expenses" as never)
+      .update({
+        status: "void",
+        updated_at: new Date().toISOString(),
+      } as never)
+      .eq("id" as never, data.expenseId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("status" as never, "paid" as never)
+      .select("id");
+    if (upErr) throw new Error(upErr.message);
+    if (!marked || (marked as unknown[]).length === 0) {
+      throw new Error(
+        `The reversing journal was posted (${voidJournalId.slice(0, 8)}…) but the expense status could not be marked void. Reload and click Void again — it will not reverse twice.`,
+      );
+    }
+    await recordBillAudit(
+      supabase,
+      data.companyId,
+      "expense.void",
+      data.expenseId,
+      {
+        void_journal_id: voidJournalId,
+        void_date: voidDate,
+        reason: data.reason,
+        posted_journal_id: e.posted_journal_id,
+      },
+      "purchase_expense",
+    );
+    return { voidJournalId, voidDate };
   });
 
 // ---- Supplier payments ----
@@ -2955,7 +3194,8 @@ async function authoriseCreditNoteInternal(
     .eq("status" as never, "draft" as never)
     .select("id");
   if (markErr || !marked || (marked as unknown[]).length === 0) {
-    throw new Error(
+    throw new JournalPostedUnlinkedError(
+      journalId,
       `The journal was posted but the credit note could not be marked authorised (${markErr?.message ?? "it changed while saving"}). Open it and click Authorise again - it will not post twice.`,
     );
   }
@@ -2992,6 +3232,8 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       companyId: string;
+      /** When set, updates this draft instead of allocating a new credit number. */
+      creditNoteId?: string;
       contactId: string;
       creditDate: string;
       currencyCode: string;
@@ -3011,6 +3253,7 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
       return {
         fxRateToBase: fx !== null && fx !== 1 ? fx : null,
         companyId: assertUuid(input.companyId),
+        creditNoteId: input.creditNoteId ? assertUuid(input.creditNoteId, "credit note") : null,
         contactId: assertUuid(input.contactId, "supplier"),
         creditDate: input.creditDate,
         currencyCode: (input.currencyCode ?? "").toUpperCase(),
@@ -3052,42 +3295,22 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
     if (supplierErr) throw new Error(supplierErr.message);
     if (!supplier) throw new Error("Supplier not found in this organisation");
 
-    const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
-    const creditNumber = await allocateDocumentNumber(
-      supabase as never,
-      data.companyId,
-      "purchase_credit_note",
-    );
+    let creditId: string;
+    let creditNumberLabel = "draft";
 
-    const { data: cn, error } = await supabase
-      .from("purchase_credit_notes" as never)
-      .insert({
-        company_id: data.companyId,
-        contact_id: data.contactId,
-        credit_number: creditNumber,
-        credit_date: data.creditDate,
-        currency_code: data.currencyCode,
-        memo: data.memo,
-        subtotal_minor: subtotal,
-        tax_minor: tax,
-        total_minor: total,
-        status: "draft",
-        created_by: userId,
-        ...(data.fxRateToBase != null ? { fx_rate_to_base: data.fxRateToBase } : {}),
-      } as never)
-      .select("id")
-      .single();
-    if (error) {
-      if (data.fxRateToBase != null && /fx_rate_to_base|schema cache/i.test(error.message)) {
-        throw new Error(
-          "Foreign-currency credit notes need a database update that has not been applied yet.",
-        );
+    if (data.creditNoteId) {
+      const existing = await loadCreditNote(supabase, data.companyId, data.creditNoteId);
+      if (existing.status !== "draft") {
+        throw new Error("Only draft credit notes can be updated from this form");
       }
-      throw new Error(error.message);
-    }
-    const creditId = (cn as { id: string }).id;
-    const { error: lineErr } = await supabase.from("purchase_credit_note_lines" as never).insert(
-      data.lines.map((l, i) => ({
+      creditId = existing.id;
+      creditNumberLabel = existing.credit_number ?? creditId.slice(0, 8);
+      const priorLines = existing.purchase_credit_note_lines.map((l) => ({
+        company_id: data.companyId,
+        credit_note_id: creditId,
+        ...l,
+      }));
+      const newLines = data.lines.map((l, i) => ({
         company_id: data.companyId,
         credit_note_id: creditId,
         line_no: i + 1,
@@ -3095,16 +3318,93 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
         account_id: l.accountId,
         net_minor: l.netMinor,
         tax_minor: l.taxMinor,
-      })) as never,
-    );
-    if (lineErr) {
-      await supabase
-        .from("purchase_credit_notes" as never)
+      }));
+      const { error: delErr } = await supabase
+        .from("purchase_credit_note_lines" as never)
         .delete()
+        .eq("company_id" as never, data.companyId as never)
+        .eq("credit_note_id" as never, creditId as never);
+      if (delErr) throw new Error(delErr.message);
+      const { error: insErr } = await supabase
+        .from("purchase_credit_note_lines" as never)
+        .insert(newLines as never);
+      if (insErr) {
+        await supabase.from("purchase_credit_note_lines" as never).insert(priorLines as never);
+        throw new Error(`Could not save credit note lines: ${insErr.message}`);
+      }
+      const { error: upErr } = await supabase
+        .from("purchase_credit_notes" as never)
+        .update({
+          contact_id: data.contactId,
+          credit_date: data.creditDate,
+          currency_code: data.currencyCode,
+          memo: data.memo,
+          subtotal_minor: subtotal,
+          tax_minor: tax,
+          total_minor: total,
+          updated_at: new Date().toISOString(),
+          ...(data.fxRateToBase != null ? { fx_rate_to_base: data.fxRateToBase } : {}),
+        } as never)
         .eq("company_id" as never, data.companyId as never)
         .eq("id" as never, creditId as never)
         .eq("status" as never, "draft" as never);
-      throw new Error(`Could not save credit note lines: ${lineErr.message}`);
+      if (upErr) throw new Error(upErr.message);
+    } else {
+      const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
+      const creditNumber = await allocateDocumentNumber(
+        supabase as never,
+        data.companyId,
+        "purchase_credit_note",
+      );
+      creditNumberLabel = creditNumber;
+
+      const { data: cn, error } = await supabase
+        .from("purchase_credit_notes" as never)
+        .insert({
+          company_id: data.companyId,
+          contact_id: data.contactId,
+          credit_number: creditNumber,
+          credit_date: data.creditDate,
+          currency_code: data.currencyCode,
+          memo: data.memo,
+          subtotal_minor: subtotal,
+          tax_minor: tax,
+          total_minor: total,
+          status: "draft",
+          created_by: userId,
+          ...(data.fxRateToBase != null ? { fx_rate_to_base: data.fxRateToBase } : {}),
+        } as never)
+        .select("id")
+        .single();
+      if (error) {
+        if (data.fxRateToBase != null && /fx_rate_to_base|schema cache/i.test(error.message)) {
+          throw new Error(
+            "Foreign-currency credit notes need a database update that has not been applied yet.",
+          );
+        }
+        throw new Error(error.message);
+      }
+      creditId = (cn as { id: string }).id;
+      const { error: lineErr } = await supabase.from("purchase_credit_note_lines" as never).insert(
+        data.lines.map((l, i) => ({
+          company_id: data.companyId,
+          credit_note_id: creditId,
+          line_no: i + 1,
+          description: l.description,
+          account_id: l.accountId,
+          net_minor: l.netMinor,
+          tax_minor: l.taxMinor,
+        })) as never,
+      );
+      if (lineErr) {
+        await supabase
+          .from("purchase_credit_notes" as never)
+          .delete()
+          .eq("company_id" as never, data.companyId as never)
+          .eq("id" as never, creditId as never)
+          .eq("status" as never, "draft" as never);
+        throw new Error(`Could not save credit note lines: ${lineErr.message}`);
+      }
     }
 
     if (!data.authorise)
@@ -3112,6 +3412,8 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
         id: creditId,
         journalId: null as string | null,
         allocationError: null as string | null,
+        authoriseError: null as string | null,
+        statusHint: null as "posted_unauthorised" | null,
       };
 
     try {
@@ -3121,11 +3423,30 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
         creditId,
         data.allocations,
       );
-      return { id: creditId, journalId: result.journalId, allocationError: result.allocationError };
+      return {
+        id: creditId,
+        journalId: result.journalId,
+        allocationError: result.allocationError,
+        authoriseError: null as string | null,
+        statusHint: null as "posted_unauthorised" | null,
+      };
     } catch (authoriseError) {
-      throw new Error(
-        `The credit note was saved as draft ${creditNumber} but could not be authorised: ${(authoriseError as Error).message}`,
-      );
+      if (authoriseError instanceof JournalPostedUnlinkedError) {
+        return {
+          id: creditId,
+          journalId: authoriseError.journalId,
+          allocationError: null as string | null,
+          authoriseError: authoriseError.message,
+          statusHint: authoriseError.statusHint,
+        };
+      }
+      return {
+        id: creditId,
+        journalId: null as string | null,
+        allocationError: null as string | null,
+        authoriseError: `The credit note was saved as draft ${creditNumberLabel} but could not be authorised: ${(authoriseError as Error).message}`,
+        statusHint: null as "posted_unauthorised" | null,
+      };
     }
   });
 
@@ -3841,6 +4162,11 @@ export const listPurchaseOrders = createServerFn({ method: "GET" })
         total_minor: number;
         billed_bill_id: string | null;
         version: number;
+        approval_state: "draft" | "pending" | "approved" | "rejected";
+        supplier_reference: string | null;
+        expected_delivery_date: string | null;
+        acknowledged_on: string | null;
+        billable_quantity: number;
         contacts: { name: string } | null;
       }>;
       total: number;
@@ -3942,6 +4268,81 @@ export const savePurchaseOrder = createServerFn({ method: "POST" })
       context.supabase,
       "save_purchase_order_atomic",
       { _company: companyId, _payload: payload },
+    );
+  });
+
+/** Copy a purchase order into a NEW draft dated today (receipt/bill state is not copied). */
+export const copyPurchaseOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; orderId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    orderId: assertUuid(input.orderId, "order"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+    const { data: row, error } = await supabase
+      .from("purchase_orders" as never)
+      .select(
+        "contact_id, memo, currency_code, purchase_order_lines(description, account_id, quantity, unit_price_minor, net_minor, tax_rate_bps, line_no)" as never,
+      )
+      .eq("id" as never, data.orderId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("purchase_order_lines.company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Purchase order not found");
+
+    const src = row as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      purchase_order_lines: Array<{
+        description: string;
+        account_id: string | null;
+        quantity: number;
+        unit_price_minor: number;
+        net_minor: number;
+        tax_rate_bps?: number | null;
+        line_no?: number | null;
+      }>;
+    };
+
+    const { mapPurchaseOrderLinesForCopy } = await import("@/lib/purchases/copy-purchase-order");
+    const mapped = mapPurchaseOrderLinesForCopy(src.purchase_order_lines ?? []);
+    if (!mapped.length) throw new Error("Purchase order has no lines to copy");
+
+    const currencyCode = String(src.currency_code || "")
+      .trim()
+      .toUpperCase();
+    if (!/^[A-Z]{3}$/.test(currencyCode)) throw new Error("Choose a valid currency");
+
+    const lines = validatePurchaseOrderLines(mapped).map(
+      ({ description, accountId, quantity, unitPriceMinor, discountMinor, taxRateBps }) => ({
+        description,
+        accountId,
+        quantity,
+        unitPriceMinor,
+        discountMinor,
+        taxRateBps,
+      }),
+    );
+    const today = new Date().toISOString().slice(0, 10);
+    const payload = {
+      contactId: assertUuid(src.contact_id, "supplier"),
+      orderDate: assertOrderDate(today),
+      currencyCode,
+      memo: (src.memo ?? "").trim().slice(0, 500),
+      lines,
+      requestId: crypto.randomUUID(),
+      orderId: null,
+      version: null,
+    };
+
+    return workflowRpc<{ id: string; orderNumber: string; version: number }>(
+      supabase,
+      "save_purchase_order_atomic",
+      { _company: data.companyId, _payload: payload },
     );
   });
 

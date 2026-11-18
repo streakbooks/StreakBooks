@@ -23,6 +23,49 @@ const bill = {
 };
 
 describe("evaluateThreeWayMatch", () => {
+  it("rejects reuse of a received order line across bill lines", () => {
+    const result = evaluateThreeWayMatch({
+      orderLines: [order],
+      billLines: [bill, { ...bill, lineNo: 2 }],
+      receiptQuantitiesAvailable: true,
+    });
+    expect(result.status).toBe("fail");
+    expect(() => assertThreeWayMatchForAuthorise(result, true)).toThrow(/no matching/);
+  });
+
+  it.each([
+    { ...bill, accountId: "other-account" },
+    { ...bill, description: "Other goods" },
+  ])("rejects unrelated bill lines even when line numbers agree", (unrelated) => {
+    expect(
+      evaluateThreeWayMatch({
+        orderLines: [order],
+        billLines: [unrelated],
+        receiptQuantitiesAvailable: true,
+      }).status,
+    ).toBe("fail");
+  });
+
+  it("matches a renumbered partial bill to the correct order line", () => {
+    const result = evaluateThreeWayMatch({
+      orderLines: [order, { ...order, lineNo: 2, description: "Other goods", netMinor: 20000 }],
+      billLines: [{ ...bill, description: "Other goods", netMinor: 20000 }],
+      receiptQuantitiesAvailable: true,
+    });
+    expect(result.status).toBe("pass");
+    expect(result.lines[0]?.lineNo).toBe(2);
+  });
+
+  it("rejects charging the full ordered amount for a partial quantity", () => {
+    const result = evaluateThreeWayMatch({
+      orderLines: [order],
+      billLines: [{ ...bill, quantity: 5 }],
+      receiptQuantitiesAvailable: true,
+    });
+    expect(result.status).toBe("fail");
+    expect(result.issues.join(" ")).toMatch(/ordered rate/);
+  });
+
   it("passes when order, receipt and bill agree", () => {
     const result = evaluateThreeWayMatch({
       orderLines: [order],

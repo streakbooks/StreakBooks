@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Updated** | 2026-11-17 |
-| **Baseline commit** | `2ba48da1` (GitHub `main` after Coding Memory #225) |
+| **Baseline commit** | `1056a3f2` (GitHub `main` after banking match permission #261) |
 | **Programme** | Complete module coverage & zero-gap execution (originality-first) |
 | **Authoritative repo** | https://github.com/linkbusinessadvisory/LinkBooks |
 
@@ -29,15 +29,19 @@
 
 | Item | Topic | Tip |
 |------|-------|-----|
-| #246–#255, `b090bfc8` | Regression, banking honesty, copy credits, AP totals | through `40480743` |
+| #246–#256, `b090bfc8` | Banking honesty, copy paths, AP totals, copy quote | through `98d93735` |
 | [#225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225) | Coding Memory events/suggestions | `2ba48da1` |
-| Copy quote | In flight / next PR | — |
+| [#257](https://github.com/linkbusinessadvisory/LinkBooks/pull/257) | AR authorise totals + journal reverse gate | `e816268e` |
+| [#258](https://github.com/linkbusinessadvisory/LinkBooks/pull/258) | AP/AR save-and-authorise posted-unlinked honesty | `c24ac11a` |
+| [#259](https://github.com/linkbusinessadvisory/LinkBooks/pull/259) | Tracker refresh (#257/#258 + Actions blocker) | `2ce28a7e` |
+| [#260](https://github.com/linkbusinessadvisory/LinkBooks/pull/260) | Copy purchase order | `6ddbd729` |
+| [#261](https://github.com/linkbusinessadvisory/LinkBooks/pull/261) | Banking match permission fail-closed | `1056a3f2` |
 
 ## Critical blockers (production-ready cannot clear these alone)
 
 | Blocker | Evidence | Owner |
 |---------|----------|-------|
-| GitHub Actions jobs `steps=[]` | Runs fail ~1–2s; runners `total_count=0`; org billing API 404/403 | Org admin |
+| GitHub Actions jobs fail ~1–2s | Runs e.g. [44124992677](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44124992677); runners `total_count=0`; jobs `steps=[]` | Org admin |
 | Coding Memory / purchase SQL on disk ≠ applied | Migration `20261117104621_bank_coding_memory_events.sql` committed; **live apply not done** | Explicit migrate auth |
 | Authenticated staging / production lifecycle | Not executed in this tracker | Ops + auth |
 | Full module audit / competitor gap depth | Still Partial for most of M-01…M-42 | Continued programme |
@@ -52,7 +56,7 @@
 
 ## Next executable steps
 
-1. Ship copy-quote PR; continue P0 honesty gaps.
-2. Org admin: restore Actions minutes.
+1. Ship void posted purchase expense; then AP credit update-on-retry if still needed.
+2. Org admin: restore Actions minutes / hosted runners.
 3. Isolated DB: apply Coding Memory migration; run fixture suite — then staging with auth.
 4. Do **not** mark modules Complete and Verified without staging/production evidence.

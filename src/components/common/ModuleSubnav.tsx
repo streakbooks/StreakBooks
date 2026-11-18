@@ -90,7 +90,7 @@ export function ModuleSubnav({
   return (
     <nav
       aria-label={label + " sections"}
-      className="mb-5 flex min-w-0 items-center gap-1 border-b border-border pb-1 print:hidden"
+      className="mb-3 flex min-w-0 items-center gap-1 border-b border-border pb-1 print:hidden"
     >
       <div
         ref={stripRef}
@@ -107,7 +107,7 @@ export function ModuleSubnav({
               activeOptions={{ exact: item.exact ?? false }}
               aria-current={isActive(item) ? "page" : undefined}
               className={cn(
-                "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-transparent px-3 py-2 text-sm font-medium text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow] duration-[var(--lb-duration-fast)] hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none pointer-coarse:min-h-11",
+                "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2.5 text-[0.8125rem] font-medium text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow] duration-[var(--lb-duration-fast)] hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none pointer-coarse:min-h-10",
                 isActive(item) &&
                   "border-border bg-accent text-foreground shadow-[0_1px_2px_color-mix(in_oklab,var(--foreground)_6%,transparent)]",
               )}
@@ -132,7 +132,7 @@ export function ModuleSubnav({
             title="Earlier sections"
             disabled={!edges.left}
             onClick={() => scrollSections(-1)}
-            className="size-9"
+            className="size-8"
           >
             <ChevronLeft className="size-4" aria-hidden />
           </Button>
@@ -144,7 +144,7 @@ export function ModuleSubnav({
             title="Later sections"
             disabled={!edges.right}
             onClick={() => scrollSections(1)}
-            className="size-9"
+            className="size-8"
           >
             <ChevronRight className="size-4" aria-hidden />
           </Button>
@@ -154,7 +154,7 @@ export function ModuleSubnav({
         destination={settings}
         mode="route"
         ariaLabel={label + " settings"}
-        className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
+        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-[0.8125rem] font-medium text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-10"
       >
         <Settings2 className="size-4" aria-hidden />
         <span className="hidden lg:inline">Settings</span>

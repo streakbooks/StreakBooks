@@ -29,7 +29,8 @@
 | Full-page Create + compact density Batch 37 | Merged | PR #283 → `fd080f6a` |
 | Remove redundant line move arrows | Merged | PR #284 → `fc605a7c` |
 | Remaining New screens + money/journal routes Batch 39 | Merged | PR #285 → `f20967ac` |
-| Density acceptance Batch 40 | In progress | `FormControlShell` widths, 2 default lines, Playwright density suite |
+| Density acceptance Batch 40 | Merged | PR #286 → `b106f471` |
+| Grouped module nav Batch 41 | In progress | PR #287 — HR eight-group IA + shared GroupedModuleSubnav; CRM/PM/Expenses |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

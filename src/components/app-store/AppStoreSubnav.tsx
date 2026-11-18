@@ -1,8 +1,18 @@
 import { Link } from "@tanstack/react-router";
+import {
+  GroupedModuleSubnav,
+  groupedModuleSectionClassName,
+} from "@/components/common/GroupedModuleSubnav";
 import { useCan } from "@/hooks/use-can";
 import { APP_STORE_SECTIONS, type AppStoreSectionKey } from "@/lib/app-store/sections";
 import type { Permission } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
+
+const APP_STORE_GROUPS = [
+  { key: "discover", label: "Discover" },
+  { key: "manage", label: "My apps" },
+  { key: "operations", label: "Operations" },
+  { key: "admin", label: "Administration" },
+] as const;
 
 export function AppStoreSubnav({ current }: { current: AppStoreSectionKey }) {
   const { can } = useCan();
@@ -11,42 +21,38 @@ export function AppStoreSubnav({ current }: { current: AppStoreSectionKey }) {
   );
 
   return (
-    <nav
-      aria-label="App Store sections"
-      className="mb-6 flex min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain border-b border-border pb-3 print:hidden"
-    >
-      {visible.map((item) => {
-        const active = current === item.key;
-        const className = cn(
-          "inline-flex min-h-10 shrink-0 items-center rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11 motion-reduce:transition-none",
-          active
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground",
-        );
-        if (item.key === "overview") {
-          return (
-            <Link
-              key={item.key}
-              to="/app-store"
-              className={className}
-              aria-current={active ? "page" : undefined}
-            >
-              {item.label}
-            </Link>
-          );
-        }
-        return (
+    <GroupedModuleSubnav
+      label="App Store"
+      groups={APP_STORE_GROUPS}
+      sections={visible}
+      current={current}
+      overview={
+        visible.some((section) => section.key === "overview") && current !== "overview" ? (
           <Link
-            key={item.key}
+            to="/app-store"
+            className="inline-flex h-8 items-center rounded-md border border-border px-2.5 text-[0.8125rem] font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-10 motion-reduce:transition-none"
+          >
+            Overview
+          </Link>
+        ) : null
+      }
+      renderSection={(section, active) => {
+        const className = groupedModuleSectionClassName(active);
+        return section.key === "overview" ? (
+          <Link to="/app-store" className={className} aria-current={active ? "page" : undefined}>
+            {section.label}
+          </Link>
+        ) : (
+          <Link
             to="/app-store/$section"
-            params={{ section: item.key }}
+            params={{ section: section.key }}
             className={className}
             aria-current={active ? "page" : undefined}
           >
-            {item.label}
+            {section.label}
           </Link>
         );
-      })}
-    </nav>
+      }}
+    />
   );
 }

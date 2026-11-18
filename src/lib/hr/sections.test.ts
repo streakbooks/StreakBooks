@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { HR_GROUPS } from "@/lib/hr/groups";
 import { HR_SECTIONS, HR_SUBNAV, isHrSectionKey, hrSection } from "@/lib/hr/sections";
 
 describe("HR sections", () => {
@@ -32,6 +33,27 @@ describe("HR sections", () => {
     ]) {
       expect(keys.has(required as never)).toBe(true);
     }
+  });
+
+  it("maps sections into the premium eight-group IA without changing paths", () => {
+    const groupKeys = new Set(HR_GROUPS.map((group) => group.key));
+    expect([...groupKeys]).toEqual([
+      "overview",
+      "people",
+      "recruitment",
+      "time",
+      "performance",
+      "compensation",
+      "reports",
+      "admin",
+    ]);
+    for (const section of HR_SECTIONS) {
+      expect(groupKeys.has(section.group as never)).toBe(true);
+    }
+    expect(hrSection("employees").group).toBe("people");
+    expect(hrSection("leave").group).toBe("time");
+    expect(hrSection("compensation").group).toBe("compensation");
+    expect(hrSection("recruitment").path).toBe("/hr/recruitment");
   });
 
   it("keeps subnav paths aligned with section definitions", () => {

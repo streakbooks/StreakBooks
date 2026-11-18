@@ -40,7 +40,8 @@
 | Component | Behaviour contract |
 | --------- | ------------------ |
 | PageHeader | Title, optional crumbs (native links), one primary action region |
-| ModuleSubnav | All sections as native links; scrollable; no hidden essential items |
+| ModuleSubnav | Flat scrollable section strip (Sales/Purchases/Banking); compact 32px items |
+| GroupedModuleSubnav | Two-row dense modules: group segmented controls + native section Links |
 | ListWorkspace | Header + optional subnav/toolbar/insight rail |
 | RecordWorkspace | Header + related + body + timeline + insight rail |
 | TransactionWorkspace | Header + details + lines + totals + support + optional sticky actions |

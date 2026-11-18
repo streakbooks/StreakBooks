@@ -16,12 +16,12 @@ export function DeveloperSubnav({ current }: { current: DeveloperPortalSectionKe
   return (
     <nav
       aria-label="Developer portal sections"
-      className="mb-6 flex flex-wrap gap-2 border-b border-border pb-3"
+      className="mb-3 flex min-w-0 flex-wrap gap-1 border-b border-border pb-2 print:hidden"
     >
       {visible.map((item) => {
         const active = current === item.key;
         const className = cn(
-          "rounded-md px-3 py-1.5 text-sm font-medium transition-colors pointer-coarse:min-h-11 pointer-coarse:inline-flex pointer-coarse:items-center",
+          "inline-flex h-8 items-center rounded-md px-2.5 text-[0.8125rem] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-10",
           active
             ? "bg-primary text-primary-foreground"
             : "text-muted-foreground hover:bg-muted hover:text-foreground",

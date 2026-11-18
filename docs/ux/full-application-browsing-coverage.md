@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Files malformed runtime search container handling (2026-11-19)
+
+- `src/lib/documents/files-navigation.ts`: null, undefined, primitive and array search containers now fail closed before property access; commit `e46d86a0234d1f149d865bc04713155bf00d5736`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: malformed container regression; commit `a745640ef3d88a847c4b9c5a32ae621ad2a3e98d`. **WRITTEN, NOT RUN.**
+- Manifest partial evidence commit `4438d5de38e9eb0d4cbb1c32d78d54218d05140e`. Inventory guard, typecheck, lint, Vitest, build, authenticated browser, accessibility, RLS and accounting regression **NOT RUN**. Baseline 21 modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. Fully verified **0/21 modules, 0/15 supporting routes, 0/12 batches**. No main, manual CI, production DB or deployment changes.
+
 ### Files own-query URL restoration (2026-11-19)
 
 - `src/lib/documents/files-navigation.ts`: only own URL query fields are accepted; inherited prototype values for folder, file, search, type, sort, view and page are ignored. Commit `38ab1375691dd0f702d89fe3d8900ed05b57d245`. **SOURCE ONLY; NOT RUN.**

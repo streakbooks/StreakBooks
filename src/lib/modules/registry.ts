@@ -113,7 +113,7 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
   {
     id: "pos",
     label: "Point of Sale",
-    description: "Catalogue preview, register setup and cash-float sessions",
+    description: "Catalogue cash checkout, register setup and drawer sessions",
     path: "/pos",
     group: "money",
     inSidebar: true,
@@ -123,7 +123,7 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
     premiumStatus: "in-progress",
     notes:
-      "POS view permission, location-scoped register sessions; checkout and cash movements remain unavailable.",
+      "Cash checkout for non-stock catalogue items, location-scoped register sessions and controlled drawer movements; migration not live until separately authorized.",
   },
   {
     id: "sales",

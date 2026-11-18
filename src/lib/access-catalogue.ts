@@ -62,6 +62,21 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
         detail: "Required together with close-register permission.",
       },
       {
+        permission: "pos.sale.create",
+        label: "Complete cash sales",
+        detail: "Checkout catalogue items for cash on an open register session.",
+      },
+      {
+        permission: "pos.cash.adjust",
+        label: "Adjust drawer cash",
+        detail: "Record controlled cash in or cash out on an open session.",
+      },
+      {
+        permission: "pos.refund.create",
+        label: "Refund cash sales",
+        detail: "Reverse a completed cash sale while the original session stays open.",
+      },
+      {
         permission: "pos.audit.view",
         label: "Review POS audit",
         detail: "Reserved for the POS audit-review workflow.",

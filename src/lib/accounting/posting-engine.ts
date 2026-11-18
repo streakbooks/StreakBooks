@@ -30,6 +30,8 @@ export const JOURNAL_SOURCE_TYPES = [
   "depreciation",
   "asset_disposal",
   "payroll",
+  "pos_sale",
+  "pos_refund",
 ] as const;
 export type JournalSourceType = (typeof JOURNAL_SOURCE_TYPES)[number];
 

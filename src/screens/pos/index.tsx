@@ -1,6 +1,6 @@
 import { PosNavigation } from "@/components/pos/PosNavigation";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
@@ -12,9 +12,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fromMinorUnits } from "@/lib/accounting/money";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { previewPosCatalogueCart, searchPosCatalogue } from "@/lib/pos/catalogue-quote.functions";
+import { getPosWorkspace } from "@/lib/pos/registers.functions";
+import { completePosCashSale, getPosRecentSales } from "@/lib/pos/cash-sale.functions";
+import { posCountFromDisplay, type PosSession } from "@/lib/pos/register-contracts";
+import type { PosCashSaleResult } from "@/lib/pos/cash-sale";
 
 type CartLine = { productId: string; name: string; quantity: number };
+const workspaceKey = (companyId: string) => ["pos-registers", companyId];
+
 export function PosScreen() {
   const context = useActiveCompany();
   const canView = useCanDo("pos.view");
@@ -24,7 +31,7 @@ export function PosScreen() {
     return (
       <CompanyEmptyState
         title="No organisation selected"
-        description="Open a company to preview its catalogue."
+        description="Open a company to use the point of sale."
       />
     );
   if (!canView)
@@ -41,8 +48,22 @@ function CatalogueCart({ companyId }: { companyId: string }) {
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [sessionId, setSessionId] = useState("");
+  const [tendered, setTendered] = useState("");
+  const [checkoutError, setCheckoutError] = useState<unknown>(null);
+  const [lastSale, setLastSale] = useState<PosCashSaleResult | null>(null);
+  const saleOperation = useRef<{ payload: string; id: string } | null>(null);
   const lookup = useServerFn(searchPosCatalogue);
   const preview = useServerFn(previewPosCatalogueCart);
+  const workspaceFn = useServerFn(getPosWorkspace);
+  const completeSale = useServerFn(completePosCashSale);
+  const recentFn = useServerFn(getPosRecentSales);
+  const client = useQueryClient();
+  const workspace = useQuery({
+    queryKey: workspaceKey(companyId),
+    queryFn: () => workspaceFn({ data: { companyId } }),
+    gcTime: 0,
+  });
   const products = useQuery({
     queryKey: ["pos-catalogue", companyId, term],
     queryFn: () => lookup({ data: { companyId, q: term } }),
@@ -61,7 +82,45 @@ function CatalogueCart({ companyId }: { companyId: string }) {
     staleTime: 0,
     gcTime: 0,
   });
+  const recentSales = useQuery({
+    queryKey: ["pos-recent-sales", companyId],
+    queryFn: () => recentFn({ data: { companyId } }),
+    enabled: workspace.data?.canSell === true,
+    gcTime: 0,
+  });
+  const openSessions = workspace.data?.openSessions ?? [];
+  const selectedSession: PosSession | undefined = openSessions.find((row) => row.id === sessionId);
+  const canCheckout = workspace.data?.canSell && openSessions.length > 0 && selectedSession;
+  useEffect(() => {
+    if (openSessions.length === 1) setSessionId(openSessions[0]!.id);
+    if (openSessions.length === 0) setSessionId("");
+  }, [openSessions]);
+  const saleMutation = useMutation({
+    mutationFn: (data: {
+      sessionId: string;
+      operationId: string;
+      cashTenderedMinor: string;
+    }) =>
+      completeSale({
+        data: {
+          companyId,
+          sessionId: data.sessionId,
+          operationId: data.operationId,
+          cashTenderedMinor: data.cashTenderedMinor,
+          lines: cart.map(({ productId, quantity }) => ({ productId, quantity })),
+        },
+      }),
+    onSuccess: async (result) => {
+      setLastSale(result);
+      setCart([]);
+      setTendered("");
+      saleOperation.current = null;
+      await client.invalidateQueries({ queryKey: workspaceKey(companyId) });
+      await client.invalidateQueries({ queryKey: ["pos-recent-sales", companyId] });
+    },
+  });
   function add(productId: string, name: string) {
+    setLastSale(null);
     setCart((lines) => {
       const existing = lines.find((line) => line.productId === productId);
       if (existing)
@@ -71,18 +130,99 @@ function CatalogueCart({ companyId }: { companyId: string }) {
       return lines.length >= 100 ? lines : [...lines, { productId, name, quantity: 1 }];
     });
   }
+  function submitSale(event: FormEvent) {
+    event.preventDefault();
+    if (!canCheckout || saleMutation.isPending || !quote.data) return;
+    try {
+      const cashTenderedMinor = posCountFromDisplay(tendered, quote.data.currency);
+      const gross = BigInt(quote.data.grossMinor);
+      if (BigInt(cashTenderedMinor) < gross) {
+        throw new Error("Cash tendered must cover the sale total");
+      }
+      const payload = JSON.stringify([
+        companyId,
+        sessionId,
+        cashTenderedMinor,
+        cart.map((line) => [line.productId, line.quantity]),
+      ]);
+      if (saleOperation.current?.payload !== payload)
+        saleOperation.current = { payload, id: crypto.randomUUID() };
+      setCheckoutError(null);
+      saleMutation.mutate({
+        sessionId,
+        operationId: saleOperation.current.id,
+        cashTenderedMinor,
+      });
+    } catch (failure) {
+      setCheckoutError(failure);
+    }
+  }
+  const displayCurrency =
+    quote.data?.currency ?? selectedSession?.currency_code ?? workspace.data?.currency ?? "USD";
+  const changeMinor =
+    quote.data && tendered.trim()
+      ? (() => {
+          try {
+            const tenderedMinor = posCountFromDisplay(tendered, quote.data.currency);
+            const gross = BigInt(quote.data.grossMinor);
+            const tenderedValue = BigInt(tenderedMinor);
+            return tenderedValue >= gross ? (tenderedValue - gross).toString() : null;
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+  const checkoutNote = !workspace.data
+    ? "Loading register sessions…"
+    : !workspace.data.canSell
+      ? "You can preview catalogue prices, but cash checkout needs pos.sale.create and an open register session."
+      : openSessions.length === 0
+        ? "Open a register session on Registers & sessions before completing a cash sale."
+        : "Cash only — card and wallet payments are not available in this batch.";
   return (
     <ListWorkspace
       title="Point of Sale"
       subnav={<PosNavigation />}
-      description="Catalogue cart preview"
+      description="Catalogue cash checkout"
       breadcrumbs={[{ label: "Point of Sale" }]}
     >
       <p className="mb-4 rounded-lg border border-border bg-muted p-4 text-sm" role="note">
-        Preview only. Uses catalogue prices and company tax settings; customer pricing, promotions
-        and jurisdiction-specific tax rules are not applied. Carts clear when you leave or change
-        company. Checkout, payments and stock tracking are not available yet.
+        {checkoutNote} Prices use catalogue data and company tax settings; promotions and
+        jurisdiction-specific rules are not applied. Carts clear when you leave or change company.
+        Stock and COGS are not adjusted.
       </p>
+      <QueryErrorState queries={[workspace]} />
+      {workspace.isSuccess && canCheckout ? (
+        <section aria-label="Register session" className="mb-4 space-y-2 rounded-lg border p-4">
+          <Label htmlFor="pos-session">Open session</Label>
+          {openSessions.length === 1 ? (
+            <p id="pos-session">
+              {workspace.data.registers.find((row) => row.id === selectedSession.register_id)?.name ??
+                "Register"}{" "}
+              · Expected cash {selectedSession.currency_code}{" "}
+              {fromMinorUnits(BigInt(selectedSession.expected_cash_minor), selectedSession.currency_code)}
+            </p>
+          ) : (
+            <select
+              id="pos-session"
+              className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={sessionId}
+              onChange={(event) => setSessionId(event.target.value)}
+            >
+              <option value="">Choose session</option>
+              {openSessions.map((session) => {
+                const register = workspace.data.registers.find((row) => row.id === session.register_id);
+                return (
+                  <option key={session.id} value={session.id}>
+                    {register?.name ?? "Register"} · expected{" "}
+                    {fromMinorUnits(BigInt(session.expected_cash_minor), session.currency_code)}
+                  </option>
+                );
+              })}
+            </select>
+          )}
+        </section>
+      ) : null}
       <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         <section aria-label="Product catalogue" className="space-y-4">
           <form
@@ -101,7 +241,9 @@ function CatalogueCart({ companyId }: { companyId: string }) {
                 onChange={(event) => setSearch(event.target.value)}
               />
             </div>
-            <Button type="submit">Search</Button>
+            <Button type="submit" className="min-h-11">
+              Search
+            </Button>
           </form>
           <QueryErrorState queries={[products]} />
           {products.isPending ? <LoadingState /> : null}
@@ -144,14 +286,14 @@ function CatalogueCart({ companyId }: { companyId: string }) {
           ) : null}
         </section>
         <section
-          aria-label="Cart preview"
+          aria-label="Cart and checkout"
           className="space-y-4 rounded-xl border border-border p-4"
         >
           <h2 className="text-lg font-semibold">Cart</h2>
           {cart.length === 0 ? (
             <EmptyState
               title="Your cart is empty"
-              description="Add an item to calculate a preview from current catalogue prices."
+              description="Add an item to calculate prices from the current catalogue."
             />
           ) : null}
           <ul className="space-y-4">
@@ -207,43 +349,53 @@ function CatalogueCart({ companyId }: { companyId: string }) {
                     <p>
                       Currency: {quote.data.currency} · Tax {quote.data.treatment}
                     </p>
-                    <section aria-label="Cart price breakdown" className="mt-4 space-y-2">
-                      <h3 className="text-sm font-semibold">Itemised price preview</h3>
-                      <ul className="space-y-2 text-sm">
-                        {quote.data.lines.map((line) => (
-                          <li
-                            key={line.productId}
-                            className="rounded-md border border-border p-3"
-                          >
-                            <p className="font-medium">{line.name}</p>
-                            <p className="text-muted-foreground">
-                              {line.code ?? "No SKU"} · {line.quantity} ×{" "}
-                              {fromMinorUnits(BigInt(line.unitPriceMinor), quote.data.currency)}
-                            </p>
-                            <dl className="mt-1 grid grid-cols-2 gap-1">
-                              <dt>Line net</dt>
-                              <dd>
-                                {fromMinorUnits(BigInt(line.netMinor), quote.data.currency)}
-                              </dd>
-                              <dt>Line tax</dt>
-                              <dd>
-                                {fromMinorUnits(BigInt(line.taxMinor), quote.data.currency)}
-                              </dd>
-                            </dl>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
                     <dl className="mt-3 grid grid-cols-2 gap-2">
                       <dt>Before tax</dt>
                       <dd>{fromMinorUnits(BigInt(quote.data.netMinor), quote.data.currency)}</dd>
                       <dt>Tax</dt>
                       <dd>{fromMinorUnits(BigInt(quote.data.taxMinor), quote.data.currency)}</dd>
-                      <dt className="font-semibold">Total preview</dt>
+                      <dt className="font-semibold">Total</dt>
                       <dd className="font-semibold">
                         {fromMinorUnits(BigInt(quote.data.grossMinor), quote.data.currency)}
                       </dd>
                     </dl>
+                    {canCheckout ? (
+                      <form onSubmit={submitSale} className="mt-4 space-y-3">
+                        <div>
+                          <Label htmlFor="cash-tendered">Cash tendered ({quote.data.currency})</Label>
+                          <Input
+                            id="cash-tendered"
+                            value={tendered}
+                            onChange={(event) => setTendered(event.target.value)}
+                            inputMode="decimal"
+                            required
+                            disabled={saleMutation.isPending}
+                            autoComplete="off"
+                          />
+                        </div>
+                        {changeMinor ? (
+                          <p>
+                            Change due: {fromMinorUnits(BigInt(changeMinor), quote.data.currency)}
+                          </p>
+                        ) : null}
+                        {checkoutError || saleMutation.isError ? (
+                          <p role="alert" className="text-sm text-destructive">
+                            {friendlyAuthError(checkoutError ?? saleMutation.error)}
+                          </p>
+                        ) : null}
+                        <Button
+                          type="submit"
+                          className="min-h-11 w-full"
+                          disabled={saleMutation.isPending}
+                        >
+                          {saleMutation.isPending ? "Posting sale…" : "Complete cash sale"}
+                        </Button>
+                      </form>
+                    ) : (
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        Checkout stays disabled until an open session is available.
+                      </p>
+                    )}
                     <Button
                       type="button"
                       variant="outline"
@@ -256,6 +408,34 @@ function CatalogueCart({ companyId }: { companyId: string }) {
                 ) : null}
               </div>
             </>
+          ) : null}
+          {lastSale ? (
+            <section aria-label="Last receipt" className="rounded-lg border border-border p-3 text-sm">
+              <h3 className="font-semibold">Sale recorded</h3>
+              <p>Receipt reference: {lastSale.receiptCode}</p>
+              <p>Journal: {lastSale.journalId ?? "Pending"}</p>
+              <p>
+                Change due:{" "}
+                {fromMinorUnits(BigInt(lastSale.changeMinor), displayCurrency)}
+              </p>
+              <p>
+                Expected drawer cash:{" "}
+                {fromMinorUnits(BigInt(lastSale.expectedCashMinor), displayCurrency)}
+              </p>
+            </section>
+          ) : null}
+          {recentSales.data && recentSales.data.length > 0 ? (
+            <section aria-label="Recent sales" className="space-y-2">
+              <h3 className="font-semibold">Recent sales</h3>
+              <ul className="space-y-1 text-sm">
+                {recentSales.data.map((sale) => (
+                  <li key={sale.id}>
+                    {new Date(sale.createdAt).toLocaleString()} · {sale.status} ·{" "}
+                    {fromMinorUnits(BigInt(sale.totalMinor), displayCurrency)}
+                  </li>
+                ))}
+              </ul>
+            </section>
           ) : null}
         </section>
       </div>

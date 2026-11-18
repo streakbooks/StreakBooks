@@ -23,6 +23,11 @@ for (const viewport of [
     await expect(breakdown).toContainText("CONS · 2 × 100.00");
     await page.getByRole("button", { name: "Refresh prices" }).click();
     await expect(page.getByText("220.00", { exact: true })).toBeVisible();
+    await page.getByLabel("Cash tendered (USD)").fill("250.00");
+    await expect(page.getByText("Change due: 30.00")).toBeVisible();
+    await page.getByRole("button", { name: "Complete cash sale" }).click();
+    await expect(page.getByRole("region", { name: "Last receipt" })).toContainText("Change due: 30.00");
+    await expect(page.getByRole("heading", { name: "Your cart is empty" })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );

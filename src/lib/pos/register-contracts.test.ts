@@ -58,7 +58,10 @@ describe("physical count and register inputs", () => {
   });
   it("keeps setup restricted while cashier duties need distinct grants", () => {
     expect(roleHasPermission("staff", "pos.register.open")).toBe(true);
+    expect(roleHasPermission("staff", "pos.sale.create")).toBe(true);
+    expect(roleHasPermission("staff", "pos.cash.adjust")).toBe(false);
     expect(roleHasPermission("staff", "pos.settings.manage")).toBe(false);
+    expect(roleHasPermission("bookkeeper", "pos.cash.adjust")).toBe(true);
     expect(roleHasPermission("read_only", "pos.register.close")).toBe(false);
     expect(roleHasPermission("accountant", "pos.register.close")).toBe(false);
   });

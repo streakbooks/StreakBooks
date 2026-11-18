@@ -24,6 +24,9 @@ export const PERMISSIONS = [
   "pos.register.open",
   "pos.register.close",
   "pos.cash.count",
+  "pos.sale.create",
+  "pos.cash.adjust",
+  "pos.refund.create",
   "pos.audit.view",
   "sales.view",
   "sales.draft",
@@ -142,6 +145,9 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "pos.register.open",
     "pos.register.close",
     "pos.cash.count",
+    "pos.sale.create",
+    "pos.cash.adjust",
+    "pos.refund.create",
     "pos.audit.view",
 
     "company.view",
@@ -358,6 +364,9 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "pos.register.open",
     "pos.register.close",
     "pos.cash.count",
+    "pos.sale.create",
+    "pos.cash.adjust",
+    "pos.refund.create",
 
     "company.view",
     "members.view",
@@ -413,6 +422,7 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "pos.register.open",
     "pos.register.close",
     "pos.cash.count",
+    "pos.sale.create",
 
     "company.view",
     "accounting.view",

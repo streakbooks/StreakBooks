@@ -59,8 +59,7 @@ const CREATE: PaletteAction[] = [
     group: "Create",
     label: "New sales order",
     keywords: "customer order confirmation draft invoice",
-    href: "/sales/orders",
-    search: { create: "true" },
+    href: "/sales/orders/new",
   },
   {
     id: "new-sales-credit-note",
@@ -128,6 +127,14 @@ const CREATE: PaletteAction[] = [
     label: "New purchase order",
     keywords: "supplier order",
     href: "/purchases/orders/new",
+  },
+  {
+    id: "new-purchase-requisition",
+    group: "Create",
+    label: "New purchase requisition",
+    keywords: "purchase request approval requisition",
+    href: "/purchases/requisitions",
+    search: { create: "true" },
   },
   {
     id: "new-supplier-payment",

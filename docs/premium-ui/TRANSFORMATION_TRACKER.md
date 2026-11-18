@@ -42,6 +42,7 @@
 | Create hardening Batch 50 | Merged | PR #298 → `e0f0d8c0` — EM list-only; palette intent; empty CTAs; SO workspace |
 | Create intents Batch 51 | Merged | PR #299 → `0be7b88f` — sales_order CREATE; FA/SO `?create=true` |
 | Create honesty Batch 52 | Merged | PR #301 → `fe0ed927` — requisitions workspace; product/contacts/projects/palette |
+| Create routes Batch 53 | In progress | `feature/premium-ui-batch53-create-routes` — SO /new; requisition CREATE; customers/suppliers/budgets/CRM |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

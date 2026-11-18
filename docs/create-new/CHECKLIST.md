@@ -1,6 +1,6 @@
 # Create New checklist
 
-Source of truth: `src/lib/create-new/registry.ts`. All 30 commands stay in the menu. A command opens when `availability` is `ready` and the role has its permission.
+Source of truth: `src/lib/create-new/registry.ts`. All 31 commands stay in the menu. A command opens when `availability` is `ready` and the role has its permission.
 
 ## Enabled (full-page workspaces)
 
@@ -10,7 +10,8 @@ These navigate to dedicated routes (browser history, Back, deep links):
 | --- | --- |
 | Invoice | `/sales/invoices/new` |
 | Quote / Estimate | `/sales/quotes/new` |
-| Sales order | `/sales/orders?create=true` |
+| Sales order | `/sales/orders/new` |
+| Purchase requisition | `/purchases/requisitions?create=true` |
 | Receive payment | `/sales/receipts/new` |
 | Customer credit note | `/sales/credit-notes/new` |
 | Recurring invoice | `/sales/recurring/new` |
@@ -40,6 +41,6 @@ These navigate to dedicated routes (browser history, Back, deep links):
 
 ## Held
 
-None. All 30 registry actions have `availability: "ready"`. Permission still gates visibility.
+None. All 31 registry actions have `availability: "ready"`. Permission still gates visibility.
 
 Recurring bill automatic generation uses the existing schedule runner; do not invent posting that bypasses approvals.

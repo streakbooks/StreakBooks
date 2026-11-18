@@ -60,9 +60,18 @@ Remaining non-`/new` destinations that are intentional (list/tooling, not comple
 - Empty CTAs: PO / supplier CN / bills recurring / fixed assets / sales orders / projects.
 - Sales order create/edit uses TransactionWorkspace (route still `/sales/orders` until dedicated `/new`).
 
+## Batch 53 follow-ups
+
+- Dedicated `/sales/orders/new` TransactionWorkspace; legacy `?create=true` redirects.
+- `purchase_requisition` CREATE_ACTIONS + palette + `?create=true`.
+- Customers/suppliers lists route to Contacts create (no half-width inline forms).
+- Budgets/CRM lead empty CTAs; budgets create on demand.
+
 ## Still deferred
 
 - Authenticated Playwright create-flow smoke (blocked without staging E2E credentials).
 - Multi-account Spend/Receive allocation lines (posting engine constraint).
 - Fixed-assets full-page `/fixed-assets/new` (header/empty CTAs open Dialog for now).
 - Products/Services full-page create (Dialog kept for narrow entity).
+- Payroll Dialog → RecordWorkspace.
+- Module finished-screen DoD (0/34 COMPLETE).

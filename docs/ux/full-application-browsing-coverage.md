@@ -289,7 +289,8 @@ Every batch may require multiple small implementation increments; do not rush a 
 - `src/routes/_authenticated/sales/invoices.$invoiceId.tsx`
 - `src/routes/_authenticated/sales/invoices.index.tsx`
 - `src/routes/_authenticated/sales/invoices.new.tsx`
-- `src/routes/_authenticated/sales/orders.tsx`
+- `src/routes/_authenticated/sales/orders.index.tsx`
+- `src/routes/_authenticated/sales/orders.new.tsx`
 - `src/routes/_authenticated/sales/quotes.$quoteId.edit.tsx`
 - `src/routes/_authenticated/sales/quotes.$quoteId.index.tsx`
 - `src/routes/_authenticated/sales/quotes.$quoteId.tsx`

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -57,13 +57,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export function PurchasesRequisitionsScreen() {
+export function PurchasesRequisitionsScreen({
+  forceCreate = false,
+}: {
+  forceCreate?: boolean;
+} = {}) {
   const { company } = useActiveCompany();
   return company ? (
     <RequisitionsWorkspace
       key={company.id}
       companyId={company.id}
       baseCurrency={company.base_currency}
+      forceCreate={forceCreate}
     />
   ) : (
     <EmptyState
@@ -75,9 +80,11 @@ export function PurchasesRequisitionsScreen() {
 function RequisitionsWorkspace({
   companyId,
   baseCurrency,
+  forceCreate = false,
 }: {
   companyId: string;
   baseCurrency: string;
+  forceCreate?: boolean;
 }) {
   const { can } = useCan();
   const fmt = useFormat();
@@ -90,6 +97,11 @@ function RequisitionsWorkspace({
   const [selected, setSelected] = useState<Requisition | null>(null);
   const [editor, setEditor] = useState<Requisition | "new" | null>(null);
   const [comment, setComment] = useState("");
+  const canDraft = can("purchases.draft");
+  useEffect(() => {
+    if (!forceCreate || !canDraft) return;
+    setEditor("new");
+  }, [forceCreate, canDraft]);
   const query = useQuery({
     queryKey: ["purchase-requisitions", companyId, status, search, page],
     enabled: can("purchases.view"),

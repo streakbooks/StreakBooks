@@ -62,9 +62,9 @@ describe("create workflow routes (Batch 46)", () => {
     expect(opensCreateAsFullPage(claim!)).toBe(true);
   });
 
-  it("opens sales order create with create=true intent on the orders list route", () => {
+  it("opens sales order create on the dedicated /new workspace", () => {
     const salesOrder = CREATE_ACTIONS.find((a) => a.id === "sales_order");
-    expect(salesOrder?.route).toBe("/sales/orders");
+    expect(salesOrder?.route).toBe("/sales/orders/new");
     expect(opensCreateAsFullPage(salesOrder!)).toBe(true);
   });
 });

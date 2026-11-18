@@ -69,6 +69,7 @@ const MENU_ORDER = [
   "bill",
   "recurring_bill",
   "purchase_order",
+  "purchase_requisition",
   "supplier_credit",
   "pay_bill",
   "reimbursement",

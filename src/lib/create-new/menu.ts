@@ -60,7 +60,9 @@ export function createNavTarget(action: CreateAction): CreateNavTarget {
     case "product":
       return { kind: "route", to: "/products-services", search: { create: true } };
     case "sales_order":
-      return { kind: "route", to: "/sales/orders", search: { create: true } };
+      return { kind: "route", to: "/sales/orders/new" };
+    case "purchase_requisition":
+      return { kind: "route", to: "/purchases/requisitions", search: { create: true } };
     case "reimbursement":
       return {
         kind: "route",

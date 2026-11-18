@@ -30,8 +30,7 @@ describe("command palette (U-07)", () => {
     expect(actions.some((a) => a.id === "new-manual-journal")).toBe(true);
     expect(actions.some((a) => a.id === "new-bank-transfer")).toBe(true);
     const salesOrder = actions.find((a) => a.id === "new-sales-order");
-    expect(salesOrder?.href).toBe("/sales/orders");
-    expect(salesOrder?.search).toEqual({ create: "true" });
+    expect(salesOrder?.href).toBe("/sales/orders/new");
     expect(actions.find((a) => a.id === "new-product")?.search).toEqual({ create: "true" });
     expect(actions.find((a) => a.id === "new-customer")?.search).toEqual({ kind: "customer" });
     expect(actions.find((a) => a.id === "new-recurring-invoice")?.href).toBe(

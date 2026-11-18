@@ -72,6 +72,7 @@ function BudgetsPage() {
   );
   const [name, setName] = useState("");
   const [search, setSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
   const [showScenarioComparison, setShowScenarioComparison] = useState(false);
   const [copySource, setCopySource] = useState<BudgetSummary | null>(null);
   const [copyName, setCopyName] = useState("");
@@ -91,6 +92,7 @@ function BudgetsPage() {
       saveFn({ data: { companyId: companyId!, name: name.trim(), fiscalYearStart: fyStart } }),
     onSuccess: async ({ id }) => {
       setName("");
+      setShowCreate(false);
       await queryClient.invalidateQueries({ queryKey: ["budgets", companyId] });
       toast.success("Budget created");
       void navigate({ to: "/budgets/$budgetId", params: { budgetId: id } });
@@ -150,6 +152,13 @@ function BudgetsPage() {
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
+            disabled={!canManage || query.data?.available === false}
+            onClick={() => setShowCreate(true)}
+          >
+            New budget
+          </Button>
+          <Button
+            size="sm"
             variant={showScenarioComparison ? "secondary" : "outline"}
             disabled={!query.data?.available || query.data.budgets.length < 2}
             onClick={() => setShowScenarioComparison((value) => !value)}
@@ -171,15 +180,21 @@ function BudgetsPage() {
         </div>
       }
     >
+      {showCreate ? (
       <section
         aria-label="Create budget"
         className="lb-budget-create mb-6 grid max-w-2xl gap-4 rounded-2xl border border-border/85 bg-card p-5 shadow-card sm:p-6"
       >
-        <div className="space-y-1">
-          <h2 className="text-base font-bold tracking-[-0.02em]">New budget</h2>
-          <p className="text-xs text-muted-foreground">
-            Create a financial-year plan, then add your accounts and monthly amounts.
-          </p>
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1">
+            <h2 className="text-base font-bold tracking-[-0.02em]">New budget</h2>
+            <p className="text-xs text-muted-foreground">
+              Create a financial-year plan, then add your accounts and monthly amounts.
+            </p>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => setShowCreate(false)}>
+            Close
+          </Button>
         </div>
         <div className="space-y-2">
           <Label htmlFor="budget-name">Name</Label>
@@ -220,6 +235,7 @@ function BudgetsPage() {
           Create budget
         </Button>
       </section>
+      ) : null}
 
       {query.data?.available ? (
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-border/65 pb-3">
@@ -262,7 +278,14 @@ function BudgetsPage() {
       ) : query.data.budgets.length === 0 ? (
         <EmptyState
           title="No budgets yet"
-          description="Create your first budget above, then fill in the monthly amounts."
+          description="Create your first budget, then fill in the monthly amounts."
+          action={
+            canManage ? (
+              <Button size="sm" onClick={() => setShowCreate(true)}>
+                New budget
+              </Button>
+            ) : undefined
+          }
         />
       ) : filteredBudgets.length === 0 ? (
         <EmptyState

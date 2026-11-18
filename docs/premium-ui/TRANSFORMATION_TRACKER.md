@@ -20,7 +20,8 @@
 | Originality + Purchases PO Batch 28 | On main | `a610f1a5` (direct push) |
 | Semantic colourful system Batch 29 | Merged | PR #274 → `4a16970c` |
 | Bill sticky + honest controls + browsing Batch 30 | Merged | PR #275 → `d193bb0e` |
-| Sales/purchases line keyboard + paste Batch 31 | In progress | numeric keyboard/paste on sales + purchases grids |
+| Sales/purchases line keyboard + paste Batch 31 | Merged | PR #276 → `8cfa5280` |
+| Expenses PersistedSwitch Batch 32 | In progress | Expenses enable toggle persists with rollback |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 
@@ -44,7 +45,7 @@
 | Point of Sale | `/pos` | in-progress | specialized | unverified | IN PROGRESS |
 | Sales | `/sales` | in-progress | TransactionWorkspace + spreadsheet lines with numeric keyboard/paste | partial | IN PROGRESS |
 | Purchases | `/purchases` | in-progress | Sticky line headers + sticky save actions; numeric line keyboard | partial | IN PROGRESS |
-| Expenses | `/expense-management` | in-progress | later | partial | IN PROGRESS |
+| Expenses | `/expense-management` | in-progress | Enable toggle persists via PersistedSwitch | partial | IN PROGRESS |
 | CRM | `/crm` | in-progress | N/A kanban | partial | IN PROGRESS |
 | Property Management | `/property-management` | in-progress | later | partial | IN PROGRESS |
 | HR | `/hr` | in-progress | later | partial | IN PROGRESS |

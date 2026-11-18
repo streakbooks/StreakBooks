@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { PersistedSwitch } from "@/components/common/PersistedSwitch";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
@@ -151,37 +152,41 @@ export function ExpenseManagementSettingsPage() {
     if (settingsQ.data) setDraft(toDraft(settingsQ.data));
   }, [settingsQ.data]);
 
+  const buildSaveDraft = (source: Draft, enabledOverride?: boolean) => {
+    const threshold = Number(source.requireReceiptAboveMinor);
+    if (!Number.isSafeInteger(threshold) || threshold < 0) {
+      throw new Error("Receipt threshold must be a whole number of minor units ≥ 0.");
+    }
+    const spendThreshold = Number(source.requireSpendingRequestAboveMinor);
+    if (!Number.isSafeInteger(spendThreshold) || spendThreshold < 0) {
+      throw new Error("Spending-request threshold must be a whole number of minor units ≥ 0.");
+    }
+    return {
+      version: source.version,
+      enabled: enabledOverride ?? source.enabled,
+      claimNumberPrefix: source.claimNumberPrefix.trim(),
+      defaultClaimCurrency: source.defaultClaimCurrency.trim()
+        ? source.defaultClaimCurrency.trim().toUpperCase()
+        : null,
+      requireReceiptAboveMinor: threshold,
+      requireSpendingRequestAboveMinor: spendThreshold,
+      employeePayableAccountId: source.employeePayableAccountId || null,
+      employeeAdvanceAccountId: source.employeeAdvanceAccountId || null,
+      pettyCashAccountId: source.pettyCashAccountId || null,
+      rebillingIncomeAccountId: source.rebillingIncomeAccountId || null,
+      allowMultiCurrencyClaims: source.allowMultiCurrencyClaims,
+      preventSelfApproval: source.preventSelfApproval,
+      defaultDistanceUnit: source.defaultDistanceUnit,
+    };
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       if (!company || !draft) throw new Error("Nothing to save.");
-      const threshold = Number(draft.requireReceiptAboveMinor);
-      if (!Number.isSafeInteger(threshold) || threshold < 0) {
-        throw new Error("Receipt threshold must be a whole number of minor units ≥ 0.");
-      }
-      const spendThreshold = Number(draft.requireSpendingRequestAboveMinor);
-      if (!Number.isSafeInteger(spendThreshold) || spendThreshold < 0) {
-        throw new Error("Spending-request threshold must be a whole number of minor units ≥ 0.");
-      }
       return saveSettings({
         data: {
           companyId: company.id,
-          draft: {
-            version: draft.version,
-            enabled: draft.enabled,
-            claimNumberPrefix: draft.claimNumberPrefix.trim(),
-            defaultClaimCurrency: draft.defaultClaimCurrency.trim()
-              ? draft.defaultClaimCurrency.trim().toUpperCase()
-              : null,
-            requireReceiptAboveMinor: threshold,
-            requireSpendingRequestAboveMinor: spendThreshold,
-            employeePayableAccountId: draft.employeePayableAccountId || null,
-            employeeAdvanceAccountId: draft.employeeAdvanceAccountId || null,
-            pettyCashAccountId: draft.pettyCashAccountId || null,
-            rebillingIncomeAccountId: draft.rebillingIncomeAccountId || null,
-            allowMultiCurrencyClaims: draft.allowMultiCurrencyClaims,
-            preventSelfApproval: draft.preventSelfApproval,
-            defaultDistanceUnit: draft.defaultDistanceUnit,
-          },
+          draft: buildSaveDraft(draft),
         },
       });
     },
@@ -191,6 +196,26 @@ export function ExpenseManagementSettingsPage() {
         queryKey: ["expense-management-settings", company?.id],
       });
       toast.success("Expense settings saved.");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const enableMutation = useMutation({
+    mutationFn: async (nextEnabled: boolean) => {
+      if (!company || !draft) throw new Error("Nothing to save.");
+      return saveSettings({
+        data: {
+          companyId: company.id,
+          draft: buildSaveDraft(draft, nextEnabled),
+        },
+      });
+    },
+    onSuccess: (saved) => {
+      setDraft(toDraft(saved));
+      void queryClient.invalidateQueries({
+        queryKey: ["expense-management-settings", company?.id],
+      });
+      toast.success(saved.enabled ? "Expenses enabled." : "Expenses disabled.");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -265,11 +290,17 @@ export function ExpenseManagementSettingsPage() {
               Turns on the module for this organisation once workflows are ready.
             </p>
           </div>
-          <Switch
+          <PersistedSwitch
             id="em-enabled"
             checked={draft.enabled}
-            disabled={!canEdit || save.isPending}
-            onCheckedChange={(checked) => setDraft({ ...draft, enabled: checked })}
+            disabled={!canEdit || save.isPending || enableMutation.isPending}
+            disabledReason={
+              canEdit ? undefined : "Ask an administrator for expenses.manage_policies."
+            }
+            aria-label="Enable Expenses"
+            onPersist={async (next) => {
+              await enableMutation.mutateAsync(next);
+            }}
           />
         </div>
 

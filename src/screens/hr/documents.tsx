@@ -128,8 +128,8 @@ export function HrDocumentsPage() {
       <ListWorkspace
         title="Employee Documents"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Documents" }]}
-      >
-        <HrSubnav current="documents" />
+      subnav={<HrSubnav current="documents" />}
+    >
         <EmptyState title="No access" description="You need hr.view to open documents." />
       </ListWorkspace>
     );
@@ -164,8 +164,8 @@ export function HrDocumentsPage() {
           </Button>
         ) : undefined
       }
+      subnav={<HrSubnav current="documents" />}
     >
-      <HrSubnav current="documents" />
       {typeof docsQ.data?.expiringSoon === "number" && docsQ.data.expiringSoon > 0 ? (
         <p className="mb-4 text-sm text-amber-700 dark:text-amber-400">
           {docsQ.data.expiringSoon} document(s) expire within 30 days.

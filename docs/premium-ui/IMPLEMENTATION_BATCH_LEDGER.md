@@ -36,6 +36,7 @@
 | 40 | Phase 3 | Measurable density acceptance: field widths, 2 default lines, viewport Playwright | eature/premium-ui-batch40-density-acceptance | [PR #286](https://github.com/linkbusinessadvisory/LinkBooks/pull/286) → 106f471 | shared form density + sales/purchases/money/journals | merged |
 | 41 | Phase 4 | Grouped module nav: HR IA + shared GroupedModuleSubnav; CRM/PM/Expenses | `feature/premium-ui-batch41-grouped-module-nav` | [PR #287](https://github.com/linkbusinessadvisory/LinkBooks/pull/287) → `8280a5b7` | hr/crm/pm/expenses + ModuleSubnav density | merged |
 | 42 | Phase 3 | Full-width fluid line grids; compact sales price-list; sticky actions align; density ≤24px fill | `feature/premium-ui-batch42-fullwidth-line-grids` | [PR #288](https://github.com/linkbusinessadvisory/LinkBooks/pull/288) → `66359d79` | EditableLineItemGrid + sales/purchases/journals | merged |
-| 43+ | Phase 4–10 | Remaining modules DoD + staging runtime evidence | TBD | — | all modules | planned |
+| 43 | Phase 4 | HR five-group IA + ListWorkspace subnav; Workforce Insights; Payroll GroupedModuleSubnav | `feature/premium-ui-batch43-hr-five-group-nav` | pending | hr + payroll + ListWorkspace | in progress |
+| 44+ | Phase 4–10 | Remaining modules DoD + staging runtime evidence | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

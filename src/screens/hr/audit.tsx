@@ -51,8 +51,8 @@ export function HrAuditPage() {
       title="HR Audit Trail"
       description="Actor, timestamp and summary for sensitive HR changes."
       breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Audit" }]}
+      subnav={<HrSubnav current="audit" />}
     >
-      <HrSubnav current="audit" />
 
       {auditQ.isPending ? (
         <LoadingState />

@@ -9,11 +9,10 @@ import { HR_SECTIONS, type HrSectionKey } from "@/lib/hr/sections";
 import type { Permission } from "@/lib/permissions";
 
 /**
- * Compact two-row HR navigation.
+ * Compact two-row HR navigation (Batch 43 five-group IA).
  *
- * Replaces the previous seven stacked group bands with Overview / People /
- * Recruitment / Time & Leave / Performance / Compensation / Reports /
- * Administration selectors while keeping every permitted section as a native Link.
+ * Overview · People · Workforce · Talent & Lifecycle · Administration
+ * with contextual section links. Every permitted destination remains a native Link.
  */
 export function HrSubnav({ current }: { current: HrSectionKey }) {
   const { can } = useCan();
@@ -33,7 +32,7 @@ export function HrSubnav({ current }: { current: HrSectionKey }) {
             to="/hr"
             className="inline-flex h-8 items-center rounded-md border border-border px-2.5 text-[0.8125rem] font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-10 motion-reduce:transition-none"
           >
-            Overview
+            Dashboard
           </Link>
         ) : null
       }

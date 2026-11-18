@@ -131,8 +131,8 @@ export function HrOffboardingPage() {
       <ListWorkspace
         title="Offboarding"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Offboarding" }]}
-      >
-        <HrSubnav current="offboarding" />
+      subnav={<HrSubnav current="offboarding" />}
+    >
         <EmptyState title="No access" description="You need hr.view." />
       </ListWorkspace>
     );
@@ -162,8 +162,8 @@ export function HrOffboardingPage() {
           </Button>
         ) : undefined
       }
+      subnav={<HrSubnav current="offboarding" />}
     >
-      <HrSubnav current="offboarding" />
       {listQ.isPending ? (
         <LoadingState />
       ) : listQ.isError ? (

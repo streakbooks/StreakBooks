@@ -145,8 +145,8 @@ export function HrPerformancePage() {
       <ListWorkspace
         title="Performance"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Performance" }]}
-      >
-        <HrSubnav current="performance" />
+      subnav={<HrSubnav current="performance" />}
+    >
         <EmptyState title="No access" description="You need hr.view." />
       </ListWorkspace>
     );
@@ -190,8 +190,8 @@ export function HrPerformancePage() {
           </div>
         ) : undefined
       }
+      subnav={<HrSubnav current="performance" />}
     >
-      <HrSubnav current="performance" />
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Cycles

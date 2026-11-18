@@ -59,7 +59,11 @@ export function HrEmployeesPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Employees" description="Workforce directory">
+      <ListWorkspace
+        title="Employees"
+        description="Workforce directory"
+        subnav={<HrSubnav current="employees" />}
+      >
         <EmptyState title="No HR access" description="Ask an administrator for hr.view." />
       </ListWorkspace>
     );
@@ -68,8 +72,9 @@ export function HrEmployeesPage() {
   return (
     <ListWorkspace
       title="Employees"
-      description="HR profiles share Payroll employee identity — organisation and lifecycle live here; pay runs stay in Payroll."
+      description="Shared employee identity with Payroll — profiles and lifecycle live here."
       breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employees" }]}
+      subnav={<HrSubnav current="employees" />}
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant="outline" size="sm">
@@ -81,8 +86,6 @@ export function HrEmployeesPage() {
         </div>
       }
     >
-      <HrSubnav current="employees" />
-
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <Input
           value={search}

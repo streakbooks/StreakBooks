@@ -149,8 +149,8 @@ export function HrReportsPage() {
       <ListWorkspace
         title="HR Reports"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Reports" }]}
-      >
-        <HrSubnav current="reports" />
+      subnav={<HrSubnav current="reports" />}
+    >
         <EmptyState title="No access" description="You need hr.reports.view or hr.view." />
       </ListWorkspace>
     );
@@ -183,8 +183,8 @@ export function HrReportsPage() {
           </Button>
         </div>
       }
+      subnav={<HrSubnav current="reports" />}
     >
-      <HrSubnav current="reports" />
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <div className="grid gap-1.5">
           <Label>Report</Label>

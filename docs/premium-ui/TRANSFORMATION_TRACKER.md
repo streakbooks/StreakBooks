@@ -32,6 +32,7 @@
 | Density acceptance Batch 40 | Merged | PR #286 → `b106f471` |
 | Grouped module nav Batch 41 | Merged | PR #287 → `8280a5b7` — HR eight-group IA + shared GroupedModuleSubnav; CRM/PM/Expenses |
 | Full-width fluid line grids Batch 42 | Merged | PR #288 → `66359d79` — fluid Description/Item columns, compact price-list chrome, density fill assert ≤24px |
+| HR five-group nav + Payroll grouped Batch 43 | In progress | `feature/premium-ui-batch43-hr-five-group-nav` — 5-group HR IA, Workforce Insights, ListWorkspace `subnav`, Payroll GroupedModuleSubnav |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

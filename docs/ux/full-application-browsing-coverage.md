@@ -1,5 +1,33 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Settings inherited navigation-slot validation (2026-11-18)
+
+- `src/lib/settings/panels.ts`: reject prototype-inherited array slots in `settingsTrail` during deep-link restoration, so only explicitly owned ancestor positions are accepted. Code commit `fddfb10594f6d1e787d10d4dbef850d6df8e5ebf`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/settings/panels.test.ts`: add inherited-slot history regression; commit `0f241f463c3bf9e5c903266c1fdc321ad0732db8`. **WRITTEN, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Settings partial evidence updated in `97866ee12a5b3e04230ffe7aaefdb35895040fcb`. **NOT RUN:** browsing inventory guard, TypeScript, lint, Vitest, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main changes, manually triggered CI, production database changes or deployment.
+
+
+### Settings validated panel persistence (2026-11-18)
+
+- `src/lib/settings/panels.ts`: `openSettingsPanel` now writes the allowlist-validated `safePanel` to URL state rather than the untrusted caller argument; commit `7b1cb44dd65bccc05a4b08a3d31b1b91ff33e589`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/settings/panels.test.ts`: new regression covers validated panel persistence, unrelated query retention, refresh validation and contextual Close; commit `f3a4e87d972a2a51dd2d9037ceb1a8732ae3b761`. **WRITTEN, NOT RUN.**
+- Manifest updated in `cc11037b92fd4ec343b93013011793d00486b554`. **NOT RUN:** inventory guard, TypeScript, lint, Vitest, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. **0/21 modules, 0/15 supporting routes, 0/12 batches verified.** No main, manual CI, production database or deployment changes.
+
+
+### Settings runtime open-panel allowlist (2026-11-18)
+
+- `src/lib/settings/panels.ts`: `openSettingsPanel` now rejects invalid runtime panel targets without modifying existing URL state; commit `89d051fc2fb770acd30c8e25785c529306b6010f`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/settings/panels.test.ts`: invalid runtime panel target and valid nested return regression added; commit `df65d56ad367e77188b439135a80ae8866631208`. **WRITTEN, NOT RUN.**
+- Manifest evidence updated in commit `6b6a1444e1208b87bf857b849eb01a854a3458e6`. No criteria or module fully verified. **NOT RUN:** local inventory guard, TypeScript, lint, unit/integration, build, authenticated browser, accessibility, RLS/accounting regression. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. **0/21 modules, 0/15 supporting routes, 0/12 batches verified.** No changes to main, manual CI, production database or deployment.
+
+
+### Settings section-derived destination allowlist (2026-11-18)
+
+- `src/lib/settings/panels.ts`: section-derived `/settings` destinations now pass through `parseSettingsPanel`, rejecting invalid runtime sections rather than generating unrecognized `category:*` panels. Code commit `d396baf3c72ac163da84a50536cc17cc4fc8eb1c`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/settings/panels.test.ts`: add invalid section and valid banking category regression cases, commit `bde74e52edae4a1ee3aec33398085ed74e457def`. **WRITTEN, NOT RUN.**
+- Manifest updated; no module or acceptance criterion fully verified. **NOT RUN:** browsing inventory guard, TypeScript, lint, Vitest, build, authenticated browser, accessibility, security/RLS, accounting regression. Baseline 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No `main` changes, manual CI, production DB or deployment.
+
+
 ### Settings explicit destination panel allowlist (2026-11-18)
 
 - `src/lib/settings/panels.ts`: validate `destination.panel` at runtime through `parseSettingsPanel` rather than trusting a TypeScript annotation; source commit `878ffd1256d37ed160fa10c304a622d62c965bc2`. **SOURCE ONLY; NOT RUN.**

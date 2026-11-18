@@ -47,7 +47,7 @@ export function panelForDestination(destination: SettingsDestination): SettingsP
       ? "numbering"
       : destination.section === "portals"
         ? "portals"
-        : `category:${destination.section}`;
+        : parseSettingsPanel(`category:${destination.section}`);
   return undefined;
 }
 export function panelLabel(panel: SettingsPanelId, owner?: string): string {
@@ -96,7 +96,7 @@ function dedupeSettingsTrail(trail: SettingsPanelId[]): SettingsPanelId[] {
 export function settingsPanelTrail(value: unknown): SettingsPanelId[] {
   return Array.isArray(value) &&
     value.length <= 8 &&
-    Array.from(value).every((id) => parseSettingsPanel(id) !== undefined)
+    Array.from(value, (id, index) => Object.prototype.hasOwnProperty.call(value, index) && parseSettingsPanel(id) !== undefined).every(Boolean)
     ? (Array.from(value) as SettingsPanelId[])
     : [];
 }
@@ -104,6 +104,9 @@ export function openSettingsPanel(
   search: Record<string, unknown>,
   panel: SettingsPanelId,
 ): Record<string, unknown> {
+  // Runtime callers can bypass TypeScript; never write an unrecognized panel into the URL.
+  const safePanel = parseSettingsPanel(panel);
+  if (!safePanel) return { ...search };
   const previous = parseSettingsPanel(search["settingsPanel"]);
   // A missing/invalid current panel cannot own a navigation trail.
   // Ignore malformed self-references so reopening a panel cannot preserve a cycle.
@@ -116,7 +119,7 @@ export function openSettingsPanel(
     const existing = trail.indexOf(panel);
     trail = existing >= 0 ? trail.slice(0, existing) : [...trail, previous].slice(-8);
   }
-  const next = { ...search, settingsPanel: panel };
+  const next = { ...search, settingsPanel: safePanel };
   if (trail.length) return { ...next, settingsTrail: trail };
   delete (next as Record<string, unknown>)["settingsTrail"];
   return next;

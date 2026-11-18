@@ -786,7 +786,15 @@
         "2026-11-18: src/lib/settings/panels.ts rejects sparse settingsTrail arrays with missing indices instead of allowing undefined ancestors through Array.every; commit 75b87dc1a819f93ad12667722dd4ba5f02a21698; SOURCE ONLY, NOT RUN.",
         "2026-11-18: src/lib/settings/panels.test.ts covers sparse URL trail validation and panel opening fallback; commit 8d4dcbeea92cf30d3905be8ea0f6279f13fa09e8; WRITTEN, NOT RUN.",
         "2026-11-18: src/lib/settings/panels.ts validates explicit destination.panel values against the runtime allowlist instead of trusting a TypeScript-only descriptor; commit 878ffd1256d37ed160fa10c304a622d62c965bc2; SOURCE ONLY, NOT RUN.",
-        "2026-11-18: src/lib/settings/panels.test.ts adds malformed explicit destination panel regression cases; commit 759872188a450209049a29783033a2820144033c; WRITTEN, NOT RUN."
+        "2026-11-18: src/lib/settings/panels.test.ts adds malformed explicit destination panel regression cases; commit 759872188a450209049a29783033a2820144033c; WRITTEN, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.ts now allowlist-validates section-derived /settings destinations, rejecting malformed runtime section identifiers; commit d396baf3c72ac163da84a50536cc17cc4fc8eb1c; SOURCE ONLY, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.test.ts adds invalid and valid section destination regressions; commit bde74e52edae4a1ee3aec33398085ed74e457def; WRITTEN, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.ts rejects malformed runtime openSettingsPanel targets without changing URL state; code commit 89d051fc2fb770acd30c8e25785c529306b6010f; SOURCE ONLY, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.test.ts adds invalid runtime target and valid nested return regression; commit df65d56ad367e77188b439135a80ae8866631208; WRITTEN, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.ts persists the allowlist-validated safePanel rather than the untrusted argument; commit 7b1cb44dd65bccc05a4b08a3d31b1b91ff33e589; SOURCE ONLY, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.test.ts adds validated panel, URL search retention and contextual close regression; commit f3a4e87d972a2a51dd2d9037ceb1a8732ae3b761; WRITTEN, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.ts rejects prototype-inherited slots in refreshable Settings navigation history; commit fddfb10594f6d1e787d10d4dbef850d6df8e5ebf; SOURCE ONLY, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.test.ts adds inherited-slot deep-link regression; commit 0f241f463c3bf9e5c903266c1fdc321ad0732db8; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Verify plan deep links, billing redirects, Back/Forward, permissions, and valid existing plan identifiers with authenticated fixtures",
@@ -800,7 +808,10 @@
         "Execute Settings trail sanitation Vitest, browser refresh/history tests and full 12-criterion acceptance; NOT RUN.",
         "Execute duplicate-ancestor navigation regression, authenticated refresh/back-forward and all 12 acceptance checks; NOT RUN.",
         "Execute sparse Settings trail regression and authenticated nested Settings deep-link/refresh/Back/Forward tests; inventory guard, typecheck, lint, build, accessibility and RLS NOT RUN.",
-        "Execute explicit destination panel allowlist regression, check:browsing-coverage, TypeScript, authenticated navigation, accessibility, and RLS/accounting tests; NOT RUN."
+        "Execute explicit destination panel allowlist regression, check:browsing-coverage, TypeScript, authenticated navigation, accessibility, and RLS/accounting tests; NOT RUN.",
+        "Run new section destination regressions, browsing inventory guard, typecheck, lint, build, authenticated navigation, accessibility and RLS/accounting tests; NOT RUN.",
+        "Run runtime invalid-target regression and all 12 Settings acceptance checks; local inventory guard, typecheck, lint, build, authenticated browser, RLS/accounting tests NOT RUN.",
+        "Execute Settings validated URL state regression and browser refresh/back/forward checks; inventory guard, typecheck, build, security and accounting tests NOT RUN."
       ]
     },
     {

@@ -160,6 +160,9 @@ describe("in-place settings routing", () => {
     expect(panelForDestination({ to: "/settings", section: "documents" })).toBe("numbering");
     expect(panelForDestination({ to: "/banking/rules" })).toBe("bank-rules");
     expect(panelForDestination({ to: "/purchases/bills/new" })).toBeUndefined();
+    expect(panelForDestination({ to: "/settings", section: "unknown" as never })).toBeUndefined();
+    expect(panelForDestination({ to: "/settings", section: "../../admin" as never })).toBeUndefined();
+    expect(panelForDestination({ to: "/settings", section: "banking" })).toBe("category:banking");
     // A malformed runtime descriptor must not bypass the panel allowlist.
     expect(
       panelForDestination({ to: "/settings", panel: "javascript:alert(1)" as never }),
@@ -167,6 +170,26 @@ describe("in-place settings routing", () => {
     expect(
       panelForDestination({ to: "/settings", panel: "category:unknown" as never }),
     ).toBeUndefined();
+  });
+  it("rejects invalid runtime panel targets without mutating URL state", () => {
+    const current = { section: "banking", settingsPanel: "bank-rules", settingsTrail: ["category:banking"], page: 2 };
+    for (const target of ["category:unknown", "../../admin", "javascript:alert(1)", "", null, ["branding"]]) {
+      expect(openSettingsPanel(current, target as never)).toEqual(current);
+    }
+    expect(openSettingsPanel(current, "bank-feeds")).toEqual({
+      ...current, settingsPanel: "bank-feeds", settingsTrail: ["category:banking", "bank-rules"],
+    });
+  });
+  it("writes only validated panel IDs and preserves unrelated query parameters", () => {
+    const original = { section: "banking", status: "draft", page: 4, settingsPanel: "bank-rules" };
+    const opened = openSettingsPanel(original, "bank-feeds");
+    expect(opened).toEqual({
+      ...original, settingsPanel: "bank-feeds", settingsTrail: ["bank-rules"],
+    });
+    expect(validateSettingsPanelSearch(opened)).toEqual({
+      settingsPanel: "bank-feeds", settingsTrail: ["bank-rules"],
+    });
+    expect(closeSettingsPanel(opened)).toEqual(original);
   });
   it("rejects sparse Settings history instead of retaining undefined ancestors", () => {
     const sparse = new Array<string>(2);
@@ -191,4 +214,15 @@ describe("in-place settings routing", () => {
       settingsTrail: ["bank-rules"],
     });
   });
+  it("rejects inherited array slots in Settings history", () => {
+    const inherited = new Array<string>(2);
+    inherited[1] = "bank-rules";
+    Object.setPrototypeOf(inherited, Object.assign(Object.create(Array.prototype), { 0: "category:banking" }));
+    expect(settingsPanelTrail(inherited)).toEqual([]);
+    expect(validateSettingsPanelSearch({
+      settingsPanel: "bank-feeds",
+      settingsTrail: inherited,
+    })).toEqual({ settingsPanel: "bank-feeds" });
+  });
+
 });

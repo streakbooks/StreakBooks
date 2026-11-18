@@ -100,7 +100,6 @@ export function downloadBase64(fileName: string, contentType: string | null, bas
   URL.revokeObjectURL(url);
 }
 
-
 /**
  * Upload a fresh immutable object for an existing document; only the server RPC
  * advances its current-version pointer. Never overwrite an earlier Storage key.
@@ -170,8 +169,8 @@ export async function uploadDocumentVersion(input: {
   } catch (error) {
     throw new Error(
       "Version could not be confirmed. Refresh the file history before retrying. " +
-      "An unlinked uploaded object may need administrator cleanup. " +
-      (error instanceof Error ? error.message : "Upload failed."),
+        "An unlinked uploaded object may need administrator cleanup. " +
+        (error instanceof Error ? error.message : "Upload failed."),
     );
   }
 }

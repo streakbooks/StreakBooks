@@ -13,7 +13,20 @@ describe("Payroll runs native URL search", () => {
   });
 
   it("rejects unsafe control and invisible characters", () => {
-    for (const character of ["\n", "\t", "\u0000", "\u0085", "\u061c", "\u200b", "\u200f", "\u2028", "\u202e", "\u2060", "\u2066", "\ufeff"]) {
+    for (const character of [
+      "\n",
+      "\t",
+      "\u0000",
+      "\u0085",
+      "\u061c",
+      "\u200b",
+      "\u200f",
+      "\u2028",
+      "\u202e",
+      "\u2060",
+      "\u2066",
+      "\ufeff",
+    ]) {
       expect(normalizePayrollRunSearch("run" + character)).toBe("");
     }
   });

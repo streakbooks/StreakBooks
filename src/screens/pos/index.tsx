@@ -211,10 +211,7 @@ function CatalogueCart({ companyId }: { companyId: string }) {
                       <h3 className="text-sm font-semibold">Itemised price preview</h3>
                       <ul className="space-y-2 text-sm">
                         {quote.data.lines.map((line) => (
-                          <li
-                            key={line.productId}
-                            className="rounded-md border border-border p-3"
-                          >
+                          <li key={line.productId} className="rounded-md border border-border p-3">
                             <p className="font-medium">{line.name}</p>
                             <p className="text-muted-foreground">
                               {line.code ?? "No SKU"} · {line.quantity} ×{" "}
@@ -222,13 +219,9 @@ function CatalogueCart({ companyId }: { companyId: string }) {
                             </p>
                             <dl className="mt-1 grid grid-cols-2 gap-1">
                               <dt>Line net</dt>
-                              <dd>
-                                {fromMinorUnits(BigInt(line.netMinor), quote.data.currency)}
-                              </dd>
+                              <dd>{fromMinorUnits(BigInt(line.netMinor), quote.data.currency)}</dd>
                               <dt>Line tax</dt>
-                              <dd>
-                                {fromMinorUnits(BigInt(line.taxMinor), quote.data.currency)}
-                              </dd>
+                              <dd>{fromMinorUnits(BigInt(line.taxMinor), quote.data.currency)}</dd>
                             </dl>
                           </li>
                         ))}

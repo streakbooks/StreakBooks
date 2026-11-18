@@ -77,9 +77,7 @@ test.describe("Native LinkBooks module section browsing", () => {
     // This journey requires an authorised seeded organisation with at least one bill.
     await signIn(page, "/purchases/bills?tab=all&sortBy=due_date&sortDir=asc&page=0");
     const source = page.url();
-    const billLink = page.locator(
-      'a[href*="/purchases/bills/"][href*="returnContext="]',
-    ).first();
+    const billLink = page.locator('a[href*="/purchases/bills/"][href*="returnContext="]').first();
     await expect(billLink).toBeVisible();
     await billLink.click();
     await expect(page).toHaveURL(/\/purchases\/bills\/[^/]+/);
@@ -93,5 +91,4 @@ test.describe("Native LinkBooks module section browsing", () => {
     expect(restored.get("sortDir")).toBe(previous.get("sortDir"));
     expect(restored.get("page")).toBe(previous.get("page"));
   });
-
 });

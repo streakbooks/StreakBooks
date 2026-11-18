@@ -22,10 +22,14 @@ function PlatformLayout() {
     staleTime: 30000,
   });
   const inAutomation = useRouterState({
-    select: (s) => (s.location.pathname === "/platform/automation" || s.location.pathname.startsWith("/platform/automation/")),
+    select: (s) =>
+      s.location.pathname === "/platform/automation" ||
+      s.location.pathname.startsWith("/platform/automation/"),
   });
   const inOperations = useRouterState({
-    select: (s) => (s.location.pathname === "/platform/operations" || s.location.pathname.startsWith("/platform/operations/")),
+    select: (s) =>
+      s.location.pathname === "/platform/operations" ||
+      s.location.pathname.startsWith("/platform/operations/"),
   });
   const section = useRouterState({
     select: (s) => (s.location.search as { section?: string }).section ?? "overview",

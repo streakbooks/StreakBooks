@@ -73,16 +73,16 @@ import {
 } from "@/components/ui/table";
 
 type Search = {
-  status?: string;
-  statusGroup?: string;
-  q?: string;
-  bankAccountId?: string;
-  transactionId?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  direction?: string;
-  page?: number;
-  pageSize?: number;
+  status?: string | undefined;
+  statusGroup?: string | undefined;
+  q?: string | undefined;
+  bankAccountId?: string | undefined;
+  transactionId?: string | undefined;
+  dateFrom?: string | undefined;
+  dateTo?: string | undefined;
+  direction?: string | undefined;
+  page?: number | undefined;
+  pageSize?: number | undefined;
 };
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -156,7 +156,11 @@ const BANK_OPTIONAL_COLUMNS = [
 ] as const;
 const BANK_OPTIONAL_IDS = BANK_OPTIONAL_COLUMNS.map((column) => column.id);
 
-type Expanded = { id: string; mode: "code" | "match"; initialAccountId?: string } | null;
+type Expanded = {
+  id: string;
+  mode: "code" | "match";
+  initialAccountId?: string | undefined;
+} | null;
 type BankRowAction = { id: string; kind: "exclude" | "restore" | "unmatch" | "redo" } | null;
 
 function BankTransactions() {

@@ -72,7 +72,10 @@ export function DocumentPostingJournals({
         const debit = journal.lines.reduce((sum, line) => sum + BigInt(line.debit_minor), 0n);
         const credit = journal.lines.reduce((sum, line) => sum + BigInt(line.credit_minor), 0n);
         return (
-          <section key={journal.id} className="space-y-3 rounded-xl border border-border/85 bg-card p-4 shadow-card">
+          <section
+            key={journal.id}
+            className="space-y-3 rounded-xl border border-border/85 bg-card p-4 shadow-card"
+          >
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <Link
@@ -141,7 +144,9 @@ export function DocumentPostingJournals({
                 Journal is out of balance. Contact your accountant.
               </p>
             ) : (
-              <p className="text-xs font-medium text-muted-foreground">Balanced journal lines · read only</p>
+              <p className="text-xs font-medium text-muted-foreground">
+                Balanced journal lines · read only
+              </p>
             )}
           </section>
         );

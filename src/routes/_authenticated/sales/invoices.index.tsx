@@ -121,8 +121,7 @@ function InvoicesList() {
   };
   const patchOverdue = (nextOverdue: boolean, p: Partial<ListState> = {}) => {
     void navigate({
-      search: (previous) =>
-        parseInvoiceListSearch({ ...previous, ...p, overdue: nextOverdue }),
+      search: (previous) => parseInvoiceListSearch({ ...previous, ...p, overdue: nextOverdue }),
     });
   };
   const q = useDebounced(state.q);
@@ -154,7 +153,19 @@ function InvoicesList() {
   });
 
   const query = useQuery({
-    queryKey: ["sales-invoices", companyId, q, state.status, state.from, state.to, state.sort, state.dir, state.page, state.pageSize, overdue],
+    queryKey: [
+      "sales-invoices",
+      companyId,
+      q,
+      state.status,
+      state.from,
+      state.to,
+      state.sort,
+      state.dir,
+      state.page,
+      state.pageSize,
+      overdue,
+    ],
     enabled: Boolean(companyId),
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -178,14 +189,16 @@ function InvoicesList() {
 
   return (
     <ListWorkspace
-        title="Invoices"
-        description="Customer invoices. Authorising posts Accounts Receivable via the shared ledger."
-        actions={
-          <Button size="sm" asChild>
-            <Link to="/sales/invoices/new" search={returnContext ? { returnContext } : {}}>New invoice</Link>
-          </Button>
-        }
-      >
+      title="Invoices"
+      description="Customer invoices. Authorising posts Accounts Receivable via the shared ledger."
+      actions={
+        <Button size="sm" asChild>
+          <Link to="/sales/invoices/new" search={returnContext ? { returnContext } : {}}>
+            New invoice
+          </Link>
+        </Button>
+      }
+    >
       <ListToolbar
         state={state}
         onChange={patch}
@@ -300,7 +313,9 @@ function InvoicesList() {
           }
           action={
             <Button size="sm" asChild>
-              <Link to="/sales/invoices/new" search={returnContext ? { returnContext } : {}}>New invoice</Link>
+              <Link to="/sales/invoices/new" search={returnContext ? { returnContext } : {}}>
+                New invoice
+              </Link>
             </Button>
           }
         />

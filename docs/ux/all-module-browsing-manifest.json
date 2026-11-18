@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "title": "LinkBooks — Mandatory all-module browsing coverage register",
+  "title": "LinkBooks \u2014 Mandatory all-module browsing coverage register",
   "source": {
     "repository": "linkbusinessadvisory/LinkBooks",
-    "sourceBranch": "feature/chatgpt-premium-browsing-20261107",
-    "routeInventoryCommit": "8935c7bd180d94d8539f75460f8542dffd648b5b",
+    "sourceBranch": "integration/all-pending-20261118",
+    "routeInventoryCommit": "9263b0f6c0706727a9c67cd616979b16e90d291c",
     "navigationSource": "src/lib/nav.ts",
     "routeRoot": "src/routes/_authenticated/"
   },
   "invariant": "Every top-level sidebar item and every authenticated route file must appear exactly once in this manifest. New ones require an explicit coverage entry. Inventory inclusion is not implementation verification.",
   "counts": {
-    "sidebarModules": 21,
-    "authenticatedRouteFiles": 132,
+    "sidebarModules": 28,
+    "authenticatedRouteFiles": 154,
     "supportingRouteFiles": 15
   },
   "acceptanceCriteria": [
@@ -30,19 +30,39 @@
   ],
   "modules": [
     {
+      "label": "Point of Sale",
+      "href": "/pos",
+      "browsingImplementation": "merged_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": ["Integrated branch source only; no hosted acceptance claimed."],
+      "remaining": [
+        "NATIVE_NAVIGATION",
+        "CONTEXTUAL_SUBNAV",
+        "CONNECTED_WORKSPACES",
+        "ORIGINAL_DESIGN_SYSTEM",
+        "RESPONSIVE_INTERACTIONS",
+        "DEEP_LINK_REFRESH_BACK_FORWARD_NEW_TAB",
+        "PRESERVE_FILTER_SORT_PAGE_SCROLL_DRAFT",
+        "REAL_FORMS_AND_ACTIONS",
+        "FEEDBACK_LOADING_ERRORS",
+        "DATA_RICH_TABLES_AND_DRILLDOWNS",
+        "PERFORMANCE_ACCESSIBILITY",
+        "SECURITY_ACCOUNTING_AND_TESTING"
+      ],
+      "routeFiles": ["pos/index.tsx", "pos/registers.tsx"]
+    },
+    {
       "label": "Dashboard",
       "href": "/",
-      "routeFiles": [
-        "index.tsx"
-      ],
+      "routeFiles": ["index.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/lib/dashboard/attention-navigation.ts — validated attention deep links",
-        "src/routes/_authenticated/index.tsx — route search validator",
-        "src/components/dashboard/BookkeepingAttentionCentre.tsx — native queue-filter links with hash anchors",
-        "src/lib/dashboard/attention-navigation.test.ts — 5 unit cases WRITTEN, NOT RUN",
-        "e2e/dashboard-attention-browsing.spec.ts — 2 browser cases WRITTEN, NOT RUN"
+        "src/lib/dashboard/attention-navigation.ts \u2014 validated attention deep links",
+        "src/routes/_authenticated/index.tsx \u2014 route search validator",
+        "src/components/dashboard/BookkeepingAttentionCentre.tsx \u2014 native queue-filter links with hash anchors",
+        "src/lib/dashboard/attention-navigation.test.ts \u2014 5 unit cases WRITTEN, NOT RUN",
+        "e2e/dashboard-attention-browsing.spec.ts \u2014 2 browser cases WRITTEN, NOT RUN"
       ],
       "remaining": [
         "Verify authorization and KPI links, reporting and creation workflows with real data",
@@ -70,23 +90,23 @@
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/lib/banking/transaction-return.ts — allowlisted banking list origin",
-        "src/routes/_authenticated/banking/transactions.tsx — linked journal and preview context",
-        "src/routes/_authenticated/banking/journal.$journalId.tsx — restored back links and reversal context",
-        "src/lib/banking/transaction-return.test.ts — 8 unit test cases written but NOT RUN",
-        "e2e/banking-journal-return-browsing.spec.ts — 3 browser tests written but NOT RUN",
-        "src/lib/banking/transaction-return.ts — calendar-valid banking journal return date filters; commit 6fe3d4736d20d751a27536d05c98fbdbd8db53e7",
-        "src/lib/banking/transaction-return.test.ts — impossible-date and leap-year regression WRITTEN, NOT RUN; commit 88c76798980a62f2f87f509f7fb6f5982d1857f8",
-        "src/lib/banking/transaction-return.ts — inverted date ranges discard dateTo while preserving valid dateFrom and other filters; commits 20867f773f4185e74f3541aa18c1488aa15e3631, fdf36e81fc9e092d4ec9fedb8f79b7109307d182",
-        "src/lib/banking/transaction-return.test.ts — inverted-range and same-day regression tests; commit d04269840e2e59671254dd9870353eb0546812de; WRITTEN, NOT RUN",
-        "src/lib/banking/transaction-return.ts — Date.UTC year 0–99 normalization corrected using setUTCFullYear; commit e841554843d40cfeeaae375c0319b40d490e1564; source only, NOT RUN",
-        "src/lib/banking/transaction-return.test.ts — early-year leap and century-boundary regressions added; commit 440dd8c1b0051a21d46d2e2ef83044276bbbd2b6; WRITTEN, NOT RUN",
-        "src/lib/banking/transaction-return.ts — canonical pageSize validation rejects padded, whitespace, exponent and hex strings; commit caa3252be5c0a1cb72fa76e765e47786bb712d83; source only",
-        "src/lib/banking/transaction-return.test.ts — pageSize regression cases; commit 8816f43bc2d9b048832369399f09c1b36f4f2a3f; WRITTEN, NOT RUN",
-        "src/lib/banking/transaction-return.ts — reject padded and noncanonical page query values; commit 94cf4b6d4951731776850aad0a9f6d3e985d5c7d; source only",
-        "src/lib/banking/transaction-return.test.ts — canonical page regression; commit 97cc65b8f70bfeae565841127dfefb53e47d6be1; WRITTEN, NOT RUN",
-        "src/lib/banking/transaction-return.ts — duplicate URL return-context keys rejected rather than last-value-wins; commit a07f3161a1a54c2f191b4ba7c565798647fcec25; SOURCE ONLY, NOT RUN",
-        "src/lib/banking/transaction-return.test.ts — duplicate-key regression cases added; commit 4cb2a5ab4cc9e08b2921131e1407b8f7b05c0897; WRITTEN, NOT RUN",
+        "src/lib/banking/transaction-return.ts \u2014 allowlisted banking list origin",
+        "src/routes/_authenticated/banking/transactions.tsx \u2014 linked journal and preview context",
+        "src/routes/_authenticated/banking/journal.$journalId.tsx \u2014 restored back links and reversal context",
+        "src/lib/banking/transaction-return.test.ts \u2014 8 unit test cases written but NOT RUN",
+        "e2e/banking-journal-return-browsing.spec.ts \u2014 3 browser tests written but NOT RUN",
+        "src/lib/banking/transaction-return.ts \u2014 calendar-valid banking journal return date filters; commit 6fe3d4736d20d751a27536d05c98fbdbd8db53e7",
+        "src/lib/banking/transaction-return.test.ts \u2014 impossible-date and leap-year regression WRITTEN, NOT RUN; commit 88c76798980a62f2f87f509f7fb6f5982d1857f8",
+        "src/lib/banking/transaction-return.ts \u2014 inverted date ranges discard dateTo while preserving valid dateFrom and other filters; commits 20867f773f4185e74f3541aa18c1488aa15e3631, fdf36e81fc9e092d4ec9fedb8f79b7109307d182",
+        "src/lib/banking/transaction-return.test.ts \u2014 inverted-range and same-day regression tests; commit d04269840e2e59671254dd9870353eb0546812de; WRITTEN, NOT RUN",
+        "src/lib/banking/transaction-return.ts \u2014 Date.UTC year 0\u201399 normalization corrected using setUTCFullYear; commit e841554843d40cfeeaae375c0319b40d490e1564; source only, NOT RUN",
+        "src/lib/banking/transaction-return.test.ts \u2014 early-year leap and century-boundary regressions added; commit 440dd8c1b0051a21d46d2e2ef83044276bbbd2b6; WRITTEN, NOT RUN",
+        "src/lib/banking/transaction-return.ts \u2014 canonical pageSize validation rejects padded, whitespace, exponent and hex strings; commit caa3252be5c0a1cb72fa76e765e47786bb712d83; source only",
+        "src/lib/banking/transaction-return.test.ts \u2014 pageSize regression cases; commit 8816f43bc2d9b048832369399f09c1b36f4f2a3f; WRITTEN, NOT RUN",
+        "src/lib/banking/transaction-return.ts \u2014 reject padded and noncanonical page query values; commit 94cf4b6d4951731776850aad0a9f6d3e985d5c7d; source only",
+        "src/lib/banking/transaction-return.test.ts \u2014 canonical page regression; commit 97cc65b8f70bfeae565841127dfefb53e47d6be1; WRITTEN, NOT RUN",
+        "src/lib/banking/transaction-return.ts \u2014 duplicate URL return-context keys rejected rather than last-value-wins; commit a07f3161a1a54c2f191b4ba7c565798647fcec25; SOURCE ONLY, NOT RUN",
+        "src/lib/banking/transaction-return.test.ts \u2014 duplicate-key regression cases added; commit 4cb2a5ab4cc9e08b2921131e1407b8f7b05c0897; WRITTEN, NOT RUN",
         "2026-11-14: src/lib/banking/transaction-return.ts rejects ASCII control characters in return search text, preserving valid independent filters; commit 8ad00b643a73c049c0548d0ee514461144f9d651; SOURCE ONLY, NOT RUN.",
         "2026-11-14: src/lib/banking/transaction-return.test.ts adds control-character and Unicode regression cases; commit acc6012104af63d61f166ea90e27b195d57ee46e; WRITTEN, NOT RUN.",
         "2026-11-15: fixed literal escaped control-character regex and comment in src/lib/banking/transaction-return.ts; commit 8baa1f86e039df8831d48893f723fafc19ceb561; SOURCE REVIEW ONLY, NOT RUN.",
@@ -157,6 +177,9 @@
         "purchases/credit-notes.index.tsx",
         "purchases/credit-notes.new.tsx",
         "purchases/employee-expenses.tsx",
+        "purchases/expense-management/$section.tsx",
+        "purchases/expense-management/claims.$claimId.tsx",
+        "purchases/expense-management/index.tsx",
         "purchases/expenses.$expenseId.tsx",
         "purchases/expenses.index.tsx",
         "purchases/expenses.new.tsx",
@@ -170,6 +193,7 @@
         "purchases/payments.new.tsx",
         "purchases/portal-inbox.tsx",
         "purchases/recurring.tsx",
+        "purchases/requisitions.tsx",
         "purchases/route.tsx",
         "purchases/settings.tsx",
         "purchases/statements.tsx",
@@ -177,6 +201,54 @@
       ],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false
+    },
+    {
+      "label": "Expenses",
+      "href": "/expense-management",
+      "browsingImplementation": "merged_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": ["Integrated branch source only; no hosted acceptance claimed."],
+      "remaining": [
+        "NATIVE_NAVIGATION",
+        "CONTEXTUAL_SUBNAV",
+        "CONNECTED_WORKSPACES",
+        "ORIGINAL_DESIGN_SYSTEM",
+        "RESPONSIVE_INTERACTIONS",
+        "DEEP_LINK_REFRESH_BACK_FORWARD_NEW_TAB",
+        "PRESERVE_FILTER_SORT_PAGE_SCROLL_DRAFT",
+        "REAL_FORMS_AND_ACTIONS",
+        "FEEDBACK_LOADING_ERRORS",
+        "DATA_RICH_TABLES_AND_DRILLDOWNS",
+        "PERFORMANCE_ACCESSIBILITY",
+        "SECURITY_ACCOUNTING_AND_TESTING"
+      ],
+      "routeFiles": [
+        "expense-management/$section.tsx",
+        "expense-management/claims.$claimId.tsx",
+        "expense-management/index.tsx"
+      ]
+    },
+    {
+      "label": "CRM",
+      "href": "/crm",
+      "browsingImplementation": "merged_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": ["Integrated branch source only; no hosted acceptance claimed."],
+      "remaining": [
+        "NATIVE_NAVIGATION",
+        "CONTEXTUAL_SUBNAV",
+        "CONNECTED_WORKSPACES",
+        "ORIGINAL_DESIGN_SYSTEM",
+        "RESPONSIVE_INTERACTIONS",
+        "DEEP_LINK_REFRESH_BACK_FORWARD_NEW_TAB",
+        "PRESERVE_FILTER_SORT_PAGE_SCROLL_DRAFT",
+        "REAL_FORMS_AND_ACTIONS",
+        "FEEDBACK_LOADING_ERRORS",
+        "DATA_RICH_TABLES_AND_DRILLDOWNS",
+        "PERFORMANCE_ACCESSIBILITY",
+        "SECURITY_ACCOUNTING_AND_TESTING"
+      ],
+      "routeFiles": ["crm/$section.tsx", "crm/index.tsx", "crm/leads.$leadId.tsx"]
     },
     {
       "label": "Contacts",
@@ -195,32 +267,28 @@
     {
       "label": "Products & Services",
       "href": "/products-services",
-      "routeFiles": [
-        "products-services.tsx"
-      ],
+      "routeFiles": ["products-services.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false
     },
     {
       "label": "Accounting",
       "href": "/accounting",
-      "routeFiles": [
-        "accounting.tsx"
-      ],
+      "routeFiles": ["accounting.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/lib/accounting/journal-browsing.ts — validated journal list query, source, dates, sort, page and pageSize",
-        "src/routes/_authenticated/accounting.tsx and src/lib/navigation/workspace-search.ts — typed route state",
-        "src/components/accounting/JournalsPanel.tsx — URL-backed list filters and sort",
-        "src/screens/accounting.tsx — retain journal list context across 13 native tabs",
-        "src/routes/_authenticated/recurring-journals.tsx — return to Journals workspace",
-        "src/lib/accounting/journal-browsing.test.ts — 8 unit cases WRITTEN, NOT RUN",
-        "e2e/accounting-journal-native-browsing.spec.ts — 3 browser cases WRITTEN, NOT RUN",
+        "src/lib/accounting/journal-browsing.ts \u2014 validated journal list query, source, dates, sort, page and pageSize",
+        "src/routes/_authenticated/accounting.tsx and src/lib/navigation/workspace-search.ts \u2014 typed route state",
+        "src/components/accounting/JournalsPanel.tsx \u2014 URL-backed list filters and sort",
+        "src/screens/accounting.tsx \u2014 retain journal list context across 13 native tabs",
+        "src/routes/_authenticated/recurring-journals.tsx \u2014 return to Journals workspace",
+        "src/lib/accounting/journal-browsing.test.ts \u2014 8 unit cases WRITTEN, NOT RUN",
+        "e2e/accounting-journal-native-browsing.spec.ts \u2014 3 browser cases WRITTEN, NOT RUN",
         "2026-11-15: src/lib/accounting/journal-browsing.ts rejects noncanonical journal page/page-size strings, control/bidi search characters, and inverted date ranges; commit 1ce8ad4cb78dc2ae78a40f48424a0df2c08f7f47; SOURCE ONLY, NOT RUN.",
         "2026-11-15: src/lib/accounting/journal-browsing.test.ts adds malformed URL, multilingual and date-range regressions; commit a9ea6ea2cea1d275f1e20abc75153979aabc6a8e; WRITTEN, NOT RUN.",
         "2026-11-15: journal-browsing.test.ts corrected to supply actual JS escaped newline, carriage return, tab, NUL, DEL, U+202E and U+2066 rather than literal backslash sequences; commit 9a155248bfc75bf8e4ebe89bf0b0ee8917cbc22a; WRITTEN, NOT RUN.",
-        "2026-11-15: journal-browsing.ts rejects C1 control range U+007F–U+009F and directional marks U+061C/U+200E/U+200F, alongside existing bidi controls; commit 631aba15ef3f92a9ed405d5e5007b66633419e79; SOURCE ONLY, NOT RUN.",
+        "2026-11-15: journal-browsing.ts rejects C1 control range U+007F\u2013U+009F and directional marks U+061C/U+200E/U+200F, alongside existing bidi controls; commit 631aba15ef3f92a9ed405d5e5007b66633419e79; SOURCE ONLY, NOT RUN.",
         "2026-11-15: journal-browsing.test.ts adds C1/directional-control regression inputs; commit 62b4193045c77fa37d2a78fd41311c2b355b32bd; WRITTEN, NOT RUN.",
         "2026-11-15: journal-browsing.ts rejects U+2028/U+2029 Unicode line/paragraph separators in journal search; source commit 7d18587be5e659b68ba2040294b17df362c5bc2e; SOURCE REVIEW ONLY, NOT RUN.",
         "2026-11-15: journal-browsing.test.ts adds U+2028/U+2029 regression cases; commit e341cd07b629f002ed87f619083d7a34dd796641; WRITTEN, NOT RUN.",
@@ -241,18 +309,38 @@
       ]
     },
     {
+      "label": "Messages",
+      "href": "/messages",
+      "browsingImplementation": "merged_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": ["Integrated branch source only; no hosted acceptance claimed."],
+      "remaining": [
+        "NATIVE_NAVIGATION",
+        "CONTEXTUAL_SUBNAV",
+        "CONNECTED_WORKSPACES",
+        "ORIGINAL_DESIGN_SYSTEM",
+        "RESPONSIVE_INTERACTIONS",
+        "DEEP_LINK_REFRESH_BACK_FORWARD_NEW_TAB",
+        "PRESERVE_FILTER_SORT_PAGE_SCROLL_DRAFT",
+        "REAL_FORMS_AND_ACTIONS",
+        "FEEDBACK_LOADING_ERRORS",
+        "DATA_RICH_TABLES_AND_DRILLDOWNS",
+        "PERFORMANCE_ACCESSIBILITY",
+        "SECURITY_ACCOUNTING_AND_TESTING"
+      ],
+      "routeFiles": ["messages/index.tsx", "messages/settings.tsx"]
+    },
+    {
       "label": "Action Center",
       "href": "/notifications",
-      "routeFiles": [
-        "notifications.tsx"
-      ],
+      "routeFiles": ["notifications.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/lib/notifications/notification-utils.ts — grouped page display preference added to validated URL search",
-        "src/routes/_authenticated/notifications.tsx — native grouping URL navigation, original permission controls left unchanged",
-        "src/lib/notifications/notification-utils.test.ts — two additional cases WRITTEN, NOT RUN",
-        "e2e/action-center-grouping-browsing.spec.ts — one authenticated browser scenario WRITTEN, NOT RUN"
+        "src/lib/notifications/notification-utils.ts \u2014 grouped page display preference added to validated URL search",
+        "src/routes/_authenticated/notifications.tsx \u2014 native grouping URL navigation, original permission controls left unchanged",
+        "src/lib/notifications/notification-utils.test.ts \u2014 two additional cases WRITTEN, NOT RUN",
+        "e2e/action-center-grouping-browsing.spec.ts \u2014 one authenticated browser scenario WRITTEN, NOT RUN"
       ],
       "remaining": [
         "Verify existing Action Center filters, paging, selection, notification permissions and UI against authenticated fixture data",
@@ -263,16 +351,14 @@
     {
       "label": "Files",
       "href": "/files",
-      "routeFiles": [
-        "files.tsx"
-      ],
+      "routeFiles": ["files.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/lib/documents/files-navigation.ts — validated list/search/filter/folder/file/deep-link parameters",
-        "src/routes/_authenticated/files.tsx — native folder/document-review links, URL-backed search/type/sort/view/pagination and preserved preview context",
-        "src/lib/documents/files-navigation.test.ts — 7 unit cases WRITTEN, NOT RUN",
-        "e2e/files-native-browsing.spec.ts — 3 browser scenarios WRITTEN, NOT RUN"
+        "src/lib/documents/files-navigation.ts \u2014 validated list/search/filter/folder/file/deep-link parameters",
+        "src/routes/_authenticated/files.tsx \u2014 native folder/document-review links, URL-backed search/type/sort/view/pagination and preserved preview context",
+        "src/lib/documents/files-navigation.test.ts \u2014 7 unit cases WRITTEN, NOT RUN",
+        "e2e/files-native-browsing.spec.ts \u2014 3 browser scenarios WRITTEN, NOT RUN"
       ],
       "remaining": [
         "Run actual app typecheck, lint, build, Vitest and authenticated Playwright",
@@ -283,18 +369,15 @@
     {
       "label": "Budgets",
       "href": "/budgets",
-      "routeFiles": [
-        "budgets/$budgetId.tsx",
-        "budgets/index.tsx"
-      ],
+      "routeFiles": ["budgets/$budgetId.tsx", "budgets/index.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/lib/budgets/budget-navigation.ts — committed implementation",
-        "src/routes/_authenticated/budgets/index.tsx — committed implementation",
-        "src/routes/_authenticated/budgets/$budgetId.tsx — committed implementation",
-        "src/lib/budgets/budget-navigation.test.ts — written, NOT RUN",
-        "e2e/budgets-return-browsing.spec.ts — written, NOT RUN",
+        "src/lib/budgets/budget-navigation.ts \u2014 committed implementation",
+        "src/routes/_authenticated/budgets/index.tsx \u2014 committed implementation",
+        "src/routes/_authenticated/budgets/$budgetId.tsx \u2014 committed implementation",
+        "src/lib/budgets/budget-navigation.test.ts \u2014 written, NOT RUN",
+        "e2e/budgets-return-browsing.spec.ts \u2014 written, NOT RUN",
         "2026-11-16: Budgets return search trims whitespace, rejects invisible controls and duplicate q keys; source commit 2b8bacae83268f2cea80987f30daffc860b4f0be; SOURCE ONLY, NOT RUN.",
         "2026-11-16: Budget list parser and decoder regression cases added; commit 3dbec6f7ac768733e9f35af81e33a0067a2803e4; WRITTEN, NOT RUN."
       ],
@@ -308,22 +391,20 @@
     {
       "label": "Fixed assets",
       "href": "/fixed-assets",
-      "routeFiles": [
-        "fixed-assets.tsx"
-      ],
+      "routeFiles": ["fixed-assets.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/lib/fixed-assets/register-navigation.ts — committed implementation",
-        "src/routes/_authenticated/fixed-assets.tsx — committed implementation",
-        "src/lib/fixed-assets/register-navigation.test.ts — written, NOT RUN",
-        "e2e/fixed-assets-native-browsing.spec.ts — written, NOT RUN",
+        "src/lib/fixed-assets/register-navigation.ts \u2014 committed implementation",
+        "src/routes/_authenticated/fixed-assets.tsx \u2014 committed implementation",
+        "src/lib/fixed-assets/register-navigation.test.ts \u2014 written, NOT RUN",
+        "e2e/fixed-assets-native-browsing.spec.ts \u2014 written, NOT RUN",
         "2026-11-16: register-navigation.ts trims effective q, rejects control/bidi characters and limits normalized search to 120; source commit e838e82f7728d0cb5eb66b763b11eca69fd04915; SOURCE ONLY, NOT RUN.",
         "2026-11-16: register-navigation.test.ts covers blank/padded/boundary/Unicode-control searches; commit 0c3f20dbefc6f3472605751c5e8533ce06a618a0; WRITTEN, NOT RUN.",
         "2026-11-16: src/lib/fixed-assets/register-navigation.test.ts corrected to use actual JS escaped control codepoints rather than literal backslash sequences; commit 4a7cd1a03be1c50dacc613f81ed3551992b93898; WRITTEN, NOT RUN.",
         "2026-11-16: src/lib/fixed-assets/register-navigation.ts rejects invisible U+2060 and U+FEFF search characters; commit 09e48d48df1e113486a32828adda59d7a73ebb04; SOURCE ONLY, NOT RUN.",
         "2026-11-16: src/lib/fixed-assets/register-navigation.test.ts adds invisible-character regression retaining independent sort; commit f9503cbaddff6de086d103543e00f13958e60684; WRITTEN, NOT RUN.",
-        "2026-11-16: Fixed Assets URL search rejects zero-width U+200B–U+200D and invisible U+2061–U+2064; source commit b0be75bea78a08976c05d7b28da60c7d6f0e4b3b; SOURCE ONLY, NOT RUN.",
+        "2026-11-16: Fixed Assets URL search rejects zero-width U+200B\u2013U+200D and invisible U+2061\u2013U+2064; source commit b0be75bea78a08976c05d7b28da60c7d6f0e4b3b; SOURCE ONLY, NOT RUN.",
         "2026-11-16: Fixed Assets URL parser regression expanded to zero-width/invisible formatting controls; commit 261b3f810f3f31abf13f5805c6cf2b3dd09935fb; WRITTEN, NOT RUN."
       ],
       "remaining": [
@@ -335,6 +416,28 @@
         "Run invisible-character regression, authenticated Fixed Assets browser, inventory guard, typecheck, lint, build, RLS and accounting tests; NOT RUN.",
         "Run Fixed Assets zero-width search regression and authenticated navigation; inventory guard, typecheck, lint, build, accessibility, security/RLS and accounting checks NOT RUN."
       ]
+    },
+    {
+      "label": "HR",
+      "href": "/hr",
+      "browsingImplementation": "merged_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": ["Integrated branch source only; no hosted acceptance claimed."],
+      "remaining": [
+        "NATIVE_NAVIGATION",
+        "CONTEXTUAL_SUBNAV",
+        "CONNECTED_WORKSPACES",
+        "ORIGINAL_DESIGN_SYSTEM",
+        "RESPONSIVE_INTERACTIONS",
+        "DEEP_LINK_REFRESH_BACK_FORWARD_NEW_TAB",
+        "PRESERVE_FILTER_SORT_PAGE_SCROLL_DRAFT",
+        "REAL_FORMS_AND_ACTIONS",
+        "FEEDBACK_LOADING_ERRORS",
+        "DATA_RICH_TABLES_AND_DRILLDOWNS",
+        "PERFORMANCE_ACCESSIBILITY",
+        "SECURITY_ACCOUNTING_AND_TESTING"
+      ],
+      "routeFiles": ["hr/$section.tsx", "hr/employees.$employeeId.tsx", "hr/index.tsx"]
     },
     {
       "label": "Payroll",
@@ -356,47 +459,47 @@
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/routes/_authenticated/payroll/reports.tsx — allowlisted reportId URL search; commit da98e6382bfb473dbf7fbe83bc341c70c47e16df",
-        "src/screens/payroll/reports.tsx — selected report uses native history/deep link; commit e163c19d6cbd7f7714c4e9706b0a0e1cace76cb3",
-        "src/routes/_authenticated/payroll/runs.index.tsx — validated status/q/sort route search; commit a8d51491862ca32e1e59d1577cde4130cb53c1e0; source only, NOT RUN",
-        "src/screens/payroll/runs.tsx — native URL-backed status/search/sort preserving refresh and browser history state; commit e1aa93cc72ec729562bc35843458d45d4b91d5d7; source only, NOT RUN",
+        "src/routes/_authenticated/payroll/reports.tsx \u2014 allowlisted reportId URL search; commit da98e6382bfb473dbf7fbe83bc341c70c47e16df",
+        "src/screens/payroll/reports.tsx \u2014 selected report uses native history/deep link; commit e163c19d6cbd7f7714c4e9706b0a0e1cace76cb3",
+        "src/routes/_authenticated/payroll/runs.index.tsx \u2014 validated status/q/sort route search; commit a8d51491862ca32e1e59d1577cde4130cb53c1e0; source only, NOT RUN",
+        "src/screens/payroll/runs.tsx \u2014 native URL-backed status/search/sort preserving refresh and browser history state; commit e1aa93cc72ec729562bc35843458d45d4b91d5d7; source only, NOT RUN",
         "2026-11-17: Payroll Runs schedule and period cells now use native accessible links retaining status, search draft and sort return context; code commit 06fc1e49c6adbb6d8062247445c94da904de79cb; SOURCE ONLY, NOT RUN. Remaining payment/status/net cells and full 12-criterion verification pending.",
-        "src/screens/payroll/runs.tsx — status/sort/clear now push browser history entries; typing search uses replace to avoid per-keystroke history; commit 9847bd3a355ef8c55cae7eb0afbd1580454d592c; SOURCE ONLY, NOT RUN",
-        "src/routes/_authenticated/payroll/runs.$runId.tsx — allowlisted employees/journals/payments tab search, commit 5d87318737c19686c9f1783091ea624499a7fbff; SOURCE ONLY, NOT RUN",
-        "src/screens/payroll/run-detail.tsx — URL-backed detail tab navigation for Back/Forward/deep link/refresh, commit 2d3e0bf24ca9bcb1638dd12e831bfe8a76f3c85d; SOURCE ONLY, NOT RUN",
-        "src/screens/payroll/run-detail.tsx — loading and error states retain PayrollSubnav and All runs native return link; source commit d7946c0d4c736b06c7bbcda296bbe4379feecb70; NOT RUN",
-        "src/screens/payroll/run-detail.tsx — Journal entries tab disabled when accounting.view is missing; direct URL retains explicit access-required empty state; commit 0fc4a2f1411fc63a227ee54b034ca9f9a80caf50; SOURCE ONLY, NOT RUN",
-        "src/screens/payroll/run-detail.tsx — reject journal-tab navigation callback when accounting.view is absent (defense in depth); commit b8645067d7b4c8fa75b6b8f3416f61193868a5d4; SOURCE ONLY, NOT RUN",
-        "src/screens/payroll/run-detail.tsx — retain Payroll subnavigation and native All runs link during company loading, no-company and payroll.view denial; source commit 0e6c01d7b3c78da30583a9c228deb8cdfdf13c39; NOT RUN",
-        "src/screens/payroll/run-detail.tsx — unauthorized journals deep links now offer a native Return to employees link; source commit ba60dd042b2f7a6fe6a50f94beb3d3eb8d9b4492; SOURCE ONLY, NOT RUN",
+        "src/screens/payroll/runs.tsx \u2014 status/sort/clear now push browser history entries; typing search uses replace to avoid per-keystroke history; commit 9847bd3a355ef8c55cae7eb0afbd1580454d592c; SOURCE ONLY, NOT RUN",
+        "src/routes/_authenticated/payroll/runs.$runId.tsx \u2014 allowlisted employees/journals/payments tab search, commit 5d87318737c19686c9f1783091ea624499a7fbff; SOURCE ONLY, NOT RUN",
+        "src/screens/payroll/run-detail.tsx \u2014 URL-backed detail tab navigation for Back/Forward/deep link/refresh, commit 2d3e0bf24ca9bcb1638dd12e831bfe8a76f3c85d; SOURCE ONLY, NOT RUN",
+        "src/screens/payroll/run-detail.tsx \u2014 loading and error states retain PayrollSubnav and All runs native return link; source commit d7946c0d4c736b06c7bbcda296bbe4379feecb70; NOT RUN",
+        "src/screens/payroll/run-detail.tsx \u2014 Journal entries tab disabled when accounting.view is missing; direct URL retains explicit access-required empty state; commit 0fc4a2f1411fc63a227ee54b034ca9f9a80caf50; SOURCE ONLY, NOT RUN",
+        "src/screens/payroll/run-detail.tsx \u2014 reject journal-tab navigation callback when accounting.view is absent (defense in depth); commit b8645067d7b4c8fa75b6b8f3416f61193868a5d4; SOURCE ONLY, NOT RUN",
+        "src/screens/payroll/run-detail.tsx \u2014 retain Payroll subnavigation and native All runs link during company loading, no-company and payroll.view denial; source commit 0e6c01d7b3c78da30583a9c228deb8cdfdf13c39; NOT RUN",
+        "src/screens/payroll/run-detail.tsx \u2014 unauthorized journals deep links now offer a native Return to employees link; source commit ba60dd042b2f7a6fe6a50f94beb3d3eb8d9b4492; SOURCE ONLY, NOT RUN",
         "2026-11-13: Payroll Runs detail links/new-run navigation carry validated returnStatus/returnQ/returnSort; detail All runs and restricted-tab recovery preserve list context across tab changes. Source commits 8b448ab, 1ce735a, 0aa6843. SOURCE ONLY, NOT RUN.",
-        "src/screens/payroll/runs.tsx — loading, no-company, permission-denied, settings/list loading and query-error states retain PageHeader and PayrollSubnav; source commit 6dbb46a7770cae6c7bd7950acac98251c4318a63; NOT RUN",
-        "src/screens/payroll/reports.tsx — preserve PayrollSubnav and page header during company loading/missing company, payroll.reports.view denial and catalog loading/error; source commit 65f1768ddf73394ee2038dad2803ef3c3fa97e84; NOT RUN",
-        "2026-11-14: src/screens/payroll/reports.tsx — fixed invalid JSX in catalog-error return by wrapping navigation shell and ErrorState in a fragment; source commit 50cf2ed7876763a745d1ddf8c558683ab1cda2d5; static review only, NOT RUN",
-        "2026-11-14: src/screens/payroll/reports.tsx — incomplete/inverted date periods now show an accessible alert and suppress report query execution; commits 27263616b7e2aba1f826090ca1e78ff513543fca and 464571cd7e05524d0ff9d423ec3f34b1318e6d5d. Source-only; tests NOT RUN.",
-        "2026-11-14: src/screens/payroll/reports.tsx — invalid date inputs expose aria-invalid and aria-describedby pointing to the visible reporting-period alert; source commit 7d2901b03860a71dd847d2b0913f50be71e32d15. SOURCE ONLY, NOT RUN.",
-        "2026-11-14: src/screens/payroll/reports.tsx — hide CSV/Print actions while report dates are invalid or the query is fetching; exportCsv also rejects invalid/fetching state, preventing stale report exports; code commit 9916bfd5a9f77e670153027aecc9e919c373ab20. SOURCE ONLY; tests NOT RUN.",
-        "src/screens/payroll/reports.tsx — CSV and Print/PDF actions now require reportQ.isSuccess for the current query, in addition to valid dates and not fetching; source commit b0e85d5c7567bfdd0eb7f3effa81ac2ea33ed6ad; NOT RUN",
-        "src/screens/payroll/reports.tsx — loading state now replaces prior report table while refetching; source commit 9699586683f3279826225b788a3d03846de4078f; NOT RUN",
-        "2026-11-14: src/screens/payroll/reports.tsx — default reporting period now uses local calendar date rather than UTC ISO date, avoiding off-by-one day at timezone boundaries; source commit 02a4de883e4705b0fe4e972bcaa5bde1c13a817d; SOURCE ONLY, NOT RUN.",
-        "2026-11-14: src/screens/payroll/reports.tsx — reporting-period accessibility now marks only the missing or chronologically offending date input invalid, while associating that input with the existing alert; source commit fd3c5aedf7d5e8ed6001bf3a4d7b25e1c8c36869; SOURCE ONLY, NOT RUN.",
-        "src/screens/payroll/reports.tsx — successful report response without usable result now renders explicit recovery empty state; commit ed73876159d059c83af6ce69517fefc16da86cfc; SOURCE ONLY, NOT RUN",
-        "2026-11-14: src/screens/payroll/reports.tsx — suppress CSV and Print/PDF actions for successful reports with zero rows; source commit 222e27bfbacc3e7cf92bbf2f19004d1fc4a92594; SOURCE ONLY, NOT RUN.",
+        "src/screens/payroll/runs.tsx \u2014 loading, no-company, permission-denied, settings/list loading and query-error states retain PageHeader and PayrollSubnav; source commit 6dbb46a7770cae6c7bd7950acac98251c4318a63; NOT RUN",
+        "src/screens/payroll/reports.tsx \u2014 preserve PayrollSubnav and page header during company loading/missing company, payroll.reports.view denial and catalog loading/error; source commit 65f1768ddf73394ee2038dad2803ef3c3fa97e84; NOT RUN",
+        "2026-11-14: src/screens/payroll/reports.tsx \u2014 fixed invalid JSX in catalog-error return by wrapping navigation shell and ErrorState in a fragment; source commit 50cf2ed7876763a745d1ddf8c558683ab1cda2d5; static review only, NOT RUN",
+        "2026-11-14: src/screens/payroll/reports.tsx \u2014 incomplete/inverted date periods now show an accessible alert and suppress report query execution; commits 27263616b7e2aba1f826090ca1e78ff513543fca and 464571cd7e05524d0ff9d423ec3f34b1318e6d5d. Source-only; tests NOT RUN.",
+        "2026-11-14: src/screens/payroll/reports.tsx \u2014 invalid date inputs expose aria-invalid and aria-describedby pointing to the visible reporting-period alert; source commit 7d2901b03860a71dd847d2b0913f50be71e32d15. SOURCE ONLY, NOT RUN.",
+        "2026-11-14: src/screens/payroll/reports.tsx \u2014 hide CSV/Print actions while report dates are invalid or the query is fetching; exportCsv also rejects invalid/fetching state, preventing stale report exports; code commit 9916bfd5a9f77e670153027aecc9e919c373ab20. SOURCE ONLY; tests NOT RUN.",
+        "src/screens/payroll/reports.tsx \u2014 CSV and Print/PDF actions now require reportQ.isSuccess for the current query, in addition to valid dates and not fetching; source commit b0e85d5c7567bfdd0eb7f3effa81ac2ea33ed6ad; NOT RUN",
+        "src/screens/payroll/reports.tsx \u2014 loading state now replaces prior report table while refetching; source commit 9699586683f3279826225b788a3d03846de4078f; NOT RUN",
+        "2026-11-14: src/screens/payroll/reports.tsx \u2014 default reporting period now uses local calendar date rather than UTC ISO date, avoiding off-by-one day at timezone boundaries; source commit 02a4de883e4705b0fe4e972bcaa5bde1c13a817d; SOURCE ONLY, NOT RUN.",
+        "2026-11-14: src/screens/payroll/reports.tsx \u2014 reporting-period accessibility now marks only the missing or chronologically offending date input invalid, while associating that input with the existing alert; source commit fd3c5aedf7d5e8ed6001bf3a4d7b25e1c8c36869; SOURCE ONLY, NOT RUN.",
+        "src/screens/payroll/reports.tsx \u2014 successful report response without usable result now renders explicit recovery empty state; commit ed73876159d059c83af6ce69517fefc16da86cfc; SOURCE ONLY, NOT RUN",
+        "2026-11-14: src/screens/payroll/reports.tsx \u2014 suppress CSV and Print/PDF actions for successful reports with zero rows; source commit 222e27bfbacc3e7cf92bbf2f19004d1fc4a92594; SOURCE ONLY, NOT RUN.",
         "2026-11-17: src/lib/payroll/run-search.ts and src/routes/_authenticated/payroll/runs.index.tsx normalize padded URL search, reject unsafe formatting characters and enforce 120-character effective limit; commits c1b5a7f435389cf76e9a6ca394f0aa06a5c2a6ae and 541e60cdfc9e3bb9d0b6f4ccfab13969a69c1605; SOURCE ONLY, NOT RUN.",
         "2026-11-17: src/lib/payroll/run-search.test.ts covers whitespace, length boundaries, Unicode controls and multilingual text; commit f6ab24aa9bbc44b883dd207ab8cc2bdae23ee72e; WRITTEN, NOT RUN.",
         "2026-11-17: src/screens/payroll/runs.tsx retains whitespace while composing multiword searches, filters immediately using draft, commits URL search on blur/Enter, and carries draft query to run detail; commits 6f85aacd65470997eb2ea080d0555f7f737dd51b and 73083cca511b12f9b7a7d1842de338137b431a22. SOURCE ONLY; NOT RUN.",
         "2026-11-17: src/screens/payroll/runs.tsx uses normalizePayrollRunSearch(searchDraft) for both existing and newly created run detail return links, avoiding stale URL search context and rejecting invalid draft text; commit 86324ceb768058c7f80357f5ce6b134b31f5245a; SOURCE REVIEW ONLY, NOT RUN.",
-        "2026-11-17: src/screens/payroll/runs.tsx — native keyboard-focusable links added for Payment, Status and Net pay cells, preserving validated draft search, status and sort return context; commit 71c3752c02ecf46cac2df35f3d1d3f819cb149db; SOURCE ONLY, NOT RUN.",
+        "2026-11-17: src/screens/payroll/runs.tsx \u2014 native keyboard-focusable links added for Payment, Status and Net pay cells, preserving validated draft search, status and sort return context; commit 71c3752c02ecf46cac2df35f3d1d3f819cb149db; SOURCE ONLY, NOT RUN.",
         "2026-11-17: src/screens/payroll/payments.tsx preserves PayrollSubnav and PageHeader during workspace loading, missing company, payroll.view denial, payment loading and payment query failure; source commit 6bcddb2452f1852343067ba672e5b8d62797bb09; SOURCE REVIEW ONLY, NOT RUN.",
-        "2026-11-17: src/screens/payroll/payments.tsx — Clear run filter is now a native TanStack Link to /payroll/payments with runId omitted, supporting browser new-tab and keyboard semantics; commit 9e5ab9a4a9583a4ad62829108d7f327773b75c52; SOURCE ONLY, NOT RUN.",
+        "2026-11-17: src/screens/payroll/payments.tsx \u2014 Clear run filter is now a native TanStack Link to /payroll/payments with runId omitted, supporting browser new-tab and keyboard semantics; commit 9e5ab9a4a9583a4ad62829108d7f327773b75c52; SOURCE ONLY, NOT RUN.",
         "2026-11-17: src/screens/payroll/payments.tsx adds native View payroll run link in filtered payment alert, opening the run's payments tab; source commit 8e8308d00427e37c6f7eb5698125a4201a8cd8db; SOURCE ONLY, NOT RUN.",
-        "2026-11-17: src/screens/payroll/payments.tsx — payment-date cells expose a keyboard-focusable detail-dialog action, preserving existing payment details and reversal behavior; commit a2e79503e64719873887c2836c2c602159ea073a; SOURCE ONLY, NOT RUN.",
+        "2026-11-17: src/screens/payroll/payments.tsx \u2014 payment-date cells expose a keyboard-focusable detail-dialog action, preserving existing payment details and reversal behavior; commit a2e79503e64719873887c2836c2c602159ea073a; SOURCE ONLY, NOT RUN.",
         "2026-11-17: src/screens/payroll/payments.tsx method, amount, reference and status cells now have keyboard-focusable detail-dialog buttons; source commit 41c9b5c5a9abadcf780350e5c19ceca7f25c5cb7. SOURCE ONLY; NOT RUN; not URL-deep-linkable.",
-        "2026-11-17: src/screens/payroll/payments.tsx — payment-detail query failure now renders existing ErrorState with retry calling paymentDetailQ.refetch(); source commit 4d072d4432d5da94ac09bd0772dc6589df691433. SOURCE ONLY; NOT RUN.",
-        "2026-11-17: src/screens/payroll/payments.tsx — settlement form settings, outstanding payslips and clearing-account query error messages each provide an inline retry button using their existing refetch methods; source commit 771e402b4175f28f55135ab488c517ce4e4903e8. SOURCE ONLY; NOT RUN.",
+        "2026-11-17: src/screens/payroll/payments.tsx \u2014 payment-detail query failure now renders existing ErrorState with retry calling paymentDetailQ.refetch(); source commit 4d072d4432d5da94ac09bd0772dc6589df691433. SOURCE ONLY; NOT RUN.",
+        "2026-11-17: src/screens/payroll/payments.tsx \u2014 settlement form settings, outstanding payslips and clearing-account query error messages each provide an inline retry button using their existing refetch methods; source commit 771e402b4175f28f55135ab488c517ce4e4903e8. SOURCE ONLY; NOT RUN.",
         "2026-11-18: src/screens/payroll/payments.tsx adds Refresh details control inside loaded payment dialog, refetching payment detail while retaining open dialog and disabling duplicate refresh during fetch; source commit 918f1cab1384b6bf9eecded2b31ddb7c3ace420f; SOURCE ONLY, NOT RUN.",
-        "2026-11-18: src/screens/payroll/payments.tsx — payment details refresh now announces active refetch through a polite screen-reader status region without changing payment queries or posting; source commit 0eb60648d7479a6f27a144942761e46817aeca68; SOURCE ONLY, NOT RUN.",
-        "2026-11-18: src/screens/payroll/payments.tsx — payslip allocations list has an accessible name; commit fa411208b4cd3f56647f3f1448a3b2a48eb96806. SOURCE ONLY; browser/screen-reader tests NOT RUN.",
+        "2026-11-18: src/screens/payroll/payments.tsx \u2014 payment details refresh now announces active refetch through a polite screen-reader status region without changing payment queries or posting; source commit 0eb60648d7479a6f27a144942761e46817aeca68; SOURCE ONLY, NOT RUN.",
+        "2026-11-18: src/screens/payroll/payments.tsx \u2014 payslip allocations list has an accessible name; commit fa411208b4cd3f56647f3f1448a3b2a48eb96806. SOURCE ONLY; browser/screen-reader tests NOT RUN.",
         "2026-11-18: src/screens/payroll/payments.tsx names the payment records table for assistive navigation; source commit 54f915dc76363fad343ec955b1c4034861ee0b0f; SOURCE ONLY, NOT RUN."
       ],
       "remaining": [
@@ -430,7 +533,7 @@
         "Execute authenticated keyboard/new-tab/deep-link/Back-Forward verification of all six Payroll Runs table columns; guard, typecheck, lint, unit, build, accessibility, security/RLS and accounting regressions NOT RUN.",
         "Verify Payroll Payments navigation in pending/missing-company/denied/payment-loading/payment-error states using authenticated browser and keyboard; coverage guard, typecheck, lint, unit, build, RLS/accounting regressions NOT RUN.",
         "Verify Payroll Payments clear-run-filter native link with Back/Forward, new-tab, refresh, and permission states; local guard, typecheck, lint, unit, build, browser and RLS/accounting tests NOT RUN.",
-        "Verify filtered Payments → payroll run payments tab, native new-tab/back/refresh, permission behavior and accounting regression; NOT RUN.",
+        "Verify filtered Payments \u2192 payroll run payments tab, native new-tab/back/refresh, permission behavior and accounting regression; NOT RUN.",
         "Verify payment-date detail action with keyboard and screen reader, then run coverage guard, TypeScript, lint, tests, build and authenticated browser checks; NOT RUN.",
         "Verify payment table keyboard, screen-reader, dialog focus and history behavior; implement native payment-detail deep link; inventory guard, typecheck, lint, tests, build and RLS/accounting regression NOT RUN.",
         "Verify payment detail query error/retry with authenticated fixture and accessible dialog focus; inventory guard, TypeScript, lint, unit/browser tests, RLS/accounting regression NOT RUN.",
@@ -444,33 +547,27 @@
     {
       "label": "Reports",
       "href": "/reports",
-      "routeFiles": [
-        "reports/$reportId.tsx",
-        "reports/builder/$viewId.tsx",
-        "reports/index.tsx"
-      ],
+      "routeFiles": ["reports/$reportId.tsx", "reports/builder/$viewId.tsx", "reports/index.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/lib/reports/centre-return.ts — bounded catalogue/workspace origin",
-        "src/lib/reports/search.ts — validated return token on report routes",
-        "src/components/reports/ReportShell.tsx — native deterministic origin link",
-        "src/components/reports/ReportCatalogue.tsx, ReportDirectory.tsx, ReportingHome.tsx, ReportLibrary.tsx, ManagementWorkspace.tsx — origin propagation",
-        "src/lib/reports/centre-return.test.ts — 9 unit test cases written but NOT RUN",
-        "src/lib/reports/search.test.ts — 2 existing suite test cases added but NOT RUN",
-        "e2e/reports-centre-return-browsing.spec.ts — 3 browser tests written but NOT RUN"
+        "src/lib/reports/centre-return.ts \u2014 bounded catalogue/workspace origin",
+        "src/lib/reports/search.ts \u2014 validated return token on report routes",
+        "src/components/reports/ReportShell.tsx \u2014 native deterministic origin link",
+        "src/components/reports/ReportCatalogue.tsx, ReportDirectory.tsx, ReportingHome.tsx, ReportLibrary.tsx, ManagementWorkspace.tsx \u2014 origin propagation",
+        "src/lib/reports/centre-return.test.ts \u2014 9 unit test cases written but NOT RUN",
+        "src/lib/reports/search.test.ts \u2014 2 existing suite test cases added but NOT RUN",
+        "e2e/reports-centre-return-browsing.spec.ts \u2014 3 browser tests written but NOT RUN"
       ]
     },
     {
       "label": "Accountant",
       "href": "/accountant",
-      "routeFiles": [
-        "accountant.tsx"
-      ],
+      "routeFiles": ["accountant.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/routes/_authenticated/accountant.tsx — validated asOf date query parameter and native URL-backed checklist date selection; commit 4e0feb68bd1b0c32c641776f158beb78d3826b32; NOT RUN"
+        "src/routes/_authenticated/accountant.tsx \u2014 validated asOf date query parameter and native URL-backed checklist date selection; commit 4e0feb68bd1b0c32c641776f158beb78d3826b32; NOT RUN"
       ],
       "remaining": [
         "Run typecheck, lint, build, unit and authenticated browser tests of asOf Back/Forward/refresh and invalid dates",
@@ -480,13 +577,11 @@
     {
       "label": "Firm",
       "href": "/firm",
-      "routeFiles": [
-        "firm.tsx"
-      ],
+      "routeFiles": ["firm.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/routes/_authenticated/firm.tsx — 12 firm workspace tabs now native URL-backed links with allowlisted tab search, Back/Forward and refresh semantics; commits 81f6c0e8b15e679fe9f541655a430a159cb3af21 and subsequent import cleanup; NOT RUN"
+        "src/routes/_authenticated/firm.tsx \u2014 12 firm workspace tabs now native URL-backed links with allowlisted tab search, Back/Forward and refresh semantics; commits 81f6c0e8b15e679fe9f541655a430a159cb3af21 and subsequent import cleanup; NOT RUN"
       ],
       "remaining": [
         "Authenticated browser tests of all 12 tabs and firm switching",
@@ -515,8 +610,8 @@
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/screens/advisors/admin-overview.tsx — persistent Advisors subnav during loading/error, accessible loading/error/result announcements and metrics landmark; commit 2c6e9ead7f0db6fb9029d63073f60dd4e5aac71f; tests NOT RUN",
-        "src/screens/advisors/admin-inquiries.tsx — persistent subnav during loading and both query failures; retry both inquiries and staff; live result count; disable conflicting/no-op actions; commit e286ab54ad3f6402ecc451bc1f10bd5460002093; tests NOT RUN",
+        "src/screens/advisors/admin-overview.tsx \u2014 persistent Advisors subnav during loading/error, accessible loading/error/result announcements and metrics landmark; commit 2c6e9ead7f0db6fb9029d63073f60dd4e5aac71f; tests NOT RUN",
+        "src/screens/advisors/admin-inquiries.tsx \u2014 persistent subnav during loading and both query failures; retry both inquiries and staff; live result count; disable conflicting/no-op actions; commit e286ab54ad3f6402ecc451bc1f10bd5460002093; tests NOT RUN",
         "2026-11-09 Advisors Administration Conversations: persistent subnav on loading/error, retry list and staff queries, accessible result count, disabled pending assignment and no-op status/note actions, bounded notes (5000); source commit fe8342e70d4291b0674b13f7bd6ab3f62b8d7580. Tests NOT RUN; 12 criteria NOT VERIFIED.",
         "2026-11-09 Advisors Admin Appointments: persistent subnav and accessible loading/error states; exception end-after-start validation; prevent overlapping mutations and redundant appointment status updates; live appointment count. Source commit 6b19df8929eb66055f9b0f41ce87674f29c932d3. All tests NOT RUN; not fully verified.",
         "2026-11-10 Advisors Admin Clients: persistent subnavigation on loading/error, both client/staff query retry, accessible results count, native client form submission and concurrent mutation button guards. Source commit 36ed571b1bd8c41ea9798df9acf192be5b72e33b. TypeScript, lint, unit, browser, RLS, accounting and coverage guard NOT RUN; 12 criteria NOT VERIFIED.",
@@ -529,8 +624,8 @@
         "2026-11-10 Advisors Services & Pricing: loading/error states retain Advisors subnavigation and announce status; bounded reason/label inputs, selected service aria-pressed, shared mutation guard for save/publish/restore and publish validation. Source commit 381effd6b5b12bc8587ba6ed7ea40bc34c485816. Tests NOT RUN; all 12 criteria NOT VERIFIED.",
         "2026-11-10 Services & Pricing add-plan input: normalize and validate new plan codes, prevent duplicate codes across catalogue, block add during mutations and provide accessible validation hint. Source commit 8fb6d122651a070f323d4d4c77ebf19f480c1b20. Typecheck, lint, unit, build, coverage guard, authenticated browser, role/RLS and accounting tests NOT RUN; 12 criteria NOT VERIFIED.",
         "2026-11-10 Add plan action now disables on invalid/duplicate normalized codes and pending mutation, and rechecks guards inside handler. Source commit 0134f29b3b54c178e766115a8b814c7ba5cd7cea. Source-only review; all tests NOT RUN; full acceptance pending.",
-        "src/screens/advisors/settings-services-pricing.tsx — corrected new-plan-code whitespace normalization before validation and duplicate detection; source commit d9b321a381c7afb7ada0c1a0b44b39ec53a923c0; runtime tests NOT RUN",
-        "src/lib/advisors/plan-code.ts and plan-code.test.ts — normalized validation and 4 Vitest cases WRITTEN, NOT RUN; integrated in settings-services-pricing.tsx; commits 14ac653, 0c0fb424, c7ffd57",
+        "src/screens/advisors/settings-services-pricing.tsx \u2014 corrected new-plan-code whitespace normalization before validation and duplicate detection; source commit d9b321a381c7afb7ada0c1a0b44b39ec53a923c0; runtime tests NOT RUN",
+        "src/lib/advisors/plan-code.ts and plan-code.test.ts \u2014 normalized validation and 4 Vitest cases WRITTEN, NOT RUN; integrated in settings-services-pricing.tsx; commits 14ac653, 0c0fb424, c7ffd57",
         "2026-11-11: canonical duplicate comparison normalizes legacy catalogue codes (including whitespace) in src/lib/advisors/plan-code.ts and settings-services-pricing.tsx; boundary and collision Vitest cases added in plan-code.test.ts. Commits 6435066e72839d35c018970f454a1a9fd71185a9, f7f3e32d676649630815f27e9641b01d95dbd7e7, 6fb5c743d65ae6653c6e948599714bd77bdf793a. Tests and coverage guard NOT RUN; full acceptance pending."
       ],
       "remaining": [
@@ -562,16 +657,16 @@
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/routes/_authenticated/advisors-portal.tasks.tsx — bounded allowlisted status query search (commit 81f87d9e5e81390a03642e02500da62f096892dd)",
-        "src/screens/advisors/portal-tasks.tsx — native URL-backed status filter links, active state and empty results (commit 994560db34dddd59dcccd6b48c83184598a35c26)",
+        "src/routes/_authenticated/advisors-portal.tasks.tsx \u2014 bounded allowlisted status query search (commit 81f87d9e5e81390a03642e02500da62f096892dd)",
+        "src/screens/advisors/portal-tasks.tsx \u2014 native URL-backed status filter links, active state and empty results (commit 994560db34dddd59dcccd6b48c83184598a35c26)",
         "All local tests, authenticated browser, accessibility and coverage guard NOT RUN",
-        "src/screens/advisors/portal-tasks.tsx — accessible live task result count and native clear-filter recovery on empty filtered results; commit 30ce8a7f06bbce1781894b7a1dc27251d31d2455; NOT RUN",
-        "src/screens/advisors/portal-tasks.tsx — removed six literal escaped newline sequences from JSX markup introduced in earlier accessibility increment; corrective commit 000324768ece3ffb886da300592a9348241d51f4; compilation and browser tests NOT RUN",
-        "src/screens/advisors/portal-appointments.tsx — loading/error views retain portal subnavigation, accessible loading/error announcements and appointment result count; code commit 9b944cd1a82e58dcbea191c539ff37d3f36e5b4b; NOT RUN",
-        "src/screens/advisors/portal-documents.tsx — persistent portal subnav during loading/errors, accessible loading/error/result announcements and bounded optional note (commit 37b04076b940f7fd309f6e1d97a7c25cdadcc04b); tests NOT RUN",
-        "src/screens/advisors/portal-messages.tsx — persistent portal subnav in loading/error, accessible status/error/count, bounded composer and pending-send feedback; commit 55dea3e002d97383fb16f99aad032112363c02e6; tests NOT RUN",
-        "src/screens/advisors/portal-account.tsx — retained portal navigation on loading/error, native contact form submit, required bounded inputs, notification loading/error/empty/retry and pending-action feedback; commit ea47a3237801d20804befa34e06c46b6e0a43251; tests NOT RUN",
-        "src/screens/advisors/portal-account.tsx — native service-request form submit, required/minimum-length details and aria-pressed request-kind controls; commit 9864d938dc4384f68ccd827dc69503ecfe6dd72b; tests NOT RUN",
+        "src/screens/advisors/portal-tasks.tsx \u2014 accessible live task result count and native clear-filter recovery on empty filtered results; commit 30ce8a7f06bbce1781894b7a1dc27251d31d2455; NOT RUN",
+        "src/screens/advisors/portal-tasks.tsx \u2014 removed six literal escaped newline sequences from JSX markup introduced in earlier accessibility increment; corrective commit 000324768ece3ffb886da300592a9348241d51f4; compilation and browser tests NOT RUN",
+        "src/screens/advisors/portal-appointments.tsx \u2014 loading/error views retain portal subnavigation, accessible loading/error announcements and appointment result count; code commit 9b944cd1a82e58dcbea191c539ff37d3f36e5b4b; NOT RUN",
+        "src/screens/advisors/portal-documents.tsx \u2014 persistent portal subnav during loading/errors, accessible loading/error/result announcements and bounded optional note (commit 37b04076b940f7fd309f6e1d97a7c25cdadcc04b); tests NOT RUN",
+        "src/screens/advisors/portal-messages.tsx \u2014 persistent portal subnav in loading/error, accessible status/error/count, bounded composer and pending-send feedback; commit 55dea3e002d97383fb16f99aad032112363c02e6; tests NOT RUN",
+        "src/screens/advisors/portal-account.tsx \u2014 retained portal navigation on loading/error, native contact form submit, required bounded inputs, notification loading/error/empty/retry and pending-action feedback; commit ea47a3237801d20804befa34e06c46b6e0a43251; tests NOT RUN",
+        "src/screens/advisors/portal-account.tsx \u2014 native service-request form submit, required/minimum-length details and aria-pressed request-kind controls; commit 9864d938dc4384f68ccd827dc69503ecfe6dd72b; tests NOT RUN",
         "2026-11-09 Advisors Portal Account: contactDirty prevents background home refetch overwriting unsaved contact edits; Save disabled until edited; reset after successful refresh; Mark all read only when unread items exist; mutation errors surfaced via toast. Code commits 3bee4ccf011f5571597e5b3f525bcdca4578edfa and 0098ed9375947f09069b7418018f848bf512dceb. Source evidence only; local tests, browser, typecheck, coverage guard NOT RUN; module NOT verified."
       ],
       "remaining": [
@@ -588,19 +683,61 @@
       ]
     },
     {
+      "label": "App Store",
+      "href": "/app-store",
+      "browsingImplementation": "merged_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": ["Integrated branch source only; no hosted acceptance claimed."],
+      "remaining": [
+        "NATIVE_NAVIGATION",
+        "CONTEXTUAL_SUBNAV",
+        "CONNECTED_WORKSPACES",
+        "ORIGINAL_DESIGN_SYSTEM",
+        "RESPONSIVE_INTERACTIONS",
+        "DEEP_LINK_REFRESH_BACK_FORWARD_NEW_TAB",
+        "PRESERVE_FILTER_SORT_PAGE_SCROLL_DRAFT",
+        "REAL_FORMS_AND_ACTIONS",
+        "FEEDBACK_LOADING_ERRORS",
+        "DATA_RICH_TABLES_AND_DRILLDOWNS",
+        "PERFORMANCE_ACCESSIBILITY",
+        "SECURITY_ACCOUNTING_AND_TESTING"
+      ],
+      "routeFiles": ["app-store/$section.tsx", "app-store/apps.$appCode.tsx", "app-store/index.tsx"]
+    },
+    {
+      "label": "Developer",
+      "href": "/developer",
+      "browsingImplementation": "merged_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": ["Integrated branch source only; no hosted acceptance claimed."],
+      "remaining": [
+        "NATIVE_NAVIGATION",
+        "CONTEXTUAL_SUBNAV",
+        "CONNECTED_WORKSPACES",
+        "ORIGINAL_DESIGN_SYSTEM",
+        "RESPONSIVE_INTERACTIONS",
+        "DEEP_LINK_REFRESH_BACK_FORWARD_NEW_TAB",
+        "PRESERVE_FILTER_SORT_PAGE_SCROLL_DRAFT",
+        "REAL_FORMS_AND_ACTIONS",
+        "FEEDBACK_LOADING_ERRORS",
+        "DATA_RICH_TABLES_AND_DRILLDOWNS",
+        "PERFORMANCE_ACCESSIBILITY",
+        "SECURITY_ACCOUNTING_AND_TESTING"
+      ],
+      "routeFiles": ["developer/$section.tsx", "developer/index.tsx"]
+    },
+    {
       "label": "AI Assistant",
       "href": "/ai-assistant",
-      "routeFiles": [
-        "ai-assistant.tsx"
-      ],
+      "routeFiles": ["ai-assistant.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/lib/ai/assistant-browsing.ts — strictly validated reviewCase/suggestionStatus/suggestionQ",
-        "src/routes/_authenticated/ai-assistant.tsx — typed URL search state",
-        "src/screens/ai-assistant.tsx — navigation-backed suggestion query/status, preserved review-case parameter",
-        "src/lib/ai/assistant-browsing.test.ts — 6 unit cases WRITTEN, NOT RUN",
-        "e2e/ai-assistant-suggestion-browsing.spec.ts — 2 browser cases WRITTEN, NOT RUN"
+        "src/lib/ai/assistant-browsing.ts \u2014 strictly validated reviewCase/suggestionStatus/suggestionQ",
+        "src/routes/_authenticated/ai-assistant.tsx \u2014 typed URL search state",
+        "src/screens/ai-assistant.tsx \u2014 navigation-backed suggestion query/status, preserved review-case parameter",
+        "src/lib/ai/assistant-browsing.test.ts \u2014 6 unit cases WRITTEN, NOT RUN",
+        "e2e/ai-assistant-suggestion-browsing.spec.ts \u2014 2 browser cases WRITTEN, NOT RUN"
       ],
       "remaining": [
         "Run authenticated AI-enabled browser tests and full app TypeScript, build and unit checks",
@@ -611,13 +748,11 @@
     {
       "label": "Tax",
       "href": "/tax",
-      "routeFiles": [
-        "tax.tsx"
-      ],
+      "routeFiles": ["tax.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/routes/_authenticated/tax.tsx — registration and GL mapping dirty/saved/view-only indicators announce status changes via role=status and aria-live=polite; commit 51f34961827bd021c70ffeb6c5c914323c539279; NOT RUN"
+        "src/routes/_authenticated/tax.tsx \u2014 registration and GL mapping dirty/saved/view-only indicators announce status changes via role=status and aria-live=polite; commit 51f34961827bd021c70ffeb6c5c914323c539279; NOT RUN"
       ],
       "remaining": [
         "Verify tax form status announcements with screen reader, keyboard and authenticated browser tests; check permissions and tax accounting regressions"
@@ -626,29 +761,27 @@
     {
       "label": "Settings",
       "href": "/settings",
-      "routeFiles": [
-        "settings.tsx"
-      ],
+      "routeFiles": ["settings.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/routes/_authenticated/settings.tsx — bounded allowlisted URL plan slug (1–64 characters) to reject malformed/unbounded billing query inputs; commit 40d15dc87763dd2efcafacbd81048f7d2da90ebf; NOT RUN",
-        "2026-11-11: src/routes/_authenticated/settings.tsx — removed literal escaped newline sequences that commented out plan validation declaration; restored bounded plan query parsing. Commit 811d02c244afc5652d955ddbe857c7d57355201c; tests NOT RUN.",
-        "src/lib/settings/search.ts — bounded plan/interval search parser; commit cd13c92348544a2ea5f0e860fa2a2e96323696a4",
-        "src/routes/_authenticated/settings.tsx — uses shared search validator; commit a5082578d1c31fe204827b013188ad369b672a0e",
-        "src/lib/settings/search.test.ts — 4 Vitest cases WRITTEN, NOT RUN; commit 98be42647cf43df8481115a452cac3e1d0075b21",
-        "src/lib/settings/search.ts — allowlisted nested settingsPanel/settingsTrail retained by route search parser; code commit 1989cd9f8db700a83f1fc38039338626981f430f",
-        "src/lib/settings/search.test.ts — nested panel refresh and invalid-trail regression tests WRITTEN, NOT RUN; commit 12cc76cdb059073ad8efc2ed45f5a98080b5bfc3",
-        "2026-11-11: src/lib/settings/panels.ts — closeSettingsPanel discards stale settingsTrail when active settingsPanel is absent/invalid; commit 2da207915047859ab9936e8266ef61ba75274611; source change NOT runtime verified.",
-        "src/lib/settings/panels.test.ts — regression case for absent/invalid panel, preserved valid parent trail and unrelated search state; commit a6faffc99c4d0cbab447370e01fcc3fdf39b5301; WRITTEN, NOT RUN.",
-        "2026-11-11: src/lib/settings/panels.ts — openSettingsPanel discards orphaned settingsTrail when active settingsPanel is missing/invalid; commits a73fea4f3339c54fde32e26079c49fb3fd0b526c and 57ac43d520f5b105772554f4f508f5eaa848682e; NOT RUN.",
-        "src/lib/settings/panels.test.ts — orphaned-trail open, valid nested return, same-panel idempotency regression WRITTEN, NOT RUN; commit a6279104cb16a4cf00d72d2c2573412358228a7e.",
-        "2026-11-11: src/lib/settings/panels.ts — malformed settingsTrail entries equal to the active panel are excluded on close to avoid self-return; commit 03c0fe7d5c0a93bb5e0558b434890ade0a06291f; runtime NOT RUN.",
-        "src/lib/settings/panels.test.ts — malformed trail self-return regression written; commit aaa976bf74e37653e569d68f4dddf721b386b0bd; NOT RUN.",
-        "2026-11-11: src/lib/settings/panels.ts — openSettingsPanel removes self-referential active-panel entries from malformed trails; commit 7bba8e459a3757e9af3dd01e3996f077e2e1adaa; runtime NOT RUN.",
-        "src/lib/settings/panels.test.ts — malformed-trail open/same-panel/close regression added; commit 15661c2eb08f07a5661753294a298d73fc5adf67; WRITTEN, NOT RUN.",
-        "2026-11-11: src/lib/settings/panels.ts — validateSettingsPanelSearch filters active-panel self-references from refreshable trails; commit 02ea38eb469bded1b856395229dc8c86003ccfe5; NOT RUN.",
-        "src/lib/settings/panels.test.ts — two deep-link sanitation assertions added; commit a022701f4677d4b782dba24919ff84c6d56540e8; WRITTEN, NOT RUN.",
+        "src/routes/_authenticated/settings.tsx \u2014 bounded allowlisted URL plan slug (1\u201364 characters) to reject malformed/unbounded billing query inputs; commit 40d15dc87763dd2efcafacbd81048f7d2da90ebf; NOT RUN",
+        "2026-11-11: src/routes/_authenticated/settings.tsx \u2014 removed literal escaped newline sequences that commented out plan validation declaration; restored bounded plan query parsing. Commit 811d02c244afc5652d955ddbe857c7d57355201c; tests NOT RUN.",
+        "src/lib/settings/search.ts \u2014 bounded plan/interval search parser; commit cd13c92348544a2ea5f0e860fa2a2e96323696a4",
+        "src/routes/_authenticated/settings.tsx \u2014 uses shared search validator; commit a5082578d1c31fe204827b013188ad369b672a0e",
+        "src/lib/settings/search.test.ts \u2014 4 Vitest cases WRITTEN, NOT RUN; commit 98be42647cf43df8481115a452cac3e1d0075b21",
+        "src/lib/settings/search.ts \u2014 allowlisted nested settingsPanel/settingsTrail retained by route search parser; code commit 1989cd9f8db700a83f1fc38039338626981f430f",
+        "src/lib/settings/search.test.ts \u2014 nested panel refresh and invalid-trail regression tests WRITTEN, NOT RUN; commit 12cc76cdb059073ad8efc2ed45f5a98080b5bfc3",
+        "2026-11-11: src/lib/settings/panels.ts \u2014 closeSettingsPanel discards stale settingsTrail when active settingsPanel is absent/invalid; commit 2da207915047859ab9936e8266ef61ba75274611; source change NOT runtime verified.",
+        "src/lib/settings/panels.test.ts \u2014 regression case for absent/invalid panel, preserved valid parent trail and unrelated search state; commit a6faffc99c4d0cbab447370e01fcc3fdf39b5301; WRITTEN, NOT RUN.",
+        "2026-11-11: src/lib/settings/panels.ts \u2014 openSettingsPanel discards orphaned settingsTrail when active settingsPanel is missing/invalid; commits a73fea4f3339c54fde32e26079c49fb3fd0b526c and 57ac43d520f5b105772554f4f508f5eaa848682e; NOT RUN.",
+        "src/lib/settings/panels.test.ts \u2014 orphaned-trail open, valid nested return, same-panel idempotency regression WRITTEN, NOT RUN; commit a6279104cb16a4cf00d72d2c2573412358228a7e.",
+        "2026-11-11: src/lib/settings/panels.ts \u2014 malformed settingsTrail entries equal to the active panel are excluded on close to avoid self-return; commit 03c0fe7d5c0a93bb5e0558b434890ade0a06291f; runtime NOT RUN.",
+        "src/lib/settings/panels.test.ts \u2014 malformed trail self-return regression written; commit aaa976bf74e37653e569d68f4dddf721b386b0bd; NOT RUN.",
+        "2026-11-11: src/lib/settings/panels.ts \u2014 openSettingsPanel removes self-referential active-panel entries from malformed trails; commit 7bba8e459a3757e9af3dd01e3996f077e2e1adaa; runtime NOT RUN.",
+        "src/lib/settings/panels.test.ts \u2014 malformed-trail open/same-panel/close regression added; commit 15661c2eb08f07a5661753294a298d73fc5adf67; WRITTEN, NOT RUN.",
+        "2026-11-11: src/lib/settings/panels.ts \u2014 validateSettingsPanelSearch filters active-panel self-references from refreshable trails; commit 02ea38eb469bded1b856395229dc8c86003ccfe5; NOT RUN.",
+        "src/lib/settings/panels.test.ts \u2014 two deep-link sanitation assertions added; commit a022701f4677d4b782dba24919ff84c6d56540e8; WRITTEN, NOT RUN.",
         "2026-11-11: src/lib/settings/panels.ts deduplicates malformed repeated ancestor IDs across URL validation, opening and closing nested Settings panels; commit d36f437b5ae1c42da4b64d7f750268993cb061fa. src/lib/settings/panels.test.ts regression written in fd148c5e2fa4c21d4bc3d125a1a163a1b3cef0b9; NOT RUN.",
         "2026-11-18: src/lib/settings/panels.ts rejects sparse settingsTrail arrays with missing indices instead of allowing undefined ancestors through Array.every; commit 75b87dc1a819f93ad12667722dd4ba5f02a21698; SOURCE ONLY, NOT RUN.",
         "2026-11-18: src/lib/settings/panels.test.ts covers sparse URL trail validation and panel opening fallback; commit 8d4dcbeea92cf30d3905be8ea0f6279f13fa09e8; WRITTEN, NOT RUN.",
@@ -673,15 +806,13 @@
     {
       "label": "Help",
       "href": "/help",
-      "routeFiles": [
-        "help.tsx"
-      ],
+      "routeFiles": ["help.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/routes/_authenticated/help.tsx — URL-backed bounded help search with replace navigation and preserved scroll; committed 9a4181ca3ad6fc4569bd30da440b9d47131c87b3",
+        "src/routes/_authenticated/help.tsx \u2014 URL-backed bounded help search with replace navigation and preserved scroll; committed 9a4181ca3ad6fc4569bd30da440b9d47131c87b3",
         "Local typecheck, lint, unit, browser and check:browsing-coverage: NOT RUN",
-        "src/routes/_authenticated/help.tsx — accessible live article count and Clear search action, commit 0c456a75bbc6405cfaa743726d0e13f294f01408; local tests NOT RUN"
+        "src/routes/_authenticated/help.tsx \u2014 accessible live article count and Clear search action, commit 0c456a75bbc6405cfaa743726d0e13f294f01408; local tests NOT RUN"
       ]
     }
   ],
@@ -774,20 +905,6 @@
     }
   ],
   "supportingRouteEvidence": {
-    "profile.tsx": {
-      "status": "partial_code_not_runtime_verified",
-      "fullyVerified": false,
-      "commit": "001c16139edc99e3c61d1fad19a538b74995ef1c",
-      "evidence": [
-        "Native profile form submit and Enter key",
-        "Unsaved changes status, no-op save disabled, empty-name guard"
-      ],
-      "remaining": [
-        "Password and security settings full acceptance",
-        "Browser, role/RLS, accessibility and authenticated tests"
-      ],
-      "tests": "NOT RUN"
-    },
     "documents.branding.tsx": {
       "status": "not_assessed_workflow_wide",
       "fullyVerified": false,
@@ -862,8 +979,8 @@
       ],
       "tests": "NOT RUN",
       "currentEvidence": [
-        "src/routes/_authenticated/platform.billing.tsx — accessible billing load failure alert and retry action; commit 0d4b281c78f88e2e6209580c8d7b3305a9539539; NOT RUN",
-        "src/routes/_authenticated/platform.billing.tsx — announced loading, disabled in-flight retry with progress label, required nonnegative safe-integer minor-unit input; commit c82ac912ca2cf55b1801573337544209e78e99ac; tests NOT RUN"
+        "src/routes/_authenticated/platform.billing.tsx \u2014 accessible billing load failure alert and retry action; commit 0d4b281c78f88e2e6209580c8d7b3305a9539539; NOT RUN",
+        "src/routes/_authenticated/platform.billing.tsx \u2014 announced loading, disabled in-flight retry with progress label, required nonnegative safe-integer minor-unit input; commit c82ac912ca2cf55b1801573337544209e78e99ac; tests NOT RUN"
       ]
     },
     "platform.index.tsx": {
@@ -893,6 +1010,20 @@
       ],
       "tests": "NOT RUN",
       "evidence": "2026-11-12 active navigation route boundary fix 13c85f124a85adba217701401f5a1efbc7ce83a5; NOT RUN; 2026-11-12 operations and automation nav now visibly highlights selected workspace via existing route-boundary booleans (commit e0d58d088e87b76d52316cb8adabf2f0d4f83486; NOT RUN)"
+    },
+    "profile.tsx": {
+      "status": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "commit": "001c16139edc99e3c61d1fad19a538b74995ef1c",
+      "evidence": [
+        "Native profile form submit and Enter key",
+        "Unsaved changes status, no-op save disabled, empty-name guard"
+      ],
+      "remaining": [
+        "Password and security settings full acceptance",
+        "Browser, role/RLS, accessibility and authenticated tests"
+      ],
+      "tests": "NOT RUN"
     },
     "projects.tsx": {
       "status": "not_assessed_workflow_wide",

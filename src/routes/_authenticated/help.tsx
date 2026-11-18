@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { GLOSSARY, HELP_ARTICLES, searchHelp } from "@/lib/help/articles";
 
 export const Route = createFileRoute("/_authenticated/help")({
   validateSearch: (search: Record<string, unknown>) => ({
-    q: typeof search.q === "string" ? search.q.slice(0, 200) : "",
+    q: typeof search["q"] === "string" ? search["q"].slice(0, 200) : "",
   }),
   head: () => ({
     meta: [
@@ -28,7 +28,12 @@ function Help() {
   const navigate = useNavigate();
   const { q } = Route.useSearch();
   const setQ = (value: string) => {
-    void navigate({ to: "/help", search: { q: value.slice(0, 200) }, replace: true, resetScroll: false });
+    void navigate({
+      to: "/help",
+      search: { q: value.slice(0, 200) },
+      replace: true,
+      resetScroll: false,
+    });
   };
   const articles = useMemo(() => searchHelp(q), [q]);
   const topics = [...new Set(articles.map((a) => a.topic))];

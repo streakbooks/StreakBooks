@@ -17,7 +17,7 @@ import { createPayrollRun, listPayrollRuns } from "@/lib/payroll/runs.functions"
 import { PAYROLL_RUN_STATUSES, type PayrollRunStatus } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -74,12 +74,14 @@ export function PayrollRunsPage() {
   const fmt = useFormat();
   const navigate = useNavigate();
   const listSearch = useSearch({ from: "/_authenticated/payroll/runs/" });
-  const statusFilter = listSearch.status;
-  const runSearch = listSearch.q;
+  const statusFilter = listSearch.status ?? "all";
+  const runSearch = listSearch.q ?? "";
   // Keep uncommitted whitespace while typing; URL normalization happens on commit.
   const [searchDraft, setSearchDraft] = useState(runSearch);
-  useEffect(() => { setSearchDraft(runSearch); }, [runSearch]);
-  const runSort = listSearch.sort;
+  useEffect(() => {
+    setSearchDraft(runSearch);
+  }, [runSearch]);
+  const runSort = listSearch.sort ?? "payment-newest";
   const updateListSearch = (patch: Partial<typeof listSearch>, replace = false) => {
     navigate({ to: "/payroll/runs", search: (previous) => ({ ...previous, ...patch }), replace });
   };
@@ -129,7 +131,16 @@ export function PayrollRunsPage() {
       toast.success(`Payroll run ${run.run_number} created`);
       setCreateOpen(false);
       queryClient.invalidateQueries({ queryKey: ["payroll-runs"] });
-      navigate({ to: "/payroll/runs/$runId", params: { runId: run.id }, search: { tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort } });
+      navigate({
+        to: "/payroll/runs/$runId",
+        params: { runId: run.id },
+        search: {
+          tab: "employees",
+          returnStatus: statusFilter,
+          returnQ: normalizePayrollRunSearch(searchDraft),
+          returnSort: runSort,
+        },
+      });
     },
     onError: (err) => toast.error(friendlyAuthError(err)),
   });
@@ -154,7 +165,7 @@ export function PayrollRunsPage() {
 
   // Keep native Payroll navigation available during loading, errors and access-denied states.
   const renderRunState = (content: ReactNode) => (
-    <ListWorkspace title="Payroll runs" description="Prepare and approve pay runs." >
+    <ListWorkspace title="Payroll runs" description="Prepare and approve pay runs.">
       <PayrollSubnav current="runs" />
       {content}
     </ListWorkspace>
@@ -200,10 +211,12 @@ export function PayrollRunsPage() {
   const searchTerm = searchDraft.trim().toLocaleLowerCase();
   const matchingRuns = list.runs
     .filter((run) => statusFilter === "all" || run.status === statusFilter)
-    .filter((run) =>
-      !searchTerm ||
-      [run.run_number, scheduleName(run.pay_schedule_id), run.period_start, run.period_end]
-        .some((value) => value.toLocaleLowerCase().includes(searchTerm)),
+    .filter(
+      (run) =>
+        !searchTerm ||
+        [run.run_number, scheduleName(run.pay_schedule_id), run.period_start, run.period_end].some(
+          (value) => value.toLocaleLowerCase().includes(searchTerm),
+        ),
     )
     .sort((a, b) =>
       runSort === "period-newest"
@@ -231,20 +244,23 @@ export function PayrollRunsPage() {
 
   return (
     <ListWorkspace
-        title="Payroll runs"
-        description="Create pay runs, calculate amounts, review and approve."
-        actions={
-          canPrepare && list.available ? (
-            <Button size="sm" onClick={() => {
-                setUserEditedDates(false);
-                setCreateOpen(true);
-              }}>
-              <Plus className="mr-2 h-4 w-4" />
-              New run
-            </Button>
-          ) : null
-        }
-      >
+      title="Payroll runs"
+      description="Create pay runs, calculate amounts, review and approve."
+      actions={
+        canPrepare && list.available ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              setUserEditedDates(false);
+              setCreateOpen(true);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            New run
+          </Button>
+        ) : null
+      }
+    >
       <PayrollSubnav current="runs" />
 
       {!list.available ? (
@@ -258,7 +274,10 @@ export function PayrollRunsPage() {
             <Label htmlFor="run-status-filter" className="sr-only">
               Filter by status
             </Label>
-            <RecordLookupSelect value={statusFilter} onValueChange={(status) => updateListSearch({ status })}>
+            <RecordLookupSelect
+              value={statusFilter}
+              onValueChange={(status) => updateListSearch({ status })}
+            >
               <SelectTrigger id="run-status-filter" className="w-[180px]">
                 <SelectValue placeholder="All statuses" />
               </SelectTrigger>
@@ -276,7 +295,9 @@ export function PayrollRunsPage() {
               maxLength={120}
               onChange={(event) => setSearchDraft(event.target.value)}
               onBlur={commitSearch}
-              onKeyDown={(event) => { if (event.key === "Enter") commitSearch(); }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") commitSearch();
+              }}
               placeholder="Search run, schedule or period…"
               aria-label="Search payroll runs"
               className="w-full sm:w-64"
@@ -319,10 +340,13 @@ export function PayrollRunsPage() {
                       Clear filters
                     </Button>
                   ) : canPrepare ? (
-                    <Button size="sm" onClick={() => {
-                setUserEditedDates(false);
-                setCreateOpen(true);
-              }}>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setUserEditedDates(false);
+                        setCreateOpen(true);
+                      }}
+                    >
                       <Plus className="mr-2 h-4 w-4" />
                       Create run
                     </Button>
@@ -348,7 +372,12 @@ export function PayrollRunsPage() {
                         <Link
                           to="/payroll/runs/$runId"
                           params={{ runId: run.id }}
-                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
+                          search={{
+                            tab: "employees",
+                            returnStatus: statusFilter,
+                            returnQ: normalizePayrollRunSearch(searchDraft),
+                            returnSort: runSort,
+                          }}
                           className="font-medium text-primary hover:underline"
                         >
                           {run.run_number}
@@ -358,7 +387,12 @@ export function PayrollRunsPage() {
                         <Link
                           to="/payroll/runs/$runId"
                           params={{ runId: run.id }}
-                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
+                          search={{
+                            tab: "employees",
+                            returnStatus: statusFilter,
+                            returnQ: normalizePayrollRunSearch(searchDraft),
+                            returnSort: runSort,
+                          }}
                           className="block rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                           aria-label={`Open payroll run ${run.run_number} for ${scheduleName(run.pay_schedule_id)}`}
                         >
@@ -369,7 +403,12 @@ export function PayrollRunsPage() {
                         <Link
                           to="/payroll/runs/$runId"
                           params={{ runId: run.id }}
-                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
+                          search={{
+                            tab: "employees",
+                            returnStatus: statusFilter,
+                            returnQ: normalizePayrollRunSearch(searchDraft),
+                            returnSort: runSort,
+                          }}
                           className="block rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                           aria-label={`Open payroll run ${run.run_number} for period ${run.period_start} to ${run.period_end}`}
                         >
@@ -380,7 +419,12 @@ export function PayrollRunsPage() {
                         <Link
                           to="/payroll/runs/$runId"
                           params={{ runId: run.id }}
-                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
+                          search={{
+                            tab: "employees",
+                            returnStatus: statusFilter,
+                            returnQ: normalizePayrollRunSearch(searchDraft),
+                            returnSort: runSort,
+                          }}
                           className="block rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                           aria-label={`Open payroll run ${run.run_number}, payment date ${fmt.date(run.payment_date)}`}
                         >
@@ -391,7 +435,12 @@ export function PayrollRunsPage() {
                         <Link
                           to="/payroll/runs/$runId"
                           params={{ runId: run.id }}
-                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
+                          search={{
+                            tab: "employees",
+                            returnStatus: statusFilter,
+                            returnQ: normalizePayrollRunSearch(searchDraft),
+                            returnSort: runSort,
+                          }}
                           className="inline-flex rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                           aria-label={`Open payroll run ${run.run_number}, status ${STATUS_LABEL[run.status]}`}
                         >
@@ -404,7 +453,12 @@ export function PayrollRunsPage() {
                         <Link
                           to="/payroll/runs/$runId"
                           params={{ runId: run.id }}
-                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: normalizePayrollRunSearch(searchDraft), returnSort: runSort }}
+                          search={{
+                            tab: "employees",
+                            returnStatus: statusFilter,
+                            returnQ: normalizePayrollRunSearch(searchDraft),
+                            returnSort: runSort,
+                          }}
                           className="inline-block rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                           aria-label={`Open payroll run ${run.run_number}, net pay ${fmt.money(run.net_minor, run.currency)}`}
                         >
@@ -506,7 +560,12 @@ export function PayrollRunsPage() {
             </Button>
             <Button
               disabled={
-                !scheduleId || !periodStart || !periodEnd || !paymentDate || invalidPeriod || createMut.isPending
+                !scheduleId ||
+                !periodStart ||
+                !periodEnd ||
+                !paymentDate ||
+                invalidPeriod ||
+                createMut.isPending
               }
               onClick={() => createMut.mutate()}
             >

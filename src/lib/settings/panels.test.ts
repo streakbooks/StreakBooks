@@ -51,19 +51,26 @@ describe("in-place settings routing", () => {
     const stale = { section: "banking", settingsTrail: ["category:banking"], status: "draft" };
     expect(closeSettingsPanel(stale)).toEqual({ section: "banking", status: "draft" });
     expect(closeSettingsPanel({ ...stale, settingsPanel: "../../admin" })).toEqual({
-      section: "banking", status: "draft",
+      section: "banking",
+      status: "draft",
     });
     expect(closeSettingsPanel({ ...stale, settingsPanel: "bank-rules" })).toEqual({
-      section: "banking", settingsPanel: "category:banking", status: "draft",
+      section: "banking",
+      settingsPanel: "category:banking",
+      status: "draft",
     });
   });
   it("drops orphaned trails when opening a panel from an invalid or missing current panel", () => {
     const orphaned = { section: "banking", status: "draft", settingsTrail: ["category:banking"] };
     expect(openSettingsPanel(orphaned, "bank-rules")).toEqual({
-      section: "banking", status: "draft", settingsPanel: "bank-rules",
+      section: "banking",
+      status: "draft",
+      settingsPanel: "bank-rules",
     });
     expect(openSettingsPanel({ ...orphaned, settingsPanel: "../../admin" }, "bank-rules")).toEqual({
-      section: "banking", status: "draft", settingsPanel: "bank-rules",
+      section: "banking",
+      status: "draft",
+      settingsPanel: "bank-rules",
     });
     const parent = openSettingsPanel({}, "category:banking");
     const child = openSettingsPanel(parent, "bank-rules");
@@ -80,11 +87,13 @@ describe("in-place settings routing", () => {
       section: "banking",
       settingsPanel: "category:banking",
     });
-    expect(closeSettingsPanel({
-      section: "banking",
-      settingsPanel: "bank-rules",
-      settingsTrail: ["bank-rules"],
-    })).toEqual({ section: "banking" });
+    expect(
+      closeSettingsPanel({
+        section: "banking",
+        settingsPanel: "bank-rules",
+        settingsTrail: ["bank-rules"],
+      }),
+    ).toEqual({ section: "banking" });
   });
   it("removes self-referential trail entries before opening another panel", () => {
     const malformed = {
@@ -110,13 +119,18 @@ describe("in-place settings routing", () => {
     });
   });
   it("sanitizes self-referential Settings history on deep-link refresh", () => {
-    expect(validateSettingsPanelSearch({
-      settingsPanel: "bank-rules",
-      settingsTrail: ["category:banking", "bank-rules"],
-    })).toEqual({ settingsPanel: "bank-rules", settingsTrail: ["category:banking"] });
-    expect(validateSettingsPanelSearch({
-      settingsPanel: "bank-rules", settingsTrail: ["bank-rules"],
-    })).toEqual({ settingsPanel: "bank-rules" });
+    expect(
+      validateSettingsPanelSearch({
+        settingsPanel: "bank-rules",
+        settingsTrail: ["category:banking", "bank-rules"],
+      }),
+    ).toEqual({ settingsPanel: "bank-rules", settingsTrail: ["category:banking"] });
+    expect(
+      validateSettingsPanelSearch({
+        settingsPanel: "bank-rules",
+        settingsTrail: ["bank-rules"],
+      }),
+    ).toEqual({ settingsPanel: "bank-rules" });
   });
   it("removes duplicate ancestors from malformed refreshable and interactive trails", () => {
     const malformed = {
@@ -147,21 +161,32 @@ describe("in-place settings routing", () => {
     expect(panelForDestination({ to: "/banking/rules" })).toBe("bank-rules");
     expect(panelForDestination({ to: "/purchases/bills/new" })).toBeUndefined();
     // A malformed runtime descriptor must not bypass the panel allowlist.
-    expect(panelForDestination({ to: "/settings", panel: "javascript:alert(1)" as never })).toBeUndefined();
-    expect(panelForDestination({ to: "/settings", panel: "category:unknown" as never })).toBeUndefined();
+    expect(
+      panelForDestination({ to: "/settings", panel: "javascript:alert(1)" as never }),
+    ).toBeUndefined();
+    expect(
+      panelForDestination({ to: "/settings", panel: "category:unknown" as never }),
+    ).toBeUndefined();
   });
   it("rejects sparse Settings history instead of retaining undefined ancestors", () => {
     const sparse = new Array<string>(2);
     sparse[1] = "category:banking";
     expect(settingsPanelTrail(sparse)).toEqual([]);
-    expect(validateSettingsPanelSearch({
-      settingsPanel: "bank-rules",
-      settingsTrail: sparse,
-    })).toEqual({ settingsPanel: "bank-rules" });
-    expect(openSettingsPanel({
-      settingsPanel: "bank-rules",
-      settingsTrail: sparse,
-    }, "bank-feeds")).toEqual({
+    expect(
+      validateSettingsPanelSearch({
+        settingsPanel: "bank-rules",
+        settingsTrail: sparse,
+      }),
+    ).toEqual({ settingsPanel: "bank-rules" });
+    expect(
+      openSettingsPanel(
+        {
+          settingsPanel: "bank-rules",
+          settingsTrail: sparse,
+        },
+        "bank-feeds",
+      ),
+    ).toEqual({
       settingsPanel: "bank-feeds",
       settingsTrail: ["bank-rules"],
     });

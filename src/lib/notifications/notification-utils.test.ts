@@ -238,11 +238,12 @@ describe("Smart Action Center history and bookmarkable filters", () => {
 
   it("keeps module grouping through a refreshable notification URL", () => {
     expect(parseActionCenterSearch({ view: "action", group: true })).toEqual({
-      view: "action", group: true,
+      view: "action",
+      group: true,
     });
-    expect(parseActionCenterSearch(Object.fromEntries(
-      new URLSearchParams("view=archived&group=true"),
-    ))).toEqual({ view: "archived", group: true });
+    expect(
+      parseActionCenterSearch(Object.fromEntries(new URLSearchParams("view=archived&group=true"))),
+    ).toEqual({ view: "archived", group: true });
   });
 
   it("rejects unsupported grouping values and does not change authorization scope", () => {

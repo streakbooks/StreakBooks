@@ -6,8 +6,7 @@ import { notificationPriorityDisplay } from "@/lib/notifications/priority-visual
 export function NotificationPriorityBadge({ priority }: { priority: string | null | undefined }) {
   const display = notificationPriorityDisplay(priority);
   const Icon: LucideIcon =
-    display.tone === "danger" ? AlertOctagon :
-    display.tone === "warning" ? ArrowUp : Circle;
+    display.tone === "danger" ? AlertOctagon : display.tone === "warning" ? ArrowUp : Circle;
 
   return (
     <Badge

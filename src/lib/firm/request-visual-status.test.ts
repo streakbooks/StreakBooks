@@ -5,14 +5,24 @@ describe("Firm request visual status", () => {
   const today = "2026-11-07";
 
   it("requires persisted completion or cancellation timestamps before claiming success", () => {
-    expect(firmRequestVisualStatus({
-      due_date: "2026-10-01",
-      action_document_requests: { completed_at: "2026-10-06", cancelled_at: null },
-    }, today)).toBe("completed");
-    expect(firmRequestVisualStatus({
-      due_date: "2026-10-01",
-      action_document_requests: { completed_at: null, cancelled_at: "2026-10-04" },
-    }, today)).toBe("cancelled");
+    expect(
+      firmRequestVisualStatus(
+        {
+          due_date: "2026-10-01",
+          action_document_requests: { completed_at: "2026-10-06", cancelled_at: null },
+        },
+        today,
+      ),
+    ).toBe("completed");
+    expect(
+      firmRequestVisualStatus(
+        {
+          due_date: "2026-10-01",
+          action_document_requests: { completed_at: null, cancelled_at: "2026-10-04" },
+        },
+        today,
+      ),
+    ).toBe("cancelled");
   });
 
   it("warns for open overdue requests but not those due today or later", () => {
@@ -27,9 +37,14 @@ describe("Firm request visual status", () => {
   });
 
   it("keeps completed records completed after their due date has passed", () => {
-    expect(firmRequestVisualStatus({
-      due_date: "2026-10-01",
-      action_document_requests: { completed_at: "2026-10-01" },
-    }, today)).toBe("completed");
+    expect(
+      firmRequestVisualStatus(
+        {
+          due_date: "2026-10-01",
+          action_document_requests: { completed_at: "2026-10-01" },
+        },
+        today,
+      ),
+    ).toBe("completed");
   });
 });

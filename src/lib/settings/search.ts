@@ -11,8 +11,7 @@ export function parseSettingsSearch(search: Record<string, unknown>): {
 } {
   const candidate = search["plan"];
   const plan =
-    typeof candidate === "string" &&
-    /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(candidate)
+    typeof candidate === "string" && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(candidate)
       ? candidate
       : undefined;
   const interval =

@@ -35,32 +35,47 @@ function compareList(expected, actual, name) {
   const added = actual.filter((x) => !expected.includes(x));
   if (missing.length || added.length) {
     throw new Error(
-      name + " is out of sync.\n" +
-      (missing.length ? "Missing from repository: " + missing.join(", ") + "\n" : "") +
-      (added.length ? "Missing from manifest: " + added.join(", ") + "\n" : "") +
-      "Update the all-module browsing manifest and specify its browsing acceptance criteria.",
+      name +
+        " is out of sync.\n" +
+        (missing.length ? "Missing from repository: " + missing.join(", ") + "\n" : "") +
+        (added.length ? "Missing from manifest: " + added.join(", ") + "\n" : "") +
+        "Update the all-module browsing manifest and specify its browsing acceptance criteria.",
     );
   }
 }
 
-const parsedSidebar = [...navSource.matchAll(
-  /\{\s*label:\s*"([^"]+)",\s*to:\s*"([^"]+)",/g,
-)].map((match) => ({ label: match[1], href: match[2] }));
+const parsedSidebar = [...navSource.matchAll(/\{\s*label:\s*"([^"]+)",\s*to:\s*"([^"]+)",/g)].map(
+  (match) => ({ label: match[1], href: match[2] }),
+);
 const sidebar = manifest.modules.map(({ label, href }) => ({ label, href }));
 // A set-based inventory comparison alone cannot detect duplicate sidebar
 // declarations. Reject duplicates in both the source navigation and manifest.
-for (const [name, entries] of [["Source navigation", parsedSidebar], ["Browsing manifest", sidebar]]) {
+for (const [name, entries] of [
+  ["Source navigation", parsedSidebar],
+  ["Browsing manifest", sidebar],
+]) {
   const keys = entries.map(({ label, href }) => label + " | " + href);
   if (new Set(keys).size !== keys.length) {
     throw new Error(name + " contains duplicate top-level sidebar entries");
   }
 }
-if (sidebar.some(({ label, href }) => typeof label !== "string" || !label.trim() || typeof href !== "string" || !/^\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)*)?$/.test(href))) {
+if (
+  sidebar.some(
+    ({ label, href }) =>
+      typeof label !== "string" ||
+      !label.trim() ||
+      typeof href !== "string" ||
+      !/^\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)*)?$/.test(href),
+  )
+) {
   throw new Error("Browsing manifest contains invalid top-level sidebar entries");
 }
 // A shared destination under different sidebar labels can conceal an omitted
 // workspace. Require explicit unique navigation targets, not just unique pairs.
-for (const [name, entries] of [["Source navigation", parsedSidebar], ["Browsing manifest", sidebar]]) {
+for (const [name, entries] of [
+  ["Source navigation", parsedSidebar],
+  ["Browsing manifest", sidebar],
+]) {
   const targets = entries.map((entry) => entry.href);
   if (new Set(targets).size !== targets.length) {
     throw new Error(name + " contains duplicate sidebar destinations");
@@ -68,7 +83,9 @@ for (const [name, entries] of [["Source navigation", parsedSidebar], ["Browsing 
   // Distinct URLs cannot justify duplicate visible module labels. Normalize
   // whitespace and case so a future navigation addition cannot hide in the
   // inventory under a visually identical label.
-  const labels = entries.map((entry) => entry.label.trim().replace(/\s+/g, " ").toLocaleLowerCase("en"));
+  const labels = entries.map((entry) =>
+    entry.label.trim().replace(/\s+/g, " ").toLocaleLowerCase("en"),
+  );
   if (new Set(labels).size !== labels.length) {
     throw new Error(name + " contains duplicate normalized sidebar labels");
   }
@@ -92,8 +109,10 @@ for (const module of manifest.modules) {
     throw new Error("Browsing module contains duplicate routes: " + module.label);
   }
 }
-if (!Array.isArray(manifest.supportingRoutes) ||
-    manifest.supportingRoutes.some((route) => !isCanonicalRoutePath(route))) {
+if (
+  !Array.isArray(manifest.supportingRoutes) ||
+  manifest.supportingRoutes.some((route) => !isCanonicalRoutePath(route))
+) {
   throw new Error("Supporting route inventory must contain canonical route paths");
 }
 
@@ -119,13 +138,24 @@ const expectedCounts = {
 };
 for (const [key, actual] of Object.entries(expectedCounts)) {
   if (manifest.counts?.[key] !== actual) {
-    throw new Error(`Browsing manifest counts.${key} is ${manifest.counts?.[key]}; expected ${actual}. Update the coverage inventory.`);
+    throw new Error(
+      `Browsing manifest counts.${key} is ${manifest.counts?.[key]}; expected ${actual}. Update the coverage inventory.`,
+    );
   }
 }
-if (!Array.isArray(manifest.acceptanceCriteria) || manifest.acceptanceCriteria.length !== 12 || manifest.acceptanceCriteria.some((criterion) => typeof criterion !== "string" || !criterion.trim())) {
+if (
+  !Array.isArray(manifest.acceptanceCriteria) ||
+  manifest.acceptanceCriteria.length !== 12 ||
+  manifest.acceptanceCriteria.some(
+    (criterion) => typeof criterion !== "string" || !criterion.trim(),
+  )
+) {
   throw new Error("Exactly 12 nonempty browsing acceptance criteria are required");
 }
-if (new Set(manifest.acceptanceCriteria.map((criterion) => criterion.trim())).size !== manifest.acceptanceCriteria.length) {
+if (
+  new Set(manifest.acceptanceCriteria.map((criterion) => criterion.trim())).size !==
+  manifest.acceptanceCriteria.length
+) {
   throw new Error("Browsing acceptance criteria must be unique");
 }
 // A checked-off criterion cannot be backed by placeholder or unexecuted evidence.
@@ -135,22 +165,40 @@ function hasExecutableAcceptanceEvidence(entry) {
     return false;
   }
   const evidence = entry.verificationEvidence;
-  return evidence.every((value) =>
-    typeof value === "string" && value.trim().length > 0 &&
-    !/\b(?:NOT RUN|PENDING|TODO|TBD|UNVERIFIED|NOT VERIFIED|NOT TESTED|SOURCE ONLY|SOURCE REVIEW ONLY|PLACEHOLDER)\b/i.test(value)
-  ) && new Set(evidence.map((value) => value.trim())).size === 12;
+  return (
+    evidence.every(
+      (value) =>
+        typeof value === "string" &&
+        value.trim().length > 0 &&
+        !/\b(?:NOT RUN|PENDING|TODO|TBD|UNVERIFIED|NOT VERIFIED|NOT TESTED|SOURCE ONLY|SOURCE REVIEW ONLY|PLACEHOLDER)\b/i.test(
+          value,
+        ),
+    ) && new Set(evidence.map((value) => value.trim())).size === 12
+  );
 }
 
 function hasContradictoryVerifiedStatus(status) {
-  return typeof status === "string" && /\b(?:partial|pending|unverified|not verified|not tested|not run|incomplete)\b/i.test(status.replace(/[_-]+/g, " "));
+  return (
+    typeof status === "string" &&
+    /\b(?:partial|pending|unverified|not verified|not tested|not run|incomplete)\b/i.test(
+      status.replace(/[_-]+/g, " "),
+    )
+  );
 }
 
 for (const module of manifest.modules) {
-  if (module.fullyVerified === true && hasContradictoryVerifiedStatus(module.browsingImplementation)) {
-    throw new Error("Fully verified module has contradictory implementation status: " + module.label);
+  if (
+    module.fullyVerified === true &&
+    hasContradictoryVerifiedStatus(module.browsingImplementation)
+  ) {
+    throw new Error(
+      "Fully verified module has contradictory implementation status: " + module.label,
+    );
   }
   if (module.fullyVerified === true && !hasExecutableAcceptanceEvidence(module)) {
-    throw new Error("Fully verified module requires 12 nonempty acceptance evidence entries: " + module.label);
+    throw new Error(
+      "Fully verified module requires 12 nonempty acceptance evidence entries: " + module.label,
+    );
   }
 }
 
@@ -158,12 +206,21 @@ for (const module of manifest.modules) {
 // in the route inventory. This prevents hidden workflows from silently escaping
 // the per-route browsing acceptance review.
 const supportingEvidence = manifest.supportingRouteEvidence;
-if (!supportingEvidence || typeof supportingEvidence !== "object" || Array.isArray(supportingEvidence)) {
+if (
+  !supportingEvidence ||
+  typeof supportingEvidence !== "object" ||
+  Array.isArray(supportingEvidence)
+) {
   throw new Error("Supporting-route browsing evidence register is required");
 }
 for (const route of manifest.supportingRoutes) {
   const entry = supportingEvidence[route];
-  if (!entry || typeof entry.status !== "string" || !entry.status.trim() || typeof entry.fullyVerified !== "boolean") {
+  if (
+    !entry ||
+    typeof entry.status !== "string" ||
+    !entry.status.trim() ||
+    typeof entry.fullyVerified !== "boolean"
+  ) {
     throw new Error("Supporting route requires explicit status and fullyVerified flag: " + route);
   }
 }
@@ -178,15 +235,36 @@ for (const [route, entry] of Object.entries(manifest.supportingRouteEvidence ?? 
     throw new Error("Verified supporting route has contradictory status: " + route);
   }
   if (entry.fullyVerified === true && !hasExecutableAcceptanceEvidence(entry)) {
-    throw new Error("Verified supporting route requires 12 nonempty acceptance evidence entries: " + route);
+    throw new Error(
+      "Verified supporting route requires 12 nonempty acceptance evidence entries: " + route,
+    );
   }
 }
-if (!Array.isArray(manifest.crossCutting) || manifest.crossCutting.some((entry) => !entry || typeof entry.area !== "string" || !entry.area.trim() || typeof entry.status !== "string" || !entry.status.trim() || typeof entry.fullyVerified !== "boolean")) {
-  throw new Error("Cross-cutting browsing areas require a name, status and explicit fullyVerified boolean");
+if (
+  !Array.isArray(manifest.crossCutting) ||
+  manifest.crossCutting.some(
+    (entry) =>
+      !entry ||
+      typeof entry.area !== "string" ||
+      !entry.area.trim() ||
+      typeof entry.status !== "string" ||
+      !entry.status.trim() ||
+      typeof entry.fullyVerified !== "boolean",
+  )
+) {
+  throw new Error(
+    "Cross-cutting browsing areas require a name, status and explicit fullyVerified boolean",
+  );
 }
 // Case and repeated whitespace must not create separate coverage identities.
 // Match the normalization used for visible sidebar labels.
-if (new Set(manifest.crossCutting.map((entry) => entry.area.trim().replace(/\s+/g, " ").toLocaleLowerCase("en"))).size !== manifest.crossCutting.length) {
+if (
+  new Set(
+    manifest.crossCutting.map((entry) =>
+      entry.area.trim().replace(/\s+/g, " ").toLocaleLowerCase("en"),
+    ),
+  ).size !== manifest.crossCutting.length
+) {
   throw new Error("Duplicate cross-cutting browsing areas");
 }
 for (const entry of manifest.crossCutting) {
@@ -194,41 +272,63 @@ for (const entry of manifest.crossCutting) {
     throw new Error("Verified cross-cutting workflow has contradictory status: " + entry.area);
   }
   if (entry.fullyVerified === true && !hasExecutableAcceptanceEvidence(entry)) {
-    throw new Error("Verified cross-cutting workflow requires 12 nonempty acceptance evidence entries: " + entry.area);
+    throw new Error(
+      "Verified cross-cutting workflow requires 12 nonempty acceptance evidence entries: " +
+        entry.area,
+    );
   }
 }
 
 const missingRequirements = manifest.modules.filter(
   (module) =>
-    typeof module.browsingImplementation !== "string" || !module.browsingImplementation.trim() ||
+    typeof module.browsingImplementation !== "string" ||
+    !module.browsingImplementation.trim() ||
     typeof module.fullyVerified !== "boolean" ||
     !Array.isArray(module.routeFiles),
 );
 if (missingRequirements.length) {
-  throw new Error("Module coverage status missing for: " +
-    missingRequirements.map((m) => m.label).join(", "));
+  throw new Error(
+    "Module coverage status missing for: " + missingRequirements.map((m) => m.label).join(", "),
+  );
 }
 for (const module of manifest.modules) {
   if (module.fullyVerified === true && !module.verificationEvidence) {
     throw new Error("No verifiable acceptance evidence for: " + module.label);
   }
 }
-if (!Array.isArray(manifest.acceptanceCriteria) ||
-    manifest.acceptanceCriteria.length !== 12) {
+if (!Array.isArray(manifest.acceptanceCriteria) || manifest.acceptanceCriteria.length !== 12) {
   throw new Error("Every module must be reviewed against the 12 browsing acceptance criteria");
 }
 
 const awaiting = manifest.modules.filter((m) => !m.fullyVerified);
 console.log(
   "LinkBooks browsing inventory: " +
-  manifest.modules.length + " sidebar modules, " +
-  actualRoutes.length + " authenticated routes, " +
-  manifest.supportingRoutes.length + " supporting routes.",
+    manifest.modules.length +
+    " sidebar modules, " +
+    actualRoutes.length +
+    " authenticated routes, " +
+    manifest.supportingRoutes.length +
+    " supporting routes.",
 );
 console.log(
-  "Fully verified modules: " + (manifest.modules.length - awaiting.length) +
-  ". Not yet fully verified: " + awaiting.length + ".",
+  "Fully verified modules: " +
+    (manifest.modules.length - awaiting.length) +
+    ". Not yet fully verified: " +
+    awaiting.length +
+    ".",
 );
-console.log("Fully verified supporting routes: " + Object.values(supportingEvidence).filter((entry) => entry.fullyVerified).length + "/" + manifest.supportingRoutes.length + ".");
-console.log("Fully verified cross-cutting workflows: " + manifest.crossCutting.filter((entry) => entry.fullyVerified).length + "/" + manifest.crossCutting.length + ".");
+console.log(
+  "Fully verified supporting routes: " +
+    Object.values(supportingEvidence).filter((entry) => entry.fullyVerified).length +
+    "/" +
+    manifest.supportingRoutes.length +
+    ".",
+);
+console.log(
+  "Fully verified cross-cutting workflows: " +
+    manifest.crossCutting.filter((entry) => entry.fullyVerified).length +
+    "/" +
+    manifest.crossCutting.length +
+    ".",
+);
 console.log("Inventory coverage verified; runtime functionality NOT established by this check.");

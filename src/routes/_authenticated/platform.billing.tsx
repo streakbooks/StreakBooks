@@ -42,13 +42,23 @@ function PlatformBillingPage() {
   const [amount, setAmount] = useState("3000");
   const [reason, setReason] = useState("");
 
-  if (query.isLoading) return <main className="p-6" role="status" aria-live="polite">Loading platform billing…</main>;
+  if (query.isLoading)
+    return (
+      <main className="p-6" role="status" aria-live="polite">
+        Loading platform billing…
+      </main>
+    );
   if (query.isError) {
     return (
       <main className="mx-auto max-w-xl space-y-3 p-6">
         <h1 className="text-2xl font-semibold">Platform billing</h1>
         <p role="alert">{query.error instanceof Error ? query.error.message : "Access denied."}</p>
-        <Button type="button" variant="outline" disabled={query.isFetching} onClick={() => void query.refetch()}>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={query.isFetching}
+          onClick={() => void query.refetch()}
+        >
           {query.isFetching ? "Retrying billing…" : "Retry loading billing"}
         </Button>
       </main>

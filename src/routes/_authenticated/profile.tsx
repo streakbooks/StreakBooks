@@ -56,7 +56,9 @@ function ProfilePage() {
     }
   }, [profileQuery.data]);
 
-  const profileDirty = !!profileQuery.data && (fullName !== profileQuery.data.full_name || jobTitle !== (profileQuery.data.job_title ?? ""));
+  const profileDirty =
+    !!profileQuery.data &&
+    (fullName !== profileQuery.data.full_name || jobTitle !== (profileQuery.data.job_title ?? ""));
 
   const mutation = useMutation({
     mutationFn: () => saveProfile({ data: { full_name: fullName, job_title: jobTitle } }),
@@ -88,36 +90,49 @@ function ProfilePage() {
               <CardDescription>This is real account data, not demo data.</CardDescription>
             </CardHeader>
             <CardContent>
-              <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); if (profileDirty && fullName.trim() && !mutation.isPending) mutation.mutate(); }}>
-              <div className="space-y-2">
-                <Label htmlFor="profile-email">Email</Label>
-                <Input id="profile-email" value={profileQuery.data.email} disabled readOnly />
-                <p className="text-xs text-muted-foreground">
-                  Your email is your sign-in identity and can't be changed in this phase.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="profile-name">Full name</Label>
-                <Input
-                  id="profile-name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="profile-role">Job title</Label>
-                <Input
-                  id="profile-role"
-                  value={jobTitle}
-                  placeholder="e.g. Finance Manager"
-                  onChange={(e) => setJobTitle(e.target.value)}
-                />
-              </div>
-              <Button type="submit" disabled={mutation.isPending || !profileDirty || !fullName.trim()}>
-                {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                {mutation.isPending ? "Saving…" : "Save changes"}
-              </Button>
-              {profileDirty ? <p role="status" className="text-xs text-muted-foreground">Unsaved profile changes</p> : null}
+              <form
+                className="space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (profileDirty && fullName.trim() && !mutation.isPending) mutation.mutate();
+                }}
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="profile-email">Email</Label>
+                  <Input id="profile-email" value={profileQuery.data.email} disabled readOnly />
+                  <p className="text-xs text-muted-foreground">
+                    Your email is your sign-in identity and can't be changed in this phase.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profile-name">Full name</Label>
+                  <Input
+                    id="profile-name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profile-role">Job title</Label>
+                  <Input
+                    id="profile-role"
+                    value={jobTitle}
+                    placeholder="e.g. Finance Manager"
+                    onChange={(e) => setJobTitle(e.target.value)}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={mutation.isPending || !profileDirty || !fullName.trim()}
+                >
+                  {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                  {mutation.isPending ? "Saving…" : "Save changes"}
+                </Button>
+                {profileDirty ? (
+                  <p role="status" className="text-xs text-muted-foreground">
+                    Unsaved profile changes
+                  </p>
+                ) : null}
               </form>
             </CardContent>
           </Card>

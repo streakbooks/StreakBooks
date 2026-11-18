@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -60,10 +61,7 @@ export function FirmClientRequestsPanel({
   clients: FirmClientRow[];
   canManage: boolean;
 }) {
-  const available = useMemo(
-    () => clients.filter((client) => Boolean(client.companies)),
-    [clients],
-  );
+  const available = useMemo(() => clients.filter((client) => Boolean(client.companies)), [clients]);
   const [selected, setSelected] = useState("");
   const clientId = available.some((client) => client.company_id === selected)
     ? selected
@@ -140,7 +138,7 @@ export function FirmClientRequestsPanel({
           Track information and document requests internally with ownership, deadlines and review
           status. Saving a request does not send email or grant portal access.
         </p>
-        <Link to="/documents" className="text-sm underline">
+        <Link to="/files" className="text-sm underline">
           Open existing Documents workspace
         </Link>
       </div>
@@ -178,17 +176,20 @@ export function FirmClientRequestsPanel({
           ) : requestsQ.isError ? (
             <ErrorState
               title="Could not load requests"
+              onRetry={() => void requestsQ.refetch()}
               description={friendlyAuthError(requestsQ.error)}
             />
           ) : (
             <>
               <div className="grid gap-3 sm:grid-cols-4">
-                {([
-                  ["All requests", metrics.total],
-                  ["Outstanding", metrics.unresolved],
-                  ["Received", metrics.received],
-                  ["Overdue", metrics.overdue],
-                ] as const).map(([label, value]) => (
+                {(
+                  [
+                    ["All requests", metrics.total],
+                    ["Outstanding", metrics.unresolved],
+                    ["Received", metrics.received],
+                    ["Overdue", metrics.overdue],
+                  ] as const
+                ).map(([label, value]) => (
                   <div key={label} className="rounded-lg border bg-card p-4">
                     <p className="text-sm text-muted-foreground">{label}</p>
                     <p className="text-2xl font-semibold tabular-nums">{value}</p>
@@ -197,7 +198,7 @@ export function FirmClientRequestsPanel({
               </div>
               <div className="max-w-xs space-y-1">
                 <Label>Filter requests</Label>
-                <Select value={filter} onValueChange={setFilter}>
+                <RecordLookupSelect value={filter} onValueChange={setFilter}>
                   <SelectTrigger aria-label="Request status filter">
                     <SelectValue />
                   </SelectTrigger>
@@ -209,7 +210,7 @@ export function FirmClientRequestsPanel({
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
               {visible.length === 0 ? (
                 <EmptyState
@@ -311,7 +312,7 @@ export function FirmClientRequestsPanel({
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label>Status</Label>
-                <Select
+                <RecordLookupSelect
                   value={draft.status}
                   onValueChange={(value) =>
                     setDraft((current) => ({
@@ -320,7 +321,9 @@ export function FirmClientRequestsPanel({
                     }))
                   }
                 >
-                  <SelectTrigger aria-label="Request status"><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="Request status">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {REQUEST_STATUSES.map((status) => (
                       <SelectItem key={status} value={status}>
@@ -328,11 +331,11 @@ export function FirmClientRequestsPanel({
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
               <div className="space-y-1">
                 <Label>Priority</Label>
-                <Select
+                <RecordLookupSelect
                   value={draft.priority}
                   onValueChange={(value) =>
                     setDraft((current) => ({
@@ -341,7 +344,9 @@ export function FirmClientRequestsPanel({
                     }))
                   }
                 >
-                  <SelectTrigger aria-label="Request priority"><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="Request priority">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {REQUEST_PRIORITIES.map((priority) => (
                       <SelectItem key={priority} value={priority}>
@@ -349,7 +354,7 @@ export function FirmClientRequestsPanel({
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="request-due">Due date</Label>
@@ -367,7 +372,7 @@ export function FirmClientRequestsPanel({
               </div>
               <div className="space-y-1">
                 <Label>Responsible team member</Label>
-                <Select
+                <RecordLookupSelect
                   value={draft.assigned_to ?? "unassigned"}
                   onValueChange={(value) =>
                     setDraft((current) => ({
@@ -376,7 +381,9 @@ export function FirmClientRequestsPanel({
                     }))
                   }
                 >
-                  <SelectTrigger aria-label="Assign firm member"><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="Assign firm member">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="unassigned">Unassigned</SelectItem>
                     {(teamQ.data ?? []).map((member) => (
@@ -385,7 +392,7 @@ export function FirmClientRequestsPanel({
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
             </div>
             <div className="space-y-1">
@@ -413,7 +420,12 @@ export function FirmClientRequestsPanel({
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" disabled={saveM.isPending} onClick={() => setDialog(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saveM.isPending}
+                onClick={() => setDialog(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={saveM.isPending}>

@@ -17,12 +17,10 @@ test.describe("Fixed Assets complete register browsing context", () => {
   });
 
   test("register search/status/sort survive direct URL and refresh", async ({ page }) => {
-    await signIn(
-      page,
-      "/fixed-assets?tab=register&q=office&status=active&sort=cost&desc=true",
-    );
+    await signIn(page, "/fixed-assets?tab=register&q=office&status=active&sort=cost&desc=true");
     await expect(page.getByRole("tab", { name: "Register" })).toHaveAttribute(
-      "aria-selected", "true",
+      "aria-selected",
+      "true",
     );
     test.skip(
       (await page.getByRole("textbox", { name: "Search fixed assets" }).count()) === 0,

@@ -1,24 +1,29 @@
 import type { AssetRegisterSort } from "./register-view";
 
 export const FIXED_ASSET_SECTIONS = [
-  "dashboard", "register", "depreciation", "types", "reconciliation", "bill-review",
+  "dashboard",
+  "register",
+  "depreciation",
+  "types",
+  "reconciliation",
+  "bill-review",
 ] as const;
 export type FixedAssetSection = (typeof FIXED_ASSET_SECTIONS)[number];
 
 export type FixedAssetRegisterSearch = {
-  tab?: FixedAssetSection;
-  q?: string;
-  status?: "all" | "active" | "disposed";
-  typeId?: string;
-  accountId?: string;
-  sort?: AssetRegisterSort;
-  desc?: boolean;
+  tab?: FixedAssetSection | undefined;
+  q?: string | undefined;
+  status?: "all" | "active" | "disposed" | undefined;
+  typeId?: string | undefined;
+  accountId?: string | undefined;
+  sort?: AssetRegisterSort | undefined;
+  desc?: boolean | undefined;
 };
 
 const SECTIONS = new Set<string>(FIXED_ASSET_SECTIONS);
 const STATUSES = new Set(["all", "active", "disposed"]);
 const SORTS = new Set(["number", "name", "purchase", "cost"]);
-const UNSAFE_SEARCH = /[\u0000-\u001f\u007f-\u009f\u061c\u200b-\u200f\u2028-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/u;
+const UNSAFE_SEARCH = /[\p{Cc}\u061c\u200b-\u200f\u2028-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/u;
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 
 /** URL parameters only describe a view; they cannot grant financial-data access. */
@@ -35,7 +40,7 @@ export function parseFixedAssetRegisterSearch(
   }
   const status = raw["status"];
   if (typeof status === "string" && STATUSES.has(status)) {
-    result.status = status as FixedAssetRegisterSearch["status"];
+    result.status = status as NonNullable<FixedAssetRegisterSearch["status"]>;
   }
   for (const key of ["typeId", "accountId"] as const) {
     const id = raw[key];

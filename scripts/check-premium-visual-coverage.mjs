@@ -13,9 +13,10 @@ const inventory = JSON.parse(
   readFileSync(join(root, "docs/ux/premium-visual-route-inventory.json"), "utf8"),
 );
 const nav = readFileSync(join(root, "src/lib/nav.ts"), "utf8");
-const sidebar = [...nav.matchAll(
-  /\{\s*label:\s*"([^"]+)",\s*to:\s*"([^"]+)",/g,
-)].map((match) => ({ label: match[1], href: match[2] }));
+const sidebar = [...nav.matchAll(/\{\s*label:\s*"([^"]+)",\s*to:\s*"([^"]+)",/g)].map((match) => ({
+  label: match[1],
+  href: match[2],
+}));
 const declaredSidebar = inventory.modules.map(({ label, href }) => ({ label, href }));
 
 function scan(dir) {
@@ -35,10 +36,11 @@ function equalInventory(actual, expected, label) {
   const added = actual.filter((item) => !expected.includes(item));
   if (missing.length || added.length) {
     throw new Error(
-      label + " inventory mismatch.\n" +
-      (missing.length ? "Removed/renamed in repository: " + missing.join(", ") + "\n" : "") +
-      (added.length ? "New untracked entries: " + added.join(", ") + "\n" : "") +
-      "Update the premium visual route inventory before declaring any batch accepted.",
+      label +
+        " inventory mismatch.\n" +
+        (missing.length ? "Removed/renamed in repository: " + missing.join(", ") + "\n" : "") +
+        (added.length ? "New untracked entries: " + added.join(", ") + "\n" : "") +
+        "Update the premium visual route inventory before declaring any batch accepted.",
     );
   }
 }
@@ -72,7 +74,14 @@ for (const module of inventory.modules) {
 }
 const complete = inventory.modules.filter((module) => module.verified).length;
 console.log(
-  "Premium visual coverage: " + sidebar.length + " modules and " +
-  routes.length + " routes inventoried. " + complete + " fully verified modules.",
+  "Premium visual coverage: " +
+    sidebar.length +
+    " modules and " +
+    routes.length +
+    " routes inventoried. " +
+    complete +
+    " fully verified modules.",
 );
-console.log("Inventory guard passed. Browser quality, accounting integrity and deployment NOT established.");
+console.log(
+  "Inventory guard passed. Browser quality, accounting integrity and deployment NOT established.",
+);

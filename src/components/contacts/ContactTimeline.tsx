@@ -405,7 +405,10 @@ export function ContactTimeline({
       ) : (
         <ol className="space-y-3">
           {rows.map((activity) => (
-            <li key={activity.id} className="space-y-3 rounded-xl border border-border/85 bg-card p-4 shadow-xs transition-colors hover:border-primary/20">
+            <li
+              key={activity.id}
+              className="space-y-3 rounded-xl border border-border/85 bg-card p-4 shadow-xs transition-colors hover:border-primary/20"
+            >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">{KIND_LABELS[activity.kind] ?? activity.kind}</Badge>

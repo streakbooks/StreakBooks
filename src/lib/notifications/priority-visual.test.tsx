@@ -6,10 +6,12 @@ import { NotificationPriorityBadge } from "@/components/notifications/Notificati
 describe("Action Center priority semantics", () => {
   it("never confuses high priority with an approved or paid document", () => {
     expect(notificationPriorityDisplay("critical")).toMatchObject({
-      label: "Critical", tone: "danger",
+      label: "Critical",
+      tone: "danger",
     });
     expect(notificationPriorityDisplay("high")).toMatchObject({
-      label: "High priority", tone: "warning",
+      label: "High priority",
+      tone: "warning",
     });
     expect(notificationPriorityDisplay("normal").tone).toBe("info");
     expect(notificationPriorityDisplay("low").tone).toBe("neutral");
@@ -30,9 +32,11 @@ describe("Action Center priority semantics", () => {
   });
 
   it("renders warning and unknown cases without pretending they are successful", () => {
-    expect(renderToStaticMarkup(<NotificationPriorityBadge priority="high" />))
-      .toContain('data-priority="high"');
-    expect(renderToStaticMarkup(<NotificationPriorityBadge priority="unknown" />))
-      .toContain("Unspecified");
+    expect(renderToStaticMarkup(<NotificationPriorityBadge priority="high" />)).toContain(
+      'data-priority="high"',
+    );
+    expect(renderToStaticMarkup(<NotificationPriorityBadge priority="unknown" />)).toContain(
+      "Unspecified",
+    );
   });
 });

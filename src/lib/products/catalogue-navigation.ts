@@ -3,14 +3,14 @@ export const PRODUCT_SECTIONS = ["catalogue", "categories", "price-lists"] as co
 export type ProductSection = (typeof PRODUCT_SECTIONS)[number];
 
 export type CatalogueSearch = {
-  section: ProductSection;
-  q?: string;
-  kind?: "all" | "service" | "product" | "non_inventory";
-  category?: string;
-  status?: "active" | "archived" | "all";
-  sort?: "name" | "name_desc" | "code" | "price_asc" | "price_desc" | "recent";
-  page?: number;
-  pageSize?: 25 | 50 | 100;
+  section?: ProductSection | undefined;
+  q?: string | undefined;
+  kind?: "all" | "service" | "product" | "non_inventory" | undefined;
+  category?: string | undefined;
+  status?: "active" | "archived" | "all" | undefined;
+  sort?: "name" | "name_desc" | "code" | "price_asc" | "price_desc" | "recent" | undefined;
+  page?: number | undefined;
+  pageSize?: 25 | 50 | 100 | undefined;
 };
 
 const KINDS = new Set(["all", "service", "product", "non_inventory"]);
@@ -34,20 +34,23 @@ export function parseCatalogueSearch(raw: Record<string, unknown>): CatalogueSea
 
   const kind = raw["kind"];
   if (typeof kind === "string" && KINDS.has(kind))
-    out.kind = kind as CatalogueSearch["kind"];
+    out.kind = kind as NonNullable<CatalogueSearch["kind"]>;
 
   const category = raw["category"];
-  if (typeof category === "string" && category.length <= 80 &&
-      (category === "all" || /^[a-zA-Z0-9_-]+$/.test(category)))
+  if (
+    typeof category === "string" &&
+    category.length <= 80 &&
+    (category === "all" || /^[a-zA-Z0-9_-]+$/.test(category))
+  )
     out.category = category;
 
   const status = raw["status"];
   if (typeof status === "string" && STATUSES.has(status))
-    out.status = status as CatalogueSearch["status"];
+    out.status = status as NonNullable<CatalogueSearch["status"]>;
 
   const sort = raw["sort"];
   if (typeof sort === "string" && SORTS.has(sort))
-    out.sort = sort as CatalogueSearch["sort"];
+    out.sort = sort as NonNullable<CatalogueSearch["sort"]>;
 
   const page = raw["page"];
   if (typeof page === "number" && Number.isSafeInteger(page) && page >= 1)
@@ -56,9 +59,11 @@ export function parseCatalogueSearch(raw: Record<string, unknown>): CatalogueSea
     out.page = Math.min(Number(page), 1_000_000);
 
   const pageSize = raw["pageSize"];
-  if ((typeof pageSize === "string" || typeof pageSize === "number") &&
-      PAGE_SIZES.has(Number(pageSize)))
-    out.pageSize = Number(pageSize) as CatalogueSearch["pageSize"];
+  if (
+    (typeof pageSize === "string" || typeof pageSize === "number") &&
+    PAGE_SIZES.has(Number(pageSize))
+  )
+    out.pageSize = Number(pageSize) as NonNullable<CatalogueSearch["pageSize"]>;
 
   return out;
 }

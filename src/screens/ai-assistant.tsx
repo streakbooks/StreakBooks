@@ -222,18 +222,22 @@ function AiAssistantWorkspace({
   const setFilter = (value: string) => {
     void navigate({
       to: "/ai-assistant",
-      search: (previous) => parseAiAssistantSearch({
-        ...previous, suggestionStatus: value as AiSuggestionStatus,
-      }),
+      search: (previous) =>
+        parseAiAssistantSearch({
+          ...previous,
+          suggestionStatus: value as AiSuggestionStatus,
+        }),
       resetScroll: false,
     });
   };
   const setSearch = (value: string) => {
     void navigate({
       to: "/ai-assistant",
-      search: (previous) => parseAiAssistantSearch({
-        ...previous, suggestionQ: value,
-      }),
+      search: (previous) =>
+        parseAiAssistantSearch({
+          ...previous,
+          suggestionQ: value,
+        }),
       replace: true,
       resetScroll: false,
     });
@@ -578,7 +582,10 @@ function AiAssistantWorkspace({
                 </div>
               ) : (
                 exchanges.map((entry) => (
-                  <article key={entry.id} className="space-y-3 rounded-xl border border-border/85 bg-background p-4 shadow-xs">
+                  <article
+                    key={entry.id}
+                    className="space-y-3 rounded-xl border border-border/85 bg-background p-4 shadow-xs"
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <Badge variant="outline">{INTENT_LABELS[entry.intent]}</Badge>
                       <Badge

@@ -26,7 +26,7 @@ const routeApi = getRouteApi("/_authenticated/contacts/new");
 
 export function NewContactRoute() {
   const { kind, returnContext } = routeApi.useSearch();
-  return <NewContact initialKind={kind} returnContext={returnContext} />;
+  return <NewContact initialKind={kind ?? "customer"} returnContext={returnContext} />;
 }
 
 const sections = [
@@ -73,7 +73,12 @@ export function NewContact({
   embedded = false,
   onSaved,
   returnContext,
-}: { initialKind?: "customer" | "supplier"; embedded?: boolean; onSaved?: () => void; returnContext?: string } = {}) {
+}: {
+  initialKind?: "customer" | "supplier";
+  embedded?: boolean;
+  onSaved?: () => void;
+  returnContext?: string | undefined;
+} = {}) {
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const canManage = useCanDo("contacts.manage");
@@ -179,11 +184,12 @@ export function NewContact({
         toast.warning("Contact saved, but some people could not be added. Review the People tab.");
       else toast.success("Contact created");
       if (onSaved) onSaved();
-      else void navigate({
-        to: "/contacts/$contactId",
-        params: { contactId: id },
-        search: returnContext ? { returnContext } : {},
-      });
+      else
+        void navigate({
+          to: "/contacts/$contactId",
+          params: { contactId: id },
+          search: returnContext ? { returnContext } : {},
+        });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });

@@ -6,7 +6,12 @@ export function parseBudgetListSearch(raw: Record<string, unknown>): BudgetListS
   if (typeof q !== "string") return {};
   const normalized = q.trim();
   // Reject invisible controls in URL-restored search, while allowing Unicode text.
-  if (!normalized || normalized.length > 100 || /[\u0000-\u001f\u007f-\u009f\u061c\u200e\u200f\u2028-\u202e\u2066-\u2069]/u.test(normalized)) return {};
+  if (
+    !normalized ||
+    normalized.length > 100 ||
+    /[\p{Cc}\u061c\u200e\u200f\u2028-\u202e\u2066-\u2069]/u.test(normalized)
+  )
+    return {};
   return { q: normalized };
 }
 

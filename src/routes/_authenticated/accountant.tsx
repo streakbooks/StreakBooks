@@ -49,14 +49,18 @@ import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 function parseChecklistDate(value: unknown): string | undefined {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
   const date = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value ? value : undefined;
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+    ? value
+    : undefined;
 }
 
 export const Route = createFileRoute("/_authenticated/accountant")({
   head: () => ({
     meta: [{ title: "Accountant tools — LinkBooks" }],
   }),
-  validateSearch: (raw: Record<string, unknown>): { tab?: AccountantWorkspaceTab; asOf?: string } => ({
+  validateSearch: (
+    raw: Record<string, unknown>,
+  ): { tab?: AccountantWorkspaceTab | undefined; asOf?: string | undefined } => ({
     tab: parseAccountantWorkspaceTab(raw["tab"]),
     asOf: parseChecklistDate(raw["asOf"]),
   }),
@@ -189,7 +193,8 @@ function AccountantTools() {
               value={asOf}
               onChange={(e) => {
                 const nextDate = parseChecklistDate(e.target.value);
-                if (nextDate) void navigate({ search: { tab, asOf: nextDate }, resetScroll: false });
+                if (nextDate)
+                  void navigate({ search: { tab, asOf: nextDate }, resetScroll: false });
               }}
             />
           </label>
@@ -203,7 +208,10 @@ function AccountantTools() {
             />
           ) : (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Accountant review queue indicators">
+              <div
+                className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                aria-label="Accountant review queue indicators"
+              >
                 <CheckCard
                   title="Unlocked periods"
                   count={query.data!.unlockedPeriods}

@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,20 +80,34 @@ export function AdvisorsAdminConversationsPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending || staffQuery.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><ListWorkspace title="Conversations" description="Review Advisors qualification chats." ><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></ListWorkspace>
-</main>;
+  if (query.isPending || staffQuery.isPending)
+    return (
+      <main className="mx-auto max-w-6xl space-y-6 p-6">
+        <ListWorkspace title="Conversations" description="Review Advisors qualification chats.">
+          <AdvisorsSubnav />
+          <div role="status" aria-live="polite">
+            <LoadingState />
+          </div>
+        </ListWorkspace>
+      </main>
+    );
   if (query.isError || staffQuery.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <ListWorkspace title="Conversations" description="Review Advisors qualification chats." >
-        <AdvisorsSubnav />
-        <div role="alert"><ErrorState
-          title="Conversations unavailable"
-          description={friendlyAuthError(query.error ?? staffQuery.error)}
-          onRetry={() => { void query.refetch(); void staffQuery.refetch(); }}
-        /></div>
-      </ListWorkspace>
-</main>
+        <ListWorkspace title="Conversations" description="Review Advisors qualification chats.">
+          <AdvisorsSubnav />
+          <div role="alert">
+            <ErrorState
+              title="Conversations unavailable"
+              description={friendlyAuthError(query.error ?? staffQuery.error)}
+              onRetry={() => {
+                void query.refetch();
+                void staffQuery.refetch();
+              }}
+            />
+          </div>
+        </ListWorkspace>
+      </main>
     );
   }
 
@@ -106,186 +120,194 @@ export function AdvisorsAdminConversationsPage() {
         title="Conversations"
         description="Open chat transcripts, assign advisors and close or hand off conversations."
       >
-      <AdvisorsSubnav />
+        <AdvisorsSubnav />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
-          <Label htmlFor="conversation-search">Search</Label>
-          <Input
-            id="conversation-search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Visitor name or email"
-            className="w-64"
-          />
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <Label htmlFor="conversation-search">Search</Label>
+            <Input
+              id="conversation-search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Visitor name or email"
+              className="w-64"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="conversation-status">Status</Label>
+            <RecordLookupSelect
+              id="conversation-status"
+              className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={status}
+              onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
+            >
+              {STATUSES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </RecordLookupSelect>
+          </div>
+          <div className="min-w-[16rem] flex-1 space-y-1">
+            <Label htmlFor="conversation-reason">Change reason</Label>
+            <Input
+              id="conversation-reason"
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Why are you updating this conversation?"
+            />
+          </div>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="conversation-status">Status</Label>
-          <RecordLookupSelect
-            id="conversation-status"
-            className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
-            value={status}
-            onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
-          >
-            {STATUSES.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </RecordLookupSelect>
-        </div>
-        <div className="min-w-[16rem] flex-1 space-y-1">
-          <Label htmlFor="conversation-reason">Change reason</Label>
-          <Input
-            id="conversation-reason"
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder="Why are you updating this conversation?"
-          />
-        </div>
-      </div>
 
-      <p role="status" aria-live="polite" className="sr-only">{query.data.length} conversations found</p>
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-        <section className="space-y-2">
-          {query.data.length === 0 ? (
-            <EmptyState
-              title="No conversations match"
-              description="Visitor chats from service selection appear here after consent."
-            />
-          ) : (
-            query.data.map((conversation) => (
-              <button
-                key={conversation.id}
-                type="button"
-                onClick={() => {
-                  setSelectedId(conversation.id);
-                  setAdminNotes(conversation.adminNotes);
-                }}
-                className={`w-full rounded-xl border p-4 text-left transition ${
-                  selectedId === conversation.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border/70 hover:border-primary/40"
-                }`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium">
-                      {conversation.visitorName || conversation.visitorEmail || "Anonymous visitor"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {conversation.serviceCode} · {conversation.messageCount} messages
-                    </p>
-                  </div>
-                  <Badge variant="secondary">{conversation.status}</Badge>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {staffLabel(staff, conversation.assignedAdvisorId)} ·{" "}
-                  {new Date(conversation.lastMessageAt || conversation.createdAt).toLocaleString()}
-                </p>
-              </button>
-            ))
-          )}
-        </section>
-
-        <section className="space-y-4 rounded-xl border border-border/70 p-4">
-          {!selectedId ? (
-            <EmptyState
-              title="Select a conversation"
-              description="Choose a chat to read the transcript and update ownership."
-            />
-          ) : detailQuery.isPending ? (
-            <LoadingState />
-          ) : detailQuery.isError ? (
-            <ErrorState
-              title="Conversation detail unavailable"
-              description={friendlyAuthError(detailQuery.error)}
-              onRetry={() => void detailQuery.refetch()}
-            />
-          ) : detail ? (
-            <>
-              <div>
-                <h2 className="font-semibold">
-                  {detail.visitorName || detail.visitorEmail || "Anonymous visitor"}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {detail.serviceCode}
-                  {detail.recommendedPlanCode ? ` · recommended ${detail.recommendedPlanCode}` : ""}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="conversation-assign">Assigned advisor</Label>
-                <RecordLookupSelect
-                  id="conversation-assign"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  disabled={updateM.isPending}
-                  value={detail.assignedAdvisorId ?? ""}
-                  onValueChange={(event) =>
-                    updateM.mutate({
-                      conversationId: detail.id,
-                      assignedAdvisorId: event || null,
-                    })
-                  }
-                >
-                  <option value="">Unassigned</option>
-                  {staff.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.displayName}
-                    </option>
-                  ))}
-                </RecordLookupSelect>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(["open", "handed_off", "closed"] as const).map((next) => (
-                  <Button
-                    key={next}
-                    type="button"
-                    size="sm"
-                    variant={detail.status === next ? "default" : "outline"}
-                    disabled={updateM.isPending || detail.status === next}
-                    onClick={() => updateM.mutate({ conversationId: detail.id, status: next })}
-                  >
-                    Mark {next}
-                  </Button>
-                ))}
-              </div>
-              <div className="max-h-[24rem] space-y-3 overflow-y-auto rounded-lg border border-border/50 p-3">
-                {detail.messages.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No messages stored yet.</p>
-                ) : (
-                  detail.messages.map((message) => (
-                    <article key={message.id} className="space-y-1 text-sm">
-                      <p className="text-xs tracking-wide text-muted-foreground uppercase">
-                        {message.role} · {new Date(message.createdAt).toLocaleString()}
-                      </p>
-                      <p className="whitespace-pre-wrap">{message.content}</p>
-                    </article>
-                  ))
-                )}
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="conversation-notes">Admin notes</Label>
-                <Textarea
-                  id="conversation-notes"
-                  value={adminNotes}
-                  onChange={(event) => setAdminNotes(event.target.value)}
-                  maxLength={5000}
-                  rows={3}
-                />
-                <Button
+        <p role="status" aria-live="polite" className="sr-only">
+          {query.data.length} conversations found
+        </p>
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+          <section className="space-y-2">
+            {query.data.length === 0 ? (
+              <EmptyState
+                title="No conversations match"
+                description="Visitor chats from service selection appear here after consent."
+              />
+            ) : (
+              query.data.map((conversation) => (
+                <button
+                  key={conversation.id}
                   type="button"
-                  variant="outline"
-                  disabled={updateM.isPending || adminNotes === detail.adminNotes}
-                  onClick={() => updateM.mutate({ conversationId: detail.id, adminNotes })}
+                  onClick={() => {
+                    setSelectedId(conversation.id);
+                    setAdminNotes(conversation.adminNotes);
+                  }}
+                  className={`w-full rounded-xl border p-4 text-left transition ${
+                    selectedId === conversation.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border/70 hover:border-primary/40"
+                  }`}
                 >
-                  Save notes
-                </Button>
-              </div>
-            </>
-          ) : null}
-        </section>
-      </div>
-    </ListWorkspace>
-</main>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium">
+                        {conversation.visitorName ||
+                          conversation.visitorEmail ||
+                          "Anonymous visitor"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {conversation.serviceCode} · {conversation.messageCount} messages
+                      </p>
+                    </div>
+                    <Badge variant="secondary">{conversation.status}</Badge>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {staffLabel(staff, conversation.assignedAdvisorId)} ·{" "}
+                    {new Date(
+                      conversation.lastMessageAt || conversation.createdAt,
+                    ).toLocaleString()}
+                  </p>
+                </button>
+              ))
+            )}
+          </section>
+
+          <section className="space-y-4 rounded-xl border border-border/70 p-4">
+            {!selectedId ? (
+              <EmptyState
+                title="Select a conversation"
+                description="Choose a chat to read the transcript and update ownership."
+              />
+            ) : detailQuery.isPending ? (
+              <LoadingState />
+            ) : detailQuery.isError ? (
+              <ErrorState
+                title="Conversation detail unavailable"
+                description={friendlyAuthError(detailQuery.error)}
+                onRetry={() => void detailQuery.refetch()}
+              />
+            ) : detail ? (
+              <>
+                <div>
+                  <h2 className="font-semibold">
+                    {detail.visitorName || detail.visitorEmail || "Anonymous visitor"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {detail.serviceCode}
+                    {detail.recommendedPlanCode
+                      ? ` · recommended ${detail.recommendedPlanCode}`
+                      : ""}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="conversation-assign">Assigned advisor</Label>
+                  <RecordLookupSelect
+                    id="conversation-assign"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    disabled={updateM.isPending}
+                    value={detail.assignedAdvisorId ?? ""}
+                    onValueChange={(event) =>
+                      updateM.mutate({
+                        conversationId: detail.id,
+                        assignedAdvisorId: event || null,
+                      })
+                    }
+                  >
+                    <option value="">Unassigned</option>
+                    {staff.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.displayName}
+                      </option>
+                    ))}
+                  </RecordLookupSelect>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(["open", "handed_off", "closed"] as const).map((next) => (
+                    <Button
+                      key={next}
+                      type="button"
+                      size="sm"
+                      variant={detail.status === next ? "default" : "outline"}
+                      disabled={updateM.isPending || detail.status === next}
+                      onClick={() => updateM.mutate({ conversationId: detail.id, status: next })}
+                    >
+                      Mark {next}
+                    </Button>
+                  ))}
+                </div>
+                <div className="max-h-[24rem] space-y-3 overflow-y-auto rounded-lg border border-border/50 p-3">
+                  {detail.messages.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No messages stored yet.</p>
+                  ) : (
+                    detail.messages.map((message) => (
+                      <article key={message.id} className="space-y-1 text-sm">
+                        <p className="text-xs tracking-wide text-muted-foreground uppercase">
+                          {message.role} · {new Date(message.createdAt).toLocaleString()}
+                        </p>
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                      </article>
+                    ))
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="conversation-notes">Admin notes</Label>
+                  <Textarea
+                    id="conversation-notes"
+                    value={adminNotes}
+                    onChange={(event) => setAdminNotes(event.target.value)}
+                    maxLength={5000}
+                    rows={3}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={updateM.isPending || adminNotes === detail.adminNotes}
+                    onClick={() => updateM.mutate({ conversationId: detail.id, adminNotes })}
+                  >
+                    Save notes
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </section>
+        </div>
+      </ListWorkspace>
+    </main>
   );
 }

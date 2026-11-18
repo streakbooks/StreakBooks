@@ -1,4 +1,5 @@
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -34,7 +35,7 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -109,7 +110,9 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
   const fmt = useFormat();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { tab, returnStatus, returnQ, returnSort } = useSearch({ from: "/_authenticated/payroll/runs/$runId" });
+  const { tab, returnStatus, returnQ, returnSort } = useSearch({
+    from: "/_authenticated/payroll/runs/$runId",
+  });
   const listReturnSearch = { status: returnStatus, q: returnQ, sort: returnSort };
   const setTab = (nextTab: string) => {
     if (nextTab !== "employees" && nextTab !== "journals" && nextTab !== "payments") return;
@@ -301,14 +304,16 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
 
   if (isPending || !company || !canView) {
     return (
-      <ListWorkspace
-          title="Payroll run"
-          actions={
-            <Button asChild variant="outline" size="sm">
-              <Link to="/payroll/runs" search={listReturnSearch}>All runs</Link>
-            </Button>
-          }
-        >
+      <RecordWorkspace
+        title="Payroll run"
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link to="/payroll/runs" search={listReturnSearch}>
+              All runs
+            </Link>
+          </Button>
+        }
+      >
         <PayrollSubnav current="runs" />
         {isPending ? (
           <LoadingState />
@@ -317,12 +322,21 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
         ) : (
           <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
         )}
-      </ListWorkspace>
+      </RecordWorkspace>
     );
   }
   if (pageQ.isPending || pageQ.isError) {
     return (
-      <ListWorkspace title="Payroll run" actions={<Button asChild variant="outline" size="sm"><Link to="/payroll/runs" search={listReturnSearch}>All runs</Link></Button>} >
+      <RecordWorkspace
+        title="Payroll run"
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link to="/payroll/runs" search={listReturnSearch}>
+              All runs
+            </Link>
+          </Button>
+        }
+      >
         <PayrollSubnav current="runs" />
         {pageQ.isPending ? (
           <LoadingState />
@@ -333,7 +347,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
             onRetry={() => pageQ.refetch()}
           />
         )}
-      </ListWorkspace>
+      </RecordWorkspace>
     );
   }
 
@@ -386,35 +400,48 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
     adjustMut.isPending;
 
   return (
-    <ListWorkspace
-        title={run.run_number}
-        description={
-          schedule
-            ? `${schedule.name} · ${fmt.date(run.period_start)} – ${fmt.date(run.period_end)}`
-            : `${fmt.date(run.period_start)} – ${fmt.date(run.period_end)}`
-        }
-        actions={
-          <div className="flex flex-wrap gap-2">
+    <RecordWorkspace
+      title={run.run_number}
+      insights={
+        <WorkspaceInsights
+          title="Run evidence"
+          facts={[
+            { label: "Status", value: STATUS_LABEL[run.status] },
+            { label: "Employees", value: String(employees.length) },
+            { label: "Net outstanding", value: fmt.money(net_outstanding_minor, run.currency) },
+            { label: "Accrual journal", value: run.accrual_journal_id ? "Posted" : "Not posted" },
+          ]}
+        />
+      }
+      description={
+        schedule
+          ? `${schedule.name} · ${fmt.date(run.period_start)} – ${fmt.date(run.period_end)}`
+          : `${fmt.date(run.period_start)} – ${fmt.date(run.period_end)}`
+      }
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/payroll/runs" search={listReturnSearch}>
+              All runs
+            </Link>
+          </Button>
+          {run.status !== "draft" && run.status !== "void" ? (
             <Button asChild variant="outline" size="sm">
-              <Link to="/payroll/runs" search={listReturnSearch}>All runs</Link>
+              <Link to="/payroll/payslips" search={{ runId: run.id }}>
+                View payslips
+              </Link>
             </Button>
-            {run.status !== "draft" && run.status !== "void" ? (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/payroll/payslips" search={{ runId: run.id }}>
-                  View payslips
-                </Link>
-              </Button>
-            ) : null}
-            {run.accrual_journal_id ? (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/payroll/payments" search={{ runId: run.id }}>
-                  Payments
-                </Link>
-              </Button>
-            ) : null}
-          </div>
-        }
-      >
+          ) : null}
+          {run.accrual_journal_id ? (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/payroll/payments" search={{ runId: run.id }}>
+                Payments
+              </Link>
+            </Button>
+          ) : null}
+        </div>
+      }
+    >
       <PayrollSubnav current="runs" />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -544,7 +571,13 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="employees">Employees</TabsTrigger>
-          <TabsTrigger value="journals" disabled={!canAccountingView} title={!canAccountingView ? "Requires accounting.view permission" : undefined}>Journal entries</TabsTrigger>
+          <TabsTrigger
+            value="journals"
+            disabled={!canAccountingView}
+            title={!canAccountingView ? "Requires accounting.view permission" : undefined}
+          >
+            Journal entries
+          </TabsTrigger>
           <TabsTrigger value="payments">Payment history</TabsTrigger>
         </TabsList>
 
@@ -890,6 +923,6 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </ListWorkspace>
+    </RecordWorkspace>
   );
 }

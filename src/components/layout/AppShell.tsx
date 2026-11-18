@@ -161,7 +161,7 @@ function NavLink({
     <Link
       to={item.to}
       {...(item.to === "/settings" ? { search: { section: "overview" } } : {})}
-      onClick={(event) => {
+      onClick={(event: import("react").MouseEvent<HTMLElement>) => {
         // Modified clicks preserve the workspace and open another tab as normal.
         if (
           event.button === 0 &&

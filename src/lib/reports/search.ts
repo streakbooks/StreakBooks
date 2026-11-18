@@ -13,7 +13,7 @@ export type ReportSearch = {
   from?: string;
   to?: string;
   /** Validated origin state for returning to the Reports Centre after drill-down. */
-  centre?: string;
+  centre?: string | undefined;
   account?: string;
   /** Multi-account selection in reporting; absent means all permitted accounts. */
   accountIds?: string;

@@ -103,9 +103,7 @@ function RequestCompletion({
 
 function RequestStatus({ request }: { request: TrackedDocumentRequest }) {
   return (
-    <StatusBadge
-      status={firmRequestVisualStatus(request, new Date().toISOString().slice(0, 10))}
-    />
+    <StatusBadge status={firmRequestVisualStatus(request, new Date().toISOString().slice(0, 10))} />
   );
 }
 

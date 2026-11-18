@@ -103,7 +103,9 @@ test.describe("LinkBooks premium appearance: authenticated application shell", (
     await expect(page.locator("html")).not.toHaveClass(/dark/);
   });
 
-  test("record status badges include readable labels and real lifecycle tones", async ({ page }) => {
+  test("record status badges include readable labels and real lifecycle tones", async ({
+    page,
+  }) => {
     await signIn(page);
     await page.goto("/sales/invoices");
     const badges = page.locator('[data-slot="status-badge"]');
@@ -117,5 +119,4 @@ test.describe("LinkBooks premium appearance: authenticated application shell", (
     if (/^overdue$/i.test(text)) expect(tone).toBe("danger");
     if (/^draft$/i.test(text)) expect(tone).toBe("neutral");
   });
-
 });

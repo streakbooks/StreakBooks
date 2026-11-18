@@ -23,7 +23,9 @@ export function ReportShellFallbackLink({
             <Link to={report.linkTo}>Open</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link to="/reports" search={backSearch}>Back to Reports Centre</Link>
+            <Link to="/reports" search={backSearch}>
+              Back to Reports Centre
+            </Link>
           </Button>
         </div>
       }

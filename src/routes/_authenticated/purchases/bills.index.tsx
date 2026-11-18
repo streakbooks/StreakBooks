@@ -92,17 +92,17 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type BillsSearch = {
-  tab?: BillsWorkspaceTab;
-  q?: string;
-  from?: string;
-  to?: string;
-  dateField?: "bill_date" | "due_date";
-  includeVoid?: boolean;
-  overdueOnly?: boolean;
-  status?: string;
-  page?: number;
-  sortBy?: string;
-  sortDir?: "asc" | "desc";
+  tab?: BillsWorkspaceTab | undefined;
+  q?: string | undefined;
+  from?: string | undefined;
+  to?: string | undefined;
+  dateField?: "bill_date" | "due_date" | undefined;
+  includeVoid?: boolean | undefined;
+  overdueOnly?: boolean | undefined;
+  status?: string | undefined;
+  page?: number | undefined;
+  sortBy?: string | undefined;
+  sortDir?: "asc" | "desc" | undefined;
 };
 
 const TABS: Array<{ id: BillsWorkspaceTab; label: string; countKey: keyof Counts }> = [
@@ -502,7 +502,7 @@ function BillsWorkspace() {
     return order.filter((c) => c !== "actions" && visible.has(c));
   }, [prefs]);
 
-  const openBill = (b: BillRow, opts?: { files?: boolean }) => {
+  const openBill = (b: BillRow, opts?: { files?: boolean | undefined }) => {
     void navigate({
       to: "/purchases/bills/$billId",
       params: { billId: b.id },
@@ -1427,6 +1427,7 @@ function BillsWorkspace() {
             </SheetHeader>
             {previewBill ? (
               <PreviewBody
+                returnContext={returnContext}
                 bill={previewBill}
                 companyId={companyId!}
                 currency={baseCurrency}
@@ -1465,6 +1466,7 @@ function otherCurrencyHint(
 }
 
 function PreviewBody({
+  returnContext,
   bill,
   companyId,
   currency,
@@ -1474,6 +1476,7 @@ function PreviewBody({
   onPrevious,
   onNext,
 }: {
+  returnContext?: string | undefined;
   bill: BillRow | null;
   companyId: string;
   currency: string;
@@ -1618,7 +1621,7 @@ type RecurringRow = {
   is_active: boolean;
   last_generated_on: string | null;
   contacts: { name: string } | null;
-  template?: { total_minor?: number };
+  template?: { total_minor?: number | undefined };
 };
 
 function RecurringPane({

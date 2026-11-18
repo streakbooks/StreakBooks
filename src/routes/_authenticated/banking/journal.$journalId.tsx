@@ -126,7 +126,9 @@ function JournalDetail() {
             label="Discuss"
           />
           <Button size="sm" variant="outline" asChild>
-            <Link to="/banking/transactions" search={backSearch}>Back to transactions</Link>
+            <Link to="/banking/transactions" search={backSearch}>
+              Back to transactions
+            </Link>
           </Button>
         </div>
       }

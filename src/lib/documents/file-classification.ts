@@ -1,7 +1,15 @@
 /** Deterministic filename/linked-record hints. Suggestions are NOT AI/OCR or accounting decisions. */
 export const FILE_CATEGORIES = [
-  "unclassified", "bill", "invoice", "receipt", "statement",
-  "contract", "tax", "payroll", "bank", "other",
+  "unclassified",
+  "bill",
+  "invoice",
+  "receipt",
+  "statement",
+  "contract",
+  "tax",
+  "payroll",
+  "bank",
+  "other",
 ] as const;
 export type FileCategory = (typeof FILE_CATEGORIES)[number];
 
@@ -25,10 +33,8 @@ export function parseFileCategory(value: unknown): FileCategory {
 export function validateDocumentTagName(input: unknown): string {
   if (typeof input !== "string") throw new Error("Tag name must be text.");
   const name = input.normalize("NFKC").trim().replace(/\s+/gu, " ");
-  if (
-    name.length < 1 || name.length > 50 ||
-    /[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069<>]/u.test(name)
-  ) throw new Error("Tag name must be 1–50 safe characters.");
+  if (name.length < 1 || name.length > 50 || /[\p{Cc}\u202a-\u202e\u2066-\u2069<>]/u.test(name))
+    throw new Error("Tag name must be 1–50 safe characters.");
   return name;
 }
 
@@ -65,7 +71,8 @@ export function suggestFileCategory(
       reason: "Suggested from the linked LinkBooks record type.",
     };
   }
-  const base = fileName.replace(/\.[^.]+$/u, "")
+  const base = fileName
+    .replace(/\.[^.]+$/u, "")
     .normalize("NFKC")
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, " ")
@@ -81,7 +88,11 @@ export function suggestFileCategory(
   else if (match(/\b(bill|supplier invoice|vendor invoice)\b/u)) category = "bill";
   else if (match(/\b(invoice|sales invoice)\b/u)) category = "invoice";
   if (!category) return null;
-  return { category, source: "filename", reason: "Suggested from keywords in the filename; confirm before saving." };
+  return {
+    category,
+    source: "filename",
+    reason: "Suggested from keywords in the filename; confirm before saving.",
+  };
 }
 
 /** Suggest reusable existing company tags by exact normalised token/phrase matches. */
@@ -89,12 +100,18 @@ export function suggestExistingTags(
   fileName: string,
   tags: readonly { id: string; name: string }[],
 ): string[] {
-  const tokens = ` ${fileName.normalize("NFKC").toLocaleLowerCase("en-US")
-    .replace(/[^\p{L}\p{N}]+/gu, " ").trim()} `;
+  const tokens = ` ${fileName
+    .normalize("NFKC")
+    .toLocaleLowerCase("en-US")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()} `;
   return tags
     .filter((tag) => {
-      const phrase = tag.name.normalize("NFKC").toLocaleLowerCase("en-US")
-        .replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+      const phrase = tag.name
+        .normalize("NFKC")
+        .toLocaleLowerCase("en-US")
+        .replace(/[^\p{L}\p{N}]+/gu, " ")
+        .trim();
       return phrase.length >= 3 && tokens.includes(` ${phrase} `);
     })
     .slice(0, 10)

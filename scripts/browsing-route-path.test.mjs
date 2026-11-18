@@ -4,21 +4,39 @@ import { isCanonicalRoutePath } from "./lib/browsing-route-path.mjs";
 
 test("accepts canonical authenticated TypeScript route files", () => {
   for (const path of [
-    "index.tsx", "accountant.tsx", "platform/billing.tsx",
+    "index.tsx",
+    "accountant.tsx",
+    "platform/billing.tsx",
     "advisors-admin.settings.services-pricing.tsx",
-    "_layout/$companyId.tsx", "nested/route.ts",
-  ]) assert.equal(isCanonicalRoutePath(path), true, path);
+    "_layout/$companyId.tsx",
+    "nested/route.ts",
+  ])
+    assert.equal(isCanonicalRoutePath(path), true, path);
 });
 
 test("rejects unsafe, noncanonical and non-route paths", () => {
   for (const path of [
-    "", "/index.tsx", "nested//index.tsx", "./index.tsx",
-    "../index.tsx", "nested/../index.tsx", "nested/./index.tsx",
-    "nested\\index.tsx", "index.jsx", "index.tsx?tab=1",
-    "index.tsx#details", "index.tsx ", "folder/💰.tsx",
-    "index.tsx/", "index.tsx/.", "index.tsx/..",
-    null, 42, {},
-  ]) assert.equal(isCanonicalRoutePath(path), false, String(path));
+    "",
+    "/index.tsx",
+    "nested//index.tsx",
+    "./index.tsx",
+    "../index.tsx",
+    "nested/../index.tsx",
+    "nested/./index.tsx",
+    "nested\\index.tsx",
+    "index.jsx",
+    "index.tsx?tab=1",
+    "index.tsx#details",
+    "index.tsx ",
+    "folder/💰.tsx",
+    "index.tsx/",
+    "index.tsx/.",
+    "index.tsx/..",
+    null,
+    42,
+    {},
+  ])
+    assert.equal(isCanonicalRoutePath(path), false, String(path));
 });
 
 test("validates route naming boundaries consistently for module and supporting inventories", () => {
@@ -28,7 +46,8 @@ test("validates route naming boundaries consistently for module and supporting i
     "advisors-portal.messages.tsx",
     "_authenticated.tsx",
     "settings/index.ts",
-  ]) assert.equal(isCanonicalRoutePath(path), true, path);
+  ])
+    assert.equal(isCanonicalRoutePath(path), true, path);
 
   for (const path of [
     "payroll//runs.$runId.tsx",
@@ -41,5 +60,6 @@ test("validates route naming boundaries consistently for module and supporting i
     "route.tsx/child.tsx",
     " route.tsx",
     "route.tsx ",
-  ]) assert.equal(isCanonicalRoutePath(path), false, path);
+  ])
+    assert.equal(isCanonicalRoutePath(path), false, path);
 });

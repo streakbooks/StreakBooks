@@ -4,11 +4,14 @@ import { assertCompanyMember } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { assertEntityAccess } from "@/lib/documents/attachments.functions";
 import { COMPANY_DOCUMENTS_BUCKET, isAttachmentEntityType } from "@/lib/documents/attachments";
-import { DEFAULT_DOCUMENT_RETENTION_DAYS, validateRetentionDays } from "@/lib/documents/recycle-bin-rules";
+import {
+  DEFAULT_DOCUMENT_RETENTION_DAYS,
+  validateRetentionDays,
+} from "@/lib/documents/recycle-bin-rules";
 import { safeFilePage } from "@/lib/documents/file-workspace";
 
 const MIGRATION_HINT =
-  "Recycle Bin requires migration 20261106183000_files_recycle_retention_cleanup.";
+  "Recycle Bin requires migration 20261118150355_files_recycle_retention_cleanup.";
 
 function databaseError(error: { code?: string; message: string }): never {
   if (error.code === "42P01" || error.code === "42703" || error.code === "42883")
@@ -54,9 +57,11 @@ async function audit(
   details: Record<string, unknown> = {},
 ) {
   try {
-    await (supabase as unknown as {
-      rpc: (action: string, args: Record<string, unknown>) => Promise<unknown>;
-    }).rpc("record_audit_event", {
+    await (
+      supabase as unknown as {
+        rpc: (action: string, args: Record<string, unknown>) => Promise<unknown>;
+      }
+    ).rpc("record_app_audit_event", {
       _company_id: companyId,
       _action: action,
       _entity_type: "company",
@@ -82,8 +87,9 @@ export const getDocumentRetentionSettings = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) databaseError(error);
     return {
-      retentionDays: (settings as { retention_days: number } | null)?.retention_days
-        ?? DEFAULT_DOCUMENT_RETENTION_DAYS,
+      retentionDays:
+        (settings as { retention_days: number } | null)?.retention_days ??
+        DEFAULT_DOCUMENT_RETENTION_DAYS,
       minDays: 7,
       maxDays: 3650,
     };
@@ -97,12 +103,13 @@ export const updateDocumentRetentionSettings = createServerFn({ method: "POST" }
   })
   .handler(async ({ data, context }) => {
     await assertEntityAccess(context.supabase, data.companyId, "company", "manage");
-    const { error } = await context.supabase
-      .from("document_retention_settings" as never)
-      .upsert({
+    const { error } = await context.supabase.from("document_retention_settings" as never).upsert(
+      {
         company_id: data.companyId,
         retention_days: data.retentionDays,
-      } as never, { onConflict: "company_id" });
+      } as never,
+      { onConflict: "company_id" },
+    );
     if (error) databaseError(error);
     await audit(context.supabase, data.companyId, "document.retention.update", null, {
       retention_days: data.retentionDays,
@@ -119,7 +126,11 @@ export const listRecycleBinFiles = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const size = 25;
-    const { data: rows, error, count } = await context.supabase
+    const {
+      data: rows,
+      error,
+      count,
+    } = await context.supabase
       .from("document_attachments" as never)
       .select(
         "id, entity_type, file_name, size_bytes, deleted_at, deleted_by, purge_after, retention_hold" as never,
@@ -155,7 +166,8 @@ export const restoreRecycleBinFile = createServerFn({ method: "POST" })
       .not("deleted_at" as never, "is", null)
       .select("id" as never);
     if (error) databaseError(error);
-    if ((rows ?? []).length !== 1) throw new Error("File was already restored or access was denied.");
+    if ((rows ?? []).length !== 1)
+      throw new Error("File was already restored or access was denied.");
     await audit(context.supabase, data.companyId, "document.recycle.restore", data.attachmentId);
     return { restored: true };
   });
@@ -207,8 +219,11 @@ async function retryCleanup(
   if (!data) throw new Error("Cleanup job not found or access denied.");
   const job = data as unknown as CleanupJob;
   if (job.completed_at) return { completed: true, objects: job.storage_paths.length };
-  if (!Array.isArray(job.storage_paths) || job.storage_paths.length > 50 ||
-      job.storage_paths.some((path) => !path.startsWith(`${companyId}/`))) {
+  if (
+    !Array.isArray(job.storage_paths) ||
+    job.storage_paths.length > 50 ||
+    job.storage_paths.some((path) => !path.startsWith(`${companyId}/`))
+  ) {
     throw new Error("Storage cleanup needs administrator review.");
   }
   // All files are in a private bucket. The requesting user still needs the
@@ -264,7 +279,11 @@ export const listStorageCleanupJobs = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertEntityAccess(context.supabase, data.companyId, "company", "manage");
     const pageSize = 25;
-    const { data: rows, error, count } = await context.supabase
+    const {
+      data: rows,
+      error,
+      count,
+    } = await context.supabase
       .from("document_storage_cleanup_jobs" as never)
       .select("id, storage_paths, created_at" as never, { count: "exact" })
       .eq("company_id" as never, data.companyId as never)
@@ -275,9 +294,13 @@ export const listStorageCleanupJobs = createServerFn({ method: "GET" })
     if (error) databaseError(error);
     if (count == null) throw new Error("Storage cleanup count is unavailable. Retry.");
     return {
-      jobs: ((rows ?? []) as unknown as Array<{
-        id: string; storage_paths: string[]; created_at: string;
-      }>).map((job) => ({
+      jobs: (
+        (rows ?? []) as unknown as Array<{
+          id: string;
+          storage_paths: string[];
+          created_at: string;
+        }>
+      ).map((job) => ({
         id: job.id,
         createdAt: job.created_at,
         objects: job.storage_paths.length,
@@ -294,6 +317,4 @@ export const retryDocumentStorageCleanup = createServerFn({ method: "POST" })
     companyId: assertUuid(input.companyId),
     jobId: assertUuid(input.jobId, "job"),
   }))
-  .handler(async ({ data, context }) =>
-    retryCleanup(context.supabase, data.companyId, data.jobId),
-  );
+  .handler(async ({ data, context }) => retryCleanup(context.supabase, data.companyId, data.jobId));

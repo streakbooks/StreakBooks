@@ -65,6 +65,7 @@ import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import {
   encodeContactsReturnContext,
+  parseContactDirectoryView,
   parseContactsDirectorySearch,
   type ContactsDirectorySearch,
 } from "@/lib/contacts/contact-view-navigation";
@@ -333,7 +334,9 @@ function ContactRecordLink({ contactId, children }: { contactId: string; childre
       to="/contacts/$contactId"
       params={{ contactId }}
       search={{
-        ...(search.view && search.view !== "all" ? { fromView: search.view } : {}),
+        ...(search.view && search.view !== "all"
+          ? { fromView: parseContactDirectoryView(search.view) }
+          : {}),
         ...(returnContext ? { returnContext } : {}),
       }}
       className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
@@ -588,7 +591,10 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
     setFilters(selected.filters);
     setSelectedSavedViewId(id);
     patchDirectory({
-      view: selected.view, q: selected.query, sort: selected.sort, page: 0,
+      view: selected.view,
+      q: selected.query,
+      sort: selected.sort,
+      page: 0,
     });
   };
 
@@ -836,46 +842,45 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
 
   return (
     <ListWorkspace
-        title="Contacts"
-        description="One directory for customers and suppliers — shared with sales, purchases and statements."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" asChild>
-              <Link
-                to="/contacts/new"
-                search={{
-                  kind: "customer",
-                  returnContext: encodeContactsReturnContext(directorySearch) || undefined,
-                }}
-              >
-                New contact
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts/import">
-                <Upload className="mr-1 size-4" /> Import
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={exportM.isPending}
-              onClick={() => exportM.mutate()}
+      title="Contacts"
+      description="One directory for customers and suppliers — shared with sales, purchases and statements."
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" asChild>
+            <Link
+              to="/contacts/new"
+              search={{
+                kind: "customer",
+                returnContext: encodeContactsReturnContext(directorySearch) || undefined,
+              }}
             >
-              <Download className="mr-1 size-4" /> Export
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <SettingsDestinationLink destination={{ to: "/contacts/settings" }}>
-                <Settings2 className="mr-1 size-4" /> Settings
-              </SettingsDestinationLink>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts/duplicates">Duplicates</Link>
-            </Button>
-          </div>
-        }
-      >
-
+              New contact
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/contacts/import">
+              <Upload className="mr-1 size-4" /> Import
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={exportM.isPending}
+            onClick={() => exportM.mutate()}
+          >
+            <Download className="mr-1 size-4" /> Export
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <SettingsDestinationLink destination={{ to: "/contacts/settings" }}>
+              <Settings2 className="mr-1 size-4" /> Settings
+            </SettingsDestinationLink>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/contacts/duplicates">Duplicates</Link>
+          </Button>
+        </div>
+      }
+    >
       {summary ? (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Metric label="Active contacts" value={String(summary.activeContactCount)} />

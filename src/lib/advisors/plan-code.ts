@@ -5,5 +5,8 @@ export function normalizeAdvisorPlanCode(value: string): string {
 
 export function canAddAdvisorPlanCode(value: string, existingCodes: readonly string[]): boolean {
   const code = normalizeAdvisorPlanCode(value);
-  return /^[a-z][a-z0-9_]{0,63}$/.test(code) && !existingCodes.some((existing) => normalizeAdvisorPlanCode(existing) === code);
+  return (
+    /^[a-z][a-z0-9_]{0,63}$/.test(code) &&
+    !existingCodes.some((existing) => normalizeAdvisorPlanCode(existing) === code)
+  );
 }

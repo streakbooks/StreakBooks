@@ -65,7 +65,9 @@ describe("contact directory configurable columns", () => {
   it("contains unique choices and keeps Name required", () => {
     const ids = CONTACT_DIRECTORY_COLUMNS.map((item) => item.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(CONTACT_DIRECTORY_COLUMNS.find((item) => item.id === "name")).toMatchObject({ required: true });
+    expect(CONTACT_DIRECTORY_COLUMNS.find((item) => item.id === "name")).toMatchObject({
+      required: true,
+    });
     expect(DEFAULT_HIDDEN_CONTACT_COLUMNS).toContain("billing_city");
     expect(DEFAULT_HIDDEN_CONTACT_COLUMNS).toContain("billing_region");
     expect(DEFAULT_HIDDEN_CONTACT_COLUMNS).not.toContain("name");

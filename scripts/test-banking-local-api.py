@@ -91,6 +91,9 @@ if args.mfa:
     token = sign_in(owner['email'], owner['password'])['access_token']
     events_path = '/rest/v1/bank_coding_events?company_id=eq.' + state['company_id'] + '&select=id'
     before = request(events_path, token=token)
+    tag_id = str(uuid.uuid4())
+    request('/rest/v1/document_tags', 'POST', {'id': tag_id, 'company_id': state['company_id'], 'name': 'Isolated MFA tag'}, token=token, expected=201)
+    check(True, 'Normal authorised session can create its isolated document tag before enrollment')
     check(len(before) >= 1, 'Normal password session can read its fixture evidence before enrollment')
     factor = request('/auth/v1/factors', 'POST', {'factor_type': 'totp', 'friendly_name': 'Isolated readiness TOTP'}, token=token)
     factor_path = '/auth/v1/factors/' + factor['id']
@@ -111,6 +114,15 @@ if args.mfa:
     check(True, 'MFA protects the reset endpoint before any preference lookup')
     check(request(events_path, token=token) == [], 'Old AAL1 session cannot read evidence after verified enrollment')
     check(request(events_path, token=elevated) == before, 'Verified AAL2 session restores only its existing company evidence')
+    tags_path = '/rest/v1/document_tags?id=eq.' + tag_id + '&select=id'
+    check(request(tags_path, token=token) == [], 'Old AAL1 session cannot read newly merged document tags')
+    check(request(tags_path, token=elevated) == [{'id': tag_id}], 'Verified AAL2 restores its isolated document tag')
+    request('/rest/v1/document_tags', 'POST', {'company_id': state['company_id'], 'name': 'Denied AAL1 tag'}, token=token, expected=403)
+    check(True, 'Old AAL1 session cannot write newly merged document tags')
+    rpc('pos_open_session', {'_company_id': state['company_id'], '_register_id': str(uuid.uuid4()), '_operation_id': str(uuid.uuid4()), '_opening_float_minor': 0}, token, expected=403)
+    check(True, 'POS definer mutation enforces MFA before register lookup')
+    rpc('purge_document_from_recycle_bin', {'_company_id': state['company_id'], '_attachment_id': str(uuid.uuid4())}, token, expected=403)
+    check(True, 'Files definer purge enforces MFA before attachment lookup')
     check(isinstance(rpc('get_bank_coding_memory', identity, elevated), list), 'Coding Memory RPC accepts the real AAL2 session')
     request('/rest/v1/bank_coding_events', 'POST', {'company_id': state['company_id']}, token=elevated, expected=403)
     check(True, 'AAL2 does not permit direct learning-event forgery')

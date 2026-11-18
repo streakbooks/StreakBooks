@@ -96,7 +96,11 @@ function ReportPage() {
       )
     : today;
 
-  const backSearch = reportingCentreBackSearch(search.centre, search.from ?? defaultFrom, search.to ?? today);
+  const backSearch = reportingCentreBackSearch(
+    search.centre,
+    search.from ?? defaultFrom,
+    search.to ?? today,
+  );
 
   if (isPending || (company && companyBasis.isPending)) return <LoadingState />;
   if (!company) {
@@ -123,7 +127,9 @@ function ReportPage() {
     return (
       <ListWorkspace title="Report not found" description={`No catalogue entry for “${reportId}”.`}>
         <Button asChild variant="outline">
-          <Link to="/reports" search={backSearch}>Back to Reports Centre</Link>
+          <Link to="/reports" search={backSearch}>
+            Back to Reports Centre
+          </Link>
         </Button>
       </ListWorkspace>
     );
@@ -143,7 +149,9 @@ function ReportPage() {
           </AlertDescription>
         </Alert>
         <Button asChild variant="outline">
-          <Link to="/reports" search={backSearch}>Back to Reports Centre</Link>
+          <Link to="/reports" search={backSearch}>
+            Back to Reports Centre
+          </Link>
         </Button>
       </ListWorkspace>
     );

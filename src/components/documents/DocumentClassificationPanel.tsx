@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -6,25 +7,44 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
-  createDocumentTag, deleteDocumentTag, getFileClassification,
-  listDocumentTags, setDocumentFileTag, updateFileCategory,
+  createDocumentTag,
+  deleteDocumentTag,
+  getFileClassification,
+  listDocumentTags,
+  setDocumentFileTag,
+  updateFileCategory,
 } from "@/lib/documents/file-classification.functions";
 import {
-  FILE_CATEGORIES, FILE_CATEGORY_LABELS, suggestFileCategory,
-  suggestExistingTags, type FileCategory,
+  FILE_CATEGORIES,
+  FILE_CATEGORY_LABELS,
+  suggestFileCategory,
+  suggestExistingTags,
+  type FileCategory,
 } from "@/lib/documents/file-classification";
 
 /** Stored tags/categories remain manual; filename hints are not OCR or automatic approvals. */
 export function DocumentClassificationPanel({
-  companyId, attachmentId, canManage,
+  companyId,
+  attachmentId,
+  canManage,
 }: {
   companyId: string;
   attachmentId: string;
@@ -69,7 +89,10 @@ export function DocumentClassificationPanel({
       if (!metadata.data) throw new Error("Load document metadata before editing.");
       return saveCategory({
         data: {
-          companyId, attachmentId, category, expectedCategory: metadata.data.category,
+          companyId,
+          attachmentId,
+          category,
+          expectedCategory: metadata.data.category,
         },
       });
     },
@@ -136,21 +159,32 @@ export function DocumentClassificationPanel({
   });
 
   return (
-    <section aria-label="Document categories and tags" className="mt-4 space-y-3 rounded-lg border p-3">
+    <section
+      aria-label="Document categories and tags"
+      className="mt-4 space-y-3 rounded-lg border p-3"
+    >
       <h3 className="flex items-center gap-2 text-sm font-semibold">
         <Tags className="size-4" /> Categories and tags
       </h3>
       {metadata.isPending || tags.isPending ? (
-        <p role="status" className="text-xs text-muted-foreground">Loading file metadata…</p>
+        <p role="status" className="text-xs text-muted-foreground">
+          Loading file metadata…
+        </p>
       ) : metadata.isError || tags.isError ? (
         <div className="space-y-2">
           <p role="alert" className="text-sm text-destructive">
             {friendlyAuthError(metadata.error ?? tags.error)}
           </p>
-          <Button size="sm" variant="outline" onClick={() => {
-            void metadata.refetch();
-            void tags.refetch();
-          }}>Retry</Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              void metadata.refetch();
+              void tags.refetch();
+            }}
+          >
+            Retry
+          </Button>
         </div>
       ) : metadata.data ? (
         <>
@@ -158,12 +192,10 @@ export function DocumentClassificationPanel({
             <label htmlFor={`file-category-${attachmentId}`} className="text-sm font-medium">
               Category
             </label>
-            <Select
+            <RecordLookupSelect
               value={metadata.data.category}
               disabled={!canManage || categoryMutation.isPending}
-              onValueChange={(category) =>
-                categoryMutation.mutate(category as FileCategory)
-              }
+              onValueChange={(category) => categoryMutation.mutate(category as FileCategory)}
             >
               <SelectTrigger
                 className="w-52"
@@ -179,7 +211,7 @@ export function DocumentClassificationPanel({
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
           </div>
           {hint && hint.category !== metadata.data.category ? (
             <div className="flex flex-wrap items-center gap-2 rounded-md bg-muted/50 p-2 text-xs">
@@ -189,7 +221,8 @@ export function DocumentClassificationPanel({
               </span>
               {canManage ? (
                 <Button
-                  size="sm" variant="outline"
+                  size="sm"
+                  variant="outline"
                   disabled={categoryMutation.isPending}
                   onClick={() => categoryMutation.mutate(hint.category)}
                 >
@@ -199,7 +232,8 @@ export function DocumentClassificationPanel({
             </div>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            Category labels are descriptive metadata only. They do not authorize or post financial records.
+            Category labels are descriptive metadata only. They do not authorize or post financial
+            records.
           </p>
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -235,10 +269,14 @@ export function DocumentClassificationPanel({
                       }
                     />
                     <span>{tag.name}</span>
-                    {suggested ? <span className="text-xs text-muted-foreground">(suggested)</span> : null}
+                    {suggested ? (
+                      <span className="text-xs text-muted-foreground">(suggested)</span>
+                    ) : null}
                     {canManage ? (
                       <Button
-                        size="icon" type="button" variant="ghost"
+                        size="icon"
+                        type="button"
+                        variant="ghost"
                         aria-label={`Delete company-wide tag ${tag.name}`}
                         disabled={deleteMutation.isPending || tagMutation.isPending}
                         onClick={(event) => {
@@ -275,7 +313,9 @@ export function DocumentClassificationPanel({
                   placeholder="New company tag, e.g. FY2026"
                 />
                 <Button
-                  type="submit" size="sm" variant="outline"
+                  type="submit"
+                  size="sm"
+                  variant="outline"
                   disabled={!newTag.trim() || createMutation.isPending || tagMutation.isPending}
                 >
                   Create and assign
@@ -293,9 +333,9 @@ export function DocumentClassificationPanel({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete tag from this entire company?</AlertDialogTitle>
             <AlertDialogDescription>
-              “{pendingRemove?.name}” can only be deleted when it is no longer
-              assigned to any company document. Remove the tag from every document
-              first. Files and accounting entries are never deleted by this action.
+              “{pendingRemove?.name}” can only be deleted when it is no longer assigned to any
+              company document. Remove the tag from every document first. Files and accounting
+              entries are never deleted by this action.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -303,7 +343,9 @@ export function DocumentClassificationPanel({
             <AlertDialogAction
               disabled={deleteMutation.isPending}
               onClick={() => pendingRemove && deleteMutation.mutate(pendingRemove.id)}
-            >Delete company tag</AlertDialogAction>
+            >
+              Delete company tag
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

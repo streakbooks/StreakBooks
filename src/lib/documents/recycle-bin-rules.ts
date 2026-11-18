@@ -11,7 +11,8 @@ export function validateRetentionDays(input: unknown): number {
     !Number.isSafeInteger(value) ||
     value < MIN_DOCUMENT_RETENTION_DAYS ||
     value > MAX_DOCUMENT_RETENTION_DAYS
-  ) throw new Error("Retention must be between 7 and 3,650 whole days.");
+  )
+    throw new Error("Retention must be between 7 and 3,650 whole days.");
   return value;
 }
 
@@ -23,12 +24,14 @@ export function canOfferPermanentPurge(
   },
   now: number,
 ): boolean {
-  if (!file.deleted_at || !file.purge_after || file.retention_hold ||
-      !Number.isFinite(now)) return false;
+  if (!file.deleted_at || !file.purge_after || file.retention_hold || !Number.isFinite(now))
+    return false;
   const deletedAt = Date.parse(file.deleted_at);
   const purgeAfter = Date.parse(file.purge_after);
-  return Number.isFinite(deletedAt) &&
+  return (
+    Number.isFinite(deletedAt) &&
     Number.isFinite(purgeAfter) &&
     purgeAfter > deletedAt &&
-    purgeAfter <= now;
+    purgeAfter <= now
+  );
 }

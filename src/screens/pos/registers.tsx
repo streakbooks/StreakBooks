@@ -451,7 +451,9 @@ function LocationAccess({ companyId, workspace }: { companyId: string; workspace
               "Inactive location";
             return (
               <li key={target} className="flex flex-wrap items-center justify-between gap-3">
-                <span>{member} · {location}</span>
+                <span>
+                  {member} · {location}
+                </span>
                 {revokeTarget === target ? (
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-muted-foreground">

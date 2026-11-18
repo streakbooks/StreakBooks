@@ -46,14 +46,13 @@ export function DocumentEmailInbox({
   const emails = useQuery({
     queryKey: ["document-email-messages", companyId, cursor],
     enabled: ready,
-    queryFn: () => listEmails({ data: { companyId, after: cursor ?? undefined } }),
+    queryFn: () => listEmails({ data: { companyId, ...(cursor ? { after: cursor } : {}) } }),
     retry: false,
   });
   const attachments = useQuery({
     queryKey: ["document-email-attachments", companyId, selectedEmailId],
     enabled: ready && Boolean(selectedEmailId),
-    queryFn: () =>
-      loadAttachments({ data: { companyId, emailId: selectedEmailId! } }),
+    queryFn: () => loadAttachments({ data: { companyId, emailId: selectedEmailId! } }),
     retry: false,
   });
 
@@ -93,7 +92,9 @@ export function DocumentEmailInbox({
         client.invalidateQueries({ queryKey: ["document-review-queue", companyId] }),
         client.invalidateQueries({ queryKey: ["company-files", companyId] }),
       ]);
-      toast.success(result.alreadyImported ? "File was already imported" : "File added to document review");
+      toast.success(
+        result.alreadyImported ? "File was already imported" : "File added to document review",
+      );
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -106,19 +107,29 @@ export function DocumentEmailInbox({
             <Inbox className="size-5" /> Email-to-Inbox
           </h2>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Forward supplier invoices and receipts to a private LinkBooks receiving address.
-            Review and import selected attachments manually. Imports do not create or post accounting entries.
+            Forward supplier invoices and receipts to a private LinkBooks receiving address. Review
+            and import selected attachments manually. Imports do not create or post accounting
+            entries.
           </p>
         </div>
-        <Button variant="outline" onClick={onClose}>Back to Files</Button>
+        <Button variant="outline" onClick={onClose}>
+          Back to Files
+        </Button>
       </div>
 
       {settings.isPending ? (
-        <p role="status" className="text-sm text-muted-foreground">Loading inbox settings…</p>
+        <p role="status" className="text-sm text-muted-foreground">
+          Loading inbox settings…
+        </p>
       ) : settings.isError ? (
         <div role="alert" className="rounded-lg border p-4 text-sm text-destructive">
           {friendlyAuthError(settings.error)}
-          <Button size="sm" variant="outline" className="ml-2" onClick={() => void settings.refetch()}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="ml-2"
+            onClick={() => void settings.refetch()}
+          >
             Retry
           </Button>
         </div>
@@ -181,9 +192,9 @@ export function DocumentEmailInbox({
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
             Keep existing HostGator or other business mailbox settings unchanged. Configure
-            forwarding of selected messages to this receiving address; do not replace your
-            primary domain MX records. The receiving address only works after provider-domain
-            setup, activation, and a successful end-to-end test.
+            forwarding of selected messages to this receiving address; do not replace your primary
+            domain MX records. The receiving address only works after provider-domain setup,
+            activation, and a successful end-to-end test.
           </p>
         </div>
       ) : null}
@@ -213,13 +224,18 @@ export function DocumentEmailInbox({
               {friendlyAuthError(emails.error)}
             </p>
           ) : emails.isPending ? (
-            <p role="status" className="text-sm text-muted-foreground">Checking incoming email…</p>
+            <p role="status" className="text-sm text-muted-foreground">
+              Checking incoming email…
+            </p>
           ) : (
             <>
               <div className="space-y-2">
                 {emails.data.rows.length ? (
                   emails.data.rows.map((email) => (
-                    <div key={email.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+                    <div
+                      key={email.id}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
+                    >
                       <div className="min-w-0">
                         <p className="break-words text-sm font-medium">{email.subject}</p>
                         <p className="break-all text-xs text-muted-foreground">
@@ -229,9 +245,9 @@ export function DocumentEmailInbox({
                       <Button
                         size="sm"
                         variant={selectedEmailId === email.id ? "default" : "outline"}
-                        onClick={() => setSelectedEmailId(
-                          selectedEmailId === email.id ? null : email.id,
-                        )}
+                        onClick={() =>
+                          setSelectedEmailId(selectedEmailId === email.id ? null : email.id)
+                        }
                       >
                         {selectedEmailId === email.id ? "Close attachments" : "View attachments"}
                       </Button>
@@ -239,8 +255,8 @@ export function DocumentEmailInbox({
                   ))
                 ) : (
                   <p className="rounded-lg border p-4 text-sm text-muted-foreground">
-                    No messages addressed to this organisation were found in the current
-                    provider page. Check forwarding or browse older messages.
+                    No messages addressed to this organisation were found in the current provider
+                    page. Check forwarding or browse older messages.
                   </p>
                 )}
               </div>
@@ -282,14 +298,19 @@ export function DocumentEmailInbox({
             <div className="space-y-3 rounded-lg border p-4">
               <h3 className="font-semibold">Email attachments</h3>
               {attachments.isPending ? (
-                <p role="status" className="text-sm text-muted-foreground">Loading attachments…</p>
+                <p role="status" className="text-sm text-muted-foreground">
+                  Loading attachments…
+                </p>
               ) : attachments.isError ? (
                 <p role="alert" className="text-sm text-destructive">
                   {friendlyAuthError(attachments.error)}
                 </p>
               ) : attachments.data.rows.length ? (
                 attachments.data.rows.map((file) => (
-                  <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 border-b py-2 last:border-0">
+                  <div
+                    key={file.id}
+                    className="flex flex-wrap items-center justify-between gap-3 border-b py-2 last:border-0"
+                  >
                     <div className="min-w-0">
                       <p className="break-all text-sm font-medium">{file.name}</p>
                       <p className="text-xs text-muted-foreground">

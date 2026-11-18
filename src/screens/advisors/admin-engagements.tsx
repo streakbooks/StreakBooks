@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -172,20 +172,36 @@ export function AdvisorsAdminEngagementsPage() {
   }, [detail]);
 
   if (listQ.isPending || clientsQ.isPending || staffQ.isPending) {
-    return <main className="mx-auto max-w-6xl space-y-6 p-6"><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
+    return (
+      <main className="mx-auto max-w-6xl space-y-6 p-6">
+        <AdvisorsSubnav />
+        <div role="status" aria-live="polite">
+          <LoadingState />
+        </div>
+      </main>
+    );
   }
   if (listQ.isError || clientsQ.isError || staffQ.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <ListWorkspace title="Engagements" description="Proposals and service delivery engagements." >
-        <AdvisorsSubnav />
-        <div role="alert"><ErrorState
-          title="Engagements unavailable"
-          description={friendlyAuthError(listQ.error ?? clientsQ.error ?? staffQ.error)}
-          onRetry={() => { void listQ.refetch(); void clientsQ.refetch(); void staffQ.refetch(); }}
-        /></div>
-      </ListWorkspace>
-</main>
+        <ListWorkspace
+          title="Engagements"
+          description="Proposals and service delivery engagements."
+        >
+          <AdvisorsSubnav />
+          <div role="alert">
+            <ErrorState
+              title="Engagements unavailable"
+              description={friendlyAuthError(listQ.error ?? clientsQ.error ?? staffQ.error)}
+              onRetry={() => {
+                void listQ.refetch();
+                void clientsQ.refetch();
+                void staffQ.refetch();
+              }}
+            />
+          </div>
+        </ListWorkspace>
+      </main>
     );
   }
 
@@ -195,308 +211,322 @@ export function AdvisorsAdminEngagementsPage() {
         title="Engagements"
         description="Create client engagements, send priced proposals and track acceptance. Acceptance does not start billing."
       >
-      <AdvisorsSubnav />
+        <AdvisorsSubnav />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
-          <Label htmlFor="engagement-search">Search</Label>
-          <Input
-            id="engagement-search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Title, client or email"
-            className="w-64"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="engagement-status">Status</Label>
-          <RecordLookupSelect
-            id="engagement-status"
-            className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
-            value={status}
-            onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
-          >
-            {STATUSES.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </RecordLookupSelect>
-        </div>
-        <div className="min-w-[16rem] flex-1 space-y-1">
-          <Label htmlFor="engagement-reason">Change reason</Label>
-          <Input
-            id="engagement-reason"
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder="Why are you changing this engagement?"
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-        <section className="space-y-2" aria-label="Engagement results">
-          <p className="sr-only" role="status" aria-live="polite">{listQ.data.length} engagements found</p>
-          {listQ.data.length === 0 ? (
-            <EmptyState
-              title="No engagements yet"
-              description="Create an engagement for a client, then send a proposal."
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <Label htmlFor="engagement-search">Search</Label>
+            <Input
+              id="engagement-search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Title, client or email"
+              className="w-64"
             />
-          ) : (
-            listQ.data.map((engagement) => (
-              <button
-                key={engagement.id}
-                type="button"
-                onClick={() => setSelectedId(engagement.id)}
-                className={`w-full rounded-xl border p-4 text-left transition ${
-                  selectedId === engagement.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border/70 hover:border-primary/40"
-                }`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium">{engagement.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {engagement.clientName || engagement.clientEmail || engagement.clientId}
-                    </p>
-                  </div>
-                  <Badge variant="secondary">{engagement.status}</Badge>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {engagement.serviceCode}
-                  {engagement.planCode ? ` · ${engagement.planCode}` : ""} ·{" "}
-                  {formatAdvisorsMoney(engagement.amountMinor, engagement.currency)} ·{" "}
-                  {engagement.proposalCount ?? 0} proposals
-                </p>
-              </button>
-            ))
-          )}
-        </section>
-
-        <div className="space-y-4">
-          <section className="space-y-3 rounded-xl border border-border/70 p-4">
-            <h2 className="font-semibold">New engagement</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1 sm:col-span-2">
-                <Label htmlFor="eng-client">Client</Label>
-                <RecordLookupSelect
-                  id="eng-client"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  value={form.clientId}
-                  onValueChange={(event) =>
-                    setForm((prev) => ({ ...prev, clientId: event }))
-                  }
-                >
-                  <option value="">Select client</option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name || client.email} ({client.email})
-                    </option>
-                  ))}
-                </RecordLookupSelect>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="eng-title">Title</Label>
-                <Input
-                  id="eng-title"
-                  value={form.title}
-                  onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="eng-advisor">Advisor</Label>
-                <RecordLookupSelect
-                  id="eng-advisor"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  value={form.assignedAdvisorId}
-                  onValueChange={(event) =>
-                    setForm((prev) => ({ ...prev, assignedAdvisorId: event }))
-                  }
-                >
-                  <option value="">Unassigned</option>
-                  {staff.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.displayName}
-                    </option>
-                  ))}
-                </RecordLookupSelect>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="eng-service">Service</Label>
-                <RecordLookupSelect
-                  id="eng-service"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  value={form.serviceCode}
-                  onValueChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      serviceCode: event as "bookkeeping" | "coaching",
-                    }))
-                  }
-                >
-                  <option value="bookkeeping">Bookkeeping</option>
-                  <option value="coaching">Coaching</option>
-                </RecordLookupSelect>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="eng-plan">Plan code</Label>
-                <Input
-                  id="eng-plan"
-                  value={form.planCode}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, planCode: event.target.value }))
-                  }
-                  placeholder="essential_books"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="eng-amount">Amount (minor units)</Label>
-                <Input
-                  id="eng-amount"
-                  type="number"
-                  value={form.amountMinor}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      amountMinor: Number(event.target.value) || 0,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label htmlFor="eng-scope">Scope summary</Label>
-                <Textarea
-                  id="eng-scope"
-                  value={form.scopeSummary}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, scopeSummary: event.target.value }))
-                  }
-                  rows={3}
-                />
-              </div>
-            </div>
-            <Button
-              type="button"
-              disabled={createM.isPending || proposalM.isPending || !form.clientId || !form.title.trim() || !Number.isSafeInteger(form.amountMinor) || form.amountMinor < 0}
-              onClick={() => createM.mutate()}
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="engagement-status">Status</Label>
+            <RecordLookupSelect
+              id="engagement-status"
+              className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={status}
+              onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
             >
-              Create engagement
-            </Button>
+              {STATUSES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </RecordLookupSelect>
+          </div>
+          <div className="min-w-[16rem] flex-1 space-y-1">
+            <Label htmlFor="engagement-reason">Change reason</Label>
+            <Input
+              id="engagement-reason"
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Why are you changing this engagement?"
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+          <section className="space-y-2" aria-label="Engagement results">
+            <p className="sr-only" role="status" aria-live="polite">
+              {listQ.data.length} engagements found
+            </p>
+            {listQ.data.length === 0 ? (
+              <EmptyState
+                title="No engagements yet"
+                description="Create an engagement for a client, then send a proposal."
+              />
+            ) : (
+              listQ.data.map((engagement) => (
+                <button
+                  key={engagement.id}
+                  type="button"
+                  onClick={() => setSelectedId(engagement.id)}
+                  className={`w-full rounded-xl border p-4 text-left transition ${
+                    selectedId === engagement.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border/70 hover:border-primary/40"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{engagement.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {engagement.clientName || engagement.clientEmail || engagement.clientId}
+                      </p>
+                    </div>
+                    <Badge variant="secondary">{engagement.status}</Badge>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {engagement.serviceCode}
+                    {engagement.planCode ? ` · ${engagement.planCode}` : ""} ·{" "}
+                    {formatAdvisorsMoney(engagement.amountMinor, engagement.currency)} ·{" "}
+                    {engagement.proposalCount ?? 0} proposals
+                  </p>
+                </button>
+              ))
+            )}
           </section>
 
-          <section className="space-y-3 rounded-xl border border-border/70 p-4">
-            {!selectedId ? (
-              <EmptyState
-                title="Select an engagement"
-                description="Open an engagement to review proposals and send a new one."
-              />
-            ) : detailQ.isPending ? (
-              <LoadingState />
-            ) : detailQ.isError ? (
-              <ErrorState
-                title="Engagement detail unavailable"
-                description={friendlyAuthError(detailQ.error)}
-                onRetry={() => void detailQ.refetch()}
-              />
-            ) : detail ? (
-              <>
-                <div>
-                  <h2 className="font-semibold">{detail.title}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedLabel} · {detail.status} ·{" "}
-                    {formatAdvisorsMoney(detail.amountMinor, detail.currency)}
-                  </p>
+          <div className="space-y-4">
+            <section className="space-y-3 rounded-xl border border-border/70 p-4">
+              <h2 className="font-semibold">New engagement</h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="eng-client">Client</Label>
+                  <RecordLookupSelect
+                    id="eng-client"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={form.clientId}
+                    onValueChange={(event) => setForm((prev) => ({ ...prev, clientId: event }))}
+                  >
+                    <option value="">Select client</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name || client.email} ({client.email})
+                      </option>
+                    ))}
+                  </RecordLookupSelect>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Proposals</h3>
-                  {detail.proposals.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No proposals yet.</p>
-                  ) : (
-                    detail.proposals.map((proposal) => (
-                      <div
-                        key={proposal.id}
-                        className="rounded-lg border border-border/50 px-3 py-2 text-sm"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span>
-                            v{proposal.versionNumber} · {proposal.title}
-                          </span>
-                          <Badge variant="outline">{proposal.status}</Badge>
-                        </div>
-                        {proposal.status !== "draft" ? (
-                          <p className="mt-1 break-all text-xs text-muted-foreground">
-                            {proposalPublicPath(proposal.publicToken)}
-                          </p>
-                        ) : null}
-                      </div>
-                    ))
-                  )}
+                <div className="space-y-1">
+                  <Label htmlFor="eng-title">Title</Label>
+                  <Input
+                    id="eng-title"
+                    value={form.title}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, title: event.target.value }))
+                    }
+                  />
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Send proposal</h3>
+                <div className="space-y-1">
+                  <Label htmlFor="eng-advisor">Advisor</Label>
+                  <RecordLookupSelect
+                    id="eng-advisor"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={form.assignedAdvisorId}
+                    onValueChange={(event) =>
+                      setForm((prev) => ({ ...prev, assignedAdvisorId: event }))
+                    }
+                  >
+                    <option value="">Unassigned</option>
+                    {staff.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.displayName}
+                      </option>
+                    ))}
+                  </RecordLookupSelect>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="eng-service">Service</Label>
+                  <RecordLookupSelect
+                    id="eng-service"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={form.serviceCode}
+                    onValueChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        serviceCode: event as "bookkeeping" | "coaching",
+                      }))
+                    }
+                  >
+                    <option value="bookkeeping">Bookkeeping</option>
+                    <option value="coaching">Coaching</option>
+                  </RecordLookupSelect>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="eng-plan">Plan code</Label>
                   <Input
-                    value={proposalDraft.title}
+                    id="eng-plan"
+                    value={form.planCode}
                     onChange={(event) =>
-                      setProposalDraft((prev) => ({ ...prev, title: event.target.value }))
+                      setForm((prev) => ({ ...prev, planCode: event.target.value }))
                     }
-                    placeholder="Proposal title"
+                    placeholder="essential_books"
                   />
-                  <Textarea
-                    value={proposalDraft.summary}
-                    onChange={(event) =>
-                      setProposalDraft((prev) => ({ ...prev, summary: event.target.value }))
-                    }
-                    placeholder="Customer-facing summary"
-                    rows={2}
-                  />
-                  <Textarea
-                    value={proposalDraft.scopeText}
-                    onChange={(event) =>
-                      setProposalDraft((prev) => ({ ...prev, scopeText: event.target.value }))
-                    }
-                    placeholder="Scope"
-                    rows={3}
-                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="eng-amount">Amount (minor units)</Label>
                   <Input
+                    id="eng-amount"
                     type="number"
-                    value={proposalDraft.amountMinor}
+                    value={form.amountMinor}
                     onChange={(event) =>
-                      setProposalDraft((prev) => ({
+                      setForm((prev) => ({
                         ...prev,
                         amountMinor: Number(event.target.value) || 0,
                       }))
                     }
-                    placeholder="Amount minor units"
                   />
-                  <Button
-                    type="button"
-                    disabled={proposalM.isPending || createM.isPending || !Number.isSafeInteger(proposalDraft.amountMinor) || proposalDraft.amountMinor < 0}
-                    onClick={() => proposalM.mutate()}
-                  >
-                    Create and send proposal
-                  </Button>
                 </div>
-                {detail.agreements.length > 0 ? (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium">Agreements</h3>
-                    {detail.agreements.map((agreement) => (
-                      <div
-                        key={agreement.id}
-                        className="rounded-lg border border-border/50 px-3 py-2 text-sm"
-                      >
-                        v{agreement.versionNumber} · {agreement.status}
-                        {agreement.acceptedName ? ` · ${agreement.acceptedName}` : ""}
-                      </div>
-                    ))}
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="eng-scope">Scope summary</Label>
+                  <Textarea
+                    id="eng-scope"
+                    value={form.scopeSummary}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, scopeSummary: event.target.value }))
+                    }
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <Button
+                type="button"
+                disabled={
+                  createM.isPending ||
+                  proposalM.isPending ||
+                  !form.clientId ||
+                  !form.title.trim() ||
+                  !Number.isSafeInteger(form.amountMinor) ||
+                  form.amountMinor < 0
+                }
+                onClick={() => createM.mutate()}
+              >
+                Create engagement
+              </Button>
+            </section>
+
+            <section className="space-y-3 rounded-xl border border-border/70 p-4">
+              {!selectedId ? (
+                <EmptyState
+                  title="Select an engagement"
+                  description="Open an engagement to review proposals and send a new one."
+                />
+              ) : detailQ.isPending ? (
+                <LoadingState />
+              ) : detailQ.isError ? (
+                <ErrorState
+                  title="Engagement detail unavailable"
+                  description={friendlyAuthError(detailQ.error)}
+                  onRetry={() => void detailQ.refetch()}
+                />
+              ) : detail ? (
+                <>
+                  <div>
+                    <h2 className="font-semibold">{detail.title}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedLabel} · {detail.status} ·{" "}
+                      {formatAdvisorsMoney(detail.amountMinor, detail.currency)}
+                    </p>
                   </div>
-                ) : null}
-              </>
-            ) : null}
-          </section>
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium">Proposals</h3>
+                    {detail.proposals.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No proposals yet.</p>
+                    ) : (
+                      detail.proposals.map((proposal) => (
+                        <div
+                          key={proposal.id}
+                          className="rounded-lg border border-border/50 px-3 py-2 text-sm"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span>
+                              v{proposal.versionNumber} · {proposal.title}
+                            </span>
+                            <Badge variant="outline">{proposal.status}</Badge>
+                          </div>
+                          {proposal.status !== "draft" ? (
+                            <p className="mt-1 break-all text-xs text-muted-foreground">
+                              {proposalPublicPath(proposal.publicToken)}
+                            </p>
+                          ) : null}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium">Send proposal</h3>
+                    <Input
+                      value={proposalDraft.title}
+                      onChange={(event) =>
+                        setProposalDraft((prev) => ({ ...prev, title: event.target.value }))
+                      }
+                      placeholder="Proposal title"
+                    />
+                    <Textarea
+                      value={proposalDraft.summary}
+                      onChange={(event) =>
+                        setProposalDraft((prev) => ({ ...prev, summary: event.target.value }))
+                      }
+                      placeholder="Customer-facing summary"
+                      rows={2}
+                    />
+                    <Textarea
+                      value={proposalDraft.scopeText}
+                      onChange={(event) =>
+                        setProposalDraft((prev) => ({ ...prev, scopeText: event.target.value }))
+                      }
+                      placeholder="Scope"
+                      rows={3}
+                    />
+                    <Input
+                      type="number"
+                      value={proposalDraft.amountMinor}
+                      onChange={(event) =>
+                        setProposalDraft((prev) => ({
+                          ...prev,
+                          amountMinor: Number(event.target.value) || 0,
+                        }))
+                      }
+                      placeholder="Amount minor units"
+                    />
+                    <Button
+                      type="button"
+                      disabled={
+                        proposalM.isPending ||
+                        createM.isPending ||
+                        !Number.isSafeInteger(proposalDraft.amountMinor) ||
+                        proposalDraft.amountMinor < 0
+                      }
+                      onClick={() => proposalM.mutate()}
+                    >
+                      Create and send proposal
+                    </Button>
+                  </div>
+                  {detail.agreements.length > 0 ? (
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium">Agreements</h3>
+                      {detail.agreements.map((agreement) => (
+                        <div
+                          key={agreement.id}
+                          className="rounded-lg border border-border/50 px-3 py-2 text-sm"
+                        >
+                          v{agreement.versionNumber} · {agreement.status}
+                          {agreement.acceptedName ? ` · ${agreement.acceptedName}` : ""}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+            </section>
+          </div>
         </div>
-      </div>
-    </ListWorkspace>
-</main>
+      </ListWorkspace>
+    </main>
   );
 }

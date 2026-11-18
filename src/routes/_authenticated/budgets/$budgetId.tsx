@@ -628,7 +628,9 @@ function BudgetEditor({
       actions={
         <>
           <Button asChild variant="outline" size="sm">
-            <Link to="/budgets" search={backSearch}>All budgets</Link>
+            <Link to="/budgets" search={backSearch}>
+              All budgets
+            </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link

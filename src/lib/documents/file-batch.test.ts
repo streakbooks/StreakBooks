@@ -38,7 +38,10 @@ describe("Files batch operations", () => {
     await expect(runFileBatch([], operation)).rejects.toThrow("1–25 distinct");
     await expect(runFileBatch(["a", "a"], operation)).rejects.toThrow("1–25 distinct");
     await expect(
-      runFileBatch(Array.from({ length: MAX_FILES_PER_BATCH + 1 }, (_, i) => String(i)), operation),
+      runFileBatch(
+        Array.from({ length: MAX_FILES_PER_BATCH + 1 }, (_, i) => String(i)),
+        operation,
+      ),
     ).rejects.toThrow("1–25 distinct");
     expect(called).toBe(0);
   });

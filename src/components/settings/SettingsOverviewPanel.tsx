@@ -109,13 +109,18 @@ export function SettingsOverviewPanel({ companyId }: Props) {
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Feature setup status">
         {counts.map((item) => (
-          <Card key={item.label} className="group/metric relative overflow-hidden border-border/80 shadow-card">
+          <Card
+            key={item.label}
+            className="group/metric relative overflow-hidden border-border/80 shadow-card"
+          >
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
                 <item.icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               </div>
-              <p className="text-[1.7rem] font-bold tracking-[-0.03em] tabular-nums">{item.value}</p>
+              <p className="text-[1.7rem] font-bold tracking-[-0.03em] tabular-nums">
+                {item.value}
+              </p>
               <p className="mt-1 text-xs text-muted-foreground">{item.hint}</p>
             </CardContent>
           </Card>

@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -150,7 +151,7 @@ function RequisitionsWorkspace({
           }}
           className="sm:max-w-sm"
         />
-        <Select
+        <RecordLookupSelect
           value={status}
           onValueChange={(value) => {
             setStatus(value as RequisitionStatus | "all");
@@ -168,7 +169,7 @@ function RequisitionsWorkspace({
               </SelectItem>
             ))}
           </SelectContent>
-        </Select>
+        </RecordLookupSelect>
       </div>
       {query.isPending ? (
         <LoadingState />

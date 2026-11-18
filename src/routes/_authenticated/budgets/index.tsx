@@ -1,7 +1,10 @@
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { parseBudgetListSearch, encodeBudgetListReturnContext } from "@/lib/budgets/budget-navigation";
+import {
+  parseBudgetListSearch,
+  encodeBudgetListReturnContext,
+} from "@/lib/budgets/budget-navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Copy, GitCompareArrows, Loader2, Trash2 } from "lucide-react";
@@ -20,7 +23,7 @@ import {
   saveBudget,
   type BudgetSummary,
 } from "@/lib/budgets/budgets.functions";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,7 +60,12 @@ function BudgetsPage() {
   const search = searchState.q ?? "";
   const returnContext = encodeBudgetListReturnContext(searchState);
   const setSearch = (value: string) => {
-    void navigate({ to: "/budgets", search: parseBudgetListSearch({ q: value }), replace: true, resetScroll: false });
+    void navigate({
+      to: "/budgets",
+      search: parseBudgetListSearch({ q: value }),
+      replace: true,
+      resetScroll: false,
+    });
   };
   const queryClient = useQueryClient();
   const canManage = useCanDo("accounts.manage");
@@ -159,34 +167,33 @@ function BudgetsPage() {
 
   return (
     <ListWorkspace
-        title="Budgets"
-        description="Plan income and expenses by account and month for a financial year, then compare with actuals."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant={showScenarioComparison ? "secondary" : "outline"}
-              disabled={!query.data?.available || query.data.budgets.length < 2}
-              onClick={() => setShowScenarioComparison((value) => !value)}
-              aria-expanded={showScenarioComparison}
-            >
-              <GitCompareArrows className="mr-2 size-4" />
-              Compare budgets
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/imports" search={{ module: "budgets" }}>
-                Import budget CSV
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/reports/$reportId" params={{ reportId: "budget-vs-actual" }}>
-                Budget versus Actual report
-              </Link>
-            </Button>
-          </div>
-        }
-      >
-
+      title="Budgets"
+      description="Plan income and expenses by account and month for a financial year, then compare with actuals."
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant={showScenarioComparison ? "secondary" : "outline"}
+            disabled={!query.data?.available || query.data.budgets.length < 2}
+            onClick={() => setShowScenarioComparison((value) => !value)}
+            aria-expanded={showScenarioComparison}
+          >
+            <GitCompareArrows className="mr-2 size-4" />
+            Compare budgets
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/imports" search={{ module: "budgets" }}>
+              Import budget CSV
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/reports/$reportId" params={{ reportId: "budget-vs-actual" }}>
+              Budget versus Actual report
+            </Link>
+          </Button>
+        </div>
+      }
+    >
       <div className="mb-6 grid max-w-xl gap-3 rounded-md border border-border p-4">
         <h2 className="text-sm font-semibold">New budget</h2>
         <div className="space-y-2">
@@ -234,8 +241,8 @@ function BudgetsPage() {
           <div>
             <h2 className="text-base font-semibold">Existing budgets</h2>
             <p className="text-xs text-muted-foreground">
-              {query.data.budgets.length} budget{query.data.budgets.length === 1 ? "" : "s"} in
-              this organisation
+              {query.data.budgets.length} budget{query.data.budgets.length === 1 ? "" : "s"} in this
+              organisation
             </p>
           </div>
           {query.data.budgets.length > 0 ? (
@@ -372,7 +379,7 @@ function BudgetsPage() {
               />
               <p className="text-xs text-muted-foreground">
                 Each monthly amount stays in its fiscal-month position, even when the target year
-              differs.
+                differs.
               </p>
             </div>
             <div className="flex items-center gap-3">

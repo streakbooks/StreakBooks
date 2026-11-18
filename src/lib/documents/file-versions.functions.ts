@@ -15,7 +15,7 @@ import {
 } from "@/lib/documents/file-versions";
 
 const migrationHint =
-  "Document versions require migration 20261106170000_document_attachment_versions.";
+  "Document versions require migration 20261118150353_document_attachment_versions.";
 
 type ParentFile = {
   id: string;
@@ -32,8 +32,7 @@ type ParentFile = {
 };
 
 function dbError(error: { code?: string; message: string }): never {
-  if (["42P01", "42703", "42883"].includes(error.code ?? ""))
-    throw new Error(migrationHint);
+  if (["42P01", "42703", "42883"].includes(error.code ?? "")) throw new Error(migrationHint);
   throw new Error(error.message);
 }
 
@@ -47,8 +46,8 @@ async function readParent(
   const { data: row, error } = await supabase
     .from("document_attachments" as never)
     .select(
-      "id, entity_type, entity_id, file_name, content_type, size_bytes, " +
-      "storage_bucket, storage_path, uploaded_by, created_at, current_version" as never,
+      ("id, entity_type, entity_id, file_name, content_type, size_bytes, " +
+        "storage_bucket, storage_path, uploaded_by, created_at, current_version") as never,
     )
     .eq("company_id" as never, companyId as never)
     .eq("id" as never, attachmentId as never)
@@ -61,10 +60,9 @@ async function readParent(
   await assertEntityAccess(supabase, companyId, file.entity_type, action);
   if (
     file.storage_bucket !== COMPANY_DOCUMENTS_BUCKET ||
-    !file.storage_path?.startsWith(
-      `${companyId}/${file.entity_type}/${file.entity_id}/`,
-    )
-  ) throw new Error("Version history requires a private Storage-backed document.");
+    !file.storage_path?.startsWith(`${companyId}/${file.entity_type}/${file.entity_id}/`)
+  )
+    throw new Error("Version history requires a private Storage-backed document.");
   return file;
 }
 
@@ -103,8 +101,8 @@ export const listFileVersions = createServerFn({ method: "GET" })
     const { data: rows, error } = await supabase
       .from("document_attachment_versions" as never)
       .select(
-        "version, file_name, content_type, size_bytes, storage_bucket, " +
-        "storage_path, uploaded_by, created_at" as never,
+        ("version, file_name, content_type, size_bytes, storage_bucket, " +
+          "storage_path, uploaded_by, created_at") as never,
       )
       .eq("company_id" as never, data.companyId as never)
       .eq("attachment_id" as never, data.attachmentId as never)
@@ -127,39 +125,49 @@ export const listFileVersions = createServerFn({ method: "GET" })
 
 export const registerFileVersion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    attachmentId: string;
-    expectedVersion: number;
-    storagePath: string;
-    fileName: string;
-    sizeBytes: number;
-    contentType: string;
-  }) => {
-    const expectedVersion = Number(input.expectedVersion);
-    if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1 || expectedVersion >= 50)
-      throw new Error("Invalid or exhausted document version.");
-    const companyId = assertUuid(input.companyId);
-    const attachmentId = assertUuid(input.attachmentId, "file");
-    const parsed = parseStoragePath(input.storagePath ?? "");
-    if (!parsed || parsed.companyId !== companyId)
-      throw new Error("Invalid company Storage path.");
-    return {
-      companyId, attachmentId, expectedVersion,
-      storagePath: input.storagePath,
-      fileName: input.fileName,
-      sizeBytes: input.sizeBytes,
-      contentType: input.contentType,
-    };
-  })
+  .inputValidator(
+    (input: {
+      companyId: string;
+      attachmentId: string;
+      expectedVersion: number;
+      storagePath: string;
+      fileName: string;
+      sizeBytes: number;
+      contentType: string;
+    }) => {
+      const expectedVersion = Number(input.expectedVersion);
+      if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1 || expectedVersion >= 50)
+        throw new Error("Invalid or exhausted document version.");
+      const companyId = assertUuid(input.companyId);
+      const attachmentId = assertUuid(input.attachmentId, "file");
+      const parsed = parseStoragePath(input.storagePath ?? "");
+      if (!parsed || parsed.companyId !== companyId)
+        throw new Error("Invalid company Storage path.");
+      return {
+        companyId,
+        attachmentId,
+        expectedVersion,
+        storagePath: input.storagePath,
+        fileName: input.fileName,
+        sizeBytes: input.sizeBytes,
+        contentType: input.contentType,
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const file = await readParent(supabase, data.companyId, data.attachmentId, "manage");
     if (file.current_version !== data.expectedVersion)
       throw new Error("A newer file version already exists. Refresh before trying again.");
-    const validated = validateVersionReplacement(file.file_name, {
-      name: data.fileName, size: data.sizeBytes, type: data.contentType,
-    }, file.current_version);
+    const validated = validateVersionReplacement(
+      file.file_name,
+      {
+        name: data.fileName,
+        size: data.sizeBytes,
+        type: data.contentType,
+      },
+      file.current_version,
+    );
     const parsed = parseStoragePath(data.storagePath);
     if (
       !parsed ||
@@ -167,7 +175,8 @@ export const registerFileVersion = createServerFn({ method: "POST" })
       parsed.entityType !== file.entity_type ||
       parsed.entityId !== file.entity_id ||
       data.storagePath === file.storage_path
-    ) throw new Error("Replacement Storage path is not part of this document.");
+    )
+      throw new Error("Replacement Storage path is not part of this document.");
 
     // Confirm the browser uploaded the exact file through its own scoped Storage session.
     const folder = data.storagePath.slice(0, data.storagePath.lastIndexOf("/"));
@@ -201,7 +210,7 @@ export const registerFileVersion = createServerFn({ method: "POST" })
         supabase as unknown as {
           rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
         }
-      ).rpc("record_audit_event", {
+      ).rpc("record_app_audit_event", {
         _company_id: data.companyId,
         _action: "document.version.create",
         _entity_type: file.entity_type,

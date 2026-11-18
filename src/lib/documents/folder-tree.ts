@@ -45,13 +45,11 @@ export function possibleParentFolders(
 }
 
 /** Label destinations by their full path so similarly named nested folders are distinguishable. */
-export function folderDisplayPath(
-  folders: readonly DocumentFolder[],
-  folderId: string,
-): string {
-  return folderAncestors(folders, folderId).map((folder) => folder.name).join(" / ");
+export function folderDisplayPath(folders: readonly DocumentFolder[], folderId: string): string {
+  return folderAncestors(folders, folderId)
+    .map((folder) => folder.name)
+    .join(" / ");
 }
-
 
 /**
  * Resolve a folder and every nested descendant for organisation-scoped searches.
@@ -83,15 +81,12 @@ export function folderDescendantIds(
   return ids;
 }
 
-
 /**
  * Index display paths once per folder query. Building a path via ancestor scans
  * for each search candidate causes O(n²) work on large folder trees.
  * Missing parents and malformed cycles are safely truncated.
  */
-export function indexFolderPaths(
-  folders: readonly DocumentFolder[],
-): ReadonlyMap<string, string> {
+export function indexFolderPaths(folders: readonly DocumentFolder[]): ReadonlyMap<string, string> {
   const byId = new Map(folders.map((folder) => [folder.id, folder]));
   const cache = new Map<string, string>();
 

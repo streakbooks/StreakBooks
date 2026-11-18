@@ -122,7 +122,7 @@ CREATE POLICY document_attachment_tags_delete
 -- Prevent deletion of a label from silently stripping it off a restricted attachment.
 -- Company tag deletion is allowed only when the tag has NO relationships anywhere.
 CREATE OR REPLACE FUNCTION public.document_tags_reject_assigned_delete()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM public.document_attachment_tags t
@@ -131,7 +131,7 @@ BEGIN
     RAISE EXCEPTION 'Tag is assigned to documents. Remove it from every document before deletion.';
   END IF;
   RETURN OLD;
-END $;
+END $$;
 REVOKE ALL ON FUNCTION public.document_tags_reject_assigned_delete()
   FROM PUBLIC, anon, authenticated;
 DROP TRIGGER IF EXISTS document_tags_reject_assigned_delete_trg ON public.document_tags;

@@ -55,10 +55,12 @@ export function validateFileRename(currentName: string, requestedName: string): 
     name.length > 255 ||
     name === "." ||
     name === ".." ||
-    /[\\/:*?"<>|\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/u.test(name) ||
+    /[\\/:*?"<>|\p{Cc}\u202a-\u202e\u2066-\u2069]/u.test(name) ||
     name.endsWith(".")
   )
-    throw new Error("Use a valid file name (1–255 characters, without path or control characters).");
+    throw new Error(
+      "Use a valid file name (1–255 characters, without path or control characters).",
+    );
 
   const extension = (fileName: string) => {
     const dot = fileName.lastIndexOf(".");
@@ -68,7 +70,6 @@ export function validateFileRename(currentName: string, requestedName: string): 
     throw new Error("Keep the original file extension when renaming.");
   return name;
 }
-
 
 /** Fixed, non-user-defined MIME groups; never build a database filter from arbitrary text. */
 export const FILE_FORMATS = ["all", "pdf", "images", "spreadsheets", "word", "text"] as const;
@@ -102,7 +103,6 @@ export function fileFormatMimeTypes(format: FileFormat): readonly string[] {
   }
 }
 
-
 /**
  * An internal deep link, never a signed Storage URL or a public share token.
  * The server still checks the recipient's membership and record permissions.
@@ -116,15 +116,12 @@ export function internalFileUrl(origin: string, attachmentId: string): string {
   return url.toString();
 }
 
-
 /**
  * Preflight upload review is deliberately conservative: equal name + byte size
  * signals only a POSSIBLE duplicate, not identical file contents.
  * Earlier items in the same picker batch are kept; later matches are flagged.
  */
-export function repeatedUploadFlags(
-  files: readonly { name: string; size: number }[],
-): boolean[] {
+export function repeatedUploadFlags(files: readonly { name: string; size: number }[]): boolean[] {
   const seen = new Set<string>();
   return files.map((file) => {
     const key = `${file.name.trim().normalize("NFKC").toLocaleLowerCase("en-US")}\u0000${file.size}`;
@@ -139,11 +136,8 @@ export function selectUploadIndexes(
   flags: readonly boolean[],
   includePossibleDuplicates: boolean,
 ): number[] {
-  return flags.flatMap((flag, index) =>
-    includePossibleDuplicates || !flag ? [index] : [],
-  );
+  return flags.flatMap((flag, index) => (includePossibleDuplicates || !flag ? [index] : []));
 }
-
 
 /** Merge in-batch and visible-existing metadata flags in the same picker order. */
 export function combinePossibleDuplicateFlags(
@@ -155,32 +149,23 @@ export function combinePossibleDuplicateFlags(
   return withinBatch.map((flag, index) => flag || amongExisting[index] === true);
 }
 
-
 /**
  * RLS-aware tag filtering uses a related table inner-join (PostgREST).
  * It avoids expensive, URL-length-limited client-generated .in() UUID lists.
  */
-export function fileListProjection(
-  baseColumns: string,
-  tagId: string | null,
-): string {
-  return tagId
-    ? `${baseColumns}, tag_match:document_attachment_tags!inner(tag_id)`
-    : baseColumns;
+export function fileListProjection(baseColumns: string, tagId: string | null): string {
+  return tagId ? `${baseColumns}, tag_match:document_attachment_tags!inner(tag_id)` : baseColumns;
 }
-
 
 /** Bound offset pagination to prevent an untrusted page index from creating huge queries. */
 export function safeFilePage(value: unknown, maxPage = 1000): number {
   const number = Number(value);
-  return Number.isSafeInteger(number) && number >= 0
-    ? Math.min(number, maxPage)
-    : 0;
+  return Number.isSafeInteger(number) && number >= 0 ? Math.min(number, maxPage) : 0;
 }
 
 /** A deleted or filtered page cannot remain selected after result counts shrink. */
 export function lastFilePage(total: number, pageSize: number): number {
-  if (!Number.isSafeInteger(total) || total < 0 ||
-      !Number.isSafeInteger(pageSize) || pageSize < 1) return 0;
+  if (!Number.isSafeInteger(total) || total < 0 || !Number.isSafeInteger(pageSize) || pageSize < 1)
+    return 0;
   return Math.max(0, Math.ceil(total / pageSize) - 1);
 }

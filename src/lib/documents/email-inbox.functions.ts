@@ -27,11 +27,10 @@ type InboxRow = {
 };
 
 const MIGRATION_HINT =
-  "Email-to-Inbox requires migration 20261106140000_files_email_inbox. Ask an administrator to apply it.";
+  "Email-to-Inbox requires migration 20261118150351_files_email_inbox. Ask an administrator to apply it.";
 
 function handleDbError(error: { code?: string; message: string }): never {
-  if (error.code === "42P01" || error.code === "42703")
-    throw new Error(MIGRATION_HINT);
+  if (error.code === "42P01" || error.code === "42703") throw new Error(MIGRATION_HINT);
   throw new Error(error.message);
 }
 
@@ -75,9 +74,8 @@ export const getDocumentInbox = createServerFn({ method: "GET" })
     return {
       configured: config.configured,
       enabled: settings?.enabled ?? false,
-      address: settings && config.configured
-        ? inboxAddress(settings.local_token, config.domain)
-        : null,
+      address:
+        settings && config.configured ? inboxAddress(settings.local_token, config.domain) : null,
       provider: config.configured ? config.provider : null,
       missingConfiguration: config.configured ? [] : config.missing,
     };
@@ -165,12 +163,9 @@ export const getDocumentInboxAttachments = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { config } = await verifyEmailRecipient(
-      data.companyId, data.emailId, context.supabase,
-    );
+    const { config } = await verifyEmailRecipient(data.companyId, data.emailId, context.supabase);
     const attachments = await listReceivedAttachments(config, data.emailId);
-    if (attachments.has_more)
-      throw new Error("Email exceeds the 100-attachment preview limit.");
+    if (attachments.has_more) throw new Error("Email exceeds the 100-attachment preview limit.");
     const { data: existing, error } = await context.supabase
       .from("document_attachments" as never)
       .select("inbox_attachment_id" as never)
@@ -208,17 +203,16 @@ export const importDocumentInboxAttachment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const supabase = context.supabase;
     await assertEntityAccess(supabase, data.companyId, "company", "manage");
-    const { config, email } = await verifyEmailRecipient(
-      data.companyId, data.emailId, supabase,
-    );
+    const { config, email } = await verifyEmailRecipient(data.companyId, data.emailId, supabase);
 
-    const existingQuery = () => supabase
-      .from("document_attachments" as never)
-      .select("id" as never)
-      .eq("company_id" as never, data.companyId as never)
-      .eq("inbox_email_id" as never, data.emailId as never)
-      .eq("inbox_attachment_id" as never, data.attachmentId as never)
-      .maybeSingle();
+    const existingQuery = () =>
+      supabase
+        .from("document_attachments" as never)
+        .select("id" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("inbox_email_id" as never, data.emailId as never)
+        .eq("inbox_attachment_id" as never, data.attachmentId as never)
+        .maybeSingle();
 
     const current = await existingQuery();
     if (current.error) handleDbError(current.error);
@@ -298,7 +292,7 @@ export const importDocumentInboxAttachment = createServerFn({ method: "POST" })
           supabase as unknown as {
             rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
           }
-        ).rpc("record_audit_event", {
+        ).rpc("record_app_audit_event", {
           _company_id: data.companyId,
           _action: "document.email_attachment.import",
           _entity_type: "company",

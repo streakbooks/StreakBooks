@@ -1,5 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { parseFilesListSearch, type FilesListSearch } from "@/lib/documents/files-navigation";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +32,11 @@ import { DocumentVersionHistory } from "@/components/documents/DocumentVersionHi
 import { DocumentRecycleBin } from "@/components/documents/DocumentRecycleBin";
 import { setRecycleBinRetentionHold } from "@/lib/documents/recycle-bin.functions";
 import { listDocumentTags } from "@/lib/documents/file-classification.functions";
-import { FILE_CATEGORIES, FILE_CATEGORY_LABELS, type FileCategory } from "@/lib/documents/file-classification";
+import {
+  FILE_CATEGORIES,
+  FILE_CATEGORY_LABELS,
+  type FileCategory,
+} from "@/lib/documents/file-classification";
 import {
   checkPossibleFileDuplicates,
   deleteAttachment,
@@ -60,7 +64,11 @@ import {
   deleteDocumentFolder,
   moveDocumentToFolder,
 } from "@/lib/documents/folders.functions";
-import { folderAncestors, indexFolderPaths, possibleParentFolders } from "@/lib/documents/folder-tree";
+import {
+  folderAncestors,
+  indexFolderPaths,
+  possibleParentFolders,
+} from "@/lib/documents/folder-tree";
 import {
   combinePossibleDuplicateFlags,
   internalFileUrl,
@@ -162,28 +170,36 @@ function FilesPage() {
   const page = routeSearch.page ?? 0;
   const sort = routeSearch.sort ?? "newest";
   const view = routeSearch.view ?? "all";
-  const patchFiles = (patch: Partial<FilesListSearch>, replace = false) => {
-    void navigate({
-      to: "/files",
-      search: (previous) => parseFilesListSearch({ ...previous, ...patch }),
-      replace,
-      resetScroll: false,
-    });
-  };
+  const patchFiles = useCallback(
+    (patch: Partial<FilesListSearch>, replace = false) => {
+      void navigate({
+        to: "/files",
+        search: (previous) => parseFilesListSearch({ ...previous, ...patch }),
+        replace,
+        resetScroll: false,
+      });
+    },
+    [navigate],
+  );
   const setFolderId = (id: string | null) =>
     patchFiles({ folder: id ?? undefined, file: undefined, page: 0 });
-  const setSelectedFile = (id: string | null) =>
-    patchFiles({ file: id ?? undefined });
-  const setSearch = (value: string) =>
-    patchFiles({ q: value, page: 0 }, true);
+  const setSelectedFile = (id: string | null) => patchFiles({ file: id ?? undefined });
+  const setSearch = (value: string) => patchFiles({ q: value, page: 0 }, true);
   const setType = (value: string) =>
     patchFiles({ type: value as FilesListSearch["type"], page: 0 });
-  const setSort = (value: FilesListSearch["sort"]) =>
-    patchFiles({ sort: value, page: 0 });
-  const setView = (value: "all" | "to-file" | "review") =>
-    patchFiles({ view: value, folder: value === "all" ? folderId ?? undefined : undefined, file: undefined, page: 0 });
-  const setPage = (next: number | ((current: number) => number)) =>
-    patchFiles({ page: typeof next === "function" ? next(page) : next });
+  const setSort = (value: FilesListSearch["sort"]) => patchFiles({ sort: value, page: 0 });
+  const setView = (value: NonNullable<FilesListSearch["view"]>) =>
+    patchFiles({
+      view: value,
+      folder: value === "all" ? (folderId ?? undefined) : undefined,
+      file: undefined,
+      page: 0,
+    });
+  const setPage = useCallback(
+    (next: number | ((current: number) => number)) =>
+      patchFiles({ page: typeof next === "function" ? next(page) : next }),
+    [patchFiles, page],
+  );
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [renameFolderOpen, setRenameFolderOpen] = useState(false);
@@ -201,6 +217,7 @@ function FilesPage() {
   const [fileFormat, setFileFormat] = useState<FileFormat>("all");
   const [categoryFilter, setCategoryFilter] = useState<FileCategory | "all">("all");
   const [tagFilter, setTagFilter] = useState("all");
+  const [includeSubfolders, setIncludeSubfolders] = useState(false);
   const [folderSearch, setFolderSearch] = useState("");
   const activeView = folderId ? "all" : view;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -250,18 +267,19 @@ function FilesPage() {
     queryFn: () => getFolders({ data: { companyId: companyId! } }),
   });
   type FolderRow = { id: string; name: string; parent_id: string | null };
-  const folders = (foldersQ.data ?? []) as FolderRow[];
+  const folders = useMemo(() => (foldersQ.data ?? []) as FolderRow[], [foldersQ.data]);
   const activeFolder = folders.find((f) => f.id === folderId);
   const breadcrumbs = folderAncestors(folders, folderId);
-  const folderPaths = useMemo(() => indexFolderPaths(folders), [foldersQ.data]);
+  const folderPaths = useMemo(() => indexFolderPaths(folders), [folders]);
   const folderMatches = useMemo(() => {
     const searchTerm = folderSearch.trim().toLocaleLowerCase("en-US");
     if (!searchTerm) return [];
     return folders
-      .filter((folder) => (folderPaths.get(folder.id) ?? "")
-        .toLocaleLowerCase("en-US").includes(searchTerm))
+      .filter((folder) =>
+        (folderPaths.get(folder.id) ?? "").toLocaleLowerCase("en-US").includes(searchTerm),
+      )
       .slice(0, 20);
-  }, [foldersQ.data, folderPaths, folderSearch]);
+  }, [folders, folderPaths, folderSearch]);
   const folderM = useMutation({
     mutationFn: async (name: string) =>
       createFolder({ data: { companyId: companyId!, name, parentId: folderId } }),
@@ -325,8 +343,11 @@ function FilesPage() {
       categoryFilter,
       tagFilter,
     ],
-    enabled: Boolean(companyId) &&
-      activeView !== "review" && activeView !== "inbox" && activeView !== "trash",
+    enabled:
+      Boolean(companyId) &&
+      activeView !== "review" &&
+      activeView !== "inbox" &&
+      activeView !== "trash",
     queryFn: () =>
       fetchFiles({
         data: {
@@ -335,7 +356,7 @@ function FilesPage() {
           entityType: activeView === "to-file" ? "company" : type,
           format: fileFormat,
           category: categoryFilter,
-          tagId: tagFilter === "all" ? undefined : tagFilter,
+          ...(tagFilter !== "all" ? { tagId: tagFilter } : {}),
           includeSubfolders: folderId !== null && includeSubfolders,
           folderId: activeView === "to-file" ? null : folderId,
           unfiledOnly: activeView === "to-file",
@@ -350,7 +371,7 @@ function FilesPage() {
     if (!filesQ.data) return;
     const last = lastFilePage(filesQ.data.total, filesQ.data.pageSize);
     if (page > last) setPage(last);
-  }, [filesQ.data?.total, filesQ.data?.pageSize, page]);
+  }, [filesQ.data, page, setPage]);
 
   const fileDetailsQ = useQuery({
     queryKey: ["company-file-details", companyId, selectedFile],
@@ -382,7 +403,19 @@ function FilesPage() {
   // Selection is deliberately limited to the current result page and its permissions.
   useEffect(
     () => setSelectedIds([]),
-    [companyId, debounced, type, folderId, page, sort, view, fileFormat, includeSubfolders, categoryFilter, tagFilter],
+    [
+      companyId,
+      debounced,
+      type,
+      folderId,
+      page,
+      sort,
+      view,
+      fileFormat,
+      includeSubfolders,
+      categoryFilter,
+      tagFilter,
+    ],
   );
   useEffect(() => setShowRenameFile(false), [companyId, selectedFile]);
   useEffect(() => {
@@ -513,9 +546,8 @@ function FilesPage() {
 
   const bulkDeleteM = useMutation({
     mutationFn: async ({ ids, sourceCompanyId }: { ids: string[]; sourceCompanyId: string }) => ({
-      ...(await runFileBatch(
-        ids,
-        (attachmentId) => remove({ data: { companyId: sourceCompanyId, attachmentId } }),
+      ...(await runFileBatch(ids, (attachmentId) =>
+        remove({ data: { companyId: sourceCompanyId, attachmentId } }),
       )),
       sourceCompanyId,
     }),
@@ -523,7 +555,9 @@ function FilesPage() {
       setPendingBulkDelete(null);
       if (companyId === sourceCompanyId) {
         setSelectedIds(failedIds);
-        setFailedDeleteBatch(failedIds.length ? { companyId: sourceCompanyId, ids: failedIds } : null);
+        setFailedDeleteBatch(
+          failedIds.length ? { companyId: sourceCompanyId, ids: failedIds } : null,
+        );
         if (selectedFile && completedIds.includes(selectedFile)) setSelectedFile(null);
       }
       await Promise.all([
@@ -533,7 +567,9 @@ function FilesPage() {
         queryClient.invalidateQueries({ queryKey: ["recycle-bin-files", sourceCompanyId] }),
       ]);
       if (completedIds.length)
-        toast.success(`Moved ${completedIds.length} file${completedIds.length === 1 ? "" : "s"} to Recycle Bin`);
+        toast.success(
+          `Moved ${completedIds.length} file${completedIds.length === 1 ? "" : "s"} to Recycle Bin`,
+        );
       if (failedIds.length)
         toast.error(
           `${failedIds.length} file${failedIds.length === 1 ? "" : "s"} could not be deleted. ${friendlyAuthError(firstError)}`,
@@ -546,7 +582,11 @@ function FilesPage() {
   });
 
   const bulkMoveM = useMutation({
-    mutationFn: ({ ids, targetId, sourceCompanyId }: {
+    mutationFn: ({
+      ids,
+      targetId,
+      sourceCompanyId,
+    }: {
       ids: string[];
       targetId: string | null;
       sourceCompanyId: string;
@@ -592,7 +632,8 @@ function FilesPage() {
       uploadM.isPending ||
       duplicateCheckM.isPending ||
       pendingUploadReview
-    ) return;
+    )
+      return;
     const files = Array.from(list);
     if (files.length > MAX_FILES_PER_BATCH) {
       setError(`Upload up to ${MAX_FILES_PER_BATCH} files at a time.`);
@@ -656,7 +697,9 @@ function FilesPage() {
     preview?.kind === "url" ? preview.url : preview?.kind === "inline" ? inlinePreviewUrl : null;
 
   if (activeView === "trash") {
-    return <DocumentRecycleBin key={companyId} companyId={companyId} onClose={() => setView("all")} />;
+    return (
+      <DocumentRecycleBin key={companyId} companyId={companyId} onClose={() => setView("all")} />
+    );
   }
 
   if (activeView === "inbox") {
@@ -666,16 +709,16 @@ function FilesPage() {
   if (activeView === "review") {
     return (
       <ListWorkspace
-          title="Document review"
-          description="Organise and approve uploaded documents without changing accounting records."
-          actions={
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/files" search={{ ...routeSearch, view: "all", file: undefined, page: 0 }}>
-                Back to Files
-              </Link>
-            </Button>
-          }
-        >
+        title="Document review"
+        description="Organise and approve uploaded documents without changing accounting records."
+        actions={
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/files" search={{ ...routeSearch, view: "all", file: undefined, page: 0 }}>
+              Back to Files
+            </Link>
+          </Button>
+        }
+      >
         <DocumentReviewQueue companyId={companyId} onClose={() => setView("all")} />
       </ListWorkspace>
     );
@@ -683,47 +726,53 @@ function FilesPage() {
 
   return (
     <ListWorkspace
-        title="Files"
-        description="Everything attached to invoices, bills, contacts and journals, plus files you upload here. You only see files for records you are allowed to view."
-        actions={
-          <>
-            <Button size="sm" variant="outline" asChild>
-              <Link
-                to="/files"
-                search={{ ...routeSearch, view: "review", folder: undefined, file: undefined, page: 0 }}
+      title="Files"
+      description="Everything attached to invoices, bills, contacts and journals, plus files you upload here. You only see files for records you are allowed to view."
+      actions={
+        <>
+          <Button size="sm" variant="outline" asChild>
+            <Link
+              to="/files"
+              search={{
+                ...routeSearch,
+                view: "review",
+                folder: undefined,
+                file: undefined,
+                page: 0,
+              }}
+            >
+              <ClipboardCheck className="mr-1 size-4" />
+              Document review
+            </Link>
+          </Button>
+          {canUpload ? (
+            <>
+              <input
+                ref={inputRef}
+                type="file"
+                multiple
+                hidden
+                accept={FILE_INPUT_ACCEPT}
+                aria-label="Choose files to upload"
+                onChange={(e) => onPick(e.target.files)}
+              />
+              <Button
+                size="sm"
+                disabled={uploadM.isPending}
+                onClick={() => inputRef.current?.click()}
               >
-                <ClipboardCheck className="mr-1 size-4" />
-                Document review
-              </Link>
-            </Button>
-            {canUpload ? (
-              <>
-                <input
-                  ref={inputRef}
-                  type="file"
-                  multiple
-                  hidden
-                  accept={FILE_INPUT_ACCEPT}
-                  aria-label="Choose files to upload"
-                  onChange={(e) => onPick(e.target.files)}
-                />
-                <Button
-                  size="sm"
-                  disabled={uploadM.isPending}
-                  onClick={() => inputRef.current?.click()}
-                >
-                  {uploadM.isPending ? (
-                    <Loader2 className="mr-1 size-4 animate-spin" />
-                  ) : (
-                    <Upload className="mr-1 size-4" />
-                  )}
-                  Upload files
-                </Button>
-              </>
-            ) : null}
-          </>
-        }
-      >
+                {uploadM.isPending ? (
+                  <Loader2 className="mr-1 size-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-1 size-4" />
+                )}
+                Upload files
+              </Button>
+            </>
+          ) : null}
+        </>
+      }
+    >
       {error ? (
         <p role="alert" className="mb-3 text-sm text-destructive">
           {error}
@@ -740,9 +789,12 @@ function FilesPage() {
         </p>
       ) : null}
       {failedDeleteBatch?.companyId === companyId && failedDeleteBatch.ids.length ? (
-        <div role="alert" className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
-          {failedDeleteBatch.ids.length} failed file deletion(s) are available for retry, even
-          if the file list has shifted to another page.
+        <div
+          role="alert"
+          className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm"
+        >
+          {failedDeleteBatch.ids.length} failed file deletion(s) are available for retry, even if
+          the file list has shifted to another page.
           <Button
             size="sm"
             variant="outline"
@@ -757,7 +809,10 @@ function FilesPage() {
         </div>
       ) : null}
       {failedMoveBatch?.companyId === companyId && failedMoveBatch.ids.length ? (
-        <div role="status" className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
+        <div
+          role="status"
+          className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm"
+        >
           {failedMoveBatch.ids.length} failed file move(s) can be retried.
           <Button
             size="sm"
@@ -914,7 +969,12 @@ function FilesPage() {
             <Button size="sm" variant="outline" asChild>
               <Link
                 to="/files"
-                search={{ ...routeSearch, folder: activeFolder.parent_id, file: undefined, page: 0 }}
+                search={{
+                  ...routeSearch,
+                  folder: activeFolder.parent_id,
+                  file: undefined,
+                  page: 0,
+                }}
               >
                 Parent folder
               </Link>
@@ -1112,7 +1172,6 @@ function FilesPage() {
             </AlertDialog>
           </div>
         ) : null}
-
       </section>
       <div className="mb-4 flex flex-wrap items-center gap-2" aria-label="Files workspace views">
         <Button size="sm" variant={activeView === "all" ? "default" : "outline"} asChild>
@@ -1127,7 +1186,13 @@ function FilesPage() {
         <Button size="sm" variant={activeView === "to-file" ? "default" : "outline"} asChild>
           <Link
             to="/files"
-            search={{ ...routeSearch, view: "to-file", folder: undefined, file: undefined, page: 0 }}
+            search={{
+              ...routeSearch,
+              view: "to-file",
+              folder: undefined,
+              file: undefined,
+              page: 0,
+            }}
             aria-current={activeView === "to-file" ? "page" : undefined}
           >
             To file
@@ -1135,7 +1200,7 @@ function FilesPage() {
         </Button>
         <Button
           size="sm"
-          variant={activeView === "inbox" ? "default" : "outline"}
+          variant="outline"
           onClick={() => {
             setFolderId(null);
             setView("inbox");
@@ -1146,7 +1211,7 @@ function FilesPage() {
         </Button>
         <Button
           size="sm"
-          variant={activeView === "trash" ? "default" : "outline"}
+          variant="outline"
           onClick={() => {
             setFolderId(null);
             setView("trash");
@@ -1156,7 +1221,8 @@ function FilesPage() {
           <ArchiveRestore className="mr-1 size-4" /> Recycle Bin
         </Button>
         <span className="text-xs text-muted-foreground">
-          To file shows unlinked, unfiled uploads. Email inbox imports attachments into Document review.
+          To file shows unlinked, unfiled uploads. Email inbox imports attachments into Document
+          review.
         </span>
       </div>
       <div className="mb-5 flex flex-wrap gap-3 rounded-xl border border-border/75 bg-card p-3 shadow-xs">
@@ -1240,14 +1306,13 @@ function FilesPage() {
           <SelectContent>
             <SelectItem value="all">All tags</SelectItem>
             {(tagsQ.data ?? []).map((tag) => (
-              <SelectItem key={tag.id} value={tag.id}>{tag.name}</SelectItem>
+              <SelectItem key={tag.id} value={tag.id}>
+                {tag.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </RecordLookupSelect>
-        <RecordLookupSelect
-          value={sort}
-          onValueChange={(v) => setSort(v as typeof sort)}
-        >
+        <RecordLookupSelect value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
           <SelectTrigger className="w-48" aria-label="Sort files">
             <ArrowUpDown className="mr-2 size-4" />
             <SelectValue />
@@ -1259,8 +1324,12 @@ function FilesPage() {
             <SelectItem value="largest">Largest first</SelectItem>
           </SelectContent>
         </RecordLookupSelect>
-        {(search || type !== "all" || fileFormat !== "all" ||
-          categoryFilter !== "all" || tagFilter !== "all" || sort !== "newest") && (
+        {(search ||
+          type !== "all" ||
+          fileFormat !== "all" ||
+          categoryFilter !== "all" ||
+          tagFilter !== "all" ||
+          sort !== "newest") && (
           <Button
             size="sm"
             variant="ghost"
@@ -1287,7 +1356,10 @@ function FilesPage() {
       ) : null}
 
       {selectedFile && fileDetailsQ.isError && !selected ? (
-        <div role="alert" className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
+        <div
+          role="alert"
+          className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm"
+        >
           File details unavailable: {friendlyAuthError(fileDetailsQ.error)}
           <Button size="sm" variant="outline" onClick={() => setSelectedFile(null)}>
             Close
@@ -1363,10 +1435,12 @@ function FilesPage() {
               size="sm"
               variant="outline"
               disabled={holdM.isPending}
-              onClick={() => holdM.mutate({
-                attachmentId: selected.id,
-                enabled: !selected.retention_hold,
-              })}
+              onClick={() =>
+                holdM.mutate({
+                  attachmentId: selected.id,
+                  enabled: !selected.retention_hold,
+                })
+              }
             >
               <LockKeyhole className="mr-1 size-4" />
               {selected.retention_hold ? "Remove retention protection" : "Protect from deletion"}
@@ -1512,8 +1586,8 @@ function FilesPage() {
                 : folderId && !includeSubfolders
                   ? "This folder has no directly assigned files. Enable Include files in nested subfolders to search its children."
                   : canUpload
-                  ? `Upload a file here or attach one to an invoice or bill. Up to ${formatFileSize(MAX_FILE_BYTES)} each.`
-                  : "No files have been added yet."
+                    ? `Upload a file here or attach one to an invoice or bill. Up to ${formatFileSize(MAX_FILE_BYTES)} each.`
+                    : "No files have been added yet."
           }
         />
       ) : (
@@ -1594,7 +1668,9 @@ function FilesPage() {
                     type="checkbox"
                     aria-label="Select all manageable files on this page"
                     checked={allSelected}
-                    disabled={selectableIds.length === 0 || bulkMoveM.isPending || bulkDeleteM.isPending}
+                    disabled={
+                      selectableIds.length === 0 || bulkMoveM.isPending || bulkDeleteM.isPending
+                    }
                     onChange={(e) => setSelectedIds(e.target.checked ? selectableIds : [])}
                   />
                 </TableHead>
@@ -1807,10 +1883,10 @@ function FilesPage() {
               Move {pendingBulkDelete?.length ?? 0} selected files to Recycle Bin?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Files will be hidden from active folders and linked-record attachment lists,
-              but preserved for restore during their retention period. Protected and approved
-              documents cannot be recycled until their restrictions are resolved.
-              Only selected, manageable files on this page are included; partial success is possible.
+              Files will be hidden from active folders and linked-record attachment lists, but
+              preserved for restore during their retention period. Protected and approved documents
+              cannot be recycled until their restrictions are resolved. Only selected, manageable
+              files on this page are included; partial success is possible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

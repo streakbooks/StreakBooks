@@ -3,15 +3,15 @@
  * Return state is an allowlisted query string, NEVER an external redirect URL.
  */
 export type BankTransactionReturnSearch = {
-  status?: "uncategorised" | "matched" | "reconciled" | "excluded" | "all";
-  statusGroup?: "unreconciled" | "posted" | "all";
-  bankAccountId?: string;
-  q?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  direction?: "in" | "out";
-  page?: number;
-  pageSize?: 25 | 50 | 100 | 200;
+  status?: "uncategorised" | "matched" | "reconciled" | "excluded" | "all" | undefined;
+  statusGroup?: "unreconciled" | "posted" | "all" | undefined;
+  bankAccountId?: string | undefined;
+  q?: string | undefined;
+  dateFrom?: string | undefined;
+  dateTo?: string | undefined;
+  direction?: "in" | "out" | undefined;
+  page?: number | undefined;
+  pageSize?: 25 | 50 | 100 | 200 | undefined;
 };
 
 const STATUS = new Set(["uncategorised", "matched", "reconciled", "excluded", "all"]);
@@ -19,8 +19,15 @@ const GROUP = new Set(["unreconciled", "posted", "all"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SIZES = new Set([25, 50, 100, 200]);
 const KEYS: Array<keyof BankTransactionReturnSearch> = [
-  "status", "statusGroup", "bankAccountId", "q",
-  "dateFrom", "dateTo", "direction", "page", "pageSize",
+  "status",
+  "statusGroup",
+  "bankAccountId",
+  "q",
+  "dateFrom",
+  "dateTo",
+  "direction",
+  "page",
+  "pageSize",
 ];
 const MAX_LENGTH = 2048;
 
@@ -29,10 +36,12 @@ export function parseBankTransactionReturnSearch(
 ): BankTransactionReturnSearch {
   const out: BankTransactionReturnSearch = {};
   if (typeof input["status"] === "string" && STATUS.has(input["status"])) {
-    out.status = input["status"] as BankTransactionReturnSearch["status"];
+    out.status = input["status"] as NonNullable<BankTransactionReturnSearch["status"]>;
   }
   if (typeof input["statusGroup"] === "string" && GROUP.has(input["statusGroup"])) {
-    out.statusGroup = input["statusGroup"] as BankTransactionReturnSearch["statusGroup"];
+    out.statusGroup = input["statusGroup"] as NonNullable<
+      BankTransactionReturnSearch["statusGroup"]
+    >;
   }
   const account = input["bankAccountId"];
   if (typeof account === "string" && UUID.test(account)) out.bankAccountId = account;
@@ -42,19 +51,28 @@ export function parseBankTransactionReturnSearch(
   // Keep ordinary spaces and Unicode text intact for legitimate bank searches.
   if (typeof q === "string") {
     const normalized = q.trim();
-    if (normalized.length > 0 && normalized.length <= 120 &&
-        !/[\u0000-\u001f\u007f-\u009f\u061c\u200e-\u200f\u2028-\u202e\u2066-\u2069]/.test(q)) {
+    if (
+      normalized.length > 0 &&
+      normalized.length <= 120 &&
+      !/[\p{Cc}\u061c\u200e-\u200f\u2028-\u202e\u2066-\u2069]/u.test(q)
+    ) {
       out.q = normalized;
     }
   }
   for (const key of ["dateFrom", "dateTo"] as const) {
     const value = input[key];
-    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) { 
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
       const [year, month, day] = value.split("-").map(Number);
+      if (year === undefined || month === undefined || day === undefined) continue;
       const date = new Date(0);
       date.setUTCHours(0, 0, 0, 0);
       date.setUTCFullYear(year, month - 1, day);
-      if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) out[key] = value;
+      if (
+        date.getUTCFullYear() === year &&
+        date.getUTCMonth() === month - 1 &&
+        date.getUTCDate() === day
+      )
+        out[key] = value;
     }
   }
   // An inverted range must not silently restore a misleading transaction list.
@@ -69,13 +87,16 @@ export function parseBankTransactionReturnSearch(
   if (
     (typeof page === "number" && Number.isSafeInteger(page) && page >= 0) ||
     (typeof page === "string" && /^(0|[1-9]\d{0,6})$/.test(page))
-  ) out.page = Math.min(Number(page), 1_000_000);
+  )
+    out.page = Math.min(Number(page), 1_000_000);
   const pageSize = input["pageSize"];
   // Accept only canonical page-size values. Number() alone also accepts padded,
   // whitespace and exponential strings, which should not survive a deep link.
-  if ((typeof pageSize === "number" && Number.isInteger(pageSize) && SIZES.has(pageSize)) ||
-      (typeof pageSize === "string" && /^(25|50|100|200)$/.test(pageSize))) {
-    out.pageSize = Number(pageSize) as BankTransactionReturnSearch["pageSize"];
+  if (
+    (typeof pageSize === "number" && Number.isInteger(pageSize) && SIZES.has(pageSize)) ||
+    (typeof pageSize === "string" && /^(25|50|100|200)$/.test(pageSize))
+  ) {
+    out.pageSize = Number(pageSize) as NonNullable<BankTransactionReturnSearch["pageSize"]>;
   }
   return out;
 }

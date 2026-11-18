@@ -128,9 +128,11 @@ describe("report URL search params (RP-05)", () => {
   });
 
   it("keeps a safe Reports Centre return token on report detail and filter edits", () => {
-    expect(parseReportSearch({
-      centre: "tab=standard&query=aged+receivables&from=2026-01-01",
-    }).centre).toBe("tab=standard&from=2026-01-01&query=aged+receivables");
+    expect(
+      parseReportSearch({
+        centre: "tab=standard&query=aged+receivables&from=2026-01-01",
+      }).centre,
+    ).toBe("tab=standard&from=2026-01-01&query=aged+receivables");
   });
 
   it("rejects missing, oversized and non-string Reports Centre origin tokens", () => {

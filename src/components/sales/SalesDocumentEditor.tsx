@@ -135,7 +135,13 @@ type Props = {
   returnContext?: string | undefined;
 };
 
-export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialContactId, returnContext }: Props) {
+export function SalesDocumentEditor({
+  kind,
+  existing,
+  fromInvoiceId,
+  initialContactId,
+  returnContext,
+}: Props) {
   const copy = COPY[kind];
   const invoiceBackSearch = decodeInvoiceReturnContext(returnContext);
   const { company } = useActiveCompany();
@@ -776,7 +782,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
         actions={
           <Button variant="outline" size="sm" asChild>
             {kind === "invoice" ? (
-              <Link to="/sales/invoices" search={invoiceBackSearch}>Back to Invoices</Link>
+              <Link to="/sales/invoices" search={invoiceBackSearch}>
+                Back to Invoices
+              </Link>
             ) : (
               <Link to={backTo}>Back</Link>
             )}

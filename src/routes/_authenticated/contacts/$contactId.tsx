@@ -56,7 +56,13 @@ import {
 } from "@/lib/contacts/contact-view-navigation";
 
 export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    tab?: string;
+    fromView?: ReturnType<typeof parseContactDirectoryView>;
+    returnContext?: string | undefined;
+  } => ({
     tab: ["overview", "edit", "people", "groups", "activity", "timeline", "portal"].includes(
       String(search["tab"]),
     )
@@ -79,9 +85,8 @@ function ContactDetail() {
   const { contactId } = Route.useParams();
   const { tab, fromView, returnContext } = Route.useSearch();
   const restoredDirectory = decodeContactsReturnContext(returnContext);
-  const backSearch = Object.keys(restoredDirectory).length > 0
-    ? restoredDirectory
-    : { view: fromView };
+  const backSearch =
+    Object.keys(restoredDirectory).length > 0 ? restoredDirectory : { view: fromView };
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";

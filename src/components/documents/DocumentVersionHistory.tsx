@@ -5,16 +5,21 @@ import { Download, History, Loader2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { type AttachmentEntityType, formatFileSize } from "@/lib/documents/attachments";
 import {
-  type AttachmentEntityType,
-  formatFileSize,
-} from "@/lib/documents/attachments";
-import {
-  downloadFileVersion, listFileVersions, registerFileVersion,
+  downloadFileVersion,
+  listFileVersions,
+  registerFileVersion,
 } from "@/lib/documents/file-versions.functions";
 import { validateVersionReplacement } from "@/lib/documents/file-versions";
 import { uploadDocumentVersion } from "@/lib/documents/upload-client";
@@ -22,7 +27,12 @@ import { openSignedDownload } from "@/lib/documents/ui";
 
 /** Old versions never overwrite the current one; read access follows document RLS. */
 export function DocumentVersionHistory({
-  companyId, attachmentId, entityType, entityId, currentName, canManage,
+  companyId,
+  attachmentId,
+  entityType,
+  entityId,
+  currentName,
+  canManage,
 }: {
   companyId: string;
   attachmentId: string;
@@ -46,8 +56,14 @@ export function DocumentVersionHistory({
   const upload = useMutation({
     mutationFn: ({ file, expectedVersion }: { file: File; expectedVersion: number }) =>
       uploadDocumentVersion({
-        file, companyId, attachmentId, entityType, entityId,
-        currentName, expectedVersion, register: register as never,
+        file,
+        companyId,
+        attachmentId,
+        entityType,
+        entityId,
+        currentName,
+        expectedVersion,
+        register: register as never,
       }),
     onSuccess: async ({ version }) => {
       setPendingFile(null);
@@ -68,8 +84,7 @@ export function DocumentVersionHistory({
     },
   });
   const download = useMutation({
-    mutationFn: (version: number) =>
-      fetchVersion({ data: { companyId, attachmentId, version } }),
+    mutationFn: (version: number) => fetchVersion({ data: { companyId, attachmentId, version } }),
     onSuccess: (response) => openSignedDownload(response.url, response.fileName),
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -109,20 +124,25 @@ export function DocumentVersionHistory({
               disabled={upload.isPending || history.data.currentVersion >= 50}
               onClick={() => picker.current?.click()}
             >
-              {upload.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> :
-                <UploadCloud className="mr-1 size-4" />}
+              {upload.isPending ? (
+                <Loader2 className="mr-1 size-4 animate-spin" />
+              ) : (
+                <UploadCloud className="mr-1 size-4" />
+              )}
               Upload new version
             </Button>
           </>
         ) : null}
       </div>
       <p className="text-xs text-muted-foreground">
-        Replacements keep the same file extension and the existing LinkBooks document link.
-        Previous versions are preserved in private Storage and cannot be edited.
-        Maximum 50 versions per file.
+        Replacements keep the same file extension and the existing LinkBooks document link. Previous
+        versions are preserved in private Storage and cannot be edited. Maximum 50 versions per
+        file.
       </p>
       {history.isPending ? (
-        <p role="status" className="text-xs text-muted-foreground">Loading version history…</p>
+        <p role="status" className="text-xs text-muted-foreground">
+          Loading version history…
+        </p>
       ) : history.isError ? (
         <div role="alert" className="space-y-2 text-xs text-destructive">
           {friendlyAuthError(history.error)}
@@ -143,7 +163,8 @@ export function DocumentVersionHistory({
               >
                 <div className="min-w-0">
                   <p className="break-all font-medium">
-                    Version {item.version}{item.isCurrent ? " · Current" : ""}
+                    Version {item.version}
+                    {item.isCurrent ? " · Current" : ""}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(item.createdAt).toLocaleString()} · {formatFileSize(item.sizeBytes)}
@@ -157,8 +178,11 @@ export function DocumentVersionHistory({
                   disabled={download.isPending}
                   onClick={() => download.mutate(item.version)}
                 >
-                  {download.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> :
-                    <Download className="mr-1 size-4" />}
+                  {download.isPending ? (
+                    <Loader2 className="mr-1 size-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-1 size-4" />
+                  )}
                   Download v{item.version}
                 </Button>
               </li>
@@ -176,9 +200,9 @@ export function DocumentVersionHistory({
             <AlertDialogTitle>Upload a new document version?</AlertDialogTitle>
             <AlertDialogDescription>
               “{pendingFile?.name}” will become version {(history.data?.currentVersion ?? 0) + 1}.
-              Your existing file link will point to the new content, but older versions will
-              remain downloadable. The selected document must still be awaiting review if
-              it belongs to the document-review queue. This does not post accounting entries.
+              Your existing file link will point to the new content, but older versions will remain
+              downloadable. The selected document must still be awaiting review if it belongs to the
+              document-review queue. This does not post accounting entries.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -16,9 +16,11 @@ export function notificationPriorityDisplay(
   raw: string | null | undefined,
 ): NotificationPriorityDisplay {
   if (!raw) return { label: "Unspecified", tone: "neutral", priority: "unknown" };
-  return LABELS[raw.trim().toLowerCase()] ?? {
-    label: "Unspecified",
-    tone: "neutral",
-    priority: "unknown",
-  };
+  return (
+    LABELS[raw.trim().toLowerCase()] ?? {
+      label: "Unspecified",
+      tone: "neutral",
+      priority: "unknown",
+    }
+  );
 }

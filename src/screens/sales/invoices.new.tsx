@@ -5,7 +5,13 @@ const routeApi = getRouteApi("/_authenticated/sales/invoices/new");
 
 export function NewInvoiceRoute() {
   const { contactId, returnContext } = routeApi.useSearch();
-  return <SalesDocumentEditor kind="invoice" initialContactId={contactId} returnContext={returnContext} />;
+  return (
+    <SalesDocumentEditor
+      kind="invoice"
+      initialContactId={contactId}
+      returnContext={returnContext}
+    />
+  );
 }
 
 /** Used by the Create-new panel, which renders the form outside a route. */

@@ -19,8 +19,7 @@ export function readReceiveConfig(
 }
 
 export function inboxAddress(token: string, domain: string): string {
-  if (!/^docs-[0-9a-f]{32}$/.test(token))
-    throw new Error("Invalid company inbox token");
+  if (!/^docs-[0-9a-f]{32}$/.test(token)) throw new Error("Invalid company inbox token");
   if (!/^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$/.test(domain) || !domain.includes("."))
     throw new Error("Invalid receiving domain");
   return `${token}@${domain}`;
@@ -40,10 +39,7 @@ export type ReceivedEmail = {
   created_at: string;
 };
 
-export function isForCompanyInbox(
-  email: Pick<ReceivedEmail, "to">,
-  address: string,
-): boolean {
+export function isForCompanyInbox(email: Pick<ReceivedEmail, "to">, address: string): boolean {
   return email.to.some((recipient) => normaliseRecipient(recipient) === address.toLowerCase());
 }
 
@@ -119,10 +115,12 @@ export function isTrustedReceivedFileUrl(input: string): boolean {
     const url = new URL(input);
     if (url.protocol !== "https:" || url.username || url.password || url.port) return false;
     const hostname = url.hostname.toLowerCase();
-    return hostname.endsWith(".resend.com") ||
+    return (
+      hostname.endsWith(".resend.com") ||
       hostname === "resend.com" ||
       hostname.endsWith(".amazonaws.com") ||
-      hostname.endsWith(".cloudfront.net");
+      hostname.endsWith(".cloudfront.net")
+    );
   } catch {
     return false;
   }

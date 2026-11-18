@@ -317,9 +317,10 @@ export const deleteAttachment = createServerFn({ method: "POST" })
       .is("deleted_at" as never, null)
       .maybeSingle();
     if (readError) {
-      if (readError.code === "42703") throw new Error(
-        "Recycle Bin migration 20261106183000_files_recycle_retention_cleanup is required.",
-      );
+      if (readError.code === "42703")
+        throw new Error(
+          "Recycle Bin migration 20261118150355_files_recycle_retention_cleanup is required.",
+        );
       throw new Error(readError.message);
     }
     if (!row) throw new Error("File not found, already recycled or access denied.");
@@ -328,8 +329,7 @@ export const deleteAttachment = createServerFn({ method: "POST" })
       entity_id: string;
       file_name: string;
     };
-    if (!isAttachmentEntityType(file.entity_type))
-      throw new Error("Unsupported file entity type.");
+    if (!isAttachmentEntityType(file.entity_type)) throw new Error("Unsupported file entity type.");
     await assertEntityAccess(supabase, data.companyId, file.entity_type, "manage");
     const { data: recycled, error } = await supabase
       .from("document_attachments" as never)
@@ -339,15 +339,17 @@ export const deleteAttachment = createServerFn({ method: "POST" })
       .is("deleted_at" as never, null)
       .select("id, purge_after" as never);
     if (error) throw new Error(error.message);
-    if ((recycled ?? []).length !== 1)
+    const recycledRows = (recycled ?? []) as Array<{ id: string; purge_after: string }>;
+    const recycledRow = recycledRows[0];
+    if (recycledRows.length !== 1 || !recycledRow)
       throw new Error("This file changed or you no longer have permission. Refresh and retry.");
-    const purgeAfter = (recycled![0] as { purge_after: string }).purge_after;
+    const purgeAfter = recycledRow.purge_after;
     try {
       await (
         supabase as unknown as {
           rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
         }
-      ).rpc("record_audit_event", {
+      ).rpc("record_app_audit_event", {
         _company_id: data.companyId,
         _action: "document.attachment.recycle",
         _entity_type: file.entity_type,
@@ -363,7 +365,6 @@ export const deleteAttachment = createServerFn({ method: "POST" })
     }
     return { ok: true as const, recycled: true as const, purgeAfter };
   });
-
 
 /**
  * Rename the displayed/downloaded filename only. The private Storage object stays at
@@ -450,7 +451,6 @@ export type CompanyFileRow = AttachmentRow & {
   entityPath: string | null;
 };
 
-
 /** Resolve one file independently of pagination; RLS still gates record-level visibility. */
 export const getCompanyFile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -501,28 +501,31 @@ export const getCompanyFile = createServerFn({ method: "GET" })
  */
 export const checkPossibleFileDuplicates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    candidates: Array<{ fileName: string; sizeBytes: number }>;
-  }) => {
-    const companyId = assertUuid(input.companyId);
-    if (!Array.isArray(input.candidates) || input.candidates.length < 1 || input.candidates.length > 25)
-      throw new Error("Check between 1 and 25 files at once.");
-    const candidates = input.candidates.map((candidate) => {
-      const fileName = String(candidate.fileName ?? "").trim();
-      const sizeBytes = Number(candidate.sizeBytes);
+  .inputValidator(
+    (input: { companyId: string; candidates: Array<{ fileName: string; sizeBytes: number }> }) => {
+      const companyId = assertUuid(input.companyId);
       if (
-        fileName.length < 1 ||
-        fileName.length > 255 ||
-        !Number.isSafeInteger(sizeBytes) ||
-        sizeBytes < 1 ||
-        sizeBytes > MAX_FILE_BYTES
+        !Array.isArray(input.candidates) ||
+        input.candidates.length < 1 ||
+        input.candidates.length > 25
       )
-        throw new Error("Invalid file name or size for duplicate review.");
-      return { fileName, sizeBytes };
-    });
-    return { companyId, candidates };
-  })
+        throw new Error("Check between 1 and 25 files at once.");
+      const candidates = input.candidates.map((candidate) => {
+        const fileName = String(candidate.fileName ?? "").trim();
+        const sizeBytes = Number(candidate.sizeBytes);
+        if (
+          fileName.length < 1 ||
+          fileName.length > 255 ||
+          !Number.isSafeInteger(sizeBytes) ||
+          sizeBytes < 1 ||
+          sizeBytes > MAX_FILE_BYTES
+        )
+          throw new Error("Invalid file name or size for duplicate review.");
+        return { fileName, sizeBytes };
+      });
+      return { companyId, candidates };
+    },
+  )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyMember(supabase, data.companyId);
@@ -566,9 +569,7 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       format: parseFileFormat(input.format),
       includeSubfolders: input.includeSubfolders === true,
       category:
-        input.category && input.category !== "all"
-          ? parseFileCategory(input.category)
-          : null,
+        input.category && input.category !== "all" ? parseFileCategory(input.category) : null,
       tagId: input.tagId ? assertUuid(input.tagId, "tag") : null,
       entityType: input.entityType && input.entityType !== "all" ? input.entityType : null,
       folderId: input.folderId ? assertUuid(input.folderId) : null,
@@ -590,25 +591,23 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       .eq("company_id" as never, data.companyId as never)
       .is("deleted_at" as never, null);
     if (data.entityType) q = q.eq("entity_type" as never, data.entityType as never);
-    if (data.category)
-      q = q.eq("document_category" as never, data.category as never);
-    if (data.tagId)
-      q = q.eq("tag_match.tag_id" as never, data.tagId as never);
+    if (data.category) q = q.eq("document_category" as never, data.category as never);
+    if (data.tagId) q = q.eq("tag_match.tag_id" as never, data.tagId as never);
     const mimeTypes = fileFormatMimeTypes(data.format);
     if (mimeTypes.length) q = q.in("content_type" as never, [...mimeTypes] as never);
     if (data.folderId && data.includeSubfolders) {
       // Never trust a client-provided list of descendants or traverse outside this company.
-      const { data: folderRows, error: folderError, count: folderCount } = await supabase
+      const {
+        data: folderRows,
+        error: folderError,
+        count: folderCount,
+      } = await supabase
         .from("document_folders" as never)
         .select("id, parent_id" as never, { count: "exact" })
         .eq("company_id" as never, data.companyId as never)
         .limit(1000);
       if (folderError) throw new Error(folderError.message);
-      if (
-        folderCount == null ||
-        folderCount > 1000 ||
-        folderCount !== (folderRows ?? []).length
-      )
+      if (folderCount == null || folderCount > 1000 || folderCount !== (folderRows ?? []).length)
         throw new Error("Folder list is too large or incomplete for a recursive search.");
       const ids = folderDescendantIds(
         (folderRows ?? []) as unknown as Array<{ id: string; parent_id: string | null }>,

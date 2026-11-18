@@ -154,7 +154,7 @@ export function DocumentReviewQueue({
     setEdit((previous) => (previous ? { ...previous, ...changes } : null));
   const applyOcrSuggestions = (suggestions: OcrSuggestions) => {
     if (!canManage) return;
-    setEdit((previous) => previous ? fillBlankReviewFields(previous, suggestions) : null);
+    setEdit((previous) => (previous ? fillBlankReviewFields(previous, suggestions) : null));
     toast.info("Suggestions filled only into blank fields. Verify and save the review manually.");
   };
 

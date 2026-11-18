@@ -2,7 +2,10 @@
 
 import { Fragment, useEffect, useState } from "react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { parseJournalBrowseSearch, type JournalBrowseSearch } from "@/lib/accounting/journal-browsing";
+import {
+  parseJournalBrowseSearch,
+  type JournalBrowseSearch,
+} from "@/lib/accounting/journal-browsing";
 import { JournalQualityReviewPanel } from "@/components/accountant/JournalQualityReviewPanel";
 import { BulkJournalImportPanel } from "@/components/accountant/BulkJournalImportPanel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -160,19 +163,21 @@ export function JournalsPanel({
   const setPage = (next: number | ((current: number) => number)) =>
     patchJournalBrowse({ journalPage: typeof next === "function" ? next(page) : next });
   const setPageSize = (value: number) =>
-    patchJournalBrowse({ journalPageSize: value as JournalBrowseSearch["journalPageSize"], journalPage: 0 });
-  const setSort = (next: (current: SortState<JournalSortKey> | null) => SortState<JournalSortKey>) => {
+    patchJournalBrowse({
+      journalPageSize: value as JournalBrowseSearch["journalPageSize"],
+      journalPage: 0,
+    });
+  const setSort = (
+    next: (current: SortState<JournalSortKey> | null) => SortState<JournalSortKey>,
+  ) => {
     const chosen = next(sort);
     patchJournalBrowse({ journalSort: chosen.key, journalDir: chosen.dir });
   };
   const setSearch = (value: string) =>
     patchJournalBrowse({ journalQ: value, journalPage: 0 }, true);
-  const setSource = (value: string) =>
-    patchJournalBrowse({ journalSource: value, journalPage: 0 });
-  const setFrom = (value: string) =>
-    patchJournalBrowse({ journalFrom: value, journalPage: 0 });
-  const setTo = (value: string) =>
-    patchJournalBrowse({ journalTo: value, journalPage: 0 });
+  const setSource = (value: string) => patchJournalBrowse({ journalSource: value, journalPage: 0 });
+  const setFrom = (value: string) => patchJournalBrowse({ journalFrom: value, journalPage: 0 });
+  const setTo = (value: string) => patchJournalBrowse({ journalTo: value, journalPage: 0 });
   const [open, setOpen] = useState<string | null>(initialOpenJournalId ?? null);
   const invalidDateRange = Boolean(from && to && from > to);
 

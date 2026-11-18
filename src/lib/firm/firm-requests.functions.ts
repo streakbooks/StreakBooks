@@ -326,7 +326,9 @@ export const listFirmClientRequests = createServerFn({ method: "GET" })
       .limit(201);
     if (error) throw new Error(error.message);
     if ((rows ?? []).length > 200) {
-      throw new Error("Client request limit reached. Archive workflow must be enabled before continuing.");
+      throw new Error(
+        "Client request limit reached. Archive workflow must be enabled before continuing.",
+      );
     }
     return (rows ?? []) as FirmClientRequest[];
   });
@@ -372,6 +374,7 @@ export const saveFirmClientRequest = createServerFn({ method: "POST" })
       .select(fields as never)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!updated) throw new Error("Request changed or permission was revoked. Refresh before retrying.");
+    if (!updated)
+      throw new Error("Request changed or permission was revoked. Refresh before retrying.");
     return updated as FirmClientRequest;
   });

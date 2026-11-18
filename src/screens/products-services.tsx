@@ -80,7 +80,7 @@ import {
 const productsRoute = getRouteApi("/_authenticated/products-services");
 
 export function ProductsPage() {
-  const { section } = productsRoute.useSearch();
+  const section = productsRoute.useSearch().section ?? "catalogue";
   const { company, isPending } = useActiveCompany();
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -98,11 +98,13 @@ export function ProductsPage() {
         onKeyDown={handleNativeTabKeyDown}
         className="flex h-auto flex-wrap"
       >
-        {([
-          ["catalogue", "Catalogue"],
-          ["categories", "Categories"],
-          ["price-lists", "Price Lists"],
-        ] as const).map(([id, label]) => (
+        {(
+          [
+            ["catalogue", "Catalogue"],
+            ["categories", "Categories"],
+            ["price-lists", "Price Lists"],
+          ] as const
+        ).map(([id, label]) => (
           <Link
             key={id}
             role="tab"
@@ -167,8 +169,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const setQ = (value: string) => patchCatalogue({ q: value, page: 1 }, true);
   const setKind = (value: string) =>
     patchCatalogue({ kind: value as CatalogueSearch["kind"], page: 1 });
-  const setCategoryFilter = (value: string) =>
-    patchCatalogue({ category: value, page: 1 });
+  const setCategoryFilter = (value: string) => patchCatalogue({ category: value, page: 1 });
   const setStatus = (value: string) =>
     patchCatalogue({ status: value as CatalogueSearch["status"], page: 1 });
   const setSort = (value: string) =>

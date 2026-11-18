@@ -4,13 +4,10 @@ import { assertCompanyMember } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { isAttachmentEntityType } from "@/lib/documents/attachments";
 import { assertEntityAccess } from "@/lib/documents/attachments.functions";
-import {
-  parseFileCategory,
-  validateDocumentTagName,
-} from "@/lib/documents/file-classification";
+import { parseFileCategory, validateDocumentTagName } from "@/lib/documents/file-classification";
 
 const migrationHint =
-  "Document classifications and tags need migration 20261106160000_files_document_classification_tags.";
+  "Document classifications and tags need migration 20261118150352_files_document_classification_tags.";
 
 function dbError(error: { code?: string; message: string }): never {
   if (error.code === "42P01" || error.code === "42703") throw new Error(migrationHint);
@@ -33,7 +30,7 @@ async function auditMetadata(
       supabase as unknown as {
         rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
       }
-    ).rpc("record_audit_event", {
+    ).rpc("record_app_audit_event", {
       _company_id: companyId,
       _action: action,
       _entity_type: "company",
@@ -52,7 +49,11 @@ export const listDocumentTags = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: rows, error, count } = await context.supabase
+    const {
+      data: rows,
+      error,
+      count,
+    } = await context.supabase
       .from("document_tags" as never)
       .select("id, company_id, name" as never, { count: "exact" })
       .eq("company_id" as never, data.companyId as never)
@@ -123,7 +124,12 @@ async function visibleFile(
     .maybeSingle();
   if (error) dbError(error);
   if (!row) throw new Error("File not found or access denied.");
-  const file = row as { id: string; entity_type: string; file_name: string; document_category: string };
+  const file = row as {
+    id: string;
+    entity_type: string;
+    file_name: string;
+    document_category: string;
+  };
   if (!isAttachmentEntityType(file.entity_type))
     throw new Error("This file type cannot be classified.");
   await assertEntityAccess(supabase, companyId, file.entity_type, action);
@@ -154,23 +160,25 @@ export const getFileClassification = createServerFn({ method: "GET" })
 
 export const updateFileCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    attachmentId: string;
-    expectedCategory: string;
-    category: string;
-  }) => {
-    const category = parseFileCategory(input.category);
-    const expectedCategory = parseFileCategory(input.expectedCategory);
-    if (category !== input.category || expectedCategory !== input.expectedCategory)
-      throw new Error("Invalid document category.");
-    return {
-      companyId: assertUuid(input.companyId),
-      attachmentId: assertUuid(input.attachmentId, "file"),
-      category,
-      expectedCategory,
-    };
-  })
+  .inputValidator(
+    (input: {
+      companyId: string;
+      attachmentId: string;
+      expectedCategory: string;
+      category: string;
+    }) => {
+      const category = parseFileCategory(input.category);
+      const expectedCategory = parseFileCategory(input.expectedCategory);
+      if (category !== input.category || expectedCategory !== input.expectedCategory)
+        throw new Error("Invalid document category.");
+      return {
+        companyId: assertUuid(input.companyId),
+        attachmentId: assertUuid(input.attachmentId, "file"),
+        category,
+        expectedCategory,
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     const file = await visibleFile(context.supabase, data.companyId, data.attachmentId, "manage");
     if (file.document_category !== data.expectedCategory)
@@ -185,26 +193,29 @@ export const updateFileCategory = createServerFn({ method: "POST" })
     if (error) dbError(error);
     if ((rows ?? []).length !== 1)
       throw new Error("Category changed, or you do not have permission. Refresh and retry.");
-    await auditMetadata(context.supabase, data.companyId, "document.category.update", data.attachmentId, {
-      previous_category: data.expectedCategory,
-      category: data.category,
-    });
+    await auditMetadata(
+      context.supabase,
+      data.companyId,
+      "document.category.update",
+      data.attachmentId,
+      {
+        previous_category: data.expectedCategory,
+        category: data.category,
+      },
+    );
     return { category: data.category };
   });
 
 export const setDocumentFileTag = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    attachmentId: string;
-    tagId: string;
-    enabled: boolean;
-  }) => ({
-    companyId: assertUuid(input.companyId),
-    attachmentId: assertUuid(input.attachmentId, "file"),
-    tagId: assertUuid(input.tagId, "tag"),
-    enabled: input.enabled === true,
-  }))
+  .inputValidator(
+    (input: { companyId: string; attachmentId: string; tagId: string; enabled: boolean }) => ({
+      companyId: assertUuid(input.companyId),
+      attachmentId: assertUuid(input.attachmentId, "file"),
+      tagId: assertUuid(input.tagId, "tag"),
+      enabled: input.enabled === true,
+    }),
+  )
   .handler(async ({ data, context }) => {
     await visibleFile(context.supabase, data.companyId, data.attachmentId, "manage");
     const { data: tag, error: tagError } = await context.supabase
@@ -216,13 +227,11 @@ export const setDocumentFileTag = createServerFn({ method: "POST" })
     if (tagError) dbError(tagError);
     if (!tag) throw new Error("Tag not found in this organisation.");
     if (data.enabled) {
-      const { error } = await context.supabase
-        .from("document_attachment_tags" as never)
-        .insert({
-          company_id: data.companyId,
-          attachment_id: data.attachmentId,
-          tag_id: data.tagId,
-        } as never);
+      const { error } = await context.supabase.from("document_attachment_tags" as never).insert({
+        company_id: data.companyId,
+        attachment_id: data.attachmentId,
+        tag_id: data.tagId,
+      } as never);
       // Two simultaneous tag additions may both be authorized; treat the second as success.
       if (error && error.code !== "23505") dbError(error);
     } else {
@@ -234,9 +243,15 @@ export const setDocumentFileTag = createServerFn({ method: "POST" })
         .eq("tag_id" as never, data.tagId as never);
       if (error) dbError(error);
     }
-    await auditMetadata(context.supabase, data.companyId, "document.tag.assign", data.attachmentId, {
-      tag_id: data.tagId,
-      enabled: data.enabled,
-    });
+    await auditMetadata(
+      context.supabase,
+      data.companyId,
+      "document.tag.assign",
+      data.attachmentId,
+      {
+        tag_id: data.tagId,
+        enabled: data.enabled,
+      },
+    );
     return { ok: true as const, enabled: data.enabled };
   });

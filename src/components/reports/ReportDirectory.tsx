@@ -16,7 +16,7 @@ export function ReportDirectory({
   reports: ReportDef[];
   from: string;
   to: string;
-  centre?: string;
+  centre?: string | undefined;
 }) {
   const sections = REPORT_CATEGORIES.map((category) => ({
     ...category,

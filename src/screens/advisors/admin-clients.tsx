@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,20 +155,34 @@ export function AdvisorsAdminClientsPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending || staffQuery.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><ListWorkspace title="Clients" description="Advisors customer records." ><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></ListWorkspace>
-</main>;
+  if (query.isPending || staffQuery.isPending)
+    return (
+      <main className="mx-auto max-w-6xl space-y-6 p-6">
+        <ListWorkspace title="Clients" description="Advisors customer records.">
+          <AdvisorsSubnav />
+          <div role="status" aria-live="polite">
+            <LoadingState />
+          </div>
+        </ListWorkspace>
+      </main>
+    );
   if (query.isError || staffQuery.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <ListWorkspace title="Clients" description="Advisors customer records." >
-        <AdvisorsSubnav />
-        <div role="alert"><ErrorState
-          title="Clients unavailable"
-          description={friendlyAuthError(query.error ?? staffQuery.error)}
-          onRetry={() => { void query.refetch(); void staffQuery.refetch(); }}
-        /></div>
-      </ListWorkspace>
-</main>
+        <ListWorkspace title="Clients" description="Advisors customer records.">
+          <AdvisorsSubnav />
+          <div role="alert">
+            <ErrorState
+              title="Clients unavailable"
+              description={friendlyAuthError(query.error ?? staffQuery.error)}
+              onRetry={() => {
+                void query.refetch();
+                void staffQuery.refetch();
+              }}
+            />
+          </div>
+        </ListWorkspace>
+      </main>
     );
   }
 
@@ -183,229 +197,249 @@ export function AdvisorsAdminClientsPage() {
         title="Clients"
         description="Manage Advisors prospects and customers, including customer portal invites."
       >
-      <AdvisorsSubnav />
+        <AdvisorsSubnav />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
-          <Label htmlFor="client-search">Search</Label>
-          <Input
-            id="client-search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Name, email or business"
-            className="w-64"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="client-status-filter">Status</Label>
-          <RecordLookupSelect
-            id="client-status-filter"
-            className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
-            value={status}
-            onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
-          >
-            {STATUSES.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </RecordLookupSelect>
-        </div>
-        <Button type="button" variant="outline" onClick={() => setForm(emptyForm)}>
-          New client
-        </Button>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="space-y-2" aria-label="Client results">
-          <p role="status" aria-live="polite" className="text-sm text-muted-foreground">{query.data.length} clients found</p>
-          {query.data.length === 0 ? (
-            <EmptyState
-              title="No clients yet"
-              description="Promote an inquiry or create a client record to begin service delivery."
-            />
-          ) : (
-            query.data.map((client) => (
-              <button
-                key={client.id}
-                type="button"
-                onClick={() => setForm({ ...emptyForm, id: client.id })}
-                className={`w-full rounded-xl border p-4 text-left transition ${
-                  form.id === client.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border/70 hover:border-primary/40"
-                }`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium">{client.name || client.email}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {client.email}
-                      {client.businessName ? ` · ${client.businessName}` : ""}
-                    </p>
-                  </div>
-                  <Badge variant="secondary">{client.status}</Badge>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {client.primaryServiceCode || "no service"} ·{" "}
-                  {staffLabel(staff, client.assignedAdvisorId)}
-                  {client.linkedUserId ? " · portal linked" : ""}
-                </p>
-              </button>
-            ))
-          )}
-        </section>
-
-        <form className="space-y-3 rounded-xl border border-border/70 p-4" onSubmit={(event) => { event.preventDefault(); if (!saveM.isPending && !inviteM.isPending && !unlinkM.isPending) saveM.mutate(); }}>
-          <h2 className="font-semibold">{form.id ? "Edit client" : "New client"}</h2>
+        <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
-            <Label htmlFor="client-reason">Change reason</Label>
+            <Label htmlFor="client-search">Search</Label>
             <Input
-              id="client-reason"
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              placeholder="Why are you saving this client?"
+              id="client-search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Name, email or business"
+              className="w-64"
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1 sm:col-span-2">
-              <Label htmlFor="client-email">Email</Label>
-              <Input
-                id="client-email"
-                type="email"
-                value={form.email}
-                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="client-name">Name</Label>
-              <Input
-                id="client-name"
-                value={form.name}
-                onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="client-business">Business</Label>
-              <Input
-                id="client-business"
-                value={form.businessName}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, businessName: event.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="client-phone">Phone</Label>
-              <Input
-                id="client-phone"
-                value={form.phone}
-                onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="client-status">Status</Label>
-              <RecordLookupSelect
-                id="client-status"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={form.status}
-                onValueChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    status: event as AdvisorsClientStatus,
-                  }))
-                }
-              >
-                {STATUSES.filter((item) => item !== "all").map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </RecordLookupSelect>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="client-service">Primary service</Label>
-              <RecordLookupSelect
-                id="client-service"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={form.primaryServiceCode}
-                onValueChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    primaryServiceCode: event as "" | "bookkeeping" | "coaching",
-                  }))
-                }
-              >
-                <option value="">Not set</option>
-                <option value="bookkeeping">Bookkeeping</option>
-                <option value="coaching">Coaching</option>
-              </RecordLookupSelect>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="client-advisor">Assigned advisor</Label>
-              <RecordLookupSelect
-                id="client-advisor"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={form.assignedAdvisorId}
-                onValueChange={(event) =>
-                  setForm((prev) => ({ ...prev, assignedAdvisorId: event }))
-                }
-              >
-                <option value="">Unassigned</option>
-                {staff.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.displayName}
-                  </option>
-                ))}
-              </RecordLookupSelect>
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <Label htmlFor="client-notes">Notes</Label>
-              <Textarea
-                id="client-notes"
-                value={form.notes}
-                onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-                rows={4}
-              />
-            </div>
+          <div className="space-y-1">
+            <Label htmlFor="client-status-filter">Status</Label>
+            <RecordLookupSelect
+              id="client-status-filter"
+              className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={status}
+              onValueChange={(event) => setStatus(event as (typeof STATUSES)[number])}
+            >
+              {STATUSES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </RecordLookupSelect>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={saveM.isPending || inviteM.isPending || unlinkM.isPending}>
-              {form.id ? "Save client" : "Create client"}
-            </Button>
-            {form.id ? (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={saveM.isPending || inviteM.isPending || unlinkM.isPending || Boolean(selectedLinked)}
-                  onClick={() => inviteM.mutate()}
-                >
-                  Invite to portal
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={saveM.isPending || inviteM.isPending || unlinkM.isPending || !selectedLinked}
-                  onClick={() => unlinkM.mutate()}
-                >
-                  Unlink portal
-                </Button>
-              </>
-            ) : null}
-          </div>
-          {selectedLinked ? (
-            <p className="text-xs text-muted-foreground">Portal login is linked for this client.</p>
-          ) : form.id ? (
-            <p className="text-xs text-muted-foreground">
-              Portal invite emails the client a link to `/advisors/portal/invite/…` (sign-in
-              required).
+          <Button type="button" variant="outline" onClick={() => setForm(emptyForm)}>
+            New client
+          </Button>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <section className="space-y-2" aria-label="Client results">
+            <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
+              {query.data.length} clients found
             </p>
-          ) : null}
-        </form>
-      </div>
-    </ListWorkspace>
-</main>
+            {query.data.length === 0 ? (
+              <EmptyState
+                title="No clients yet"
+                description="Promote an inquiry or create a client record to begin service delivery."
+              />
+            ) : (
+              query.data.map((client) => (
+                <button
+                  key={client.id}
+                  type="button"
+                  onClick={() => setForm({ ...emptyForm, id: client.id })}
+                  className={`w-full rounded-xl border p-4 text-left transition ${
+                    form.id === client.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border/70 hover:border-primary/40"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{client.name || client.email}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {client.email}
+                        {client.businessName ? ` · ${client.businessName}` : ""}
+                      </p>
+                    </div>
+                    <Badge variant="secondary">{client.status}</Badge>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {client.primaryServiceCode || "no service"} ·{" "}
+                    {staffLabel(staff, client.assignedAdvisorId)}
+                    {client.linkedUserId ? " · portal linked" : ""}
+                  </p>
+                </button>
+              ))
+            )}
+          </section>
+
+          <form
+            className="space-y-3 rounded-xl border border-border/70 p-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!saveM.isPending && !inviteM.isPending && !unlinkM.isPending) saveM.mutate();
+            }}
+          >
+            <h2 className="font-semibold">{form.id ? "Edit client" : "New client"}</h2>
+            <div className="space-y-1">
+              <Label htmlFor="client-reason">Change reason</Label>
+              <Input
+                id="client-reason"
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder="Why are you saving this client?"
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="client-email">Email</Label>
+                <Input
+                  id="client-email"
+                  type="email"
+                  value={form.email}
+                  onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="client-name">Name</Label>
+                <Input
+                  id="client-name"
+                  value={form.name}
+                  onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="client-business">Business</Label>
+                <Input
+                  id="client-business"
+                  value={form.businessName}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, businessName: event.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="client-phone">Phone</Label>
+                <Input
+                  id="client-phone"
+                  value={form.phone}
+                  onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="client-status">Status</Label>
+                <RecordLookupSelect
+                  id="client-status"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={form.status}
+                  onValueChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      status: event as AdvisorsClientStatus,
+                    }))
+                  }
+                >
+                  {STATUSES.filter((item) => item !== "all").map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </RecordLookupSelect>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="client-service">Primary service</Label>
+                <RecordLookupSelect
+                  id="client-service"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={form.primaryServiceCode}
+                  onValueChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      primaryServiceCode: event as "" | "bookkeeping" | "coaching",
+                    }))
+                  }
+                >
+                  <option value="">Not set</option>
+                  <option value="bookkeeping">Bookkeeping</option>
+                  <option value="coaching">Coaching</option>
+                </RecordLookupSelect>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="client-advisor">Assigned advisor</Label>
+                <RecordLookupSelect
+                  id="client-advisor"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={form.assignedAdvisorId}
+                  onValueChange={(event) =>
+                    setForm((prev) => ({ ...prev, assignedAdvisorId: event }))
+                  }
+                >
+                  <option value="">Unassigned</option>
+                  {staff.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.displayName}
+                    </option>
+                  ))}
+                </RecordLookupSelect>
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="client-notes">Notes</Label>
+                <Textarea
+                  id="client-notes"
+                  value={form.notes}
+                  onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+                  rows={4}
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="submit"
+                disabled={saveM.isPending || inviteM.isPending || unlinkM.isPending}
+              >
+                {form.id ? "Save client" : "Create client"}
+              </Button>
+              {form.id ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={
+                      saveM.isPending ||
+                      inviteM.isPending ||
+                      unlinkM.isPending ||
+                      Boolean(selectedLinked)
+                    }
+                    onClick={() => inviteM.mutate()}
+                  >
+                    Invite to portal
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={
+                      saveM.isPending || inviteM.isPending || unlinkM.isPending || !selectedLinked
+                    }
+                    onClick={() => unlinkM.mutate()}
+                  >
+                    Unlink portal
+                  </Button>
+                </>
+              ) : null}
+            </div>
+            {selectedLinked ? (
+              <p className="text-xs text-muted-foreground">
+                Portal login is linked for this client.
+              </p>
+            ) : form.id ? (
+              <p className="text-xs text-muted-foreground">
+                Portal invite emails the client a link to `/advisors/portal/invite/…` (sign-in
+                required).
+              </p>
+            ) : null}
+          </form>
+        </div>
+      </ListWorkspace>
+    </main>
   );
 }

@@ -74,16 +74,24 @@ export function selectedContactsOnPage(selected: string[], pageContactIds: strin
 
 /** Preserve current saved-column IDs while supporting earlier directory aliases. */
 const LEGACY_CONTACT_COLUMN_ALIASES = {
-  account: "account_number", roles: "kind", terms: "payment_terms_days",
-  city: "billing_city", state: "billing_region", postal: "billing_postal",
-  country: "billing_country", address: "billing_address_line1",
-  currency: "default_currency", status: "is_active",
+  account: "account_number",
+  roles: "kind",
+  terms: "payment_terms_days",
+  city: "billing_city",
+  state: "billing_region",
+  postal: "billing_postal",
+  country: "billing_country",
+  address: "billing_address_line1",
+  currency: "default_currency",
+  status: "is_active",
 } as const;
 export const DEFAULT_HIDDEN_CONTACT_COLUMNS: ContactDirectoryColumnId[] =
   CONTACT_DIRECTORY_COLUMNS.map((column) => column.id).filter(
     (id) => !DEFAULT_CONTACT_DIRECTORY_COLUMNS.includes(id),
   );
-export type ContactDirectoryRecord = Partial<Record<ContactDirectoryColumnId, string | number | boolean | null>> & {
+export type ContactDirectoryRecord = Partial<
+  Record<ContactDirectoryColumnId, string | number | boolean | null>
+> & {
   id: string;
   name: string;
   kind: string;
@@ -107,11 +115,16 @@ export function contactDirectoryCellValue(
   row: ContactDirectoryRecord,
   column: ContactDirectoryColumnId | keyof typeof LEGACY_CONTACT_COLUMN_ALIASES,
 ): string {
-  const resolved = column in LEGACY_CONTACT_COLUMN_ALIASES
-    ? LEGACY_CONTACT_COLUMN_ALIASES[column as keyof typeof LEGACY_CONTACT_COLUMN_ALIASES]
-    : column as ContactDirectoryColumnId;
-  const values = { ...row, kind: row.kind === "both" ? "Customer & supplier" : row.kind,
-    payment_terms_days: `${row.payment_terms_days}d`, is_active: row.is_active ? "Active" : "Inactive" };
+  const resolved =
+    column in LEGACY_CONTACT_COLUMN_ALIASES
+      ? LEGACY_CONTACT_COLUMN_ALIASES[column as keyof typeof LEGACY_CONTACT_COLUMN_ALIASES]
+      : (column as ContactDirectoryColumnId);
+  const values = {
+    ...row,
+    kind: row.kind === "both" ? "Customer & supplier" : row.kind,
+    payment_terms_days: `${row.payment_terms_days}d`,
+    is_active: row.is_active ? "Active" : "Inactive",
+  };
   const value = values[resolved];
   return value == null || value === "" ? "—" : String(value);
 }

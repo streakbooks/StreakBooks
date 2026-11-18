@@ -33,7 +33,6 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadge } from "@/components/common/StatusBadge";
 import { NotificationPriorityBadge } from "@/components/notifications/NotificationPriorityBadge";
 import {
   Select,
@@ -445,7 +444,7 @@ function ActionCenterPage() {
                 variant={groupByModule ? "secondary" : "outline"}
                 aria-pressed={groupByModule}
                 disabled={bulkBusy}
-                onClick={() => setGroupByModule((current) => !current)}
+                onClick={() => setGroupByModule(!groupByModule)}
               >
                 Group page by module
               </Button>

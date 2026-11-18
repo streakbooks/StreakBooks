@@ -1,3 +1,4 @@
+import { parseDashboardSearch } from "@/lib/dashboard/attention-navigation";
 import { useEffect, useRef } from "react";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

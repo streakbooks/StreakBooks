@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildIntegrationHealth, integrationStatusLabel, integrationStatusTone } from "./integration-health";
+import {
+  buildIntegrationHealth,
+  integrationStatusLabel,
+  integrationStatusTone,
+} from "./integration-health";
 describe("integration configuration evidence", () => {
   it.each([
     [false, false, "not_configured"],

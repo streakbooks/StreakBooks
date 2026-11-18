@@ -10,11 +10,7 @@ import {
  * This visual reports configuration evidence only. It deliberately does not
  * say "Connected", "Synced" or "Verified" unless a future backend proves it.
  */
-export function IntegrationHealthBadge({
-  status,
-}: {
-  status: IntegrationHealth["status"];
-}) {
+export function IntegrationHealthBadge({ status }: { status: IntegrationHealth["status"] }) {
   const Icon =
     status === "configured"
       ? Settings2

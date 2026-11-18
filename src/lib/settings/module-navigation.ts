@@ -1,10 +1,10 @@
 import type { SettingsPanelId } from "./panels";
 import type { SettingsCategory } from "./registry";
 export type SettingsDestination = {
-  panel?: SettingsPanelId;
+  panel?: SettingsPanelId | undefined;
   to: string;
-  section?: SettingsCategory;
-  from?: "sales" | "purchases";
+  section?: SettingsCategory | undefined;
+  from?: "sales" | "purchases" | undefined;
 };
 export type SettingsLink = SettingsDestination & { label: string; description: string };
 /** Navigation only: every destination reuses an existing settings or setup screen. */
@@ -104,8 +104,8 @@ export const WORKSPACE_SETTINGS: Array<{
   prefix: string;
   label: string;
   destination: SettingsDestination;
-  pinned?: boolean;
-  rootHasSettingsLink?: boolean;
+  pinned?: boolean | undefined;
+  rootHasSettingsLink?: boolean | undefined;
 }> = [
   {
     prefix: "/sales",

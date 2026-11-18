@@ -38,9 +38,7 @@ for (const width of [1440, 768, 390]) {
       name: "Revoke location access for Cashier One at City Store",
     });
     await revoke.click();
-    await expect(
-      page.getByText("Revoke this cashier's access to this location?"),
-    ).toBeVisible();
+    await expect(page.getByText("Revoke this cashier's access to this location?")).toBeVisible();
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(revoke).toBeVisible();
     await revoke.click();

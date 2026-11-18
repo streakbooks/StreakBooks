@@ -367,7 +367,9 @@ function TaxConfigPage() {
           <div className="grid max-w-2xl gap-4 rounded-md border p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-medium">Organisation tax settings</h2>
-              <Badge variant="outline" role="status" aria-live="polite">{!canTax ? "View only" : registrationDirty ? "Unsaved changes" : "Saved"}</Badge>
+              <Badge variant="outline" role="status" aria-live="polite">
+                {!canTax ? "View only" : registrationDirty ? "Unsaved changes" : "Saved"}
+              </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
               Suggested regime for {orgCountry}:{" "}
@@ -479,7 +481,9 @@ function TaxConfigPage() {
           <div className="grid max-w-2xl gap-4 rounded-md border p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-medium">GL mappings</h2>
-              <Badge variant="outline" role="status" aria-live="polite">{!canTax ? "View only" : mappingsDirty ? "Unsaved changes" : "Saved"}</Badge>
+              <Badge variant="outline" role="status" aria-live="polite">
+                {!canTax ? "View only" : mappingsDirty ? "Unsaved changes" : "Saved"}
+              </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
               Posting uses these accounts when set; otherwise falls back to CoA codes 2100 (output)

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  FILE_CATEGORIES, FILE_CATEGORY_LABELS, parseFileCategory,
-  suggestExistingTags, suggestFileCategory, validateDocumentTagName,
+  FILE_CATEGORIES,
+  FILE_CATEGORY_LABELS,
+  parseFileCategory,
+  suggestExistingTags,
+  suggestFileCategory,
+  validateDocumentTagName,
 } from "./file-classification";
 
 describe("Files categories, smart hints and tags", () => {
@@ -16,7 +20,8 @@ describe("Files categories, smart hints and tags", () => {
   it("prioritises linked record classification over contradictory filenames", () => {
     const hint = suggestFileCategory("receipt-458.pdf", "purchase_bill");
     expect(hint).toMatchObject({
-      category: "bill", source: "linked_record",
+      category: "bill",
+      source: "linked_record",
     });
     expect(suggestFileCategory("draft.pdf", "sales_invoice")?.category).toBe("invoice");
   });

@@ -28,7 +28,9 @@ type Attachment = {
 function configuredOcr() {
   const config = readOcrConfig();
   if (!config.configured)
-    throw new Error("OCR is not configured. Ask your administrator to set the Azure Document Intelligence server credentials.");
+    throw new Error(
+      "OCR is not configured. Ask your administrator to set the Azure Document Intelligence server credentials.",
+    );
   return config;
 }
 
@@ -41,7 +43,9 @@ async function eligibleDocument(
   await assertEntityAccess(supabase, companyId, "company", "manage");
   const { data: file, error: fileError } = await supabase
     .from("document_attachments" as never)
-    .select("id, entity_type, file_name, storage_path, storage_bucket, size_bytes, content_type" as never)
+    .select(
+      "id, entity_type, file_name, storage_path, storage_bucket, size_bytes, content_type" as never,
+    )
     .eq("company_id" as never, companyId as never)
     .eq("id" as never, attachmentId as never)
     .eq("entity_type" as never, "company" as never)
@@ -53,13 +57,15 @@ async function eligibleDocument(
   if (
     attachment.storage_bucket !== COMPANY_DOCUMENTS_BUCKET ||
     !attachment.storage_path?.startsWith(`${companyId}/company/${companyId}/`)
-  ) throw new Error("OCR requires a private uploaded document.");
+  )
+    throw new Error("OCR requires a private uploaded document.");
   if (
     !attachment.size_bytes ||
     attachment.size_bytes <= 0 ||
     attachment.size_bytes > OCR_MAX_FILE_BYTES ||
     !isOcrDocument(attachment.content_type, attachment.file_name)
-  ) throw new Error("OCR supports PDF, PNG and JPEG files up to 8 MB.");
+  )
+    throw new Error("OCR supports PDF, PNG and JPEG files up to 8 MB.");
   const { data: review, error: reviewError } = await supabase
     .from("document_reviews" as never)
     .select("status" as never)
@@ -129,7 +135,7 @@ export const startDocumentOcr = createServerFn({ method: "POST" })
         context.supabase as unknown as {
           rpc: (name: string, args: Record<string, unknown>) => Promise<unknown>;
         }
-      ).rpc("record_audit_event", {
+      ).rpc("record_app_audit_event", {
         _company_id: data.companyId,
         _action: "document.ocr.start",
         _entity_type: "company",
@@ -149,9 +155,7 @@ export const startDocumentOcr = createServerFn({ method: "POST" })
 
 export const checkDocumentOcr = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string; attachmentId: string; jobToken: string;
-  }) => ({
+  .inputValidator((input: { companyId: string; attachmentId: string; jobToken: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
     jobToken: String(input.jobToken ?? "").slice(0, 1600),

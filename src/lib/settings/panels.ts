@@ -26,7 +26,9 @@ export function validateSettingsPanelSearch(search: Record<string, unknown>): {
   const panel = parseSettingsPanel(search["settingsPanel"]);
   // Do not persist malformed self-references in refreshable Settings URLs.
   // A malformed URL may repeat ancestors; retain only the latest occurrence so Close cannot cycle.
-  const trail = dedupeSettingsTrail(settingsPanelTrail(search["settingsTrail"]).filter((id) => id !== panel));
+  const trail = dedupeSettingsTrail(
+    settingsPanelTrail(search["settingsTrail"]).filter((id) => id !== panel),
+  );
   return panel ? { settingsPanel: panel, ...(trail.length ? { settingsTrail: trail } : {}) } : {};
 }
 export function panelForDestination(destination: SettingsDestination): SettingsPanelId | undefined {
@@ -78,7 +80,9 @@ export function closeSettingsPanel(search: Record<string, unknown>): Record<stri
   }
   // Malformed deep links must not return to the panel being closed.
   const current = parseSettingsPanel(search["settingsPanel"]);
-  const trail = dedupeSettingsTrail(settingsPanelTrail(search["settingsTrail"]).filter((id) => id !== current));
+  const trail = dedupeSettingsTrail(
+    settingsPanelTrail(search["settingsTrail"]).filter((id) => id !== current),
+  );
   const previous = trail.pop();
   if (previous) next["settingsPanel"] = previous;
   else delete next["settingsPanel"];
@@ -104,7 +108,9 @@ export function openSettingsPanel(
   // A missing/invalid current panel cannot own a navigation trail.
   // Ignore malformed self-references so reopening a panel cannot preserve a cycle.
   let trail = previous
-    ? dedupeSettingsTrail(settingsPanelTrail(search["settingsTrail"]).filter((id) => id !== previous))
+    ? dedupeSettingsTrail(
+        settingsPanelTrail(search["settingsTrail"]).filter((id) => id !== previous),
+      )
     : [];
   if (previous && previous !== panel) {
     const existing = trail.indexOf(panel);

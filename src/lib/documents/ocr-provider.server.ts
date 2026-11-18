@@ -19,20 +19,23 @@ function providerEndpoint(input: string): string | null {
   try {
     const url = new URL(input.trim());
     if (
-      url.protocol !== "https:" || url.username || url.password || url.port ||
-      url.search || url.hash || (url.pathname !== "/" && url.pathname !== "")
-    ) return null;
-    if (!/^[a-z0-9-]+\.cognitiveservices\.azure\.com$/.test(url.hostname))
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.port ||
+      url.search ||
+      url.hash ||
+      (url.pathname !== "/" && url.pathname !== "")
+    )
       return null;
+    if (!/^[a-z0-9-]+\.cognitiveservices\.azure\.com$/.test(url.hostname)) return null;
     return url.origin;
   } catch {
     return null;
   }
 }
 
-export function readOcrConfig(
-  env: Record<string, string | undefined> = process.env,
-): OcrConfig {
+export function readOcrConfig(env: Record<string, string | undefined> = process.env): OcrConfig {
   const endpoint = providerEndpoint(env["AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT"] ?? "");
   const apiKey = (env["AZURE_DOCUMENT_INTELLIGENCE_KEY"] ?? "").trim();
   const signingKey = (env["DOCUMENT_OCR_JOB_SIGNING_KEY"] ?? "").trim();
@@ -41,9 +44,14 @@ export function readOcrConfig(
     ...(apiKey ? [] : ["AZURE_DOCUMENT_INTELLIGENCE_KEY"]),
     ...(signingKey.length >= 32 ? [] : ["DOCUMENT_OCR_JOB_SIGNING_KEY (min 32 characters)"]),
   ];
-  return missing.length ? { configured: false, missing } : {
-    configured: true, endpoint: endpoint!, apiKey, signingKey,
-  };
+  return missing.length
+    ? { configured: false, missing }
+    : {
+        configured: true,
+        endpoint: endpoint!,
+        apiKey,
+        signingKey,
+      };
 }
 
 function analyzeUrl(config: Extract<OcrConfig, { configured: true }>): string {
@@ -69,11 +77,13 @@ export async function submitAzureInvoiceOcr(
     },
     body: JSON.stringify({ base64Source: Buffer.from(fileBytes).toString("base64") }),
   });
-  if (response.status !== 202) throw new Error("OCR provider did not accept this document.");
+  if (response["status"] !== 202) throw new Error("OCR provider did not accept this document.");
   const operation = response.headers.get("operation-location");
   if (!operation) throw new Error("OCR provider did not provide a result identifier.");
   let parsed: URL;
-  try { parsed = new URL(operation); } catch {
+  try {
+    parsed = new URL(operation);
+  } catch {
     throw new Error("Unexpected OCR result location.");
   }
   const expectedPrefix = `${config.endpoint}/documentintelligence/documentModels/${MODEL}/analyzeResults/`;
@@ -83,7 +93,8 @@ export async function submitAzureInvoiceOcr(
     parsed.searchParams.get("api-version") !== VERSION ||
     parsed.searchParams.size !== 1 ||
     parsed.hash
-  ) throw new Error("Unexpected OCR result location.");
+  )
+    throw new Error("Unexpected OCR result location.");
   const id = parsed.pathname.slice(new URL(expectedPrefix).pathname.length);
   if (!UUID.test(id)) throw new Error("Invalid OCR result identifier.");
   return id;
@@ -96,7 +107,10 @@ export type OcrJobClaims = {
   resultId: string;
   issuedAt: number;
 };
-export function signOcrJob(config: Extract<OcrConfig, { configured: true }>, claims: OcrJobClaims): string {
+export function signOcrJob(
+  config: Extract<OcrConfig, { configured: true }>,
+  claims: OcrJobClaims,
+): string {
   const encoded = Buffer.from(JSON.stringify(claims)).toString("base64url");
   const signature = createHmac("sha256", config.signingKey).update(encoded).digest("base64url");
   return `${encoded}.${signature}`;
@@ -110,17 +124,22 @@ export function verifyOcrJob(
   if (!token || token.length > 1500 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token))
     throw new Error("Invalid or expired extraction request.");
   const [encoded, signature] = token.split(".");
-  const expected = createHmac("sha256", config.signingKey)
-    .update(encoded!).digest();
+  const expected = createHmac("sha256", config.signingKey).update(encoded!).digest();
   const given = Buffer.from(signature!, "base64url");
   if (
     given.length !== expected.length ||
     given.toString("base64url") !== signature ||
     !timingSafeEqual(expected, given)
-  ) throw new Error("Invalid or expired extraction request.");
+  )
+    throw new Error("Invalid or expired extraction request.");
   let parsed: Partial<OcrJobClaims>;
-  try { parsed = JSON.parse(Buffer.from(encoded!, "base64url").toString("utf8")) as Partial<OcrJobClaims>; }
-  catch { throw new Error("Invalid or expired extraction request."); }
+  try {
+    parsed = JSON.parse(
+      Buffer.from(encoded!, "base64url").toString("utf8"),
+    ) as Partial<OcrJobClaims>;
+  } catch {
+    throw new Error("Invalid or expired extraction request.");
+  }
   if (
     parsed.companyId !== scope.companyId ||
     parsed.attachmentId !== scope.attachmentId ||
@@ -130,7 +149,8 @@ export function verifyOcrJob(
     !Number.isFinite(parsed.issuedAt) ||
     parsed.issuedAt > now + 5000 ||
     now - parsed.issuedAt > JOB_TTL_MS
-  ) throw new Error("Invalid or expired extraction request.");
+  )
+    throw new Error("Invalid or expired extraction request.");
   return parsed as OcrJobClaims;
 }
 
@@ -176,9 +196,12 @@ export async function checkAzureInvoiceOcr(
   }
   const content = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))).toString("utf8");
   let payload: Record<string, unknown>;
-  try { payload = JSON.parse(content) as Record<string, unknown>; }
-  catch { throw new Error("OCR provider returned invalid JSON."); }
-  const status = payload.status;
+  try {
+    payload = JSON.parse(content) as Record<string, unknown>;
+  } catch {
+    throw new Error("OCR provider returned invalid JSON.");
+  }
+  const status = payload["status"];
   if (status === "running" || status === "notStarted") return { status: "pending" };
   if (status === "failed" || status === "canceled")
     return { status: "failed", message: "OCR extraction could not be completed." };
@@ -187,6 +210,9 @@ export async function checkAzureInvoiceOcr(
     const result = parseAzureInvoiceSuggestions(payload);
     return { status: "completed", ...result };
   } catch {
-    return { status: "failed", message: "No structured invoice fields were found. Enter the details manually." };
+    return {
+      status: "failed",
+      message: "No structured invoice fields were found. Enter the details manually.",
+    };
   }
 }

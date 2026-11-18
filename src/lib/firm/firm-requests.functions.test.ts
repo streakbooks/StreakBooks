@@ -1,19 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("@tanstack/react-start", () => ({
   createServerFn: () => ({
-    middleware() { return this; },
-    inputValidator() { return this; },
-    handler(fn: unknown) { return fn; },
+    middleware() {
+      return this;
+    },
+    inputValidator() {
+      return this;
+    },
+    handler(fn: unknown) {
+      return fn;
+    },
   }),
 }));
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn() }));
 
-import {
-  requestInput,
-  summarizeRequests,
-  REQUEST_STATUSES,
-} from "./firm-requests.functions";
+import { requestInput, summarizeRequests, REQUEST_STATUSES } from "./firm-requests.functions";
 
 const base = {
   firmId: "9e39add8-d585-46cb-ac80-f38b67e6397f",

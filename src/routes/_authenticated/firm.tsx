@@ -51,8 +51,23 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/firm")({
-  validateSearch: (raw: Record<string, unknown>): { tab?: string } => ({
-    tab: ["clients","work","onboarding","engagements","requests","billing","insights","team","invitations","activity","setup","partner"].includes(String(raw["tab"])) ? String(raw["tab"]) : undefined,
+  validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
+    tab: [
+      "clients",
+      "work",
+      "onboarding",
+      "engagements",
+      "requests",
+      "billing",
+      "insights",
+      "team",
+      "invitations",
+      "activity",
+      "setup",
+      "partner",
+    ].includes(String(raw["tab"]))
+      ? String(raw["tab"])
+      : undefined,
   }),
   head: () => ({ meta: [{ title: "Firm — LinkBooks" }] }),
   component: FirmPage,
@@ -72,7 +87,8 @@ function FirmPage() {
 
   const [firmName, setFirmName] = useState("");
   const tab = Route.useSearch().tab ?? "clients";
-  const selectTab = (nextTab: string) => void navigate({ to: "/firm", search: { tab: nextTab }, resetScroll: false });
+  const selectTab = (nextTab: string) =>
+    void navigate({ to: "/firm", search: { tab: nextTab }, resetScroll: false });
   const [selectedFirmId, setSelectedFirmId] = useState("");
   const [accessLevel, setAccessLevel] = useState("view");
   const [activityCompanyId, setActivityCompanyId] = useState("");
@@ -232,19 +248,142 @@ function FirmPage() {
             </div>
           </div>
           <Tabs className="space-y-5" value={tab}>
-            <TabsList onKeyDown={handleNativeTabKeyDown} className="flex h-auto flex-wrap justify-start gap-1">
-              <Link to="/firm" search={{ tab: "clients" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "clients"} data-state={tab === "clients" ? "active" : "inactive"}>Clients & overview</Link>
-              <Link to="/firm" search={{ tab: "work" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "work"} data-state={tab === "work" ? "active" : "inactive"}>Work & deadlines</Link>
-              <Link to="/firm" search={{ tab: "onboarding" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "onboarding"} data-state={tab === "onboarding" ? "active" : "inactive"}>Onboarding</Link>
-              <Link to="/firm" search={{ tab: "engagements" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "engagements"} data-state={tab === "engagements" ? "active" : "inactive"}>Engagements</Link>
-              <Link to="/firm" search={{ tab: "requests" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "requests"} data-state={tab === "requests" ? "active" : "inactive"}>Client requests</Link>
-              <Link to="/firm" search={{ tab: "billing" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "billing"} data-state={tab === "billing" ? "active" : "inactive"}>Practice billing</Link>
-              <Link to="/firm" search={{ tab: "insights" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "insights"} data-state={tab === "insights" ? "active" : "inactive"}>Insights</Link>
-              <Link to="/firm" search={{ tab: "team" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "team"} data-state={tab === "team" ? "active" : "inactive"}>Team</Link>
-              <Link to="/firm" search={{ tab: "invitations" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "invitations"} data-state={tab === "invitations" ? "active" : "inactive"}>Staff invitations</Link>
-              <Link to="/firm" search={{ tab: "activity" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "activity"} data-state={tab === "activity" ? "active" : "inactive"}>Client activity</Link>
-              <Link to="/firm" search={{ tab: "setup" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "setup"} data-state={tab === "setup" ? "active" : "inactive"}>Firm settings</Link>
-              <Link to="/firm" search={{ tab: "partner" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "partner"} data-state={tab === "partner" ? "active" : "inactive"}>Partner programme</Link>
+            <TabsList
+              onKeyDown={handleNativeTabKeyDown}
+              className="flex h-auto flex-wrap justify-start gap-1"
+            >
+              <Link
+                to="/firm"
+                search={{ tab: "clients" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "clients"}
+                data-state={tab === "clients" ? "active" : "inactive"}
+              >
+                Clients & overview
+              </Link>
+              <Link
+                to="/firm"
+                search={{ tab: "work" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "work"}
+                data-state={tab === "work" ? "active" : "inactive"}
+              >
+                Work & deadlines
+              </Link>
+              <Link
+                to="/firm"
+                search={{ tab: "onboarding" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "onboarding"}
+                data-state={tab === "onboarding" ? "active" : "inactive"}
+              >
+                Onboarding
+              </Link>
+              <Link
+                to="/firm"
+                search={{ tab: "engagements" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "engagements"}
+                data-state={tab === "engagements" ? "active" : "inactive"}
+              >
+                Engagements
+              </Link>
+              <Link
+                to="/firm"
+                search={{ tab: "requests" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "requests"}
+                data-state={tab === "requests" ? "active" : "inactive"}
+              >
+                Client requests
+              </Link>
+              <Link
+                to="/firm"
+                search={{ tab: "billing" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "billing"}
+                data-state={tab === "billing" ? "active" : "inactive"}
+              >
+                Practice billing
+              </Link>
+              <Link
+                to="/firm"
+                search={{ tab: "insights" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "insights"}
+                data-state={tab === "insights" ? "active" : "inactive"}
+              >
+                Insights
+              </Link>
+              <Link
+                to="/firm"
+                search={{ tab: "team" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "team"}
+                data-state={tab === "team" ? "active" : "inactive"}
+              >
+                Team
+              </Link>
+              <Link
+                to="/firm"
+                search={{ tab: "invitations" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "invitations"}
+                data-state={tab === "invitations" ? "active" : "inactive"}
+              >
+                Staff invitations
+              </Link>
+              <Link
+                to="/firm"
+                search={{ tab: "activity" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "activity"}
+                data-state={tab === "activity" ? "active" : "inactive"}
+              >
+                Client activity
+              </Link>
+              <Link
+                to="/firm"
+                search={{ tab: "setup" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "setup"}
+                data-state={tab === "setup" ? "active" : "inactive"}
+              >
+                Firm settings
+              </Link>
+              <Link
+                to="/firm"
+                search={{ tab: "partner" }}
+                resetScroll={false}
+                className={nativeTabLinkClass}
+                role="tab"
+                aria-selected={tab === "partner"}
+                data-state={tab === "partner" ? "active" : "inactive"}
+              >
+                Partner programme
+              </Link>
             </TabsList>
 
             <TabsContent value="clients" className="space-y-4">
@@ -369,18 +508,18 @@ function FirmPage() {
                 />
               ) : (
                 <div className="space-y-6">
-                <FirmRequestsPanel
-                  key={firmId}
-                  firmId={firmId}
-                  clients={clientsQ.data ?? []}
-                  canManage={firmAdmin}
-                />
-                <FirmClientRequestsPanel
-                  key={firmId}
-                  firmId={firmId}
-                  clients={clientsQ.data ?? []}
-                  canManage={firmAdmin}
-                />
+                  <FirmRequestsPanel
+                    key={firmId}
+                    firmId={firmId}
+                    clients={clientsQ.data ?? []}
+                    canManage={firmAdmin}
+                  />
+                  <FirmClientRequestsPanel
+                    key={firmId}
+                    firmId={firmId}
+                    clients={clientsQ.data ?? []}
+                    canManage={firmAdmin}
+                  />
                 </div>
               )}
             </TabsContent>

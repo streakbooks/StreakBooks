@@ -1,7 +1,4 @@
-import {
-  MAX_FILE_BYTES,
-  validateUpload,
-} from "@/lib/documents/attachments";
+import { MAX_FILE_BYTES, validateUpload } from "@/lib/documents/attachments";
 import { validateFileRename } from "@/lib/documents/file-workspace";
 
 export const MAX_FILE_VERSIONS = 50;
@@ -30,7 +27,8 @@ export function validateVersionReplacement(
     replacement.size <= 0 ||
     replacement.size > MAX_FILE_BYTES ||
     !Number.isSafeInteger(replacement.size)
-  ) throw new Error("Replacement must be between 1 byte and 20 MB.");
+  )
+    throw new Error("Replacement must be between 1 byte and 20 MB.");
   // File extension changes would break existing previews and signed download names.
   validateFileRename(originalName, replacement.name);
   const contentType = replacement.type.split(";")[0]!.trim().toLowerCase();
@@ -49,13 +47,20 @@ export function assertVersionHistory(
   versions: readonly Pick<FileVersionItem, "version">[],
   expectedCurrent: number,
 ): void {
-  if (!Number.isSafeInteger(expectedCurrent) || expectedCurrent < 1 ||
-      expectedCurrent > MAX_FILE_VERSIONS) throw new Error("Invalid current file version.");
+  if (
+    !Number.isSafeInteger(expectedCurrent) ||
+    expectedCurrent < 1 ||
+    expectedCurrent > MAX_FILE_VERSIONS
+  )
+    throw new Error("Invalid current file version.");
   if (versions.length !== expectedCurrent)
     throw new Error("Document version history is incomplete.");
   const actual = new Set(versions.map((item) => item.version));
-  if (actual.size !== expectedCurrent ||
-      !Array.from({ length: expectedCurrent }, (_, index) => index + 1)
-        .every((version) => actual.has(version)))
+  if (
+    actual.size !== expectedCurrent ||
+    !Array.from({ length: expectedCurrent }, (_, index) => index + 1).every((version) =>
+      actual.has(version),
+    )
+  )
     throw new Error("Document version history has missing or duplicate revisions.");
 }

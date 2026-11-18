@@ -91,12 +91,14 @@ export function DocumentOcrPanel({
           <FileScan className="size-4" /> OCR and invoice field suggestions
         </h4>
         <p className="text-xs text-muted-foreground">
-          An optional third-party extraction for PDF, PNG and JPEG documents up to 8 MB.
-          Only the first three pages are analysed. Nothing is posted or approved automatically.
+          An optional third-party extraction for PDF, PNG and JPEG documents up to 8 MB. Only the
+          first three pages are analysed. Nothing is posted or approved automatically.
         </p>
       </div>
       {available.isPending ? (
-        <p role="status" className="text-sm text-muted-foreground">Checking OCR configuration…</p>
+        <p role="status" className="text-sm text-muted-foreground">
+          Checking OCR configuration…
+        </p>
       ) : available.isError ? (
         <p role="alert" className="text-sm text-destructive">
           {friendlyAuthError(available.error)}
@@ -116,8 +118,8 @@ export function DocumentOcrPanel({
               onChange={(event) => setConfirmed(event.target.checked)}
               className="mt-1"
             />
-            I understand this document will be sent securely to the configured Azure
-            Document Intelligence service for extraction.
+            I understand this document will be sent securely to the configured Azure Document
+            Intelligence service for extraction.
           </label>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -126,8 +128,11 @@ export function DocumentOcrPanel({
               disabled={!confirmed || start.isPending || Boolean(jobToken)}
               onClick={() => start.mutate({ companyId, attachmentId, consent: confirmed })}
             >
-              {start.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> :
-                <FileScan className="mr-1 size-4" />}
+              {start.isPending ? (
+                <Loader2 className="mr-1 size-4 animate-spin" />
+              ) : (
+                <FileScan className="mr-1 size-4" />
+              )}
               Start extraction
             </Button>
             {jobToken ? (
@@ -138,8 +143,11 @@ export function DocumentOcrPanel({
                 disabled={check.isPending}
                 onClick={() => check.mutate({ companyId, attachmentId, jobToken })}
               >
-                {check.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> :
-                  <RefreshCw className="mr-1 size-4" />}
+                {check.isPending ? (
+                  <Loader2 className="mr-1 size-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1 size-4" />
+                )}
                 Check OCR result
               </Button>
             ) : null}
@@ -164,7 +172,9 @@ export function DocumentOcrPanel({
               The provider has accepted the file. Check the result again once processing finishes.
             </p>
           ) : result?.status === "failed" ? (
-            <p role="alert" className="text-xs text-destructive">{result.message}</p>
+            <p role="alert" className="text-xs text-destructive">
+              {result.message}
+            </p>
           ) : result?.status === "completed" ? (
             <div className="space-y-3">
               <div className="space-y-1 text-xs">
@@ -195,8 +205,8 @@ export function DocumentOcrPanel({
                 Fill blank review fields
               </Button>
               <p className="text-xs text-muted-foreground">
-                Suggestions may be incorrect. Inspect the original, correct any fields,
-                then select Save review. This action never saves automatically.
+                Suggestions may be incorrect. Inspect the original, correct any fields, then select
+                Save review. This action never saves automatically.
               </p>
             </div>
           ) : null}

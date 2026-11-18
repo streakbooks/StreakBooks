@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Files search deep-link validation (2026-11-18)
+
+- `src/lib/documents/files-navigation.ts`: trim effective Files search and reject control, bidi and invisible characters while retaining independent sort/view/page filters; commit `91dfacb202ba895bad4e9e1e96bc4bbf22767af4`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: whitespace, 120/121 boundary, multilingual and invisible-character regressions; commit `531d8901d9bf4f5e1eb5107929ab9b4fc0231101`. **WRITTEN, NOT RUN.**
+- Manifest updated in `3cf85a216159b75ef9317ca784ce5c94ae78b90d`. **NOT RUN:** browsing coverage guard, TypeScript, lint, Vitest, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows; **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. No main changes, manually triggered CI, production DB or deployment.
+
+
 ### Settings inherited navigation-slot validation (2026-11-18)
 
 - `src/lib/settings/panels.ts`: reject prototype-inherited array slots in `settingsTrail` during deep-link restoration, so only explicitly owned ancestor positions are accepted. Code commit `fddfb10594f6d1e787d10d4dbef850d6df8e5ebf`. **SOURCE ONLY; NOT RUN.**

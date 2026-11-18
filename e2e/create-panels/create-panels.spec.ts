@@ -33,6 +33,7 @@ for (const [action, heading] of [
   ["Transfer money", "Transfer money"],
   ["Spend money", "Spend money"],
   ["Receive money", "Receive money"],
+  ["Bank deposit", "Bank deposit"],
   ["Manual Journal", "Manual journal"],
   ["Recurring journal", "Recurring journal template"],
 ]) {
@@ -147,4 +148,12 @@ test("modified Create clicks open the canonical form independently", async ({ pa
   await tab.close();
   await expect(page.getByRole("dialog", { name: "Create new" })).toBeVisible();
   await expect(page).toHaveURL(/edit=unrelated-order/);
+});
+
+test("legacy Accounting journal bookmarks open the canonical full-page editor", async ({
+  page,
+}) => {
+  await page.goto("/accounting?tab=post");
+  await expect(page).toHaveURL(/accounting\/journals\/new\?mode=post$/);
+  await expect(page.getByRole("heading", { name: "Manual journal", exact: true })).toBeVisible();
 });

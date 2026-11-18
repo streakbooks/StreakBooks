@@ -5,7 +5,7 @@ import { type AccountingTab } from "@/lib/navigation/workspace-search";
 import { DeferralsPanel } from "@/components/accounting/DeferralsPanel";
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { TransactionCorrections } from "@/components/accounting/corrections/TransactionCorrections";
-import { getRouteApi, Link, Navigate } from "@tanstack/react-router";
+import { getRouteApi, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, Loader2 } from "lucide-react";
@@ -224,11 +224,6 @@ export function AccountingWorkspace({
             currency={currency}
             initialOpenJournalId={search.journal}
           />
-        </TabsContent>
-
-        <TabsContent value="post">
-          {/* Legacy deep link /accounting?tab=post → canonical full-page create */}
-          <Navigate to="/accounting/journals/new" search={{ mode: "post" }} replace />
         </TabsContent>
 
         <TabsContent

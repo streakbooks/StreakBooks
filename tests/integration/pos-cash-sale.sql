@@ -34,7 +34,10 @@ SELECT public.pos_complete_cash_sale(
 );
 SELECT public.test_assert((SELECT expected_cash_minor FROM public.pos_register_sessions WHERE closed_at IS NULL)=16000,'sale increases expected cash by gross 11000');
 SELECT public.test_assert((SELECT count(*)=1 FROM public.pos_sales WHERE sale_operation_id=:'sale_op'::uuid),'one sale row persisted');
+-- Inspect accounting evidence as the fixture administrator without granting ledger reads to cashiers.
+RESET ROLE;
 SELECT public.test_assert((SELECT count(*)=3 FROM public.journal_lines j JOIN public.journals x ON x.id=j.journal_id WHERE x.source_type='pos_sale'),'sale posts cash, revenue and tax lines');
+SET ROLE authenticated;
 
 SELECT public.test_raises(
   $q$SELECT public.pos_complete_cash_sale('20000000-0000-4000-8000-000000000001',

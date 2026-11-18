@@ -87,7 +87,17 @@ const workspace: PosWorkspace = {
 };
 const recentSales: { id: string; total_minor: string; status: string; created_at: string }[] = [];
 export async function getPosWorkspace() {
-  return structuredClone(workspace);
+  const result = structuredClone(workspace);
+  if (new URLSearchParams(location.search).get("multipleSessions") === "true") {
+    const secondRegister = { ...result.registers[0]!, id: "second-register", name: "Back Counter" };
+    result.registers.push(secondRegister);
+    result.openSessions.push({
+      ...result.openSessions[0]!,
+      id: "second-session",
+      register_id: secondRegister.id,
+    });
+  }
+  return result;
 }
 export async function createPosRegister({
   data,
@@ -182,7 +192,8 @@ export async function completePosCashSale({
     "exclusive",
   );
   const gross = quote.grossMinor;
-  if (BigInt(data.cashTenderedMinor) < BigInt(gross)) throw new Error("Cash tendered is below sale total");
+  if (BigInt(data.cashTenderedMinor) < BigInt(gross))
+    throw new Error("Cash tendered is below sale total");
   const change = (BigInt(data.cashTenderedMinor) - BigInt(gross)).toString();
   session.expected_cash_minor = (BigInt(session.expected_cash_minor) + BigInt(gross)).toString();
   const saleId = crypto.randomUUID();

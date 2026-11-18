@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -9,13 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -72,15 +67,13 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
   });
   const access = useQuery({
     queryKey: ["pm-portal-access", company?.id, kind],
-    queryFn: () =>
-      fetchAccess({ data: { companyId: company!.id, portalRole: kind } }),
+    queryFn: () => fetchAccess({ data: { companyId: company!.id, portalRole: kind } }),
     enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
     retry: false,
   });
   const contacts = useQuery({
     queryKey: ["pm-portal-contacts", company?.id],
-    queryFn: () =>
-      fetchContacts({ data: { companyId: company!.id, kind: "all", limit: 200 } }),
+    queryFn: () => fetchContacts({ data: { companyId: company!.id, kind: "all", limit: 200 } }),
     enabled: Boolean(company?.id) && canManage && showForm,
     retry: false,
   });
@@ -105,7 +98,9 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
   const inviteMutation = useMutation({
     mutationFn: async () => {
       if (!company || !contactId || !partyId) {
-        throw new Error(kind === "owner" ? "Select contact and owner" : "Select contact and tenant");
+        throw new Error(
+          kind === "owner" ? "Select contact and owner" : "Select contact and tenant",
+        );
       }
       return invite({
         data: {
@@ -149,9 +144,11 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
   }
   if (!canView) {
     return (
-      <ListWorkspace title={title} description="Portal access grants."
-      subnav={<PmSubnav current={sectionKey} />}
-    >
+      <ListWorkspace
+        title={title}
+        description="Portal access grants."
+        subnav={<PmSubnav current={sectionKey} />}
+      >
         <EmptyState title="No access" description="Ask an administrator for portal permissions." />
       </ListWorkspace>
     );
@@ -161,10 +158,7 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
     <ListWorkspace
       title={title}
       description="Invite and revoke portal access. External self-serve login surfaces ship later; grants are persisted now."
-      breadcrumbs={[
-        { label: "Property Management", to: "/property-management" },
-        { label: title },
-      ]}
+      breadcrumbs={[{ label: "Property Management", to: "/property-management" }, { label: title }]}
       actions={
         canManage ? (
           <Button type="button" onClick={() => setShowForm((v) => !v)}>
@@ -189,7 +183,7 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Contact</Label>
-                  <Select value={contactId || undefined} onValueChange={setContactId}>
+                  <RecordLookupSelect value={contactId} onValueChange={setContactId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select contact" />
                     </SelectTrigger>
@@ -200,11 +194,11 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="grid gap-2">
                   <Label>{kind === "owner" ? "Owner" : "Tenant"}</Label>
-                  <Select value={partyId || undefined} onValueChange={setPartyId}>
+                  <RecordLookupSelect value={partyId} onValueChange={setPartyId}>
                     <SelectTrigger>
                       <SelectValue placeholder={`Select ${kind}`} />
                     </SelectTrigger>
@@ -221,7 +215,7 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
                             </SelectItem>
                           ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
                   <Label htmlFor={`pm-portal-email-${kind}`}>Invite email (optional)</Label>

@@ -32,7 +32,9 @@ describe("unapplied platform authorisation", () => {
       for (const match of file.sql.matchAll(/CREATE TABLE public\.([a-z0-9_]+)/g)) {
         const table = match[1] ?? "";
         expect(file.sql, table).toContain(`ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY`);
-        expect(file.sql, table).toContain(`REVOKE ALL ON public.${table}`);
+        expect(file.sql, table).toMatch(
+          new RegExp(`REVOKE ALL ON (?:TABLE )?[^;]*\\bpublic\\.${table}\\b[^;]* FROM`, "i"),
+        );
       }
     }
     for (const name of names) {

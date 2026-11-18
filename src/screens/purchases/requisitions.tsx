@@ -205,6 +205,7 @@ function RequisitionsWorkspace({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            {/* lookup-fixed-enum: Requisition lifecycle statuses. */}
             <SelectItem value="all">All statuses</SelectItem>
             {requisitionStatuses.map((value) => (
               <SelectItem key={value} value={value}>

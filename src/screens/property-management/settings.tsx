@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -66,7 +67,9 @@ export function PmSettingsPage() {
   const [rentalMode, setRentalMode] = useState<PmRentalMode | null>(null);
   const [businessModel, setBusinessModel] = useState<PmBusinessModel | null>(null);
   const [requireHundred, setRequireHundred] = useState<boolean | null>(null);
-  const [mappingsDraft, setMappingsDraft] = useState<Partial<Record<MappingKey, string | null>>>({});
+  const [mappingsDraft, setMappingsDraft] = useState<Partial<Record<MappingKey, string | null>>>(
+    {},
+  );
 
   const postableAccounts = useMemo(
     () => (accounts.data ?? []).filter((account) => account.is_active && account.is_postable),
@@ -157,9 +160,11 @@ export function PmSettingsPage() {
   }
   if (!canAdmin) {
     return (
-      <ListWorkspace title="Settings" description="Organisation Property Management configuration."
-      subnav={<PmSubnav current="settings" />}
-    >
+      <ListWorkspace
+        title="Settings"
+        description="Organisation Property Management configuration."
+        subnav={<PmSubnav current="settings" />}
+      >
         <EmptyState
           title="Administrator access required"
           description="Only users with property.settings.manage can change these settings."
@@ -189,7 +194,10 @@ export function PmSettingsPage() {
     <div className="grid gap-2" key={key}>
       <Label>{label}</Label>
       <p className="text-sm text-muted-foreground">{hint}</p>
-      <Select value={mappingValue(key)} onValueChange={(value) => setMapping(key, value)}>
+      <RecordLookupSelect
+        value={mappingValue(key)}
+        onValueChange={(value) => setMapping(key, value)}
+      >
         <SelectTrigger>
           <SelectValue placeholder="Select account" />
         </SelectTrigger>
@@ -201,7 +209,7 @@ export function PmSettingsPage() {
             </SelectItem>
           ))}
         </SelectContent>
-      </Select>
+      </RecordLookupSelect>
     </div>
   );
 

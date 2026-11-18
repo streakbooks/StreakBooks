@@ -19,14 +19,20 @@ type RpcMatchResult = { linked: number; bank_transaction_ids: string[] };
 async function assertCanMatchBank(supabase: AnyClient, companyId: string): Promise<void> {
   const [{ data: hasCategorise, error: catErr }, { data: hasReconcile, error: reconErr }] =
     await Promise.all([
-      supabase.rpc("has_company_permission" as never, {
-        _company_id: companyId,
-        _permission: "banking.categorise",
-      } as never),
-      supabase.rpc("has_company_permission" as never, {
-        _company_id: companyId,
-        _permission: "banking.reconcile",
-      } as never),
+      supabase.rpc(
+        "has_company_permission" as never,
+        {
+          _company_id: companyId,
+          _permission: "banking.categorise",
+        } as never,
+      ),
+      supabase.rpc(
+        "has_company_permission" as never,
+        {
+          _company_id: companyId,
+          _permission: "banking.reconcile",
+        } as never,
+      ),
     ]);
   if (catErr) throw new Error(catErr.message);
   if (reconErr) throw new Error(reconErr.message);

@@ -535,7 +535,7 @@ export const setProductPrices = createServerFn({ method: "POST" })
       throw new Error("Not all items could be updated; refresh the catalogue and review prices");
     }
     const { error: auditError } = await context.supabase.rpc(
-      "record_audit_event" as never,
+      "record_app_audit_event" as never,
       {
         _company_id: data.companyId,
         _action: "products.bulk_price_set",

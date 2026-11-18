@@ -103,7 +103,7 @@ describe("standard statement server boundaries", () => {
     expect(file.filename).toBe("profit-and-loss-2026-10-31.csv");
     expect(callRpc).toHaveBeenLastCalledWith(
       context.supabase,
-      "record_audit_event",
+      "record_app_audit_event",
       expect.objectContaining({ _company_id: data.companyId, _action: "report.exported" }),
       expect.any(String),
     );

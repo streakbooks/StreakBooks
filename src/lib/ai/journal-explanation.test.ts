@@ -58,8 +58,8 @@ describe("posted journal evidence explanations", () => {
     expect(explained.balanced).toBe(true);
     expect(explained.total_debit_minor).toBe("35000");
     expect(explained.total_credit_minor).toBe("35000");
-    expect(explained.lines[0]!.meaning).toMatch(/Debit.*expense.*increases/);
-    expect(explained.lines[1]!.meaning).toMatch(/Credit.*liability.*increases/);
+    expect(explained.lines[0]?.meaning).toMatch(/Debit.*expense.*increases/);
+    expect(explained.lines[1]?.meaning).toMatch(/Credit.*liability.*increases/);
     expect(explained.summary).toMatch(/correctness.*unverified/);
   });
 
@@ -131,7 +131,7 @@ describe("posted journal evidence explanations", () => {
 
   it("does not convert foreign-currency journals into base-currency totals", () => {
     const explained = buildJournalExplanation(posted({ currency_code: "KWD" }));
-    expect(explained.lines[0]!.debit_display).toBe("KWD 35.000");
+    expect(explained.lines[0]?.debit_display).toBe("KWD 35.000");
     expect(explained.limitations.join(" ")).toMatch(/No FX conversion/);
   });
 

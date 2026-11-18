@@ -12,13 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -124,10 +118,21 @@ export function CrmOpportunitiesPage() {
   const closedOpps = useQuery({
     queryKey: ["crm-opportunities", company?.id, "closed", effectivePipelineId],
     queryFn: async () => {
-      const pipeline = effectivePipelineId ? { pipelineId: effectivePipelineId } : {};
       const [won, lost] = await Promise.all([
-        fetchOpps({ data: { companyId: company!.id, status: "won", ...pipeline } }),
-        fetchOpps({ data: { companyId: company!.id, status: "lost", ...pipeline } }),
+        fetchOpps({
+          data: {
+            companyId: company!.id,
+            status: "won",
+            ...(effectivePipelineId ? { pipelineId: effectivePipelineId } : {}),
+          },
+        }),
+        fetchOpps({
+          data: {
+            companyId: company!.id,
+            status: "lost",
+            ...(effectivePipelineId ? { pipelineId: effectivePipelineId } : {}),
+          },
+        }),
       ]);
       return [...won, ...lost];
     },

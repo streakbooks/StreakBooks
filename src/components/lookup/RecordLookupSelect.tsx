@@ -52,6 +52,7 @@ export function RecordLookupSelect({
       invalid={validation !== undefined && validation !== false && validation !== "false"}
       allowClear={!required && declared.placeholder !== undefined}
       className={className}
+      triggerClassName={declared.triggerClassName}
     />
   );
 }

@@ -11,7 +11,7 @@ describe("filed tax return comparison", () => {
       { ...raw[0], deltaMinor: -200n },
       { ...raw[1], deltaMinor: 100n },
     ]);
-    expect(raw[0]!.filed_minor).toBe(5000);
+    expect(raw[0]?.filed_minor).toBe(5000);
     expect(returnVariances([])).toEqual([]);
   });
   it("does not overflow at the maximum safe integer range", () => {

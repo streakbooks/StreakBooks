@@ -42,14 +42,14 @@ export function parseInvoiceListSearch(raw: Record<string, unknown>): InvoiceLis
   if (typeof q === "string" && q.length > 0 && q.length <= 100) out.q = q;
   const status = raw["status"];
   if (typeof status === "string" && STATUSES.has(status))
-    out.status = status as "all" | "draft" | "authorised" | "partly_paid" | "paid" | "void";
+    out.status = status as NonNullable<InvoiceListSearch["status"]>;
   for (const key of ["from", "to"] as const) {
     const value = raw[key];
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) out[key] = value;
   }
   const sort = raw["sort"];
   if (typeof sort === "string" && SORT_FIELDS.has(sort))
-    out.sort = sort as "invoice_date" | "due_date" | "invoice_number" | "total_minor" | "status";
+    out.sort = sort as NonNullable<InvoiceListSearch["sort"]>;
   if (raw["dir"] === "asc" || raw["dir"] === "desc") out.dir = raw["dir"];
   const page = raw["page"];
   if (

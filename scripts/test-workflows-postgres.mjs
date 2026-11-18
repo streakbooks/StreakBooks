@@ -92,7 +92,7 @@ try {
     ),
   );
   for (const name of ["public.assert_journal_date_unlocked", "public.post_journal"])
-    sql(fn("supabase/migrations/20261022180000_settings_centre_foundation.sql", name));
+    sql(fn("supabase/migrations/20261022125237_settings_centre_foundation.sql", name));
   const migrations = readdirSync(path.join(root, "supabase/migrations")).filter((name) =>
     name.endsWith("_accounting_workflow_depth.sql"),
   );
@@ -109,7 +109,7 @@ try {
   sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
   sql(
     fn(
-      "supabase/migrations/20261022180000_settings_centre_foundation.sql",
+      "supabase/migrations/20261022125237_settings_centre_foundation.sql",
       "public.set_organisation_feature",
     ),
   );
@@ -122,7 +122,7 @@ try {
   sql(read("tests/fixtures/workflows/settings-lock-policy-cas-baseline.sql"));
   sql(
     fn(
-      "supabase/migrations/20261022180000_settings_centre_foundation.sql",
+      "supabase/migrations/20261022125237_settings_centre_foundation.sql",
       "public.set_organisation_lock_policy",
     ),
   );

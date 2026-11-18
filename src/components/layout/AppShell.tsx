@@ -569,7 +569,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
           collapsed ? "lg:pl-[4.5rem]" : "lg:pl-64",
         )}
       >
-        <header className="lb-workspace-topbar sticky top-0 z-30 flex min-h-16 items-center gap-1 border-b border-border/80 bg-card/95 px-3 py-2 print:hidden sm:gap-2 md:px-6">
+        <header className="lb-workspace-topbar sticky top-0 z-30 flex min-h-16 flex-wrap items-center gap-1 border-b border-border/80 bg-card/95 px-3 py-2 print:hidden sm:flex-nowrap sm:gap-2 md:px-6">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
@@ -589,7 +589,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
             </SheetContent>
           </Sheet>
 
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 basis-[calc(100%-3rem)] sm:basis-0">
             <div className="truncate text-sm font-semibold md:hidden">{title}</div>
             <div className="flex items-center gap-4">
               <Breadcrumbs />

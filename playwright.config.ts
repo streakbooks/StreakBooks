@@ -11,6 +11,8 @@ const hasAccount = Boolean(
 export default defineConfig({
   testDir: "./e2e",
   testIgnore: [
+    "**/banking-local-api/**",
+    "**/coding-memory/**",
     "**/voice/**",
     "**/migration/**",
     "**/practice/**",

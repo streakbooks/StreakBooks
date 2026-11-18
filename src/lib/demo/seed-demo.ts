@@ -904,7 +904,7 @@ export async function seedDemoCompanyData(
   await linkDemoDocumentsToJournals(supabase, companyId, journalByKey);
 
   await supabase.rpc(
-    "record_audit_event" as never,
+    "record_app_audit_event" as never,
     {
       _company_id: companyId,
       _action: "demo.seed",

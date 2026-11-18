@@ -77,7 +77,7 @@ export const exportStandardStatement = createServerFn({ method: "POST" })
           : new TextEncoder().encode(exportReportCsv(doc));
     await callRpc(
       context.supabase,
-      "record_audit_event",
+      "record_app_audit_event",
       {
         _company_id: data.companyId,
         _action: "report.exported",

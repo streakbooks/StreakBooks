@@ -73,7 +73,7 @@ beforeEach(() => {
   config = { ...dates, basis: "cash", _builder: definition };
   vi.mocked(loadCashProfitLossInput).mockImplementation(async () => cashInputFixture());
   vi.mocked(callRpc).mockImplementation(async (_sb, name, args) => {
-    if (name === "record_audit_event") return true;
+    if (name === "record_app_audit_event") return true;
     if (name === "cash_reporting_capabilities") return 1;
     if (name === "get_reporting_delivery_status") return { configured: true };
     if (name === "queue_report_delivery") return viewId;

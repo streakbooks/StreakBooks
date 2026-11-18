@@ -22,6 +22,7 @@ export function isForbiddenTrackedPath(path) {
   if (typeof path !== "string" || !path) return false;
   const normalized = path.replaceAll("\\", "/");
   const parts = normalized.split("/");
+  if (parts[0] === "work") return true;
   if (parts.some((part) => forbiddenParts.has(part))) return true;
   if (normalized.endsWith(".tsbuildinfo")) return true;
   return parts.some((part) => /^\.env(?:\.[^/]*)?$/.test(part) && part !== ".env.example");
@@ -35,7 +36,13 @@ export function inspectRepository(repoRoot = process.cwd()) {
   });
   const tracked = output.split("\0").filter(Boolean);
   const forbidden = tracked.filter(isForbiddenTrackedPath);
-  const required = [".env", ".env.local", ".vercel/output.json", "node_modules/example/index.js"];
+  const required = [
+    ".env",
+    ".env.local",
+    ".vercel/output.json",
+    "node_modules/example/index.js",
+    "work/local-api-session.json",
+  ];
   const notIgnored = required.filter((path) => {
     const result = spawnSync("git", ["check-ignore", "--no-index", "-q", path], {
       cwd: repoRoot,

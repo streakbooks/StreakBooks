@@ -49,6 +49,10 @@ BEGIN
 END $$;
 
 -- Explicit tenant isolation applies even inside SECURITY DEFINER triggers.
+-- The preceding salesperson has B access from the shared workflow fixture.
+-- Switch to the A-only actor before asserting that company B is forbidden.
+SELECT set_config('request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-000000000001"}', false);
 DO $$
 DECLARE
   other_company uuid := '10000000-0000-4000-8000-000000000002';

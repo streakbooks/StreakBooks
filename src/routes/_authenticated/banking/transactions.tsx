@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import { useCanDo } from "@/hooks/use-can";
+import { useCan } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { useTablePrefs } from "@/hooks/use-table-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -164,8 +164,11 @@ function BankTransactions() {
   const fmt = useFormat();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
-  const canTax = useCanDo("tax.settings");
-  const canBank = useCanDo("banking.feeds.manage");
+  const { can } = useCan();
+  const canTax = can("tax.settings");
+  const canBank = can("banking.feeds.manage");
+  const canCategorise = can("banking.categorise");
+  const canMatch = canCategorise || can("banking.reconcile");
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
@@ -713,12 +716,14 @@ function BankTransactions() {
         />
       </div>
 
-      <SelectionActionBar
-        count={selected.size}
-        onClear={() => setSelected(new Set())}
-        description="Selection applies to visible transactions on this page. Choose a coding account below."
-      />
-      {reviewing && uncategorisedRows.length > 0 ? (
+      {canCategorise ? (
+        <SelectionActionBar
+          count={selected.size}
+          onClear={() => setSelected(new Set())}
+          description="Selection applies to visible transactions on this page. Choose a coding account below."
+        />
+      ) : null}
+      {canCategorise && reviewing && uncategorisedRows.length > 0 ? (
         <div className="mb-3 space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">
@@ -816,6 +821,8 @@ function BankTransactions() {
         />
       ) : showMobileCards ? (
         <BankTransactionMobileCards
+          canCategorise={canCategorise}
+          canMatch={canMatch}
           rows={rows}
           selected={selected}
           density={tablePrefs.density}
@@ -855,7 +862,7 @@ function BankTransactions() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-8">
-                  {reviewing ? (
+                  {reviewing && canCategorise ? (
                     <Checkbox
                       aria-label="Select all on this page"
                       checked={allPageSelected}
@@ -890,12 +897,15 @@ function BankTransactions() {
                   (l) => l.sourceType === "bank_transaction" && !l.reversed,
                 );
                 const canRedo = t.status === "matched" && bankJournals.length > 0;
-                const open = expanded?.id === t.id ? expanded : null;
+                const open =
+                  expanded?.id === t.id && (expanded.mode === "code" ? canCategorise : canMatch)
+                    ? expanded
+                    : null;
                 return (
                   <Fragment key={t.id}>
                     <TableRow ref={mobileFocusId === t.id ? focusRowRef : undefined}>
                       <TableCell>
-                        {t.status === "uncategorised" ? (
+                        {canCategorise && t.status === "uncategorised" ? (
                           <Checkbox
                             aria-label={`Select ${t.description ?? "transaction"}`}
                             checked={selected.has(t.id)}
@@ -1002,29 +1012,33 @@ function BankTransactions() {
                           </Button>
                           {t.status === "uncategorised" ? (
                             <>
-                              <Button
-                                size="sm"
-                                variant={open?.mode === "code" ? "secondary" : "default"}
-                                onClick={() =>
-                                  setExpanded(
-                                    open?.mode === "code" ? null : { id: t.id, mode: "code" },
-                                  )
-                                }
-                              >
-                                Code
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="hidden sm:inline-flex"
-                                onClick={() =>
-                                  setExpanded(
-                                    open?.mode === "match" ? null : { id: t.id, mode: "match" },
-                                  )
-                                }
-                              >
-                                Match
-                              </Button>
+                              {canCategorise ? (
+                                <Button
+                                  size="sm"
+                                  variant={open?.mode === "code" ? "secondary" : "default"}
+                                  onClick={() =>
+                                    setExpanded(
+                                      open?.mode === "code" ? null : { id: t.id, mode: "code" },
+                                    )
+                                  }
+                                >
+                                  Code
+                                </Button>
+                              ) : null}
+                              {canMatch ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="hidden sm:inline-flex"
+                                  onClick={() =>
+                                    setExpanded(
+                                      open?.mode === "match" ? null : { id: t.id, mode: "match" },
+                                    )
+                                  }
+                                >
+                                  Match
+                                </Button>
+                              ) : null}
                             </>
                           ) : null}
                           {t.status === "matched" ? (
@@ -1033,7 +1047,8 @@ function BankTransactions() {
                           {t.status === "reconciled" ? (
                             <span className="text-xs text-muted-foreground">Reconciled</span>
                           ) : null}
-                          {["uncategorised", "matched", "excluded"].includes(t.status) ? (
+                          {["uncategorised", "matched", "excluded"].includes(t.status) &&
+                          (canCategorise || (canMatch && t.status === "uncategorised")) ? (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
@@ -1052,26 +1067,30 @@ function BankTransactions() {
                               <DropdownMenuContent align="end" className="min-w-48">
                                 {t.status === "uncategorised" ? (
                                   <>
-                                    <DropdownMenuItem
-                                      className="sm:hidden"
-                                      onSelect={() =>
-                                        setExpanded(
-                                          open?.mode === "match"
-                                            ? null
-                                            : { id: t.id, mode: "match" },
-                                        )
-                                      }
-                                    >
-                                      Match transaction
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      disabled={excludeM.isPending}
-                                      onSelect={() =>
-                                        setPendingAction({ id: t.id, kind: "exclude" })
-                                      }
-                                    >
-                                      Exclude from review…
-                                    </DropdownMenuItem>
+                                    {canMatch ? (
+                                      <DropdownMenuItem
+                                        className="sm:hidden"
+                                        onSelect={() =>
+                                          setExpanded(
+                                            open?.mode === "match"
+                                              ? null
+                                              : { id: t.id, mode: "match" },
+                                          )
+                                        }
+                                      >
+                                        Match transaction
+                                      </DropdownMenuItem>
+                                    ) : null}
+                                    {canCategorise ? (
+                                      <DropdownMenuItem
+                                        disabled={excludeM.isPending}
+                                        onSelect={() =>
+                                          setPendingAction({ id: t.id, kind: "exclude" })
+                                        }
+                                      >
+                                        Exclude from review…
+                                      </DropdownMenuItem>
+                                    ) : null}
                                   </>
                                 ) : null}
                                 {t.status === "matched" ? (
@@ -1251,7 +1270,7 @@ function BankTransactions() {
       )}
 
       <ConfirmDialog
-        open={Boolean(pendingAction)}
+        open={canCategorise && Boolean(pendingAction)}
         onOpenChange={(open) => !open && setPendingAction(null)}
         title={
           pendingAction?.kind === "exclude"
@@ -1284,7 +1303,7 @@ function BankTransactions() {
         }
         pending={excludeM.isPending || restoreM.isPending || unmatchM.isPending}
         onConfirm={() => {
-          if (!pendingAction || !actionRow) {
+          if (!canCategorise || !pendingAction || !actionRow) {
             setPendingAction(null);
             return;
           }

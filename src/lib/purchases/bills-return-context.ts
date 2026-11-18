@@ -48,8 +48,7 @@ export function decodeBillsReturnContext(raw: unknown): BillsReturnContext {
   const p = new URLSearchParams(raw);
   const out: BillsReturnContext = {};
   const tab = p.get("tab");
-  if (tab && TABS.has(tab))
-    out.tab = tab as "all" | "drafts" | "for_approval" | "to_pay" | "paid" | "recurring";
+  if (tab && TABS.has(tab)) out.tab = tab as NonNullable<BillsReturnContext["tab"]>;
   const q = p.get("q");
   if (q && q.length <= 100) out.q = q;
   for (const key of ["from", "to"] as const) {

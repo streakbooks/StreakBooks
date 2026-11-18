@@ -177,7 +177,11 @@ export const auditAssetDepreciationPosting = createServerFn({ method: "GET" })
     }
 
     const { journal, lines } = await readJournalEvidence(sb, data.companyId, run.journal_id, [
-      ...assets.flatMap((asset) => [asset.expense_account_id, asset.accumulated_account_id]),
+      ...assets.flatMap((asset) => [
+        asset.asset_account_id,
+        asset.expense_account_id,
+        asset.accumulated_account_id,
+      ]),
     ]);
     const company = await loadCompanyMeta(sb as unknown as Sb, data.companyId);
     return reviewAssetDepreciationPosting(

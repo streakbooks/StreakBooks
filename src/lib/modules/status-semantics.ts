@@ -135,7 +135,7 @@ export function resolveDomainStatus(
     return {
       label: extra.label,
       tone: extra.tone,
-      ...(extra.muted !== undefined ? { muted: extra.muted } : {}),
+      ...(extra.muted === undefined ? {} : { muted: extra.muted }),
       unmapped: false,
     };
   }

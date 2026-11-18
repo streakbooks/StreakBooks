@@ -47,6 +47,11 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    // Standalone test entrypoint and dependency adapters are not Fast Refresh boundaries.
+    files: ["tests/fixtures/coding-memory/ui/{app,stubs}.tsx"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
   eslintPluginPrettier,
   {
     files: ["e2e/**/*.ts", "playwright.config.ts"],

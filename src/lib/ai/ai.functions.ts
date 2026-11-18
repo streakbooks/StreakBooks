@@ -1,3 +1,4 @@
+import type { Json } from "@/integrations/supabase/types";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -364,7 +365,7 @@ export const listAiSuggestions = createServerFn({ method: "GET" })
       status: string;
       title: string;
       summary: string;
-      payload: import("@/integrations/supabase/types").Json;
+      payload: Record<string, Json>;
       validation_errors: string[];
       created_at: string;
       applied_journal_id: string | null;
@@ -479,7 +480,7 @@ export const applyAiSuggestion = createServerFn({ method: "POST" })
       .eq("company_id" as never, data.companyId as never);
 
     await context.supabase.rpc(
-      "record_audit_event" as never,
+      "record_app_audit_event" as never,
       {
         _company_id: data.companyId,
         _action: "ai.suggestion_applied",

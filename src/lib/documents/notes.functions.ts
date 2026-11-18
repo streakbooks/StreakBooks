@@ -134,7 +134,7 @@ export const addDocumentNote = createServerFn({ method: "POST" })
           args: Record<string, unknown>,
         ) => Promise<{ error: { message: string } | null }>;
       }
-    ).rpc("record_audit_event", {
+    ).rpc("record_app_audit_event", {
       _company_id: data.companyId,
       _action: "document.note.add",
       _entity_type: data.entityType,

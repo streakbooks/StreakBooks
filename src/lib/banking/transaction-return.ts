@@ -36,10 +36,12 @@ export function parseBankTransactionReturnSearch(
 ): BankTransactionReturnSearch {
   const out: BankTransactionReturnSearch = {};
   if (typeof input["status"] === "string" && STATUS.has(input["status"])) {
-    out.status = input["status"] as "uncategorised" | "matched" | "reconciled" | "excluded" | "all";
+    out.status = input["status"] as NonNullable<BankTransactionReturnSearch["status"]>;
   }
   if (typeof input["statusGroup"] === "string" && GROUP.has(input["statusGroup"])) {
-    out.statusGroup = input["statusGroup"] as "unreconciled" | "posted" | "all";
+    out.statusGroup = input["statusGroup"] as NonNullable<
+      BankTransactionReturnSearch["statusGroup"]
+    >;
   }
   const account = input["bankAccountId"];
   if (typeof account === "string" && UUID.test(account)) out.bankAccountId = account;
@@ -63,7 +65,7 @@ export function parseBankTransactionReturnSearch(
     (typeof pageSize === "number" || typeof pageSize === "string") &&
     SIZES.has(Number(pageSize))
   ) {
-    out.pageSize = Number(pageSize) as 25 | 50 | 100 | 200;
+    out.pageSize = Number(pageSize) as NonNullable<BankTransactionReturnSearch["pageSize"]>;
   }
   return out;
 }

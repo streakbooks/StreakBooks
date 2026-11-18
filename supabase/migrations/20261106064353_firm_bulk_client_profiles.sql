@@ -56,7 +56,7 @@ begin
   new.version := old.version + 1;
   new.updated_at := clock_timestamp();
   return new;
-end $function$
+end $function$;
 CREATE TRIGGER firm_client_profile_version_guard
  BEFORE UPDATE ON public.firm_client_profiles
  FOR EACH ROW EXECUTE FUNCTION private.firm_client_profile_version_guard();
@@ -103,7 +103,7 @@ begin
     )
   );
   return new;
-end $function$
+end $function$;
 CREATE TRIGGER firm_client_profile_audit_capture
  AFTER INSERT OR UPDATE ON public.firm_client_profiles
  FOR EACH ROW EXECUTE FUNCTION private.firm_client_profile_audit_capture();
@@ -234,7 +234,7 @@ begin
   return pg_catalog.jsonb_build_object(
     'updated',changed,'unchanged',unchanged,'total',pg_catalog.jsonb_array_length(_items)
   );
-end $function$
+end $function$;
 REVOKE ALL ON FUNCTION public.bulk_update_firm_client_profiles(uuid,jsonb,text,text)
  FROM public,anon;
 GRANT EXECUTE ON FUNCTION public.bulk_update_firm_client_profiles(uuid,jsonb,text,text)

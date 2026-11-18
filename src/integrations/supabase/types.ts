@@ -12896,6 +12896,16 @@ export type Database = {
         };
         Returns: string;
       };
+      record_app_audit_event: {
+        Args: {
+          _action: string;
+          _company_id: string;
+          _details?: Json;
+          _entity_id?: string | null;
+          _entity_type: string;
+        };
+        Returns: string;
+      };
       record_audit_event: {
         Args: {
           _action: string;

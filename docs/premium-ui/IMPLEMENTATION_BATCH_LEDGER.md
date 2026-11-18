@@ -42,6 +42,7 @@
 | 46 | Phase 3 | Journal/recurring full-page creates; transfer/product/claim Create destinations; browsing sync | `feature/premium-ui-batch46-create-workflows` | [PR #293](https://github.com/linkbusinessadvisory/LinkBooks/pull/293) → `9a9e6b6f` | accounting + recurring + banking transfers + create registry | merged (CI blocked by org billing; local gates PASS) |
 | 47 | Phase 3 | Recurring edit URLs; bank documents New CTA; Create checklist sync | `feature/premium-ui-batch47-create-edit-hardening` | [PR #294](https://github.com/linkbusinessadvisory/LinkBooks/pull/294) → `32b2c6db` | sales/purchases recurring edit + banking docs | merged (CI billing skipped per standing instruction; local gates PASS) |
 | 48 | Phase 3 | Transfer route-search fix; Banking hub New CTAs; EM create ownership; delete recurring Sheets | `feature/premium-ui-batch48-create-hardening` | [PR #296](https://github.com/linkbusinessadvisory/LinkBooks/pull/296) → `0efe21fb` | banking + expenses + navigation tests | merged (CI billing skipped; local gates PASS) |
-| 49+ | Phase 4–10 | Remaining module DoD, staging runtime evidence | TBD | — | all modules | planned |
+| 49 | Phase 3 | Transactions New CTAs; createNavTarget; EM claim create workspace; expenses empty CTA | `feature/premium-ui-batch49-create-surfaces` | pending | banking + create menu + expenses | in progress |
+| 50+ | Phase 4–10 | Remaining module DoD, staging runtime evidence | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

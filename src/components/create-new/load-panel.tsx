@@ -46,7 +46,9 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
     }
     case "expense": {
       const m = await import("@/screens/purchases/expenses.new");
-      return m.NewExpense;
+      return function SpendMoneyPanel() {
+        return <m.NewExpense ownership="banking" />;
+      };
     }
     case "supplier_credit": {
       const m = await import("@/screens/purchases/credit-notes.new");
@@ -55,7 +57,7 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
     case "reimbursement": {
       const m = await import("@/screens/expense-management/claims");
       return function ExpenseClaimPanel() {
-        return <m.ExpenseManagementClaimsPage mode="my-expenses" />;
+        return <m.ExpenseManagementClaimsPage mode="my-expenses" forceCreate />;
       };
     }
     case "bank_transfer": {

@@ -9,6 +9,7 @@ import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagement
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -547,20 +548,11 @@ export function ExpenseManagementClaimsPage({
 
   const claims = claimsQ.data ?? [];
 
-  return (
-    <ListWorkspace
-      title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
-      description={
-        mode === "my-expenses"
-          ? "Multi-line drafts, equal splits, templates, submit and withdraw."
-          : "Organisation-wide expense claims visible to finance and approvers."
-      }
-      subnav={<ExpenseManagementSubnav current={sectionKey} />}
-    >
-      {mode === "my-expenses" && canSubmit ? (
+  const createForm =
+    mode === "my-expenses" && canSubmit ? (
         <form
           id="expense-claim-create"
-          className="mb-8 grid gap-4 rounded-lg border border-border/70 bg-card/80 p-4 sm:p-5"
+          className="grid gap-4 rounded-lg border border-border/70 bg-card/80 p-4 sm:p-5"
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate();
@@ -884,15 +876,85 @@ export function ExpenseManagementClaimsPage({
             </Button>
           </div>
         </form>
-      ) : null}
+      ) : null;
+
+  if (forceCreate && createForm) {
+    return (
+      <TransactionWorkspace
+        title="New expense claim"
+        description="Multi-line draft with equal splits and templates. Saving does not post until you submit and an approver acts."
+        breadcrumbs={[
+          { label: "Expenses", to: "/expense-management" },
+          { label: "My Expenses" },
+          { label: "New" },
+        ]}
+        stickyActions={
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
+                Cancel
+              </Link>
+            </Button>
+            <Button
+              size="sm"
+              disabled={create.isPending}
+              onClick={() => create.mutate()}
+            >
+              {create.isPending ? "Saving…" : "Save draft"}
+            </Button>
+          </div>
+        }
+      >
+        {createForm}
+      </TransactionWorkspace>
+    );
+  }
+
+  return (
+    <ListWorkspace
+      title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
+      description={
+        mode === "my-expenses"
+          ? "Multi-line drafts, equal splits, templates, submit and withdraw."
+          : "Organisation-wide expense claims visible to finance and approvers."
+      }
+      subnav={<ExpenseManagementSubnav current={sectionKey} />}
+      actions={
+        mode === "my-expenses" && canSubmit ? (
+          <Button size="sm" asChild>
+            <Link
+              to="/expense-management/$section"
+              params={{ section: "my-expenses" }}
+              search={{ create: true }}
+            >
+              New expense claim
+            </Link>
+          </Button>
+        ) : undefined
+      }
+    >
+      {createForm ? <div className="mb-8">{createForm}</div> : null}
 
       {claims.length === 0 ? (
         <EmptyState
           title="No claims yet"
           description={
             mode === "my-expenses"
-              ? "Add one or more lines above to create a draft claim."
+              ? "Use New expense claim to start a multi-line draft."
               : "No organisation claims are visible yet."
+          }
+          action={
+            mode === "my-expenses" && canSubmit ? (
+              <Button size="sm" asChild>
+                <Link
+                  to="/expense-management/$section"
+                  params={{ section: "my-expenses" }}
+                  search={{ create: true }}
+                >
+                  New expense claim
+                </Link>
+              </Button>
+            ) : undefined
           }
         />
       ) : (

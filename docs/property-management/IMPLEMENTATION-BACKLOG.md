@@ -2,9 +2,9 @@
 
 | Batch | Scope | Depends on | Status |
 | --- | --- | --- | --- |
-| PM-00 | Audit, PRD, architecture, gap register, tracker | — | In progress |
-| PM-01 | Module nav, permissions, settings, master-data foundations | PM-00 | In progress |
-| PM-02 | Properties, units, owners, agreements (full CRUD + validation) | PM-01 | Pending |
+| PM-00 | Audit, PRD, architecture, gap register, tracker | — | Done (PR #267) |
+| PM-01 | Module nav, permissions, settings, master-data foundations | PM-00 | Done (PR #267) |
+| PM-02 | Properties, units, owners, agreements (full CRUD + validation) | PM-01 | In progress |
 | PM-03 | Tenants, leases, rent, deposits | PM-02 | Pending |
 | PM-04 | STR reservations + financial normalization | PM-02 | Pending |
 | PM-05 | Property ledger allocations + accounting integrity | PM-03, PM-04 | Pending |

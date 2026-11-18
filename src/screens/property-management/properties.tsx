@@ -26,6 +26,7 @@ import {
 } from "@/lib/property-management/pm.functions";
 import type { PmRentalMode } from "@/lib/property-management/types";
 import type { Permission } from "@/lib/permissions";
+import { PmOwnershipPanel } from "@/screens/property-management/ownership-panel";
 import { toast } from "sonner";
 
 export function PmPropertiesPage() {
@@ -33,6 +34,9 @@ export function PmPropertiesPage() {
   const { can } = useCan();
   const canView = can("property.view" as Permission);
   const canManage = can("property.manage" as Permission);
+  const canOwnerManage = can("property.owner.manage" as Permission);
+  const canOwnerView =
+    can("property.owner.view" as Permission) || can("property.view" as Permission);
   const queryClient = useQueryClient();
   const fetchSettings = useServerFn(getPmSettings);
   const fetchProperties = useServerFn(listPmProperties);
@@ -43,6 +47,7 @@ export function PmPropertiesPage() {
   const [code, setCode] = useState("");
   const [rentalMode, setRentalMode] = useState<PmRentalMode>("hybrid");
   const [showForm, setShowForm] = useState(false);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
 
   const settings = useQuery({
     queryKey: ["pm-settings", company?.id],
@@ -217,21 +222,58 @@ export function PmPropertiesPage() {
                     <th className="px-3 py-2 font-medium">Mode</th>
                     <th className="px-3 py-2 font-medium">Status</th>
                     <th className="px-3 py-2 font-medium">Currency</th>
+                    <th className="px-3 py-2 font-medium">Ownership</th>
                   </tr>
                 </thead>
                 <tbody>
                   {properties.data.map((property) => (
-                    <tr key={property.id} className="border-t border-border/70">
+                    <tr
+                      key={property.id}
+                      className={
+                        selectedPropertyId === property.id
+                          ? "border-t border-border/70 bg-primary/5"
+                          : "border-t border-border/70"
+                      }
+                    >
                       <td className="px-3 py-2 tabular-nums">{property.code}</td>
                       <td className="px-3 py-2">{property.name}</td>
                       <td className="px-3 py-2">{property.rentalMode.replaceAll("_", " ")}</td>
                       <td className="px-3 py-2">{property.status}</td>
                       <td className="px-3 py-2">{property.currencyCode}</td>
+                      <td className="px-3 py-2">
+                        {canOwnerView ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={selectedPropertyId === property.id ? "default" : "outline"}
+                            onClick={() =>
+                              setSelectedPropertyId((current) =>
+                                current === property.id ? "" : property.id,
+                              )
+                            }
+                          >
+                            {selectedPropertyId === property.id ? "Hide" : "Shares"}
+                          </Button>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          ) : null}
+          {selectedPropertyId && canOwnerView && company ? (
+            <PmOwnershipPanel
+              companyId={company.id}
+              propertyId={selectedPropertyId}
+              propertyLabel={
+                properties.data?.find((row) => row.id === selectedPropertyId)?.name ??
+                selectedPropertyId
+              }
+              canManage={canOwnerManage}
+            />
           ) : null}
         </>
       ) : null}

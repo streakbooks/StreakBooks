@@ -168,7 +168,7 @@ function BankTransactions() {
   const canTax = can("tax.settings");
   const canBank = can("banking.feeds.manage");
   const canCategorise = can("banking.categorise");
-  const canReconcile = can("banking.reconcile");
+  const canMatch = canCategorise || can("banking.reconcile");
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
@@ -822,7 +822,7 @@ function BankTransactions() {
       ) : showMobileCards ? (
         <BankTransactionMobileCards
           canCategorise={canCategorise}
-          canReconcile={canReconcile}
+          canMatch={canMatch}
           rows={rows}
           selected={selected}
           density={tablePrefs.density}
@@ -898,7 +898,7 @@ function BankTransactions() {
                 );
                 const canRedo = t.status === "matched" && bankJournals.length > 0;
                 const open =
-                  expanded?.id === t.id && (expanded.mode === "code" ? canCategorise : canReconcile)
+                  expanded?.id === t.id && (expanded.mode === "code" ? canCategorise : canMatch)
                     ? expanded
                     : null;
                 return (
@@ -1025,7 +1025,7 @@ function BankTransactions() {
                                   Code
                                 </Button>
                               ) : null}
-                              {canReconcile ? (
+                              {canMatch ? (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -1048,7 +1048,7 @@ function BankTransactions() {
                             <span className="text-xs text-muted-foreground">Reconciled</span>
                           ) : null}
                           {["uncategorised", "matched", "excluded"].includes(t.status) &&
-                          (canCategorise || (canReconcile && t.status === "uncategorised")) ? (
+                          (canCategorise || (canMatch && t.status === "uncategorised")) ? (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
@@ -1067,7 +1067,7 @@ function BankTransactions() {
                               <DropdownMenuContent align="end" className="min-w-48">
                                 {t.status === "uncategorised" ? (
                                   <>
-                                    {canReconcile ? (
+                                    {canMatch ? (
                                       <DropdownMenuItem
                                         className="sm:hidden"
                                         onSelect={() =>

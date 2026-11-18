@@ -288,18 +288,18 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
               </Link>
             </Button>
           ) : null}
-        {can("purchases.draft") ? (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={copyMutation.isPending}
-            title="Create a new draft with today's date (receipt and bill links are not copied)"
-            onClick={() => copyMutation.mutate()}
-          >
-            {copyMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            Copy order
-          </Button>
-        ) : null}
+          {can("purchases.draft") ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={copyMutation.isPending}
+              title="Create a new draft with today's date (receipt and bill links are not copied)"
+              onClick={() => copyMutation.mutate()}
+            >
+              {copyMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Copy order
+            </Button>
+          ) : null}
         </div>
         <p className="mb-4 text-sm text-muted-foreground">
           This order has no ledger impact. Receiving updates quantities only. Bill received goods

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   canCategorise: boolean;
-  canReconcile: boolean;
+  canMatch: boolean;
   rows: BankTxnListRow[];
   selected: ReadonlySet<string>;
   density: "compact" | "comfortable";
@@ -27,7 +27,7 @@ type Props = {
  */
 export function BankTransactionMobileCards({
   canCategorise,
-  canReconcile,
+  canMatch,
   rows,
   selected,
   density,
@@ -111,7 +111,7 @@ export function BankTransactionMobileCards({
                     Code
                   </Button>
                 ) : null}
-                {canReconcile ? (
+                {canMatch ? (
                   <Button
                     type="button"
                     size="sm"

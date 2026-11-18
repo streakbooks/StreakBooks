@@ -3156,9 +3156,7 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
       return {
         fxRateToBase: fx !== null && fx !== 1 ? fx : null,
         companyId: assertUuid(input.companyId),
-        creditNoteId: input.creditNoteId
-          ? assertUuid(input.creditNoteId, "credit note")
-          : null,
+        creditNoteId: input.creditNoteId ? assertUuid(input.creditNoteId, "credit note") : null,
         contactId: assertUuid(input.contactId, "supplier"),
         creditDate: input.creditDate,
         currencyCode: (input.currencyCode ?? "").toUpperCase(),
@@ -3255,61 +3253,61 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
         .eq("status" as never, "draft" as never);
       if (upErr) throw new Error(upErr.message);
     } else {
-    const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
-    const creditNumber = await allocateDocumentNumber(
-      supabase as never,
-      data.companyId,
-      "purchase_credit_note",
-    );
+      const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
+      const creditNumber = await allocateDocumentNumber(
+        supabase as never,
+        data.companyId,
+        "purchase_credit_note",
+      );
       creditNumberLabel = creditNumber;
 
-    const { data: cn, error } = await supabase
-      .from("purchase_credit_notes" as never)
-      .insert({
-        company_id: data.companyId,
-        contact_id: data.contactId,
-        credit_number: creditNumber,
-        credit_date: data.creditDate,
-        currency_code: data.currencyCode,
-        memo: data.memo,
-        subtotal_minor: subtotal,
-        tax_minor: tax,
-        total_minor: total,
-        status: "draft",
-        created_by: userId,
-        ...(data.fxRateToBase != null ? { fx_rate_to_base: data.fxRateToBase } : {}),
-      } as never)
-      .select("id")
-      .single();
-    if (error) {
-      if (data.fxRateToBase != null && /fx_rate_to_base|schema cache/i.test(error.message)) {
-        throw new Error(
-          "Foreign-currency credit notes need a database update that has not been applied yet.",
-        );
-      }
-      throw new Error(error.message);
-    }
-      creditId = (cn as { id: string }).id;
-    const { error: lineErr } = await supabase.from("purchase_credit_note_lines" as never).insert(
-      data.lines.map((l, i) => ({
-        company_id: data.companyId,
-        credit_note_id: creditId,
-        line_no: i + 1,
-        description: l.description,
-        account_id: l.accountId,
-        net_minor: l.netMinor,
-        tax_minor: l.taxMinor,
-      })) as never,
-    );
-    if (lineErr) {
-      await supabase
+      const { data: cn, error } = await supabase
         .from("purchase_credit_notes" as never)
-        .delete()
-        .eq("company_id" as never, data.companyId as never)
-        .eq("id" as never, creditId as never)
-        .eq("status" as never, "draft" as never);
-      throw new Error(`Could not save credit note lines: ${lineErr.message}`);
-    }
+        .insert({
+          company_id: data.companyId,
+          contact_id: data.contactId,
+          credit_number: creditNumber,
+          credit_date: data.creditDate,
+          currency_code: data.currencyCode,
+          memo: data.memo,
+          subtotal_minor: subtotal,
+          tax_minor: tax,
+          total_minor: total,
+          status: "draft",
+          created_by: userId,
+          ...(data.fxRateToBase != null ? { fx_rate_to_base: data.fxRateToBase } : {}),
+        } as never)
+        .select("id")
+        .single();
+      if (error) {
+        if (data.fxRateToBase != null && /fx_rate_to_base|schema cache/i.test(error.message)) {
+          throw new Error(
+            "Foreign-currency credit notes need a database update that has not been applied yet.",
+          );
+        }
+        throw new Error(error.message);
+      }
+      creditId = (cn as { id: string }).id;
+      const { error: lineErr } = await supabase.from("purchase_credit_note_lines" as never).insert(
+        data.lines.map((l, i) => ({
+          company_id: data.companyId,
+          credit_note_id: creditId,
+          line_no: i + 1,
+          description: l.description,
+          account_id: l.accountId,
+          net_minor: l.netMinor,
+          tax_minor: l.taxMinor,
+        })) as never,
+      );
+      if (lineErr) {
+        await supabase
+          .from("purchase_credit_notes" as never)
+          .delete()
+          .eq("company_id" as never, data.companyId as never)
+          .eq("id" as never, creditId as never)
+          .eq("status" as never, "draft" as never);
+        throw new Error(`Could not save credit note lines: ${lineErr.message}`);
+      }
     }
 
     if (!data.authorise)

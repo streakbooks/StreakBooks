@@ -106,8 +106,7 @@ function ExpenseDetail() {
     memo: string | null;
     posted_journal_id: string | null;
   };
-  const canVoid =
-    e.status === "paid" && Boolean(e.posted_journal_id) && can("purchases.authorise");
+  const canVoid = e.status === "paid" && Boolean(e.posted_journal_id) && can("purchases.authorise");
 
   return (
     <RecordWorkspace

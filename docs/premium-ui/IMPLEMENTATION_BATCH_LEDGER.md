@@ -40,6 +40,7 @@
 | 44 | Phase 3–4 | Banking owns Spend/Receive Money routes; Expenses shortcuts; routing ownership tests | `feature/premium-ui-batch44-money-routing` | [PR #291](https://github.com/linkbusinessadvisory/LinkBooks/pull/291) → `8fef011c` | banking + expenses + create menu | merged |
 | 45 | Phase 3–4 | Spend Money spreadsheet roll-up; Receive Save & add another; CRM/PM ListWorkspace subnav | `feature/premium-ui-batch45-money-editor-subnav` | [PR #292](https://github.com/linkbusinessadvisory/LinkBooks/pull/292) → `e186afd5` | banking + crm + pm | merged |
 | 46 | Phase 3 | Journal/recurring full-page creates; transfer/product/claim Create destinations; browsing sync | `feature/premium-ui-batch46-create-workflows` | [PR #293](https://github.com/linkbusinessadvisory/LinkBooks/pull/293) → `9a9e6b6f` | accounting + recurring + banking transfers + create registry | merged (CI blocked by org billing; local gates PASS) |
-| 47+ | Phase 4–10 | Remaining +New audit, module DoD, staging runtime evidence | TBD | — | all modules | planned |
+| 47 | Phase 3 | Recurring edit URLs; bank documents New CTA; Create checklist sync | `feature/premium-ui-batch47-create-edit-hardening` | pending | sales/purchases recurring edit + banking docs | in progress |
+| 48+ | Phase 4–10 | Remaining module DoD, staging runtime evidence | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

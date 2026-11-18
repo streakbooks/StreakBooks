@@ -40,3 +40,8 @@ future branches, pull requests and deliveries. Do not access or publish to `rohi
 retired it from this workflow. Work only in the authoritative repository.
 The user's Windows checkout is `D:\MyApp\LinkBooks` and is separate from cloud
 workspaces. Pushing a feature branch does not update `main` or the local checkout.
+
+- Merge without waiting for GitHub Actions when failures are solely org billing /
+  spending-limit (jobs never started). After local gates pass, merge with admin
+  authorization. Do not skip real test/lint failures. Standing instruction from
+  Gulshan (Operations), 2026-11-18 — see `.cursor/rules/merge-without-ci-billing.mdc`.

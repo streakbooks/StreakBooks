@@ -1,21 +1,44 @@
 # Create New checklist
 
-Source of truth: `src/lib/create-new/registry.ts`. All 29 commands stay in the menu. A command opens its flyover only when `availability` is `ready`.
+Source of truth: `src/lib/create-new/registry.ts`. All 29 commands stay in the menu. A command opens when `availability` is `ready` and the role has its permission.
 
-## Enabled
+## Enabled (full-page workspaces)
 
-These open the existing screens and save through the existing organisation services:
+These navigate to dedicated routes (browser history, Back, deep links):
 
-Invoice, quote, receive payment, customer credit note, recurring invoice, customer statement, bill, recurring bill, purchase order, pay bill, expense, supplier credit, reimbursement claim, bank transfer, customer, supplier, product, account.
+| Action | Destination |
+| --- | --- |
+| Invoice | `/sales/invoices/new` |
+| Quote / Estimate | `/sales/quotes/new` |
+| Receive payment | `/sales/receipts/new` |
+| Customer credit note | `/sales/credit-notes/new` |
+| Recurring invoice | `/sales/recurring/new` |
+| Bill | `/purchases/bills/new` |
+| Recurring bill | `/purchases/recurring/new` |
+| Purchase order | `/purchases/orders/new` |
+| Quick payment | `/purchases/payments/new` |
+| Spend money | `/banking/spend-money` |
+| Supplier credit | `/purchases/credit-notes/new` |
+| Expense claim | `/expense-management/my-expenses?create=true` |
+| Receive money | `/banking/receive-money` |
+| Sales receipt / refunds / deposit / card / adjustment | `/banking/money-documents/new?kind=…` |
+| Transfer money | `/banking/transfers/new` |
+| Manual journal | `/accounting/journals/new?mode=post` |
+| Recurring journal | `/accounting/journals/new?mode=template` |
+| Customer / Supplier | `/contacts/new?kind=…` |
+| Product / Service | `/products-services?create=true` |
 
-Recurring bill automatic generation stays unwired. There is no outbound email provider.
+## Enabled (list / tooling / flyover)
+
+| Action | Destination | Notes |
+| --- | --- | --- |
+| Customer statement | `/sales/statements` | Statement tooling page |
+| Chart of account | Flyover `NewAccountPanel` | Also available from Accounting CoA |
+| Project | Flyover `ProjectPanel` | Narrow create |
+| Document upload | Flyover `InboxPanel` | No malware scanner claimed |
 
 ## Held
 
-These stay visible and disabled. Their source remains in the repository. They need `supabase/migrations/20261022210000_create_new_documents.sql` on the database, or a signed-in ledger check, before they can be enabled:
+None. All 29 registry actions have `availability: "ready"`. Permission still gates visibility.
 
-Sales receipt, customer refund, supplier refund, receive money, bank deposit, credit card payment, bank adjustment, manual journal flyover, recurring journal, project, document upload.
-
-Document upload also stays disabled because no malware scanner is configured. Manual journals can still be posted from Accounting.
-
-`20261022210000_create_new_documents` is applied on the linked database. Row level security is on for the new tables. The commands stay disabled until a signed-in save is verified. Do not run a full `supabase db push`: local file `20261022180000_settings_centre_foundation.sql` repeats work already applied under versions `20261022125237` through `20261022125601`.
+Recurring bill automatic generation uses the existing schedule runner; do not invent posting that bypasses approvals.

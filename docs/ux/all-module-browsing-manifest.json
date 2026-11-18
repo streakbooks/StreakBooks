@@ -13,7 +13,7 @@
   "invariant": "Every top-level sidebar item and every authenticated route file must appear exactly once in this manifest. New ones require an explicit coverage entry. Inventory inclusion is not implementation verification.",
   "counts": {
     "sidebarModules": 29,
-    "authenticatedRouteFiles": 163,
+    "authenticatedRouteFiles": 165,
     "supportingRouteFiles": 15
   },
   "acceptanceCriteria": [
@@ -133,6 +133,7 @@
         "sales/receipts.new.tsx",
         "sales/recurring.index.tsx",
         "sales/recurring.new.tsx",
+        "sales/recurring.$id.edit.tsx",
         "sales/reminders.tsx",
         "sales/route.tsx",
         "sales/settings.tsx",
@@ -176,6 +177,7 @@
         "purchases/portal-inbox.tsx",
         "purchases/recurring.index.tsx",
         "purchases/recurring.new.tsx",
+        "purchases/recurring.$id.edit.tsx",
         "purchases/requisitions.tsx",
         "purchases/route.tsx",
         "purchases/settings.tsx",

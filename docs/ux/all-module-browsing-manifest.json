@@ -395,7 +395,8 @@
         "2026-11-17: src/screens/payroll/payments.tsx — payment-detail query failure now renders existing ErrorState with retry calling paymentDetailQ.refetch(); source commit 4d072d4432d5da94ac09bd0772dc6589df691433. SOURCE ONLY; NOT RUN.",
         "2026-11-17: src/screens/payroll/payments.tsx — settlement form settings, outstanding payslips and clearing-account query error messages each provide an inline retry button using their existing refetch methods; source commit 771e402b4175f28f55135ab488c517ce4e4903e8. SOURCE ONLY; NOT RUN.",
         "2026-11-18: src/screens/payroll/payments.tsx adds Refresh details control inside loaded payment dialog, refetching payment detail while retaining open dialog and disabling duplicate refresh during fetch; source commit 918f1cab1384b6bf9eecded2b31ddb7c3ace420f; SOURCE ONLY, NOT RUN.",
-        "2026-11-18: src/screens/payroll/payments.tsx — payment details refresh now announces active refetch through a polite screen-reader status region without changing payment queries or posting; source commit 0eb60648d7479a6f27a144942761e46817aeca68; SOURCE ONLY, NOT RUN."
+        "2026-11-18: src/screens/payroll/payments.tsx — payment details refresh now announces active refetch through a polite screen-reader status region without changing payment queries or posting; source commit 0eb60648d7479a6f27a144942761e46817aeca68; SOURCE ONLY, NOT RUN.",
+        "2026-11-18: src/screens/payroll/payments.tsx — payslip allocations list has an accessible name; commit fa411208b4cd3f56647f3f1448a3b2a48eb96806. SOURCE ONLY; browser/screen-reader tests NOT RUN."
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
@@ -434,7 +435,8 @@
         "Verify payment detail query error/retry with authenticated fixture and accessible dialog focus; inventory guard, TypeScript, lint, unit/browser tests, RLS/accounting regression NOT RUN.",
         "Verify all three settlement form retry actions with injected query failures and accessible keyboard focus; local guard, typecheck, lint, unit, build, authenticated browser, RLS and accounting tests NOT RUN.",
         "Verify in-dialog payment detail refresh (loading state, retry, keyboard focus, RLS and accounting invariants) with authenticated browser; NOT RUN.",
-        "Verify polite live-region announcement during payment detail refresh in authenticated screen-reader/browser tests; guard, TypeScript, lint, unit, build, RLS/accounting regressions NOT RUN."
+        "Verify polite live-region announcement during payment detail refresh in authenticated screen-reader/browser tests; guard, TypeScript, lint, unit, build, RLS/accounting regressions NOT RUN.",
+        "Verify accessible allocation list naming with a screen reader, alongside native payment-detail URL browsing and all 12 acceptance criteria; NOT RUN."
       ]
     },
     {

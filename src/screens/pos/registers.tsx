@@ -111,7 +111,7 @@ function RegisterContent({ companyId, workspace }: { companyId: string; workspac
           return (
             <section
               key={register.id}
-              aria-label={register.name}
+              aria-label={`${register.name} (${register.code})`}
               className="space-y-3 rounded-xl border border-border p-4"
             >
               <h2 className="text-lg font-semibold">{register.name}</h2>

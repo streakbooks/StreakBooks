@@ -36,6 +36,13 @@ SELECT public.test_assert((SELECT expected_cash_minor FROM public.pos_register_s
 SELECT public.test_assert((SELECT count(*)=1 FROM public.pos_sales WHERE sale_operation_id=:'sale_op'::uuid),'one sale row persisted');
 SELECT public.test_assert((SELECT count(*)=3 FROM public.journal_lines j JOIN public.journals x ON x.id=j.journal_id WHERE x.source_type='pos_sale'),'sale posts cash, revenue and tax lines');
 
+SELECT public.test_raises(
+  $q$SELECT public.pos_complete_cash_sale('20000000-0000-4000-8000-000000000001',
+    (SELECT id FROM public.pos_register_sessions WHERE closed_at IS NULL LIMIT 1),
+    '61000000-0000-4000-8000-000000000001',12000,
+    jsonb_build_array(jsonb_build_object('product_id','60000000-0000-4000-8000-000000000001','quantity',1)))$q$,
+  'Sale operation payload differs','conflicting sale replay rejected');
+
 SELECT public.test_assert(
   (public.pos_complete_cash_sale(:'c',
     (SELECT id FROM public.pos_register_sessions WHERE closed_at IS NULL LIMIT 1),

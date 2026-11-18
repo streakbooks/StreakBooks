@@ -15,7 +15,11 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { previewPosCatalogueCart, searchPosCatalogue } from "@/lib/pos/catalogue-quote.functions";
 import { getPosWorkspace } from "@/lib/pos/registers.functions";
-import { completePosCashSale, getPosRecentSales } from "@/lib/pos/cash-sale.functions";
+import {
+  completePosCashSale,
+  getPosRecentSales,
+  refundPosCashSale,
+} from "@/lib/pos/cash-sale.functions";
 import { posCountFromDisplay, type PosSession } from "@/lib/pos/register-contracts";
 import type { PosCashSaleResult } from "@/lib/pos/cash-sale";
 
@@ -51,12 +55,16 @@ function CatalogueCart({ companyId }: { companyId: string }) {
   const [sessionId, setSessionId] = useState("");
   const [tendered, setTendered] = useState("");
   const [checkoutError, setCheckoutError] = useState<unknown>(null);
+  const [refundError, setRefundError] = useState<unknown>(null);
+  const [refundingSaleId, setRefundingSaleId] = useState<string | null>(null);
   const [lastSale, setLastSale] = useState<PosCashSaleResult | null>(null);
   const saleOperation = useRef<{ payload: string; id: string } | null>(null);
+  const refundOperations = useRef(new Map<string, string>());
   const lookup = useServerFn(searchPosCatalogue);
   const preview = useServerFn(previewPosCatalogueCart);
   const workspaceFn = useServerFn(getPosWorkspace);
   const completeSale = useServerFn(completePosCashSale);
+  const refundSale = useServerFn(refundPosCashSale);
   const recentFn = useServerFn(getPosRecentSales);
   const client = useQueryClient();
   const workspace = useQuery({
@@ -85,12 +93,14 @@ function CatalogueCart({ companyId }: { companyId: string }) {
   const recentSales = useQuery({
     queryKey: ["pos-recent-sales", companyId],
     queryFn: () => recentFn({ data: { companyId } }),
-    enabled: workspace.data?.canSell === true,
+    enabled: workspace.data?.canSell === true || workspace.data?.canRefund === true,
     gcTime: 0,
   });
   const openSessions = workspace.data?.openSessions ?? [];
   const selectedSession: PosSession | undefined = openSessions.find((row) => row.id === sessionId);
   const canCheckout = workspace.data?.canSell && openSessions.length > 0 && selectedSession;
+  const canRefundRecent =
+    workspace.data?.canRefund === true && openSessions.length > 0;
   useEffect(() => {
     if (openSessions.length === 1) setSessionId(openSessions[0]!.id);
     if (openSessions.length === 0) setSessionId("");
@@ -117,6 +127,33 @@ function CatalogueCart({ companyId }: { companyId: string }) {
       saleOperation.current = null;
       await client.invalidateQueries({ queryKey: workspaceKey(companyId) });
       await client.invalidateQueries({ queryKey: ["pos-recent-sales", companyId] });
+    },
+  });
+  const refundMutation = useMutation({
+    mutationFn: (saleId: string) => {
+      let operationId = refundOperations.current.get(saleId);
+      if (!operationId) {
+        operationId = crypto.randomUUID();
+        refundOperations.current.set(saleId, operationId);
+      }
+      return refundSale({
+        data: { companyId, saleId, operationId },
+      });
+    },
+    onMutate: (saleId) => {
+      setRefundError(null);
+      setRefundingSaleId(saleId);
+    },
+    onSuccess: async () => {
+      setRefundError(null);
+      await client.invalidateQueries({ queryKey: workspaceKey(companyId) });
+      await client.invalidateQueries({ queryKey: ["pos-recent-sales", companyId] });
+    },
+    onError: (failure) => {
+      setRefundError(failure);
+    },
+    onSettled: () => {
+      setRefundingSaleId(null);
     },
   });
   function add(productId: string, name: string) {
@@ -346,19 +383,34 @@ function CatalogueCart({ companyId }: { companyId: string }) {
                   <p>Calculating current prices…</p>
                 ) : quote.isSuccess ? (
                   <>
-                    <p>
-                      Currency: {quote.data.currency} · Tax {quote.data.treatment}
-                    </p>
-                    <dl className="mt-3 grid grid-cols-2 gap-2">
-                      <dt>Before tax</dt>
-                      <dd>{fromMinorUnits(BigInt(quote.data.netMinor), quote.data.currency)}</dd>
-                      <dt>Tax</dt>
-                      <dd>{fromMinorUnits(BigInt(quote.data.taxMinor), quote.data.currency)}</dd>
-                      <dt className="font-semibold">Total</dt>
-                      <dd className="font-semibold">
-                        {fromMinorUnits(BigInt(quote.data.grossMinor), quote.data.currency)}
-                      </dd>
-                    </dl>
+                    <section aria-label="Cart price breakdown" className="space-y-2">
+                      <p className="text-sm font-medium">Itemised price preview</p>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        {quote.data.lines.map((line) => (
+                          <li key={`${line.productId}-${line.quantity}`}>
+                            {line.code ?? "No SKU"} · {line.quantity} ×{" "}
+                            {fromMinorUnits(BigInt(line.unitPriceMinor), quote.data.currency)}
+                            <span className="block">
+                              Line net {fromMinorUnits(BigInt(line.netMinor), quote.data.currency)} ·
+                              Line tax {fromMinorUnits(BigInt(line.taxMinor), quote.data.currency)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p>
+                        Currency: {quote.data.currency} · Tax {quote.data.treatment}
+                      </p>
+                      <dl className="mt-3 grid grid-cols-2 gap-2">
+                        <dt>Before tax</dt>
+                        <dd>{fromMinorUnits(BigInt(quote.data.netMinor), quote.data.currency)}</dd>
+                        <dt>Tax</dt>
+                        <dd>{fromMinorUnits(BigInt(quote.data.taxMinor), quote.data.currency)}</dd>
+                        <dt className="font-semibold">Total</dt>
+                        <dd className="font-semibold">
+                          {fromMinorUnits(BigInt(quote.data.grossMinor), quote.data.currency)}
+                        </dd>
+                      </dl>
+                    </section>
                     {canCheckout ? (
                       <form onSubmit={submitSale} className="mt-4 space-y-3">
                         <div>
@@ -427,11 +479,39 @@ function CatalogueCart({ companyId }: { companyId: string }) {
           {recentSales.data && recentSales.data.length > 0 ? (
             <section aria-label="Recent sales" className="space-y-2">
               <h3 className="font-semibold">Recent sales</h3>
-              <ul className="space-y-1 text-sm">
+              <p className="text-sm text-muted-foreground">
+                Full cash refunds only. A refund needs an open register session on the till that
+                recorded the sale.
+              </p>
+              {refundError ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {friendlyAuthError(refundError)}
+                </p>
+              ) : null}
+              <ul className="space-y-2 text-sm">
                 {recentSales.data.map((sale) => (
-                  <li key={sale.id}>
-                    {new Date(sale.createdAt).toLocaleString()} · {sale.status} ·{" "}
-                    {fromMinorUnits(BigInt(sale.totalMinor), displayCurrency)}
+                  <li
+                    key={sale.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3"
+                  >
+                    <span>
+                      {new Date(sale.createdAt).toLocaleString()} · {sale.status} ·{" "}
+                      {fromMinorUnits(BigInt(sale.totalMinor), displayCurrency)}
+                    </span>
+                    {canRefundRecent && sale.status === "completed" ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-11"
+                        disabled={refundMutation.isPending}
+                        aria-label={`Refund sale ${fromMinorUnits(BigInt(sale.totalMinor), displayCurrency)}`}
+                        onClick={() => refundMutation.mutate(sale.id)}
+                      >
+                        {refundingSaleId === sale.id && refundMutation.isPending
+                          ? "Refunding…"
+                          : "Refund"}
+                      </Button>
+                    ) : null}
                   </li>
                 ))}
               </ul>

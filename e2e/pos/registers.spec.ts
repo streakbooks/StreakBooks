@@ -14,7 +14,7 @@ for (const width of [1440, 768, 390]) {
     await chooseLookup(page, "Location", "City Store (CITY)");
     await chooseLookup(page, "Cash asset account", "1000 · Till cash");
     await page.getByRole("button", { name: "Create register", exact: true }).click();
-    const register = page.getByRole("region", { name: "Front Counter" });
+    const register = page.getByRole("region", { name: "Front Counter (TILL-1)" });
     await expect(register).toBeVisible();
     await chooseLookup(page, "Access location", "City Store");
     await chooseLookup(page, "Company member", "Cashier One (cashier@example.test)");

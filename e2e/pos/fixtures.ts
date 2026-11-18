@@ -232,3 +232,24 @@ export async function getPosRecentSales() {
     createdAt: sale.created_at,
   }));
 }
+export async function refundPosCashSale({
+  data,
+}: {
+  data: { companyId: string; saleId: string; operationId: string };
+}) {
+  const sale = recentSales.find((row) => row.id === data.saleId);
+  if (!sale || sale.status !== "completed") throw new Error("Sale unavailable for refund");
+  const session = workspace.openSessions[0];
+  if (!session) throw new Error("Session unavailable");
+  sale.status = "refunded";
+  session.expected_cash_minor = (
+    BigInt(session.expected_cash_minor) - BigInt(sale.total_minor)
+  ).toString();
+  return {
+    refundId: crypto.randomUUID(),
+    saleId: data.saleId,
+    amountMinor: sale.total_minor,
+    expectedCashMinor: session.expected_cash_minor,
+    journalId: crypto.randomUUID(),
+  };
+}

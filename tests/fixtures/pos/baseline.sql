@@ -32,7 +32,7 @@ INSERT INTO public.company_members VALUES
  ('20000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000004','active');
 INSERT INTO public.test_permissions SELECT '20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001',p FROM unnest(ARRAY['pos.view','pos.settings.manage','pos.register.open','pos.register.close','pos.cash.count','pos.audit.view','members.view','pos.sale.create','pos.cash.adjust','pos.refund.create']) p;
 INSERT INTO public.test_permissions SELECT '20000000-0000-4000-8000-000000000001', u::uuid,p FROM unnest(ARRAY['10000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000003']) u CROSS JOIN unnest(ARRAY['pos.view','pos.register.open','pos.register.close','pos.cash.count']) p;
-INSERT INTO public.test_permissions SELECT '20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002','pos.sale.create';
+INSERT INTO public.test_permissions SELECT '20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002',p FROM unnest(ARRAY['pos.sale.create','pos.refund.create','pos.cash.adjust']) p;
 INSERT INTO public.hr_locations(id,company_id,code,name) VALUES
  ('30000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','ONE','Store One'),
  ('30000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000002','TWO','Store Two');

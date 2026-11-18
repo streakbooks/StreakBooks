@@ -601,6 +601,16 @@ BEGIN
 
   SELECT coalesce(prices_include_tax, false) INTO _inclusive FROM public.company_tax_settings WHERE company_id = _company_id;
   _cash_acct := _r.cash_account_id;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.accounts a
+    JOIN public.companies c ON c.id = a.company_id
+    WHERE a.company_id = _company_id AND a.id = _cash_acct
+      AND a.is_active AND a.is_postable AND a.archived_at IS NULL
+      AND a.account_type = 'asset' AND a.account_kind IN ('bank', 'current_asset')
+      AND (a.currency_code IS NULL OR a.currency_code = c.base_currency)
+  ) THEN
+    RAISE EXCEPTION 'Register cash mapping is no longer valid' USING ERRCODE = '22023';
+  END IF;
 
   DROP TABLE IF EXISTS _pos_sale_work;
   CREATE TEMP TABLE _pos_sale_work (
@@ -632,6 +642,14 @@ BEGIN
     END IF;
     IF _product.income_account_id IS NULL THEN
       RAISE EXCEPTION 'Product missing income account on line %', _line_no USING ERRCODE = '22023';
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM public.accounts a
+      WHERE a.company_id = _company_id AND a.id = _product.income_account_id
+        AND a.is_active AND a.is_postable AND a.archived_at IS NULL
+        AND a.account_type = 'income'
+    ) THEN
+      RAISE EXCEPTION 'Product income account is not postable on line %', _line_no USING ERRCODE = '22023';
     END IF;
     SELECT * INTO _tax_line FROM private.pos_compute_tax_line(
       _qty, _product.sales_price_minor, 0, _product.sales_tax_rate_bps, _inclusive);

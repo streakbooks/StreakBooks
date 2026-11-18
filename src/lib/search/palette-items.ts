@@ -107,6 +107,14 @@ const CREATE: PaletteAction[] = [
     search: { create: "true" },
   },
   {
+    id: "new-fixed-asset",
+    group: "Create",
+    label: "New fixed asset",
+    keywords: "register asset capitalise depreciation",
+    href: "/fixed-assets",
+    search: { create: "true" },
+  },
+  {
     id: "new-receive-payment",
     group: "Create",
     label: "Receive customer payment",

@@ -140,6 +140,8 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
         return <m.ProductsPage forceCreate />;
       };
     }
+    case "fixed_asset":
+      throw new Error("Fixed asset opens at /fixed-assets?create=true");
     case "account": {
       const m = await import("@/components/create-new/NewAccountPanel");
       return m.NewAccountPanel;

@@ -272,12 +272,15 @@
         "src/lib/documents/files-navigation.ts — validated list/search/filter/folder/file/deep-link parameters",
         "src/routes/_authenticated/files.tsx — native folder/document-review links, URL-backed search/type/sort/view/pagination and preserved preview context",
         "src/lib/documents/files-navigation.test.ts — 7 unit cases WRITTEN, NOT RUN",
-        "e2e/files-native-browsing.spec.ts — 3 browser scenarios WRITTEN, NOT RUN"
+        "e2e/files-native-browsing.spec.ts — 3 browser scenarios WRITTEN, NOT RUN",
+        "2026-11-18: src/lib/documents/files-navigation.ts trims URL-restored Files search, rejects invisible/control characters, preserves unrelated filters; code commit 91dfacb202ba895bad4e9e1e96bc4bbf22767af4; SOURCE ONLY, NOT RUN.",
+        "2026-11-18: src/lib/documents/files-navigation.test.ts adds whitespace, boundary, Unicode and control regressions; test commit 531d8901d9bf4f5e1eb5107929ab9b4fc0231101; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Run actual app typecheck, lint, build, Vitest and authenticated Playwright",
         "Review folder actions, document uploads, previews and selection permissions with seeded data",
-        "Verify folder navigation, large lists, mobile, keyboard and performance on staging"
+        "Verify folder navigation, large lists, mobile, keyboard and performance on staging",
+        "Execute Files search regression, inventory guard, typecheck, lint, build, authenticated browser and RLS/accounting verification; NOT RUN."
       ]
     },
     {

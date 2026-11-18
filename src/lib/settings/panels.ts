@@ -91,8 +91,8 @@ function dedupeSettingsTrail(trail: SettingsPanelId[]): SettingsPanelId[] {
 export function settingsPanelTrail(value: unknown): SettingsPanelId[] {
   return Array.isArray(value) &&
     value.length <= 8 &&
-    value.every((id) => parseSettingsPanel(id) !== undefined)
-    ? (value as SettingsPanelId[])
+    Array.from(value).every((id) => parseSettingsPanel(id) !== undefined)
+    ? (Array.from(value) as SettingsPanelId[])
     : [];
 }
 export function openSettingsPanel(

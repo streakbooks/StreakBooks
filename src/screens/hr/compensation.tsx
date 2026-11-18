@@ -145,6 +145,22 @@ export function HrCompensationPage() {
         <EmptyState
           title="No compensation proposals"
           description="Propose adjustments for Payroll to apply through approved handoff."
+          action={
+            <Button
+              size="sm"
+              type="button"
+              onClick={() => {
+                setEmployeeId("");
+                setEffectiveOn(new Date().toISOString().slice(0, 10));
+                setAmount("0");
+                setStatus("proposed");
+                setNotes("");
+                setOpen(true);
+              }}
+            >
+              Propose change
+            </Button>
+          }
         />
       ) : (
         <TableCard>

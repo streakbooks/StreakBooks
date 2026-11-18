@@ -232,6 +232,13 @@ export function PmOwnersPage() {
             <EmptyState
               title="No owners linked"
               description="Link a contact as an owner to assign ownership shares."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    Link owner
+                  </Button>
+                ) : undefined
+              }
             />
           ) : null}
           {owners.data && owners.data.length > 0 ? (

@@ -86,3 +86,11 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | CRM territories empty | New territory CTA |
 | PM properties / units / tenants empty | New property / unit / Link tenant CTAs |
 
+## Batch 59 (empty CTA wave 2)
+
+| Gap | Action |
+| --- | --- |
+| HR leave / shifts / transfers / relations / offboarding / recruitment / holidays / compensation | EmptyState actions mirror header create controls |
+| PM leases / owners / agreements / payouts / statements / reservations | EmptyState New/Link/Generate CTAs |
+| CRM campaigns | EmptyState New campaign CTA |
+

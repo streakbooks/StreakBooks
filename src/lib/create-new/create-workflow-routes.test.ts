@@ -53,13 +53,17 @@ describe("create workflow routes (Batch 46)", () => {
     }
   });
 
-  it("documents product and expense-claim Create deep-link owners (CreateNewMenu appends create=true)", () => {
+  it("documents product /new and expense-claim Create deep-link owners", () => {
     const product = CREATE_ACTIONS.find((a) => a.id === "product");
     const claim = CREATE_ACTIONS.find((a) => a.id === "reimbursement");
-    expect(product?.route).toBe("/products-services");
+    expect(product?.route).toBe("/products-services/new");
     expect(claim?.route).toBe("/expense-management/my-expenses");
     expect(opensCreateAsFullPage(product!)).toBe(true);
     expect(opensCreateAsFullPage(claim!)).toBe(true);
+  });
+
+  it("names account create New Account (not Chart of account)", () => {
+    expect(CREATE_ACTIONS.find((a) => a.id === "account")?.label).toBe("New Account");
   });
 
   it("opens sales order create on the dedicated /new workspace", () => {

@@ -137,11 +137,19 @@ function FixedAssetsPage() {
   useEffect(() => {
     if (!forceCreate || !canManage) return;
     setDialog({ kind: "asset", editing: null, fromBillLine: null });
-    void navigate({
-      search: (prev) => ({ ...prev, create: undefined }),
-      replace: true,
-    });
-  }, [forceCreate, canManage, navigate]);
+    // Keep ?create=true sticky until the New asset workspace closes (refresh-safe).
+  }, [forceCreate, canManage]);
+
+  function dismissDialog() {
+    const wasCreateAsset = dialog?.kind === "asset" && !dialog.editing && forceCreate;
+    setDialog(null);
+    if (wasCreateAsset) {
+      void navigate({
+        search: (prev) => ({ ...prev, create: undefined }),
+        replace: true,
+      });
+    }
+  }
   const [assetSearch, setAssetSearch] = useState("");
   const [assetStatus, setAssetStatus] = useState<"all" | "active" | "disposed">("all");
   const [assetTypeId, setAssetTypeId] = useState("");
@@ -238,7 +246,7 @@ function FixedAssetsPage() {
         key={dialog.fromBillLine?.lineId ?? "new"}
         open
         layout="workspace"
-        onOpenChange={(o) => !o && setDialog(null)}
+        onOpenChange={(o) => !o && dismissDialog()}
         companyId={companyId}
         currency={currency}
         accounts={d.accounts}

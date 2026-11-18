@@ -22,10 +22,11 @@ Automated guard: `src/lib/create-new/create-workflow-routes.test.ts` + `menu.tes
 Remaining non-`/new` destinations that are intentional (list/tooling, not complex accounting create):
 
 - `customer_statement` → `/sales/statements`
-- `reimbursement` → `/expense-management/my-expenses`
-- `bank_transfer` → `/banking/transfers`
-- `product` → `/products-services`
-- `account` → `/accounting` (flyover CoA still primary)
+- `reimbursement` → `/expense-management/my-expenses` (`?create=true`)
+- `bank_transfer` → `/banking/transfers/new` (dedicated create; list is history)
+- `product` → `/products-services/new` (Batch 55)
+- `fixed_asset` → `/fixed-assets?create=true` (sticky until workspace closes; Batch 55)
+- `account` → `/accounting` flyover; label **New Account** (Batch 55)
 - `project` → `/projects` (flyover)
 - `document_upload` → flyover only
 
@@ -74,9 +75,16 @@ Remaining non-`/new` destinations that are intentional (list/tooling, not comple
 - Payroll employee/run create → RecordWorkspace.
 - CRM opportunities/activities empty New CTAs.
 
+## Batch 55 follow-ups (directive gap consolidation)
+
+- Account CREATE label → **New Account**.
+- Dedicated `/products-services/new`; list `?create=true` stays until Cancel/Save.
+- Fixed asset `?create=true` sticky until New asset workspace closes.
+- Consolidated tracker: `docs/premium-ui/DIRECTIVE_V2_GAP_MATRIX.md`.
+
 ## Still deferred
 
 - Authenticated Playwright create-flow smoke (blocked without staging E2E credentials).
 - Multi-account Spend/Receive allocation lines (posting engine constraint).
-- Dedicated `/fixed-assets/new` and `/products-services/new` URL routes (workspace via `?create=true` / in-page state for now).
+- Optional dedicated `/fixed-assets/new` (sticky `?create=true` is addressable; extract only if needed).
 - Module finished-screen DoD (0/34 COMPLETE).

@@ -13,7 +13,7 @@
   "invariant": "Every top-level sidebar item and every authenticated route file must appear exactly once in this manifest. New ones require an explicit coverage entry. Inventory inclusion is not implementation verification.",
   "counts": {
     "sidebarModules": 29,
-    "authenticatedRouteFiles": 166,
+    "authenticatedRouteFiles": 167,
     "supportingRouteFiles": 15
   },
   "acceptanceCriteria": [
@@ -78,8 +78,8 @@
         "banking/import.tsx",
         "banking/index.tsx",
         "banking/journal.$journalId.tsx",
-        "banking/money-documents.tsx",
         "banking/money-documents.new.tsx",
+        "banking/money-documents.tsx",
         "banking/receive-money.tsx",
         "banking/reconcile.tsx",
         "banking/reconciliation-report.$sessionId.tsx",
@@ -132,9 +132,9 @@
         "sales/receipts.$receiptId.tsx",
         "sales/receipts.index.tsx",
         "sales/receipts.new.tsx",
+        "sales/recurring.$id.edit.tsx",
         "sales/recurring.index.tsx",
         "sales/recurring.new.tsx",
-        "sales/recurring.$id.edit.tsx",
         "sales/reminders.tsx",
         "sales/route.tsx",
         "sales/settings.tsx",
@@ -176,9 +176,9 @@
         "purchases/payments.index.tsx",
         "purchases/payments.new.tsx",
         "purchases/portal-inbox.tsx",
+        "purchases/recurring.$id.edit.tsx",
         "purchases/recurring.index.tsx",
         "purchases/recurring.new.tsx",
-        "purchases/recurring.$id.edit.tsx",
         "purchases/requisitions.tsx",
         "purchases/route.tsx",
         "purchases/settings.tsx",
@@ -268,7 +268,8 @@
       "label": "Products & Services",
       "href": "/products-services",
       "routeFiles": [
-        "products-services.tsx"
+        "products-services.index.tsx",
+        "products-services.new.tsx"
       ],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,

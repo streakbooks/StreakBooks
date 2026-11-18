@@ -28,15 +28,15 @@ These navigate to dedicated routes (browser history, Back, deep links):
 | Manual journal | `/accounting/journals/new?mode=post` |
 | Recurring journal | `/accounting/journals/new?mode=template` |
 | Customer / Supplier | `/contacts/new?kind=…` |
-| Product / Service | `/products-services?create=true` (RecordWorkspace create) |
-| Fixed asset | `/fixed-assets?create=true` |
+| Product / Service | `/products-services/new` (RecordWorkspace create; list `?create=true` also sticky) |
+| Fixed asset | `/fixed-assets?create=true` (sticky until workspace closes) |
 
 ## Enabled (list / tooling / flyover)
 
 | Action | Destination | Notes |
 | --- | --- | --- |
 | Customer statement | `/sales/statements` | Statement tooling page |
-| Chart of account | Flyover `NewAccountPanel` | Also available from Accounting CoA |
+| New Account | Flyover CoA / `IndustryCoaPanel` | Label per Master Directive V2 addendum |
 | Project | Flyover `ProjectPanel` | Narrow create |
 | Document upload | Flyover `InboxPanel` | No malware scanner claimed |
 

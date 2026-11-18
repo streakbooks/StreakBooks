@@ -6,6 +6,8 @@ import type { BankTxnListRow } from "@/lib/banking/banking.functions";
 import { cn } from "@/lib/utils";
 
 type Props = {
+  canCategorise: boolean;
+  canReconcile: boolean;
   rows: BankTxnListRow[];
   selected: ReadonlySet<string>;
   density: "compact" | "comfortable";
@@ -24,6 +26,8 @@ type Props = {
  * Financial actions switch to the original table workflow; no second posting surface.
  */
 export function BankTransactionMobileCards({
+  canCategorise,
+  canReconcile,
   rows,
   selected,
   density,
@@ -80,7 +84,7 @@ export function BankTransactionMobileCards({
             ) : null}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
-            {txn.status === "uncategorised" ? (
+            {canCategorise && txn.status === "uncategorised" ? (
               <label className="mr-auto flex min-h-9 cursor-pointer items-center gap-2 text-xs">
                 <Checkbox
                   checked={selected.has(txn.id)}
@@ -102,26 +106,30 @@ export function BankTransactionMobileCards({
             </Button>
             {txn.status === "uncategorised" ? (
               <>
-                <Button type="button" size="sm" onClick={() => onReview(txn.id, "code")}>
-                  Code
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onReview(txn.id, "match")}
-                >
-                  Match
-                </Button>
+                {canCategorise ? (
+                  <Button type="button" size="sm" onClick={() => onReview(txn.id, "code")}>
+                    Code
+                  </Button>
+                ) : null}
+                {canReconcile ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onReview(txn.id, "match")}
+                  >
+                    Match
+                  </Button>
+                ) : null}
               </>
             ) : txn.status === "reconciled" ? (
               <span className="text-xs text-muted-foreground">Reopen reconciliation to change</span>
-            ) : (
+            ) : canCategorise ? (
               <Button type="button" variant="outline" size="sm" onClick={() => onManage(txn.id)}>
                 <ListChecks className="size-4" aria-hidden />
                 Manage
               </Button>
-            )}
+            ) : null}
           </div>
         </article>
       ))}

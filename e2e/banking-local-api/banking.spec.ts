@@ -6,9 +6,11 @@ type Fixture = {
   api_url: string;
   anon_key: string;
   company_id: string;
+  other_company_id: string;
+  reader: { email: string; password: string; access_token: string };
   bank_id: string;
   transaction_ids: string[];
-  owner: { email: string; password: string; access_token: string };
+  owner: { id: string; email: string; password: string; access_token: string };
 };
 const fixture = JSON.parse(readFileSync(path, "utf8")) as Fixture;
 if (
@@ -45,15 +47,22 @@ async function transaction(amount: number) {
   writeFileSync(path, JSON.stringify(fixture), { mode: 0o600 });
   return id;
 }
-async function openCode(page: Page, id: string) {
+async function signIn(
+  page: Page,
+  id: string,
+  user: Pick<Fixture["owner"], "email" | "password"> = fixture.owner,
+) {
   await page.goto(
     "/auth?redirect=" + encodeURIComponent("/banking/transactions?transactionId=" + id),
     { timeout: 120_000 },
   );
-  await page.locator("#signin-email").fill(fixture.owner.email);
-  await page.locator("#signin-password").fill(fixture.owner.password);
+  await page.locator("#signin-email").fill(user.email);
+  await page.locator("#signin-password").fill(user.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL(/\/banking\/transactions/, { timeout: 90_000 });
+}
+async function openCode(page: Page, id: string) {
+  await signIn(page, id);
   await page.getByRole("button", { name: "Code", exact: true }).first().click();
   await expect(page.getByRole("button", { name: "Use suggestion", exact: true })).toBeVisible({
     timeout: 60_000,
@@ -96,6 +105,10 @@ test("signed-in Banking → feedback → authoritative posting → persisted lea
     `bank_coding_events?company_id=eq.${fixture.company_id}&bank_transaction_id=eq.${id}&select=id,journal_id`,
   )) as Array<{ id: string; journal_id: string }>;
   expect(events).toHaveLength(1);
+  const audits = await api(
+    `audit_events?company_id=eq.${fixture.company_id}&entity_id=eq.${id}&action=eq.bank_transaction.coded&select=id`,
+  );
+  expect(audits).toHaveLength(1);
   const feedback = (await api(
     `bank_coding_feedback?company_id=eq.${fixture.company_id}&bank_transaction_id=eq.${id}&journal_id=eq.${events[0]!.journal_id}&select=state`,
   )) as Array<{ state: string }>;
@@ -109,6 +122,107 @@ test("signed-in Banking → feedback → authoritative posting → persisted lea
   await page.reload();
   await expect(page.getByRole("button", { name: "Code", exact: true })).toHaveCount(0);
 });
+
+test("retry after a lost feedback response reuses the committed request instead of duplicating feedback", async ({
+  page,
+}) => {
+  const id = await transaction(13200);
+  await openCode(page, id);
+  await page.getByText("Supporting history and preferences", { exact: true }).click();
+  let dropped = 0;
+  await page.route("**/_serverFn/**", async (route) => {
+    const body = route.request().postData() ?? "";
+    if (
+      dropped < 2 &&
+      route.request().method() === "POST" &&
+      body.includes(id) &&
+      body.includes("rejected")
+    ) {
+      dropped += 1;
+      const response = await route.fetch();
+      expect(response.ok()).toBe(true);
+      await route.abort("failed");
+    } else await route.continue();
+  });
+  await page.getByRole("button", { name: "Reject", exact: true }).click();
+  await expect.poll(() => dropped).toBe(2);
+  const retry = page.getByRole("button", { name: "Retry", exact: true });
+  await expect(retry).toBeVisible();
+  const path = `bank_coding_feedback?company_id=eq.${fixture.company_id}&bank_transaction_id=eq.${id}&select=id,request_id,state`;
+  const committed = await api(path);
+  expect(committed).toHaveLength(1);
+  expect(committed[0].state).toBe("rejected");
+  await retry.click();
+  await expect(
+    page.getByText("Last feedback: rejected (selection only).", { exact: true }),
+  ).toBeVisible();
+  expect(await api(path)).toEqual(committed);
+});
+
+test("switching real organisations discards prior-company coding evidence and persists the active company", async ({
+  page,
+}) => {
+  const id = await transaction(13100);
+  await openCode(page, id);
+  const first = "Organisation: Isolated Coding Memory Readiness. Switch organisation";
+  const second = "Organisation: Isolated Empty Switch Target. Switch organisation";
+  await page.getByRole("button", { name: first, exact: true }).click();
+  await page.getByRole("menuitem", { name: "Isolated Empty Switch Target", exact: true }).click();
+  await expect(page.getByRole("button", { name: second, exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByRole("button", { name: "Use suggestion", exact: true })).toHaveCount(0);
+  await expect
+    .poll(
+      async () =>
+        (await api(`profiles?id=eq.${fixture.owner.id}&select=last_company_id`))[0].last_company_id,
+    )
+    .toBe(fixture.other_company_id);
+  await page.reload();
+  await expect(page.getByRole("button", { name: second, exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByRole("button", { name: "Use suggestion", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: second, exact: true }).click();
+  await page
+    .getByRole("menuitem", { name: "Isolated Coding Memory Readiness", exact: true })
+    .click();
+  await expect(page.getByRole("button", { name: first, exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect
+    .poll(
+      async () =>
+        (await api(`profiles?id=eq.${fixture.owner.id}&select=last_company_id`))[0].last_company_id,
+    )
+    .toBe(fixture.company_id);
+});
+
+for (const width of [1280, 375]) {
+  test(`real read-only member retains inspection without financial controls at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 800 });
+    const id = await transaction(13400);
+    await signIn(page, id, fixture.reader);
+    await expect(page.getByRole("heading", { name: "For review", exact: true })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByText("Readiness Cloud Hosting", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Code", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Post", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Match", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Code selected", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /More actions for transaction/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Manage", exact: true })).toHaveCount(0);
+    await expect(
+      page.getByRole("button", {
+        name: "Preview transaction Readiness Cloud Hosting",
+        exact: true,
+      }),
+    ).toBeVisible();
+  });
+}
 
 for (const viewport of [
   { width: 768, height: 1024 },

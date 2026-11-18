@@ -659,7 +659,9 @@
         "2026-11-18: src/lib/settings/panels.ts rejects malformed runtime openSettingsPanel targets without changing URL state; code commit 89d051fc2fb770acd30c8e25785c529306b6010f; SOURCE ONLY, NOT RUN.",
         "2026-11-18: src/lib/settings/panels.test.ts adds invalid runtime target and valid nested return regression; commit df65d56ad367e77188b439135a80ae8866631208; WRITTEN, NOT RUN.",
         "2026-11-18: src/lib/settings/panels.ts persists the allowlist-validated safePanel rather than the untrusted argument; commit 7b1cb44dd65bccc05a4b08a3d31b1b91ff33e589; SOURCE ONLY, NOT RUN.",
-        "2026-11-18: src/lib/settings/panels.test.ts adds validated panel, URL search retention and contextual close regression; commit f3a4e87d972a2a51dd2d9037ceb1a8732ae3b761; WRITTEN, NOT RUN."
+        "2026-11-18: src/lib/settings/panels.test.ts adds validated panel, URL search retention and contextual close regression; commit f3a4e87d972a2a51dd2d9037ceb1a8732ae3b761; WRITTEN, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.ts rejects prototype-inherited slots in refreshable Settings navigation history; commit fddfb10594f6d1e787d10d4dbef850d6df8e5ebf; SOURCE ONLY, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.test.ts adds inherited-slot deep-link regression; commit 0f241f463c3bf9e5c903266c1fdc321ad0732db8; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Verify plan deep links, billing redirects, Back/Forward, permissions, and valid existing plan identifiers with authenticated fixtures",

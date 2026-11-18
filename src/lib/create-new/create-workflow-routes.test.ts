@@ -52,4 +52,13 @@ describe("create workflow routes (Batch 46)", () => {
       expect(action?.id).not.toBe("expense");
     }
   });
+
+  it("documents product and expense-claim Create deep-link owners (CreateNewMenu appends create=true)", () => {
+    const product = CREATE_ACTIONS.find((a) => a.id === "product");
+    const claim = CREATE_ACTIONS.find((a) => a.id === "reimbursement");
+    expect(product?.route).toBe("/products-services");
+    expect(claim?.route).toBe("/expense-management/my-expenses");
+    expect(opensCreateAsFullPage(product!)).toBe(true);
+    expect(opensCreateAsFullPage(claim!)).toBe(true);
+  });
 });

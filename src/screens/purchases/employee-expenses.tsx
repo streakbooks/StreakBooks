@@ -1,29 +1,27 @@
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useState } from "react";
 
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import { listAccounts } from "@/lib/accounting/accounting.functions";
 import {
   approveAndReimburseClaim,
   listEmployeeClaims,
   listPaymentAccounts,
   rejectEmployeeClaim,
-  submitEmployeeClaim,
 } from "@/lib/purchases/purchases.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { AccountLookup } from "@/components/lookup";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -34,28 +32,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+/**
+ * Legacy employee-expense claims list / approve path.
+ * New claim creation is owned by Expense Management → My Expenses.
+ */
 export function EmployeeExpensesPage() {
   const { company } = useActiveCompany();
   const queryClient = useQueryClient();
   const fetchClaims = useServerFn(listEmployeeClaims);
-  const fetchAccounts = useServerFn(listAccounts);
   const fetchPaymentAccounts = useServerFn(listPaymentAccounts);
   const { can } = useCan();
-  const submit = useServerFn(submitEmployeeClaim);
   const approve = useServerFn(approveAndReimburseClaim);
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
-  const today = new Date().toISOString().slice(0, 10);
 
   const claimsQ = useQuery({
     queryKey: ["claims", companyId],
     enabled: Boolean(companyId),
     queryFn: () => fetchClaims({ data: { companyId: companyId! } }),
-  });
-  const accountsQ = useQuery({
-    queryKey: ["accounts", companyId],
-    enabled: Boolean(companyId),
-    queryFn: () => fetchAccounts({ data: { companyId: companyId! } }),
   });
 
   const paymentAccountsQ = useQuery({
@@ -63,45 +57,8 @@ export function EmployeeExpensesPage() {
     enabled: Boolean(companyId) && can("expenses.approve"),
     queryFn: () => fetchPaymentAccounts({ data: { companyId: companyId! } }),
   });
-  const [tax, setTax] = useState("0.00");
-  const [description, setDescription] = useState("");
-  const [claimDate, setClaimDate] = useState(today);
-  const [expenseAccountId, setExpenseAccountId] = useState("");
-  const [amount, setAmount] = useState("0.00");
   const [paymentAccountId, setPaymentAccountId] = useState("");
 
-  const accounts = (accountsQ.data ?? []) as Array<{
-    id: string;
-    code: string;
-    name: string;
-    account_type: string;
-    is_postable: boolean;
-    is_active: boolean;
-  }>;
-
-  const submitMutation = useMutation({
-    mutationFn: () =>
-      submit({
-        data: {
-          companyId: companyId!,
-          claimDate,
-          description,
-          expenseAccountId,
-          currencyCode: currency,
-          amountMinor: Number(parseMinorOrThrow(amount || "0", currency, "Amount")),
-          taxMinor: Number(parseMinorOrThrow(tax || "0", currency, "Tax")),
-        },
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["claims", companyId] });
-      toast.success("Claim submitted");
-      setDescription("");
-    },
-    onError: (e) => toast.error(friendlyAuthError(e)),
-  });
-
-  const amountInvalid = tryParseMinor(amount || "0", currency) === null;
-  const taxInvalid = tryParseMinor(tax || "0", currency) === null;
   const doReject = useServerFn(rejectEmployeeClaim);
 
   const approveMutation = useMutation({
@@ -123,7 +80,7 @@ export function EmployeeExpensesPage() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  const requiredQueries = [accountsQ, paymentAccountsQ];
+  const requiredQueries = [paymentAccountsQ];
   if (requiredQueries.some((query) => query.isError && query.data === undefined))
     return <QueryErrorState queries={requiredQueries} title="Could not load expense accounts" />;
 
@@ -132,61 +89,26 @@ export function EmployeeExpensesPage() {
   return (
     <ListWorkspace
       title="Employee expenses"
-      description="Staff submit claims; approvers reimburse via the shared posting engine (DR expense / CR bank)."
-    >
-      <div className="mb-6 grid max-w-xl gap-3 rounded-md border border-border p-4">
-        <div className="space-y-2">
-          <Label>Description</Label>
-          <Input value={description} onChange={(e) => setDescription(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label>Date</Label>
-          <Input type="date" value={claimDate} onChange={(e) => setClaimDate(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label>Expense account</Label>
-          <AccountLookup
-            ariaLabel="Expense account"
-            purpose="expense"
-            accounts={accounts.filter(
-              (a) => a.is_active && a.is_postable && a.account_type === "expense",
-            )}
-            value={expenseAccountId}
-            onChange={setExpenseAccountId}
-            companyId={companyId}
-            placeholder="Select"
-            allowClear={false}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Net amount ({currency})</Label>
-          <Input
-            value={amount}
-            inputMode="decimal"
-            aria-invalid={amountInvalid}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Recoverable tax ({currency}, added on top of the net amount)</Label>
-          <Input
-            value={tax}
-            inputMode="decimal"
-            aria-invalid={taxInvalid}
-            onChange={(e) => setTax(e.target.value)}
-          />
-        </div>
-        <Button
-          size="sm"
-          disabled={
-            submitMutation.isPending || amountInvalid || taxInvalid || !can("expenses.submit")
-          }
-          onClick={() => submitMutation.mutate()}
-        >
-          {submitMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-          Submit claim
+      description="Legacy claims list and reimbursement. Submit new claims from Expenses → My Expenses."
+      actions={
+        <Button size="sm" asChild>
+          <Link
+            to="/expense-management/$section"
+            params={{ section: "my-expenses" }}
+            search={{ create: true }}
+          >
+            New expense claim
+          </Link>
         </Button>
-      </div>
+      }
+    >
+      <Alert className="mb-6">
+        <AlertTitle>Create claims in Expense Management</AlertTitle>
+        <AlertDescription>
+          This Purchases page keeps the legacy approve-and-pay list. New multi-line drafts open under
+          Expenses → My Expenses.
+        </AlertDescription>
+      </Alert>
 
       {can("expenses.approve") ? (
         <div className="mb-4 max-w-sm space-y-2">
@@ -215,7 +137,21 @@ export function EmployeeExpensesPage() {
           description={friendlyAuthError(claimsQ.error)}
         />
       ) : (claimsQ.data ?? []).length === 0 ? (
-        <EmptyState title="No claims" description="Submit an employee expense claim." />
+        <EmptyState
+          title="No legacy claims"
+          description="Create a new claim in Expense Management."
+          action={
+            <Button size="sm" asChild>
+              <Link
+                to="/expense-management/$section"
+                params={{ section: "my-expenses" }}
+                search={{ create: true }}
+              >
+                New expense claim
+              </Link>
+            </Button>
+          }
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -272,6 +208,9 @@ export function EmployeeExpensesPage() {
                         disabled={approveMutation.isPending || !paymentAccountId}
                         onClick={() => approveMutation.mutate(c.id)}
                       >
+                        {approveMutation.isPending ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : null}
                         Approve & reimburse
                       </Button>
                     </>

@@ -19,7 +19,7 @@ These navigate to dedicated routes (browser history, Back, deep links):
 | Quick payment | `/purchases/payments/new` |
 | Spend money | `/banking/spend-money` |
 | Supplier credit | `/purchases/credit-notes/new` |
-| Expense claim | `/expense-management/my-expenses?create=true` |
+| Expense claim | `/expense-management/my-expenses?create=true` (Purchases employee-expenses is legacy approve list only) |
 | Receive money | `/banking/receive-money` |
 | Sales receipt / refunds / deposit / card / adjustment | `/banking/money-documents/new?kind=…` |
 | Transfer money | `/banking/transfers/new` |

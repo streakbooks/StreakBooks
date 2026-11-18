@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Settings inherited navigation-slot validation (2026-11-18)
+
+- `src/lib/settings/panels.ts`: reject prototype-inherited array slots in `settingsTrail` during deep-link restoration, so only explicitly owned ancestor positions are accepted. Code commit `fddfb10594f6d1e787d10d4dbef850d6df8e5ebf`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/settings/panels.test.ts`: add inherited-slot history regression; commit `0f241f463c3bf9e5c903266c1fdc321ad0732db8`. **WRITTEN, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Settings partial evidence updated in `97866ee12a5b3e04230ffe7aaefdb35895040fcb`. **NOT RUN:** browsing inventory guard, TypeScript, lint, Vitest, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main changes, manually triggered CI, production database changes or deployment.
+
+
 ### Settings validated panel persistence (2026-11-18)
 
 - `src/lib/settings/panels.ts`: `openSettingsPanel` now writes the allowlist-validated `safePanel` to URL state rather than the untrusted caller argument; commit `7b1cb44dd65bccc05a4b08a3d31b1b91ff33e589`. **SOURCE ONLY; NOT RUN.**

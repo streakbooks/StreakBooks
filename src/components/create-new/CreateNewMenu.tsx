@@ -168,6 +168,14 @@ export function CreateNewMenu() {
         void navigate({ to: "/accounting/journals/new", search: { mode: "template" } });
         return;
       }
+      if (action.id === "recurring_bill") {
+        void navigate({ to: "/purchases/recurring/new" });
+        return;
+      }
+      if (action.id === "recurring_invoice") {
+        void navigate({ to: "/sales/recurring/new" });
+        return;
+      }
       if (action.id === "receive_money") {
         void navigate({ to: "/banking/receive-money" });
         return;
@@ -176,18 +184,19 @@ export function CreateNewMenu() {
         void navigate({ to: "/banking/spend-money" });
         return;
       }
-      const moneyKinds = new Set([
+      const moneyKinds = [
         "sales_receipt",
         "customer_refund",
         "supplier_refund",
         "bank_deposit",
         "card_payment",
         "bank_adjustment",
-      ]);
-      if (moneyKinds.has(action.id)) {
+      ] as const;
+      const moneyKind = moneyKinds.find((id) => id === action.id);
+      if (moneyKind) {
         void navigate({
           to: "/banking/money-documents/new",
-          search: { kind: action.id },
+          search: { kind: moneyKind },
         });
         return;
       }

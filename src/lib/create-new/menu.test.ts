@@ -81,4 +81,16 @@ describe("create full-page destinations", () => {
     expect(receiveMoney && opensCreateAsFullPage(receiveMoney)).toBe(true);
     expect(account && opensCreateAsFullPage(account)).toBe(false);
   });
+
+  it("routes recurring creates to dedicated full-page workspaces", () => {
+    const recurringInvoice = CREATE_ACTIONS.find((a) => a.id === "recurring_invoice");
+    const recurringBill = CREATE_ACTIONS.find((a) => a.id === "recurring_bill");
+    const recurringJournal = CREATE_ACTIONS.find((a) => a.id === "recurring_journal");
+    expect(recurringInvoice?.route).toBe("/sales/recurring/new");
+    expect(recurringBill?.route).toBe("/purchases/recurring/new");
+    expect(recurringJournal?.route).toBe("/accounting/journals/new");
+    expect(recurringInvoice && opensCreateAsFullPage(recurringInvoice)).toBe(true);
+    expect(recurringBill && opensCreateAsFullPage(recurringBill)).toBe(true);
+    expect(recurringJournal && opensCreateAsFullPage(recurringJournal)).toBe(true);
+  });
 });

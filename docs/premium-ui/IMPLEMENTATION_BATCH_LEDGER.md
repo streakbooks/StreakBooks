@@ -38,7 +38,8 @@
 | 42 | Phase 3 | Full-width fluid line grids; compact sales price-list; sticky actions align; density ≤24px fill | `feature/premium-ui-batch42-fullwidth-line-grids` | [PR #288](https://github.com/linkbusinessadvisory/LinkBooks/pull/288) → `66359d79` | EditableLineItemGrid + sales/purchases/journals | merged |
 | 43 | Phase 4 | HR five-group IA + ListWorkspace subnav; Workforce Insights; Payroll GroupedModuleSubnav | `feature/premium-ui-batch43-hr-five-group-nav` | [PR #290](https://github.com/linkbusinessadvisory/LinkBooks/pull/290) → `b0e824e5` | hr + payroll + ListWorkspace | merged |
 | 44 | Phase 3–4 | Banking owns Spend/Receive Money routes; Expenses shortcuts; routing ownership tests | `feature/premium-ui-batch44-money-routing` | [PR #291](https://github.com/linkbusinessadvisory/LinkBooks/pull/291) → `8fef011c` | banking + expenses + create menu | merged |
-| 45 | Phase 3–4 | Spend Money spreadsheet roll-up; Receive Save & add another; CRM/PM ListWorkspace subnav | `feature/premium-ui-batch45-money-editor-subnav` | pending | banking + crm + pm | in progress |
-| 46+ | Phase 4–10 | Remaining modules DoD + staging runtime evidence | TBD | — | all modules | planned |
+| 45 | Phase 3–4 | Spend Money spreadsheet roll-up; Receive Save & add another; CRM/PM ListWorkspace subnav | `feature/premium-ui-batch45-money-editor-subnav` | [PR #292](https://github.com/linkbusinessadvisory/LinkBooks/pull/292) → `e186afd5` | banking + crm + pm | merged |
+| 46 | Phase 3 | Canonical journal create; recurring bill/invoice full-page workspaces; create-route guards | `feature/premium-ui-batch46-create-workflows` | pending | accounting + sales/purchases recurring + create registry | in progress |
+| 47+ | Phase 4–10 | Remaining +New audit, module DoD, staging runtime evidence | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

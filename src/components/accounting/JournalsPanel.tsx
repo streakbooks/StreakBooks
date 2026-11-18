@@ -30,6 +30,7 @@ import {
   journalSourceLabel,
   journalLineCurrency,
 } from "@/lib/accounting/journal-display";
+import { Link } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
@@ -298,6 +299,11 @@ export function JournalsPanel({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
+        <Button size="sm" asChild>
+          <Link to="/accounting/journals/new" search={{ mode: "post" }}>
+            New manual journal
+          </Link>
+        </Button>
         <Button
           size="sm"
           variant="outline"
@@ -332,6 +338,15 @@ export function JournalsPanel({
               page > 0
                 ? "No journals remain on this page. Return to the previous page."
                 : "Change the filters, or post a manual journal."
+            }
+            action={
+              page > 0 ? undefined : (
+                <Button size="sm" asChild>
+                  <Link to="/accounting/journals/new" search={{ mode: "post" }}>
+                    New manual journal
+                  </Link>
+                </Button>
+              )
             }
           />
           {page > 0 ? (

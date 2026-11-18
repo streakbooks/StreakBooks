@@ -150,8 +150,8 @@ export function HrShiftsPage() {
       <ListWorkspace
         title="Shifts & Rosters"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Shifts & Rosters" }]}
-      >
-        <HrSubnav current="shifts" />
+      subnav={<HrSubnav current="shifts" />}
+    >
         <EmptyState title="No access" description="You need hr.view to open shifts." />
       </ListWorkspace>
     );
@@ -200,8 +200,8 @@ export function HrShiftsPage() {
           </div>
         ) : undefined
       }
+      subnav={<HrSubnav current="shifts" />}
     >
-      <HrSubnav current="shifts" />
 
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">

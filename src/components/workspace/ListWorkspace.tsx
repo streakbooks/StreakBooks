@@ -33,7 +33,7 @@ export function ListWorkspace({
     <section
       data-slot="list-workspace"
       aria-label={title}
-      className={cn("lb-list-workspace flex min-w-0 flex-col gap-4", className)}
+      className={cn("lb-list-workspace flex min-w-0 flex-col gap-3", className)}
     >
       <PageHeader
         title={title}
@@ -46,7 +46,7 @@ export function ListWorkspace({
       {toolbar}
       <div
         className={cn(
-          "lb-list-workspace-body grid min-w-0 gap-4",
+          "lb-list-workspace-body grid min-w-0 gap-3",
           insights ? "xl:grid-cols-[minmax(0,1fr)_18rem]" : undefined,
         )}
       >

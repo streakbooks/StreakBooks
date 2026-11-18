@@ -136,8 +136,8 @@ export function HrSettingsPage() {
           </Button>
         ) : undefined
       }
+      subnav={<HrSubnav current="settings" />}
     >
-      <HrSubnav current="settings" />
 
       {settingsQ.isPending ? (
         <LoadingState />

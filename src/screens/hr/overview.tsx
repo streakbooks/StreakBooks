@@ -75,7 +75,11 @@ export function HrOverviewPage() {
   }
   if (!canOpen) {
     return (
-      <ListWorkspace title="HR" description="Workforce and employee lifecycle.">
+      <ListWorkspace
+        title="HR Dashboard"
+        description="Workforce and employee lifecycle."
+        subnav={<HrSubnav current="overview" />}
+      >
         <EmptyState
           title="No HR access"
           description={`Missing permission: hr.view (active role: ${role ?? "unknown"}). Ask an owner or administrator to grant HR access, then refresh the page.`}
@@ -86,12 +90,13 @@ export function HrOverviewPage() {
 
   return (
     <ListWorkspace
-      title="HR Overview"
+      title="HR Dashboard"
       description="Workforce position across the shared employee identity used by Payroll."
       breadcrumbs={[{ label: "HR" }]}
+      subnav={<HrSubnav current="overview" />}
       actions={
         can("hr.settings.edit" as Permission) ? (
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" size="sm">
             <Link to="/hr/$section" params={{ section: "settings" }}>
               HR settings
             </Link>
@@ -99,7 +104,6 @@ export function HrOverviewPage() {
         ) : undefined
       }
     >
-      <HrSubnav current="overview" />
 
       {settings.isError ? (
         <ErrorState

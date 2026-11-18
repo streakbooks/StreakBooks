@@ -147,8 +147,8 @@ export function HrAssetsPage() {
       <ListWorkspace
         title="Employee Assets"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Assets" }]}
-      >
-        <HrSubnav current="assets" />
+      subnav={<HrSubnav current="assets" />}
+    >
         <EmptyState title="No access" description="You need hr.view to open assets." />
       </ListWorkspace>
     );
@@ -193,8 +193,8 @@ export function HrAssetsPage() {
           </div>
         ) : undefined
       }
+      subnav={<HrSubnav current="assets" />}
     >
-      <HrSubnav current="assets" />
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Asset types

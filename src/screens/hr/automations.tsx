@@ -91,8 +91,8 @@ export function HrAutomationsPage() {
       <ListWorkspace
         title="HR Automations"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Automations" }]}
-      >
-        <HrSubnav current="automations" />
+      subnav={<HrSubnav current="automations" />}
+    >
         <EmptyState title="No access" description="Missing permission: hr.settings.edit." />
       </ListWorkspace>
     );
@@ -111,8 +111,8 @@ export function HrAutomationsPage() {
           Run all now
         </Button>
       }
+      subnav={<HrSubnav current="automations" />}
     >
-      <HrSubnav current="automations" />
       {dataQ.isPending ? (
         <LoadingState />
       ) : dataQ.isError ? (

@@ -79,11 +79,11 @@ export function GroupedModuleSubnav<TKey extends string>({
     <nav
       aria-label={`${label} sections`}
       className={cn(
-        "mb-3 min-w-0 rounded-xl border border-border/70 bg-card/80 px-2.5 py-2 print:hidden sm:px-3",
+        "mb-2 min-w-0 rounded-lg border border-border/70 bg-card/80 px-2 py-1.5 print:hidden sm:px-2.5",
         className,
       )}
     >
-      <div className="mb-1.5 flex min-w-0 flex-wrap items-center justify-between gap-2">
+      <div className="mb-1 flex min-w-0 flex-wrap items-center justify-between gap-2">
         <p className="truncate text-xs font-medium text-muted-foreground">
           <span className="sr-only">{label}: </span>
           {currentLabel}
@@ -93,7 +93,7 @@ export function GroupedModuleSubnav<TKey extends string>({
 
       <div
         aria-label={`${label} navigation groups`}
-        className="flex min-w-0 gap-1 overflow-x-auto pb-1.5"
+        className="flex min-w-0 gap-1 overflow-x-auto pb-1"
       >
         {populated.map((group) => {
           const active = group.key === selectedGroup;

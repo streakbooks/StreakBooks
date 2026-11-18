@@ -175,8 +175,8 @@ export function HrSelfServicePage() {
       <ListWorkspace
         title="Employee Self-Service"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Self-Service" }]}
-      >
-        <HrSubnav current="self-service" />
+      subnav={<HrSubnav current="self-service" />}
+    >
         <EmptyState title="No access" description="You need hr.self_service permission." />
       </ListWorkspace>
     );
@@ -188,8 +188,8 @@ export function HrSelfServicePage() {
       <ListWorkspace
         title="Employee Self-Service"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Self-Service" }]}
-      >
-        <HrSubnav current="self-service" />
+      subnav={<HrSubnav current="self-service" />}
+    >
         <ErrorState
           title="Could not load self-service"
           description={friendlyAuthError(contextQ.error)}
@@ -241,8 +241,8 @@ export function HrSelfServicePage() {
           </div>
         ) : undefined
       }
+      subnav={<HrSubnav current="self-service" />}
     >
-      <HrSubnav current="self-service" />
 
       {!ctx.linked ? (
         <EmptyState

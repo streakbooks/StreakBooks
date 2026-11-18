@@ -125,8 +125,8 @@ export function HrOrganizationPage() {
           </Button>
         ) : undefined
       }
+      subnav={<HrSubnav current="organization" />}
     >
-      <HrSubnav current="organization" />
 
       <div className="mb-4">
         <Select value={kind} onValueChange={(value) => setKind(value as OrgKind)}>

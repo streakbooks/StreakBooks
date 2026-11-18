@@ -141,8 +141,8 @@ export function HrTransfersPage() {
       <ListWorkspace
         title="Transfers & Promotions"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Transfers & Promotions" }]}
-      >
-        <HrSubnav current="transfers" />
+      subnav={<HrSubnav current="transfers" />}
+    >
         <EmptyState title="No access" description="You need hr.view." />
       </ListWorkspace>
     );
@@ -178,8 +178,8 @@ export function HrTransfersPage() {
           </Button>
         ) : undefined
       }
+      subnav={<HrSubnav current="transfers" />}
     >
-      <HrSubnav current="transfers" />
       {listQ.isPending ? (
         <LoadingState />
       ) : listQ.isError ? (

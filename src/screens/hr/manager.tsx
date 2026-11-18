@@ -54,8 +54,8 @@ export function HrManagerPage() {
       <ListWorkspace
         title="Manager Workspace"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Manager Workspace" }]}
-      >
-        <HrSubnav current="manager" />
+      subnav={<HrSubnav current="manager" />}
+    >
         <EmptyState
           title="No access"
           description="You need manager or leave approval permission."
@@ -80,8 +80,8 @@ export function HrManagerPage() {
           </Link>
         </Button>
       }
+      subnav={<HrSubnav current="manager" />}
     >
-      <HrSubnav current="manager" />
 
       {canManager && (
         <section className="mb-8 space-y-3">

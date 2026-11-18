@@ -40,7 +40,7 @@
 | Create hardening Batch 48 | Merged | PR #296 → `0efe21fb` — transfer Vitest fix; Banking hub New; EM create ownership; Sheets deleted; see CI_BILLING_AND_CREATE_WHY.md |
 | Create surfaces Batch 49 | Merged | PR #297 → `de6913c6` — transactions New CTAs; createNavTarget; EM claim TransactionWorkspace |
 | Create hardening Batch 50 | Merged | PR #298 → `e0f0d8c0` — EM list-only; palette intent; empty CTAs; SO workspace |
-| Create intents Batch 51 | In progress | `feature/premium-ui-batch51-create-intents` — sales_order CREATE; FA/SO `?create=true` |
+| Create intents Batch 51 | Merged | PR #299 → `0be7b88f` — sales_order CREATE; FA/SO `?create=true` |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

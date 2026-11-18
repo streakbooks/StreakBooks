@@ -92,10 +92,44 @@
   --shadow-card: 0 1px 2px oklch(0.2 0.03 250 / 0.05), 0 0 0 1px oklch(0.2 0.03 250 / 0.03);
   --shadow-raised: 0 1px 2px oklch(0.2 0.03 250 / 0.06), 0 8px 24px oklch(0.2 0.03 250 / 0.1);
   --shadow-overlay: 0 4px 6px oklch(0.2 0.03 250 / 0.05), 0 16px 40px oklch(0.2 0.03 250 / 0.16);
+
+  /* Density / chrome layout (Batch 25). Additive — consumers opt in. */
+  --lb-sidebar-width: 16rem;
+  --lb-sidebar-width-collapsed: 4.5rem;
+  --lb-header-height: 4rem;
+  --lb-brand-bar-height: 3.5rem;
+  --lb-control-height: 2.5rem;
+  --lb-control-height-coarse: 2.75rem;
+  --lb-table-row-height: 2.75rem;
+  --lb-space-1: 0.25rem;
+  --lb-space-2: 0.5rem;
+  --lb-space-3: 0.75rem;
+  --lb-space-4: 1rem;
+  --lb-space-5: 1.5rem;
+  --lb-space-6: 2rem;
+  --lb-duration-fast: 150ms;
+  --lb-duration-normal: 200ms;
+  --lb-radius-surface: var(--radius);
 }
 
 :root {
   --radius: 0.625rem;
+  --lb-sidebar-width: 16rem;
+  --lb-sidebar-width-collapsed: 4.5rem;
+  --lb-header-height: 4rem;
+  --lb-brand-bar-height: 3.5rem;
+  --lb-control-height: 2.5rem;
+  --lb-control-height-coarse: 2.75rem;
+  --lb-table-row-height: 2.75rem;
+  --lb-space-1: 0.25rem;
+  --lb-space-2: 0.5rem;
+  --lb-space-3: 0.75rem;
+  --lb-space-4: 1rem;
+  --lb-space-5: 1.5rem;
+  --lb-space-6: 2rem;
+  --lb-duration-fast: 150ms;
+  --lb-duration-normal: 200ms;
+  --lb-radius-surface: var(--radius);
 
   --background: oklch(0.982 0.003 250);
   --foreground: oklch(0.22 0.03 255);

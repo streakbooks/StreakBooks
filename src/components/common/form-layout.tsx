@@ -99,6 +99,35 @@ export function FormField({
   );
 }
 
+/**
+ * Compact responsive field grid for transaction headers (contact, dates, reference).
+ * Prefer 3–4 columns on wide screens without forcing equal heights on every control.
+ */
+export function FormGrid({
+  children,
+  columns = 3,
+  className,
+}: {
+  children: ReactNode;
+  columns?: 2 | 3 | 4;
+  className?: string;
+}) {
+  return (
+    <div
+      data-slot="form-grid"
+      className={cn(
+        "grid min-w-0 gap-3 sm:gap-4",
+        columns === 2 && "sm:grid-cols-2",
+        columns === 3 && "sm:grid-cols-2 xl:grid-cols-3",
+        columns === 4 && "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 /** Sticky-friendly action row at the bottom of a form (primary action last). */
 export function FormActions({ children, className }: { children: ReactNode; className?: string }) {
   return (

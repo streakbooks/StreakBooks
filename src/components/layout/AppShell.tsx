@@ -1,7 +1,16 @@
 import { SettingsSurface } from "@/components/settings/SettingsSurface";
 import { parseSettingsPanel, panelLabel } from "@/lib/settings/panels";
 import { WorkspaceSettingsShortcut } from "@/components/settings/ModuleSettingsLinks";
-import { lazy, Suspense, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { LoadingState } from "@/components/common/states";
 import {
   Link,
@@ -514,20 +523,30 @@ function AppShellLayout({ children }: { children: ReactNode }) {
   const isDemo = Boolean(company?.is_demo);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className="min-h-screen bg-background"
+      style={
+        {
+          "--lb-sidebar-current-width": collapsed
+            ? "var(--lb-sidebar-width-collapsed)"
+            : "var(--lb-sidebar-width)",
+        } as CSSProperties
+      }
+    >
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
       <aside
         aria-label="Sidebar"
         className={cn(
-          "lb-premium-sidebar fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-sidebar-border/65 bg-sidebar transition-[width] duration-200 print:hidden lg:flex",
-          collapsed ? "w-[4.5rem]" : "w-64",
+          "lb-premium-sidebar fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-sidebar-border/65 bg-sidebar transition-[width] duration-[var(--lb-duration-normal)] motion-reduce:transition-none print:hidden lg:flex",
+          collapsed ? "w-[var(--lb-sidebar-width-collapsed)]" : "w-[var(--lb-sidebar-width)]",
         )}
       >
         <div
           className={cn(
-            "flex h-14 shrink-0 items-center gap-1 px-3",
+            "flex shrink-0 items-center gap-1 px-3",
+            "h-[var(--lb-brand-bar-height)]",
             collapsed ? "flex-col justify-center gap-0.5" : "justify-between",
           )}
         >
@@ -565,11 +584,13 @@ function AppShellLayout({ children }: { children: ReactNode }) {
 
       <div
         className={cn(
-          "transition-[padding] duration-200 print:pl-0",
-          collapsed ? "lg:pl-[4.5rem]" : "lg:pl-64",
+          "transition-[padding] duration-[var(--lb-duration-normal)] motion-reduce:transition-none print:pl-0",
+          collapsed
+            ? "lg:pl-[var(--lb-sidebar-width-collapsed)]"
+            : "lg:pl-[var(--lb-sidebar-width)]",
         )}
       >
-        <header className="lb-workspace-topbar sticky top-0 z-30 flex min-h-16 flex-wrap items-center gap-1 border-b border-border/80 bg-card/95 px-3 py-2 print:hidden sm:flex-nowrap sm:gap-2 md:px-6">
+        <header className="lb-workspace-topbar sticky top-0 z-30 flex min-h-[var(--lb-header-height)] flex-wrap items-center gap-1 border-b border-border/80 bg-card/95 px-3 py-2 print:hidden sm:flex-nowrap sm:gap-2 md:px-6">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
@@ -579,7 +600,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
             <SheetContent side="left" className="lb-premium-sidebar w-72 border-0 bg-sidebar p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <div className="flex h-full flex-col">
-                <div className="flex h-14 shrink-0 items-center px-4">
+                <div className="flex h-[var(--lb-brand-bar-height)] shrink-0 items-center px-4">
                   <Brand />
                 </div>
                 <CompanySwitcher />

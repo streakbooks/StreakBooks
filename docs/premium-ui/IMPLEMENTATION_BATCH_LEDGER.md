@@ -17,6 +17,11 @@
 | 21 | 8–9 | Error-retry gate + Bills ListWorkspace + demo/search isolation + Lookup clear a11y | `feature/premium-ui-batch21-error-retry-bills-isolation` | [PR #203](https://github.com/linkbusinessadvisory/LinkBooks/pull/203) → `e31e4f7f` | bills.index + check:error-retry + demo/search tests | merged |
 | 22 | 8–9 | Section 18 gate reporter + firm filter label association + accounting invariant npm script | `feature/premium-ui-batch22-section18-gate-firm-a11y-invariants` | [PR #204](https://github.com/linkbusinessadvisory/LinkBooks/pull/204) → `64f6fe82` | check:section18 + firm portfolio + test:accounting-invariants | merged |
 | 23 | 8–9 | Apply pending Nov budget/tax/recon SQL to linked prod + evidence docs | `feature/premium-ui-batch23-supabase-migration-apply` | pending merge | 11 migrations via db query + repair | ready |
-| 24+ | 8–9 | Staging smoke (when E2E creds), live RBAC, manual a11y, release close-out | TBD | — | | planned |
+| 24 | 8–9 | Staging smoke (when E2E creds), live RBAC, manual a11y, release close-out | TBD | — | | planned |
+| 25 | Phase 1 | Density tokens, AppShell wiring, TransactionWorkspace/TotalsSummary/SplitButton/EditableLineItemGrid/FormGrid scaffolds, central tracker | `feature/premium-ui-batch25-phase1-foundation` | open | shared chrome + docs | in progress |
+| 26 | Phase 3 | Adopt TransactionWorkspace on Sales + Purchases (+ journals entry where safe) | TBD | — | sales/purchases editors | planned |
+| 27 | Phase 3 | Spreadsheet keyboard/paste/sticky behaviours on line grids | TBD | — | line editors | planned |
+| 28 | Phase 3–4 | Banking money docs + journals workspace adoption | TBD | — | banking/accounting | planned |
+| 29+ | Phase 4–10 | Remaining modules DoD + browsing manifest refresh | TBD | — | all modules | planned |
 
-Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`.
+Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

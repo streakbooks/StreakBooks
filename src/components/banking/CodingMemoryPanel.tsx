@@ -5,11 +5,25 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { recordCodingFeedback, setCodingMemoryPreference } from "@/lib/banking/memory.functions";
+import {
+  recordCodingFeedback,
+  resetCodingMemoryPreference,
+  setCodingMemoryPreference,
+} from "@/lib/banking/memory.functions";
 import type { MemoryPreference } from "@/lib/banking/memory";
 import type { Suggestion } from "@/lib/banking/suggestions";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Props = {
   companyId: string;
@@ -29,7 +43,12 @@ export function CodingMemoryPanel({
   available,
   onSelect,
 }: Props) {
-  const [lastOperation, setLastOperation] = useState<"feedback" | "preference">("feedback");
+  const [lastOperation, setLastOperation] = useState<"feedback" | "preference" | "reset">(
+    "feedback",
+  );
+  const [resetTarget, setResetTarget] = useState<MemoryPreference | null>(null);
+  const resetTrigger = useRef<HTMLButtonElement | null>(null);
+  const explanation = useRef<HTMLParagraphElement | null>(null);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -41,6 +60,7 @@ export function CodingMemoryPanel({
   const qc = useQueryClient();
   const sendFeedback = useServerFn(recordCodingFeedback);
   const setPreference = useServerFn(setCodingMemoryPreference);
+  const resetPreference = useServerFn(resetCodingMemoryPreference);
   const refresh = () =>
     qc.invalidateQueries({ queryKey: ["bank-suggest", companyId, transactionId] });
   const feedback = useMutation({
@@ -87,8 +107,25 @@ export function CodingMemoryPanel({
       void refresh();
     },
   });
-  const pending = feedback.isPending || preference.isPending;
-  const error = lastOperation === "feedback" ? feedback.error : preference.error;
+  const reset = useMutation({
+    onMutate: () => setLastOperation("reset"),
+    mutationFn: (input: { historyId: string; requestId: string }) =>
+      resetPreference({ data: { companyId, bankTransactionId: transactionId, ...input } }),
+    retry: 1,
+    onSuccess: async () => {
+      if (!mounted.current) return;
+      toast.success("Preference reset. Future approved postings can teach it again.");
+      await refresh();
+      if (mounted.current) explanation.current?.focus();
+    },
+  });
+  const pending = feedback.isPending || preference.isPending || reset.isPending;
+  const error =
+    lastOperation === "feedback"
+      ? feedback.error
+      : lastOperation === "preference"
+        ? preference.error
+        : reset.error;
   if (!available)
     return (
       <p role="status" className="text-xs text-muted-foreground">
@@ -98,7 +135,7 @@ export function CodingMemoryPanel({
     );
   return (
     <div className="space-y-2 text-xs">
-      <p className="text-muted-foreground">
+      <p ref={explanation} tabIndex={-1} className="text-muted-foreground">
         Coding Memory uses linked, unreversed postings for this bank account and currency. Selecting
         a suggestion does not post or approve an entry.
       </p>
@@ -113,7 +150,10 @@ export function CodingMemoryPanel({
               onClick={() => {
                 if (lastOperation === "feedback" && feedback.variables)
                   feedback.mutate(feedback.variables);
-                else if (preference.variables) preference.mutate(preference.variables);
+                else if (lastOperation === "preference" && preference.variables)
+                  preference.mutate(preference.variables);
+                else if (lastOperation === "reset" && reset.variables)
+                  reset.mutate(reset.variables);
               }}
             >
               Retry
@@ -172,6 +212,9 @@ export function CodingMemoryPanel({
                   posting(s), {p.direction}, last approved{" "}
                   {new Date(p.last_approved_at).toLocaleDateString()}.{" "}
                   {p.enabled ? "Enabled" : "Disabled"}.
+                  {p.last_reset_at
+                    ? ` Learning since reset on ${new Date(p.last_reset_at).toLocaleDateString()}.`
+                    : ""}
                 </span>
                 <Link
                   to="/banking/journal/$journalId"
@@ -196,12 +239,59 @@ export function CodingMemoryPanel({
                 >
                   {p.enabled ? "Disable preference" : "Re-enable preference"}
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!canCode || pending}
+                  onClick={(event) => {
+                    resetTrigger.current = event.currentTarget;
+                    setResetTarget(p);
+                  }}
+                >
+                  Reset learned preference
+                </Button>
               </li>
             ))}
           </ul>
         </details>
       ) : null}
-      {pending ? <p role="status">Saving Coding Memory feedback…</p> : null}
+      {pending ? <p role="status">Saving Coding Memory changes…</p> : null}
+      <AlertDialog
+        open={resetTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setResetTarget(null);
+        }}
+      >
+        <AlertDialogContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            resetTrigger.current?.focus();
+          }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset this learned preference?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Forget earlier learning for {resetTarget?.payee_normalized} →{" "}
+              {resetTarget?.account_code} {resetTarget?.account_name} ({resetTarget?.direction}) in
+              this bank account and currency. Posted journals, approval evidence and the audit trail
+              are kept. Future approved postings can teach this preference again, with learning
+              enabled.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!canCode || pending}
+              onClick={() => {
+                if (!resetTarget || !canCode || pending) return;
+                reset.mutate({ historyId: resetTarget.history_id, requestId: crypto.randomUUID() });
+              }}
+            >
+              Reset preference
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

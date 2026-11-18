@@ -107,6 +107,8 @@ if args.mfa:
     check(claims['aal'] == 'aal2', 'Real Auth enrollment and challenge return an AAL2 session')
     identity = {'_company_id': state['company_id'], '_bank_transaction_id': state['transaction_ids'][1]}
     rpc('get_bank_coding_memory', identity, token, expected=403)
+    rpc('reset_bank_coding_memory_preference', {**identity, '_history_id': str(uuid.uuid4()), '_request_id': str(uuid.uuid4())}, token, expected=403)
+    check(True, 'MFA protects the reset endpoint before any preference lookup')
     check(request(events_path, token=token) == [], 'Old AAL1 session cannot read evidence after verified enrollment')
     check(request(events_path, token=elevated) == before, 'Verified AAL2 session restores only its existing company evidence')
     check(isinstance(rpc('get_bank_coding_memory', identity, elevated), list), 'Coding Memory RPC accepts the real AAL2 session')
@@ -131,6 +133,11 @@ elif args.reverse:
     check(memory == [], 'Authoritative reversals remove all fixture precedents')
     events = request('/rest/v1/bank_coding_events?company_id=eq.' + state['company_id'] + '&select=id', token=token)
     check(len(events) >= 1, 'Reversal retains immutable learning evidence')
+    feedback_rows = request('/rest/v1/bank_coding_feedback?company_id=eq.' + state['company_id'] + '&journal_id=is.null&select=id,bank_transaction_id,history_id,state,request_id&limit=1', token=token)
+    if feedback_rows:
+        row = feedback_rows[0]
+        replay = {'_company_id': state['company_id'], '_bank_transaction_id': row['bank_transaction_id'], '_history_id': row['history_id'], '_state': row['state'], '_request_id': row['request_id']}
+        check(rpc('record_bank_coding_feedback', replay, token) == row['id'], 'Committed feedback retry survives authoritative reversal')
 else:
     owner, other = create_user(), create_user()
     token = owner['access_token']
@@ -187,6 +194,16 @@ else:
     check(True, 'Real read-only member cannot submit coding feedback')
     rpc('set_bank_coding_memory_preference', {**identity, '_history_id': history_id, '_enabled': False}, reader['access_token'], expected=403)
     check(True, 'Real read-only member cannot change memory preferences')
+    reset = {**identity, '_history_id': history_id, '_request_id': str(uuid.uuid4())}
+    rpc('reset_bank_coding_memory_preference', reset, reader['access_token'], expected=403)
+    check(True, 'Real read-only member cannot reset learned preferences')
+    rpc('reset_bank_coding_memory_preference', reset, other['access_token'], expected=403)
+    check(True, 'Cross-company reset is denied by the real API')
+    request('/rest/v1/rpc/reset_bank_coding_memory_preference', 'POST', reset, expected=401)
+    check(True, 'Anonymous reset is denied')
+    request('/rest/v1/bank_coding_memory_controls?company_id=eq.' + company, 'PATCH', {'reset_event_no': 0}, token=token, expected=403)
+    check(True, 'Direct scoped watermark forgery is denied')
+    check(request('/rest/v1/bank_coding_memory_controls?company_id=eq.' + company + '&select=history_id', token=other['access_token']) == [], 'Real RLS hides another company scoped controls')
     denied = rpc('post_journal', {'payload': {**payload, 'idempotency_key': 'local-denied:' + str(uuid.uuid4())}}, reader['access_token'], expected=400)
     check('permission to post journals' in denied.get('message', ''), 'Real read-only member cannot bypass the UI to post a journal')
     existing = request('/rest/v1/journals?company_id=eq.' + company + '&source_id=eq.' + transactions[0] + '&select=id', token=token)

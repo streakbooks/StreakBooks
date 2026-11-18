@@ -12,7 +12,7 @@ const identity = z.object({
 
 export const recordCodingFeedback = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     identity
       .extend({ state: z.enum(["accepted", "edited", "rejected"]), requestId: z.string().uuid() })
       .strict()
@@ -32,17 +32,31 @@ export const recordCodingFeedback = createServerFn({ method: "POST" })
 
 export const setCodingMemoryPreference = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    identity.extend({ enabled: z.boolean() }).strict().parse(input),
-  )
+  .validator((input: unknown) => identity.extend({ enabled: z.boolean() }).strict().parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "banking.categorise");
     await assertCompanyPermission(context.supabase, data.companyId, "banking.view");
-    // An invoker RPC applies the update under caller RLS and the existing MFA policy.
+    // The scoped RPC rechecks company membership, both permissions and MFA.
     return callRpc<string>(context.supabase, "set_bank_coding_memory_preference", {
       _company_id: data.companyId,
       _bank_transaction_id: data.bankTransactionId,
       _history_id: data.historyId,
       _enabled: data.enabled,
+    });
+  });
+
+export const resetCodingMemoryPreference = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) =>
+    identity.extend({ requestId: z.string().uuid() }).strict().parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "banking.categorise");
+    await assertCompanyPermission(context.supabase, data.companyId, "banking.view");
+    return callRpc<string>(context.supabase, "reset_bank_coding_memory_preference", {
+      _company_id: data.companyId,
+      _bank_transaction_id: data.bankTransactionId,
+      _history_id: data.historyId,
+      _request_id: data.requestId,
     });
   });

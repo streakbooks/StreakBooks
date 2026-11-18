@@ -7,6 +7,8 @@ declare global {
       failures: number;
       calls: Array<Record<string, unknown>>;
       preference: (enabled: boolean) => void;
+      companyId: string;
+      reset: () => void;
     };
   }
 }
@@ -31,8 +33,14 @@ async function request(input: { data: Record<string, unknown> }) {
     window.memoryFixture.failures--;
     throw new Error("Fixture evidence service unavailable");
   }
-  if (typeof input.data.enabled === "boolean") window.memoryFixture.preference(input.data.enabled);
+  if (input.data.companyId === window.memoryFixture.companyId) {
+    if (typeof input.data.enabled === "boolean")
+      window.memoryFixture.preference(input.data.enabled);
+    if (input.data.operation === "reset") window.memoryFixture.reset();
+  }
   return "fixture-result";
 }
 export const recordCodingFeedback = request;
 export const setCodingMemoryPreference = request;
+export const resetCodingMemoryPreference = (input: { data: Record<string, unknown> }) =>
+  request({ data: { ...input.data, operation: "reset" } });

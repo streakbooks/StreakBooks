@@ -6,7 +6,7 @@ vi.mock("@tanstack/react-start", () => ({
       middleware() {
         return this;
       },
-      inputValidator(fn: (value: unknown) => unknown) {
+      validator(fn: (value: unknown) => unknown) {
         parse = fn;
         return this;
       },
@@ -22,7 +22,11 @@ vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn()
 vi.mock("./rpc", () => ({ callRpc: vi.fn() }));
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { callRpc } from "./rpc";
-import { recordCodingFeedback, setCodingMemoryPreference } from "./memory.functions";
+import {
+  recordCodingFeedback,
+  resetCodingMemoryPreference,
+  setCodingMemoryPreference,
+} from "./memory.functions";
 const companyId = "11111111-1111-4111-8111-111111111111";
 const identity = {
   companyId,
@@ -82,5 +86,39 @@ describe("Coding Memory authenticated server mutation boundaries", () => {
     await expect(
       invoke(setCodingMemoryPreference, { ...identity, enabled: false }),
     ).rejects.toThrow("Database update required");
+  });
+  it("requires a reset request identity and derives bank scope in the database", async () => {
+    expect(() => invoke(resetCodingMemoryPreference, identity)).toThrow();
+    expect(() =>
+      invoke(resetCodingMemoryPreference, {
+        ...identity,
+        requestId: companyId,
+        bankAccountId: companyId,
+      }),
+    ).toThrow();
+    expect(callRpc).not.toHaveBeenCalled();
+    vi.mocked(callRpc).mockResolvedValueOnce("reset-receipt");
+    await expect(
+      invoke(resetCodingMemoryPreference, { ...identity, requestId: companyId }),
+    ).resolves.toBe("reset-receipt");
+    expect(vi.mocked(assertCompanyPermission).mock.calls.map((call) => call[2])).toEqual([
+      "banking.categorise",
+      "banking.view",
+    ]);
+    expect(callRpc).toHaveBeenCalledWith(context.supabase, "reset_bank_coding_memory_preference", {
+      _company_id: companyId,
+      _bank_transaction_id: identity.bankTransactionId,
+      _history_id: identity.historyId,
+      _request_id: companyId,
+    });
+  });
+  it("denies reset if Banking read access was revoked", async () => {
+    vi.mocked(assertCompanyPermission)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("Read permission revoked"));
+    await expect(
+      invoke(resetCodingMemoryPreference, { ...identity, requestId: companyId }),
+    ).rejects.toThrow("Read permission revoked");
+    expect(callRpc).not.toHaveBeenCalled();
   });
 });

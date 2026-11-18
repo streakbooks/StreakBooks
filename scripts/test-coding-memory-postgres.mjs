@@ -87,11 +87,12 @@ try {
     `create function public.bump_bank_coding_history(uuid,text,text,uuid,text) returns void language sql as $$ select $$;`,
   );
   sql(read("tests/fixtures/coding-memory/setup.sql"));
-  const files = readdirSync(path.join(root, "supabase/migrations")).filter((n) =>
-    n.endsWith("_bank_coding_memory_events.sql"),
+  const files = readdirSync(path.join(root, "supabase/migrations")).filter(
+    (n) =>
+      n.endsWith("_bank_coding_memory_events.sql") || n.endsWith("_scoped_coding_memory_reset.sql"),
   );
-  if (files.length !== 1) throw Error("Expected one Coding Memory migration");
-  sql(read(`supabase/migrations/${files[0]}`));
+  if (files.length !== 2) throw Error("Expected the foundation and scoped reset migrations");
+  for (const file of files.sort()) sql(read(`supabase/migrations/${file}`));
   sql(read("tests/fixtures/coding-memory/scenarios.sql"));
   // Two simultaneous transactions re-link the same approved journal after an unmatch.
   sql(`delete from public.reconciliation_links where bank_transaction_id=md5('base-txn')::uuid;`);
@@ -105,6 +106,9 @@ try {
   sql(`select public.test_assert((select count(*)=1 from public.bank_coding_events where journal_id=md5('base-journal')::uuid),'concurrent event deduplication');
     select public.test_assert((select count(*)=1 from public.audit_events where action='bank_coding_memory.learned' and entity_id=md5('base-txn')::uuid),'concurrent audit deduplication');`);
   sql("select public.test_seed('race');");
+  sql(
+    `select public.test_assert((select status::text='posted' and reversed_by_journal_id is null from public.journals where id=md5('race-journal')::uuid),'concurrent reversal starts with posted journal');`,
+  );
   const reversal = promisify(execFile)(
     "docker",
     [
@@ -141,12 +145,19 @@ try {
       { env },
     );
   } catch (error) {
-    if (!String(error.stderr).includes("Coding journal is no longer posted")) throw error;
+    // Either guard can observe the committed reversal, depending on scheduling:
+    // the initial source read or the recheck after waiting for its row lock.
+    if (
+      !String(error.stderr).includes("Coding journal is no longer posted") &&
+      !String(error.stderr).includes("Coding evidence does not match the posted bank transaction")
+    )
+      throw error;
     linkDenied = true;
   }
   await reversal;
   if (!linkDenied) throw Error("Concurrent reversed journal was incorrectly learned");
   sql(`select public.test_assert((select count(*)=0 from public.bank_coding_events where journal_id=md5('race-journal')::uuid),'concurrent reversal cannot learn');
+    select public.test_assert((select reversed_by_journal_id=md5('race-reversal')::uuid from public.journals where id=md5('race-journal')::uuid),'concurrent denial follows committed reversal');
     select public.test_assert((select count(*)=0 from public.reconciliation_links where bank_transaction_id=md5('race-txn')::uuid),'concurrent reversal rolls link back');`);
   sql(`select public.test_seed('split');
     update public.journal_lines set debit_minor=6000 where id=md5('split-offsetline')::uuid;
@@ -156,6 +167,23 @@ try {
     select public.test_link('split'); reset role;
     select public.test_assert((select jsonb_array_length(allocations)=2 from public.bank_coding_events where journal_id=md5('split-journal')::uuid),'split allocations preserved');
     select public.test_assert((public.get_bank_coding_memory(md5('company-a')::uuid,md5('next-txn')::uuid)->0->>'times_used')::int=1,'split not flattened into a single account hint');`);
+  sql(read("tests/fixtures/coding-memory/reset-scenarios.sql"));
+  const feedbackRace = `set request.jwt.claims='{"sub":"11111111-1111-4111-8111-111111111111","aal":"aal2"}'; set role authenticated;
+    select public.record_bank_coding_feedback(md5('company-a')::uuid,md5('bank2-txn')::uuid,
+      (select history_id from public.bank_coding_events where journal_id=md5('base-journal')::uuid),'rejected',md5('race-feedback')::uuid);`;
+  const resetRace = `set request.jwt.claims='{"sub":"11111111-1111-4111-8111-111111111111","aal":"aal2"}'; set role authenticated;
+    select public.reset_bank_coding_memory_preference(md5('company-a')::uuid,md5('bank2-txn')::uuid,
+      (select history_id from public.bank_coding_events where journal_id=md5('base-journal')::uuid),md5('race-reset')::uuid);`;
+  for (const command of [feedbackRace, resetRace]) {
+    const results = await Promise.all(
+      [1, 2].map(() => promisify(execFile)("docker", [...prefix, ...psql, "-c", command], { env })),
+    );
+    if (results[0].stdout !== results[1].stdout)
+      throw Error("Concurrent retry returned different receipts");
+  }
+  sql(`select public.test_assert((select count(*)=1 from public.bank_coding_memory_resets where request_id=md5('race-reset')::uuid),'concurrent reset receipt deduplicated');
+    select public.test_assert((select count(*)=1 from public.audit_events where action='bank_coding_memory.reset' and details->>'bank_account_id'=md5('bank2')::uuid::text),'concurrent reset audit deduplicated');
+    select public.test_assert((select count(*)=1 from public.bank_coding_feedback where request_id=md5('race-feedback')::uuid),'concurrent feedback receipt deduplicated');`);
   sql(`set request.jwt.claims='{"sub":"11111111-1111-4111-8111-111111111111","aal":"aal2"}';
     select public.test_denied('select public.reset_demo_company(md5(''company-a'')::uuid)','reset requires explicit permission');
     insert into public.test_permissions values(md5('company-a')::uuid,'11111111-1111-4111-8111-111111111111','demo.reset');
@@ -171,9 +199,11 @@ try {
     reset role;
     select public.test_assert((select count(*)=0 from public.bank_coding_events),'authorised demo reset clears events');
     select public.test_assert((select count(*)=0 from public.bank_coding_feedback),'authorised demo reset clears feedback');
-    select public.test_assert((select count(*)=0 from public.bank_coding_memory_preferences),'authorised demo reset clears preferences');`);
+    select public.test_assert((select count(*)=0 from public.bank_coding_memory_preferences),'authorised demo reset clears preferences');
+    select public.test_assert((select count(*)=0 from public.bank_coding_memory_controls),'authorised demo reset clears scoped controls');
+    select public.test_assert((select count(*)=0 from public.bank_coding_memory_resets),'authorised demo reset clears reset receipts');`);
   console.log(
-    `Coding Memory PostgreSQL: ${sql("select count(*) from public.test_assertions").trim()} assertions passed; 0 failed. Isolated fixtures, no production connection. Includes concurrent relink and reversal sessions.`,
+    `Coding Memory PostgreSQL: ${sql("select count(*) from public.test_assertions").trim()} assertions passed; 0 failed. Isolated fixtures, no production connection. Includes concurrent relink, reversal, feedback and reset sessions.`,
   );
 } finally {
   try {

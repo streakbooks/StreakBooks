@@ -77,6 +77,7 @@ export type PmRentCharge = {
   currencyCode: string;
   status: "draft" | "posted" | "partially_paid" | "paid" | "void";
   description: string | null;
+  journalId: string | null;
   createdAt: string;
 };
 

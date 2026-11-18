@@ -102,6 +102,7 @@ function mapRentCharge(raw: unknown): PmRentCharge {
     currencyCode: str(pick(row, "currencyCode", "currency_code")),
     status: (pick(row, "status") ?? "draft") as PmRentCharge["status"],
     description: strOrNull(pick(row, "description")),
+    journalId: strOrNull(pick(row, "journalId", "journal_id")),
     createdAt: str(pick(row, "createdAt", "created_at")),
   };
 }

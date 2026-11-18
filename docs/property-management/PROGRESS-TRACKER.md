@@ -1,38 +1,30 @@
 # Property Management — progress tracker
 
 **Updated:** 2026-11-18  
-**Baseline SHA:** `0ca84bef58d9783dd993c21eb72e145d979d1ab7`  
-**Current branch:** `feature/pm-02-ownership-agreements-polish`  
-**Current phase:** Phase 0–7 (ops + statement engine in flight)  
-**Current PRs:** [#267](https://github.com/linkbusinessadvisory/LinkBooks/pull/267), [#268](https://github.com/linkbusinessadvisory/LinkBooks/pull/268)
+**Current branch:** `feature/pm-production-posting-payouts-portals`  
+**Current phase:** PM-05 / PM-09 / PM-10 posting, payouts, portals  
+**Authoritative repo:** https://github.com/linkbusinessadvisory/LinkBooks
 
 ## Overall progress
 
 | Metric | Value |
 | --- | --- |
-| Completed tasks | 10 (audit through ownership + tenants/leases/rent/reservations/statements) |
-| Total tracked tasks (PR batches) | 15 |
-| Percentage complete | ~40% (ops + statement calc; **not** full production — no GL posting/payouts/portals/CI) |
-| Failed checks | GitHub Actions blocked by **org billing** (jobs never started); not a code failure |
-| Blocked tasks | GitHub Actions billing; staging/prod migration apply still needs environment confirmation |
-| Next action | Push ops+statements; merge stack when billing restored; then payouts + journal posting |
+| Completed batches | PM-00…PM-04 foundation/ops/statements; PM-05 posting; PM-09 payouts/trust basics; PM-10 portal grants |
+| Remaining product gaps | Full trust recon, self-serve portal login UI, PMS/OTA APIs, bulk templates, management-fees workspace polish |
+| Percentage complete (accounting-critical path) | ~75% — GL posting + payouts + COA mappings live; not statutory trust certified |
+| Failed checks | GitHub Actions may still be blocked by **org billing** |
+| Live DB (`ipxflpzfcqwtenodbxwc`) | Migrations `20261118150000`, `20261118160000`, `20261118170000` applied |
 
 ## Verification dimensions
 
 | Dimension | Status |
 | --- | --- |
-| Product specification | Partial → strong for P0 settlement scope |
-| Frontend implementation | Partial (portfolio + LTR/STR ops + owner statement workspace) |
-| Backend implementation | Partial (master data + ops + statement RPCs; **no** `post_journal` yet) |
-| Database migration | Two migrations on branch; **not applied** to staging/prod |
-| Permissions and RLS | Seeded; local `check:modules` passed; live RLS not tested |
-| Accounting integrity | Not tested (statements allocate ops data only) |
-| Owner statement calculations | Implemented in SQL + UI; needs live DB verification |
-| Integration tests | Not run |
-| E2E tests | Not run |
-| GitHub PR | #267/#268 open |
-| GitHub CI | Failed to start — billing/spending limit |
-| Staging | Not verified |
-| Production | Not verified |
+| Frontend | Portfolio, ops, statements, settings COA, rent post, owner payouts, trust summary, portal invites |
+| Backend | RPCs use `post_journal` (`source_type` other); permissions fail-closed |
+| Database migration | Three PM migrations applied on linked remote |
+| Permissions and RLS | Seeded; local `check:modules` / `check:ui` / `check:navigation` passed |
+| Accounting integrity | Posting paths implemented; needs authenticated staging walkthrough with real COA |
+| E2E / CI | Not green if billing blocks runners |
+| Production verification | Migration applied; full authenticated ledger walkthrough not claimed |
 
 Completion is never measured by screen count alone.

@@ -13,6 +13,9 @@ import { PmLeasesPage } from "@/screens/property-management/leases";
 import { PmRentChargesPage } from "@/screens/property-management/rent-charges";
 import { PmReservationsPage } from "@/screens/property-management/reservations";
 import { PmOwnerStatementsPage } from "@/screens/property-management/owner-statements";
+import { PmOwnerPayoutsPage } from "@/screens/property-management/owner-payouts";
+import { PmTrustAccountingPage } from "@/screens/property-management/trust-accounting";
+import { PmPortalPage } from "@/screens/property-management/portals";
 
 /**
  * Dispatches Property Management section routes.
@@ -28,6 +31,10 @@ export function PmSectionPage({ sectionKey }: { sectionKey: PmSectionKey }) {
   if (sectionKey === "rent-charges") return <PmRentChargesPage />;
   if (sectionKey === "reservations") return <PmReservationsPage />;
   if (sectionKey === "owner-statements") return <PmOwnerStatementsPage />;
+  if (sectionKey === "owner-payouts") return <PmOwnerPayoutsPage />;
+  if (sectionKey === "trust-accounting") return <PmTrustAccountingPage />;
+  if (sectionKey === "owner-portal") return <PmPortalPage kind="owner" />;
+  if (sectionKey === "tenant-portal") return <PmPortalPage kind="tenant" />;
   if (sectionKey === "settings") return <PmSettingsPage />;
 
   const section = pmSection(sectionKey);

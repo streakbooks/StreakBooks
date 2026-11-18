@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Files own-query URL restoration (2026-11-19)
+
+- `src/lib/documents/files-navigation.ts`: only own URL query fields are accepted; inherited prototype values for folder, file, search, type, sort, view and page are ignored. Commit `38ab1375691dd0f702d89fe3d8900ed05b57d245`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: inherited-property and null-prototype regression scenarios. Commit `639f1877e4da54ab8b036ac06bff2d4f2ff03f4a`. **WRITTEN, NOT RUN.**
+- Manifest evidence updated in `24f26e6de7a995ae7a723461282a4f36062efefb`. **NOT RUN:** inventory guard, TypeScript, lint, Vitest, build, authenticated browser/accessibility, security/RLS or accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main changes, manually triggered CI, production DB changes or deployment.
+
+
 ### Files canonical pagination and regression fixture correction (2026-11-18)
 
 - `src/lib/documents/files-navigation.ts`: reject padded and leading-zero page query strings while retaining the existing page cap and independent filters; commit `084bc882ebc8bc6e238ebb3e2c8ee4848ff41c71`. **SOURCE ONLY; NOT RUN.**

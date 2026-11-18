@@ -78,6 +78,16 @@ describe("Files workspace native browsing state", () => {
     expect(parseFilesListSearch({ type: ["company"] })).toEqual({});
   });
 
+  it("ignores prototype-inherited query values without losing own fields", () => {
+    const inherited = Object.create({ folder, file, q: "spoofed", type: "company", sort: "largest", view: "review", page: "8" }) as Record<string, unknown>;
+    expect(parseFilesListSearch(inherited)).toEqual({});
+    inherited["q"] = "  actual search  ";
+    inherited["page"] = "2";
+    expect(parseFilesListSearch(inherited)).toEqual({ q: "actual search", page: 2 });
+    const nullPrototype = Object.assign(Object.create(null) as Record<string, unknown>, { folder, sort: "name" });
+    expect(parseFilesListSearch(nullPrototype)).toEqual({ folder, sort: "name" });
+  });
+
   it("preserves filter characters safely through a standard URL", () => {
     const query = "Tax & books + FY/26";
     const params = new URLSearchParams({ q: query, sort: "name", view: "to-file" });

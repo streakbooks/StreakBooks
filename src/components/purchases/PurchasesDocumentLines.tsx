@@ -14,7 +14,7 @@ import { type PurchaseLineFormState, emptyPurchaseLine } from "@/lib/purchases/l
 import { useVoiceSession } from "@/components/ai-voice/voice-context";
 
 import { isPurchaseTaxCode } from "@/lib/purchases/tax-code-eligibility";
-import { Trash2, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
+import { Trash2, GripVertical } from "lucide-react";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { computeBillTotals, type TaxCalculationMode } from "@/lib/purchases/bill-form-helpers";
 import { Button } from "@/components/ui/button";
@@ -388,17 +388,6 @@ export function PurchasesDocumentLines({
       taxCodeId,
       taxRateBps: code ? String(code.rateBps) : lines[idx]!.taxRateBps,
     });
-  };
-
-  const moveLine = (idx: number, dir: -1 | 1) => {
-    voice?.clearField();
-    const j = idx + dir;
-    if (j < 0 || j >= lines.length) return;
-    const next = [...lines];
-    const tmp = next[idx]!;
-    next[idx] = next[j]!;
-    next[j] = tmp;
-    onChange(next);
   };
 
   const addMultiple = (n: number) => {
@@ -875,44 +864,20 @@ export function PurchasesDocumentLines({
                     <td className="px-2 py-1 text-right tabular-nums whitespace-nowrap">{lineAmount}</td>
                   ) : null}
                   <td className="p-0">
-                    <div className="flex items-center gap-0.5">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-7"
-                        disabled={idx === 0}
-                        onClick={() => moveLine(idx, -1)}
-                        aria-label={`Move line ${idx + 1} up`}
-                      >
-                        <ChevronUp className="size-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-7"
-                        disabled={idx >= lines.length - 1}
-                        onClick={() => moveLine(idx, 1)}
-                        aria-label={`Move line ${idx + 1} down`}
-                      >
-                        <ChevronDown className="size-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-7 text-destructive"
-                        disabled={lines.length <= 1}
-                        onClick={() => {
-                          voice?.clearField();
-                          onChange(lines.filter((_, i) => i !== idx));
-                        }}
-                        aria-label={`Delete line ${idx + 1}`}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 text-destructive"
+                      disabled={lines.length <= 1}
+                      onClick={() => {
+                        voice?.clearField();
+                        onChange(lines.filter((_, i) => i !== idx));
+                      }}
+                      aria-label={`Delete line ${idx + 1}`}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
                   </td>
                 </tr>
               );

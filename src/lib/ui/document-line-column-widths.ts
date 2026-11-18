@@ -28,7 +28,7 @@ export const DEFAULT_PURCHASE_LINE_COLUMN_WIDTHS = {
   customer: 148,
   billable: 72,
   amount: 100,
-  actions: 96,
+  actions: 48,
 } as const;
 
 export const DEFAULT_SALES_LINE_COLUMN_WIDTHS = {

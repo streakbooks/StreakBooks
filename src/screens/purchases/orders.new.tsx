@@ -2,11 +2,11 @@ import type { PurchaseOrderDetail } from "@/lib/purchases/purchase-order-data";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { impliedDiscountMinor } from "@/lib/purchases/po-convert";
 import { getPurchaseOrder } from "@/lib/purchases/purchases.functions";
-import { useRef, useState } from "react";
+import { useRef, useState, type DragEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowDown, ArrowUp, Copy, Loader2, Trash2 } from "lucide-react";
+import { Copy, GripVertical, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
@@ -214,13 +214,28 @@ function OrderForm({
   });
   const updateLine = (key: number, patch: Partial<PurchaseOrderLineForm>) =>
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
-  const moveLine = (index: number, direction: number) =>
+  const onDragStart = (event: DragEvent, index: number) => {
+    event.dataTransfer.setData("text/plain", String(index));
+    event.dataTransfer.effectAllowed = "move";
+  };
+  const onDrop = (event: DragEvent, toIndex: number) => {
+    event.preventDefault();
+    const fromIndex = Number(event.dataTransfer.getData("text/plain"));
+    if (
+      !Number.isInteger(fromIndex) ||
+      fromIndex === toIndex ||
+      fromIndex < 0 ||
+      fromIndex >= lines.length
+    ) {
+      return;
+    }
     setLines((current) => {
       const next = [...current];
-      const moved = next.splice(index, 1)[0]!;
-      next.splice(index + direction, 0, moved);
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved!);
       return next;
     });
+  };
   if (suppliersQ.isPending || accountsQ.isPending || orgQ.isPending) return <LoadingState />;
   if (suppliersQ.isError || accountsQ.isError || orgQ.isError)
     return (
@@ -340,13 +355,14 @@ function OrderForm({
           <EditableLineItemGrid
             aria-label="Order lines"
             columns={[
+              { id: "reorder", header: "", widthPx: 36, minWidthPx: 36, resizable: false },
               { id: "description", header: "Description", widthPx: 240, minWidthPx: 160 },
               { id: "account", header: "Account", widthPx: 180, minWidthPx: 140 },
               { id: "qty", header: "Qty", align: "right", widthPx: 72, minWidthPx: 64 },
               { id: "price", header: "Price", align: "right", widthPx: 100, minWidthPx: 80 },
               { id: "discount", header: "Discount", align: "right", widthPx: 96, minWidthPx: 72 },
               { id: "tax", header: "Tax %", align: "right", widthPx: 80, minWidthPx: 64 },
-              { id: "actions", header: "", widthPx: 140, minWidthPx: 120, resizable: false },
+              { id: "actions", header: "", widthPx: 88, minWidthPx: 72, resizable: false },
             ]}
             {...(lines.length < 200
               ? {
@@ -360,7 +376,23 @@ function OrderForm({
             addRowLabel="Add line"
           >
             {lines.map((line, index) => (
-              <TableRow key={line.key}>
+              <TableRow
+                key={line.key}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => onDrop(event, index)}
+              >
+                <TableCell className="p-0 align-middle">
+                  <button
+                    type="button"
+                    className="cursor-grab p-1 text-muted-foreground"
+                    draggable={!locked}
+                    onDragStart={(event) => onDragStart(event, index)}
+                    aria-label={`Drag to reorder line ${index + 1}`}
+                    disabled={locked}
+                  >
+                    <GripVertical className="size-4" aria-hidden />
+                  </button>
+                </TableCell>
                 <TableCell className="align-top p-0">
                   <Textarea
                     id={`description-${line.key}`}
@@ -416,33 +448,13 @@ function OrderForm({
                     />
                   </TableCell>
                 ))}
-                <TableCell className="align-top">
-                  <div className="flex flex-wrap gap-0.5">
+                <TableCell className="align-middle p-0">
+                  <div className="flex items-center gap-0.5">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      disabled={index === 0}
-                      onClick={() => moveLine(index, -1)}
-                      aria-label={`Move line ${index + 1} up`}
-                    >
-                      <ArrowUp className="size-4" aria-hidden />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      disabled={index === lines.length - 1}
-                      onClick={() => moveLine(index, 1)}
-                      aria-label={`Move line ${index + 1} down`}
-                    >
-                      <ArrowDown className="size-4" aria-hidden />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      disabled={lines.length >= 200}
+                      disabled={locked || lines.length >= 200}
                       onClick={() =>
                         setLines((current) => [...current, { ...line, key: nextKey.current++ }])
                       }
@@ -454,7 +466,8 @@ function OrderForm({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      disabled={lines.length === 1}
+                      className="text-destructive"
+                      disabled={locked || lines.length === 1}
                       onClick={() =>
                         setLines((current) => current.filter((l) => l.key !== line.key))
                       }

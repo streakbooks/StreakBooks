@@ -109,8 +109,9 @@ export function PmOwnersPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Owners" description="Beneficial owners.">
-        <PmSubnav current="owners" />
+      <ListWorkspace title="Owners" description="Beneficial owners."
+      subnav={<PmSubnav current="owners" />}
+    >
         <EmptyState
           title="No access"
           description="Ask an administrator for property.owner.view."
@@ -134,8 +135,8 @@ export function PmOwnersPage() {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current="owners" />}
     >
-      <PmSubnav current="owners" />
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="Module disabled"

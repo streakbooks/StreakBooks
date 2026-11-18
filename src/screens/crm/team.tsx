@@ -142,8 +142,8 @@ export function CrmTeamPage() {
           </Button>
         ) : undefined
       }
+      subnav={<CrmSubnav current="team" />}
     >
-      <CrmSubnav current="team" />
 
       {settings.data && !settings.data.enabled ? (
         <EmptyState

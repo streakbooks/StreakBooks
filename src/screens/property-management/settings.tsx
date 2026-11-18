@@ -157,8 +157,9 @@ export function PmSettingsPage() {
   }
   if (!canAdmin) {
     return (
-      <ListWorkspace title="Settings" description="Organisation Property Management configuration.">
-        <PmSubnav current="settings" />
+      <ListWorkspace title="Settings" description="Organisation Property Management configuration."
+      subnav={<PmSubnav current="settings" />}
+    >
         <EmptyState
           title="Administrator access required"
           description="Only users with property.settings.manage can change these settings."
@@ -221,8 +222,8 @@ export function PmSettingsPage() {
           {mutation.isPending ? "Saving…" : "Save settings"}
         </Button>
       }
+      subnav={<PmSubnav current="settings" />}
     >
-      <PmSubnav current="settings" />
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
         <ErrorState

@@ -99,8 +99,9 @@ export function PmPropertiesPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Properties" description="Property register.">
-        <PmSubnav current="properties" />
+      <ListWorkspace title="Properties" description="Property register."
+      subnav={<PmSubnav current="properties" />}
+    >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -121,8 +122,8 @@ export function PmPropertiesPage() {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current="properties" />}
     >
-      <PmSubnav current="properties" />
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
         <ErrorState

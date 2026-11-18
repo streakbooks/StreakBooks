@@ -6,8 +6,8 @@
 | --- | ---: | --- | --- |
 | HR | 25 sections | GroupedModuleSubnav (5 groups) + ListWorkspace `subnav` | Redesigned Batch 43 |
 | Payroll | 8 | GroupedModuleSubnav (4 groups) | Adopted Batch 43 |
-| CRM | 20 | GroupedModuleSubnav | Adopted shared Batch 41 |
-| Property Management | 23 | GroupedModuleSubnav | Adopted shared Batch 41 |
+| CRM | 20 | GroupedModuleSubnav + ListWorkspace `subnav` | Batch 41 groups; Batch 45 subnav slot |
+| Property Management | 23 | GroupedModuleSubnav + ListWorkspace `subnav` | Batch 41 groups; Batch 45 subnav slot |
 | Expenses | 16 | GroupedModuleSubnav + ListWorkspace `subnav` | Adopted shared Batch 41 |
 | Sales / Purchases / Banking | 9–13 | ModuleSubnav (flat strip, denser) | Density Batch 41 |
 | App Store | 16 | GroupedModuleSubnav | Redesigned Batch 41 |

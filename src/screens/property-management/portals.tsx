@@ -149,8 +149,9 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
   }
   if (!canView) {
     return (
-      <ListWorkspace title={title} description="Portal access grants.">
-        <PmSubnav current={sectionKey} />
+      <ListWorkspace title={title} description="Portal access grants."
+      subnav={<PmSubnav current={sectionKey} />}
+    >
         <EmptyState title="No access" description="Ask an administrator for portal permissions." />
       </ListWorkspace>
     );
@@ -171,8 +172,8 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current={sectionKey} />}
     >
-      <PmSubnav current={sectionKey} />
       {!settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (

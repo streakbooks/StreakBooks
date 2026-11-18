@@ -1,19 +1,26 @@
 import { QueryErrorState } from "@/components/common/QueryErrorState";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { listPaymentAccounts, saveAndPostExpense } from "@/lib/purchases/purchases.functions";
-import { parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
+import { tryParseMinor } from "@/lib/purchases/money-input";
+import {
+  createSpendMoneyLines,
+  emptySpendMoneyLine,
+  sumSpendMoneyLinesMinor,
+  type SpendMoneyLine,
+} from "@/lib/banking/spend-money-lines";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState } from "@/components/common/states";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
+import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import {
@@ -23,8 +30,8 @@ import {
 import { AccountLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { fromMinorUnits } from "@/lib/accounting/money";
 
 export function NewExpense({
@@ -82,7 +89,7 @@ export function NewExpense({
   const [expenseDate, setExpenseDate] = useState(today);
   const [expenseAccountId, setExpenseAccountId] = useState("");
   const [paymentAccountId, setPaymentAccountId] = useState(initialBankAccountId ?? "");
-  const [amount, setAmount] = useState("0.00");
+  const [lines, setLines] = useState<SpendMoneyLine[]>(() => createSpendMoneyLines());
   const [tax, setTax] = useState("0.00");
   const [reference, setReference] = useState("");
   const [memo, setMemo] = useState("");
@@ -93,17 +100,34 @@ export function NewExpense({
     if (initialBankAccountId) setPaymentAccountId(initialBankAccountId);
   }, [initialBankAccountId]);
 
-  const amountInvalid = tryParseMinor(amount || "0", currency) === null;
-  const taxInvalid = tryParseMinor(tax || "0", currency) === null;
-
-  const netMinor = tryParseMinor(amount || "0", currency);
+  const rolled = useMemo(() => sumSpendMoneyLinesMinor(lines, currency), [lines, currency]);
   const taxMinor = tryParseMinor(tax || "0", currency);
+  const taxInvalid = taxMinor === null;
+  const netMinor = rolled.netMinor;
+  const amountInvalid = netMinor === null;
   const totalMinor =
     netMinor !== null && taxMinor !== null ? Number(netMinor) + Number(taxMinor) : null;
 
+  function updateLine(id: string, patch: Partial<SpendMoneyLine>) {
+    setLines((previous) => previous.map((line) => (line.id === id ? { ...line, ...patch } : line)));
+  }
+
+  function resetForm() {
+    setPayeeName("");
+    setExpenseDate(today);
+    setExpenseAccountId("");
+    setPaymentAccountId(initialBankAccountId ?? "");
+    setLines(createSpendMoneyLines());
+    setTax("0.00");
+    setReference("");
+    setMemo("");
+  }
+
   const mutation = useMutation({
-    mutationFn: (post: boolean) =>
-      saveExpense({
+    mutationFn: (post: boolean) => {
+      if (netMinor === null) throw new Error("Enter valid line quantities and prices");
+      const composedMemo = [memo.trim(), rolled.memoFromLines].filter(Boolean).join(" — ").slice(0, 500);
+      return saveExpense({
         data: {
           companyId: companyId!,
           payeeName,
@@ -111,13 +135,14 @@ export function NewExpense({
           expenseAccountId,
           paymentAccountId,
           currencyCode: currency,
-          netMinor: Number(parseMinorOrThrow(amount || "0", currency, "Net amount")),
-          taxMinor: Number(parseMinorOrThrow(tax || "0", currency, "Tax")),
+          netMinor: Number(netMinor),
+          taxMinor: Number(taxMinor ?? 0),
           reference,
-          memo,
+          memo: composedMemo,
           post,
         },
-      }),
+      });
+    },
     onSuccess: async (result) => {
       try {
         await recordRef.current?.flush(result.id);
@@ -136,22 +161,11 @@ export function NewExpense({
       );
       if (addAnotherPending.current) {
         addAnotherPending.current = false;
-        setPayeeName("");
-        setExpenseDate(today);
-        setExpenseAccountId("");
-        setPaymentAccountId(initialBankAccountId ?? "");
-        setAmount("0.00");
-        setTax("0.00");
-        setReference("");
-        setMemo("");
+        resetForm();
         return;
       }
       if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
         void navigate({ to: returnTo as never });
-        return;
-      }
-      if (isBanking) {
-        void navigate({ to: "/purchases/expenses/$expenseId", params: { expenseId: result.id } });
         return;
       }
       void navigate({ to: "/purchases/expenses/$expenseId", params: { expenseId: result.id } });
@@ -166,14 +180,14 @@ export function NewExpense({
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (accountsQ.isPending || paymentAccountsQ.isPending) return <LoadingState />;
 
-  const blocked = mutation.isPending || amountInvalid || taxInvalid;
+  const blocked = mutation.isPending || amountInvalid || taxInvalid || !expenseAccountId || !paymentAccountId;
 
   return (
     <TransactionWorkspace
       title={isBanking ? "Spend money" : "New direct expense"}
       description={
         isBanking
-          ? "Pays immediately from a bank account (DR expense / CR bank). Supplier bills stay in Purchases."
+          ? "Pays immediately from a bank account (DR expense / CR bank). Line amounts roll up to one expense account."
           : "Pays immediately (DR expense / CR bank). Use Bills for supplier invoices paid later."
       }
       breadcrumbs={
@@ -204,20 +218,40 @@ export function NewExpense({
       details={
         <FormGrid columns={4}>
           <FormControlShell width="contact">
-            <Label>Payee</Label>
-            <Input value={payeeName} onChange={(e) => setPayeeName(e.target.value)} />
+            <Label htmlFor="spend-payee">Payee</Label>
+            <Input
+              id="spend-payee"
+              value={payeeName}
+              onChange={(e) => setPayeeName(e.target.value)}
+              placeholder="Who was paid"
+            />
           </FormControlShell>
           <FormControlShell width="date">
-            <Label>Date</Label>
+            <Label htmlFor="spend-date">Date</Label>
             <Input
+              id="spend-date"
               type="date"
               value={expenseDate}
               onChange={(e) => setExpenseDate(e.target.value)}
             />
           </FormControlShell>
           <FormControlShell>
-            <Label>Reference</Label>
-            <Input value={reference} onChange={(e) => setReference(e.target.value)} />
+            <Label htmlFor="spend-reference">Reference</Label>
+            <Input
+              id="spend-reference"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+            />
+          </FormControlShell>
+          <FormControlShell width="money">
+            <Label htmlFor="spend-tax">Tax ({currency})</Label>
+            <Input
+              id="spend-tax"
+              value={tax}
+              inputMode="decimal"
+              aria-invalid={taxInvalid}
+              onChange={(e) => setTax(e.target.value)}
+            />
           </FormControlShell>
           <FormControlShell width="contact">
             <Label>Expense account</Label>
@@ -245,57 +279,124 @@ export function NewExpense({
               allowClear={false}
             />
           </FormControlShell>
-          <FormControlShell width="money">
-            <Label>Net ({currency})</Label>
+          <FormControlShell width="full" className="sm:col-span-2">
+            <Label htmlFor="spend-memo">Memo (optional)</Label>
             <Input
-              value={amount}
-              inputMode="decimal"
-              aria-invalid={amountInvalid}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </FormControlShell>
-          <FormControlShell width="money">
-            <Label>Tax ({currency})</Label>
-            <Input
-              value={tax}
-              inputMode="decimal"
-              aria-invalid={taxInvalid}
-              onChange={(e) => setTax(e.target.value)}
-            />
-          </FormControlShell>
-          <FormControlShell width="full" className="sm:col-span-2 xl:col-span-4">
-            <Label>Memo</Label>
-            <Textarea
+              id="spend-memo"
               value={memo}
-              rows={1}
-              className="lb-spreadsheet-wrap min-h-8"
               onChange={(e) => setMemo(e.target.value)}
+              placeholder="Extra note — line descriptions are appended on save"
             />
           </FormControlShell>
         </FormGrid>
       }
-      totals={
-        <TotalsSummary
-          lines={[
+      lines={
+        <EditableLineItemGrid
+          aria-label="Spend money lines"
+          columns={[
             {
-              id: "net",
-              label: "Net",
-              value: fromMinorUnits(Number(netMinor ?? 0), currency),
+              id: "description",
+              header: "Description",
+              widthPx: 280,
+              minWidthPx: 200,
+              fluid: true,
+            },
+            { id: "qty", header: "Qty", align: "right", widthPx: 72, minWidthPx: 64 },
+            {
+              id: "price",
+              header: "Unit price",
+              align: "right",
+              widthPx: 110,
+              minWidthPx: 88,
             },
             {
-              id: "tax",
-              label: "Tax",
-              value: fromMinorUnits(Number(taxMinor ?? 0), currency),
-              emphasis: "muted",
+              id: "amount",
+              header: "Amount",
+              align: "right",
+              widthPx: 110,
+              minWidthPx: 88,
+              resizable: false,
             },
-            {
-              id: "total",
-              label: "Total",
-              value: fromMinorUnits(totalMinor ?? 0, currency),
-              emphasis: "total",
-            },
+            { id: "actions", header: "", widthPx: 48, minWidthPx: 40, resizable: false },
           ]}
-        />
+          onAddRow={() => setLines((previous) => [...previous, emptySpendMoneyLine()])}
+          addRowLabel="Add line"
+          footer={
+            <TotalsSummary
+              lines={[
+                {
+                  id: "net",
+                  label: "Net",
+                  value: fromMinorUnits(Number(netMinor ?? 0), currency),
+                },
+                {
+                  id: "tax",
+                  label: "Tax",
+                  value: fromMinorUnits(Number(taxMinor ?? 0), currency),
+                  emphasis: "muted",
+                },
+                {
+                  id: "total",
+                  label: "Total",
+                  value: fromMinorUnits(totalMinor ?? 0, currency),
+                  emphasis: "total",
+                },
+              ]}
+            />
+          }
+        >
+          {lines.map((line, index) => {
+            const qty = Number(line.quantity);
+            const unit = tryParseMinor(line.unitPrice || "0", currency);
+            const lineMinor =
+              Number.isFinite(qty) && unit !== null ? Math.round(qty * Number(unit)) : null;
+            return (
+              <TableRow key={line.id}>
+                <TableCell className="p-0">
+                  <Input
+                    aria-label={`Line ${index + 1} description`}
+                    value={line.description}
+                    onChange={(e) => updateLine(line.id, { description: e.target.value })}
+                    placeholder="What was purchased"
+                  />
+                </TableCell>
+                <TableCell className="p-0">
+                  <Input
+                    aria-label={`Line ${index + 1} quantity`}
+                    value={line.quantity}
+                    inputMode="decimal"
+                    className="text-right tabular-nums"
+                    onChange={(e) => updateLine(line.id, { quantity: e.target.value })}
+                  />
+                </TableCell>
+                <TableCell className="p-0">
+                  <Input
+                    aria-label={`Line ${index + 1} unit price`}
+                    value={line.unitPrice}
+                    inputMode="decimal"
+                    className="text-right tabular-nums"
+                    onChange={(e) => updateLine(line.id, { unitPrice: e.target.value })}
+                  />
+                </TableCell>
+                <TableCell className="px-2 text-right tabular-nums text-sm">
+                  {lineMinor === null ? "—" : fromMinorUnits(lineMinor, currency)}
+                </TableCell>
+                <TableCell className="p-0">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Remove line ${index + 1}`}
+                    disabled={lines.length <= 1}
+                    onClick={() => setLines((previous) => previous.filter((row) => row.id !== line.id))}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </EditableLineItemGrid>
       }
       support={
         <DocumentRecordPanel

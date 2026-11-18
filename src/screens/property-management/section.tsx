@@ -47,8 +47,8 @@ export function PmSectionPage({ sectionKey }: { sectionKey: PmSectionKey }) {
         { label: "Property Management", to: "/property-management" },
         { label: section.label },
       ]}
+      subnav={<PmSubnav current={sectionKey} />}
     >
-      <PmSubnav current={sectionKey} />
       <EmptyState
         title={`${section.label} arrives in ${section.batch}`}
         description="This surface is registered for deep links and access control. Backend capabilities will ship in the listed batch with real authorization and persistence."

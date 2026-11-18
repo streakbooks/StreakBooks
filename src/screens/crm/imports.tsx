@@ -56,8 +56,8 @@ export function CrmImportsPage() {
       title="Imports & Exports"
       description="Permissions are registered; mapping and audit backends are not ready, so actions stay blocked."
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "Imports & Exports" }]}
+      subnav={<CrmSubnav current="imports" />}
     >
-      <CrmSubnav current="imports" />
 
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before import/export." />

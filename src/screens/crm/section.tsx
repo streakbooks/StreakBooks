@@ -56,8 +56,8 @@ export function CrmSectionPage({ sectionKey }: { sectionKey: CrmSectionKey }) {
       title={section.label}
       description={`Scheduled for ${section.batch}. Navigation and permissions are live; domain workflows remain fail-closed until that batch lands.`}
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: section.label }]}
+      subnav={<CrmSubnav current={sectionKey} />}
     >
-      <CrmSubnav current={sectionKey} />
       <EmptyState
         title={`${section.label} arrives in ${section.batch}`}
         description={

@@ -91,8 +91,8 @@ export function CrmQuotesPage() {
           <Link to="/sales/quotes">Open Sales quotes</Link>
         </Button>
       }
+      subnav={<CrmSubnav current="quotes" />}
     >
-      <CrmSubnav current="quotes" />
 
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (

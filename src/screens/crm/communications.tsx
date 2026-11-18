@@ -50,8 +50,8 @@ export function CrmCommunicationsPage() {
       title="Communications"
       description="Outbound CRM email is intentionally fail-closed until a provider is approved and connected."
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "Communications" }]}
+      subnav={<CrmSubnav current="communications" />}
     >
-      <CrmSubnav current="communications" />
 
       {settings.data && !settings.data.enabled ? (
         <EmptyState

@@ -115,8 +115,9 @@ export function PmLeasesPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Leases" description="Long-term lease register.">
-        <PmSubnav current="leases" />
+      <ListWorkspace title="Leases" description="Long-term lease register."
+      subnav={<PmSubnav current="leases" />}
+    >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -139,8 +140,8 @@ export function PmLeasesPage() {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current="leases" />}
     >
-      <PmSubnav current="leases" />
       {!settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (

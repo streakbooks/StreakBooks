@@ -142,8 +142,8 @@ export function CrmCampaignsPage() {
           </Button>
         ) : undefined
       }
+      subnav={<CrmSubnav current="campaigns" />}
     >
-      <CrmSubnav current="campaigns" />
 
       {settings.data && !settings.data.enabled ? (
         <EmptyState

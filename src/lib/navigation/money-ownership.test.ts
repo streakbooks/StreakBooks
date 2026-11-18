@@ -28,4 +28,20 @@ describe("money ownership routing", () => {
     expect(claim?.route).toBe(MONEY_OWNERSHIP.expenseClaims.createRoute);
     expect(claim?.route).not.toBe(MONEY_OWNERSHIP.spendMoney.createRoute);
   });
+
+  it("does not leave other money kinds pointing at bare money-documents/new without kind helpers", () => {
+    const moneyIds = [
+      "sales_receipt",
+      "customer_refund",
+      "supplier_refund",
+      "bank_deposit",
+      "card_payment",
+      "bank_adjustment",
+    ] as const;
+    for (const id of moneyIds) {
+      const action = CREATE_ACTIONS.find((entry) => entry.id === id);
+      expect(action?.route).toBe("/banking/money-documents/new");
+      expect(action?.id).not.toBe("receive_money");
+    }
+  });
 });

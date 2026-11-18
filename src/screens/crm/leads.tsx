@@ -227,8 +227,8 @@ export function CrmLeadsPage() {
           </Button>
         ) : undefined
       }
+      subnav={<CrmSubnav current="leads" />}
     >
-      <CrmSubnav current="leads" />
 
       {settings.isLoading ? <LoadingState /> : null}
       {settings.data && !settings.data.enabled ? (

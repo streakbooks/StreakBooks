@@ -118,8 +118,9 @@ export function PmRentChargesPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Rent & Charges" description="Scheduled rent charges.">
-        <PmSubnav current="rent-charges" />
+      <ListWorkspace title="Rent & Charges" description="Scheduled rent charges."
+      subnav={<PmSubnav current="rent-charges" />}
+    >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -140,8 +141,8 @@ export function PmRentChargesPage() {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current="rent-charges" />}
     >
-      <PmSubnav current="rent-charges" />
       {!settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (

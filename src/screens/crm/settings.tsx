@@ -101,8 +101,9 @@ export function CrmSettingsPage() {
   }
   if (!canAdmin) {
     return (
-      <ListWorkspace title="CRM Settings" description="Organisation CRM configuration.">
-        <CrmSubnav current="settings" />
+      <ListWorkspace title="CRM Settings" description="Organisation CRM configuration."
+      subnav={<CrmSubnav current="settings" />}
+    >
         <EmptyState
           title="Administrator access required"
           description="Only users with crm.admin can change CRM settings."
@@ -131,8 +132,8 @@ export function CrmSettingsPage() {
           {mutation.isPending ? "Saving…" : "Save settings"}
         </Button>
       }
+      subnav={<CrmSubnav current="settings" />}
     >
-      <CrmSubnav current="settings" />
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
         <ErrorState

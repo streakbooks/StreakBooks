@@ -19,3 +19,8 @@ Posted spend documents remain readable at `/purchases/expenses/$id` (single ledg
 ## Cross-module shortcuts
 
 Expenses overview **Spend money** opens Banking Spend Money with `returnTo=/expense-management` so Cancel/Back returns to Expenses without inventing a second posting engine.
+
+## Batch 45 editor notes
+
+- Spend Money uses `EditableLineItemGrid` (Description / Qty / Unit price / Amount). Line amounts **roll up** to a single `netMinor` for `saveAndPostExpense` (one expense account + one bank account). True multi-account line posting remains deferred.
+- Receive Money exposes **Save & add another** and **Save & post** (returns to Bank documents).

@@ -106,8 +106,9 @@ export function PmAgreementsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Agreements" description="Management agreements.">
-        <PmSubnav current="agreements" />
+      <ListWorkspace title="Agreements" description="Management agreements."
+      subnav={<PmSubnav current="agreements" />}
+    >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -130,8 +131,8 @@ export function PmAgreementsPage() {
           </Button>
         ) : null
       }
+      subnav={<PmSubnav current="agreements" />}
     >
-      <PmSubnav current="agreements" />
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="Module disabled"

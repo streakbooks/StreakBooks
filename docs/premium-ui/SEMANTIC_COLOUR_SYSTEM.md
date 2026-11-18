@@ -1,7 +1,8 @@
 # LinkBooks semantic colour system
 
-**Version:** Batch 29 (2026-11-18)  
+**Version:** Batch 33 (2026-11-18) — light premium surfaces + Batch 29 semantic map  
 **Extends:** existing tokens in `src/styles.css` — does not invent a second palette system.  
+**Light surfaces:** see [LIGHT_PREMIUM_PALETTE.md](./LIGHT_PREMIUM_PALETTE.md).  
 **Originality:** Colours express **state and purpose**, never competitor trade dress. See [ORIGINALITY_AND_REFERENCE_POLICY.md](./ORIGINALITY_AND_REFERENCE_POLICY.md).
 
 ## Meaning map

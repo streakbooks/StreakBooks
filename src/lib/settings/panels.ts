@@ -24,11 +24,14 @@ export function validateSettingsPanelSearch(search: Record<string, unknown>): {
   settingsTrail?: SettingsPanelId[];
 } {
   const panel = parseSettingsPanel(search["settingsPanel"]);
-  const trail = settingsPanelTrail(search["settingsTrail"]);
+  // Do not persist malformed self-references in refreshable Settings URLs.
+  // A malformed URL may repeat ancestors; retain only the latest occurrence so Close cannot cycle.
+  const trail = dedupeSettingsTrail(settingsPanelTrail(search["settingsTrail"]).filter((id) => id !== panel));
   return panel ? { settingsPanel: panel, ...(trail.length ? { settingsTrail: trail } : {}) } : {};
 }
 export function panelForDestination(destination: SettingsDestination): SettingsPanelId | undefined {
-  if (destination.panel) return destination.panel;
+  // Treat runtime navigation descriptors as untrusted even when their TypeScript type is narrow.
+  if (destination.panel !== undefined) return parseSettingsPanel(destination.panel);
   if (destination.to === "/documents/branding") return "branding";
   if (destination.to === "/contacts/settings") return "contact-settings";
   if (destination.to === "/sales/settings") return "sales-defaults";
@@ -67,7 +70,15 @@ export function panelLabel(panel: SettingsPanelId, owner?: string): string {
 }
 export function closeSettingsPanel(search: Record<string, unknown>): Record<string, unknown> {
   const next = { ...search };
-  const trail = [...settingsPanelTrail(search["settingsTrail"])];
+  // An invalid or absent current panel must not resurrect an old panel from a stale trail.
+  if (!parseSettingsPanel(search["settingsPanel"])) {
+    delete next["settingsPanel"];
+    delete next["settingsTrail"];
+    return next;
+  }
+  // Malformed deep links must not return to the panel being closed.
+  const current = parseSettingsPanel(search["settingsPanel"]);
+  const trail = dedupeSettingsTrail(settingsPanelTrail(search["settingsTrail"]).filter((id) => id !== current));
   const previous = trail.pop();
   if (previous) next["settingsPanel"] = previous;
   else delete next["settingsPanel"];
@@ -75,11 +86,14 @@ export function closeSettingsPanel(search: Record<string, unknown>): Record<stri
   else delete next["settingsTrail"];
   return next;
 }
+function dedupeSettingsTrail(trail: SettingsPanelId[]): SettingsPanelId[] {
+  return trail.filter((id, index) => trail.lastIndexOf(id) === index);
+}
 export function settingsPanelTrail(value: unknown): SettingsPanelId[] {
   return Array.isArray(value) &&
     value.length <= 8 &&
-    value.every((id) => parseSettingsPanel(id) !== undefined)
-    ? (value as SettingsPanelId[])
+    Array.from(value).every((id) => parseSettingsPanel(id) !== undefined)
+    ? (Array.from(value) as SettingsPanelId[])
     : [];
 }
 export function openSettingsPanel(
@@ -87,7 +101,11 @@ export function openSettingsPanel(
   panel: SettingsPanelId,
 ): Record<string, unknown> {
   const previous = parseSettingsPanel(search["settingsPanel"]);
-  let trail = settingsPanelTrail(search["settingsTrail"]);
+  // A missing/invalid current panel cannot own a navigation trail.
+  // Ignore malformed self-references so reopening a panel cannot preserve a cycle.
+  let trail = previous
+    ? dedupeSettingsTrail(settingsPanelTrail(search["settingsTrail"]).filter((id) => id !== previous))
+    : [];
   if (previous && previous !== panel) {
     const existing = trail.indexOf(panel);
     trail = existing >= 0 ? trail.slice(0, existing) : [...trail, previous].slice(-8);

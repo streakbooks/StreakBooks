@@ -28,6 +28,7 @@
     "check:lookups": "node scripts/check-lookup-architecture.mjs",
     "check:navigation": "node scripts/check-native-navigation.mjs",
     "check:visual-coverage": "node scripts/check-premium-visual-coverage.mjs",
+    "check:browsing-coverage": "node scripts/check-browsing-coverage.mjs",
     "test:workflows:postgres": "node scripts/test-workflows-postgres.mjs",
     "test:documents:postgres": "node scripts/test-document-review-postgres.mjs",
     "test:accountant:postgres": "node scripts/test-accountant-exceptions-postgres.mjs",

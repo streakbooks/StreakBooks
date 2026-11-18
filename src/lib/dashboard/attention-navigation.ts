@@ -2,7 +2,12 @@
  * Dashboard task-queue tabs are browser navigation state, not financial data.
  * Invalid or unrecognized parameters must never become redirect destinations.
  */
-export const DASHBOARD_ATTENTION_FILTERS = ["all", "overdue", "upcoming", "bank"] as const;
+export const DASHBOARD_ATTENTION_FILTERS = [
+  "all",
+  "overdue",
+  "upcoming",
+  "bank",
+] as const;
 
 export type DashboardAttentionFilter = (typeof DASHBOARD_ATTENTION_FILTERS)[number];
 export type DashboardSearch = { attention?: DashboardAttentionFilter };

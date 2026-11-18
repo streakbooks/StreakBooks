@@ -1,8 +1,9 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
@@ -29,8 +30,7 @@ import { listPayrollPayslips } from "@/lib/payroll/runs.functions";
 import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -83,7 +83,6 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const canView = useCanDo("payroll.view");
   const canPay = useCanDo("payroll.pay");
   const canAccountingView = useCanDo("accounting.view");
-  const navigate = useNavigate({ from: "/payroll/payments/" });
   const fmt = useFormat();
   const queryClient = useQueryClient();
   const fetchPayments = useServerFn(listPayrollPayments);
@@ -183,7 +182,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           | undefined
       )?.payslips ?? [];
     return items
-      .filter(
+.filter(
         (row) =>
           ["posted", "paid", "complete"].includes(row.run.status) &&
           row.run.currency.toUpperCase() === payCurrency,
@@ -326,36 +325,37 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
     setRecordOpen(true);
   };
 
-  if (isPending) return <LoadingState />;
+  // Preserve native Payroll navigation during loading, missing-company and error states.
+  const renderPaymentState = (content: ReactNode) => (
+    <ListWorkspace title="Payroll payments" >
+      <PayrollSubnav current="payments" />
+      {content}
+    </ListWorkspace>
+  );
+
+  if (isPending) return renderPaymentState(<LoadingState />);
   if (!company) {
-    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+    return renderPaymentState(<CompanyEmptyState title="No organisation" description="Select a company first." />);
   }
   if (!canView) {
-    return (
-      <ListWorkspace title="Payroll payments" description="Record net-pay settlements.">
-        <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
-      </ListWorkspace>
-    );
+    return renderPaymentState(<EmptyState title="No payroll access" description="Ask for payroll.view permission." />);
   }
 
   const page = paymentsQ.data;
-  if (paymentsQ.isPending) return <LoadingState />;
+  if (paymentsQ.isPending) return renderPaymentState(<LoadingState />);
   if (paymentsQ.isError) {
-    return (
+    return renderPaymentState(
       <ErrorState
         title="Could not load payments"
         description={friendlyAuthError(paymentsQ.error)}
         onRetry={() => paymentsQ.refetch()}
-      />
+      />,
     );
   }
   if (page && !page.available) {
     return (
-      <ListWorkspace
-        title="Payroll payments"
-        description="Record net-pay settlements."
-        subnav={<PayrollSubnav current="payments" />}
-      >
+      <ListWorkspace title="Payroll payments" >
+        <PayrollSubnav current="payments" />
         <EmptyState title="Migration pending" description={page.migrationMessage ?? ""} />
       </ListWorkspace>
     );
@@ -382,39 +382,43 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
 
   return (
     <ListWorkspace
-      title="Payroll payments"
-      description="Record net-pay settlements against posted runs. Partial and multiple payments are supported."
-      actions={
-        <div className="flex flex-wrap gap-2">
-          {canPay ? (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={exportMut.isPending}
-                onClick={() => exportMut.mutate()}
-              >
-                Generic bank CSV
-              </Button>
-              <Button size="sm" disabled={recordMut.isPending} onClick={openRecordDialog}>
-                Record payment
-              </Button>
-            </>
-          ) : null}
-        </div>
-      }
-      subnav={<PayrollSubnav current="payments" />}
-    >
+        title="Payroll payments"
+        description="Record net-pay settlements against posted runs. Partial and multiple payments are supported."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            {canPay ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={exportMut.isPending}
+                  onClick={() => exportMut.mutate()}
+                >
+                  Generic bank CSV
+                </Button>
+                <Button size="sm" disabled={recordMut.isPending} onClick={openRecordDialog}>
+                  Record payment
+                </Button>
+              </>
+            ) : null}
+          </div>
+        }
+      >
+      <PayrollSubnav current="payments" />
+
       {runIdFilter ? (
         <Alert className="mb-4">
           <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
             <span>Showing payments linked to this payroll run.</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => void navigate({ search: { runId: undefined } })}
-            >
-              Clear run filter
+            <Button asChild size="sm" variant="outline">
+              <Link to="/payroll/runs/$runId" params={{ runId: runIdFilter }} search={{ tab: "payments" }}>
+                View payroll run
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/payroll/payments" search={{ runId: undefined }}>
+                Clear run filter
+              </Link>
             </Button>
           </AlertDescription>
         </Alert>
@@ -437,7 +441,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           aria-label="Search payroll payments"
           className="w-full sm:w-72"
         />
-        <Select
+        <RecordLookupSelect
           value={paymentStatus}
           onValueChange={(value) => setPaymentStatus(value as typeof paymentStatus)}
         >
@@ -449,7 +453,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             <SelectItem value="posted">Posted</SelectItem>
             <SelectItem value="reversed">Reversed</SelectItem>
           </SelectContent>
-        </Select>
+        </RecordLookupSelect>
         {filtersActive ? (
           <Button variant="ghost" size="sm" onClick={clearPaymentFilters}>
             Clear filters
@@ -486,7 +490,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             }
           />
         ) : (
-          <Table>
+          <Table aria-label="Payroll payment records">
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
@@ -500,13 +504,36 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             <TableBody>
               {filteredPayments.map((p) => (
                 <TableRow key={p.id}>
-                  <TableCell>{fmt.date(p.payment_date)}</TableCell>
-                  <TableCell>{METHOD_LABELS[p.payment_method] ?? p.payment_method}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">
-                    {fmt.money(p.amount_minor, p.currency)}
+                  <TableCell>
+                    <button
+                      type="button"
+                      className="rounded-sm text-left underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                      onClick={() => setDetailPaymentId(p.id)}
+                      aria-label={`View payment details for ${fmt.date(p.payment_date)}`}
+                    >
+                      {fmt.date(p.payment_date)}
+                    </button>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{p.reference ?? "—"}</TableCell>
-                  <TableCell>{p.status === "reversed" ? "Reversed" : "Posted"}</TableCell>
+                  <TableCell>
+                    <button type="button" className="rounded-sm text-left underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setDetailPaymentId(p.id)} aria-label={`View payment details for ${METHOD_LABELS[p.payment_method] ?? p.payment_method} payment`}>
+                      {METHOD_LABELS[p.payment_method] ?? p.payment_method}
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm">
+                    <button type="button" className="rounded-sm underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setDetailPaymentId(p.id)} aria-label={`View payment details for ${fmt.money(p.amount_minor, p.currency)}`}>
+                      {fmt.money(p.amount_minor, p.currency)}
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    <button type="button" className="rounded-sm text-left underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setDetailPaymentId(p.id)} aria-label={`View payment details for reference ${p.reference ?? "none"}`}>
+                      {p.reference ?? "—"}
+                    </button>
+                  </TableCell>
+                  <TableCell>
+                    <button type="button" className="rounded-sm text-left underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setDetailPaymentId(p.id)} aria-label={`View details for ${p.status === "reversed" ? "reversed" : "posted"} payment`}>
+                      {p.status === "reversed" ? "Reversed" : "Posted"}
+                    </button>
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" variant="outline" onClick={() => setDetailPaymentId(p.id)}>
@@ -561,6 +588,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <Alert variant="destructive">
                 <AlertDescription>
                   Could not load payroll settings. {friendlyAuthError(settingsQ.error)}
+                  <Button type="button" size="sm" variant="outline" className="ml-2" onClick={() => void settingsQ.refetch()}>Retry settings</Button>
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -568,8 +596,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <Alert variant="destructive">
                 <AlertDescription>
                   Payroll currency {payCurrency} differs from organisation base currency{" "}
-                  {company.base_currency.toUpperCase()}. Payment posting is unavailable until an
-                  approved FX accounting workflow is configured, to avoid an incorrect GL entry.
+                  {company.base_currency.toUpperCase()}. Payment posting is unavailable until
+                  an approved FX accounting workflow is configured, to avoid an incorrect GL entry.
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -577,6 +605,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <Alert variant="destructive">
                 <AlertDescription>
                   Could not load open payslips. {friendlyAuthError(payslipsQ.error)}
+                  <Button type="button" size="sm" variant="outline" className="ml-2" onClick={() => void payslipsQ.refetch()}>Retry payslips</Button>
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -584,6 +613,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <Alert variant="destructive">
                 <AlertDescription>
                   Could not load clearing accounts. {friendlyAuthError(accountsQ.error)}
+                  <Button type="button" size="sm" variant="outline" className="ml-2" onClick={() => void accountsQ.refetch()}>Retry accounts</Button>
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -743,10 +773,31 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               Allocations, unallocated balance, and linked journal entry.
             </DialogDescription>
           </DialogHeader>
+          {detailPaymentId !== null && paymentDetailQ.isSuccess ? (
+            <div className="flex items-center justify-between gap-3">
+              <span role="status" aria-live="polite" className="text-xs text-muted-foreground">
+                {paymentDetailQ.isFetching ? "Updating payment details…" : ""}
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={paymentDetailQ.isFetching}
+                onClick={() => void paymentDetailQ.refetch()}
+                aria-label="Refresh payroll payment details"
+              >
+                {paymentDetailQ.isFetching ? "Refreshing…" : "Refresh details"}
+              </Button>
+            </div>
+          ) : null}
           {paymentDetailQ.isPending ? (
             <LoadingState />
           ) : paymentDetailQ.isError ? (
-            <p className="text-sm text-destructive">{friendlyAuthError(paymentDetailQ.error)}</p>
+            <ErrorState
+              title="Could not load payment details"
+              description={friendlyAuthError(paymentDetailQ.error)}
+              onRetry={() => paymentDetailQ.refetch()}
+            />
           ) : paymentDetailQ.data ? (
             (() => {
               const detail = paymentDetailQ.data as PayrollPaymentDetailPage;
@@ -793,7 +844,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                         No payslip allocations on this payment.
                       </p>
                     ) : (
-                      <ul className="space-y-2 rounded-md border p-3">
+                      <ul aria-label="Payslip allocations for this payment" className="space-y-2 rounded-md border p-3">
                         {allocations.map((row) => (
                           <li key={row.allocation.id} className="flex justify-between gap-2">
                             <span>
@@ -858,9 +909,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={reverseMut.isPending || reversalSubmitLock.current}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={reverseMut.isPending || reversalSubmitLock.current}>Cancel</AlertDialogCancel>
             <Button
               variant="destructive"
               disabled={reverseMut.isPending || reversalSubmitLock.current || !reversalDate}

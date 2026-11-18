@@ -236,6 +236,21 @@ describe("Smart Action Center history and bookmarkable filters", () => {
     expect(parseActionCenterSearch({ q: "    " })).toEqual({});
   });
 
+  it("keeps module grouping through a refreshable notification URL", () => {
+    expect(parseActionCenterSearch({ view: "action", group: true })).toEqual({
+      view: "action", group: true,
+    });
+    expect(parseActionCenterSearch(Object.fromEntries(
+      new URLSearchParams("view=archived&group=true"),
+    ))).toEqual({ view: "archived", group: true });
+  });
+
+  it("rejects unsupported grouping values and does not change authorization scope", () => {
+    expect(parseActionCenterSearch({ group: "false", admin: true })).toEqual({});
+    expect(parseActionCenterSearch({ group: "../settings" })).toEqual({});
+    expect(parseActionCenterSearch({ group: "1" })).toEqual({ group: true });
+  });
+
   it("limits saved search terms to 120 characters", () => {
     expect(parseActionCenterSearch({ q: "a".repeat(250) }).q).toHaveLength(120);
   });

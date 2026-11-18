@@ -1,6 +1,10 @@
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  parseFixedAssetRegisterSearch,
+  type FixedAssetRegisterSearch,
+} from "@/lib/fixed-assets/register-navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowDownUp, Download, Loader2, Search } from "lucide-react";
@@ -84,18 +88,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/fixed-assets")({
-  validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
-    tab: [
-      "dashboard",
-      "register",
-      "depreciation",
-      "types",
-      "reconciliation",
-      "bill-review",
-    ].includes(String(raw["tab"]))
-      ? String(raw["tab"])
-      : undefined,
-  }),
+  validateSearch: parseFixedAssetRegisterSearch,
   head: () => ({ meta: [{ title: "Fixed assets — LinkBooks" }] }),
   component: FixedAssetsPage,
 });
@@ -113,8 +106,31 @@ type Dialogs =
 function FixedAssetsPage() {
   const { company } = useActiveCompany();
   const companyId = company?.id;
-  const { tab: requestedTab } = Route.useSearch();
-  const tab = requestedTab ?? "register";
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const tab = search.tab ?? "register";
+  const assetSearch = search.q ?? "";
+  const assetStatus = search.status ?? "all";
+  const assetTypeId = search.typeId ?? "";
+  const assetAccountId = search.accountId ?? "";
+  const assetSort = search.sort ?? "number";
+  const sortDescending = search.desc ?? false;
+  const updateRegister = (patch: Partial<FixedAssetRegisterSearch>, replace = false) => {
+    void navigate({
+      to: "/fixed-assets",
+      search: (previous) => parseFixedAssetRegisterSearch({ ...previous, ...patch }),
+      replace,
+      resetScroll: false,
+    });
+  };
+  const setAssetSearch = (value: string) => updateRegister({ q: value }, true);
+  const setAssetStatus = (value: "all" | "active" | "disposed") =>
+    updateRegister({ status: value });
+  const setAssetTypeId = (value: string) => updateRegister({ typeId: value });
+  const setAssetAccountId = (value: string) => updateRegister({ accountId: value });
+  const setAssetSort = (value: AssetRegisterSort) => updateRegister({ sort: value });
+  const setSortDescending = (value: boolean | ((previous: boolean) => boolean)) =>
+    updateRegister({ desc: typeof value === "function" ? value(sortDescending) : value });
   const fmt = useFormat();
   const canManage = useCanDo("accounts.manage");
   const canViewAccounting = useCanDo("accounting.view");
@@ -124,12 +140,6 @@ function FixedAssetsPage() {
   const pageFn = useServerFn(getAssetRegisterPage);
   const registerFn = useServerFn(getFixedAssetRegister);
   const [dialog, setDialog] = useState<Dialogs>(null);
-  const [assetSearch, setAssetSearch] = useState("");
-  const [assetStatus, setAssetStatus] = useState<"all" | "active" | "disposed">("all");
-  const [assetTypeId, setAssetTypeId] = useState("");
-  const [assetAccountId, setAssetAccountId] = useState("");
-  const [assetSort, setAssetSort] = useState<AssetRegisterSort>("number");
-  const [sortDescending, setSortDescending] = useState(false);
   const tablePrefs = useTablePrefs(
     "fixed-assets:" + (companyId ?? "no-company"),
     FIXED_ASSET_COLUMN_IDS,
@@ -148,12 +158,14 @@ function FixedAssetsPage() {
     descending: sortDescending,
   };
   const applySavedFilters = (filters: AssetRegisterFilters) => {
-    setAssetSearch(filters.search);
-    setAssetStatus(filters.status);
-    setAssetTypeId(filters.typeId);
-    setAssetAccountId(filters.accountId);
-    setAssetSort(filters.sort);
-    setSortDescending(filters.descending);
+    updateRegister({
+      q: filters.search,
+      status: filters.status,
+      typeId: filters.typeId,
+      accountId: filters.accountId,
+      sort: filters.sort,
+      desc: filters.descending,
+    });
   };
   const today = useMemo(() => todayIso(), []);
 

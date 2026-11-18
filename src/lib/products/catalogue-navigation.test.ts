@@ -29,18 +29,16 @@ describe("Products & Services deep-link sections", () => {
 
 describe("Catalogue list query context", () => {
   it("retains all permitted filters and pagination in direct deep links", () => {
-    expect(
-      parseCatalogueSearch({
-        section: "price-lists",
-        q: "Black & white",
-        kind: "service",
-        category: "178de295-8c4c-4aa1-9bcd-d3b7ce912345",
-        status: "archived",
-        sort: "price_desc",
-        page: "3",
-        pageSize: "100",
-      }),
-    ).toEqual({
+    expect(parseCatalogueSearch({
+      section: "price-lists",
+      q: "Black & white",
+      kind: "service",
+      category: "178de295-8c4c-4aa1-9bcd-d3b7ce912345",
+      status: "archived",
+      sort: "price_desc",
+      page: "3",
+      pageSize: "100",
+    })).toEqual({
       section: "price-lists",
       q: "Black & white",
       kind: "service",
@@ -53,28 +51,24 @@ describe("Catalogue list query context", () => {
   });
 
   it("uses catalogue defaults and ignores unsupported query keys", () => {
-    expect(
-      parseCatalogueSearch({
-        section: "invalid",
-        random: "hidden",
-        redirect: "https://example.com/evil",
-        page: 0,
-        pageSize: 20,
-      }),
-    ).toEqual({ section: "catalogue" });
+    expect(parseCatalogueSearch({
+      section: "invalid",
+      random: "hidden",
+      redirect: "https://example.com/evil",
+      page: 0,
+      pageSize: 20,
+    })).toEqual({ section: "catalogue" });
   });
 
   it("rejects injection-shaped categories, long search queries and unsupported enums", () => {
-    expect(
-      parseCatalogueSearch({
-        section: "catalogue",
-        q: "x".repeat(101),
-        kind: "admin",
-        category: "../../../other",
-        status: "other",
-        sort: "sql",
-      }),
-    ).toEqual({ section: "catalogue" });
+    expect(parseCatalogueSearch({
+      section: "catalogue",
+      q: "x".repeat(101),
+      kind: "admin",
+      category: "../../../other",
+      status: "other",
+      sort: "sql",
+    })).toEqual({ section: "catalogue" });
   });
 
   it("allows all supported item kinds and orderings", () => {
@@ -91,9 +85,7 @@ describe("Catalogue list query context", () => {
 
   it("bounds numeric pagination and rejects non-integers", () => {
     expect(parseCatalogueSearch({ page: "9999999", pageSize: 25 })).toEqual({
-      section: "catalogue",
-      page: 1_000_000,
-      pageSize: 25,
+      section: "catalogue", page: 1_000_000, pageSize: 25,
     });
     expect(parseCatalogueSearch({ page: "1.5", pageSize: 0 })).toEqual({
       section: "catalogue",
@@ -105,16 +97,10 @@ describe("Catalogue list query context", () => {
 
   it("retains the current catalogue filters when changing sections", () => {
     const initial = parseCatalogueSearch({
-      section: "catalogue",
-      kind: "service",
-      q: "support",
-      page: 2,
+      section: "catalogue", kind: "service", q: "support", page: 2,
     });
     expect(parseCatalogueSearch({ ...initial, section: "categories" })).toEqual({
-      section: "categories",
-      kind: "service",
-      q: "support",
-      page: 2,
+      section: "categories", kind: "service", q: "support", page: 2,
     });
   });
 });

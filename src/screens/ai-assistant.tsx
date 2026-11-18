@@ -1,5 +1,7 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState, type KeyboardEvent } from "react";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { parseAiAssistantSearch, type AiSuggestionStatus } from "@/lib/ai/assistant-browsing";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -139,6 +141,8 @@ const STARTERS: Array<{ intent: AiIntent; label: string; prompt: string }> = [
   },
 ];
 
+const aiRoute = getRouteApi("/_authenticated/ai-assistant");
+
 export function AiAssistantPage() {
   const { company, isPending } = useActiveCompany();
   if (isPending) return <LoadingState />;
@@ -211,8 +215,29 @@ function AiAssistantWorkspace({
   const [history, setHistory] = useState<Exchange[]>([]);
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [journalDate, setJournalDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [filter, setFilter] = useState("all");
-  const [search, setSearch] = useState("");
+  const routeSearch = aiRoute.useSearch();
+  const navigate = useNavigate();
+  const filter = routeSearch.suggestionStatus ?? "all";
+  const search = routeSearch.suggestionQ ?? "";
+  const setFilter = (value: string) => {
+    void navigate({
+      to: "/ai-assistant",
+      search: (previous) => parseAiAssistantSearch({
+        ...previous, suggestionStatus: value as AiSuggestionStatus,
+      }),
+      resetScroll: false,
+    });
+  };
+  const setSearch = (value: string) => {
+    void navigate({
+      to: "/ai-assistant",
+      search: (previous) => parseAiAssistantSearch({
+        ...previous, suggestionQ: value,
+      }),
+      replace: true,
+      resetScroll: false,
+    });
+  };
   const [onlyLatestFacts, setOnlyLatestFacts] = useState(true);
 
   const statusQ = useQuery({
@@ -750,6 +775,7 @@ function AiAssistantWorkspace({
               <input
                 id="ai-search"
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm sm:max-w-72"
+                maxLength={100}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search title or intent"

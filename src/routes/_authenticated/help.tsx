@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label";
 import { GLOSSARY, HELP_ARTICLES, searchHelp } from "@/lib/help/articles";
 
 export const Route = createFileRoute("/_authenticated/help")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    q: typeof search.q === "string" ? search.q.slice(0, 200) : "",
+  }),
   head: () => ({
     meta: [
       { title: "Help — LinkBooks" },
@@ -22,7 +25,11 @@ export const Route = createFileRoute("/_authenticated/help")({
 });
 
 function Help() {
-  const [q, setQ] = useState("");
+  const navigate = useNavigate();
+  const { q } = Route.useSearch();
+  const setQ = (value: string) => {
+    void navigate({ to: "/help", search: { q: value.slice(0, 200) }, replace: true, resetScroll: false });
+  };
   const articles = useMemo(() => searchHelp(q), [q]);
   const topics = [...new Set(articles.map((a) => a.topic))];
 
@@ -40,6 +47,7 @@ function Help() {
           id="help-search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          type="search"
           placeholder="Reconcile, invoice, tax return, shortcut…"
         />
       </section>

@@ -63,6 +63,11 @@ import type { ContactPreferenceKind } from "@/lib/contacts/contact-directory-pre
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import {
+  encodeContactsReturnContext,
+  parseContactsDirectorySearch,
+  type ContactsDirectorySearch,
+} from "@/lib/contacts/contact-view-navigation";
 import { ContactFollowUpsPanel } from "@/components/contacts/ContactFollowUpsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -321,10 +326,16 @@ function ContactDirectoryCell({
 }
 
 function ContactRecordLink({ contactId, children }: { contactId: string; children: ReactNode }) {
+  const search = routeApi.useSearch();
+  const returnContext = encodeContactsReturnContext(search);
   return (
     <Link
       to="/contacts/$contactId"
       params={{ contactId }}
+      search={{
+        ...(search.view && search.view !== "all" ? { fromView: search.view } : {}),
+        ...(returnContext ? { returnContext } : {}),
+      }}
       className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
     >
       {children}
@@ -352,11 +363,23 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const persistCloudPreference = useServerFn(saveContactDirectoryPreference);
   const canManage = useCanDo("contacts.manage");
 
-  const { view: requestedView } = routeApi.useSearch();
-  const view = requestedView ?? "all";
-  const [page, setPage] = useState(0);
-  const [q, setQ] = useState("");
-  const [sort, setSort] = useState("default");
+  const directorySearch = routeApi.useSearch();
+  const view = directorySearch.view ?? "all";
+  const page = directorySearch.page ?? 0;
+  const q = directorySearch.q ?? "";
+  const sort = directorySearch.sort ?? "default";
+  const patchDirectory = (patch: Partial<ContactsDirectorySearch>, replace = false) => {
+    void navigate({
+      to: "/contacts",
+      search: (previous) => parseContactsDirectorySearch({ ...previous, ...patch }),
+      replace,
+      resetScroll: false,
+    });
+  };
+  const setPage = (next: number | ((current: number) => number)) =>
+    patchDirectory({ page: typeof next === "function" ? next(page) : next });
+  const setQ = (value: string) => patchDirectory({ q: value, page: 0 }, true);
+  const setSort = (value: string) => patchDirectory({ sort: value, page: 0 });
   const [filters, setFilters] = useState<ContactAdvancedFilters>({
     ...DEFAULT_CONTACT_ADVANCED_FILTERS,
   });
@@ -562,12 +585,11 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const applySavedView = (id: string) => {
     const selected = savedViews.find((saved) => saved.id === id);
     if (!selected) return;
-    setQ(selected.query);
-    setSort(selected.sort);
     setFilters(selected.filters);
-    setPage(0);
     setSelectedSavedViewId(id);
-    void navigate({ to: "/contacts", search: { view: selected.view } });
+    patchDirectory({
+      view: selected.view, q: selected.query, sort: selected.sort, page: 0,
+    });
   };
 
   const deleteSavedView = () => {
@@ -814,39 +836,46 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
 
   return (
     <ListWorkspace
-      title="Contacts"
-      description="One directory for customers and suppliers — shared with sales, purchases and statements."
-      actions={
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" asChild>
-            <Link to="/contacts/new" search={{ kind: "customer" }}>
-              New contact
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/contacts/import">
-              <Upload className="mr-1 size-4" /> Import
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={exportM.isPending}
-            onClick={() => exportM.mutate()}
-          >
-            <Download className="mr-1 size-4" /> Export
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <SettingsDestinationLink destination={{ to: "/contacts/settings" }}>
-              <Settings2 className="mr-1 size-4" /> Settings
-            </SettingsDestinationLink>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/contacts/duplicates">Duplicates</Link>
-          </Button>
-        </div>
-      }
-    >
+        title="Contacts"
+        description="One directory for customers and suppliers — shared with sales, purchases and statements."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" asChild>
+              <Link
+                to="/contacts/new"
+                search={{
+                  kind: "customer",
+                  returnContext: encodeContactsReturnContext(directorySearch) || undefined,
+                }}
+              >
+                New contact
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/contacts/import">
+                <Upload className="mr-1 size-4" /> Import
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={exportM.isPending}
+              onClick={() => exportM.mutate()}
+            >
+              <Download className="mr-1 size-4" /> Export
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <SettingsDestinationLink destination={{ to: "/contacts/settings" }}>
+                <Settings2 className="mr-1 size-4" /> Settings
+              </SettingsDestinationLink>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/contacts/duplicates">Duplicates</Link>
+            </Button>
+          </div>
+        }
+      >
+
       {summary ? (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Metric label="Active contacts" value={String(summary.activeContactCount)} />
@@ -882,8 +911,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "all"}
               data-state={view === "all" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "all" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "all", page: 0 })
+              }
             >
               All
             </Link>
@@ -893,8 +923,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "customers"}
               data-state={view === "customers" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "customers" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "customers", page: 0 })
+              }
             >
               Customers
             </Link>
@@ -904,8 +935,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "suppliers"}
               data-state={view === "suppliers" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "suppliers" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "suppliers", page: 0 })
+              }
             >
               Suppliers
             </Link>
@@ -915,8 +947,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "both"}
               data-state={view === "both" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "both" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "both", page: 0 })
+              }
             >
               Both roles
             </Link>
@@ -926,8 +959,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "recent"}
               data-state={view === "recent" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "recent" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "recent", page: 0 })
+              }
             >
               Recently added
             </Link>
@@ -937,8 +971,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "updated"}
               data-state={view === "updated" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "updated" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "updated", page: 0 })
+              }
             >
               Recently updated
             </Link>
@@ -948,8 +983,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "inactive"}
               data-state={view === "inactive" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "inactive" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "inactive", page: 0 })
+              }
             >
               Inactive
             </Link>
@@ -959,18 +995,18 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "archived"}
               data-state={view === "archived" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "archived" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "archived", page: 0 })
+              }
             >
               Archived
             </Link>
           </TabsList>
           <div className="flex w-full flex-wrap gap-2 lg:w-auto">
-            <Select
+            <RecordLookupSelect
               value={sort}
               onValueChange={(value) => {
                 setSort(value);
-                setPage(0);
               }}
             >
               <SelectTrigger className="w-52" aria-label="Sort contacts">
@@ -993,7 +1029,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                 <SelectItem value="recent">Newest first</SelectItem>
                 <SelectItem value="updated">Recently updated</SelectItem>
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -1134,7 +1170,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                 )}
                 <div className="space-y-1">
                   <Label>Contact currency override</Label>
-                  <Select
+                  <RecordLookupSelect
                     value={filters.currency || "any"}
                     onValueChange={(value) =>
                       updateFilter("currency", value === "any" ? "" : value)
@@ -1155,11 +1191,11 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                         ),
                       )}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-1">
                   <Label>Payment terms</Label>
-                  <Select
+                  <RecordLookupSelect
                     value={filters.terms}
                     onValueChange={(value) => updateFilter("terms", value)}
                   >
@@ -1172,7 +1208,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                       <SelectItem value="up_to_30">1 to 30 days</SelectItem>
                       <SelectItem value="over_30">More than 30 days</SelectItem>
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="flex justify-between gap-2">
                   <Button
@@ -1286,7 +1322,6 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               value={q}
               onChange={(e) => {
                 setQ(e.target.value);
-                setPage(0);
               }}
               aria-label="Search contacts"
             />
@@ -1521,7 +1556,6 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                           view={view}
                           onSort={(key) => {
                             setSort(nextContactSort(sort, key, view));
-                            setPage(0);
                           }}
                         />
                       ) : (

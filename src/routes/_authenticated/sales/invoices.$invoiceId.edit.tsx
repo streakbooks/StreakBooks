@@ -15,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/sales/invoices/$invoiceId/
 
 function EditInvoice() {
   const { invoiceId } = Route.useParams();
+  const search = Route.useSearch();
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const fetchInvoice = useServerFn(getInvoice);
@@ -38,7 +39,11 @@ function EditInvoice() {
         />
         <div className="flex justify-center">
           <Button asChild size="sm" variant="outline">
-            <Link to="/sales/invoices/$invoiceId" params={{ invoiceId }}>
+            <Link
+              to="/sales/invoices/$invoiceId"
+              params={{ invoiceId }}
+              search={search.returnContext ? { returnContext: search.returnContext } : {}}
+            >
               Back
             </Link>
           </Button>
@@ -49,6 +54,7 @@ function EditInvoice() {
   return (
     <SalesDocumentEditor
       kind="invoice"
+      returnContext={search.returnContext}
       existing={{
         id: inv.id,
         contactId: inv.contact_id,

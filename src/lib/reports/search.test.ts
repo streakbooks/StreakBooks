@@ -127,6 +127,18 @@ describe("report URL search params (RP-05)", () => {
     expect(parseReportSearch({ accountIds: "x".repeat(4000) })).toEqual({});
   });
 
+  it("keeps a safe Reports Centre return token on report detail and filter edits", () => {
+    expect(parseReportSearch({
+      centre: "tab=standard&query=aged+receivables&from=2026-01-01",
+    }).centre).toBe("tab=standard&from=2026-01-01&query=aged+receivables");
+  });
+
+  it("rejects missing, oversized and non-string Reports Centre origin tokens", () => {
+    expect(parseReportSearch({ centre: "returnTo=https%3A%2F%2Fevil.example" })).toEqual({});
+    expect(parseReportSearch({ centre: ["tab=standard"] })).toEqual({});
+    expect(parseReportSearch({ centre: "tab=standard&query=" + "x".repeat(2200) })).toEqual({});
+  });
+
   it("omits default values", () => {
     expect(parseReportSearch({ columns: "none" })).toEqual({});
   });

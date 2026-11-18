@@ -1,5 +1,6 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { Link } from "@tanstack/react-router";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -21,14 +22,19 @@ import type {
 import { csvFilename, downloadCsv, toCsv, csvMoney } from "@/lib/reports/csv";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -74,13 +80,19 @@ export function PayrollReportsPage() {
   const fetchCatalog = useServerFn(getPayrollReportsCatalog);
   const fetchReport = useServerFn(runPayrollReportServer);
 
-  const today = new Date().toISOString().slice(0, 10);
-  const [reportId, setReportId] = useState<PayrollReportId>("payroll_summary");
+  // Use the user’s local calendar date, not UTC (which can be tomorrow or yesterday locally).
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const reportId = useSearch({ from: "/_authenticated/payroll/reports" }).reportId ?? "payroll_summary";
+  const navigate = useNavigate();
   const [dateFrom, setDateFrom] = useState(`${today.slice(0, 4)}-01-01`);
   const [dateTo, setDateTo] = useState(today);
   const [employeeId, setEmployeeId] = useState<string>("all");
   const [department, setDepartment] = useState("");
   const [payScheduleId, setPayScheduleId] = useState<string>("all");
+  const invalidPeriod = !dateFrom || !dateTo || dateFrom > dateTo;
+  const invalidFrom = !dateFrom || Boolean(dateTo && dateFrom > dateTo);
+  const invalidTo = !dateTo || Boolean(dateFrom && dateFrom > dateTo);
 
   const catalogQ = useQuery({
     queryKey: ["payroll-reports-catalog", company?.id],
@@ -111,7 +123,7 @@ export function PayrollReportsPage() {
           payScheduleId: payScheduleId === "all" ? null : payScheduleId,
         },
       }),
-    enabled: Boolean(company?.id && canView && catalogQ.isSuccess && catalogQ.data.available),
+    enabled: Boolean(company?.id && canView && catalogQ.isSuccess && catalogQ.data.available && dateFrom && dateTo && dateFrom <= dateTo),
   });
 
   const departments = useMemo(() => {
@@ -128,7 +140,7 @@ export function PayrollReportsPage() {
   const currency = company?.base_currency ?? "GBP";
 
   const exportCsv = () => {
-    if (!result || !company) return;
+    if (!result || !company || invalidPeriod || !reportQ.isSuccess || reportQ.isFetching) return;
     const headers = result.columns.map((c) => c.label);
     const rows = result.rows.map((row) =>
       result.columns.map((col) => {
@@ -164,28 +176,37 @@ export function PayrollReportsPage() {
     downloadCsv(csvFilename(result.title, dateTo), csv);
   };
 
-  if (isPending) return <LoadingState />;
+  const navigationShell = (
+    <ListWorkspace title="Payroll reports" description="Operational payroll reporting." >
+      <PayrollSubnav current="reports" />
+    </ListWorkspace>
+  );
+  if (isPending) return <>{navigationShell}<LoadingState /></>;
   if (!company) {
-    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+    return <>{navigationShell}<CompanyEmptyState title="No organisation" description="Select a company first." /></>;
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Payroll reports" description="Operational payroll reporting.">
+      <>
+        {navigationShell}
         <EmptyState
           title="No payroll report access"
           description="Ask an organisation administrator for the payroll.reports.view permission."
         />
-      </ListWorkspace>
+      </>
     );
   }
-  if (catalogQ.isPending) return <LoadingState />;
+  if (catalogQ.isPending) return <>{navigationShell}<LoadingState /></>;
   if (catalogQ.isError) {
     return (
-      <ErrorState
+      <>
+        {navigationShell}
+        <ErrorState
         title="Could not load payroll reports"
         description={friendlyAuthError(catalogQ.error)}
         onRetry={() => catalogQ.refetch()}
       />
+      </>
     );
   }
 
@@ -194,29 +215,30 @@ export function PayrollReportsPage() {
 
   return (
     <ListWorkspace
-      title="Payroll reports"
-      description="Approved and posted payroll runs with filters by period, employee, department and schedule."
-      actions={
-        result ? (
-          <div className="flex flex-wrap gap-2 print:hidden">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={exportCsv}
-              disabled={result.rows.length === 0}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export CSV
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" />
-              Print / PDF
-            </Button>
-          </div>
-        ) : null
-      }
-      subnav={<PayrollSubnav current="reports" />}
-    >
+        title="Payroll reports"
+        description="Approved and posted payroll runs with filters by period, employee, department and schedule."
+        actions={
+          result && result.rows.length > 0 && !invalidPeriod && reportQ.isSuccess && !reportQ.isFetching ? (
+            <div className="flex flex-wrap gap-2 print:hidden">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={exportCsv}
+                disabled={result.rows.length === 0}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => window.print()}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print / PDF
+              </Button>
+            </div>
+          ) : null
+        }
+      >
+      <PayrollSubnav current="reports" />
+
       {!catalog.available ? (
         <Alert>
           <AlertTitle>Database update required</AlertTitle>
@@ -229,10 +251,7 @@ export function PayrollReportsPage() {
               <div className="grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-2 lg:col-span-3">
                   <Label htmlFor="payroll-report-type">Report</Label>
-                  <RecordLookupSelect
-                    value={reportId}
-                    onValueChange={(v) => setReportId(v as PayrollReportId)}
-                  >
+                  <RecordLookupSelect value={reportId} onValueChange={(v) => void navigate({ to: "/payroll/reports", search: { reportId: v as PayrollReportId }, resetScroll: false })}>
                     <SelectTrigger id="payroll-report-type">
                       <SelectValue />
                     </SelectTrigger>
@@ -253,6 +272,8 @@ export function PayrollReportsPage() {
                   <Input
                     id="payroll-report-from"
                     type="date"
+                    aria-invalid={invalidFrom}
+                    aria-describedby={invalidFrom ? "payroll-report-period-error" : undefined}
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
                   />
@@ -262,6 +283,8 @@ export function PayrollReportsPage() {
                   <Input
                     id="payroll-report-to"
                     type="date"
+                    aria-invalid={invalidTo}
+                    aria-describedby={invalidTo ? "payroll-report-period-error" : undefined}
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
                   />
@@ -321,7 +344,12 @@ export function PayrollReportsPage() {
             </TableCard>
           </div>
 
-          {reportQ.isPending ? (
+          {invalidPeriod ? (
+            <Alert id="payroll-report-period-error" role="alert">
+              <AlertTitle>Check the reporting period</AlertTitle>
+              <AlertDescription>Choose both dates and make sure the start date is not after the end date.</AlertDescription>
+            </Alert>
+          ) : reportQ.isPending || reportQ.isFetching ? (
             <LoadingState />
           ) : reportQ.isError ? (
             <ErrorState
@@ -338,6 +366,11 @@ export function PayrollReportsPage() {
               footnotes={result.footnotes}
               currency={currency}
               fmt={fmt}
+            />
+          ) : reportQ.isSuccess ? (
+            <EmptyState
+              title="Report results unavailable"
+              description="This report did not return a usable result. Try another report or reporting period."
             />
           ) : null}
         </div>

@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { ProductsPage } from "@/screens/products-services";
+import { parseCatalogueSearch } from "@/lib/products/catalogue-navigation";
 
 export const Route = createFileRoute("/_authenticated/products-services")({
+  validateSearch: parseCatalogueSearch,
   head: () => ({
     meta: [
       { title: "Products & Services — LinkBooks" },

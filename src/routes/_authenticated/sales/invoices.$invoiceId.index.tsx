@@ -18,6 +18,7 @@ import {
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { canVoidInvoice } from "@/lib/sales/allocation-rules";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { decodeInvoiceReturnContext } from "@/lib/sales/invoice-list-navigation";
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
@@ -57,6 +58,8 @@ export const Route = createFileRoute("/_authenticated/sales/invoices/$invoiceId/
 
 function InvoiceDetail() {
   const { invoiceId } = Route.useParams();
+  const search = Route.useSearch();
+  const backSearch = decodeInvoiceReturnContext(search.returnContext);
   const { company } = useActiveCompany();
   const navigate = useNavigate();
   const fetchInvoice = useServerFn(getInvoice);
@@ -143,7 +146,7 @@ function InvoiceDetail() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["sales-invoices", companyId] });
       toast.success("Draft deleted");
-      navigate({ to: "/sales/invoices" });
+      navigate({ to: "/sales/invoices", search: backSearch });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -153,7 +156,11 @@ function InvoiceDetail() {
     onSuccess: async (r) => {
       await queryClient.invalidateQueries({ queryKey: ["sales-invoices", companyId] });
       toast.success("Copied to a new draft");
-      navigate({ to: "/sales/invoices/$invoiceId/edit", params: { invoiceId: r.id } });
+      navigate({
+        to: "/sales/invoices/$invoiceId/edit",
+        params: { invoiceId: r.id },
+        search: search.returnContext ? { returnContext: search.returnContext } : {},
+      });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });

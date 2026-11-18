@@ -4,7 +4,7 @@ import { PracticeWorkBoard } from "@/components/accountant/PracticeWorkBoard";
 import { AccountWorkpapersPanel } from "@/components/accountant/AccountWorkpapersPanel";
 import { useCanDo } from "@/hooks/use-can";
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -46,12 +46,19 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 
+function parseChecklistDate(value: unknown): string | undefined {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value ? value : undefined;
+}
+
 export const Route = createFileRoute("/_authenticated/accountant")({
   head: () => ({
     meta: [{ title: "Accountant tools — LinkBooks" }],
   }),
-  validateSearch: (raw: Record<string, unknown>): { tab?: AccountantWorkspaceTab } => ({
+  validateSearch: (raw: Record<string, unknown>): { tab?: AccountantWorkspaceTab; asOf?: string } => ({
     tab: parseAccountantWorkspaceTab(raw["tab"]),
+    asOf: parseChecklistDate(raw["asOf"]),
   }),
   component: AccountantPage,
 });
@@ -62,13 +69,15 @@ function AccountantPage() {
 }
 
 function AccountantTools() {
-  const tab = Route.useSearch().tab ?? "overview";
+  const search = Route.useSearch();
+  const tab = search.tab ?? "overview";
+  const navigate = useNavigate({ from: "/accountant" });
   const canAdjust = useCanDo("tax.settings");
   const { company, isPending } = useActiveCompany();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
   const today = new Date().toISOString().slice(0, 10);
-  const [asOf, setAsOf] = useState(today);
+  const asOf = search.asOf ?? today;
   const qc = useQueryClient();
   const fetch = useServerFn(getAccountantChecklist);
   const fetchAccounts = useServerFn(listAccounts);
@@ -160,7 +169,7 @@ function AccountantTools() {
               aria-selected={tab === item.id}
               data-state={tab === item.id ? "active" : "inactive"}
               to="/accountant"
-              search={{ tab: item.id }}
+              search={{ tab: item.id, asOf: search.asOf }}
               resetScroll={false}
             >
               {item.label}
@@ -178,7 +187,10 @@ function AccountantTools() {
               aria-label="Checklist as of"
               type="date"
               value={asOf}
-              onChange={(e) => setAsOf(e.target.value)}
+              onChange={(e) => {
+                const nextDate = parseChecklistDate(e.target.value);
+                if (nextDate) void navigate({ search: { tab, asOf: nextDate }, resetScroll: false });
+              }}
             />
           </label>
           {query.isPending ? (

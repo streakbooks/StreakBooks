@@ -21,7 +21,12 @@ import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { ListToolbar, Pager, TableCard, SortHead } from "@/components/sales/ListKit";
-import { downloadCsv, initialListState, type ListState } from "@/lib/sales/list-state";
+import { downloadCsv, type ListState } from "@/lib/sales/list-state";
+import {
+  encodeInvoiceReturnContext,
+  invoiceListStateFromSearch,
+  parseInvoiceListSearch,
+} from "@/lib/sales/invoice-list-navigation";
 import { useDebounced } from "@/hooks/use-debounced";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +48,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/sales/invoices/")({
+  validateSearch: parseInvoiceListSearch,
   head: () => ({ meta: [{ title: "Invoices — LinkBooks" }] }),
   component: InvoicesList,
 });
@@ -94,8 +100,11 @@ function InvoicesList() {
   const fetchInvoices = useServerFn(listInvoices);
   const exportCsv = useServerFn(exportInvoicesCsv);
   const companyId = company?.id;
-  const [state, setState] = useState<ListState>(initialListState("invoice_date"));
-  const [overdue, setOverdue] = useState(false);
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const state = invoiceListStateFromSearch(search);
+  const overdue = Boolean(search.overdue);
+  const returnContext = encodeInvoiceReturnContext(search);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const [mobileView, setMobileView] = useState<MobileListView>("cards");
@@ -103,7 +112,19 @@ function InvoicesList() {
     `${user.id}:${companyId ?? "none"}:sales-invoices`,
     INVOICE_OPTIONAL_IDS,
   );
-  const patch = (p: Partial<ListState>) => setState((s) => ({ ...s, ...p }));
+  const patch = (p: Partial<ListState>) => {
+    void navigate({
+      search: (previous) => parseInvoiceListSearch({ ...previous, ...p }),
+      // Typing should not produce one Back-history entry per character.
+      replace: p.q !== undefined,
+    });
+  };
+  const patchOverdue = (nextOverdue: boolean, p: Partial<ListState> = {}) => {
+    void navigate({
+      search: (previous) =>
+        parseInvoiceListSearch({ ...previous, ...p, overdue: nextOverdue }),
+    });
+  };
   const q = useDebounced(state.q);
   useEffect(
     () => setPreviewId(null),
@@ -133,7 +154,7 @@ function InvoicesList() {
   });
 
   const query = useQuery({
-    queryKey: ["sales-invoices", companyId, q, state, overdue],
+    queryKey: ["sales-invoices", companyId, q, state.status, state.from, state.to, state.sort, state.dir, state.page, state.pageSize, overdue],
     enabled: Boolean(companyId),
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -157,14 +178,14 @@ function InvoicesList() {
 
   return (
     <ListWorkspace
-      title="Invoices"
-      description="Customer invoices. Authorising posts Accounts Receivable via the shared ledger."
-      actions={
-        <Button size="sm" asChild>
-          <Link to="/sales/invoices/new">New invoice</Link>
-        </Button>
-      }
-    >
+        title="Invoices"
+        description="Customer invoices. Authorising posts Accounts Receivable via the shared ledger."
+        actions={
+          <Button size="sm" asChild>
+            <Link to="/sales/invoices/new" search={returnContext ? { returnContext } : {}}>New invoice</Link>
+          </Button>
+        }
+      >
       <ListToolbar
         state={state}
         onChange={patch}
@@ -178,8 +199,7 @@ function InvoicesList() {
               type="checkbox"
               checked={overdue}
               onChange={(e) => {
-                setOverdue(e.target.checked);
-                patch({ page: 0 });
+                patchOverdue(e.target.checked, { page: 0 });
               }}
             />
             Overdue only
@@ -194,8 +214,7 @@ function InvoicesList() {
           variant={overdue && state.status === "all" ? "secondary" : "outline"}
           size="sm"
           onClick={() => {
-            setOverdue(true);
-            patch({ status: "all", page: 0 });
+            patchOverdue(true, { status: "all", page: 0 });
           }}
         >
           Overdue
@@ -204,8 +223,7 @@ function InvoicesList() {
           variant={state.status === "draft" && !overdue ? "secondary" : "outline"}
           size="sm"
           onClick={() => {
-            setOverdue(false);
-            patch({ status: "draft", page: 0 });
+            patchOverdue(false, { status: "draft", page: 0 });
           }}
         >
           Drafts
@@ -214,8 +232,7 @@ function InvoicesList() {
           variant={state.status === "partly_paid" && !overdue ? "secondary" : "outline"}
           size="sm"
           onClick={() => {
-            setOverdue(false);
-            patch({ status: "partly_paid", page: 0 });
+            patchOverdue(false, { status: "partly_paid", page: 0 });
           }}
         >
           Partly paid
@@ -236,21 +253,22 @@ function InvoicesList() {
               overdue,
             }}
             onApply={(view) => {
-              setState({
-                ...initialListState("invoice_date"),
-                q: String(view["q"] ?? ""),
-                status: String(view["status"] ?? "all"),
-                from: String(view["from"] ?? ""),
-                to: String(view["to"] ?? ""),
-                sort: String(view["sort"] ?? "invoice_date"),
-                dir: view["dir"] === "asc" ? "asc" : "desc",
-                pageSize: Number(view["pageSize"] ?? 50),
+              void navigate({
+                search: parseInvoiceListSearch({
+                  q: view["q"],
+                  status: view["status"],
+                  from: view["from"],
+                  to: view["to"],
+                  sort: view["sort"],
+                  dir: view["dir"],
+                  pageSize: view["pageSize"],
+                  page: 0,
+                  overdue: view["overdue"],
+                }),
               });
-              setOverdue(view["overdue"] === true);
             }}
             onReset={() => {
-              setState(initialListState("invoice_date"));
-              setOverdue(false);
+              void navigate({ search: {} });
             }}
           />
         </div>
@@ -282,7 +300,7 @@ function InvoicesList() {
           }
           action={
             <Button size="sm" asChild>
-              <Link to="/sales/invoices/new">New invoice</Link>
+              <Link to="/sales/invoices/new" search={returnContext ? { returnContext } : {}}>New invoice</Link>
             </Button>
           }
         />
@@ -296,6 +314,7 @@ function InvoicesList() {
               date={(value) => fmt.date(value)}
               money={(minor, currency) => fmt.money(minor, currency)}
               onPreview={setPreviewId}
+              returnContext={returnContext}
             />
           ) : (
             <TableCard>
@@ -359,6 +378,7 @@ function InvoicesList() {
                           <Link
                             to="/sales/invoices/$invoiceId"
                             params={{ invoiceId: inv.id }}
+                            search={returnContext ? { returnContext } : {}}
                             className="underline-offset-2 hover:underline"
                           >
                             {inv.invoice_number ?? inv.id.slice(0, 8)}
@@ -369,6 +389,7 @@ function InvoicesList() {
                             <Link
                               to="/sales/invoices/$invoiceId"
                               params={{ invoiceId: inv.id }}
+                              search={returnContext ? { returnContext } : {}}
                               className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                             >
                               {fmt.date(inv.invoice_date)}
@@ -380,6 +401,7 @@ function InvoicesList() {
                             <Link
                               to="/sales/invoices/$invoiceId"
                               params={{ invoiceId: inv.id }}
+                              search={returnContext ? { returnContext } : {}}
                               className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                             >
                               {fmt.date(inv.due_date)}
@@ -390,6 +412,7 @@ function InvoicesList() {
                           <Link
                             to="/sales/invoices/$invoiceId"
                             params={{ invoiceId: inv.id }}
+                            search={returnContext ? { returnContext } : {}}
                             className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                           >
                             {inv.contacts?.name ?? "—"}
@@ -399,6 +422,7 @@ function InvoicesList() {
                           <Link
                             to="/sales/invoices/$invoiceId"
                             params={{ invoiceId: inv.id }}
+                            search={returnContext ? { returnContext } : {}}
                             className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                           >
                             <StatusBadge status={isOverdue ? "overdue" : inv.status} />
@@ -408,6 +432,7 @@ function InvoicesList() {
                           <Link
                             to="/sales/invoices/$invoiceId"
                             params={{ invoiceId: inv.id }}
+                            search={returnContext ? { returnContext } : {}}
                             className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                           >
                             {fmt.money(inv.total_minor, inv.currency_code)}
@@ -418,6 +443,7 @@ function InvoicesList() {
                             <Link
                               to="/sales/invoices/$invoiceId"
                               params={{ invoiceId: inv.id }}
+                              search={returnContext ? { returnContext } : {}}
                               className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                             >
                               {fmt.money(out, inv.currency_code)}
@@ -440,6 +466,7 @@ function InvoicesList() {
                               <Link
                                 to="/sales/invoices/$invoiceId"
                                 params={{ invoiceId: inv.id }}
+                                search={returnContext ? { returnContext } : {}}
                                 aria-label={
                                   "Open invoice " + (inv.invoice_number ?? inv.id.slice(0, 8))
                                 }
@@ -512,7 +539,11 @@ function InvoicesList() {
                 money={(minor, code) => fmt.money(minor, code)}
               />
               <Button asChild className="w-full">
-                <Link to="/sales/invoices/$invoiceId" params={{ invoiceId: previewInvoice.id }}>
+                <Link
+                  to="/sales/invoices/$invoiceId"
+                  params={{ invoiceId: previewInvoice.id }}
+                  search={returnContext ? { returnContext } : {}}
+                >
                   Open full invoice
                 </Link>
               </Button>

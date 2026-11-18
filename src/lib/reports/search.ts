@@ -1,5 +1,6 @@
 import { standardSettingsSchema, encodeStandardSettings } from "./standard-settings";
 import { isReportDate } from "./date-validation";
+import { normalizeReportingCentreContext } from "./centre-return";
 import {
   parseTransactionColumns,
   DEFAULT_TRANSACTION_COLUMNS,
@@ -11,6 +12,8 @@ export type ReportSearch = {
   settings?: string;
   from?: string;
   to?: string;
+  /** Validated origin state for returning to the Reports Centre after drill-down. */
+  centre?: string;
   account?: string;
   /** Multi-account selection in reporting; absent means all permitted accounts. */
   accountIds?: string;
@@ -64,6 +67,8 @@ function str(v: unknown, max = 80): string | undefined {
 
 export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
   const out: ReportSearch = {};
+  const centre = normalizeReportingCentreContext(raw["centre"]);
+  if (centre) out.centre = centre;
   if (raw["settings"] !== undefined) {
     if (typeof raw["settings"] !== "string" || raw["settings"].length > 60000)
       throw new Error("Invalid report settings");

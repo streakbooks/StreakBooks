@@ -10,6 +10,7 @@ import { upsertContact, upsertContactPerson } from "@/lib/contacts/contacts.func
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { decodeContactsReturnContext } from "@/lib/contacts/contact-view-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,8 +25,8 @@ import {
 const routeApi = getRouteApi("/_authenticated/contacts/new");
 
 export function NewContactRoute() {
-  const { kind } = routeApi.useSearch();
-  return <NewContact initialKind={kind} />;
+  const { kind, returnContext } = routeApi.useSearch();
+  return <NewContact initialKind={kind} returnContext={returnContext} />;
 }
 
 const sections = [
@@ -71,11 +72,13 @@ export function NewContact({
   initialKind = "customer",
   embedded = false,
   onSaved,
-}: { initialKind?: "customer" | "supplier"; embedded?: boolean; onSaved?: () => void } = {}) {
+  returnContext,
+}: { initialKind?: "customer" | "supplier"; embedded?: boolean; onSaved?: () => void; returnContext?: string } = {}) {
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const canManage = useCanDo("contacts.manage");
   const navigate = useNavigate();
+  const directorySearch = decodeContactsReturnContext(returnContext);
   const qc = useQueryClient();
   const save = useServerFn(upsertContact);
   const savePerson = useServerFn(upsertContactPerson);
@@ -176,7 +179,11 @@ export function NewContact({
         toast.warning("Contact saved, but some people could not be added. Review the People tab.");
       else toast.success("Contact created");
       if (onSaved) onSaved();
-      else void navigate({ to: "/contacts/$contactId", params: { contactId: id } });
+      else void navigate({
+        to: "/contacts/$contactId",
+        params: { contactId: id },
+        search: returnContext ? { returnContext } : {},
+      });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });

@@ -16,7 +16,9 @@ const MAX_CONTEXT_LENGTH = 2048;
  * Only validated, bounded report-centre query fields may be used as an origin.
  * This token never represents a destination URL or bypasses report permissions.
  */
-export function encodeReportingCentreContext(search: Record<string, unknown>): string {
+export function encodeReportingCentreContext(
+  search: Record<string, unknown>,
+): string {
   const safe = parseReportingCentreSearch(search);
   const params = new URLSearchParams();
   for (const key of CENTRE_KEYS) {

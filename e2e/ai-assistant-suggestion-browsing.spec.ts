@@ -17,7 +17,10 @@ test.describe("AI Assistant suggestion list browsing", () => {
   });
 
   test("recent suggestions restore safe status/search through refresh", async ({ page }) => {
-    await signIn(page, "/ai-assistant?suggestionStatus=validated&suggestionQ=accrual");
+    await signIn(
+      page,
+      "/ai-assistant?suggestionStatus=validated&suggestionQ=accrual",
+    );
     const search = page.getByRole("textbox", { name: "Search suggestions" });
     test.skip((await search.count()) === 0, "Requires ai.use permission");
     await expect(search).toHaveValue("accrual");

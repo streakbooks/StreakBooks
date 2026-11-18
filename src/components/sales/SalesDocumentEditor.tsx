@@ -2,7 +2,6 @@
 
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 
-import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { VoiceFields, VoiceSelect } from "@/components/ai-voice/voice-fields";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -40,6 +39,7 @@ import { getWorkflowSettings } from "@/lib/settings/workflow-settings.functions"
 import { addDaysIso } from "@/lib/sales/line-helpers";
 import { toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { decodeInvoiceReturnContext } from "@/lib/sales/invoice-list-navigation";
 import { useVoiceForm } from "@/components/ai-voice/voice-context";
 import { validateVoiceDraft } from "@/lib/ai-voice/form-adapter";
 import { recordVoiceDraftOutcome } from "@/lib/ai-voice/voice-audit.functions";
@@ -131,10 +131,13 @@ type Props = {
   fromInvoiceId?: string | undefined;
   /** Start with this customer selected. */
   initialContactId?: string | undefined;
+  /** Optional validated list context for returning from an invoice edit workflow. */
+  returnContext?: string | undefined;
 };
 
-export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialContactId }: Props) {
+export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialContactId, returnContext }: Props) {
   const copy = COPY[kind];
+  const invoiceBackSearch = decodeInvoiceReturnContext(returnContext);
   const { company } = useActiveCompany();
   const { can } = useCan();
   const navigate = useNavigate();
@@ -635,7 +638,11 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             : `Draft ${copy.noun} saved`,
       );
       if (kind === "invoice") {
-        navigate({ to: "/sales/invoices/$invoiceId", params: { invoiceId: res.id } });
+        navigate({
+          to: "/sales/invoices/$invoiceId",
+          params: { invoiceId: res.id },
+          search: returnContext ? { returnContext } : {},
+        });
       } else if (kind === "quote") {
         navigate({ to: "/sales/quotes/$quoteId", params: { quoteId: res.id } });
       } else {
@@ -768,7 +775,11 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
         }
         actions={
           <Button variant="outline" size="sm" asChild>
-            <Link to={backTo}>Back</Link>
+            {kind === "invoice" ? (
+              <Link to="/sales/invoices" search={invoiceBackSearch}>Back to Invoices</Link>
+            ) : (
+              <Link to={backTo}>Back</Link>
+            )}
           </Button>
         }
       >

@@ -1,5 +1,7 @@
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { parseBudgetListSearch, encodeBudgetListReturnContext } from "@/lib/budgets/budget-navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Copy, GitCompareArrows, Loader2, Trash2 } from "lucide-react";
@@ -18,8 +20,7 @@ import {
   saveBudget,
   type BudgetSummary,
 } from "@/lib/budgets/budgets.functions";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/budgets/")({
+  validateSearch: parseBudgetListSearch,
   head: () => ({ meta: [{ title: "Budgets — LinkBooks" }] }),
   component: BudgetsPage,
 });
@@ -51,6 +53,12 @@ function BudgetsPage() {
   const { company } = useActiveCompany();
   const fmt = useFormat();
   const navigate = useNavigate();
+  const searchState = Route.useSearch();
+  const search = searchState.q ?? "";
+  const returnContext = encodeBudgetListReturnContext(searchState);
+  const setSearch = (value: string) => {
+    void navigate({ to: "/budgets", search: parseBudgetListSearch({ q: value }), replace: true, resetScroll: false });
+  };
   const queryClient = useQueryClient();
   const canManage = useCanDo("accounts.manage");
   const listFn = useServerFn(listBudgets);
@@ -71,7 +79,6 @@ function BudgetsPage() {
     [company],
   );
   const [name, setName] = useState("");
-  const [search, setSearch] = useState("");
   const [showScenarioComparison, setShowScenarioComparison] = useState(false);
   const [copySource, setCopySource] = useState<BudgetSummary | null>(null);
   const [copyName, setCopyName] = useState("");
@@ -93,7 +100,11 @@ function BudgetsPage() {
       setName("");
       await queryClient.invalidateQueries({ queryKey: ["budgets", companyId] });
       toast.success("Budget created");
-      void navigate({ to: "/budgets/$budgetId", params: { budgetId: id } });
+      void navigate({
+        to: "/budgets/$budgetId",
+        params: { budgetId: id },
+        search: returnContext ? { returnContext } : {},
+      });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -113,7 +124,11 @@ function BudgetsPage() {
       setCopySource(null);
       await queryClient.invalidateQueries({ queryKey: ["budgets", companyId] });
       toast.success("Budget duplicated");
-      void navigate({ to: "/budgets/$budgetId", params: { budgetId: id } });
+      void navigate({
+        to: "/budgets/$budgetId",
+        params: { budgetId: id },
+        search: returnContext ? { returnContext } : {},
+      });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -144,43 +159,36 @@ function BudgetsPage() {
 
   return (
     <ListWorkspace
-      title="Budgets"
-      description="Plan income and expenses by account and month for a financial year, then compare with actuals."
-      actions={
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant={showScenarioComparison ? "secondary" : "outline"}
-            disabled={!query.data?.available || query.data.budgets.length < 2}
-            onClick={() => setShowScenarioComparison((value) => !value)}
-            aria-expanded={showScenarioComparison}
-          >
-            <GitCompareArrows className="mr-2 size-4" />
-            Compare budgets
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/imports" search={{ module: "budgets" }}>
-              Import budget CSV
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/reports/$reportId" params={{ reportId: "budget-vs-actual" }}>
-              Budget versus Actual report
-            </Link>
-          </Button>
-        </div>
-      }
-    >
-      <section
-        aria-label="Create budget"
-        className="lb-budget-create mb-6 grid max-w-2xl gap-4 rounded-2xl border border-border/85 bg-card p-5 shadow-card sm:p-6"
+        title="Budgets"
+        description="Plan income and expenses by account and month for a financial year, then compare with actuals."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant={showScenarioComparison ? "secondary" : "outline"}
+              disabled={!query.data?.available || query.data.budgets.length < 2}
+              onClick={() => setShowScenarioComparison((value) => !value)}
+              aria-expanded={showScenarioComparison}
+            >
+              <GitCompareArrows className="mr-2 size-4" />
+              Compare budgets
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/imports" search={{ module: "budgets" }}>
+                Import budget CSV
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/reports/$reportId" params={{ reportId: "budget-vs-actual" }}>
+                Budget versus Actual report
+              </Link>
+            </Button>
+          </div>
+        }
       >
-        <div className="space-y-1">
-          <h2 className="text-base font-bold tracking-[-0.02em]">New budget</h2>
-          <p className="text-xs text-muted-foreground">
-            Create a financial-year plan, then add your accounts and monthly amounts.
-          </p>
-        </div>
+
+      <div className="mb-6 grid max-w-xl gap-3 rounded-md border border-border p-4">
+        <h2 className="text-sm font-semibold">New budget</h2>
         <div className="space-y-2">
           <Label htmlFor="budget-name">Name</Label>
           <Input
@@ -219,15 +227,15 @@ function BudgetsPage() {
           {create.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
           Create budget
         </Button>
-      </section>
+      </div>
 
       {query.data?.available ? (
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-border/65 pb-3">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-lg font-bold tracking-[-0.02em]">Existing budgets</h2>
+            <h2 className="text-base font-semibold">Existing budgets</h2>
             <p className="text-xs text-muted-foreground">
-              {query.data.budgets.length} budget{query.data.budgets.length === 1 ? "" : "s"} in this
-              organisation
+              {query.data.budgets.length} budget{query.data.budgets.length === 1 ? "" : "s"} in
+              this organisation
             </p>
           </div>
           {query.data.budgets.length > 0 ? (
@@ -270,60 +278,59 @@ function BudgetsPage() {
           description="Try another name, financial year or note."
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border/85 bg-card shadow-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Financial year from</TableHead>
-                <TableHead>Last changed</TableHead>
-                <TableHead className="w-28 text-right">Actions</TableHead>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Financial year from</TableHead>
+              <TableHead>Last changed</TableHead>
+              <TableHead className="w-28 text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredBudgets.map((b) => (
+              <TableRow key={b.id}>
+                <TableCell>
+                  <Link
+                    to="/budgets/$budgetId"
+                    params={{ budgetId: b.id }}
+                    search={returnContext ? { returnContext } : {}}
+                    className="font-medium underline-offset-2 hover:underline"
+                  >
+                    {b.name}
+                  </Link>
+                </TableCell>
+                <TableCell>{fmt.date(b.fiscal_year_start)}</TableCell>
+                <TableCell>{fmt.dateTime(b.updated_at)}</TableCell>
+                <TableCell className="whitespace-nowrap text-right">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={`Duplicate ${b.name}`}
+                    title="Duplicate budget into another financial year"
+                    disabled={!canManage || copy.isPending || remove.isPending}
+                    onClick={() => openCopy(b)}
+                  >
+                    <Copy className="size-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={`Delete ${b.name}`}
+                    disabled={!canManage || remove.isPending}
+                    onClick={() => {
+                      if (window.confirm(`Delete budget "${b.name}" and all its amounts?`)) {
+                        remove.mutate(b.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredBudgets.map((b) => (
-                <TableRow key={b.id}>
-                  <TableCell>
-                    <Link
-                      to="/budgets/$budgetId"
-                      params={{ budgetId: b.id }}
-                      className="font-medium underline-offset-2 hover:underline"
-                    >
-                      {b.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{fmt.date(b.fiscal_year_start)}</TableCell>
-                  <TableCell>{fmt.dateTime(b.updated_at)}</TableCell>
-                  <TableCell className="whitespace-nowrap text-right">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      aria-label={`Duplicate ${b.name}`}
-                      title="Duplicate budget into another financial year"
-                      disabled={!canManage || copy.isPending || remove.isPending}
-                      onClick={() => openCopy(b)}
-                    >
-                      <Copy className="size-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      aria-label={`Delete ${b.name}`}
-                      disabled={!canManage || remove.isPending}
-                      onClick={() => {
-                        if (window.confirm(`Delete budget "${b.name}" and all its amounts?`)) {
-                          remove.mutate(b.id);
-                        }
-                      }}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       {showScenarioComparison && query.data?.available && query.data.budgets.length >= 2 ? (
@@ -365,7 +372,7 @@ function BudgetsPage() {
               />
               <p className="text-xs text-muted-foreground">
                 Each monthly amount stays in its fiscal-month position, even when the target year
-                differs.
+              differs.
               </p>
             </div>
             <div className="flex items-center gap-3">

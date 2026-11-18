@@ -89,16 +89,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
+import { decodeBillsReturnContext } from "@/lib/purchases/bills-return-context";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
 
-type BillSearch = { fromTab?: string; files?: boolean };
+type BillSearch = { fromTab?: string; files?: boolean; returnContext?: string };
 
 export const Route = createFileRoute("/_authenticated/purchases/bills/$billId")({
   validateSearch: (s: Record<string, unknown>): BillSearch => {
     const out: BillSearch = {};
     if (typeof s["fromTab"] === "string" && s["fromTab"]) out.fromTab = s["fromTab"];
     if (s["files"] === true || s["files"] === "1" || s["files"] === "true") out.files = true;
+    if (typeof s["returnContext"] === "string" && s["returnContext"].length <= 2048)
+      out.returnContext = s["returnContext"];
     return out;
   },
   head: () => ({ meta: [{ title: "Bill — LinkBooks" }] }),
@@ -681,8 +684,11 @@ function BillDocumentWorkspace() {
       ? 0
       : (bill.balance_due_minor ??
         Math.max(0, bill.total_minor - bill.amount_paid_minor - bill.amount_credited_minor));
-  const backSearch =
-    search.fromTab && search.fromTab !== "all" ? { tab: search.fromTab as never } : {};
+  const backSearch = search.returnContext
+    ? decodeBillsReturnContext(search.returnContext)
+    : search.fromTab && search.fromTab !== "all"
+      ? { tab: search.fromTab as never }
+      : {};
   const neighbors = neighborsQ.data;
 
   const applyDueFromTerms = (date: string, termId: string, force = false) => {

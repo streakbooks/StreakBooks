@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -33,9 +34,7 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
-import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
-import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
+import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -109,7 +108,18 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
   const canAccountingView = useCanDo("accounting.view");
   const fmt = useFormat();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState("employees");
+  const navigate = useNavigate();
+  const { tab, returnStatus, returnQ, returnSort } = useSearch({ from: "/_authenticated/payroll/runs/$runId" });
+  const listReturnSearch = { status: returnStatus, q: returnQ, sort: returnSort };
+  const setTab = (nextTab: string) => {
+    if (nextTab !== "employees" && nextTab !== "journals" && nextTab !== "payments") return;
+    if (nextTab === "journals" && !canAccountingView) return;
+    navigate({
+      to: "/payroll/runs/$runId",
+      params: { runId },
+      search: { tab: nextTab, returnStatus, returnQ, returnSort },
+    });
+  };
   const fetchPage = useServerFn(getPayrollRunPage);
   const fetchJournals = useServerFn(listPayrollRunJournals);
   const calcRun = useServerFn(calculatePayrollRunFn);
@@ -289,25 +299,41 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  if (isPending) return <LoadingState />;
-  if (!company) {
-    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
-  }
-  if (!canView) {
+  if (isPending || !company || !canView) {
     return (
-      <RecordWorkspace title="Payroll run">
-        <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
-      </RecordWorkspace>
+      <ListWorkspace
+          title="Payroll run"
+          actions={
+            <Button asChild variant="outline" size="sm">
+              <Link to="/payroll/runs" search={listReturnSearch}>All runs</Link>
+            </Button>
+          }
+        >
+        <PayrollSubnav current="runs" />
+        {isPending ? (
+          <LoadingState />
+        ) : !company ? (
+          <CompanyEmptyState title="No organisation" description="Select a company first." />
+        ) : (
+          <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
+        )}
+      </ListWorkspace>
     );
   }
-  if (pageQ.isPending) return <LoadingState />;
-  if (pageQ.isError) {
+  if (pageQ.isPending || pageQ.isError) {
     return (
-      <ErrorState
-        title="Could not load run"
-        description={friendlyAuthError(pageQ.error)}
-        onRetry={() => pageQ.refetch()}
-      />
+      <ListWorkspace title="Payroll run" actions={<Button asChild variant="outline" size="sm"><Link to="/payroll/runs" search={listReturnSearch}>All runs</Link></Button>} >
+        <PayrollSubnav current="runs" />
+        {pageQ.isPending ? (
+          <LoadingState />
+        ) : (
+          <ErrorState
+            title="Could not load run"
+            description={friendlyAuthError(pageQ.error)}
+            onRetry={() => pageQ.refetch()}
+          />
+        )}
+      </ListWorkspace>
     );
   }
 
@@ -360,63 +386,17 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
     adjustMut.isPending;
 
   return (
-    <>
-      <RecordWorkspace
+    <ListWorkspace
         title={run.run_number}
         description={
           schedule
             ? `${schedule.name} · ${fmt.date(run.period_start)} – ${fmt.date(run.period_end)}`
             : `${fmt.date(run.period_start)} – ${fmt.date(run.period_end)}`
         }
-        insights={
-          <WorkspaceInsights
-            title="Related"
-            facts={[
-              { label: "Status", value: STATUS_LABEL[run.status] },
-              { label: "Employees", value: String(employees.length) },
-              {
-                label: "Net outstanding",
-                value: fmt.money(net_outstanding_minor, run.currency),
-              },
-              {
-                label: "Accrual journal",
-                value: run.accrual_journal_id ? "Posted" : "Not posted",
-              },
-            ]}
-            links={[
-              {
-                label: "All runs",
-                to: "/payroll/runs",
-                hint: "Return to payroll runs",
-              },
-              ...(run.status !== "draft" && run.status !== "void"
-                ? [
-                    {
-                      label: "Payslips",
-                      to: "/payroll/payslips",
-                      search: { runId: run.id },
-                      hint: "Payslips for this run",
-                    },
-                  ]
-                : []),
-              ...(run.accrual_journal_id
-                ? [
-                    {
-                      label: "Payments",
-                      to: "/payroll/payments",
-                      search: { runId: run.id },
-                      hint: "Settle net pay for this run",
-                    },
-                  ]
-                : []),
-            ]}
-            footer="Outstanding net pay is calculated from this run’s posted lines and payments."
-          />
-        }
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link to="/payroll/runs">All runs</Link>
+              <Link to="/payroll/runs" search={listReturnSearch}>All runs</Link>
             </Button>
             {run.status !== "draft" && run.status !== "void" ? (
               <Button asChild variant="outline" size="sm">
@@ -435,379 +415,383 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
           </div>
         }
       >
-        <PayrollSubnav current="runs" />
+      <PayrollSubnav current="runs" />
 
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Badge>{STATUS_LABEL[run.status]}</Badge>
-          {run.posted_at ? (
-            <span className="text-sm text-muted-foreground">
-              Posted {fmt.dateTime(run.posted_at)}
-            </span>
-          ) : null}
-          {run.accrual_journal_id && net_outstanding_minor > 0 ? (
-            <span className="text-sm text-muted-foreground">
-              Net outstanding {fmt.money(net_outstanding_minor, run.currency)}
-            </span>
-          ) : null}
-          {canPrepare && isMutable ? (
-            <>
-              {run.status === "draft" || run.calculated_at == null ? (
-                <Button size="sm" disabled={busy} onClick={() => calcMut.mutate()}>
-                  Calculate
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={busy}
-                  onClick={() => recalcMut.mutate()}
-                >
-                  Recalculate
-                </Button>
-              )}
-              {run.status === "calculated" && run.requires_approval ? (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={busy}
-                  onClick={() => reviewMut.mutate()}
-                >
-                  Mark reviewed
-                </Button>
-              ) : null}
-              {canApprove &&
-              ((run.requires_approval && run.status === "reviewed") ||
-                (!run.requires_approval &&
-                  run.calculated_at &&
-                  (run.status === "calculated" || run.status === "reviewed"))) ? (
-                <Button size="sm" disabled={busy} onClick={() => approveMut.mutate()}>
-                  Approve &amp; generate payslips
-                </Button>
-              ) : null}
-              {canApprove && run.requires_approval && run.status === "calculated" ? (
-                <span className="text-sm text-muted-foreground self-center">
-                  Mark reviewed before approval
-                </span>
-              ) : null}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Badge>{STATUS_LABEL[run.status]}</Badge>
+        {run.posted_at ? (
+          <span className="text-sm text-muted-foreground">
+            Posted {fmt.dateTime(run.posted_at)}
+          </span>
+        ) : null}
+        {run.accrual_journal_id && net_outstanding_minor > 0 ? (
+          <span className="text-sm text-muted-foreground">
+            Net outstanding {fmt.money(net_outstanding_minor, run.currency)}
+          </span>
+        ) : null}
+        {canPrepare && isMutable ? (
+          <>
+            {run.status === "draft" || run.calculated_at == null ? (
+              <Button size="sm" disabled={busy} onClick={() => calcMut.mutate()}>
+                Calculate
+              </Button>
+            ) : (
               <Button
                 size="sm"
-                variant="destructive"
+                variant="secondary"
                 disabled={busy}
-                onClick={() => setVoidConfirmOpen(true)}
+                onClick={() => recalcMut.mutate()}
               >
-                Void run
+                Recalculate
               </Button>
-            </>
-          ) : null}
-          {canPost && run.status === "approved" && !run.accrual_journal_id ? (
-            <Button size="sm" disabled={busy} onClick={() => postMut.mutate()}>
-              Post to ledger
-            </Button>
-          ) : null}
-          {canReverseAccrual ? (
+            )}
+            {run.status === "calculated" && run.requires_approval ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={busy}
+                onClick={() => reviewMut.mutate()}
+              >
+                Mark reviewed
+              </Button>
+            ) : null}
+            {canApprove &&
+            ((run.requires_approval && run.status === "reviewed") ||
+              (!run.requires_approval &&
+                run.calculated_at &&
+                (run.status === "calculated" || run.status === "reviewed"))) ? (
+              <Button size="sm" disabled={busy} onClick={() => approveMut.mutate()}>
+                Approve &amp; generate payslips
+              </Button>
+            ) : null}
+            {canApprove && run.requires_approval && run.status === "calculated" ? (
+              <span className="text-sm text-muted-foreground self-center">
+                Mark reviewed before approval
+              </span>
+            ) : null}
             <Button
               size="sm"
               variant="destructive"
               disabled={busy}
-              onClick={() => {
-                setAccrualReversalDate(new Date().toISOString().slice(0, 10));
-                setAccrualReverseOpen(true);
-              }}
+              onClick={() => setVoidConfirmOpen(true)}
             >
-              Reverse accrual
+              Void run
             </Button>
-          ) : null}
-        </div>
+          </>
+        ) : null}
+        {canPost && run.status === "approved" && !run.accrual_journal_id ? (
+          <Button size="sm" disabled={busy} onClick={() => postMut.mutate()}>
+            Post to ledger
+          </Button>
+        ) : null}
+        {canReverseAccrual ? (
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={busy}
+            onClick={() => {
+              setAccrualReversalDate(new Date().toISOString().slice(0, 10));
+              setAccrualReverseOpen(true);
+            }}
+          >
+            Reverse accrual
+          </Button>
+        ) : null}
+      </div>
 
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Gross</CardTitle>
-            </CardHeader>
-            <CardContent className="font-mono text-lg">
-              {fmt.money(run.gross_minor, run.currency)}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Deductions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="font-mono text-lg">
-              {fmt.money(run.deductions_minor, run.currency)}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Net pay</CardTitle>
-            </CardHeader>
-            <CardContent className="font-mono text-lg">
-              {fmt.money(run.net_minor, run.currency)}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Net paid / outstanding
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="font-mono text-lg">
-              {fmt.money(run.net_paid_minor, run.currency)}
-              {run.accrual_journal_id ? (
-                <span className="block text-sm font-normal text-muted-foreground">
-                  Outstanding {fmt.money(net_outstanding_minor, run.currency)}
-                </span>
-              ) : null}
-            </CardContent>
-          </Card>
-        </div>
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Gross</CardTitle>
+          </CardHeader>
+          <CardContent className="font-mono text-lg">
+            {fmt.money(run.gross_minor, run.currency)}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Deductions</CardTitle>
+          </CardHeader>
+          <CardContent className="font-mono text-lg">
+            {fmt.money(run.deductions_minor, run.currency)}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Net pay</CardTitle>
+          </CardHeader>
+          <CardContent className="font-mono text-lg">
+            {fmt.money(run.net_minor, run.currency)}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Net paid / outstanding
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="font-mono text-lg">
+            {fmt.money(run.net_paid_minor, run.currency)}
+            {run.accrual_journal_id ? (
+              <span className="block text-sm font-normal text-muted-foreground">
+                Outstanding {fmt.money(net_outstanding_minor, run.currency)}
+              </span>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
 
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList>
-            <TabsTrigger value="employees">Employees</TabsTrigger>
-            <TabsTrigger value="journals">Journal entries</TabsTrigger>
-            <TabsTrigger value="payments">Payment history</TabsTrigger>
-          </TabsList>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="employees">Employees</TabsTrigger>
+          <TabsTrigger value="journals" disabled={!canAccountingView} title={!canAccountingView ? "Requires accounting.view permission" : undefined}>Journal entries</TabsTrigger>
+          <TabsTrigger value="payments">Payment history</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="employees" className="mt-4">
+        <TabsContent value="employees" className="mt-4">
+          <TableCard>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee</TableHead>
+                  <TableHead className="text-right">Gross</TableHead>
+                  <TableHead className="text-right">Deductions</TableHead>
+                  <TableHead className="text-right">Net</TableHead>
+                  <TableHead>Pay status</TableHead>
+                  {canPrepare && isMutable ? <TableHead className="w-[120px]" /> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {employees.map(({ run_employee: re, employee: emp, payslip }) => (
+                  <TableRow key={re.id}>
+                    <TableCell>
+                      <div className="font-medium">
+                        {emp.first_name} {emp.last_name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{emp.employee_number}</div>
+                      {(linesByRunEmployee.get(re.id)?.length ?? 0) > 0 ? (
+                        <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                          {linesByRunEmployee.get(re.id)?.map((l) => (
+                            <li key={l.id}>
+                              {l.name}: {fmt.money(l.amount_minor, run.currency)}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      {fmt.money(re.gross_minor, run.currency)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      {fmt.money(re.deductions_minor, run.currency)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      {fmt.money(re.net_minor, run.currency)}
+                    </TableCell>
+                    <TableCell>
+                      {payslip ? <Badge variant="outline">{payslip.payment_status}</Badge> : "—"}
+                    </TableCell>
+                    {canPrepare && isMutable ? (
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() =>
+                            openEmployeeAdjust(emp.id, `${emp.first_name} ${emp.last_name}`, re.id)
+                          }
+                        >
+                          Adjust
+                        </Button>
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableCard>
+        </TabsContent>
+
+        <TabsContent value="journals" className="mt-4">
+          {!canAccountingView ? (
+            <div className="space-y-3">
+              <EmptyState
+                title="Accounting access required"
+                description="Journal entries require accounting.view."
+              />
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  to="/payroll/runs/$runId"
+                  params={{ runId }}
+                  search={{ tab: "employees", returnStatus, returnQ, returnSort }}
+                >
+                  Return to employees
+                </Link>
+              </Button>
+            </div>
+          ) : !run.accrual_journal_id ? (
+            <EmptyState
+              title="Not posted yet"
+              description="Post this run to create accrual journal entries."
+            />
+          ) : journalsQ.isPending ? (
+            <LoadingState />
+          ) : journalsQ.isError ? (
+            <ErrorState
+              title="Could not load journals"
+              description={friendlyAuthError(journalsQ.error)}
+              onRetry={() => journalsQ.refetch()}
+            />
+          ) : !journalsQ.data?.journals.length ? (
+            <EmptyState
+              title="No journals"
+              description="No ledger entries were found for this run."
+            />
+          ) : (
+            <div className="space-y-4">
+              {journalsQ.data.journals.map((journal) => (
+                <section key={journal.id} className="rounded-md border p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="font-medium">
+                      {canAccountingView ? (
+                        <Link
+                          to="/accounting"
+                          search={{ tab: "journals", journal: journal.id }}
+                          className="text-primary hover:underline"
+                        >
+                          Journal #{journal.journal_number}
+                        </Link>
+                      ) : (
+                        <>Journal #{journal.journal_number}</>
+                      )}{" "}
+                      · {fmt.date(journal.journal_date)}
+                    </span>
+                    <Badge variant="outline">{journal.source_type}</Badge>
+                  </div>
+                  {journal.memo ? (
+                    <p className="mb-2 text-sm text-muted-foreground">{journal.memo}</p>
+                  ) : null}
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Account</TableHead>
+                        <TableHead className="text-right">Debit</TableHead>
+                        <TableHead className="text-right">Credit</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {journal.lines.map((line) => (
+                        <TableRow key={`${journal.id}-${line.account_code}-${line.debit_minor}`}>
+                          <TableCell>
+                            {line.account_code} {line.account_name}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {line.debit_minor ? fmt.money(line.debit_minor, run.currency) : "—"}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {line.credit_minor ? fmt.money(line.credit_minor, run.currency) : "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </section>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="payments" className="mt-4">
+          {payments.length === 0 ? (
+            <EmptyState
+              title="No payments recorded"
+              description={
+                run.accrual_journal_id
+                  ? "Record net-pay payments from the Payments screen."
+                  : "Post the run before recording payments."
+              }
+            />
+          ) : (
             <TableCard>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead className="text-right">Gross</TableHead>
-                    <TableHead className="text-right">Deductions</TableHead>
-                    <TableHead className="text-right">Net</TableHead>
-                    <TableHead>Pay status</TableHead>
-                    {canPrepare && isMutable ? <TableHead className="w-[120px]" /> : null}
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Reference</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {employees.map(({ run_employee: re, employee: emp, payslip }) => (
-                    <TableRow key={re.id}>
-                      <TableCell>
-                        <div className="font-medium">
-                          {emp.first_name} {emp.last_name}
-                        </div>
-                        <div className="text-xs text-muted-foreground">{emp.employee_number}</div>
-                        {(linesByRunEmployee.get(re.id)?.length ?? 0) > 0 ? (
-                          <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-                            {linesByRunEmployee.get(re.id)?.map((l) => (
-                              <li key={l.id}>
-                                {l.name}: {fmt.money(l.amount_minor, run.currency)}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : null}
-                      </TableCell>
+                  {payments.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell>{fmt.date(p.payment_date)}</TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        {fmt.money(re.gross_minor, run.currency)}
+                        {fmt.money(p.amount_minor, run.currency)}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm">
-                        {fmt.money(re.deductions_minor, run.currency)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-sm">
-                        {fmt.money(re.net_minor, run.currency)}
-                      </TableCell>
-                      <TableCell>
-                        {payslip ? <Badge variant="outline">{payslip.payment_status}</Badge> : "—"}
-                      </TableCell>
-                      {canPrepare && isMutable ? (
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={busy}
-                            onClick={() =>
-                              openEmployeeAdjust(
-                                emp.id,
-                                `${emp.first_name} ${emp.last_name}`,
-                                re.id,
-                              )
-                            }
-                          >
-                            Adjust
-                          </Button>
-                        </TableCell>
-                      ) : null}
+                      <TableCell>{p.reference ?? "—"}</TableCell>
+                      <TableCell>{p.status === "reversed" ? "Reversed" : "Posted"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </TableCard>
-          </TabsContent>
+          )}
+        </TabsContent>
+      </Tabs>
 
-          <TabsContent value="journals" className="mt-4">
-            {!canAccountingView ? (
-              <EmptyState
-                title="Accounting access required"
-                description="Journal entries require accounting.view."
-              />
-            ) : !run.accrual_journal_id ? (
-              <EmptyState
-                title="Not posted yet"
-                description="Post this run to create accrual journal entries."
-              />
-            ) : journalsQ.isPending ? (
-              <LoadingState />
-            ) : journalsQ.isError ? (
-              <ErrorState
-                title="Could not load journals"
-                description={friendlyAuthError(journalsQ.error)}
-                onRetry={() => journalsQ.refetch()}
-              />
-            ) : !journalsQ.data?.journals.length ? (
-              <EmptyState
-                title="No journals"
-                description="No ledger entries were found for this run."
-              />
-            ) : (
-              <div className="space-y-4">
-                {journalsQ.data.journals.map((journal) => (
-                  <section key={journal.id} className="rounded-md border p-3">
-                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
-                      <span className="font-medium">
-                        {canAccountingView ? (
-                          <Link
-                            to="/accounting"
-                            search={{ tab: "journals", journal: journal.id }}
-                            className="text-primary hover:underline"
-                          >
-                            Journal #{journal.journal_number}
-                          </Link>
-                        ) : (
-                          <>Journal #{journal.journal_number}</>
-                        )}{" "}
-                        · {fmt.date(journal.journal_date)}
-                      </span>
-                      <Badge variant="outline">{journal.source_type}</Badge>
-                    </div>
-                    {journal.memo ? (
-                      <p className="mb-2 text-sm text-muted-foreground">{journal.memo}</p>
-                    ) : null}
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Account</TableHead>
-                          <TableHead className="text-right">Debit</TableHead>
-                          <TableHead className="text-right">Credit</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {journal.lines.map((line) => (
-                          <TableRow key={`${journal.id}-${line.account_code}-${line.debit_minor}`}>
-                            <TableCell>
-                              {line.account_code} {line.account_name}
-                            </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
-                              {line.debit_minor ? fmt.money(line.debit_minor, run.currency) : "—"}
-                            </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
-                              {line.credit_minor ? fmt.money(line.credit_minor, run.currency) : "—"}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </section>
-                ))}
-              </div>
-            )}
-          </TabsContent>
+      <AlertDialog open={voidConfirmOpen} onOpenChange={setVoidConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Void this payroll run?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This cancels the run in draft or calculated state. Generated figures are discarded and
+              the run cannot be approved or posted unless you create a new run.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={voidMut.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={voidMut.isPending}
+              onClick={() => voidMut.mutate()}
+            >
+              Void run
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-          <TabsContent value="payments" className="mt-4">
-            {payments.length === 0 ? (
-              <EmptyState
-                title="No payments recorded"
-                description={
-                  run.accrual_journal_id
-                    ? "Record net-pay payments from the Payments screen."
-                    : "Post the run before recording payments."
-                }
-              />
-            ) : (
-              <TableCard>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payments.map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell>{fmt.date(p.payment_date)}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {fmt.money(p.amount_minor, run.currency)}
-                        </TableCell>
-                        <TableCell>{p.reference ?? "—"}</TableCell>
-                        <TableCell>{p.status === "reversed" ? "Reversed" : "Posted"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableCard>
-            )}
-          </TabsContent>
-        </Tabs>
-
-        <AlertDialog open={voidConfirmOpen} onOpenChange={setVoidConfirmOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Void this payroll run?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This cancels the run in draft or calculated state. Generated figures are discarded
-                and the run cannot be approved or posted unless you create a new run.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={voidMut.isPending}>Cancel</AlertDialogCancel>
-              <Button
-                variant="destructive"
-                disabled={voidMut.isPending}
-                onClick={() => voidMut.mutate()}
-              >
-                Void run
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <AlertDialog open={accrualReverseOpen} onOpenChange={setAccrualReverseOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Reverse payroll accrual?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Posts a reversing journal and returns this run to approved. Only available when no
-                net-pay payments have been recorded for the run.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="grid gap-2 py-2">
-              <Label htmlFor="pr-accrual-reverse-date">Reversal date</Label>
-              <Input
-                id="pr-accrual-reverse-date"
-                type="date"
-                value={accrualReversalDate}
-                onChange={(e) => setAccrualReversalDate(e.target.value)}
-              />
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={reverseAccrualMut.isPending}>Cancel</AlertDialogCancel>
-              <Button
-                variant="destructive"
-                disabled={reverseAccrualMut.isPending || !accrualReversalDate}
-                onClick={() => reverseAccrualMut.mutate()}
-              >
-                Reverse accrual
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </RecordWorkspace>
+      <AlertDialog open={accrualReverseOpen} onOpenChange={setAccrualReverseOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reverse payroll accrual?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Posts a reversing journal and returns this run to approved. Only available when no
+              net-pay payments have been recorded for the run.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid gap-2 py-2">
+            <Label htmlFor="pr-accrual-reverse-date">Reversal date</Label>
+            <Input
+              id="pr-accrual-reverse-date"
+              type="date"
+              value={accrualReversalDate}
+              onChange={(e) => setAccrualReversalDate(e.target.value)}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reverseAccrualMut.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={reverseAccrualMut.isPending || !accrualReversalDate}
+              onClick={() => reverseAccrualMut.mutate()}
+            >
+              Reverse accrual
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog
         open={adjustTarget !== null}
@@ -906,6 +890,6 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </ListWorkspace>
   );
 }

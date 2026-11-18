@@ -1,3 +1,4 @@
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { PracticeWorkBoard } from "@/components/accountant/PracticeWorkBoard";
 import { FirmClientPortfolio } from "@/components/firm/FirmClientPortfolio";
 import { FirmOnboardingPanel, FirmTeamPanel } from "@/components/firm/FirmOnboardingAndTeam";
@@ -31,7 +32,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import { LookupSelect } from "@/components/lookup";
 import {
   Select,
@@ -50,6 +51,9 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/firm")({
+  validateSearch: (raw: Record<string, unknown>): { tab?: string } => ({
+    tab: ["clients","work","onboarding","engagements","requests","billing","insights","team","invitations","activity","setup","partner"].includes(String(raw["tab"])) ? String(raw["tab"]) : undefined,
+  }),
   head: () => ({ meta: [{ title: "Firm — LinkBooks" }] }),
   component: FirmPage,
 });
@@ -67,7 +71,8 @@ function FirmPage() {
   const doRevoke = useServerFn(revokeFirmClient);
 
   const [firmName, setFirmName] = useState("");
-  const [tab, setTab] = useState("clients");
+  const tab = Route.useSearch().tab ?? "clients";
+  const selectTab = (nextTab: string) => void navigate({ to: "/firm", search: { tab: nextTab }, resetScroll: false });
   const [selectedFirmId, setSelectedFirmId] = useState("");
   const [accessLevel, setAccessLevel] = useState("view");
   const [activityCompanyId, setActivityCompanyId] = useState("");
@@ -209,7 +214,7 @@ function FirmPage() {
                 onChange={(id) => {
                   setSelectedFirmId(id);
                   setActivityCompanyId("");
-                  setTab("clients");
+                  selectTab("clients");
                 }}
                 searchPlaceholder="Search firm"
                 options={(firmsQ.data ?? []).map((f) => ({
@@ -226,20 +231,20 @@ function FirmPage() {
               <div className="text-xs">Client accounting permissions remain company-specific.</div>
             </div>
           </div>
-          <Tabs className="space-y-5" value={tab} onValueChange={setTab}>
-            <TabsList className="flex h-auto flex-wrap justify-start gap-1">
-              <TabsTrigger value="clients">Clients & overview</TabsTrigger>
-              <TabsTrigger value="work">Work & deadlines</TabsTrigger>
-              <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
-              <TabsTrigger value="engagements">Engagements</TabsTrigger>
-              <TabsTrigger value="requests">Client requests</TabsTrigger>
-              <TabsTrigger value="billing">Practice billing</TabsTrigger>
-              <TabsTrigger value="insights">Insights</TabsTrigger>
-              <TabsTrigger value="team">Team</TabsTrigger>
-              <TabsTrigger value="invitations">Staff invitations</TabsTrigger>
-              <TabsTrigger value="activity">Client activity</TabsTrigger>
-              <TabsTrigger value="setup">Firm settings</TabsTrigger>
-              <TabsTrigger value="partner">Partner programme</TabsTrigger>
+          <Tabs className="space-y-5" value={tab}>
+            <TabsList onKeyDown={handleNativeTabKeyDown} className="flex h-auto flex-wrap justify-start gap-1">
+              <Link to="/firm" search={{ tab: "clients" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "clients"} data-state={tab === "clients" ? "active" : "inactive"}>Clients & overview</Link>
+              <Link to="/firm" search={{ tab: "work" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "work"} data-state={tab === "work" ? "active" : "inactive"}>Work & deadlines</Link>
+              <Link to="/firm" search={{ tab: "onboarding" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "onboarding"} data-state={tab === "onboarding" ? "active" : "inactive"}>Onboarding</Link>
+              <Link to="/firm" search={{ tab: "engagements" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "engagements"} data-state={tab === "engagements" ? "active" : "inactive"}>Engagements</Link>
+              <Link to="/firm" search={{ tab: "requests" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "requests"} data-state={tab === "requests" ? "active" : "inactive"}>Client requests</Link>
+              <Link to="/firm" search={{ tab: "billing" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "billing"} data-state={tab === "billing" ? "active" : "inactive"}>Practice billing</Link>
+              <Link to="/firm" search={{ tab: "insights" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "insights"} data-state={tab === "insights" ? "active" : "inactive"}>Insights</Link>
+              <Link to="/firm" search={{ tab: "team" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "team"} data-state={tab === "team" ? "active" : "inactive"}>Team</Link>
+              <Link to="/firm" search={{ tab: "invitations" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "invitations"} data-state={tab === "invitations" ? "active" : "inactive"}>Staff invitations</Link>
+              <Link to="/firm" search={{ tab: "activity" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "activity"} data-state={tab === "activity" ? "active" : "inactive"}>Client activity</Link>
+              <Link to="/firm" search={{ tab: "setup" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "setup"} data-state={tab === "setup" ? "active" : "inactive"}>Firm settings</Link>
+              <Link to="/firm" search={{ tab: "partner" }} resetScroll={false} className={nativeTabLinkClass} role="tab" aria-selected={tab === "partner"} data-state={tab === "partner" ? "active" : "inactive"}>Partner programme</Link>
             </TabsList>
 
             <TabsContent value="clients" className="space-y-4">
@@ -257,7 +262,7 @@ function FirmPage() {
                     title="No linked clients"
                     description="Link an organisation you administer to start using your practice portfolio."
                   />
-                  <Button variant="outline" onClick={() => setTab("setup")}>
+                  <Button variant="outline" onClick={() => selectTab("setup")}>
                     Open firm settings
                   </Button>
                 </div>

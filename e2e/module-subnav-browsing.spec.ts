@@ -73,4 +73,25 @@ test.describe("Native LinkBooks module section browsing", () => {
     await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
     await expect(page).toHaveURL(/\/purchases\/bills/);
   });
+  test("Bills restores sorting and pagination after opening and returning", async ({ page }) => {
+    // This journey requires an authorised seeded organisation with at least one bill.
+    await signIn(page, "/purchases/bills?tab=all&sortBy=due_date&sortDir=asc&page=0");
+    const source = page.url();
+    const billLink = page.locator(
+      'a[href*="/purchases/bills/"][href*="returnContext="]',
+    ).first();
+    await expect(billLink).toBeVisible();
+    await billLink.click();
+    await expect(page).toHaveURL(/\/purchases\/bills\/[^/]+/);
+    const details = new URL(page.url());
+    expect(details.searchParams.has("returnContext")).toBe(true);
+    await page.getByRole("link", { name: "Back to Bills" }).click();
+    await expect(page).toHaveURL(/\/purchases\/bills(?:\/|\?|$)/);
+    const restored = new URL(page.url()).searchParams;
+    const previous = new URL(source).searchParams;
+    expect(restored.get("sortBy")).toBe(previous.get("sortBy"));
+    expect(restored.get("sortDir")).toBe(previous.get("sortDir"));
+    expect(restored.get("page")).toBe(previous.get("page"));
+  });
+
 });

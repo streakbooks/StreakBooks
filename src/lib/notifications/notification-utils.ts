@@ -108,6 +108,8 @@ export type ActionCenterSearch = {
   priority?: string;
   sort?: NotificationSort;
   q?: string;
+  /** Presentation-only grouping of the loaded notification page. */
+  group?: boolean;
 };
 
 const ACTION_CATEGORIES = new Set([
@@ -148,6 +150,9 @@ export function parseActionCenterSearch(raw: Record<string, unknown>): ActionCen
   const sort = raw["sort"];
   if (typeof sort === "string" && ACTION_SORTS.has(sort as NotificationSort)) {
     result.sort = sort as NotificationSort;
+  }
+  if (raw["group"] === true || raw["group"] === "true" || raw["group"] === "1") {
+    result.group = true;
   }
   const text = raw["q"];
   if (typeof text === "string") {

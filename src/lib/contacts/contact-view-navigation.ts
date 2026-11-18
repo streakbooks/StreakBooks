@@ -17,7 +17,8 @@ export type ContactDirectoryView = (typeof CONTACT_DIRECTORY_VIEWS)[number];
 
 /** Invalid/untrusted query values intentionally return undefined. */
 export function parseContactDirectoryView(value: unknown): ContactDirectoryView | undefined {
-  return typeof value === "string" && (CONTACT_DIRECTORY_VIEWS as readonly string[]).includes(value)
+  return typeof value === "string" &&
+    (CONTACT_DIRECTORY_VIEWS as readonly string[]).includes(value)
     ? (value as ContactDirectoryView)
     : undefined;
 }
@@ -31,35 +32,16 @@ export type ContactsDirectorySearch = {
 };
 
 const SORT_FIELDS = [
-  "name",
-  "account",
-  "roles",
-  "email",
-  "phone",
-  "terms",
-  "city",
-  "state",
-  "postal",
-  "country",
-  "legal",
-  "tax",
-  "currency",
-  "credit",
-  "status",
-  "created",
-  "modified",
+  "name", "account", "roles", "email", "phone", "terms", "city", "state",
+  "postal", "country", "legal", "tax", "currency", "credit", "status", "created", "modified",
 ];
 const ALLOWED_SORTS = new Set([
-  "default",
-  "recent",
-  "updated",
+  "default", "recent", "updated",
   ...SORT_FIELDS.flatMap((field) => [field + "_asc", field + "_desc"]),
 ]);
 const MAX_RETURN_LENGTH = 2048;
 
-export function parseContactsDirectorySearch(
-  raw: Record<string, unknown>,
-): ContactsDirectorySearch {
+export function parseContactsDirectorySearch(raw: Record<string, unknown>): ContactsDirectorySearch {
   const out: ContactsDirectorySearch = {};
   const view = parseContactDirectoryView(raw["view"]);
   if (view) out.view = view;

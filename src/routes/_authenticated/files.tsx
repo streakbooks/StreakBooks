@@ -1,7 +1,8 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { parseFilesListSearch, type FilesListSearch } from "@/lib/documents/files-navigation";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Download,
@@ -113,14 +114,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/files")({
-  validateSearch: (
-    raw: Record<string, unknown>,
-  ): { folder?: string | undefined; file?: string | undefined } => ({
-    ...(typeof raw["folder"] === "string" && raw["folder"]
-      ? { folder: raw["folder"] as string }
-      : {}),
-    ...(typeof raw["file"] === "string" && raw["file"] ? { file: raw["file"] as string } : {}),
-  }),
+  validateSearch: parseFilesListSearch,
   head: () => ({ meta: [{ title: "Files — LinkBooks" }] }),
   component: FilesPage,
 });
@@ -159,17 +153,37 @@ function FilesPage() {
   const updateFolder = useServerFn(updateDocumentFolder);
   const deleteFolder = useServerFn(deleteDocumentFolder);
   const moveFile = useServerFn(moveDocumentToFolder);
-  const { folder, file } = Route.useSearch();
+  const routeSearch = Route.useSearch();
   const navigate = Route.useNavigate();
-  const folderId = folder ?? null;
-  const selectedFile = file ?? null;
-  const setFolderId = (id: string | null) =>
+  const folderId = routeSearch.folder ?? null;
+  const selectedFile = routeSearch.file ?? null;
+  const search = routeSearch.q ?? "";
+  const type = routeSearch.type ?? "all";
+  const page = routeSearch.page ?? 0;
+  const sort = routeSearch.sort ?? "newest";
+  const view = routeSearch.view ?? "all";
+  const patchFiles = (patch: Partial<FilesListSearch>, replace = false) => {
     void navigate({
       to: "/files",
-      search: (previous) => ({ ...previous, folder: id ?? undefined, file: undefined }),
+      search: (previous) => parseFilesListSearch({ ...previous, ...patch }),
+      replace,
+      resetScroll: false,
     });
+  };
+  const setFolderId = (id: string | null) =>
+    patchFiles({ folder: id ?? undefined, file: undefined, page: 0 });
   const setSelectedFile = (id: string | null) =>
-    void navigate({ to: "/files", search: (previous) => ({ ...previous, file: id ?? undefined }) });
+    patchFiles({ file: id ?? undefined });
+  const setSearch = (value: string) =>
+    patchFiles({ q: value, page: 0 }, true);
+  const setType = (value: string) =>
+    patchFiles({ type: value as FilesListSearch["type"], page: 0 });
+  const setSort = (value: FilesListSearch["sort"]) =>
+    patchFiles({ sort: value, page: 0 });
+  const setView = (value: "all" | "to-file" | "review") =>
+    patchFiles({ view: value, folder: value === "all" ? folderId ?? undefined : undefined, file: undefined, page: 0 });
+  const setPage = (next: number | ((current: number) => number)) =>
+    patchFiles({ page: typeof next === "function" ? next(page) : next });
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [renameFolderOpen, setRenameFolderOpen] = useState(false);
@@ -182,18 +196,12 @@ function FilesPage() {
   const [showRenameFile, setShowRenameFile] = useState(false);
   const [renameFileName, setRenameFileName] = useState("");
 
-  const [search, setSearch] = useState("");
-  const [debounced, setDebounced] = useState("");
-  const [type, setType] = useState("all");
+  const [debounced, setDebounced] = useState(search.trim());
+  const [error, setError] = useState<string | null>(null);
   const [fileFormat, setFileFormat] = useState<FileFormat>("all");
   const [categoryFilter, setCategoryFilter] = useState<FileCategory | "all">("all");
   const [tagFilter, setTagFilter] = useState("all");
-  const [includeSubfolders, setIncludeSubfolders] = useState(false);
   const [folderSearch, setFolderSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [sort, setSort] = useState<"newest" | "oldest" | "name" | "largest">("newest");
-  const [view, setView] = useState<"all" | "to-file" | "review" | "inbox" | "trash">("all");
   const activeView = folderId ? "all" : view;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkTarget, setBulkTarget] = useState("unfiled");
@@ -219,7 +227,6 @@ function FilesPage() {
   useEffect(() => {
     const t = setTimeout(() => {
       setDebounced(search.trim());
-      setPage(0);
     }, 300);
     return () => clearTimeout(t);
   }, [search]);
@@ -659,14 +666,16 @@ function FilesPage() {
   if (activeView === "review") {
     return (
       <ListWorkspace
-        title="Document review"
-        description="Organise and approve uploaded documents without changing accounting records."
-        actions={
-          <Button size="sm" variant="outline" onClick={() => setView("all")}>
-            Back to Files
-          </Button>
-        }
-      >
+          title="Document review"
+          description="Organise and approve uploaded documents without changing accounting records."
+          actions={
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/files" search={{ ...routeSearch, view: "all", file: undefined, page: 0 }}>
+                Back to Files
+              </Link>
+            </Button>
+          }
+        >
         <DocumentReviewQueue companyId={companyId} onClose={() => setView("all")} />
       </ListWorkspace>
     );
@@ -674,49 +683,47 @@ function FilesPage() {
 
   return (
     <ListWorkspace
-      title="Files"
-      description="Everything attached to invoices, bills, contacts and journals, plus files you upload here. You only see files for records you are allowed to view."
-      actions={
-        <>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setView("review");
-              setFolderId(null);
-            }}
-          >
-            <ClipboardCheck className="mr-1 size-4" />
-            Document review
-          </Button>
-          {canUpload ? (
-            <>
-              <input
-                ref={inputRef}
-                type="file"
-                multiple
-                hidden
-                accept={FILE_INPUT_ACCEPT}
-                aria-label="Choose files to upload"
-                onChange={(e) => onPick(e.target.files)}
-              />
-              <Button
-                size="sm"
-                disabled={uploadM.isPending || duplicateCheckM.isPending || Boolean(pendingUploadReview)}
-                onClick={() => inputRef.current?.click()}
+        title="Files"
+        description="Everything attached to invoices, bills, contacts and journals, plus files you upload here. You only see files for records you are allowed to view."
+        actions={
+          <>
+            <Button size="sm" variant="outline" asChild>
+              <Link
+                to="/files"
+                search={{ ...routeSearch, view: "review", folder: undefined, file: undefined, page: 0 }}
               >
-                {uploadM.isPending || duplicateCheckM.isPending ? (
-                  <Loader2 className="mr-1 size-4 animate-spin" />
-                ) : (
-                  <Upload className="mr-1 size-4" />
-                )}
-                Upload files
-              </Button>
-            </>
-          ) : null}
-        </>
-      }
-    >
+                <ClipboardCheck className="mr-1 size-4" />
+                Document review
+              </Link>
+            </Button>
+            {canUpload ? (
+              <>
+                <input
+                  ref={inputRef}
+                  type="file"
+                  multiple
+                  hidden
+                  accept={FILE_INPUT_ACCEPT}
+                  aria-label="Choose files to upload"
+                  onChange={(e) => onPick(e.target.files)}
+                />
+                <Button
+                  size="sm"
+                  disabled={uploadM.isPending}
+                  onClick={() => inputRef.current?.click()}
+                >
+                  {uploadM.isPending ? (
+                    <Loader2 className="mr-1 size-4 animate-spin" />
+                  ) : (
+                    <Upload className="mr-1 size-4" />
+                  )}
+                  Upload files
+                </Button>
+              </>
+            ) : null}
+          </>
+        }
+      >
       {error ? (
         <p role="alert" className="mb-3 text-sm text-destructive">
           {error}
@@ -806,26 +813,17 @@ function FilesPage() {
             <Folder className="size-4" />
             <Link
               to="/files"
-              search={{ folder: undefined, file: undefined }}
+              search={{ ...routeSearch, folder: undefined, file: undefined, view: "all", page: 0 }}
               className="text-sm underline"
-              onClick={(e) => {
-                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
-                  setPage(0);
-                  setView("all");
-                }
-              }}
             >
               All files
             </Link>
             {breadcrumbs.map((crumb) => (
               <Link
                 to="/files"
-                search={{ folder: crumb.id }}
+                search={{ ...routeSearch, folder: crumb.id, file: undefined, page: 0 }}
                 key={crumb.id}
                 className="text-sm underline"
-                onClick={(e) => {
-                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
-                }}
               >
                 / {crumb.name}
               </Link>
@@ -916,10 +914,7 @@ function FilesPage() {
             <Button size="sm" variant="outline" asChild>
               <Link
                 to="/files"
-                search={{ folder: activeFolder.parent_id }}
-                onClick={(e) => {
-                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
-                }}
+                search={{ ...routeSearch, folder: activeFolder.parent_id, file: undefined, page: 0 }}
               >
                 Parent folder
               </Link>
@@ -931,10 +926,7 @@ function FilesPage() {
               <Button key={folder.id} size="sm" variant="outline" asChild>
                 <Link
                   to="/files"
-                  search={{ folder: folder.id }}
-                  onClick={(e) => {
-                    if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
-                  }}
+                  search={{ ...routeSearch, folder: folder.id, file: undefined, page: 0 }}
                 >
                   <Folder className="mr-2 size-4" />
                   {folder.name}
@@ -1122,30 +1114,24 @@ function FilesPage() {
         ) : null}
 
       </section>
-      <div
-        className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-muted/25 p-2"
-        aria-label="Files workspace views"
-      >
-        <Button
-          size="sm"
-          variant={activeView === "all" ? "default" : "outline"}
-          onClick={() => {
-            setView("all");
-            setPage(0);
-          }}
-        >
-          All files
+      <div className="mb-4 flex flex-wrap items-center gap-2" aria-label="Files workspace views">
+        <Button size="sm" variant={activeView === "all" ? "default" : "outline"} asChild>
+          <Link
+            to="/files"
+            search={{ ...routeSearch, view: "all", file: undefined, page: 0 }}
+            aria-current={activeView === "all" ? "page" : undefined}
+          >
+            All files
+          </Link>
         </Button>
-        <Button
-          size="sm"
-          variant={activeView === "to-file" ? "default" : "outline"}
-          onClick={() => {
-            setView("to-file");
-            setPage(0);
-            setFolderId(null);
-          }}
-        >
-          To file
+        <Button size="sm" variant={activeView === "to-file" ? "default" : "outline"} asChild>
+          <Link
+            to="/files"
+            search={{ ...routeSearch, view: "to-file", folder: undefined, file: undefined, page: 0 }}
+            aria-current={activeView === "to-file" ? "page" : undefined}
+          >
+            To file
+          </Link>
         </Button>
         <Button
           size="sm"
@@ -1181,13 +1167,10 @@ function FilesPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Select
+        <RecordLookupSelect
           value={type}
           disabled={activeView === "to-file"}
-          onValueChange={(v) => {
-            setType(v);
-            setPage(0);
-          }}
+          onValueChange={(v) => setType(v)}
         >
           {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
@@ -1202,8 +1185,8 @@ function FilesPage() {
               </SelectItem>
             ))}
           </SelectContent>
-        </Select>
-        <Select
+        </RecordLookupSelect>
+        <RecordLookupSelect
           value={fileFormat}
           onValueChange={(v) => {
             setFileFormat(v as FileFormat);
@@ -1222,8 +1205,8 @@ function FilesPage() {
             <SelectItem value="word">Word documents</SelectItem>
             <SelectItem value="text">Text files</SelectItem>
           </SelectContent>
-        </Select>
-        <Select
+        </RecordLookupSelect>
+        <RecordLookupSelect
           value={categoryFilter}
           onValueChange={(v) => {
             setCategoryFilter(v as FileCategory | "all");
@@ -1242,8 +1225,8 @@ function FilesPage() {
               </SelectItem>
             ))}
           </SelectContent>
-        </Select>
-        <Select
+        </RecordLookupSelect>
+        <RecordLookupSelect
           value={tagFilter}
           onValueChange={(value) => {
             setTagFilter(value);
@@ -1260,13 +1243,10 @@ function FilesPage() {
               <SelectItem key={tag.id} value={tag.id}>{tag.name}</SelectItem>
             ))}
           </SelectContent>
-        </Select>
-        <Select
+        </RecordLookupSelect>
+        <RecordLookupSelect
           value={sort}
-          onValueChange={(v) => {
-            setSort(v as typeof sort);
-            setPage(0);
-          }}
+          onValueChange={(v) => setSort(v as typeof sort)}
         >
           <SelectTrigger className="w-48" aria-label="Sort files">
             <ArrowUpDown className="mr-2 size-4" />
@@ -1278,7 +1258,7 @@ function FilesPage() {
             <SelectItem value="name">File name A–Z</SelectItem>
             <SelectItem value="largest">Largest first</SelectItem>
           </SelectContent>
-        </Select>
+        </RecordLookupSelect>
         {(search || type !== "all" || fileFormat !== "all" ||
           categoryFilter !== "all" || tagFilter !== "all" || sort !== "newest") && (
           <Button
@@ -1649,7 +1629,7 @@ function FilesPage() {
                     <TableCell className="max-w-xs">
                       <Link
                         to="/files"
-                        search={(previous) => ({ ...previous, file: f.id }) as never}
+                        search={(previous) => parseFilesListSearch({ ...previous, file: f.id })}
                         className="block max-w-xs truncate text-left font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                         aria-label={`View details for ${f.file_name}`}
                       >

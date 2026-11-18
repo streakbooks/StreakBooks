@@ -1,11 +1,6 @@
 /** URL search state is navigation only; AI permissions and posting require server verification. */
 export const AI_SUGGESTION_STATUSES = [
-  "all",
-  "validated",
-  "pending",
-  "invalid",
-  "rejected",
-  "applied",
+  "all", "validated", "pending", "invalid", "rejected", "applied",
 ] as const;
 export type AiSuggestionStatus = (typeof AI_SUGGESTION_STATUSES)[number];
 
@@ -23,8 +18,10 @@ export function parseAiAssistantSearch(raw: Record<string, unknown>): AiAssistan
   if (typeof caseId === "string" && UUID.test(caseId)) result.reviewCase = caseId;
 
   const status = raw["suggestionStatus"];
-  if (typeof status === "string" && (AI_SUGGESTION_STATUSES as readonly string[]).includes(status))
-    result.suggestionStatus = status as AiSuggestionStatus;
+  if (
+    typeof status === "string" &&
+    (AI_SUGGESTION_STATUSES as readonly string[]).includes(status)
+  ) result.suggestionStatus = status as AiSuggestionStatus;
 
   const q = raw["suggestionQ"];
   if (typeof q === "string" && q.length > 0 && q.length <= 100) result.suggestionQ = q;

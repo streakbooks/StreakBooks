@@ -1,12 +1,7 @@
 import type { AssetRegisterSort } from "./register-view";
 
 export const FIXED_ASSET_SECTIONS = [
-  "dashboard",
-  "register",
-  "depreciation",
-  "types",
-  "reconciliation",
-  "bill-review",
+  "dashboard", "register", "depreciation", "types", "reconciliation", "bill-review",
 ] as const;
 export type FixedAssetSection = (typeof FIXED_ASSET_SECTIONS)[number];
 
@@ -23,6 +18,7 @@ export type FixedAssetRegisterSearch = {
 const SECTIONS = new Set<string>(FIXED_ASSET_SECTIONS);
 const STATUSES = new Set(["all", "active", "disposed"]);
 const SORTS = new Set(["number", "name", "purchase", "cost"]);
+const UNSAFE_SEARCH = /[\u0000-\u001f\u007f-\u009f\u061c\u200b-\u200f\u2028-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/u;
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 
 /** URL parameters only describe a view; they cannot grant financial-data access. */
@@ -33,10 +29,13 @@ export function parseFixedAssetRegisterSearch(
   const tab = raw["tab"];
   if (typeof tab === "string" && SECTIONS.has(tab)) result.tab = tab as FixedAssetSection;
   const q = raw["q"];
-  if (typeof q === "string" && q.length > 0 && q.length <= 120) result.q = q;
+  if (typeof q === "string" && !UNSAFE_SEARCH.test(q)) {
+    const normalized = q.trim();
+    if (normalized.length > 0 && normalized.length <= 120) result.q = normalized;
+  }
   const status = raw["status"];
   if (typeof status === "string" && STATUSES.has(status)) {
-    result.status = status as NonNullable<FixedAssetRegisterSearch["status"]>;
+    result.status = status as FixedAssetRegisterSearch["status"];
   }
   for (const key of ["typeId", "accountId"] as const) {
     const id = raw[key];

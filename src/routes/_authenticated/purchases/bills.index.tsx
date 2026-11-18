@@ -42,6 +42,7 @@ import {
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { encodeBillsReturnContext } from "@/lib/purchases/bills-return-context";
 import { cn } from "@/lib/utils";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -280,6 +281,7 @@ function BillsWorkspace() {
   const companyId = company?.id;
   const baseCurrency = company?.base_currency ?? "GBP";
   const search = Route.useSearch();
+  const returnContext = encodeBillsReturnContext(search);
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
 
@@ -506,6 +508,7 @@ function BillsWorkspace() {
       params: { billId: b.id },
       search: {
         ...(tab !== "all" ? { fromTab: tab } : {}),
+        ...(returnContext ? { returnContext } : {}),
         ...(opts?.files ? { files: true } : {}),
       },
     });
@@ -1181,6 +1184,7 @@ function BillsWorkspace() {
                           params={{ billId: b.id }}
                           search={{
                             ...(tab !== "all" ? { fromTab: tab } : {}),
+                            ...(returnContext ? { returnContext } : {}),
                             ...(files ? { files: true } : {}),
                           }}
                           className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
@@ -1581,7 +1585,10 @@ function PreviewBody({
         <Link
           to="/purchases/bills/$billId"
           params={{ billId: bill.id }}
-          search={{ ...(tab !== "all" ? { fromTab: tab } : {}) }}
+          search={{
+            ...(tab !== "all" ? { fromTab: tab } : {}),
+            ...(returnContext ? { returnContext } : {}),
+          }}
         >
           {bill.status === "draft" || bill.status === "awaiting_approval"
             ? "Open & edit"

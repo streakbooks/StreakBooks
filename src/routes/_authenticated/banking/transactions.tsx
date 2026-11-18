@@ -4,6 +4,7 @@ import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Eye, MoreHorizontal, Rows3, Table2 } from "lucide-react";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
+import { encodeBankTransactionReturnContext } from "@/lib/banking/transaction-return";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -170,6 +171,7 @@ function BankTransactions() {
   const canCategorise = can("banking.categorise");
   const canMatch = canCategorise || can("banking.reconcile");
   const search = Route.useSearch();
+  const returnContext = encodeBankTransactionReturnContext(search);
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
 
@@ -923,7 +925,7 @@ function BankTransactions() {
                       <TableCell className="whitespace-nowrap">
                         <Link
                           to="/banking/transactions"
-                          search={{ transactionId: t.id, statusGroup: "all" }}
+                          search={{ ...search, transactionId: t.id, statusGroup: "all" }}
                           className="rounded-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
                         >
                           {fmt.date(t.txn_date)}
@@ -932,7 +934,7 @@ function BankTransactions() {
                       <TableCell>
                         <Link
                           to="/banking/transactions"
-                          search={{ transactionId: t.id, statusGroup: "all" }}
+                          search={{ ...search, transactionId: t.id, statusGroup: "all" }}
                           className="rounded-sm font-medium text-foreground underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
                         >
                           {t.description ?? "—"}
@@ -984,6 +986,7 @@ function BankTransactions() {
                                     key={l.journalLineId}
                                     to="/banking/journal/$journalId"
                                     params={{ journalId: l.journalId }}
+                                    search={returnContext ? { returnContext } : {}}
                                     className="text-sm underline-offset-4 hover:underline"
                                   >
                                     Journal #{l.journalNumber}

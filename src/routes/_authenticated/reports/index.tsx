@@ -1,5 +1,6 @@
 import { REPORT_CATALOG } from "@/lib/reports/catalog";
 import { parseReportingCentreSearch } from "@/lib/reports/centre-search";
+import { encodeReportingCentreContext } from "@/lib/reports/centre-return";
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { ReportingFeatureGate } from "@/components/reports/ReportingFeatureGate";
 import { ManagementWorkspace } from "@/components/reports/ManagementWorkspace";
@@ -44,6 +45,7 @@ function ReportsCentre() {
   const { company, isPending } = useActiveCompany();
   // Defensive validation also handles router search state inherited from external URLs.
   const search = parseReportingCentreSearch(Route.useSearch() as Record<string, unknown>);
+  const centre = encodeReportingCentreContext(search);
   const navigate = Route.useNavigate();
   const tab = search.tab ?? "standard";
   const periodFrom = search.from ?? "";
@@ -231,7 +233,7 @@ function ReportsCentre() {
                   <Link
                     to="/reports/$reportId"
                     params={{ reportId: "budget-vs-actual" }}
-                    search={{ from, to: periodTo }}
+                    search={{ from, to: periodTo, centre }}
                   >
                     Budget versus Actual
                   </Link>

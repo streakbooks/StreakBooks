@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useReportingCentreOrigin } from "@/hooks/use-reporting-centre-origin";
 import { Link } from "@tanstack/react-router";
 import {
   QUICK_REPORT_IDS,
@@ -27,6 +28,7 @@ export function ReportCatalogue({
   to: string;
   onChange: (filters: CatalogueFilters) => void;
 }) {
+  const centre = useReportingCentreOrigin();
   const categories = nonEmptyCategories();
   const filtered = useMemo(
     () =>
@@ -50,7 +52,7 @@ export function ReportCatalogue({
           if (!r) return null;
           return (
             <Button key={id} asChild variant="secondary" size="sm">
-              <Link to="/reports/$reportId" params={{ reportId: id }} search={{ from, to }}>
+              <Link to="/reports/$reportId" params={{ reportId: id }} search={{ from, to, centre }}>
                 {r.title}
               </Link>
             </Button>
@@ -105,7 +107,7 @@ export function ReportCatalogue({
           </Button>
         )}
       </div>
-      <ReportDirectory reports={filtered} from={from} to={to} />
+      <ReportDirectory reports={filtered} from={from} to={to} centre={centre} />
 
       {filtered.length === 0 && (
         <EmptyState

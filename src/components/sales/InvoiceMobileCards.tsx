@@ -25,6 +25,7 @@ export function InvoiceMobileCards({
   date,
   money,
   onPreview,
+  returnContext,
 }: {
   rows: readonly InvoiceMobileRow[];
   today: string;
@@ -32,6 +33,7 @@ export function InvoiceMobileCards({
   date: (value: string) => string;
   money: (minor: number, currency: string) => string;
   onPreview: (invoiceId: string) => void;
+  returnContext?: string;
 }) {
   return (
     <section aria-label="Mobile invoices" className="space-y-3">
@@ -99,6 +101,7 @@ export function InvoiceMobileCards({
                 <Link
                   to="/sales/invoices/$invoiceId"
                   params={{ invoiceId: invoice.id }}
+                  search={returnContext ? { returnContext } : {}}
                   aria-label={"Open invoice " + number}
                 >
                   Open <ExternalLink className="size-4" aria-hidden />

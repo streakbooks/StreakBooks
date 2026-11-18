@@ -28,14 +28,9 @@ describe("Contact directory return navigation", () => {
   });
 
   it("retains all permitted search, sorting and pagination fields", () => {
-    expect(
-      parseContactsDirectorySearch({
-        view: "suppliers",
-        q: "paper & pens",
-        sort: "name_desc",
-        page: "4",
-      }),
-    ).toEqual({ view: "suppliers", q: "paper & pens", sort: "name_desc", page: 4 });
+    expect(parseContactsDirectorySearch({
+      view: "suppliers", q: "paper & pens", sort: "name_desc", page: "4",
+    })).toEqual({ view: "suppliers", q: "paper & pens", sort: "name_desc", page: 4 });
   });
 
   it("allows only known sortable directory fields", () => {
@@ -46,20 +41,15 @@ describe("Contact directory return navigation", () => {
 
   it("round trips list context through a safe URL parameter", () => {
     const original = {
-      view: "archived",
-      q: "consulting & audit",
-      sort: "created_desc",
-      page: 6,
+      view: "archived", q: "consulting & audit", sort: "created_desc", page: 6,
     };
     expect(decodeContactsReturnContext(encodeContactsReturnContext(original))).toEqual(original);
   });
 
   it("drops unsafe return URLs and unexpected query parameters", () => {
-    expect(
-      decodeContactsReturnContext(
-        "redirect=https%3A%2F%2Fevil.example&view=customers&q=abc&admin=true",
-      ),
-    ).toEqual({ view: "customers", q: "abc" });
+    expect(decodeContactsReturnContext(
+      "redirect=https%3A%2F%2Fevil.example&view=customers&q=abc&admin=true",
+    )).toEqual({ view: "customers", q: "abc" });
   });
 
   it("rejects excessively long queries and unbounded return context", () => {

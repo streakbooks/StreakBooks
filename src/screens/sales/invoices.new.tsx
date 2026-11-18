@@ -4,8 +4,8 @@ import { SalesDocumentEditor } from "@/components/sales/SalesDocumentEditor";
 const routeApi = getRouteApi("/_authenticated/sales/invoices/new");
 
 export function NewInvoiceRoute() {
-  const { contactId } = routeApi.useSearch();
-  return <SalesDocumentEditor kind="invoice" initialContactId={contactId} />;
+  const { contactId, returnContext } = routeApi.useSearch();
+  return <SalesDocumentEditor kind="invoice" initialContactId={contactId} returnContext={returnContext} />;
 }
 
 /** Used by the Create-new panel, which renders the form outside a route. */

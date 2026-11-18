@@ -1,7 +1,7 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, getRouteApi, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Package, Plus, Archive, Copy, Download, Columns3 } from "lucide-react";
@@ -14,7 +14,9 @@ import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { listTaxCodes } from "@/lib/tax/tax.functions";
 import { listProductCategories } from "@/lib/products/catalogue-masterdata.functions";
 import { CategoriesWorkspace, PriceListsWorkspace } from "@/components/products/ProductsMasterData";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsContent } from "@/components/ui/tabs";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
+import { parseCatalogueSearch, type CatalogueSearch } from "@/lib/products/catalogue-navigation";
 import { useCanDo } from "@/hooks/use-can";
 import {
   archiveProduct,
@@ -75,7 +77,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+const productsRoute = getRouteApi("/_authenticated/products-services");
+
 export function ProductsPage() {
+  const { section } = productsRoute.useSearch();
   const { company, isPending } = useActiveCompany();
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -87,11 +92,29 @@ export function ProductsPage() {
     );
   }
   return (
-    <Tabs defaultValue="catalogue" className="space-y-4">
-      <TabsList aria-label="Products and services sections">
-        <TabsTrigger value="catalogue">Catalogue</TabsTrigger>
-        <TabsTrigger value="categories">Categories</TabsTrigger>
-        <TabsTrigger value="price-lists">Price Lists</TabsTrigger>
+    <Tabs value={section} className="space-y-4">
+      <TabsList
+        aria-label="Products and services sections"
+        onKeyDown={handleNativeTabKeyDown}
+        className="flex h-auto flex-wrap"
+      >
+        {([
+          ["catalogue", "Catalogue"],
+          ["categories", "Categories"],
+          ["price-lists", "Price Lists"],
+        ] as const).map(([id, label]) => (
+          <Link
+            key={id}
+            role="tab"
+            to="/products-services"
+            search={(previous) => parseCatalogueSearch({ ...previous, section: id })}
+            aria-selected={section === id}
+            data-state={section === id ? "active" : "inactive"}
+            className={nativeTabLinkClass}
+          >
+            {label}
+          </Link>
+        ))}
       </TabsList>
       <TabsContent value="catalogue">
         <ProductsWorkspace companyId={company.id} currency={company.base_currency} />
@@ -120,8 +143,36 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const fetchCategories = useServerFn(listProductCategories);
   const canManage = useCanDo("products.manage");
   const canTax = useCanDo("tax.settings");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const search = productsRoute.useSearch();
+  const navigate = useNavigate();
+  const page = search.page ?? 1;
+  const pageSize = search.pageSize ?? 50;
+  const q = search.q ?? "";
+  const kind = search.kind ?? "all";
+  const categoryFilter = search.category ?? "all";
+  const status = search.status ?? "active";
+  const sort = search.sort ?? "name";
+  const patchCatalogue = (patch: Partial<CatalogueSearch>, replace = false) => {
+    void navigate({
+      to: "/products-services",
+      search: (previous) => parseCatalogueSearch({ ...previous, ...patch }),
+      replace,
+      resetScroll: false,
+    });
+  };
+  const setPage = (next: number | ((current: number) => number)) =>
+    patchCatalogue({ page: typeof next === "function" ? next(page) : next });
+  const setPageSize = (value: number) =>
+    patchCatalogue({ pageSize: value as CatalogueSearch["pageSize"], page: 1 });
+  const setQ = (value: string) => patchCatalogue({ q: value, page: 1 }, true);
+  const setKind = (value: string) =>
+    patchCatalogue({ kind: value as CatalogueSearch["kind"], page: 1 });
+  const setCategoryFilter = (value: string) =>
+    patchCatalogue({ category: value, page: 1 });
+  const setStatus = (value: string) =>
+    patchCatalogue({ status: value as CatalogueSearch["status"], page: 1 });
+  const setSort = (value: string) =>
+    patchCatalogue({ sort: value as CatalogueSearch["sort"], page: 1 });
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     "code",
     "kind",
@@ -130,12 +181,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
     "status",
   ]);
 
-  const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
-  const [kind, setKind] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [status, setStatus] = useState("active");
-  const [sort, setSort] = useState("name");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<"archive" | "restore" | null>(null);
   const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
@@ -198,10 +244,16 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const total = productsQ.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const showColumn = (column: string) => visibleColumns.includes(column);
-  useEffect(() => setPage(1), [companyId, q, kind, categoryFilter, status, sort, pageSize]);
   useEffect(() => {
-    if (!productsQ.isPending && page > totalPages) setPage(totalPages);
-  }, [page, totalPages, productsQ.isPending]);
+    if (!productsQ.isPending && page > totalPages) {
+      void navigate({
+        to: "/products-services",
+        search: (previous) => parseCatalogueSearch({ ...previous, page: totalPages }),
+        replace: true,
+        resetScroll: false,
+      });
+    }
+  }, [page, totalPages, productsQ.isPending, navigate]);
   const selectedRows = rows.filter((row) => selectedIds.includes(row.id));
   const allVisibleSelected =
     rows.length > 0 && rows.slice(0, 100).every((row) => selectedIds.includes(row.id));
@@ -410,12 +462,14 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   });
 
   function resetFilters() {
-    setQ("");
-    setKind("all");
-    setCategoryFilter("all");
-    setStatus("active");
-    setSort("name");
-    setPage(1);
+    patchCatalogue({
+      q: "",
+      kind: "all",
+      category: "all",
+      status: "active",
+      sort: "name",
+      page: 1,
+    });
     setSelectedIds([]);
   }
 

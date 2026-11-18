@@ -55,6 +55,7 @@ eature/premium-ui-batch40-density-acceptance | [PR #286](https://github.com/link
 | 56 | Phase 3–9 | Typecheck green; FA `/new` redirect; sticky project create; PersistedSwitch exactOptional fix | `feature/premium-ui-batch56-typecheck-create-gaps` | [PR #309](https://github.com/linkbusinessadvisory/LinkBooks/pull/309) → `8e990f85` | FA + projects + firm/HR/EM + docs | merged (CI billing skipped; local gates PASS) |
 | 57 | Phase 3 | Sticky create honesty: budgets/payroll/requisitions/EM cancel; create-search helpers | `feature/premium-ui-batch57-create-honesty` | direct main `5684bd7a` | budgets + payroll + purchases + EM + products | merged (pushed to main; local gates PASS) |
 | 58 | Phase 4–5 | Empty CTA honesty: HR training/performance/onboarding; CRM territories; PM properties/units/tenants | `feature/premium-ui-batch58-empty-cta-honesty` | [PR #313](https://github.com/linkbusinessadvisory/LinkBooks/pull/313) → `3060d166` | hr + crm + property-management | merged (CI billing skipped; local gates PASS) |
-| 59+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do create Batches 46–58) | TBD | — | all modules | planned |
+| 59 | Phase 4–5 | Empty CTA wave 2: remaining HR lists; PM leases/owners/agreements/payouts/statements/reservations; CRM campaigns | `feature/premium-ui-batch59-empty-cta-wave2` | pending | hr + property-management + crm | in progress |
+| 60+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do create Batches 46–59) | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

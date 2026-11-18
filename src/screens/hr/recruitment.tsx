@@ -315,6 +315,13 @@ export function HrRecruitmentPage() {
           <EmptyState
             title="No applications yet"
             description="Add candidates against an open or draft requisition."
+            action={
+              canManage ? (
+                <Button size="sm" type="button" variant="outline" onClick={() => setAppOpen(true)}>
+                  Add candidate
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>

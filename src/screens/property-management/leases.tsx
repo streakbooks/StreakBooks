@@ -236,7 +236,17 @@ export function PmLeasesPage() {
             />
           ) : null}
           {leases.data?.length === 0 ? (
-            <EmptyState title="No leases yet" description="Create a lease for an active tenant." />
+            <EmptyState
+              title="No leases yet"
+              description="Create a lease for an active tenant."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    New lease
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : null}
           {leases.data && leases.data.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-border">

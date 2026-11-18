@@ -271,6 +271,23 @@ export function HrShiftsPage() {
           <EmptyState
             title="No roster assignments"
             description="Assign an active shift template to employees with an effective date."
+            action={
+              canManage && shifts.some((s) => s.isActive) ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setAssignOpen(true);
+                  }}
+                >
+                  Assign shift
+                </Button>
+              ) : canManage ? (
+                <Button size="sm" type="button" variant="outline" onClick={() => setShiftOpen(true)}>
+                  New shift template first
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>

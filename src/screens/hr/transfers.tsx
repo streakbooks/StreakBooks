@@ -192,6 +192,19 @@ export function HrTransfersPage() {
         <EmptyState
           title="No transfer requests"
           description="Submit a transfer or promotion with an effective date."
+          action={
+            canManage ? (
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => {
+                  setOpen(true);
+                }}
+              >
+                New request
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <TableCard>

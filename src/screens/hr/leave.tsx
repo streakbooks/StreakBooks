@@ -287,6 +287,24 @@ export function HrLeavePage() {
           <EmptyState
             title="No leave types"
             description="Create annual, sick, or unpaid leave policies before recording balances."
+            action={
+              canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setCode("");
+                    setName("");
+                    setAllowance(20);
+                    setAccrual("annual");
+                    setRequiresApproval("yes");
+                    setTypeOpen(true);
+                  }}
+                >
+                  New leave type
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>
@@ -330,6 +348,13 @@ export function HrLeavePage() {
           <EmptyState
             title="No balances yet"
             description="Ensure a balance for an employee and leave type to seed entitlement."
+            action={
+              canManage ? (
+                <Button size="sm" type="button" onClick={() => setBalOpen(true)}>
+                  Ensure balance
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>
@@ -376,6 +401,41 @@ export function HrLeavePage() {
           <EmptyState
             title="No leave requests"
             description="Submitted requests reserve pending balance until approved or rejected."
+            action={
+              canManage && activeTypes.length > 0 ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setEmployeeId("");
+                    setLeaveTypeId(activeTypes[0]?.id ?? "");
+                    setStartDate("");
+                    setEndDate("");
+                    setStatus("submitted");
+                    setReason("");
+                    setReqOpen(true);
+                  }}
+                >
+                  New request
+                </Button>
+              ) : canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setCode("");
+                    setName("");
+                    setAllowance(20);
+                    setAccrual("annual");
+                    setRequiresApproval("yes");
+                    setTypeOpen(true);
+                  }}
+                >
+                  New leave type first
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>

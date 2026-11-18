@@ -100,6 +100,9 @@ export function openSettingsPanel(
   search: Record<string, unknown>,
   panel: SettingsPanelId,
 ): Record<string, unknown> {
+  // Runtime callers can bypass TypeScript; never write an unrecognized panel into the URL.
+  const safePanel = parseSettingsPanel(panel);
+  if (!safePanel) return { ...search };
   const previous = parseSettingsPanel(search["settingsPanel"]);
   // A missing/invalid current panel cannot own a navigation trail.
   // Ignore malformed self-references so reopening a panel cannot preserve a cycle.

@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Settings explicit destination panel allowlist (2026-11-18)
+
+- `src/lib/settings/panels.ts`: validate `destination.panel` at runtime through `parseSettingsPanel` rather than trusting a TypeScript annotation; source commit `878ffd1256d37ed160fa10c304a622d62c965bc2`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/settings/panels.test.ts`: add malformed explicit destination regression cases; commit `759872188a450209049a29783033a2820144033c`. **WRITTEN, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: record partial Settings evidence; no acceptance criterion or module fully verified. **NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, Vitest, build, authenticated browser, accessibility, security/RLS and accounting regression. Documented baseline: 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main changes, manual CI, production database operations or deployment.
+
+
 ### Settings sparse nested-history validation (2026-11-18)
 
 - `src/lib/settings/panels.ts`: reject sparse `settingsTrail` arrays containing holes, which `Array.every` otherwise skips, preventing undefined ancestor IDs from surviving URL-backed Settings navigation. Code commit `75b87dc1a819f93ad12667722dd4ba5f02a21698`. **SOURCE ONLY; NOT RUN.**

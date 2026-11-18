@@ -36,17 +36,21 @@ import {
 } from "@/lib/sales/price-list-draft";
 import { getWorkflowSettings } from "@/lib/settings/workflow-settings.functions";
 import { addDaysIso } from "@/lib/sales/line-helpers";
-import { toMinorUnits } from "@/lib/accounting/money";
+import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useVoiceForm } from "@/components/ai-voice/voice-context";
 import { validateVoiceDraft } from "@/lib/ai-voice/form-adapter";
 import { recordVoiceDraftOutcome } from "@/lib/ai-voice/voice-audit.functions";
 import { LoadingState, EmptyState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormGrid } from "@/components/common/form-layout";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { SplitButton } from "@/components/ui/split-button";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
 import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
 import { emptySalesLine, type SalesLineFormState } from "@/lib/sales/line-form-state";
+import { computeTaxLineRounded } from "@/lib/sales/line-math-rounded";
 import {
   currencyOptions,
   lineFormToInput,
@@ -59,6 +63,7 @@ import {
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
 import { Label } from "@/components/ui/label";
 import {
@@ -758,10 +763,43 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
         ? "/sales/quotes"
         : "/sales/credit-notes";
   const title = savedId || existing ? copy.editTitle : copy.newTitle;
+  const displayCurrency = currency || base;
+  const breadcrumbs = [
+    { label: "Sales", to: "/sales" },
+    {
+      label: kind === "invoice" ? "Invoices" : kind === "quote" ? "Quotes" : "Credit notes",
+      to: backTo,
+    },
+    { label: title },
+  ];
+  const totalsPreview = (() => {
+    try {
+      const taxCodes = config?.taxCodes ?? [];
+      const computed = lines.map((line) => {
+        const code = line.taxCodeId
+          ? taxCodes.find((entry) => entry.id === line.taxCodeId)
+          : undefined;
+        return computeTaxLineRounded({
+          quantity: Number(line.quantity),
+          unit_price_minor: Number(toMinorUnits(line.unitPrice || "0", displayCurrency)),
+          discount_minor: Number(toMinorUnits(line.discount || "0", displayCurrency)),
+          tax_rate_bps: code ? code.rate_bps : Number(line.taxRateBps || 0),
+          treatment,
+        });
+      });
+      return {
+        subtotal: computed.reduce((sum, row) => sum + Number(row.net_minor), 0),
+        tax: computed.reduce((sum, row) => sum + Number(row.tax_minor), 0),
+        total: computed.reduce((sum, row) => sum + Number(row.gross_minor), 0),
+      };
+    } catch {
+      return null;
+    }
+  })();
 
   return (
     <VoiceFields token={voiceToken}>
-      <ListWorkspace
+      <TransactionWorkspace
         title={title}
         description={
           kind === "credit_note"
@@ -770,147 +808,183 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               ? "Defaults come from Sales settings and the customer’s payment terms. Authorising posts AR + revenue/tax once."
               : "Quotes do not post to the ledger. Convert to an invoice when the customer accepts."
         }
+        breadcrumbs={breadcrumbs}
+        meta={<StatusBadge status="draft" />}
         actions={
           <Button variant="outline" size="sm" asChild>
             <Link to={backTo}>Back</Link>
           </Button>
         }
-      >
-        {formError ? (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{formError}</AlertDescription>
-          </Alert>
-        ) : null}
-        <div className="grid max-w-4xl gap-4">
-          <div className="space-y-2">
-            <Label>Customer</Label>
-            <EntityCombobox
-              voiceField={{ key: "contactId", label: "Customer", order: 10 }}
-              aria-label="Customer"
-              options={customerOptions}
-              value={contactId}
-              onChange={onCustomerChange}
-              placeholder="Search customers"
-              allowClear={false}
-              disabled={sourceLocked}
-              companyId={companyId}
-              canAddNew={can("contacts.manage") && !sourceLocked}
-              createTitle="New customer"
-              renderCreate={
-                can("contacts.manage") && !sourceLocked
-                  ? (ctx) => <ContactCreateForm companyId={companyId} kind="customer" ctx={ctx} />
-                  : undefined
+        stickyActions={
+          <>
+            <SplitButton
+              label={
+                <>
+                  {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                  {savedId ? "Save changes" : "Save draft"}
+                </>
               }
-              onCreated={(option) => {
-                if (kind !== "invoice") return;
-                const terms = Number(option.meta);
-                if (Number.isFinite(terms)) setSecondDate(addDaysIso(docDate || today, terms));
-              }}
+              disabled={mutation.isPending}
+              busy={mutation.isPending}
+              onClick={() => mutation.mutate(false)}
+              menuLabel="More save options"
+              items={
+                copy.authorise
+                  ? [
+                      {
+                        id: "authorise",
+                        label: copy.authorise,
+                        onSelect: () => mutation.mutate(true),
+                        disabled: mutation.isPending,
+                      },
+                    ]
+                  : []
+              }
             />
-          </div>
-          {kind === "credit_note" ? (
-            <div className="space-y-2">
-              <Label>Credit against invoice (optional)</Label>
-              <EntityCombobox
-                aria-label="Source invoice"
-                options={creditableInvoices.map((i) => ({
-                  value: i.id,
-                  label: `${i.invoice_number ?? i.id.slice(0, 8)} (${i.status.replace("_", " ")}, ${i.currency_code})`,
-                }))}
-                value={sourceInvoiceId}
-                onChange={(v) => {
-                  setSourceInvoiceId(v);
-                  const inv = creditableInvoices.find((i) => i.id === v);
-                  if (inv) setCurrency(inv.currency_code);
-                }}
-                placeholder={contactId ? "None — standalone credit" : "Choose a customer first"}
-                disabled={!contactId}
-              />
-            </div>
-          ) : null}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label>{copy.dateLabel}</Label>
-              <Input
-                type="date"
-                voiceField={{
-                  key: "date",
-                  label: "Document date",
-                  aliases: ["date", "invoice date", "quote date", "credit note date"],
-                  order: 20,
-                }}
-                value={docDate}
-                onChange={(e) => onDocumentDateChange(e.target.value)}
-              />
-            </div>
-            {copy.secondLabel ? (
+            {copy.authorise ? (
+              <Button size="sm" disabled={mutation.isPending} onClick={() => mutation.mutate(true)}>
+                {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                {copy.authorise}
+              </Button>
+            ) : null}
+          </>
+        }
+        details={
+          <div className="space-y-4">
+            {formError ? (
+              <Alert variant="destructive">
+                <AlertDescription>{formError}</AlertDescription>
+              </Alert>
+            ) : null}
+            <FormGrid columns={3}>
+              <div className="space-y-2 sm:col-span-2 xl:col-span-1">
+                <Label>Customer</Label>
+                <EntityCombobox
+                  voiceField={{ key: "contactId", label: "Customer", order: 10 }}
+                  aria-label="Customer"
+                  options={customerOptions}
+                  value={contactId}
+                  onChange={onCustomerChange}
+                  placeholder="Search customers"
+                  allowClear={false}
+                  disabled={sourceLocked}
+                  companyId={companyId}
+                  canAddNew={can("contacts.manage") && !sourceLocked}
+                  createTitle="New customer"
+                  renderCreate={
+                    can("contacts.manage") && !sourceLocked
+                      ? (ctx) => (
+                          <ContactCreateForm companyId={companyId} kind="customer" ctx={ctx} />
+                        )
+                      : undefined
+                  }
+                  onCreated={(option) => {
+                    if (kind !== "invoice") return;
+                    const terms = Number(option.meta);
+                    if (Number.isFinite(terms)) setSecondDate(addDaysIso(docDate || today, terms));
+                  }}
+                />
+              </div>
+              {kind === "credit_note" ? (
+                <div className="space-y-2 sm:col-span-2 xl:col-span-1">
+                  <Label>Credit against invoice (optional)</Label>
+                  <EntityCombobox
+                    aria-label="Source invoice"
+                    options={creditableInvoices.map((i) => ({
+                      value: i.id,
+                      label: `${i.invoice_number ?? i.id.slice(0, 8)} (${i.status.replace("_", " ")}, ${i.currency_code})`,
+                    }))}
+                    value={sourceInvoiceId}
+                    onChange={(v) => {
+                      setSourceInvoiceId(v);
+                      const inv = creditableInvoices.find((i) => i.id === v);
+                      if (inv) setCurrency(inv.currency_code);
+                    }}
+                    placeholder={contactId ? "None — standalone credit" : "Choose a customer first"}
+                    disabled={!contactId}
+                  />
+                </div>
+              ) : null}
               <div className="space-y-2">
-                <Label>{copy.secondLabel}</Label>
+                <Label>{copy.dateLabel}</Label>
                 <Input
                   type="date"
                   voiceField={{
-                    key: "dueDate",
-                    label: "Due date",
-                    aliases: ["expiry date"],
-                    order: 30,
+                    key: "date",
+                    label: "Document date",
+                    aliases: ["date", "invoice date", "quote date", "credit note date"],
+                    order: 20,
                   }}
-                  value={secondDate}
-                  onChange={(e) => setSecondDate(e.target.value)}
+                  value={docDate}
+                  onChange={(e) => onDocumentDateChange(e.target.value)}
                 />
               </div>
-            ) : null}
-            <div className="space-y-2">
-              <Label>{copy.numberLabel}</Label>
-              <Input
-                voiceField={{
-                  key: "number",
-                  label: "Number",
-                  aliases: [
-                    "reference",
-                    "invoice number",
-                    "supplier reference",
-                    "reference number",
-                  ],
-                  order: 40,
-                }}
-                value={number}
-                onChange={(e) => setNumber(e.target.value)}
-                placeholder="Leave blank to auto-number"
-              />
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Currency</Label>
-              <VoiceSelect
-                voiceField={{ key: "currency", label: "Currency", order: 50 }}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={currency}
-                disabled={sourceLocked}
-                onChange={(e) => onDocumentCurrencyChange(e.target.value)}
-              >
-                {currencyOptions(base, currency ? [currency] : []).map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                    {c === base ? " (base)" : ""}
-                  </option>
-                ))}
-              </VoiceSelect>
-            </div>
-            {isForeign ? (
+              {copy.secondLabel ? (
+                <div className="space-y-2">
+                  <Label>{copy.secondLabel}</Label>
+                  <Input
+                    type="date"
+                    voiceField={{
+                      key: "dueDate",
+                      label: "Due date",
+                      aliases: ["expiry date"],
+                      order: 30,
+                    }}
+                    value={secondDate}
+                    onChange={(e) => setSecondDate(e.target.value)}
+                  />
+                </div>
+              ) : null}
               <div className="space-y-2">
-                <Label>
-                  Exchange rate (1 {currency} = ? {base})
-                </Label>
+                <Label>{copy.numberLabel}</Label>
                 <Input
-                  value={fxRate}
-                  onChange={(e) => setFxRate(e.target.value)}
-                  inputMode="decimal"
-                  placeholder="e.g. 0.79"
+                  voiceField={{
+                    key: "number",
+                    label: "Number",
+                    aliases: [
+                      "reference",
+                      "invoice number",
+                      "supplier reference",
+                      "reference number",
+                    ],
+                    order: 40,
+                  }}
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  placeholder="Leave blank to auto-number"
                 />
               </div>
-            ) : null}
-          </div>
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <VoiceSelect
+                  voiceField={{ key: "currency", label: "Currency", order: 50 }}
+                  className="h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={currency}
+                  disabled={sourceLocked}
+                  onChange={(e) => onDocumentCurrencyChange(e.target.value)}
+                >
+                  {currencyOptions(base, currency ? [currency] : []).map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                      {c === base ? " (base)" : ""}
+                    </option>
+                  ))}
+                </VoiceSelect>
+              </div>
+              {isForeign ? (
+                <div className="space-y-2">
+                  <Label>
+                    Exchange rate (1 {currency} = ? {base})
+                  </Label>
+                  <Input
+                    value={fxRate}
+                    onChange={(e) => setFxRate(e.target.value)}
+                    inputMode="decimal"
+                    placeholder="e.g. 0.79"
+                  />
+                </div>
+              ) : null}
+            </FormGrid>
           {isSalesDraft ? (
             <div className="space-y-3 rounded-md border p-3">
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
@@ -1041,6 +1115,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               onChange={(e) => setMemo(e.target.value)}
             />
           </div>
+          </div>
+        }
+        lines={
           <SalesDocumentLines
             lines={lines}
             onChange={setLines}
@@ -1062,31 +1139,41 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             companyId={companyId}
             baseCurrency={base}
           />
+        }
+        totals={
+          totalsPreview ? (
+            <TotalsSummary
+              lines={[
+                {
+                  id: "subtotal",
+                  label: "Subtotal",
+                  value: `${displayCurrency} ${fromMinorUnits(totalsPreview.subtotal, displayCurrency)}`,
+                },
+                {
+                  id: "tax",
+                  label: treatment === "inclusive" ? "Tax (included)" : "Tax",
+                  value: `${displayCurrency} ${fromMinorUnits(totalsPreview.tax, displayCurrency)}`,
+                  emphasis: "muted",
+                },
+                {
+                  id: "total",
+                  label: "Total",
+                  value: `${displayCurrency} ${fromMinorUnits(totalsPreview.total, displayCurrency)}`,
+                  emphasis: "total",
+                },
+              ]}
+            />
+          ) : null
+        }
+        support={
           <DocumentRecordPanel
             ref={recordRef}
             entityType={recordEntityType}
             entityId={savedId ?? null}
             audience="customer"
           />
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={mutation.isPending}
-              onClick={() => mutation.mutate(false)}
-            >
-              {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              {savedId ? "Save changes" : "Save draft"}
-            </Button>
-            {copy.authorise ? (
-              <Button size="sm" disabled={mutation.isPending} onClick={() => mutation.mutate(true)}>
-                {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                {copy.authorise}
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      </ListWorkspace>
+        }
+      />
       <Dialog
         open={applyPriceListOpen}
         onOpenChange={(open) => {

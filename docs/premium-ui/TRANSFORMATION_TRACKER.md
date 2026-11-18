@@ -14,8 +14,8 @@
 | Authenticated route files (approx.) | 156 | `src/routes/_authenticated/**/*.tsx` |
 | Modules COMPLETE (DoD) | 0 | No module has full gate PASS |
 | Modules chrome-adopted / in-progress | 34 | Prior batches 1–22 + Batch 25 |
-| Shared foundation Batch 25 | In progress | this branch |
-| Transaction workspace Batch 26 | Pending | — |
+| Shared foundation Batch 25 | Merged | PR #271 → `2aafc864` |
+| Transaction workspace Batch 26 | In progress | Sales + money docs |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 
@@ -37,8 +37,8 @@
 | Dashboard | `/` | partial | N/A | partial | IN PROGRESS |
 | Banking | `/banking` | in-progress | Batch 28 planned | partial | IN PROGRESS |
 | Point of Sale | `/pos` | in-progress | specialized | unverified | IN PROGRESS |
-| Sales | `/sales` | in-progress | Batch 26 | partial | IN PROGRESS |
-| Purchases | `/purchases` | in-progress | Batch 26 | partial | IN PROGRESS |
+| Sales | `/sales` | in-progress | TransactionWorkspace on invoice/quote/credit editors; spreadsheet line grid | partial | IN PROGRESS |
+| Purchases | `/purchases` | in-progress | Sticky line headers; BillWorkspaceLayout retained | partial | IN PROGRESS |
 | Expenses | `/expense-management` | in-progress | later | partial | IN PROGRESS |
 | CRM | `/crm` | in-progress | N/A kanban | partial | IN PROGRESS |
 | Property Management | `/property-management` | in-progress | later | partial | IN PROGRESS |

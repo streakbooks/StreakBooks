@@ -22,6 +22,9 @@ import { AccountLookup, ContactLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormGrid } from "@/components/common/form-layout";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import type { BankAdjustmentType } from "@/lib/create-new/journal-contracts";
 
 type Kind =
@@ -194,9 +197,24 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
         saveM.mutate();
       }}
     >
-      <p className="text-sm text-muted-foreground">{help}</p>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <TransactionWorkspace
+        title={TITLES[kind]}
+        description={help}
+        breadcrumbs={[
+          { label: "Banking", to: "/banking" },
+          { label: "Bank documents", to: "/banking/money-documents" },
+          { label: TITLES[kind] },
+        ]}
+        meta={<StatusBadge status={recordId ? "posted" : "draft"} />}
+        stickyActions={
+          <Button type="submit" disabled={saveM.isPending}>
+            {saveM.isPending ? "Posting…" : "Post"}
+          </Button>
+        }
+        details={
+          <div className="space-y-4">
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            <FormGrid columns={2}>
         <Field label="Date">
           <Input type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
@@ -340,64 +358,68 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
             <Input required value={description} onChange={(e) => setDescription(e.target.value)} />
           </Field>
         ) : null}
-      </div>
-      {needsIncome ? (
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={settlement === "undeposited"}
-            onChange={(e) => setSettlement(e.target.checked ? "undeposited" : "bank")}
-          />
-          Hold in the clearing account for a later bank deposit
-        </label>
-      ) : null}
-      {kind === "bank_deposit" ? (
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">Undeposited receipts</legend>
-          {(
-            (undepositedQ.data ?? []) as Array<{
-              id: string;
-              document_date: string;
-              total_minor: number;
-              reference: string | null;
-              kind: string;
-            }>
-          ).map((row) => (
-            <label key={row.id} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={sourceIds.includes(row.id)}
-                onChange={(e) =>
-                  setSourceIds((current) =>
-                    e.target.checked ? [...current, row.id] : current.filter((id) => id !== row.id),
-                  )
-                }
-              />
-              {row.document_date} · {row.kind} · {(row.total_minor / 100).toFixed(2)}{" "}
-              {row.reference ?? ""}
-            </label>
-          ))}
-          {(undepositedQ.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No undeposited receipts for this organisation.
-            </p>
-          ) : null}
-        </fieldset>
-      ) : null}
-      <Field label="Memo">
-        <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
-      </Field>
-      {recordMeta ? (
-        <DocumentRecordPanel
-          ref={recordRef}
-          entityType={recordMeta.entityType}
-          entityId={recordId}
-          audience={recordMeta.audience}
-        />
-      ) : null}
-      <Button type="submit" disabled={saveM.isPending}>
-        {saveM.isPending ? "Posting…" : "Post"}
-      </Button>
+            </FormGrid>
+            {needsIncome ? (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={settlement === "undeposited"}
+                  onChange={(e) => setSettlement(e.target.checked ? "undeposited" : "bank")}
+                />
+                Hold in the clearing account for a later bank deposit
+              </label>
+            ) : null}
+            {kind === "bank_deposit" ? (
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium">Undeposited receipts</legend>
+                {(
+                  (undepositedQ.data ?? []) as Array<{
+                    id: string;
+                    document_date: string;
+                    total_minor: number;
+                    reference: string | null;
+                    kind: string;
+                  }>
+                ).map((row) => (
+                  <label key={row.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={sourceIds.includes(row.id)}
+                      onChange={(e) =>
+                        setSourceIds((current) =>
+                          e.target.checked
+                            ? [...current, row.id]
+                            : current.filter((id) => id !== row.id),
+                        )
+                      }
+                    />
+                    {row.document_date} · {row.kind} · {(row.total_minor / 100).toFixed(2)}{" "}
+                    {row.reference ?? ""}
+                  </label>
+                ))}
+                {(undepositedQ.data ?? []).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No undeposited receipts for this organisation.
+                  </p>
+                ) : null}
+              </fieldset>
+            ) : null}
+            <Field label="Memo">
+              <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
+            </Field>
+          </div>
+        }
+        support={
+          recordMeta ? (
+            <DocumentRecordPanel
+              ref={recordRef}
+              entityType={recordMeta.entityType}
+              entityId={recordId}
+              audience={recordMeta.audience}
+            />
+          ) : null
+        }
+      />
     </form>
   );
 }
@@ -422,7 +444,7 @@ function Select({
 }) {
   return (
     <select
-      className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+      className="h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-2 text-sm"
       value={value}
       onChange={(event) => onChange(event.target.value)}
     >

@@ -313,7 +313,7 @@ export function PurchasesDocumentLines({
 
       <div className="overflow-x-auto rounded-md border border-border">
         <table className="w-full min-w-[1100px] border-collapse text-sm">
-          <thead>
+          <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm">
             <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
               <th className="p-2 w-8" scope="col">
                 <span className="sr-only">Reorder</span>

@@ -18,14 +18,16 @@ import type { SalesTaxCode } from "@/lib/sales/tax-codes";
 import { bpsToPercentString, percentStringToBps } from "@/components/sales/sales-form-utils";
 import { Button } from "@/components/ui/button";
 import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
-import { Label } from "@/components/ui/label";
 import { EntityCombobox, type EntityOption } from "@/components/common/EntityCombobox";
+import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
+import { TableCell, TableRow } from "@/components/ui/table";
 import {
   AccountCreateForm,
   ProductCreateForm,
   TaxCodeCreateForm,
 } from "@/components/lookup/create-forms";
 import { useCan } from "@/hooks/use-can";
+import { Trash2 } from "lucide-react";
 
 type ProductOption = {
   id: string;
@@ -205,225 +207,236 @@ export function SalesDocumentLines({
 
   return (
     <div className="space-y-3">
-      <Label>Lines</Label>
-      {lines.map((line, idx) => {
-        const code = line.taxCodeId ? codeById.get(line.taxCodeId) : undefined;
-        return (
-          <div key={idx} className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-12">
-            <div className="sm:col-span-4 space-y-1">
-              <span className="text-xs text-muted-foreground">Product / service</span>
-              <EntityCombobox
-                aria-label={`Line ${idx + 1} product`}
-                options={productOptions}
-                value={line.productId}
-                onChange={(v) => applyProduct(idx, v)}
-                placeholder="Optional catalogue item"
-                emptyText="No products — enter a free-text line"
-                disabled={disabled || productSelectionDisabled}
-                companyId={companyId}
-                canAddNew={canProduct}
-                createTitle="New product or service"
-                renderCreate={
-                  canProduct
-                    ? (ctx) => (
-                        <ProductCreateForm companyId={companyId!} currency={currency} ctx={ctx} />
-                      )
-                    : undefined
-                }
-                onCreated={(option) =>
-                  update(idx, {
-                    productId: option.id,
-                    description: option.description || option.name || option.label,
-                    unitPrice: option.meta || line.unitPrice,
-                  })
-                }
-              />
-            </div>
-            <div className="sm:col-span-8 space-y-1">
-              <span className="text-xs text-muted-foreground">Description</span>
-              <Input
-                placeholder="Description"
-                voiceField={{
-                  key: "description",
-                  label: "Description",
-                  aliases: [],
-                  line: idx,
-                  order: 100 + idx * 100 + 10,
-                }}
-                value={line.description}
-                disabled={disabled}
-                onChange={(e) => update(idx, { description: e.target.value })}
-              />
-            </div>
-            <div className="sm:col-span-4 space-y-1">
-              <span className="text-xs text-muted-foreground">Revenue account</span>
-              <EntityCombobox
-                aria-label={`Line ${idx + 1} account`}
-                options={accountOptions}
-                voiceField={{
-                  key: "accountId",
-                  label: "Account",
-                  aliases: ["revenue account", "expense account", "expense asset account"],
-                  line: idx,
-                  order: 100 + idx * 100 + 20,
-                }}
-                value={line.accountId}
-                onChange={(v) => update(idx, { accountId: v })}
-                placeholder="Account"
-                allowClear={false}
-                disabled={disabled}
-                companyId={companyId}
-                canAddNew={canAccount}
-                createTitle="New account"
-                renderCreate={
-                  canAccount
-                    ? (ctx) => (
-                        <AccountCreateForm
-                          companyId={companyId!}
-                          currency={baseCurrency || currency}
-                          initialKind="revenue"
-                          ctx={ctx}
-                        />
-                      )
-                    : undefined
-                }
-              />
-            </div>
-            <div className="sm:col-span-2 space-y-1">
-              <span className="text-xs text-muted-foreground">Qty</span>
-              <Input
-                voiceField={{
-                  key: "quantity",
-                  label: "Quantity",
-                  aliases: ["qty"],
-                  line: idx,
-                  order: 100 + idx * 100 + 30,
-                }}
-                value={line.quantity}
-                disabled={disabled}
-                onChange={(e) => update(idx, { quantity: e.target.value })}
-                inputMode="decimal"
-              />
-            </div>
-            <div className="sm:col-span-2 space-y-1">
-              <span className="text-xs text-muted-foreground">Price</span>
-              <Input
-                voiceField={{
-                  key: "unitPrice",
-                  label: "Unit price",
-                  aliases: ["price"],
-                  line: idx,
-                  order: 100 + idx * 100 + 40,
-                }}
-                value={line.unitPrice}
-                disabled={disabled}
-                onChange={(e) => update(idx, { unitPrice: e.target.value })}
-                inputMode="decimal"
-              />
-            </div>
-            <div className="sm:col-span-2 space-y-1">
-              <span className="text-xs text-muted-foreground">Discount (amount)</span>
-              <Input
-                voiceField={{
-                  key: "discount",
-                  label: "Discount",
-                  aliases: [],
-                  line: idx,
-                  order: 100 + idx * 100 + 50,
-                }}
-                value={line.discount}
-                disabled={disabled}
-                onChange={(e) => update(idx, { discount: e.target.value })}
-                inputMode="decimal"
-              />
-            </div>
-            <div className="sm:col-span-6 space-y-1">
-              <span className="text-xs text-muted-foreground">Tax</span>
-              <EntityCombobox
-                aria-label={`Line ${idx + 1} tax code`}
-                options={taxOptions}
-                voiceField={{
-                  key: "taxCodeId",
-                  label: "Tax",
-                  aliases: ["tax rate", "tax code"],
-                  line: idx,
-                  order: 100 + idx * 100 + 60,
-                }}
-                value={line.taxCodeId || NO_CODE}
-                onChange={(v) => {
-                  if (!v || v === NO_CODE) update(idx, { taxCodeId: "" });
-                  else {
-                    const c = codeById.get(v);
-                    update(idx, { taxCodeId: v, taxRateBps: String(c?.rate_bps ?? 0) });
-                  }
-                }}
-                placeholder="Tax code"
-                allowClear={false}
-                disabled={disabled}
-                companyId={companyId}
-                canAddNew={canTax}
-                createTitle="New tax code"
-                renderCreate={
-                  canTax
-                    ? (ctx) => (
-                        <TaxCodeCreateForm companyId={companyId!} appliesTo="sales" ctx={ctx} />
-                      )
-                    : undefined
-                }
-                onCreated={(option) =>
-                  update(idx, { taxCodeId: option.id, taxRateBps: option.meta ?? "0" })
-                }
-              />
-            </div>
-            <div className="sm:col-span-2 space-y-1">
-              <span className="text-xs text-muted-foreground">Rate %</span>
-              <Input
-                value={
-                  code ? bpsToPercentString(code.rate_bps) : bpsToPercentString(line.taxRateBps)
-                }
-                disabled={disabled || Boolean(code)}
-                onChange={(e) =>
-                  update(idx, { taxRateBps: String(percentStringToBps(e.target.value)) })
-                }
-                inputMode="decimal"
-                title={code ? "Rate comes from the tax code" : "Custom rate in percent, e.g. 20"}
-              />
-            </div>
-            <div className="sm:col-span-4 flex items-end justify-end">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={disabled || lines.length <= 1}
-                onClick={() => {
-                  voice?.clearField();
-                  onChange(lines.filter((_, i) => i !== idx));
-                }}
-              >
-                Remove
-              </Button>
-            </div>
-          </div>
-        );
-      })}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={disabled}
-        onClick={() => {
-          voice?.clearField();
-          onChange([...lines, emptySalesLine()]);
-        }}
+      <EditableLineItemGrid
+        aria-label="Sales document lines"
+        columns={[
+          { id: "item", header: "Item / description", widthClassName: "min-w-[14rem]" },
+          { id: "account", header: "Account", widthClassName: "min-w-[10rem]" },
+          { id: "qty", header: "Qty", align: "right", widthClassName: "w-24" },
+          { id: "price", header: "Price", align: "right", widthClassName: "w-28" },
+          { id: "discount", header: "Discount", align: "right", widthClassName: "w-28" },
+          { id: "tax", header: "Tax", widthClassName: "min-w-[9rem]" },
+          { id: "rate", header: "Rate %", align: "right", widthClassName: "w-20" },
+          { id: "actions", header: "", widthClassName: "w-12" },
+        ]}
+        onAddRow={
+          disabled
+            ? undefined
+            : () => {
+                voice?.clearField();
+                onChange([...lines, emptySalesLine()]);
+              }
+        }
+        addRowLabel="Add line"
       >
-        Add line
-      </Button>
+        {lines.map((line, idx) => {
+          const code = line.taxCodeId ? codeById.get(line.taxCodeId) : undefined;
+          return (
+            <TableRow key={idx}>
+              <TableCell className="align-top">
+                <div className="space-y-2 py-1">
+                  <EntityCombobox
+                    aria-label={`Line ${idx + 1} product`}
+                    options={productOptions}
+                    value={line.productId}
+                    onChange={(v) => applyProduct(idx, v)}
+                    placeholder="Optional catalogue item"
+                    emptyText="No products — enter a free-text line"
+                    disabled={disabled || productSelectionDisabled}
+                    companyId={companyId}
+                    canAddNew={canProduct}
+                    createTitle="New product or service"
+                    renderCreate={
+                      canProduct
+                        ? (ctx) => (
+                            <ProductCreateForm
+                              companyId={companyId!}
+                              currency={currency}
+                              ctx={ctx}
+                            />
+                          )
+                        : undefined
+                    }
+                    onCreated={(option) =>
+                      update(idx, {
+                        productId: option.id,
+                        description: option.description || option.name || option.label,
+                        unitPrice: option.meta || line.unitPrice,
+                      })
+                    }
+                  />
+                  <Input
+                    placeholder="Description"
+                    voiceField={{
+                      key: "description",
+                      label: "Description",
+                      aliases: [],
+                      line: idx,
+                      order: 100 + idx * 100 + 10,
+                    }}
+                    value={line.description}
+                    disabled={disabled}
+                    onChange={(e) => update(idx, { description: e.target.value })}
+                  />
+                </div>
+              </TableCell>
+              <TableCell className="align-top">
+                <EntityCombobox
+                  aria-label={`Line ${idx + 1} account`}
+                  options={accountOptions}
+                  voiceField={{
+                    key: "accountId",
+                    label: "Account",
+                    aliases: ["revenue account", "expense account", "expense asset account"],
+                    line: idx,
+                    order: 100 + idx * 100 + 20,
+                  }}
+                  value={line.accountId}
+                  onChange={(v) => update(idx, { accountId: v })}
+                  placeholder="Account"
+                  allowClear={false}
+                  disabled={disabled}
+                  companyId={companyId}
+                  canAddNew={canAccount}
+                  createTitle="New account"
+                  renderCreate={
+                    canAccount
+                      ? (ctx) => (
+                          <AccountCreateForm
+                            companyId={companyId!}
+                            currency={baseCurrency || currency}
+                            initialKind="revenue"
+                            ctx={ctx}
+                          />
+                        )
+                      : undefined
+                  }
+                />
+              </TableCell>
+              <TableCell className="align-top">
+                <Input
+                  voiceField={{
+                    key: "quantity",
+                    label: "Quantity",
+                    aliases: ["qty"],
+                    line: idx,
+                    order: 100 + idx * 100 + 30,
+                  }}
+                  value={line.quantity}
+                  disabled={disabled}
+                  onChange={(e) => update(idx, { quantity: e.target.value })}
+                  inputMode="decimal"
+                  className="text-right"
+                />
+              </TableCell>
+              <TableCell className="align-top">
+                <Input
+                  voiceField={{
+                    key: "unitPrice",
+                    label: "Unit price",
+                    aliases: ["price"],
+                    line: idx,
+                    order: 100 + idx * 100 + 40,
+                  }}
+                  value={line.unitPrice}
+                  disabled={disabled}
+                  onChange={(e) => update(idx, { unitPrice: e.target.value })}
+                  inputMode="decimal"
+                  className="text-right"
+                />
+              </TableCell>
+              <TableCell className="align-top">
+                <Input
+                  voiceField={{
+                    key: "discount",
+                    label: "Discount",
+                    aliases: [],
+                    line: idx,
+                    order: 100 + idx * 100 + 50,
+                  }}
+                  value={line.discount}
+                  disabled={disabled}
+                  onChange={(e) => update(idx, { discount: e.target.value })}
+                  inputMode="decimal"
+                  className="text-right"
+                />
+              </TableCell>
+              <TableCell className="align-top">
+                <EntityCombobox
+                  aria-label={`Line ${idx + 1} tax code`}
+                  options={taxOptions}
+                  voiceField={{
+                    key: "taxCodeId",
+                    label: "Tax",
+                    aliases: ["tax rate", "tax code"],
+                    line: idx,
+                    order: 100 + idx * 100 + 60,
+                  }}
+                  value={line.taxCodeId || NO_CODE}
+                  onChange={(v) => {
+                    if (!v || v === NO_CODE) update(idx, { taxCodeId: "" });
+                    else {
+                      const c = codeById.get(v);
+                      update(idx, { taxCodeId: v, taxRateBps: String(c?.rate_bps ?? 0) });
+                    }
+                  }}
+                  placeholder="Tax code"
+                  allowClear={false}
+                  disabled={disabled}
+                  companyId={companyId}
+                  canAddNew={canTax}
+                  createTitle="New tax code"
+                  renderCreate={
+                    canTax
+                      ? (ctx) => (
+                          <TaxCodeCreateForm companyId={companyId!} appliesTo="sales" ctx={ctx} />
+                        )
+                      : undefined
+                  }
+                  onCreated={(option) =>
+                    update(idx, { taxCodeId: option.id, taxRateBps: option.meta ?? "0" })
+                  }
+                />
+              </TableCell>
+              <TableCell className="align-top">
+                <Input
+                  value={
+                    code ? bpsToPercentString(code.rate_bps) : bpsToPercentString(line.taxRateBps)
+                  }
+                  disabled={disabled || Boolean(code)}
+                  onChange={(e) =>
+                    update(idx, { taxRateBps: String(percentStringToBps(e.target.value)) })
+                  }
+                  inputMode="decimal"
+                  className="text-right"
+                  title={code ? "Rate comes from the tax code" : "Custom rate in percent, e.g. 20"}
+                />
+              </TableCell>
+              <TableCell className="align-top">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remove line ${idx + 1}`}
+                  disabled={disabled || lines.length <= 1}
+                  onClick={() => {
+                    voice?.clearField();
+                    onChange(lines.filter((_, i) => i !== idx));
+                  }}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              </TableCell>
+            </TableRow>
+          );
+        })}
+      </EditableLineItemGrid>
       {preview ? (
-        <p className="text-sm text-muted-foreground">
-          Subtotal {currency} {fromMinorUnits(preview.subtotal, currency)} · Tax {currency}{" "}
-          {fromMinorUnits(preview.tax, currency)} · Total {currency}{" "}
-          {fromMinorUnits(preview.total, currency)}
-          {treatment === "inclusive" ? " (prices include tax)" : " (prices exclude tax)"}
+        <p className="sr-only" aria-live="polite">
+          Subtotal {currency} {fromMinorUnits(preview.subtotal, currency)}. Tax {currency}{" "}
+          {fromMinorUnits(preview.tax, currency)}. Total {currency}{" "}
+          {fromMinorUnits(preview.total, currency)}.
+          {treatment === "inclusive" ? " Prices include tax." : " Prices exclude tax."}
         </p>
       ) : null}
     </div>

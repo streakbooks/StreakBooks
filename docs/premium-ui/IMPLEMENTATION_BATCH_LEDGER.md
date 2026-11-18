@@ -18,8 +18,8 @@
 | 22 | 8–9 | Section 18 gate reporter + firm filter label association + accounting invariant npm script | `feature/premium-ui-batch22-section18-gate-firm-a11y-invariants` | [PR #204](https://github.com/linkbusinessadvisory/LinkBooks/pull/204) → `64f6fe82` | check:section18 + firm portfolio + test:accounting-invariants | merged |
 | 23 | 8–9 | Apply pending Nov budget/tax/recon SQL to linked prod + evidence docs | `feature/premium-ui-batch23-supabase-migration-apply` | pending merge | 11 migrations via db query + repair | ready |
 | 24 | 8–9 | Staging smoke (when E2E creds), live RBAC, manual a11y, release close-out | TBD | — | | planned |
-| 25 | Phase 1 | Density tokens, AppShell wiring, TransactionWorkspace/TotalsSummary/SplitButton/EditableLineItemGrid/FormGrid scaffolds, central tracker | `feature/premium-ui-batch25-phase1-foundation` | open | shared chrome + docs | in progress |
-| 26 | Phase 3 | Adopt TransactionWorkspace on Sales + Purchases (+ journals entry where safe) | TBD | — | sales/purchases editors | planned |
+| 25 | Phase 1 | Density tokens, AppShell wiring, TransactionWorkspace/TotalsSummary/SplitButton/EditableLineItemGrid/FormGrid scaffolds, central tracker | `feature/premium-ui-batch25-phase1-foundation` | [PR #271](https://github.com/linkbusinessadvisory/LinkBooks/pull/271) → `2aafc864` | shared chrome + docs | merged (CI blocked by org billing; local gates PASS) |
+| 26 | Phase 3 | Sales TransactionWorkspace + spreadsheet lines; money docs workspace; purchases sticky headers | `feature/premium-ui-batch26-transaction-workspaces` | open | sales/banking money/purchases lines | in progress |
 | 27 | Phase 3 | Spreadsheet keyboard/paste/sticky behaviours on line grids | TBD | — | line editors | planned |
 | 28 | Phase 3–4 | Banking money docs + journals workspace adoption | TBD | — | banking/accounting | planned |
 | 29+ | Phase 4–10 | Remaining modules DoD + browsing manifest refresh | TBD | — | all modules | planned |

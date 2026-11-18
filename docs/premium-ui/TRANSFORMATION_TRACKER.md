@@ -46,7 +46,7 @@
 | Create workspaces Batch 54 | Merged | PR #305 → `cf20b0a0` — product/FA/payroll workspaces; CRM CTAs |
 | Directive gap consolidation Batch 55 | Merged | PR #307 → `28933021` — New Account; product `/new`; sticky create URLs; gap matrix; payroll import fix |
 | Production typecheck + FA /new Batch 56 | Merged | PR #309 → `8e990f85` — typecheck green; FA /new; sticky project create |
-| Sticky create honesty Batch 57 | In progress | Budgets/payroll/requisitions sticky create; EM cancel clears create |
+| Sticky create honesty Batch 57 | Merged | main `5684bd7a` — budgets/payroll/requisitions sticky create; EM cancel |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

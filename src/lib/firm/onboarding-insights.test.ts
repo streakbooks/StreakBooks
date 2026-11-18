@@ -9,6 +9,7 @@ import {
 
 const parent = {
   task_key: "details",
+  title: "Company details",
   completed_at: null,
   due_date: "2026-11-04",
   assignee_id: null,
@@ -16,6 +17,7 @@ const parent = {
 };
 const child = {
   task_key: "records",
+  title: "Statutory records",
   completed_at: null,
   due_date: "2026-11-06",
   assignee_id: "staff",
@@ -23,6 +25,7 @@ const child = {
 };
 const final = {
   task_key: "approval",
+  title: "Partner approval",
   completed_at: null,
   due_date: "2026-11-12",
   assignee_id: "staff",

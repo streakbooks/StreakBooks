@@ -49,6 +49,7 @@
 | 53 | Phase 3 | Sales orders /new; requisition CREATE; customers/suppliers/budgets/CRM honesty | `feature/premium-ui-batch53-create-routes` | [PR #303](https://github.com/linkbusinessadvisory/LinkBooks/pull/303) → `7f098686` | sales + purchases + budgets + CRM | merged (CI billing skipped; local gates PASS) |
 | 54 | Phase 3 | Product/FA/payroll RecordWorkspace creates; CRM empty CTAs; fixed_asset CREATE | `feature/premium-ui-batch54-create-workspaces` | [PR #305](https://github.com/linkbusinessadvisory/LinkBooks/pull/305) → `cf20b0a0` | products + FA + payroll + CRM | merged (CI billing skipped; local gates PASS) |
 | 55 | Phase 3 | Directive V2 gap consolidation only: New Account label; `/products-services/new`; sticky FA/product create URLs; gap matrix; payroll import fix | `feature/premium-ui-batch55-directive-gaps` | [PR #307](https://github.com/linkbusinessadvisory/LinkBooks/pull/307) → `28933021` | products + FA + create registry + payroll + docs | merged (CI billing skipped; local gates PASS) |
-| 56+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do create Batches 46–55) | TBD | — | all modules | planned |
+| 56 | Phase 3–9 | Typecheck green; FA `/new` redirect; sticky project create; PersistedSwitch exactOptional fix | `feature/premium-ui-batch56-typecheck-create-gaps` | pending | FA + projects + firm/HR/EM + docs | in progress |
+| 57+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do create Batches 46–56) | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

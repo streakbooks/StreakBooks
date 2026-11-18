@@ -25,7 +25,7 @@
 | Bank transfer dedicated create | IMPLEMENTED | `/banking/transfers/new` |
 | `createNavTarget` preserves create intent | IMPLEMENTED | Batch 49+; Create menu uses helper |
 | Product Create opens usable editor | IMPLEMENTED | Batch 55: `/products-services/new` RecordWorkspace; sticky until close |
-| Fixed asset Create opens workspace | IMPLEMENTED | `?create=true` sticky until dismiss (Batch 55) |
+| Fixed asset Create opens workspace | IMPLEMENTED | Batch 56: `/fixed-assets/new` redirects to sticky `?create=true` |
 | Account create labelled **New Account** | IMPLEMENTED | Batch 55 registry label (flyover CoA panel) |
 | Expense claim Create opens draft workspace | IMPLEMENTED | `/expense-management/my-expenses?create=true` |
 | Sales order dedicated `/new` | IMPLEMENTED | `/sales/orders/new` |
@@ -57,3 +57,13 @@
 ## Explicitly do **not** re-do
 
 Batches 46–54 merged create routing, money ownership, journal/recurring full pages, EM list-only create, sales order `/new`, product/FA/payroll RecordWorkspace creates, CRM empty CTAs, browsing count sync.
+
+## Batch 56 (production defect + remaining create gaps)
+
+| Gap | Action |
+| --- | --- |
+| Typecheck failures (firm/HR/projects/EM PersistedSwitch) | Fixed fixtures, Json narrowing, sticky project create search, PersistedSwitch optional props |
+| Dedicated `/fixed-assets/new` | Thin redirect to sticky `?create=true` workspace |
+| Project create sticky URL + close on save | Refresh-safe; `ProjectPanel onSaved` closes panel |
+| Production build | Local `vite build` PASS on this batch |
+

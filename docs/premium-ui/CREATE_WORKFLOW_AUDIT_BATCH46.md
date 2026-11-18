@@ -82,9 +82,14 @@ Remaining non-`/new` destinations that are intentional (list/tooling, not comple
 - Fixed asset `?create=true` sticky until New asset workspace closes.
 - Consolidated tracker: `docs/premium-ui/DIRECTIVE_V2_GAP_MATRIX.md`.
 
+## Batch 56 follow-ups
+
+- Typecheck green (firm onboarding fixtures, HR automation config, PersistedSwitch, projects sticky create).
+- `/fixed-assets/new` redirect; project create sticky until close/save.
+
 ## Still deferred
 
 - Authenticated Playwright create-flow smoke (blocked without staging E2E credentials).
 - Multi-account Spend/Receive allocation lines (posting engine constraint).
-- Optional dedicated `/fixed-assets/new` (sticky `?create=true` is addressable; extract only if needed).
+- Dedicated `/fixed-assets/new` redirect (Batch 56).
 - Module finished-screen DoD (0/34 COMPLETE).

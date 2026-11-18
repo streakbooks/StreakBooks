@@ -13,7 +13,7 @@
   "invariant": "Every top-level sidebar item and every authenticated route file must appear exactly once in this manifest. New ones require an explicit coverage entry. Inventory inclusion is not implementation verification.",
   "counts": {
     "sidebarModules": 29,
-    "authenticatedRouteFiles": 167,
+    "authenticatedRouteFiles": 168,
     "supportingRouteFiles": 15
   },
   "acceptanceCriteria": [
@@ -391,7 +391,8 @@
       "label": "Fixed assets",
       "href": "/fixed-assets",
       "routeFiles": [
-        "fixed-assets.tsx"
+        "fixed-assets.index.tsx",
+        "fixed-assets.new.tsx"
       ],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,

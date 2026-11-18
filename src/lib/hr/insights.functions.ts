@@ -190,8 +190,8 @@ export const listHrAutomationRules = createServerFn({ method: "GET" })
           triggerKind: str(pick(r, "triggerKind")),
           isEnabled: bool(pick(r, "isEnabled"), true),
           config:
-            cfg && typeof cfg === "object"
-              ? (cfg as import("@/integrations/supabase/types").Json)
+            cfg && typeof cfg === "object" && !Array.isArray(cfg)
+              ? (cfg as Record<string, import("@/integrations/supabase/types").Json>)
               : {},
           lastRunAt: strOrNull(pick(r, "lastRunAt")),
           lastRunStatus: strOrNull(pick(r, "lastRunStatus")),

@@ -44,7 +44,7 @@
 | Create honesty Batch 52 | Merged | PR #301 → `fe0ed927` — requisitions workspace; product/contacts/projects/palette |
 | Create routes Batch 53 | Merged | PR #303 → `7f098686` — SO /new; requisition CREATE; customers/suppliers/budgets/CRM |
 | Create workspaces Batch 54 | Merged | PR #305 → `cf20b0a0` — product/FA/payroll workspaces; CRM CTAs |
-| Directive gap consolidation Batch 55 | In progress | New Account label; `/products-services/new`; sticky create URLs; `DIRECTIVE_V2_GAP_MATRIX.md` |
+| Directive gap consolidation Batch 55 | Merged | PR #307 → `28933021` — New Account; product `/new`; sticky create URLs; gap matrix; payroll import fix |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

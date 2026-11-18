@@ -7,10 +7,12 @@ import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import {
   convertQuoteToInvoice,
+  copyQuote,
   deleteDraftQuote,
   getQuote,
   updateQuoteStatus,
 } from "@/lib/sales/sales.functions";
+import { useCan } from "@/hooks/use-can";
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { isQuoteConvertible, quoteStatusActions, type QuoteStatus } from "@/lib/sales/quote-status";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -71,6 +73,8 @@ function QuoteDetailPage() {
   const doStatus = useServerFn(updateQuoteStatus);
   const doConvert = useServerFn(convertQuoteToInvoice);
   const doDelete = useServerFn(deleteDraftQuote);
+  const doCopy = useServerFn(copyQuote);
+  const { can } = useCan();
 
   const query = useQuery({
     queryKey: ["sales-quote", companyId, quoteId],
@@ -108,6 +112,14 @@ function QuoteDetailPage() {
       await qc.invalidateQueries({ queryKey: ["sales-quotes", companyId] });
       toast.success("Draft quote deleted");
       navigate({ to: "/sales/quotes" });
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+  const copyM = useMutation({
+    mutationFn: () => doCopy({ data: { companyId: companyId!, quoteId } }),
+    onSuccess: async (r) => {
+      toast.success("Copied to a new draft quote");
+      await navigate({ to: "/sales/quotes/$quoteId", params: { quoteId: r.id } });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -235,6 +247,20 @@ function QuoteDetailPage() {
                 </Link>
               </Button>
             ) : null}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={copyM.isPending || !can("sales.draft")}
+              title={
+                can("sales.draft")
+                  ? "Create a new draft quote dated today"
+                  : "You do not have permission to create drafts"
+              }
+              onClick={() => copyM.mutate()}
+            >
+              {copyM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Copy quote
+            </Button>
           </div>
         }
       >

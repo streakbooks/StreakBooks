@@ -1,165 +1,92 @@
-# name: LinkBooks quality gates
+name: LinkBooks quality gates
 
-# on:
-#   pull_request:
-#     branches: [main]
-#   push:
-#     branches: [main]
-#   workflow_dispatch:
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-# permissions:
-#   contents: read
+permissions:
+  contents: read
 
-# concurrency:
-#   group: quality-${{ github.workflow }}-${{ github.ref }}
-#   cancel-in-progress: true
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
-# jobs:
-#   validate:
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 25
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
-#         with:
-#           fetch-depth: 0
+env:
+  NODE_OPTIONS: --max-old-space-size=6144
 
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: "22"
-#           cache: npm
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-#       - name: Prevent tracked local secrets and generated artifacts
-#         run: |
-#           node scripts/check-repository-hygiene.mjs
-#           node --test scripts/check-repository-hygiene.test.mjs
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
 
-#       - name: Install locked dependencies
-#         run: npm ci
+      - name: Prevent tracked local secrets and generated artifacts
+        run: npm run check:repository
 
-#       - name: TypeScript typecheck
-#         run: npm run typecheck
+      - name: Install locked dependencies
+        run: npm ci
 
-#       - name: ESLint (zero errors or warnings)
-#         run: npm run lint -- --max-warnings=0
+      - name: TypeScript typecheck
+        run: npm run typecheck
 
-#       - name: Unit tests
-#         run: npm test
+      - name: ESLint (zero errors or warnings)
+        run: npm run lint -- --max-warnings=0
 
-#       - name: Isolated PostgreSQL workflow tests
-#         run: npm run test:workflows:postgres
+      - name: Unit tests
+        run: npm test -- --maxWorkers=4
 
-#       - name: Isolated document review security tests
-#         run: npm run test:documents:postgres
+      - name: Module, UI, navigation and lookup contracts
+        run: |
+          npm run check:modules
+          npm run check:ui
+          npm run check:navigation
+          npm run check:lookups
 
-#       - name: Isolated accountant exception review security tests
-#         run: npm run test:accountant:postgres
+      - name: Production build
+        run: npm run build
 
-#       - name: Isolated correction maker-checker approval security tests
-#         run: npm run test:correction-approvals:postgres
+      - name: Client bootstrap JS budget
+        run: npm run check:bundle
 
-#       - name: Isolated workpaper reconciling item security tests
-#         run: npm run test:workpaper-items:postgres
+      - name: State the scope of these gates
+        run: |
+          echo "These checks certify static and isolated local gates only."
+          echo "Authenticated staging, full-schema upgrade, production approval and deployment remain separate release gates."
 
-#       - name: Isolated platform permission and lifecycle tests
-#         run: npm run test:platform:postgres
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        script: [test:workflows:postgres, test:platform:postgres]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-#       - name: Isolated billing account, reference data and audit chain tests
-#         run: npm run test:billing:postgres
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
 
-#       - name: Cash history and delivery PostgreSQL checks
-#         run: python3 scripts/test-cash-history-postgres.py
+      - name: Install locked dependencies
+        run: npm ci
 
-#       - name: Native navigation checks
-#         run: npm run check:navigation
-
-#       - name: Shared interface and lookup contracts
-#         run: npm run check:ui && npm run check:lookups
-
-#       - name: Validate authenticated browser test discovery
-#         run: |
-#           npx playwright test e2e/native-navigation.spec.ts --list
-#           npx playwright test e2e/staging-smoke.spec.ts --list
-
-#       - name: Production build
-#         run: npm run build
-
-#       - name: Client bootstrap JS budget
-#         run: npm run check:bundle
-
-#   staging-browser:
-#     # Enabled only for trusted repository PRs and after all static/compile tests pass.
-#     needs: validate
-#     if: ${{ vars.E2E_STAGING_ENABLED == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) }}
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 25
-#     env:
-#       E2E_STAGING_ENABLED: "true"
-#       E2E_STAGING_RUN: "true"
-#       E2E_BASE_URL: ${{ vars.E2E_STAGING_URL }}
-#       E2E_EXPECTED_STAGING_HOST: ${{ vars.E2E_EXPECTED_STAGING_HOST }}
-#       E2E_PRODUCTION_URL: ${{ vars.E2E_PRODUCTION_URL }}
-#       E2E_EMAIL: ${{ secrets.E2E_STAGING_EMAIL }}
-#       E2E_PASSWORD: ${{ secrets.E2E_STAGING_PASSWORD }}
-#     steps:
-#       - name: Checkout trusted PR source
-#         uses: actions/checkout@v4
-
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: "22"
-#           cache: npm
-
-#       - name: Verify HTTPS staging origin, production separation and credentials
-#         run: node scripts/check-staging-target.mjs
-
-#       - name: Install locked dependencies
-#         run: npm ci
-
-#       - name: Install Chromium with system dependencies
-#         run: npx playwright install --with-deps chromium
-
-#       - name: Run real authenticated staging smoke
-#         run: npx playwright test e2e/staging-smoke.spec.ts --workers=1
-
-#   interface-browser:
-#     name: Interface browser regressions
-#     needs: validate
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 25
-#     steps:
-#       - name: Checkout tested source
-#         uses: actions/checkout@v4
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: "22"
-#           cache: npm
-#       - name: Install locked dependencies
-#         run: npm ci
-#       - name: Install Chromium
-#         run: npx playwright install --with-deps chromium
-#       - name: Shared interface, accessibility and mobile themes
-#         run: npm run test:ui
-#       - name: Reporting workflows and responsive lookups
-#         run: npm run test:reporting
-#       - name: Document themes and PDF layouts
-#         run: npm run test:themes
-#       - name: Native and keyboard navigation
-#         run: npm run test:navigation
-#       - name: Corrections and read-only permissions
-#         run: npm run test:corrections
-#       - name: Practice review and conflict recovery
-#         run: npm run test:practice
-#       - name: Platform workflows and permissions
-#         run: npm run test:platform
-#       - name: Voice navigation and permission regressions
-#         run: npm run test:voice
-#       - name: Wake-word and verification regressions
-#         run: npm run test:wake
-#       - name: Actual anonymous app, recovery and portal entry
-#         run: npm run test:public-ui
-#       - name: Global Create panels and route prefill isolation
-#         run: npm run test:create-panels
+      - name: Isolated PostgreSQL suite
+        run: npm run ${{ matrix.script }}

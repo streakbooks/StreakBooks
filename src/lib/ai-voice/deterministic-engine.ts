@@ -63,6 +63,7 @@ export const VOICE_COMMANDS = [
 
 const modulePermission: Record<string, Permission> = {
   "/banking": "banking.view",
+  "/expense-management": "expenses.view",
   "/sales": "sales.view",
   "/purchases": "purchases.view",
   "/reports": "reports.view",
@@ -236,6 +237,12 @@ export function parseDeterministicCommand(transcript: string, location = ""): Pa
       .replace(/^(the|my|our)\s+/, "")
       .replace(/\s+(?:page|screen|tab|section|list)$/, "")
       .replace(/^(?:all|list of)\s+/, "");
+    // Outside a document workspace, exact sidebar labels identify their top-level module.
+    // Within Sales/Purchases, unqualified section names retain their existing contextual meaning.
+    const moduleCommand = MODULE_NAV.find((entry) => entry.phrases.includes(subject));
+    if (moduleCommand && !location.startsWith("/sales") && !location.startsWith("/purchases")) {
+      return { kind: "matched", command: moduleCommand };
+    }
     const sections = [
       ...PURCHASES_SECTIONS.map((item) => ({
         ...item,

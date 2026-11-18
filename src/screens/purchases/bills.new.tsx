@@ -13,7 +13,7 @@ import {
   listSuppliers,
   upsertSupplier,
   saveBillDraft,
-  authoriseBill,
+  saveAndAuthoriseBill,
   checkDuplicateSupplierBill,
   listPaymentTerms,
   createPaymentTerm,
@@ -249,8 +249,8 @@ export function NewBill({
   const doUpsertDimCategory = useServerFn(upsertTrackingCategory);
   const doUpsertCustomer = useServerFn(upsertCustomer);
   const saveDraft = useServerFn(saveBillDraft);
+  const saveAndAuthorise = useServerFn(saveAndAuthoriseBill);
   const recordVoiceSave = useServerFn(recordVoiceDraftOutcome);
-  const authorise = useServerFn(authoriseBill);
   const checkDup = useServerFn(checkDuplicateSupplierBill);
   const doUpsertSupplier = useServerFn(upsertSupplier);
   const doCreateTerm = useServerFn(createPaymentTerm);
@@ -1047,11 +1047,7 @@ export function NewBill({
     return saved.id;
   };
 
-  const persistDraft = async (forAuthorise = false): Promise<string> => {
-    const saved = await saveDraft({ data: buildSavePayload(forAuthorise) });
-    const id = saved.id;
-    setBillId(id);
-    // Flush pending attachments
+  const flushBillExtras = async (id: string) => {
     for (const file of pendingAttachments) {
       await doUpload({
         data: {
@@ -1075,6 +1071,13 @@ export function NewBill({
     await queryClient.invalidateQueries({ queryKey: ["bill-attachments", companyId, id] });
     await queryClient.invalidateQueries({ queryKey: ["bill-notes", companyId, id] });
     await queryClient.invalidateQueries({ queryKey: ["bill-activity", companyId, id] });
+  };
+
+  const persistDraft = async (forAuthorise = false): Promise<string> => {
+    const saved = await saveDraft({ data: buildSavePayload(forAuthorise) });
+    const id = saved.id;
+    setBillId(id);
+    await flushBillExtras(id);
     return id;
   };
 
@@ -1086,13 +1089,31 @@ export function NewBill({
       try {
         if (isTemplate) {
           const id = await persistTemplate(mode === "authorise");
-          return { id, mode };
+          return {
+            id,
+            mode,
+            authoriseError: null as string | null,
+            statusHint: null as "posted_unauthorised" | null,
+          };
         }
-        const id = await persistDraft(mode === "authorise");
         if (mode === "authorise") {
-          await authorise({ data: { companyId: companyId!, billId: id } });
+          const r = await saveAndAuthorise({ data: buildSavePayload(true) });
+          setBillId(r.id);
+          await flushBillExtras(r.id);
+          return {
+            id: r.id,
+            mode,
+            authoriseError: r.authoriseError,
+            statusHint: r.statusHint,
+          };
         }
-        return { id, mode };
+        const id = await persistDraft(false);
+        return {
+          id,
+          mode,
+          authoriseError: null as string | null,
+          statusHint: null as "posted_unauthorised" | null,
+        };
       } finally {
         savingRef.current = false;
       }
@@ -1111,6 +1132,20 @@ export function NewBill({
           return;
         }
         setBaseline(snapshot());
+        return;
+      }
+      if (result.authoriseError) {
+        if (result.statusHint === "posted_unauthorised") {
+          setFormError(
+            `The journal was posted but the bill status was not linked. Open the bill and click Authorise again — it will not post twice. ${result.authoriseError}`,
+          );
+          toast.error("Journal posted — retry Authorise to link status");
+        } else {
+          setFormError(`Saved as a draft, but it could not be authorised: ${result.authoriseError}`);
+          toast.error("Saved as draft — authorise failed");
+        }
+        setBaseline(snapshot());
+        navigate({ to: "/purchases/bills/$billId", params: { billId: result.id } });
         return;
       }
       toast.success(

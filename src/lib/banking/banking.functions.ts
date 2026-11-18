@@ -6,13 +6,20 @@ import { requireAccountInCompany } from "@/lib/purchases/accounts";
 import { postBankTransfer, voidPostedDocument } from "@/lib/sales/posting";
 import { codeBankTransactionOnce } from "@/lib/banking/coding-server";
 import { chunk } from "@/lib/banking/fetch-all";
-import { DB_UPDATE_MESSAGE, isMissingSchema, recordAudit, tryRpc } from "@/lib/banking/rpc";
+import {
+  callRpc,
+  DB_UPDATE_MESSAGE,
+  isMissingSchema,
+  recordAudit,
+  tryRpc,
+} from "@/lib/banking/rpc";
 import {
   ledgerBalanceAsOf,
   loadBankAccount,
   loadBankTxn,
   type AnyClient,
 } from "@/lib/banking/server-helpers";
+import { resolveTransferMatchSide } from "@/lib/banking/transfer-match";
 import {
   directionFromAmount,
   normalizePayee,
@@ -475,6 +482,8 @@ export const createTransfer = createServerFn({ method: "POST" })
       /** Amount received in the destination account's currency (required when the currencies differ). */
       toAmountMinor?: number | null;
       memo?: string;
+      /** When set (Create transfer from this line), match that uncategorised statement line after posting. */
+      matchBankTransactionId?: string | null;
     }) => {
       if (!isIsoDate(input.transferDate)) throw new Error("Transfer date must be YYYY-MM-DD");
       const amount = Math.round(Number(input.amountMinor));
@@ -492,6 +501,9 @@ export const createTransfer = createServerFn({ method: "POST" })
         amountMinor: amount,
         currencyCode: (input.currencyCode ?? "").toUpperCase(),
         memo: (input.memo ?? "").trim().slice(0, 500) || null,
+        matchBankTransactionId: input.matchBankTransactionId
+          ? assertUuid(input.matchBankTransactionId, "bank transaction")
+          : null,
       };
     },
   )
@@ -507,6 +519,66 @@ export const createTransfer = createServerFn({ method: "POST" })
     if (from.currency_code !== data.currencyCode) {
       throw new Error("Transfer currency must be the source account's currency");
     }
+
+    const toAmountForMatch = data.toAmountMinor ?? data.amountMinor;
+    let matchSide: ReturnType<typeof resolveTransferMatchSide> | null = null;
+    if (data.matchBankTransactionId) {
+      const txn = await loadBankTxn(supabase, data.companyId, data.matchBankTransactionId);
+      if (txn.status !== "uncategorised") {
+        throw new Error("Only an uncategorised statement line can be auto-matched to a new transfer");
+      }
+      matchSide = resolveTransferMatchSide({
+        statementBankAccountId: txn.bank_account_id,
+        statementAmountMinor: txn.amount_minor,
+        fromBankAccountId: data.fromBankAccountId,
+        toBankAccountId: data.toBankAccountId,
+        fromAmountMinor: data.amountMinor,
+        toAmountMinor: toAmountForMatch,
+      });
+    }
+
+    const finish = async (posted: { id: string; journalId: string }) => {
+      if (!data.matchBankTransactionId || !matchSide) {
+        return { ...posted, matched: false as const, matchError: null as string | null };
+      }
+      try {
+        const sideAccount = await loadBankAccount(supabase, data.companyId, matchSide.bankAccountId);
+        const { data: lines, error: lineErr } = await supabase
+          .from("journal_lines" as never)
+          .select("id, debit_minor, credit_minor" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("journal_id" as never, posted.journalId as never)
+          .eq("account_id" as never, sideAccount.gl_account_id as never);
+        if (lineErr) throw new Error(lineErr.message);
+        const matches = (
+          (lines ?? []) as unknown as Array<{
+            id: string;
+            debit_minor: number;
+            credit_minor: number;
+          }>
+        ).filter(
+          (l) => Number(l.debit_minor) - Number(l.credit_minor) === matchSide.expectedLineAmountMinor,
+        );
+        if (matches.length !== 1) {
+          throw new Error(
+            "Could not identify the transfer journal line on this bank account to match",
+          );
+        }
+        await callRpc(supabase, "match_bank_transaction", {
+          _company_id: data.companyId,
+          _bank_transaction_id: data.matchBankTransactionId,
+          _journal_line_ids: [matches[0]!.id],
+        });
+        return { ...posted, matched: true as const, matchError: null as string | null };
+      } catch (e) {
+        return {
+          ...posted,
+          matched: false as const,
+          matchError: e instanceof Error ? e.message : "Auto-match failed",
+        };
+      }
+    };
+
     if (from.currency_code !== to.currency_code) {
       // BK-10: two currencies, an amount on each side, and the difference posted to FX gain/loss.
       if (data.toAmountMinor === null) {
@@ -532,7 +604,7 @@ export const createTransfer = createServerFn({ method: "POST" })
           `${DB_UPDATE_MESSAGE} (create_bank_transfer_fx). Cross-currency transfers need it.`,
         );
       }
-      return { id: fx.data.id, journalId: fx.data.journal_id };
+      return finish({ id: fx.data.id, journalId: fx.data.journal_id });
     }
 
     // Preferred: one database transaction creates the journal and the transfer row together.
@@ -545,7 +617,7 @@ export const createTransfer = createServerFn({ method: "POST" })
       _currency_code: data.currencyCode,
       _memo: data.memo,
     });
-    if (rpc.available) return { id: rpc.data.id, journalId: rpc.data.journal_id };
+    if (rpc.available) return finish({ id: rpc.data.id, journalId: rpc.data.journal_id });
 
     // Fallback until the RPC is installed: row first (it supplies the journal's source id), then post.
     // If posting fails the row is removed so no transfer exists without a journal.
@@ -590,7 +662,7 @@ export const createTransfer = createServerFn({ method: "POST" })
       .from("bank_transfers" as never)
       .update({ posted_journal_id: journalId } as never)
       .eq("id" as never, transferId as never);
-    return { id: transferId, journalId };
+    return finish({ id: transferId, journalId });
   });
 
 export const listStatementImports = createServerFn({ method: "GET" })
@@ -805,51 +877,55 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
     bankTransactionId: assertUuid(input.bankTransactionId),
   }))
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "banking.view");
     const { data: txn, error } = await context.supabase
       .from("bank_transactions" as never)
-      .select("id, description, amount_minor, status" as never)
+      .select("id, bank_account_id, reference, payee, description, amount_minor, status" as never)
       .eq("id" as never, data.bankTransactionId as never)
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!txn) throw new Error("Transaction not found");
-    const t = txn as { description: string | null; amount_minor: number; status: string };
+    const t = txn as {
+      bank_account_id: string;
+      reference: string | null;
+      payee: string | null;
+      description: string | null;
+      amount_minor: number;
+      status: string;
+    };
 
-    const { data: history } = await context.supabase
-      .from("bank_coding_history" as never)
-      .select(
-        "payee_normalized, offset_account_id, direction, times_used, accounts(code, name)" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .limit(100);
-    const { data: rules } = await context.supabase
+    const memory = await tryRpc<Array<import("./memory").MemoryPreference>>(
+      context.supabase,
+      "get_bank_coding_memory",
+      {
+        _company_id: data.companyId,
+        _bank_transaction_id: data.bankTransactionId,
+      },
+    );
+    const history = memory.available ? memory.data : [];
+    const { data: rules, error: rulesError } = await context.supabase
       .from("bank_rules" as never)
       .select(
-        "id, name, match_field, match_pattern, match_type, offset_account_id, priority, is_active, accounts(code, name)" as never,
+        "id, name, match_field, match_pattern, match_type, offset_account_id, priority, is_active, direction, min_amount_minor, max_amount_minor, bank_account_id, tax_code_id, contact_id, accounts!inner(code, name)" as never,
       )
       .eq("company_id" as never, data.companyId as never)
-      .eq("is_active" as never, true as never);
+      .eq("is_active" as never, true as never)
+      .eq("accounts.company_id" as never, data.companyId as never)
+      .eq("accounts.is_active" as never, true as never)
+      .eq("accounts.is_postable" as never, true as never)
+      .eq("accounts.is_control" as never, false as never)
+      .is("accounts.archived_at" as never, null as never);
+
+    if (rulesError) throw new Error(rulesError.message);
 
     const suggestions = rankCodingSuggestions({
       description: t.description,
+      bankAccountId: t.bank_account_id,
+      reference: t.reference,
+      payee: t.payee,
       amountMinor: t.amount_minor,
-      history: (
-        (history ?? []) as Array<{
-          payee_normalized: string;
-          offset_account_id: string;
-          direction: "in" | "out";
-          times_used: number;
-          accounts: { code: string; name: string } | null;
-        }>
-      ).map((h) => ({
-        payee_normalized: h.payee_normalized,
-        offset_account_id: h.offset_account_id,
-        direction: h.direction,
-        times_used: h.times_used,
-        account_code: h.accounts?.code ?? null,
-        account_name: h.accounts?.name ?? null,
-      })),
+      history: history.slice(0, 100).filter((h) => h.enabled),
       rules: (
         (rules ?? []) as Array<{
           id: string;
@@ -858,6 +934,12 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
           match_pattern: string;
           match_type: string;
           offset_account_id: string;
+          direction: string;
+          min_amount_minor: number | null;
+          max_amount_minor: number | null;
+          bank_account_id: string | null;
+          tax_code_id: string | null;
+          contact_id: string | null;
           priority: number;
           is_active: boolean;
           accounts: { code: string; name: string } | null;
@@ -869,6 +951,12 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
         match_pattern: r.match_pattern,
         match_type: r.match_type,
         offset_account_id: r.offset_account_id,
+        direction: r.direction,
+        min_amount_minor: r.min_amount_minor,
+        max_amount_minor: r.max_amount_minor,
+        bank_account_id: r.bank_account_id,
+        tax_code_id: r.tax_code_id,
+        contact_id: r.contact_id,
         priority: r.priority,
         is_active: r.is_active,
         account_code: r.accounts?.code ?? null,
@@ -879,9 +967,15 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
     return {
       status: t.status,
       payeeNormalized: normalizePayee(t.description),
+      memoryAvailable: memory.available,
+      memoryPreferences: history.slice(0, 100),
+      historyCoverage: {
+        checked: Math.min((history ?? []).length, 100),
+        limited: (history ?? []).length > 100,
+      },
       externalResearchAvailable: false,
       externalResearchNote:
-        "No external search/AI provider is configured. Suggestions use this organisation’s coding history and bank rules only.",
+        "No matching suggestion was found in this organisation’s available coding history and bank rules.",
       suggestions,
     };
   });

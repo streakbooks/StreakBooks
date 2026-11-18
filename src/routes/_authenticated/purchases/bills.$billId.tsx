@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, ChevronLeft, ChevronRight, Loader2, Paperclip, Printer } from "lucide-react";
@@ -10,6 +10,7 @@ import {
   addBillNote,
   authoriseBill,
   checkDuplicateSupplierBill,
+  copyBill,
   listPaymentTerms,
   deleteDraftBill,
   downloadBillAttachment,
@@ -23,8 +24,10 @@ import {
   saveBillDraft,
   updatePurchaseOrderBillDetails,
   submitBillForApproval,
+  SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED,
   voidBill,
 } from "@/lib/purchases/purchases.functions";
+import type { SupplierCreditLimitAssessment } from "@/lib/purchases/supplier-credit-limit";
 import { listProducts } from "@/lib/products/products.functions";
 import { listTaxCodes } from "@/lib/tax/tax.functions";
 import { listTrackingDimensions } from "@/lib/settings/dimensions.functions";
@@ -120,6 +123,7 @@ type BillPayload = {
   due_date_manual_override?: boolean | null;
   tax_calculation?: string | null;
   duplicate_override?: boolean | null;
+  purchase_order_id?: string | null;
   supplier_address_line1?: string | null;
   supplier_address_line2?: string | null;
   supplier_address_city?: string | null;
@@ -180,11 +184,13 @@ type BillPayload = {
     created_at: string;
   }>;
   payment_allocations: BillPaymentAllocation[];
+  supplierCreditLimitAssessment?: SupplierCreditLimitAssessment | null;
 };
 
 function BillDocumentWorkspace() {
   const { billId } = Route.useParams();
   const search = Route.useSearch();
+  const navigate = useNavigate();
   const { company } = useActiveCompany();
   const fetchBill = useServerFn(getBill);
   const fetchNeighbors = useServerFn(getBillNeighbors);
@@ -207,6 +213,7 @@ function BillDocumentWorkspace() {
   const doSubmit = useServerFn(submitBillForApproval);
   const doReject = useServerFn(rejectBillApproval);
   const doDelete = useServerFn(deleteDraftBill);
+  const doCopy = useServerFn(copyBill);
   const doAddNote = useServerFn(addBillNote);
   const doDownload = useServerFn(downloadBillAttachment);
   const queryClient = useQueryClient();
@@ -232,6 +239,7 @@ function BillDocumentWorkspace() {
   const [taxCalculation, setTaxCalculation] = useState<TaxCalculationMode>("exclusive");
   const [fxRate, setFxRate] = useState("");
   const [acknowledgeDuplicate, setAcknowledgeDuplicate] = useState(false);
+  const [ackCreditLimit, setAckCreditLimit] = useState(false);
   const [address, setAddress] = useState<BillEditorAddress>({
     line1: "",
     line2: "",
@@ -447,15 +455,27 @@ function BillDocumentWorkspace() {
   const authoriseMutation = useMutation({
     mutationFn: async () => {
       await saveIfDirty();
-      return doAuthorise({ data: { companyId: companyId!, billId } });
+      return doAuthorise({
+        data: {
+          companyId: companyId!,
+          billId,
+          acknowledgeCreditLimit: ackCreditLimit,
+        },
+      });
     },
     onSuccess: async () => {
       setHydrated(false);
+      setAckCreditLimit(false);
       await invalidate();
       toast.success("Bill authorised — journal posted");
     },
     onError: (e) => {
       const msg = friendlyAuthError(e);
+      if (msg.includes(SUPPLIER_CREDIT_LIMIT_ACK_REQUIRED)) {
+        setFormError(msg);
+        toast.error("Credit limit exceeded — tick the acknowledgement to authorise anyway.");
+        return;
+      }
       setFormError(msg);
       toast.error(msg);
     },
@@ -475,6 +495,15 @@ function BillDocumentWorkspace() {
       setVoidOpen(false);
       await invalidate();
       toast.success("Bill voided — reversing journal posted when applicable");
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
+  const copyMutation = useMutation({
+    mutationFn: () => doCopy({ data: { companyId: companyId!, billId } }),
+    onSuccess: async (r) => {
+      toast.success("Copied to a new draft bill");
+      await navigate({ to: "/purchases/bills/$billId", params: { billId: r.id } });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -842,6 +871,16 @@ function BillDocumentWorkspace() {
             <Printer className="mr-1 size-4" />
             Print / PDF
           </Button>
+          {bill.status !== "draft" && can("purchases.draft") ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={copyMutation.isPending}
+              onClick={() => copyMutation.mutate()}
+            >
+              Copy bill
+            </Button>
+          ) : null}
           <BillAttachmentsButton
             count={bill.attachments?.length ?? 0}
             onClick={() => setFilesOpen(true)}
@@ -970,6 +1009,38 @@ function BillDocumentWorkspace() {
         <Alert variant="destructive">
           <AlertTitle>Could not save</AlertTitle>
           <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {bill.supplierCreditLimitAssessment &&
+      bill.supplierCreditLimitAssessment.status !== "no_limit" &&
+      bill.supplierCreditLimitAssessment.status !== "ok" ? (
+        <Alert
+          className="mb-4"
+          variant={bill.supplierCreditLimitAssessment.overLimit ? "destructive" : "default"}
+        >
+          <AlertTitle>
+            {bill.supplierCreditLimitAssessment.overLimit
+              ? "Supplier credit limit exceeded"
+              : "Supplier credit exposure review"}
+          </AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p>{bill.supplierCreditLimitAssessment.message}</p>
+            {canEdit && bill.supplierCreditLimitAssessment.overLimit ? (
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={ackCreditLimit}
+                  onChange={(e) => setAckCreditLimit(e.target.checked)}
+                />
+                <span>
+                  I acknowledge this bill takes the supplier over their credit limit and authorise
+                  anyway.
+                </span>
+              </label>
+            ) : null}
+          </AlertDescription>
         </Alert>
       ) : null}
 

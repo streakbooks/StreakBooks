@@ -38,6 +38,8 @@
 | 2026-11-17 | Partial bill-from-received | No new npm packages; original `po-partial-bill` maths; convert bills unbilled received qty only; no competitor code; no inventory valuation claim |
 | 2026-11-17 | Purchase bill void_date | No new npm packages; records void date/reason for AP as-at; reuses existing ReasonDialog; inventory still not claimed |
 | 2026-11-17 | Supplier credit void_date | No new npm packages; parity with B5 bill void; shared void-date helper; ReasonDialog; no competitor code |
+| 2026-11-17 | Supplier payment void_date + reason | No new npm packages; persists void_date on reverse_supplier_payment; requires reason; ReasonDialog parity with receipts; no competitor code |
+| 2026-11-17 | Supplier statement opening balance | No new npm packages; reuses AR statement builder with AP nouns; public statement concepts only |
 
 ## Open compliance items
 

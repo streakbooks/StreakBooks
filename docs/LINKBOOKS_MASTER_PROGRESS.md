@@ -1,76 +1,62 @@
-# LinkBooks — Master progress tracker
+﻿# LinkBooks — Master progress tracker
 
 | Field | Value |
 |-------|-------|
 | **Updated** | 2026-11-17 |
-| **Baseline commit** | `ddaff917` (GitHub `main` at session start) |
-| **Programme** | Complete module coverage & zero-gap execution (with originality-first IP policy) |
+| **Baseline commit** | `1056a3f2` (GitHub `main` after banking match permission #261) |
+| **Programme** | Complete module coverage & zero-gap execution (originality-first) |
 | **Authoritative repo** | https://github.com/linkbusinessadvisory/LinkBooks |
 
-## Originality-first & IP protection (mandatory)
+## Honest completion status (addendum)
 
-LinkBooks is built as an **independent original product**. Competitors (Odoo, Xero, QuickBooks Online, Zoho Books, Sage, MYOB, ERPNext and specialists) are **functional/workflow references only**.
+| Gate | Measured result |
+|------|-----------------|
+| Complete and Verified modules (staging + production) | **0** |
+| Full 43-module deep audit + competitor matrix | **Not complete** |
+| Gap register exhaustive per §4 fields | **Partial** |
+| Production-ready product claim | **Not allowed yet** |
 
-- Do **not** copy proprietary source, UI layouts, illustrations, logos, branding or documentation.
-- Prefer independent implementation over reusing Odoo (or other) open-source code; if any OSS reuse is ever proposed, license obligations must be reviewed before merge.
-- Do **not** use third-party trademarks in a way that suggests endorsement or affiliation.
-- Review dependencies, licenses and attribution before adding packages — see [IP_AND_DEPENDENCY_COMPLIANCE.md](./IP_AND_DEPENDENCY_COMPLIANCE.md), [THIRD_PARTY.md](./THIRD_PARTY.md), [CLEAN_ROOM.md](./CLEAN_ROOM.md).
-- Block release of components with unresolved licensing or IP concerns.
-- Progress percentages below are **measured**, not optimistic estimates.
+## Status lanes (do not conflate)
 
-## Overall measured progress
+| Lane | Meaning |
+|------|---------|
+| Merged | On GitHub `main` |
+| Tested | Named local/isolated suite recorded |
+| Deployed | Hosted URL verified |
+| Production-ready | Auth staging + production gates — **none** |
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Modules in `MODULE_REGISTRY` | 28 | Sidebar + hidden operational surfaces |
-| Authenticated route files | ~151 | Includes nested sales/purchases/banking/CRM/HR |
-| Migrations on disk | 347 | Application to staging/prod is separate |
-| Gap register rows (this refresh) | See [FULL_COVERAGE_GAP_REGISTER.md](./FULL_COVERAGE_GAP_REGISTER.md) | Classifications are evidence-based |
-| Requirements marked Complete and Verified | **0** | No module has passed full acceptance + staging + production gates in this tracker |
-| Requirements Partial / in progress | Majority of core bookkeeping | Real code exists; live acceptance incomplete |
-| Open product PRs (non-draft blockers) | #225 Coding Memory (draft), #227 release gates (draft, conflicting) | Recheck before duplicating work |
+## Merged this wave (code on main — not production-certified)
 
-**Do not claim 100% completion** until every in-scope requirement has passed its defined acceptance and release gates.
+| Item | Topic | Tip |
+|------|-------|-----|
+| #246–#256, `b090bfc8` | Banking honesty, copy paths, AP totals, copy quote | through `98d93735` |
+| [#225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225) | Coding Memory events/suggestions | `2ba48da1` |
+| [#257](https://github.com/linkbusinessadvisory/LinkBooks/pull/257) | AR authorise totals + journal reverse gate | `e816268e` |
+| [#258](https://github.com/linkbusinessadvisory/LinkBooks/pull/258) | AP/AR save-and-authorise posted-unlinked honesty | `c24ac11a` |
+| [#259](https://github.com/linkbusinessadvisory/LinkBooks/pull/259) | Tracker refresh (#257/#258 + Actions blocker) | `2ce28a7e` |
+| [#260](https://github.com/linkbusinessadvisory/LinkBooks/pull/260) | Copy purchase order | `6ddbd729` |
+| [#261](https://github.com/linkbusinessadvisory/LinkBooks/pull/261) | Banking match permission fail-closed | `1056a3f2` |
 
-## Execution batches
+## Critical blockers (production-ready cannot clear these alone)
 
-| Batch | Status | Evidence |
-|-------|--------|----------|
-| B0 — Tracker + IP register + full-coverage gap skeleton | **Done on branch** | This file; IP register; gap register |
-| B1 — Historical Aged Payables (dated AP allocations) | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/229 |
-| B1.1 — Period close uses dated AR/AP as-at | **Pushed on #229** | `30238d5a` — PeriodClosePanel + `period-close-subledger` |
-| B2 — PO goods receipt foundation | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/230 — migration pending authorized apply |
-| B3 — PO three-way match (order×receipt×bill) | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/231 — stacked on #230 |
-| B4 — Partial bill-from-received | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/232 — stacked on #231; migrations not applied live |
-| B5 — Purchase bill void_date | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/233 — from main; migration not applied live |
-| B6 — Supplier credit void_date | **In progress** | Branch `feature/supplier-credit-void-date-20261117` from main; parity with B5 / sales credits |
+| Blocker | Evidence | Owner |
+|---------|----------|-------|
+| GitHub Actions jobs fail ~1–2s | Runs e.g. [44124992677](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44124992677); runners `total_count=0`; jobs `steps=[]` | Org admin |
+| Coding Memory / purchase SQL on disk ≠ applied | Migration `20261117104621_bank_coding_memory_events.sql` committed; **live apply not done** | Explicit migrate auth |
+| Authenticated staging / production lifecycle | Not executed in this tracker | Ops + auth |
+| Full module audit / competitor gap depth | Still Partial for most of M-01…M-42 | Continued programme |
 
-### B1 typecheck remediation (2026-11-17)
+## Open PRs (coordinate — do not blindly overwrite)
 
-| Check | Result |
-|-------|--------|
-| Failure | Shell `787035` exit 2 — TS4111 on `Record<string, unknown>` dot access in `historyAllocation` |
-| Fix | Index signature access via `src["bill_id"]` (etc.) |
-| Re-run | Full `tsc --noEmit` exit **0** (shell `177001`); focused vitest **9/9** |
+| PR | Notes |
+|----|-------|
+| #252 | Lint mega (~597 files) — merge carefully / after rebase |
+| #253 | Lookups draft |
+| #251 / #238 / #227 | Drafts |
 
-## Current blockers
+## Next executable steps
 
-1. Authenticated staging E2E and production verification not run in this session.
-2. PR #227 conflicts with main after #228; release-gate repair needs rebase/decision.
-3. External providers (bank feeds, email delivery, payroll filing) remain fail-closed / unavailable until configured and verified.
-4. Pre-archive deleted AP allocations cannot be reconstructed (documented limitation).
-5. PR #229 CI: Actions runs conclude **failure** with **0 jobs** because `.github/workflows/quality.yml` is entirely commented out on `main`. Restoring gates is owned by conflicting PR #227 — do not duplicate that restore on #229. Do not merge without green checks + review once gates exist.
-
-## Inventory / COGS inspection (2026-11-17)
-
-| Check | Result |
-|-------|--------|
-| Stock cost layers / movement ledger tables | **Missing** — no `stock_layer` / inventory movement entities in `src/lib` or migrations beyond cash evidence index |
-| COGS posting from layers | **Not present** — COA `cogs` subtypes only; settings `valuation_method` unused for posting |
-| Classification | **Partial / Intentionally Deferred (M-08)** — do **not** claim inventory valuation or automatic COGS |
-
-## Next executable step
-
-1. Review #233 and #234 (bill + supplier credit void_date); keep #229–#232 unmerged until reviews; no live migrations without authorization; CI restore remains #227.
-2. Next P0/P1: supplier statement opening-balance / AP statement depth.
-3. Inventory/COGS remains deferred until stock cost layers exist. Avoid Coding Memory (#225).
+1. Ship void posted purchase expense; then AP credit update-on-retry if still needed.
+2. Org admin: restore Actions minutes / hosted runners.
+3. Isolated DB: apply Coding Memory migration; run fixture suite — then staging with auth.
+4. Do **not** mark modules Complete and Verified without staging/production evidence.

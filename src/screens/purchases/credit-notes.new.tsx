@@ -68,6 +68,8 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
   const [billId, setBillId] = useState(initialBillId ?? "");
   const [fxRate, setFxRate] = useState("");
   const [billCurrency, setBillCurrency] = useState<string | null>(null);
+  /** Kept after a failed authorise so Save & authorise updates THIS draft, never a second number. */
+  const [savedCreditNoteId, setSavedCreditNoteId] = useState<string | null>(null);
 
   const suppliersQ = useQuery({
     queryKey: ["suppliers", companyId],
@@ -195,6 +197,7 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
       save({
         data: {
           companyId: companyId!,
+          ...(savedCreditNoteId ? { creditNoteId: savedCreditNoteId } : {}),
           contactId,
           creditDate,
           currencyCode: currency,
@@ -213,6 +216,7 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
         },
       }),
     onSuccess: async (r) => {
+      setSavedCreditNoteId(r.id);
       try {
         await recordRef.current?.flush(r.id);
       } catch (e) {
@@ -220,6 +224,18 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
       }
       await queryClient.invalidateQueries({ queryKey: ["credits", companyId] });
       await queryClient.invalidateQueries({ queryKey: ["bills", companyId] });
+      if (r.authoriseError) {
+        if (r.statusHint === "posted_unauthorised") {
+          toast.error("Journal posted — retry Authorise to link status");
+        } else {
+          toast.error("Saved as draft — authorise failed");
+        }
+        navigate({
+          to: "/purchases/credit-notes/$creditNoteId",
+          params: { creditNoteId: r.id },
+        });
+        return;
+      }
       toast.success(r.journalId ? "Credit note authorised and posted" : "Draft credit note saved");
       if (r.allocationError) toast.error(`Not applied to the bill: ${r.allocationError}`);
       navigate({

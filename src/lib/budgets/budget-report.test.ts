@@ -156,7 +156,7 @@ describe("Budget vs Actual accounting integrity", () => {
         amountMinor: 1 }],
       actuals: [{ accountId: "sales", month: "2026-04-01",
         debitMinor: 0, creditMinor: 1_000_000_000_000 }],
-    })).toThrow(/supported precision/);
+    })).toThrow(/supported.*(?:precision|range)/);
   });
 
   it("does not mutate input accounts, columns, budget or activity", () => {

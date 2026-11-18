@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll payment allocation list accessibility (2026-11-18)
+
+- `src/screens/payroll/payments.tsx`: add an accessible name to the payment-details payslip allocation list, preserving existing allocation display and accounting operations. Source commit `fa411208b4cd3f56647f3f1448a3b2a48eb96806`. **SOURCE ONLY; NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: append Payroll source evidence and pending assistive-technology verification; commit `13fd7c52c8de6b973a202e4ea084f0db03eb3474`.
+- **NOT RUN:** inventory guard, TypeScript, lint, unit/integration, build, authenticated browser/screen-reader, RLS/accounting regressions. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. Fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No main changes, manual CI, production database operations or deployment.
+
 ### Payroll payment refresh accessibility announcement (2026-11-18)
 
 - `src/screens/payroll/payments.tsx`: add a polite screen-reader status message during payment-detail refetch, while retaining the dialog and existing refresh action. Source commit `0eb60648d7479a6f27a144942761e46817aeca68`. **SOURCE ONLY; NOT RUN.** No settlement, reversal, or accounting code changed.

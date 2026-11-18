@@ -651,7 +651,9 @@
         "src/lib/settings/panels.test.ts — two deep-link sanitation assertions added; commit a022701f4677d4b782dba24919ff84c6d56540e8; WRITTEN, NOT RUN.",
         "2026-11-11: src/lib/settings/panels.ts deduplicates malformed repeated ancestor IDs across URL validation, opening and closing nested Settings panels; commit d36f437b5ae1c42da4b64d7f750268993cb061fa. src/lib/settings/panels.test.ts regression written in fd148c5e2fa4c21d4bc3d125a1a163a1b3cef0b9; NOT RUN.",
         "2026-11-18: src/lib/settings/panels.ts rejects sparse settingsTrail arrays with missing indices instead of allowing undefined ancestors through Array.every; commit 75b87dc1a819f93ad12667722dd4ba5f02a21698; SOURCE ONLY, NOT RUN.",
-        "2026-11-18: src/lib/settings/panels.test.ts covers sparse URL trail validation and panel opening fallback; commit 8d4dcbeea92cf30d3905be8ea0f6279f13fa09e8; WRITTEN, NOT RUN."
+        "2026-11-18: src/lib/settings/panels.test.ts covers sparse URL trail validation and panel opening fallback; commit 8d4dcbeea92cf30d3905be8ea0f6279f13fa09e8; WRITTEN, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.ts validates explicit destination.panel values against the runtime allowlist instead of trusting a TypeScript-only descriptor; commit 878ffd1256d37ed160fa10c304a622d62c965bc2; SOURCE ONLY, NOT RUN.",
+        "2026-11-18: src/lib/settings/panels.test.ts adds malformed explicit destination panel regression cases; commit 759872188a450209049a29783033a2820144033c; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Verify plan deep links, billing redirects, Back/Forward, permissions, and valid existing plan identifiers with authenticated fixtures",
@@ -664,7 +666,8 @@
         "Run new malformed-trail test, authenticated nested panel navigation, check:browsing-coverage, accessibility and role checks; NOT RUN.",
         "Execute Settings trail sanitation Vitest, browser refresh/history tests and full 12-criterion acceptance; NOT RUN.",
         "Execute duplicate-ancestor navigation regression, authenticated refresh/back-forward and all 12 acceptance checks; NOT RUN.",
-        "Execute sparse Settings trail regression and authenticated nested Settings deep-link/refresh/Back/Forward tests; inventory guard, typecheck, lint, build, accessibility and RLS NOT RUN."
+        "Execute sparse Settings trail regression and authenticated nested Settings deep-link/refresh/Back/Forward tests; inventory guard, typecheck, lint, build, accessibility and RLS NOT RUN.",
+        "Execute explicit destination panel allowlist regression, check:browsing-coverage, TypeScript, authenticated navigation, accessibility, and RLS/accounting tests; NOT RUN."
       ]
     },
     {

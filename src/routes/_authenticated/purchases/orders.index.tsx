@@ -7,16 +7,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
-import {
-  convertPurchaseOrderToBill,
-  listPurchaseOrders,
-} from "@/lib/purchases/purchases.functions";
+import { listPurchaseOrders } from "@/lib/purchases/purchases.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -44,6 +40,11 @@ type OrderRow = {
   total_minor: number;
   billed_bill_id: string | null;
   contacts: { name: string } | null;
+  approval_state?: string;
+  supplier_reference?: string | null;
+  expected_delivery_date?: string | null;
+  acknowledged_on?: string | null;
+  billable_quantity?: number;
 };
 
 export const Route = createFileRoute("/_authenticated/purchases/orders/")({
@@ -57,26 +58,12 @@ function OrdersList() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const fmt = useFormat();
-  const navigate = useNavigate();
   const fetch = useServerFn(listPurchaseOrders);
-  const convert = useServerFn(convertPurchaseOrderToBill);
-  const queryClient = useQueryClient();
   const companyId = company?.id;
   const query = useQuery({
     queryKey: ["orders", companyId, search, status, page],
     enabled: Boolean(companyId),
     queryFn: () => fetch({ data: { companyId: companyId!, q: search, status, page } }),
-  });
-
-  const convertMutation = useMutation({
-    mutationFn: (orderId: string) => convert({ data: { companyId: companyId!, orderId } }),
-    onSuccess: async (r) => {
-      await queryClient.invalidateQueries({ queryKey: ["orders", companyId] });
-      await queryClient.invalidateQueries({ queryKey: ["bills", companyId] });
-      toast.success("Converted to draft bill (no ledger post until bill is authorised)");
-      navigate({ to: "/purchases/bills/$billId", params: { billId: r.billId } });
-    },
-    onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
   const rows = (query.data?.rows ?? []) as OrderRow[];
@@ -87,7 +74,7 @@ function OrdersList() {
   return (
     <ListWorkspace
       title="Purchase orders"
-      description="POs never post AP or expense. Convert to a draft bill when ready — posting happens only when the bill is authorised."
+      description="Approve supplier commitments, track deliveries, receive goods and bill the quantities received."
       actions={
         can("purchases.draft") ? (
           <Button size="sm" asChild>
@@ -124,6 +111,10 @@ function OrdersList() {
                 {[
                   ["all", "All statuses"],
                   ["draft", "Draft"],
+                  ["pending", "Awaiting approval"],
+                  ["approved", "Approved drafts"],
+                  ["rejected", "Rejected drafts"],
+                  ["late", "Late deliveries"],
                   ["sent", "Sent"],
                   ["partially_received", "Partially received"],
                   ["billed", "Billed"],
@@ -149,12 +140,27 @@ function OrdersList() {
               company: company?.name ?? "",
               title: "Purchase orders — current page",
               currency: "Per row",
-              headers: ["Order", "Date", "Supplier", "Status", "Currency", "Total"],
+              headers: [
+                "Order",
+                "Date",
+                "Supplier",
+                "Supplier reference",
+                "Status",
+                "Approval",
+                "Expected delivery",
+                "Acknowledged",
+                "Currency",
+                "Total",
+              ],
               rows: visible.map((r) => [
                 r.order_number ?? "",
                 r.order_date,
                 r.contacts?.name ?? "",
+                r.supplier_reference ?? "",
                 r.status,
+                r.approval_state ?? "",
+                r.expected_delivery_date ?? "",
+                r.acknowledged_on ?? "",
                 r.currency_code,
                 fromMinorUnits(BigInt(r.total_minor), r.currency_code),
               ]),
@@ -192,6 +198,8 @@ function OrdersList() {
                   <TableHead>Date</TableHead>
                   <TableHead>Supplier</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Approval</TableHead>
+                  <TableHead>Delivery</TableHead>
                   <TableHead>Currency</TableHead>
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead />
@@ -200,7 +208,7 @@ function OrdersList() {
               <TableBody>
                 {visible.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
                       No orders match these filters.
                     </TableCell>
                   </TableRow>
@@ -217,33 +225,50 @@ function OrdersList() {
                       </Link>
                     </TableCell>
                     <TableCell>{fmt.date(o.order_date)}</TableCell>
-                    <TableCell>{o.contacts?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      {o.contacts?.name ?? "—"}
+                      {o.supplier_reference ? (
+                        <p className="text-xs text-muted-foreground">{o.supplier_reference}</p>
+                      ) : null}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={o.status} />
+                    </TableCell>
+                    <TableCell>
+                      {o.approval_state ? (
+                        <StatusBadge
+                          status={
+                            o.approval_state === "pending" ? "awaiting_approval" : o.approval_state
+                          }
+                        />
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span>
+                        {o.expected_delivery_date
+                          ? fmt.date(o.expected_delivery_date)
+                          : "Not scheduled"}
+                      </span>
+                      <p className="text-xs text-muted-foreground">
+                        {o.acknowledged_on
+                          ? `Acknowledged ${fmt.date(o.acknowledged_on)}`
+                          : "Awaiting acknowledgement"}
+                      </p>
                     </TableCell>
                     <TableCell>{o.currency_code}</TableCell>
                     <TableCell className="money">
                       {fmt.money(o.total_minor, o.currency_code)}
                     </TableCell>
                     <TableCell>
-                      {!o.billed_bill_id && o.status !== "cancelled" && can("purchases.draft") ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={convertMutation.isPending}
-                          onClick={() => convertMutation.mutate(o.id)}
-                        >
-                          Convert to bill
-                        </Button>
-                      ) : o.billed_bill_id ? (
-                        <Link
-                          className="text-sm underline"
-                          to="/purchases/bills/$billId"
-                          params={{ billId: o.billed_bill_id }}
-                        >
-                          View bill
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to="/purchases/orders/$orderId" params={{ orderId: o.id }}>
+                          {Number(o.billable_quantity ?? 0) > 0 && can("purchases.draft")
+                            ? "Bill received goods"
+                            : "Open order"}
                         </Link>
-                      ) : null}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

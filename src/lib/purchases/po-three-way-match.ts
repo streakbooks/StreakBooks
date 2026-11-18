@@ -70,8 +70,8 @@ function round6(n: number): number {
 }
 
 /**
- * Pair bill lines to order lines by line_no when unique, else by description+account.
- * Unpaired bill or order lines are reported as failures.
+ * Pair each bill line to one order line with the same description and account.
+ * Prefer its line number, but allow renumbered partial bills. Unbilled order lines are allowed.
  */
 export function evaluateThreeWayMatch(input: {
   orderLines: ThreeWayOrderLine[];
@@ -115,14 +115,13 @@ export function evaluateThreeWayMatch(input: {
 
   const sortedBill = [...input.billLines].sort((a, b) => a.lineNo - b.lineNo);
   for (const bill of sortedBill) {
+    const matches = (candidate: ThreeWayOrderLine) =>
+      !usedOrder.has(candidate.lineNo) &&
+      candidate.accountId === bill.accountId &&
+      candidate.description.trim().toLowerCase() === bill.description.trim().toLowerCase();
     let order = orderByNo.get(bill.lineNo);
-    if (!order) {
-      order = input.orderLines.find(
-        (o) =>
-          !usedOrder.has(o.lineNo) &&
-          o.accountId === bill.accountId &&
-          o.description.trim().toLowerCase() === bill.description.trim().toLowerCase(),
-      );
+    if (!order || !matches(order)) {
+      order = input.orderLines.find(matches);
     }
     if (!order) {
       const detail = `Bill line ${bill.lineNo} has no matching purchase-order line.`;
@@ -158,9 +157,7 @@ export function evaluateThreeWayMatch(input: {
       parts.push("received quantity missing");
     } else if (round6(receivedQuantity) < round6(billedQuantity)) {
       status = "fail";
-      parts.push(
-        `billed quantity ${billedQuantity} exceeds received ${receivedQuantity}`,
-      );
+      parts.push(`billed quantity ${billedQuantity} exceeds received ${receivedQuantity}`);
     }
 
     if (round6(billedQuantity) > round6(orderedQuantity)) {
@@ -168,7 +165,7 @@ export function evaluateThreeWayMatch(input: {
       parts.push(`billed quantity ${billedQuantity} exceeds ordered ${orderedQuantity}`);
     }
 
-    if (billedNetMinor !== orderedNetMinor) {
+    if (billedNetMinor !== orderedNetMinor || round6(billedQuantity) < round6(orderedQuantity)) {
       // Allow under-billing (partial bill) when quantities also under-bill proportionally is complex;
       // fail closed on net mismatch unless billed qty matches a strict partial of order net by qty ratio.
       if (round6(billedQuantity) === round6(orderedQuantity)) {
@@ -189,9 +186,7 @@ export function evaluateThreeWayMatch(input: {
     }
 
     const detail =
-      status === "pass"
-        ? "Order, receipt and bill quantities/amounts agree."
-        : parts.join("; ");
+      status === "pass" ? "Order, receipt and bill quantities/amounts agree." : parts.join("; ");
     if (status !== "pass") issues.push(`Line ${order.lineNo}: ${detail}`);
 
     verdicts.push({

@@ -66,3 +66,12 @@ This inventory classifies surfaces. It does **not** mark screens DONE under the 
 - `npm run check:modules` — registry ↔ nav ↔ docs (Batch 1)
 
 Update this file whenever a module merges to `main`.
+
+## Purchase requisitions — 18 November 2026
+
+`/purchases/requisitions` is registered under the existing Purchases module using
+`ListWorkspace` and `PURCHASES_SECTIONS`. It supports tenant-scoped paginated search,
+atomic draft creation/editing, independent approval/rejection, revision/cancellation,
+and approved-to-PO conversion. Source implementation is complete; manual device,
+accessibility, authenticated staging and production acceptance remain unverified.
+See `docs/purchases/REQUISITIONS_IMPLEMENTATION.md` for the new-surface checklist.

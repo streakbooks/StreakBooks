@@ -3,6 +3,7 @@
  * Keeps Supabase I/O out of the pure match maths module.
  */
 import type { assertCompanyPermission } from "@/lib/assert-company-access";
+import { workflowRpc } from "@/lib/workflows-rpc.server";
 import { defaultDocumentFor, purchasesConfigSchema } from "@/lib/settings/registry";
 import {
   evaluateThreeWayMatch,
@@ -35,6 +36,7 @@ export async function loadBillThreeWayMatch(
   supabase: Sb,
   companyId: string,
   bill: {
+    id?: string;
     purchase_order_id: string | null | undefined;
     purchase_bill_lines: Array<{
       line_no?: number | null;
@@ -47,6 +49,16 @@ export async function loadBillThreeWayMatch(
 ): Promise<ThreeWayMatchResult> {
   const orderId = bill.purchase_order_id ? String(bill.purchase_order_id) : "";
   if (!orderId) return notApplicableMatch();
+
+  // Persisted PO bills use stable source line identities and cumulative allocations
+  // across every active linked bill. Per-bill proportional math cannot validate
+  // final rounding residuals or quantities released by deleted/void bills.
+  if (bill.id) {
+    return workflowRpc<ThreeWayMatchResult>(supabase, "validate_purchase_order_bill", {
+      _company: companyId,
+      _bill: bill.id,
+    });
+  }
 
   let receiptQuantitiesAvailable = true;
   type OrderRow = {

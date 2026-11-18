@@ -1,0 +1,67 @@
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',false);
+DO $$
+DECLARE c uuid:='10000000-0000-4000-8000-000000000001'; o jsonb; receipt jsonb; bill jsonb; posted jsonb; replay jsonb; first_bill uuid; second_bill uuid; line_id uuid; n integer; i integer; stamp timestamptz; posted_journal uuid; reversal_id uuid;
+BEGIN
+ o:=public.po_test_open_order(gen_random_uuid(),3);
+ line_id:=(o->>'lineId')::uuid;
+ FOR i IN 1..3 LOOP
+  receipt:=public.receive_purchase_order(c,(o->>'id')::uuid,gen_random_uuid(),'2026-11-18','SPLIT-'||i,jsonb_build_array(jsonb_build_object('lineId',line_id,'receiveQuantity',1)));
+  IF i=1 THEN
+   SELECT count(*) INTO n FROM public.purchase_bills;
+   PERFORM set_config('test.fail_audit','on',true);
+   PERFORM public.po_test_error(format('SELECT public.convert_purchase_order_atomic(%L,%L)',c,o->>'id'),'%Injected audit failure%','conversion audit failure surfaced');
+   PERFORM set_config('test.fail_audit','off',true);
+   PERFORM public.po_test_assert((SELECT count(*) FROM public.purchase_bills)=n AND (SELECT quantity_billed FROM public.purchase_order_lines WHERE id=line_id)=0,'conversion failure atomically rolls back bills and allocations');
+  END IF;
+  bill:=public.convert_purchase_order_atomic(c,(o->>'id')::uuid);
+  IF i=1 THEN first_bill:=(bill->>'billId')::uuid; END IF;
+  IF i=2 THEN second_bill:=(bill->>'billId')::uuid; END IF;
+  PERFORM public.po_test_assert(public.validate_purchase_order_bill(c,(bill->>'billId')::uuid)->>'status'='pass','split bill '||i||' validates against cumulative source');
+ END LOOP;
+ PERFORM public.po_test_assert((SELECT sum(net_minor) FROM public.purchase_bill_lines WHERE purchase_order_line_id=line_id)=299 AND (SELECT sum(tax_minor) FROM public.purchase_bill_lines WHERE purchase_order_line_id=line_id)=60,'three split bills reconcile full discounted net and tax');
+ PERFORM public.po_test_assert((SELECT quantity_billed FROM public.purchase_order_lines WHERE id=line_id)=3 AND (SELECT status FROM public.purchase_orders WHERE id=(o->>'id')::uuid)='billed','full billing updates PO status and quantity');
+ PERFORM public.po_test_assert(NOT EXISTS(SELECT 1 FROM public.purchase_bill_lines WHERE bill_id IN(SELECT id FROM public.purchase_bills WHERE purchase_order_id=(o->>'id')::uuid) AND purchase_order_line_id IS NULL),'converted bills retain stable source line IDs');
+ PERFORM public.po_test_error(format('UPDATE public.purchase_bill_lines SET quantity=2 WHERE bill_id=%L',first_bill),'%fixed%','source bill line edits denied');
+ PERFORM public.po_test_error(format('DELETE FROM public.purchase_bill_lines WHERE bill_id=%L',first_bill),'%fixed%','individual source bill line deletion denied');
+ PERFORM public.po_test_error(format('UPDATE public.purchase_bills SET currency_code=%L WHERE id=%L','USD',first_bill),'%fixed%','source bill currency cannot change');
+ PERFORM public.po_test_error(format('UPDATE public.purchase_bills SET purchase_order_id=NULL WHERE id=%L',first_bill),'%fixed%','source bill cannot be detached');
+ PERFORM public.po_test_error(format('SELECT public.reverse_purchase_receipt(%L,%L,%L,%L,%L)',c,o->>'id',receipt->>'receiptId',gen_random_uuid(),'Return billed goods'),'%linked bills%','billed receipt cannot reverse until bills are reconciled');
+ SELECT updated_at INTO stamp FROM public.purchase_bills WHERE id=first_bill;
+ PERFORM public.update_po_bill_details(c,first_bill,jsonb_build_object('expectedUpdatedAt',stamp,'billDate','2026-11-18','dueDate','2026-12-18','supplierInvoiceNumber','INV-PO-SPLIT','memo','Supplier invoice received'));
+ PERFORM public.po_test_assert(EXISTS(SELECT 1 FROM public.purchase_bills WHERE id=first_bill AND supplier_invoice_number='INV-PO-SPLIT' AND due_date='2026-12-18'),'PO bill commercial snapshot supports invoice detail updates');
+ PERFORM public.po_test_error(format('SELECT public.update_po_bill_details(%L,%L,%L)',c,first_bill,jsonb_build_object('expectedUpdatedAt',stamp,'billDate','2026-11-18','dueDate','2026-12-18')::text),'%reload%','PO bill stale detail update rejected');
+ PERFORM public.delete_purchase_order_bill_atomic(c,second_bill);
+ PERFORM public.po_test_assert((SELECT quantity_billed FROM public.purchase_order_lines WHERE id=line_id)=2 AND (SELECT status FROM public.purchase_orders WHERE id=(o->>'id')::uuid)='partially_received','deleting converted draft restores billable quantity/status');
+ bill:=public.convert_purchase_order_atomic(c,(o->>'id')::uuid);
+ PERFORM public.po_test_assert((SELECT sum(net_minor) FROM public.purchase_bill_lines WHERE purchase_order_line_id=line_id)=299 AND (SELECT sum(tax_minor) FROM public.purchase_bill_lines WHERE purchase_order_line_id=line_id)=60,'replacement bill reconciles rounding after draft deletion');
+ PERFORM public.po_test_assert((SELECT count(*) FROM public.journals)=0,'partial conversions do not post ledger journals');
+ PERFORM set_config('test.fail_audit','on',true);
+ PERFORM public.po_test_error(format('SELECT public.authorise_purchase_order_bill_atomic(%L,%L)',c,first_bill),'%Injected audit failure%','atomic PO posting audit error surfaced');
+ PERFORM set_config('test.fail_audit','off',true);
+ PERFORM public.po_test_assert((SELECT count(*) FROM public.journals)=0 AND (SELECT posted_journal_id IS NULL AND status='draft' FROM public.purchase_bills WHERE id=first_bill),'failed posting rolls back journal and bill link');
+ posted:=public.authorise_purchase_order_bill_atomic(c,first_bill);
+ posted_journal:=(posted->>'journalId')::uuid;
+ replay:=public.authorise_purchase_order_bill_atomic(c,first_bill);
+ PERFORM public.po_test_assert(posted=replay AND (SELECT count(*) FROM public.journals)=1 AND EXISTS(SELECT 1 FROM public.purchase_bills WHERE id=first_bill AND status='authorised' AND posted_journal_id=posted_journal),'atomic PO authorisation links once and retries safely');
+ PERFORM public.po_test_assert((SELECT sum(debit_minor)=sum(credit_minor) FROM public.journal_lines WHERE journal_lines.journal_id=posted_journal),'authorised PO journal balances');
+ PERFORM public.po_test_assert(EXISTS(SELECT 1 FROM public.journal_lines WHERE journal_lines.journal_id=posted_journal AND account_id='20000000-0000-4000-8000-000000000002' AND credit_minor=(SELECT total_minor FROM public.purchase_bills WHERE id=first_bill)),'PO journal credits the AP control at bill total');
+ PERFORM public.po_test_error(format('SELECT public.delete_purchase_order_bill_atomic(%L,%L)',c,first_bill),'%unposted%','posted PO bill cannot be deleted');
+ PERFORM set_config('test.fail_audit','on',true);
+ PERFORM public.po_test_error(format('SELECT public.void_purchase_order_bill_atomic(%L,%L,%L,%L)',c,first_bill,'Supplier cancellation','2026-11-18'),'%Injected audit failure%','atomic void audit error surfaced');
+ PERFORM set_config('test.fail_audit','off',true);
+ PERFORM public.po_test_assert((SELECT count(*) FROM public.journals)=1 AND (SELECT status='authorised' FROM public.purchase_bills WHERE id=first_bill),'failed void rolls back reversal and bill status');
+ posted:=public.void_purchase_order_bill_atomic(c,first_bill,'Supplier cancellation','2026-11-18');
+ reversal_id:=(posted->>'journalId')::uuid;
+ PERFORM public.po_test_assert(EXISTS(SELECT 1 FROM public.journals WHERE id=reversal_id AND reverses_journal_id=posted_journal) AND (SELECT sum(debit_minor)=sum(credit_minor) FROM public.journal_lines WHERE journal_lines.journal_id=reversal_id),'atomic void posts a balanced linked reversal');
+ PERFORM public.po_test_assert((SELECT quantity_billed FROM public.purchase_order_lines WHERE id=line_id)=2,'void restores operational billed quantity');
+ PERFORM public.po_test_error(format('UPDATE public.purchase_bills SET status=%L WHERE id=%L','draft',first_bill),'%immutable%','void source bill cannot reactivate');
+ bill:=public.convert_purchase_order_atomic(c,(o->>'id')::uuid);
+ PERFORM public.po_test_assert((SELECT sum(bl.net_minor) FROM public.purchase_bill_lines bl JOIN public.purchase_bills b ON b.id=bl.bill_id WHERE bl.purchase_order_line_id=line_id AND b.status<>'void')=299 AND public.validate_purchase_order_bill(c,(bill->>'billId')::uuid)->>'status'='pass','replacement after void preserves active cumulative allocation');
+ PERFORM public.po_test_assert((SELECT count(*) FROM public.journals)=2,'PO conversions after void add no extra ledger journals');
+ -- Save a separate fully received order for genuine competing transactions.
+ o:=public.po_test_open_order(gen_random_uuid(),3,'Concurrent goods');
+ INSERT INTO public.po_test_context VALUES('race_order',(o->>'id')::uuid),('race_line',(o->>'lineId')::uuid),('race_receipt_request',gen_random_uuid());
+END $$;
+RESET ROLE;
+SELECT public.po_test_assert(NOT has_function_privilege('anon','public.convert_purchase_order_atomic(uuid,uuid)','EXECUTE'),'anonymous PO conversion denied');

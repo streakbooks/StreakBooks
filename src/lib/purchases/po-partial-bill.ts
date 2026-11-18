@@ -4,8 +4,7 @@
  * Non-posting until the resulting draft bill is authorised through the existing engine.
  */
 
-import { computeLineAmounts, sumLines } from "@/lib/purchases/line-math";
-import { impliedDiscountMinor } from "@/lib/purchases/po-convert";
+import { sumLines } from "@/lib/purchases/line-math";
 
 export type PartialBillOrderLine = {
   lineId: string;
@@ -18,6 +17,10 @@ export type PartialBillOrderLine = {
   unitPriceMinor: number;
   netMinor: number;
   taxRateBps: number;
+  /** Actual non-void allocated amounts; needed after deletions or voids. */
+  billedNetMinor?: number;
+  billedTaxMinor?: number;
+  taxMinor?: number;
 };
 
 export type PartialBillDraftLine = {
@@ -28,6 +31,8 @@ export type PartialBillDraftLine = {
   quantity: number;
   unitPriceMinor: number;
   discountMinor: number;
+  roundingMinor: number;
+  taxRoundingMinor: number;
   taxRateBps: number;
   netMinor: number;
   taxMinor: number;
@@ -39,6 +44,67 @@ function qty(value: number, label: string): number {
     throw new Error(`${label}: quantities must be finite with up to six decimal places`);
   }
   return n;
+}
+
+function safeMinor(value: number, label: string): bigint {
+  if (!Number.isSafeInteger(value) || value < 0)
+    throw new Error(`${label}: amount is out of range`);
+  return BigInt(value);
+}
+
+function micros(value: number, label: string): bigint {
+  const n = qty(value, label);
+  // Parse fixed decimal text rather than multiplying a binary float into an integer.
+  return BigInt(n.toFixed(6).replace(".", ""));
+}
+
+/** Cumulative allocations preserve the exact order net and tax on final conversion. */
+export function allocateReceivedLine(input: {
+  orderedQuantity: number;
+  billedQuantity: number;
+  billQuantity: number;
+  netMinor: number;
+  taxMinor: number;
+  billedNetMinor?: number;
+  billedTaxMinor?: number;
+  unitPriceMinor: number;
+  taxRateBps: number;
+}): Pick<
+  PartialBillDraftLine,
+  "discountMinor" | "roundingMinor" | "taxRoundingMinor" | "netMinor" | "taxMinor"
+> {
+  const ordered = micros(input.orderedQuantity, "Ordered quantity");
+  const billed = micros(input.billedQuantity, "Billed quantity");
+  const next = billed + micros(input.billQuantity, "Bill quantity");
+  if (ordered <= 0n || next > ordered || next <= billed)
+    throw new Error("Invalid cumulative bill quantity");
+  if (!Number.isInteger(input.taxRateBps) || input.taxRateBps < 0 || input.taxRateBps > 10000)
+    throw new Error("Invalid tax rate");
+  const fullNet = safeMinor(input.netMinor, "Order net");
+  const fullTax = safeMinor(input.taxMinor, "Order tax");
+  const priorNet =
+    input.billedNetMinor == null
+      ? (fullNet * billed) / ordered
+      : safeMinor(input.billedNetMinor, "Billed net");
+  const priorTax =
+    input.billedTaxMinor == null
+      ? (fullTax * billed * 2n + ordered) / (ordered * 2n)
+      : safeMinor(input.billedTaxMinor, "Billed tax");
+  const net = (fullNet * next) / ordered - priorNet;
+  const tax = (fullTax * next * 2n + ordered) / (ordered * 2n) - priorTax;
+  if (net < 0n || tax < 0n)
+    throw new Error("Prior bills exceed the cumulative order allocation; reconcile source bills");
+  const extended =
+    (micros(input.billQuantity, "Bill quantity") * safeMinor(input.unitPriceMinor, "Unit price")) /
+    1000000n;
+  const discount = extended > net ? extended - net : 0n;
+  return {
+    discountMinor: Number(discount),
+    roundingMinor: Number(net - (extended - discount)),
+    taxRoundingMinor: Number(tax - (net * BigInt(input.taxRateBps) * 2n + 10000n) / 20000n),
+    netMinor: Number(net),
+    taxMinor: Number(tax),
+  };
 }
 
 /** Outstanding quantity that may be billed: min(received, ordered) − already billed. */
@@ -86,17 +152,16 @@ export function buildReceivedBillLines(lines: PartialBillOrderLine[]): {
     const billQty = billableQuantity(line);
     if (billQty <= 0) continue;
     const ordered = qty(line.orderedQuantity, "Ordered quantity");
-    const fullDiscount = impliedDiscountMinor({
-      quantity: ordered,
-      unit_price_minor: line.unitPriceMinor,
-      net_minor: line.netMinor,
-    });
-    const discountMinor = Math.floor((fullDiscount * billQty) / ordered);
-    const computed = computeLineAmounts({
-      quantity: billQty,
-      unit_price_minor: line.unitPriceMinor,
-      discount_minor: discountMinor,
-      tax_rate_bps: line.taxRateBps,
+    const allocation = allocateReceivedLine({
+      orderedQuantity: ordered,
+      billedQuantity: line.quantityBilled,
+      billQuantity: billQty,
+      netMinor: line.netMinor,
+      taxMinor: line.taxMinor ?? Math.round((line.netMinor * line.taxRateBps) / 10000),
+      ...(line.billedNetMinor === undefined ? {} : { billedNetMinor: line.billedNetMinor }),
+      ...(line.billedTaxMinor === undefined ? {} : { billedTaxMinor: line.billedTaxMinor }),
+      unitPriceMinor: line.unitPriceMinor,
+      taxRateBps: line.taxRateBps,
     });
     draft.push({
       lineId: line.lineId,
@@ -105,10 +170,8 @@ export function buildReceivedBillLines(lines: PartialBillOrderLine[]): {
       accountId: line.accountId,
       quantity: billQty,
       unitPriceMinor: line.unitPriceMinor,
-      discountMinor,
+      ...allocation,
       taxRateBps: line.taxRateBps,
-      netMinor: Number(computed.net_minor),
-      taxMinor: Number(computed.tax_minor),
     });
   }
   if (draft.length < 1) {

@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
+import { getOrgExtendedSettings } from "@/lib/settings/org-settings.functions";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { listSuppliers, savePurchaseOrder } from "@/lib/purchases/purchases.functions";
 import {
@@ -27,7 +28,7 @@ import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
-import { AccountLookup, ContactLookup } from "@/components/lookup";
+import { AccountLookup, ContactLookup, LookupSelect } from "@/components/lookup";
 import { AccountCreateForm, ContactCreateForm } from "@/components/lookup/create-forms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,11 +75,16 @@ function OrderLoader({
         description={friendlyAuthError(q.error)}
       />
     );
-  if (q.data && (q.data.status !== "draft" || q.data.billed_bill_id))
+  if (
+    q.data &&
+    (q.data.status !== "draft" ||
+      q.data.billed_bill_id ||
+      !["draft", "rejected"].includes(q.data.approval_state ?? ""))
+  )
     return (
       <EmptyState
         title="Order cannot be edited"
-        description="Only unbilled draft orders can be edited."
+        description="Return this order to draft before changing its items. Submitted or approved orders cannot be edited."
       />
     );
   return <OrderForm companyId={companyId} baseCurrency={baseCurrency} initial={q.data} />;
@@ -97,11 +103,13 @@ function OrderForm({
   const fetchSuppliers = useServerFn(listSuppliers);
   const fetchAccounts = useServerFn(listAccounts);
   const save = useServerFn(savePurchaseOrder);
+  const fetchOrg = useServerFn(getOrgExtendedSettings);
   const { can } = useCan();
   const [contactId, setContactId] = useState(initial?.contact_id ?? "");
   const [orderDate, setOrderDate] = useState(
     initial?.order_date ?? new Date().toISOString().slice(0, 10),
   );
+  const [currencyOverride, setCurrencyOverride] = useState(initial?.currency_code.trim() ?? "");
   const [memo, setMemo] = useState(initial?.memo ?? "");
   const nextKey = useRef(initial?.purchase_order_lines.length ?? 1);
   const [lines, setLines] = useState(() =>
@@ -124,6 +132,10 @@ function OrderForm({
   const recordRef = useRef<DocumentRecordHandle>(null);
   const createdRef = useRef<string | null>(null);
   const requestId = useRef(crypto.randomUUID());
+  const orgQ = useQuery({
+    queryKey: ["org-extended-settings", companyId],
+    queryFn: () => fetchOrg({ data: { companyId } }),
+  });
   const suppliersQ = useQuery({
     queryKey: ["suppliers", companyId],
     queryFn: () => fetchSuppliers({ data: { companyId } }),
@@ -138,6 +150,7 @@ function OrderForm({
     default_currency: string | null;
   }>;
   const currency = (
+    currencyOverride ||
     (initial && contactId === initial.contact_id ? initial.currency_code : null) ||
     suppliers.find((s) => s.id === contactId)?.default_currency ||
     baseCurrency
@@ -203,15 +216,16 @@ function OrderForm({
       next.splice(index + direction, 0, moved);
       return next;
     });
-  if (suppliersQ.isPending || accountsQ.isPending) return <LoadingState />;
-  if (suppliersQ.isError || accountsQ.isError)
+  if (suppliersQ.isPending || accountsQ.isPending || orgQ.isPending) return <LoadingState />;
+  if (suppliersQ.isError || accountsQ.isError || orgQ.isError)
     return (
       <ErrorState
         title="Could not load order options"
-        description={friendlyAuthError(suppliersQ.error ?? accountsQ.error)}
+        description={friendlyAuthError(suppliersQ.error ?? accountsQ.error ?? orgQ.error)}
         onRetry={() => {
           void suppliersQ.refetch();
           void accountsQ.refetch();
+          void orgQ.refetch();
         }}
       />
     );
@@ -263,6 +277,21 @@ function OrderForm({
               onChange={(e) => setOrderDate(e.target.value)}
             />
           </div>
+        </div>
+        <div className="max-w-sm space-y-2">
+          <Label>Order currency</Label>
+          <LookupSelect
+            ariaLabel="Order currency"
+            value={currency}
+            onChange={setCurrencyOverride}
+            allowClear={false}
+            options={[
+              ...new Set([baseCurrency, currency, ...(orgQ.data?.enabledCurrencies ?? [])]),
+            ].map((code) => ({ id: code, label: code }))}
+          />
+          <p className="text-xs text-muted-foreground">
+            Changing currency keeps the numeric prices. Review each line before saving.
+          </p>
         </div>
         <p className="text-sm text-muted-foreground">
           Currency: <strong>{currency}</strong>. Prices exclude tax. Discounts are amounts in{" "}

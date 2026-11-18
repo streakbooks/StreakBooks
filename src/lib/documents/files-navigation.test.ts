@@ -5,6 +5,12 @@ describe("Files workspace native browsing state", () => {
   const folder = "a5f54317-b430-4cd5-a59e-5b15c3ff7ec0";
   const file = "11cd7a39-7692-44ac-8c16-27ee1bd6fcef";
 
+  it("fails closed for malformed runtime search containers", () => {
+    for (const raw of [null, undefined, "q=spoofed", 7, true, ["q"]]) {
+      expect(parseFilesListSearch(raw as unknown as Record<string, unknown>)).toEqual({});
+    }
+  });
+
   it("restores a complete bookmarked file view", () => {
     expect(parseFilesListSearch({
       folder, file, q: "receipts & invoices", type: "purchase_bill",

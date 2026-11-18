@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Settings validated panel persistence (2026-11-18)
+
+- `src/lib/settings/panels.ts`: `openSettingsPanel` now writes the allowlist-validated `safePanel` to URL state rather than the untrusted caller argument; commit `7b1cb44dd65bccc05a4b08a3d31b1b91ff33e589`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/settings/panels.test.ts`: new regression covers validated panel persistence, unrelated query retention, refresh validation and contextual Close; commit `f3a4e87d972a2a51dd2d9037ceb1a8732ae3b761`. **WRITTEN, NOT RUN.**
+- Manifest updated in `cc11037b92fd4ec343b93013011793d00486b554`. **NOT RUN:** inventory guard, TypeScript, lint, Vitest, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. **0/21 modules, 0/15 supporting routes, 0/12 batches verified.** No main, manual CI, production database or deployment changes.
+
+
 ### Settings runtime open-panel allowlist (2026-11-18)
 
 - `src/lib/settings/panels.ts`: `openSettingsPanel` now rejects invalid runtime panel targets without modifying existing URL state; commit `89d051fc2fb770acd30c8e25785c529306b6010f`. **SOURCE ONLY; NOT RUN.**

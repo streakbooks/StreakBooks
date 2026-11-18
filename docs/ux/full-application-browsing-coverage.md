@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Settings runtime open-panel allowlist (2026-11-18)
+
+- `src/lib/settings/panels.ts`: `openSettingsPanel` now rejects invalid runtime panel targets without modifying existing URL state; commit `89d051fc2fb770acd30c8e25785c529306b6010f`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/settings/panels.test.ts`: invalid runtime panel target and valid nested return regression added; commit `df65d56ad367e77188b439135a80ae8866631208`. **WRITTEN, NOT RUN.**
+- Manifest evidence updated in commit `6b6a1444e1208b87bf857b849eb01a854a3458e6`. No criteria or module fully verified. **NOT RUN:** local inventory guard, TypeScript, lint, unit/integration, build, authenticated browser, accessibility, RLS/accounting regression. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. **0/21 modules, 0/15 supporting routes, 0/12 batches verified.** No changes to main, manual CI, production database or deployment.
+
+
 ### Settings section-derived destination allowlist (2026-11-18)
 
 - `src/lib/settings/panels.ts`: section-derived `/settings` destinations now pass through `parseSettingsPanel`, rejecting invalid runtime sections rather than generating unrecognized `category:*` panels. Code commit `d396baf3c72ac163da84a50536cc17cc4fc8eb1c`. **SOURCE ONLY; NOT RUN.**

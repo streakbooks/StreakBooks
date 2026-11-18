@@ -1,0 +1,892 @@
+{
+  "schemaVersion": 1,
+  "title": "LinkBooks premium visual redesign — route-level acceptance inventory",
+  "repository": "linkbusinessadvisory/LinkBooks",
+  "branch": "feature/linkbooks-premium-visual-redesign",
+  "baseRevision": "48421b1c710f7e4f3dd50e4a496e4fe4c3723ed9",
+  "scopeStatement": "No authenticated, support, public, forms, overlays, workflow screens or future module is excluded. An inventory entry is not a test result.",
+  "counts": {
+    "topLevelModules": 22,
+    "allRouteFiles": 174,
+    "authenticatedRouteFiles": 138,
+    "supportingRouteFiles": 51
+  },
+  "moduleAcceptance": [
+    "layout_hierarchy",
+    "typography_spacing",
+    "sidebar_and_context_navigation",
+    "buttons_forms_feedback",
+    "tables_cards_dashboards",
+    "status_labels_colours",
+    "seven_palettes_and_custom",
+    "light_dark_system",
+    "mobile_tablet_desktop",
+    "keyboard_a11y",
+    "real_data_and_authorisation",
+    "unit_build_browser_regression"
+  ],
+  "modules": [
+    {
+      "label": "Dashboard",
+      "href": "/",
+      "routeFiles": [
+        "_authenticated/index.tsx"
+      ],
+      "visualReview": "partial_direct_visual_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/components/dashboard/DashboardWidgets.tsx — refined KPI cards and financial widget hierarchy",
+        "src/components/dashboard/PersonalizedDashboardWidgets.tsx — responsive dashboard customization surfaces"
+      ]
+    },
+    {
+      "label": "Banking",
+      "href": "/banking",
+      "routeFiles": [
+        "_authenticated/banking/cash-coding.tsx",
+        "_authenticated/banking/feeds.tsx",
+        "_authenticated/banking/import.tsx",
+        "_authenticated/banking/index.tsx",
+        "_authenticated/banking/journal.$journalId.tsx",
+        "_authenticated/banking/money-documents.tsx",
+        "_authenticated/banking/reconcile.tsx",
+        "_authenticated/banking/reconciliation-report.$sessionId.tsx",
+        "_authenticated/banking/route.tsx",
+        "_authenticated/banking/rules.tsx",
+        "_authenticated/banking/transactions.tsx",
+        "_authenticated/banking/transfers.tsx"
+      ],
+      "visualReview": "partial_shared_and_record_status_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/components/common/stat-card.tsx — existing bank transaction status chips now render semantic StatusBadge",
+        "src/components/banking/BankTransactionMobileCards.tsx — responsive premium transaction cards",
+        "src/components/banking/BankTransactionQuickPreview.tsx — improved authorised preview panel",
+        "src/components/common/SelectionActionBar.tsx — consistent bank list contextual actions"
+      ]
+    },
+    {
+      "label": "Sales",
+      "href": "/sales",
+      "routeFiles": [
+        "_authenticated/sales/credit-notes.$creditNoteId.edit.tsx",
+        "_authenticated/sales/credit-notes.$creditNoteId.index.tsx",
+        "_authenticated/sales/credit-notes.$creditNoteId.tsx",
+        "_authenticated/sales/credit-notes.index.tsx",
+        "_authenticated/sales/credit-notes.new.tsx",
+        "_authenticated/sales/customers.tsx",
+        "_authenticated/sales/index.tsx",
+        "_authenticated/sales/invoices.$invoiceId.edit.tsx",
+        "_authenticated/sales/invoices.$invoiceId.index.tsx",
+        "_authenticated/sales/invoices.$invoiceId.tsx",
+        "_authenticated/sales/invoices.index.tsx",
+        "_authenticated/sales/invoices.new.tsx",
+        "_authenticated/sales/orders.tsx",
+        "_authenticated/sales/quotes.$quoteId.edit.tsx",
+        "_authenticated/sales/quotes.$quoteId.index.tsx",
+        "_authenticated/sales/quotes.$quoteId.tsx",
+        "_authenticated/sales/quotes.index.tsx",
+        "_authenticated/sales/quotes.new.tsx",
+        "_authenticated/sales/receipts.$receiptId.tsx",
+        "_authenticated/sales/receipts.index.tsx",
+        "_authenticated/sales/receipts.new.tsx",
+        "_authenticated/sales/recurring.tsx",
+        "_authenticated/sales/reminders.tsx",
+        "_authenticated/sales/route.tsx",
+        "_authenticated/sales/settings.tsx",
+        "_authenticated/sales/statements.tsx"
+      ],
+      "visualReview": "partial_shared_and_record_status_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/components/common/stat-card.tsx — existing invoice status chips now render semantic StatusBadge",
+        "src/components/sales/InvoiceMobileCards.tsx — premium mobile invoice presentation with unchanged authorised invoice route and due-date status",
+        "src/components/common/data-table-toolbar.tsx — premium shared record search and bulk actions",
+        "src/components/documents/DocumentPostingJournals.tsx — real posted/reversed journal states on documents",
+        "src/components/documents/DocumentRecordPanel.tsx — notes, real activity history and journal tabs"
+      ]
+    },
+    {
+      "label": "Purchases",
+      "href": "/purchases",
+      "routeFiles": [
+        "_authenticated/purchases/bills.$billId.edit.tsx",
+        "_authenticated/purchases/bills.$billId.tsx",
+        "_authenticated/purchases/bills.index.tsx",
+        "_authenticated/purchases/bills.new.tsx",
+        "_authenticated/purchases/credit-notes.$creditNoteId.tsx",
+        "_authenticated/purchases/credit-notes.index.tsx",
+        "_authenticated/purchases/credit-notes.new.tsx",
+        "_authenticated/purchases/employee-expenses.tsx",
+        "_authenticated/purchases/expense-management/$section.tsx",
+        "_authenticated/purchases/expense-management/claims.$claimId.tsx",
+        "_authenticated/purchases/expense-management/index.tsx",
+        "_authenticated/purchases/expenses.$expenseId.tsx",
+        "_authenticated/purchases/expenses.index.tsx",
+        "_authenticated/purchases/expenses.new.tsx",
+        "_authenticated/purchases/index.tsx",
+        "_authenticated/purchases/orders.$orderId.tsx",
+        "_authenticated/purchases/orders.index.tsx",
+        "_authenticated/purchases/orders.new.tsx",
+        "_authenticated/purchases/payments.$paymentId.tsx",
+        "_authenticated/purchases/payments.batch.tsx",
+        "_authenticated/purchases/payments.index.tsx",
+        "_authenticated/purchases/payments.new.tsx",
+        "_authenticated/purchases/portal-inbox.tsx",
+        "_authenticated/purchases/recurring.tsx",
+        "_authenticated/purchases/route.tsx",
+        "_authenticated/purchases/settings.tsx",
+        "_authenticated/purchases/statements.tsx",
+        "_authenticated/purchases/suppliers.tsx"
+      ],
+      "visualReview": "partial_shared_and_record_status_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/components/common/stat-card.tsx — existing bills status chips now render semantic StatusBadge",
+        "src/components/purchases/BillMobileCards.tsx — premium mobile bill layout and verified overdue display",
+        "src/components/purchases/BillWorkspaceLayout.tsx — palette-aware three-pane bill entry",
+        "src/lib/visual/transaction-card-status.ts — safe read-only overdue presentation",
+        "src/components/purchases/BillMobileCards.test.tsx — SSR regression tests WRITTEN, NOT RUN",
+        "src/components/documents/DocumentPostingJournals.tsx — authentic ledger status and reversal indicator",
+        "src/components/documents/DocumentRecordPanel.tsx — accessible actual activity table"
+      ]
+    },
+    {
+      "label": "Expense Management",
+      "href": "/expense-management",
+      "routeFiles": [
+        "_authenticated/expense-management/$section.tsx",
+        "_authenticated/expense-management/claims.$claimId.tsx",
+        "_authenticated/expense-management/index.tsx"
+      ],
+      "visualReview": "partial_shared_and_record_status_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/screens/expense-management/claims.tsx — approval status pills",
+        "src/screens/expense-management/claim-detail.tsx — approval/posting/reimbursement/rebilling statuses",
+        "src/screens/expense-management/reimbursements.tsx — reimbursement lifecycle badges"
+      ]
+    },
+    {
+      "label": "Contacts",
+      "href": "/contacts",
+      "routeFiles": [
+        "_authenticated/contacts/$contactId.tsx",
+        "_authenticated/contacts/duplicates.tsx",
+        "_authenticated/contacts/import.tsx",
+        "_authenticated/contacts/index.tsx",
+        "_authenticated/contacts/new.tsx",
+        "_authenticated/contacts/settings.tsx"
+      ],
+      "visualReview": "partial_direct_visual_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/components/contacts/ContactTimeline.tsx — task-completion status badges and premium activity cards"
+      ]
+    },
+    {
+      "label": "Products & Services",
+      "href": "/products-services",
+      "routeFiles": [
+        "_authenticated/products-services.tsx"
+      ],
+      "visualReview": "partial_direct_visual_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/components/products/ProductsMasterData.tsx — persisted category and price-list statuses, richer catalogue master data surfaces"
+      ]
+    },
+    {
+      "label": "Accounting",
+      "href": "/accounting",
+      "routeFiles": [
+        "_authenticated/accounting.tsx"
+      ],
+      "visualReview": "partial_shared_and_record_status_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/components/accounting/JournalsPanel.tsx — posted and reversed status badges",
+        "src/components/documents/DocumentPostingJournals.tsx — source-authorised posted and reversed status badges"
+      ]
+    },
+    {
+      "label": "Action Center",
+      "href": "/notifications",
+      "routeFiles": [
+        "_authenticated/notifications.tsx"
+      ],
+      "visualReview": "partial_direct_visual_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/notifications.tsx — notification workload cards, high/critical priority and archived/completed states",
+        "src/components/notifications/NotificationPriorityBadge.tsx — accessible priority indicator and label",
+        "src/lib/notifications/priority-visual.ts — source-based priority mapping"
+      ]
+    },
+    {
+      "label": "Files",
+      "href": "/files",
+      "routeFiles": [
+        "_authenticated/files.tsx"
+      ],
+      "visualReview": "partial_direct_visual_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/files.tsx — upload dropzone, folder explorer, file selection and filtering surfaces"
+      ]
+    },
+    {
+      "label": "Budgets",
+      "href": "/budgets",
+      "routeFiles": [
+        "_authenticated/budgets/$budgetId.tsx",
+        "_authenticated/budgets/index.tsx"
+      ],
+      "visualReview": "partial_direct_visual_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/budgets/index.tsx — financial-year creation and budget directory surfaces"
+      ]
+    },
+    {
+      "label": "Fixed assets",
+      "href": "/fixed-assets",
+      "routeFiles": [
+        "_authenticated/fixed-assets.tsx"
+      ],
+      "visualReview": "partial_shared_and_record_status_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/fixed-assets.tsx — persisted/derived asset register lifecycle badges",
+        "src/components/fixed-assets/AssetDetailsDialog.tsx — status in the actual asset detail dialog"
+      ]
+    },
+    {
+      "label": "Payroll",
+      "href": "/payroll",
+      "routeFiles": [
+        "_authenticated/payroll/employees.$employeeId.tsx",
+        "_authenticated/payroll/employees.index.tsx",
+        "_authenticated/payroll/index.tsx",
+        "_authenticated/payroll/payments.index.tsx",
+        "_authenticated/payroll/payslips.$payslipId.tsx",
+        "_authenticated/payroll/payslips.index.tsx",
+        "_authenticated/payroll/reports.tsx",
+        "_authenticated/payroll/route.tsx",
+        "_authenticated/payroll/runs.$runId.tsx",
+        "_authenticated/payroll/runs.index.tsx",
+        "_authenticated/payroll/salary-structures.tsx",
+        "_authenticated/payroll/settings.tsx"
+      ],
+      "visualReview": "partial_shared_and_record_status_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/screens/payroll/overview.tsx — active/inactive readiness and semantic setup colours",
+        "src/screens/payroll/runs.tsx — persisted pay-run lifecycle badges",
+        "src/screens/payroll/overview.tsx — organisation readiness status",
+        "src/screens/payroll/runs.tsx — pay run lifecycle",
+        "src/screens/payroll/employees.tsx — active/archived/terminated employee states"
+      ]
+    },
+    {
+      "label": "Reports",
+      "href": "/reports",
+      "routeFiles": [
+        "_authenticated/reports/$reportId.tsx",
+        "_authenticated/reports/builder/$viewId.tsx",
+        "_authenticated/reports/index.tsx"
+      ],
+      "visualReview": "partial_direct_visual_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/components/reports/ReportCatalogue.tsx — search/category/popular report filters",
+        "src/components/reports/ReportDirectory.tsx — grouped linked report workspaces"
+      ]
+    },
+    {
+      "label": "Accountant",
+      "href": "/accountant",
+      "routeFiles": [
+        "_authenticated/accountant.tsx"
+      ],
+      "visualReview": "partial_direct_visual_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/accountant.tsx — financial review queue, journals and adjustment form, posted status badges"
+      ]
+    },
+    {
+      "label": "Firm",
+      "href": "/firm",
+      "routeFiles": [
+        "_authenticated/firm.tsx"
+      ],
+      "visualReview": "partial_shared_and_record_status_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/components/firm/FirmEngagementPanel.tsx — engagement status",
+        "src/components/firm/FirmRequestsPanel.tsx — request completion/cancellation/overdue",
+        "src/lib/firm/request-visual-status.ts — strictly timestamp-derived presentation",
+        "src/lib/firm/request-visual-status.test.ts — unit scenarios written, NOT EXECUTED"
+      ]
+    },
+    {
+      "label": "Advisors",
+      "href": "/advisors-admin",
+      "routeFiles": [
+        "_authenticated/advisors-admin.appointments.tsx",
+        "_authenticated/advisors-admin.billing.tsx",
+        "_authenticated/advisors-admin.clients.tsx",
+        "_authenticated/advisors-admin.conversations.tsx",
+        "_authenticated/advisors-admin.documents.tsx",
+        "_authenticated/advisors-admin.engagements.tsx",
+        "_authenticated/advisors-admin.index.tsx",
+        "_authenticated/advisors-admin.inquiries.tsx",
+        "_authenticated/advisors-admin.onboarding.tsx",
+        "_authenticated/advisors-admin.settings.services-pricing.tsx",
+        "_authenticated/advisors-admin.staff.tsx",
+        "_authenticated/advisors-admin.tsx",
+        "_authenticated/advisors-admin.workspaces.tsx"
+      ],
+      "visualReview": "partial_shared_and_record_status_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/screens/advisors/admin-engagements.tsx — engagement and proposal status",
+        "src/components/common/StatusBadge.tsx — shared semantic controls"
+      ]
+    },
+    {
+      "label": "Advisors portal",
+      "href": "/advisors-portal",
+      "routeFiles": [
+        "_authenticated/advisors-portal.account.tsx",
+        "_authenticated/advisors-portal.appointments.tsx",
+        "_authenticated/advisors-portal.documents.tsx",
+        "_authenticated/advisors-portal.index.tsx",
+        "_authenticated/advisors-portal.messages.tsx",
+        "_authenticated/advisors-portal.tasks.tsx"
+      ],
+      "visualReview": "partial_shared_and_record_status_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/screens/advisors/portal-tasks.tsx — live delivery task status"
+      ]
+    },
+    {
+      "label": "AI Assistant",
+      "href": "/ai-assistant",
+      "routeFiles": [
+        "_authenticated/ai-assistant.tsx"
+      ],
+      "visualReview": "partial_direct_visual_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/screens/ai-assistant.tsx — transcript, conversation empty state and persisted suggestion lifecycle badges"
+      ]
+    },
+    {
+      "label": "Tax",
+      "href": "/tax",
+      "routeFiles": [
+        "_authenticated/tax.tsx"
+      ],
+      "visualReview": "partial_shared_and_record_status_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/tax.tsx — verification and filing status badges"
+      ]
+    },
+    {
+      "label": "Settings",
+      "href": "/settings",
+      "routeFiles": [
+        "_authenticated/settings.tsx"
+      ],
+      "visualReview": "partial_direct_visual_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/components/settings/SettingsOverviewPanel.tsx — organisation setup cards, shortcuts and integration health",
+        "src/components/settings/IntegrationHealthBadge.tsx — configuration-evidence badges distinct from delivery verification",
+        "src/components/settings/SettingsOverviewPanel.tsx — integration health visually backed by actual configuration status",
+        "src/lib/settings/integration-health.test.ts — severity and truthful label checks WRITTEN, NOT RUN",
+        "src/components/settings/IntegrationHealthBadge.test.tsx — accessible badge render checks WRITTEN, NOT RUN"
+      ]
+    },
+    {
+      "label": "Help",
+      "href": "/help",
+      "routeFiles": [
+        "_authenticated/help.tsx"
+      ],
+      "visualReview": "partial_direct_visual_code_unverified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/help.tsx — help search, article cards and glossary layouts"
+      ]
+    }
+  ],
+  "supportingRoutes": [
+    "__root.tsx",
+    "_authenticated/documents.branding.tsx",
+    "_authenticated/documents.print.$kind.$id.tsx",
+    "_authenticated/firm-invite.$token.tsx",
+    "_authenticated/imports.tsx",
+    "_authenticated/invite.$token.tsx",
+    "_authenticated/onboarding.tsx",
+    "_authenticated/platform.automation.tsx",
+    "_authenticated/platform.billing.tsx",
+    "_authenticated/platform.index.tsx",
+    "_authenticated/platform.operations.tsx",
+    "_authenticated/platform.tsx",
+    "_authenticated/profile.tsx",
+    "_authenticated/projects.tsx",
+    "_authenticated/recurring-journals.tsx",
+    "_authenticated/route.tsx",
+    "advisors.tsx",
+    "advisors_.$serviceCode.tsx",
+    "advisors_.agreement.$token.tsx",
+    "advisors_.book.tsx",
+    "advisors_.manage.$manageToken.tsx",
+    "advisors_.portal.invite.$token.tsx",
+    "advisors_.proposal.$token.tsx",
+    "auth.tsx",
+    "auth_.callback.tsx",
+    "auth_.mfa.tsx",
+    "auth_.sso.tsx",
+    "forgot-password.tsx",
+    "portal/app/bank.tsx",
+    "portal/app/bills.tsx",
+    "portal/app/credits.tsx",
+    "portal/app/documents.tsx",
+    "portal/app/index.tsx",
+    "portal/app/invoices.$invoiceId.tsx",
+    "portal/app/invoices.tsx",
+    "portal/app/messages.tsx",
+    "portal/app/orders.tsx",
+    "portal/app/payments.tsx",
+    "portal/app/remittances.tsx",
+    "portal/app/route.tsx",
+    "portal/app/security.tsx",
+    "portal/app/statement.tsx",
+    "portal/index.tsx",
+    "portal/invite.$token.tsx",
+    "portal/login.tsx",
+    "portal/pay.$intentId.tsx",
+    "portal/route.tsx",
+    "pricing.tsx",
+    "pricing_.builder.tsx",
+    "reset-password.tsx",
+    "share.invoice.$token.tsx"
+  ],
+  "crossCuttingGaps": [
+    {
+      "name": "App Store & Integrations marketplace",
+      "status": "Present on independently advanced main as of inspected snapshot; absent in this isolated visual branch",
+      "requiredAction": "Review App Store UI and security, reconcile separate branches in an isolated checkout, then theme and visually verify full marketplace routes; do not copy/overwrite Cursor work"
+    },
+    {
+      "name": "LinkBooks Signal",
+      "status": "Internal voice components; no single dedicated route",
+      "requiredAction": "Audit command and voice overlays, focus, contrast, palette behaviour"
+    },
+    {
+      "name": "Expense Claims across Purchases and Expense Management",
+      "status": "Both route groups exist",
+      "requiredAction": "Validate lifecycle badges in both entry points and dialogs; no accounting logic changes"
+    },
+    {
+      "name": "Platform Superadmin, billing and profiles",
+      "status": "Supporting routes without top-level sidebar item",
+      "requiredAction": "Audit permissions and full visual designs"
+    },
+    {
+      "name": "Global Search, Create New and import centre",
+      "status": "Shared popovers, sheets and non-module routes",
+      "requiredAction": "Verify keyboard, responsive, theme, status and real workflows"
+    },
+    {
+      "name": "Developer workspace",
+      "status": "Present on current main; absent from this visual branch",
+      "requiredAction": "Perform full developer portal screen, app approval, auth/permissions and responsive appearance review after safe integration"
+    }
+  ],
+  "verification": {
+    "moduleFullyAccepted": 0,
+    "moduleInitialVisualImproved": 22,
+    "fullBuild": "NOT_RUN",
+    "authenticatedBrowser": "NOT_RUN",
+    "deployment": "NOT_VERIFIED",
+    "sharedFoundation": "Shared form and application shell code committed; full browser verification pending",
+    "statusTransitions": "UNVERIFIED",
+    "lightDarkSevenPresets": "NOT_BROWSER_VERIFIED",
+    "beforeAfterScreenshots": "NOT_CAPTURED",
+    "appShell": "Original CSS ledger mark, topbar, sidebar and canvas committed; responsive verification pending",
+    "formControls": "Inputs, textarea, labels, select, dialogs, sheets, tabs and table frames committed; browser regression pending",
+    "directScreenEvidence": "All 22 sidebar areas have at least one committed direct UI change; full screen, forms, dialogs, themes and responsive acceptance NOT VERIFIED",
+    "browserScreenshots": "NOT_CAPTURED",
+    "testsExecuted": "NOT_RUN",
+    "gitHubMain": "UNCHANGED_BY_THIS_BRANCH; new main commits may exist from other agents",
+    "mobileViews": "Sales invoice, Purchases bill and Banking transaction cards code committed, 390px browser tests WRITTEN NOT RUN",
+    "documentWorkflow": "Notes, journal entries and real activity history styling COMMITTED, persisted transitions NOT VERIFIED",
+    "integrationHealth": "Configured is informational only; verified delivery never claimed by presentation",
+    "localTypecheck": "NOT_RUN",
+    "localBuild": "NOT_RUN",
+    "localLint": "NOT_RUN",
+    "authenticatedE2E": "NOT_RUN",
+    "screenshots": "NOT_CAPTURED",
+    "lastIncrement": "read-only mobile status correctness, authentic document history, shared record toolbars, truthful integration setup",
+    "productionReadiness": "NOT_VERIFIED",
+    "mainBranchRouteDrift": "24 modules and 179 routes on checked main; 5 new authenticated routes must be integrated before complete visual acceptance"
+  },
+  "parallelDevelopmentSnapshot": {
+    "sourceBranch": "main",
+    "inspectedHead": "f1d538129adf9bbc70093083f39e422050af0c4f",
+    "newSidebarModules": [
+      "App Store",
+      "Developer"
+    ],
+    "mainSidebarModules": 24,
+    "mainAllRouteFiles": 179,
+    "visualBranchSidebarModules": 22,
+    "visualBranchAllRouteFiles": 174,
+    "routesMissingFromVisualBranch": [
+      "_authenticated/app-store/$section.tsx",
+      "_authenticated/app-store/apps.$appCode.tsx",
+      "_authenticated/app-store/index.tsx",
+      "_authenticated/developer/$section.tsx",
+      "_authenticated/developer/index.tsx"
+    ],
+    "integrationStatus": "NOT_MERGED; shared UI impact and page acceptance PENDING",
+    "note": "Parallel Cursor main includes real App Store/Developer pages. Do not overwrite, duplicate, or mark them visually verified. Branch-scoped route guard remains accurate for this isolated visual feature branch."
+  }
+}

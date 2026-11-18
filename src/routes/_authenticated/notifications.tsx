@@ -33,6 +33,8 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { NotificationPriorityBadge } from "@/components/notifications/NotificationPriorityBadge";
 import {
   Select,
   SelectContent,
@@ -727,22 +729,9 @@ function NotificationRow({
                 n.title
               )}
             </h2>
-            <span
-              className={
-                n.priority === "critical"
-                  ? "rounded bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-destructive"
-                  : n.priority === "high"
-                    ? "rounded bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-amber-700 dark:text-amber-300"
-                    : "rounded bg-muted px-2 py-0.5 text-[11px] font-medium uppercase"
-              }
-            >
-              {n.priority}
-            </span>
-            {n.archived_at ? (
-              <StatusBadge status="archived" />
-            ) : n.resolved_at ? (
-              <StatusBadge status="completed" />
-            ) : null}
+            <NotificationPriorityBadge priority={n.priority} />
+            {n.archived_at ? <StatusBadge status="archived" /> : null}
+            {n.resolved_at && !n.archived_at ? <StatusBadge status="completed" /> : null}
             <span className="text-xs text-muted-foreground">
               {CATEGORIES[n.category] ?? n.category}
             </span>

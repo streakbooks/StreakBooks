@@ -20,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { firmRequestVisualStatus } from "@/lib/firm/request-visual-status";
 
 function RequestCompletion({
   firmId,
@@ -100,12 +102,11 @@ function RequestCompletion({
 }
 
 function RequestStatus({ request }: { request: TrackedDocumentRequest }) {
-  const source = request.action_document_requests;
-  if (source?.completed_at) return <span className="text-sm font-medium">Completed</span>;
-  if (source?.cancelled_at) return <span className="text-sm font-medium">Cancelled</span>;
-  if (request.due_date < new Date().toISOString().slice(0, 10))
-    return <span className="text-sm font-medium text-destructive">Overdue</span>;
-  return <span className="text-sm font-medium">Open</span>;
+  return (
+    <StatusBadge
+      status={firmRequestVisualStatus(request, new Date().toISOString().slice(0, 10))}
+    />
+  );
 }
 
 export function FirmRequestsPanel({

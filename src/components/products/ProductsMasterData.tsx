@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -110,7 +111,7 @@ export function CategoriesWorkspace({ companyId }: WorkspaceProps) {
           {categoriesQ.data?.map((category) => (
             <div
               key={category.id}
-              className="flex items-center justify-between gap-3 rounded-md border p-3"
+              className="flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/25"
             >
               <div className="min-w-0">
                 <p className="font-medium">{category.name}</p>
@@ -321,7 +322,7 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
             {listsQ.data?.map((list) => (
               <div
                 key={list.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/25"
               >
                 <div>
                   <p className="font-medium">{list.name}</p>
@@ -499,7 +500,7 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
               {pricesQ.data?.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/25"
                 >
                   <div>
                     <p className="font-medium">

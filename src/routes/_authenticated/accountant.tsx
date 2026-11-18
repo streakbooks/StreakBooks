@@ -25,7 +25,7 @@ import { LoadingState, ErrorState, EmptyState } from "@/components/common/states
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -191,7 +191,7 @@ function AccountantTools() {
             />
           ) : (
             <>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Accountant review queue indicators">
                 <CheckCard
                   title="Unlocked periods"
                   count={query.data!.unlockedPeriods}
@@ -224,7 +224,7 @@ function AccountantTools() {
                 />
               </div>
 
-              <h2 className="mt-8 mb-3 text-sm font-medium text-muted-foreground">
+              <h2 className="mt-8 mb-3 border-b border-border/70 pb-2 text-base font-bold tracking-[-0.02em] text-foreground">
                 Recent journals
               </h2>
               <Table>
@@ -252,7 +252,7 @@ function AccountantTools() {
                       <TableCell>{j.journal_number}</TableCell>
                       <TableCell>{j.journal_date}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{j.status}</Badge>
+                        <StatusBadge status={j.status} />
                       </TableCell>
                       <TableCell>{j.source_type}</TableCell>
                       <TableCell>{j.memo ?? "—"}</TableCell>
@@ -353,7 +353,7 @@ function AccountantTools() {
               description={friendlyAuthError(accountsQ.error)}
             />
           )}
-          <h2 className="mt-8 mb-3 text-sm font-medium text-muted-foreground">
+          <h2 className="mt-8 mb-3 border-b border-border/70 pb-2 text-base font-bold tracking-[-0.02em] text-foreground">
             Tax adjustment (period-end)
           </h2>
           <Alert className="mb-3">
@@ -363,7 +363,7 @@ function AccountantTools() {
               file a return.
             </AlertDescription>
           </Alert>
-          <div className="mb-8 grid max-w-xl gap-3 rounded-md border p-4">
+          <div className="mb-8 grid max-w-2xl gap-4 rounded-xl border border-border/85 bg-card p-5 shadow-card">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label>Date</Label>

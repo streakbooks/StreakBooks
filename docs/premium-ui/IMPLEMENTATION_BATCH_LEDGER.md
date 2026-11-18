@@ -1,4 +1,4 @@
-# Implementation batch ledger
+﻿# Implementation batch ledger
 
 | Batch | Wave | Scope | Branch | PR/commit | Routes touched | Status |
 | ----- | ---- | ----- | ------ | --------- | -------------- | ------ |
@@ -25,7 +25,7 @@
 | 29 | Phase 1–5 | Semantic colourful tokens (AI purple), status tone realignment, nav group icon accents, button success/warning variants | `feature/premium-ui-batch29-semantic-colour-system` | [PR #274](https://github.com/linkbusinessadvisory/LinkBooks/pull/274) → `4a16970c` | styles + status-badge + AppShell | merged |
 | 30 | Phase 3–5 | Bill sticky actions; purchase line keyboard; MeasuredProgress + PersistedSwitch; browsing manifest sync (29 modules / 156 routes) | `feature/premium-ui-batch30-bill-sticky-browsing` | [PR #275](https://github.com/linkbusinessadvisory/LinkBooks/pull/275) → `d193bb0e` | bills + purchases lines + firm/CRM/banking + docs/ux | merged |
 | 31 | Phase 3 | Sales + purchases numeric paste; sales line keyboard; tracker sync | `feature/premium-ui-batch31-sales-line-keyboard` | [PR #276](https://github.com/linkbusinessadvisory/LinkBooks/pull/276) → `8cfa5280` | sales/purchases lines + paste helper | merged |
-| 32 | Phase 4 | Expenses enablement PersistedSwitch (save/rollback) + tracker sync | `feature/premium-ui-batch32-expense-persisted-switch` | open | expense settings | in progress |
+| 32 | Phase 4 | Expenses enablement PersistedSwitch (save/rollback) + tracker sync | `feature/premium-ui-batch32-expense-persisted-switch` | [PR #277](https://github.com/linkbusinessadvisory/LinkBooks/pull/277) → `31c77d9a` | expense settings | merged |
 | 33+ | Phase 4–10 | Remaining modules DoD + browsing runtime evidence | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

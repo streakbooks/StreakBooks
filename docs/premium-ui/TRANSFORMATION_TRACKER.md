@@ -1,4 +1,4 @@
-# Premium UI/UX Transformation Tracker
+﻿# Premium UI/UX Transformation Tracker
 
 **Single source of truth** for the application-wide premium UI programme.  
 **Authoritative repo:** https://github.com/linkbusinessadvisory/LinkBooks  
@@ -21,7 +21,7 @@
 | Semantic colourful system Batch 29 | Merged | PR #274 → `4a16970c` |
 | Bill sticky + honest controls + browsing Batch 30 | Merged | PR #275 → `d193bb0e` |
 | Sales/purchases line keyboard + paste Batch 31 | Merged | PR #276 → `8cfa5280` |
-| Expenses PersistedSwitch Batch 32 | In progress | Expenses enable toggle persists with rollback |
+| Expenses PersistedSwitch Batch 32 | Merged | PR #277 → `31c77d9a` |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

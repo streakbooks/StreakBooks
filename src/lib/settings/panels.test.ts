@@ -153,6 +153,15 @@ describe("in-place settings routing", () => {
     expect(panelForDestination({ to: "/settings", panel: "javascript:alert(1)" as never })).toBeUndefined();
     expect(panelForDestination({ to: "/settings", panel: "category:unknown" as never })).toBeUndefined();
   });
+  it("rejects invalid runtime panel targets without mutating URL state", () => {
+    const current = { section: "banking", settingsPanel: "bank-rules", settingsTrail: ["category:banking"], page: 2 };
+    for (const target of ["category:unknown", "../../admin", "javascript:alert(1)", "", null, ["branding"]]) {
+      expect(openSettingsPanel(current, target as never)).toEqual(current);
+    }
+    expect(openSettingsPanel(current, "bank-feeds")).toEqual({
+      ...current, settingsPanel: "bank-feeds", settingsTrail: ["category:banking", "bank-rules"],
+    });
+  });
   it("rejects sparse Settings history instead of retaining undefined ancestors", () => {
     const sparse = new Array<string>(2);
     sparse[1] = "category:banking";

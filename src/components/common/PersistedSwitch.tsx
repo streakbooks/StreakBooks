@@ -25,13 +25,13 @@ export function PersistedSwitch({
   "aria-label": ariaLabel,
   className,
 }: {
-  id?: string;
+  id?: string | undefined;
   checked: boolean;
   onPersist: (next: boolean) => Promise<unknown> | unknown;
-  disabled?: boolean;
-  disabledReason?: string;
-  "aria-label"?: string;
-  className?: string;
+  disabled?: boolean | undefined;
+  disabledReason?: string | undefined;
+  "aria-label"?: string | undefined;
+  className?: string | undefined;
 }) {
   const [pending, setPending] = useState(false);
   const [optimistic, setOptimistic] = useState<boolean | null>(null);

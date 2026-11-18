@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { ContactLookup } from "@/components/lookup";
 import { Label } from "@/components/ui/label";
 
-export function ProjectPanel() {
+export function ProjectPanel({ onSaved }: { onSaved?: () => void } = {}) {
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const qc = useQueryClient();
@@ -66,6 +66,7 @@ export function ProjectPanel() {
       setRecordId(result.id);
       toast.success("Project saved");
       await qc.invalidateQueries({ queryKey: ["project-profitability", companyId] });
+      onSaved?.();
     },
     onError: (e) => setError(friendlyAuthError(e)),
   });

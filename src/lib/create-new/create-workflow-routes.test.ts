@@ -71,4 +71,10 @@ describe("create workflow routes (Batch 46)", () => {
     expect(salesOrder?.route).toBe("/sales/orders/new");
     expect(opensCreateAsFullPage(salesOrder!)).toBe(true);
   });
+
+  it("opens fixed asset create on the dedicated /new redirect", () => {
+    const fixedAsset = CREATE_ACTIONS.find((a) => a.id === "fixed_asset");
+    expect(fixedAsset?.route).toBe("/fixed-assets/new");
+    expect(opensCreateAsFullPage(fixedAsset!)).toBe(true);
+  });
 });

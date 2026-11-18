@@ -37,7 +37,7 @@ const required = [
     "src/routes/_authenticated/contacts/$contactId.tsx",
     ['to="/contacts/$contactId"', 'role="tab"'],
   ],
-  ["src/routes/_authenticated/fixed-assets.tsx", ['to="/fixed-assets"', 'role="tab"']],
+  ["src/routes/_authenticated/fixed-assets.index.tsx", ['to="/fixed-assets"', 'role="tab"']],
   [
     "src/routes/_authenticated/reports/index.tsx",
     ['to="/reports"', 'role="tab"', 'aria-label="Reporting modules"'],
@@ -74,7 +74,7 @@ for (const file of [
   "src/routes/_authenticated/contacts/index.tsx",
   "src/routes/_authenticated/contacts/$contactId.tsx",
   "src/routes/_authenticated/tax.tsx",
-  "src/routes/_authenticated/fixed-assets.tsx",
+  "src/routes/_authenticated/fixed-assets.index.tsx",
   "src/routes/_authenticated/purchases/recurring.index.tsx",
   "src/routes/_authenticated/settings.tsx",
 ]) {

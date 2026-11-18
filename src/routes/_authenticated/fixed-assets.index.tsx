@@ -82,7 +82,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export const Route = createFileRoute("/_authenticated/fixed-assets")({
+export const Route = createFileRoute("/_authenticated/fixed-assets/")({
   validateSearch: (
     raw: Record<string, unknown>,
   ): { tab?: string | undefined; create?: boolean | undefined } => {

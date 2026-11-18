@@ -24,7 +24,6 @@ import { Route as AuthenticatedAiAssistantRouteImport } from './routes/_authenti
 import { Route as AuthenticatedBankingRouteRouteImport } from './routes/_authenticated/banking/route'
 import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files'
 import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
-import { Route as AuthenticatedFixedAssetsRouteImport } from './routes/_authenticated/fixed-assets'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
 import { Route as AuthenticatedImportsRouteImport } from './routes/_authenticated/imports'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
@@ -92,6 +91,8 @@ import { Route as AuthenticatedDocumentsBrandingRouteImport } from './routes/_au
 import { Route as AuthenticatedExpenseManagementIndexRouteImport } from './routes/_authenticated/expense-management/index'
 import { Route as AuthenticatedExpenseManagementSectionRouteImport } from './routes/_authenticated/expense-management/$section'
 import { Route as AuthenticatedFirmInviteTokenRouteImport } from './routes/_authenticated/firm-invite.$token'
+import { Route as AuthenticatedFixedAssetsIndexRouteImport } from './routes/_authenticated/fixed-assets.index'
+import { Route as AuthenticatedFixedAssetsNewRouteImport } from './routes/_authenticated/fixed-assets.new'
 import { Route as AuthenticatedHrIndexRouteImport } from './routes/_authenticated/hr/index'
 import { Route as AuthenticatedHrSectionRouteImport } from './routes/_authenticated/hr/$section'
 import { Route as AuthenticatedInviteTokenRouteImport } from './routes/_authenticated/invite.$token'
@@ -289,12 +290,6 @@ const AuthenticatedFirmRoute = AuthenticatedFirmRouteImport.update({
   path: '/firm',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedFixedAssetsRoute =
-  AuthenticatedFixedAssetsRouteImport.update({
-    id: '/fixed-assets',
-    path: '/fixed-assets',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedHelpRoute = AuthenticatedHelpRouteImport.update({
   id: '/help',
   path: '/help',
@@ -675,6 +670,18 @@ const AuthenticatedFirmInviteTokenRoute =
   AuthenticatedFirmInviteTokenRouteImport.update({
     id: '/firm-invite/$token',
     path: '/firm-invite/$token',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFixedAssetsIndexRoute =
+  AuthenticatedFixedAssetsIndexRouteImport.update({
+    id: '/fixed-assets/',
+    path: '/fixed-assets/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFixedAssetsNewRoute =
+  AuthenticatedFixedAssetsNewRouteImport.update({
+    id: '/fixed-assets/new',
+    path: '/fixed-assets/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedHrIndexRoute = AuthenticatedHrIndexRouteImport.update({
@@ -1390,7 +1397,6 @@ export interface FileRoutesByFullPath {
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/files': typeof AuthenticatedFilesRoute
   '/firm': typeof AuthenticatedFirmRoute
-  '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/help': typeof AuthenticatedHelpRoute
   '/imports': typeof AuthenticatedImportsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -1445,6 +1451,7 @@ export interface FileRoutesByFullPath {
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
+  '/fixed-assets/new': typeof AuthenticatedFixedAssetsNewRoute
   '/hr/$section': typeof AuthenticatedHrSectionRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/messages/settings': typeof AuthenticatedMessagesSettingsRoute
@@ -1494,6 +1501,7 @@ export interface FileRoutesByFullPath {
   '/crm/': typeof AuthenticatedCrmIndexRoute
   '/developer/': typeof AuthenticatedDeveloperIndexRoute
   '/expense-management/': typeof AuthenticatedExpenseManagementIndexRoute
+  '/fixed-assets/': typeof AuthenticatedFixedAssetsIndexRoute
   '/hr/': typeof AuthenticatedHrIndexRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
   '/payroll/': typeof AuthenticatedPayrollIndexRoute
@@ -1585,7 +1593,6 @@ export interface FileRoutesByTo {
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/files': typeof AuthenticatedFilesRoute
   '/firm': typeof AuthenticatedFirmRoute
-  '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/help': typeof AuthenticatedHelpRoute
   '/imports': typeof AuthenticatedImportsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -1640,6 +1647,7 @@ export interface FileRoutesByTo {
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
+  '/fixed-assets/new': typeof AuthenticatedFixedAssetsNewRoute
   '/hr/$section': typeof AuthenticatedHrSectionRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/messages/settings': typeof AuthenticatedMessagesSettingsRoute
@@ -1689,6 +1697,7 @@ export interface FileRoutesByTo {
   '/crm': typeof AuthenticatedCrmIndexRoute
   '/developer': typeof AuthenticatedDeveloperIndexRoute
   '/expense-management': typeof AuthenticatedExpenseManagementIndexRoute
+  '/fixed-assets': typeof AuthenticatedFixedAssetsIndexRoute
   '/hr': typeof AuthenticatedHrIndexRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
   '/payroll': typeof AuthenticatedPayrollIndexRoute
@@ -1786,7 +1795,6 @@ export interface FileRoutesById {
   '/_authenticated/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/_authenticated/files': typeof AuthenticatedFilesRoute
   '/_authenticated/firm': typeof AuthenticatedFirmRoute
-  '/_authenticated/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/imports': typeof AuthenticatedImportsRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
@@ -1842,6 +1850,7 @@ export interface FileRoutesById {
   '/_authenticated/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/_authenticated/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
   '/_authenticated/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
+  '/_authenticated/fixed-assets/new': typeof AuthenticatedFixedAssetsNewRoute
   '/_authenticated/hr/$section': typeof AuthenticatedHrSectionRoute
   '/_authenticated/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/_authenticated/messages/settings': typeof AuthenticatedMessagesSettingsRoute
@@ -1891,6 +1900,7 @@ export interface FileRoutesById {
   '/_authenticated/crm/': typeof AuthenticatedCrmIndexRoute
   '/_authenticated/developer/': typeof AuthenticatedDeveloperIndexRoute
   '/_authenticated/expense-management/': typeof AuthenticatedExpenseManagementIndexRoute
+  '/_authenticated/fixed-assets/': typeof AuthenticatedFixedAssetsIndexRoute
   '/_authenticated/hr/': typeof AuthenticatedHrIndexRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
   '/_authenticated/payroll/': typeof AuthenticatedPayrollIndexRoute
@@ -1992,7 +2002,6 @@ export interface FileRouteTypes {
     | '/ai-assistant'
     | '/files'
     | '/firm'
-    | '/fixed-assets'
     | '/help'
     | '/imports'
     | '/notifications'
@@ -2047,6 +2056,7 @@ export interface FileRouteTypes {
     | '/documents/branding'
     | '/expense-management/$section'
     | '/firm-invite/$token'
+    | '/fixed-assets/new'
     | '/hr/$section'
     | '/invite/$token'
     | '/messages/settings'
@@ -2096,6 +2106,7 @@ export interface FileRouteTypes {
     | '/crm/'
     | '/developer/'
     | '/expense-management/'
+    | '/fixed-assets/'
     | '/hr/'
     | '/messages/'
     | '/payroll/'
@@ -2187,7 +2198,6 @@ export interface FileRouteTypes {
     | '/ai-assistant'
     | '/files'
     | '/firm'
-    | '/fixed-assets'
     | '/help'
     | '/imports'
     | '/notifications'
@@ -2242,6 +2252,7 @@ export interface FileRouteTypes {
     | '/documents/branding'
     | '/expense-management/$section'
     | '/firm-invite/$token'
+    | '/fixed-assets/new'
     | '/hr/$section'
     | '/invite/$token'
     | '/messages/settings'
@@ -2291,6 +2302,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/developer'
     | '/expense-management'
+    | '/fixed-assets'
     | '/hr'
     | '/messages'
     | '/payroll'
@@ -2387,7 +2399,6 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-assistant'
     | '/_authenticated/files'
     | '/_authenticated/firm'
-    | '/_authenticated/fixed-assets'
     | '/_authenticated/help'
     | '/_authenticated/imports'
     | '/_authenticated/notifications'
@@ -2443,6 +2454,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents/branding'
     | '/_authenticated/expense-management/$section'
     | '/_authenticated/firm-invite/$token'
+    | '/_authenticated/fixed-assets/new'
     | '/_authenticated/hr/$section'
     | '/_authenticated/invite/$token'
     | '/_authenticated/messages/settings'
@@ -2492,6 +2504,7 @@ export interface FileRouteTypes {
     | '/_authenticated/crm/'
     | '/_authenticated/developer/'
     | '/_authenticated/expense-management/'
+    | '/_authenticated/fixed-assets/'
     | '/_authenticated/hr/'
     | '/_authenticated/messages/'
     | '/_authenticated/payroll/'
@@ -2699,13 +2712,6 @@ declare module '@tanstack/react-router' {
       path: '/firm'
       fullPath: '/firm'
       preLoaderRoute: typeof AuthenticatedFirmRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/fixed-assets': {
-      id: '/_authenticated/fixed-assets'
-      path: '/fixed-assets'
-      fullPath: '/fixed-assets'
-      preLoaderRoute: typeof AuthenticatedFixedAssetsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/help': {
@@ -3175,6 +3181,20 @@ declare module '@tanstack/react-router' {
       path: '/firm-invite/$token'
       fullPath: '/firm-invite/$token'
       preLoaderRoute: typeof AuthenticatedFirmInviteTokenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fixed-assets/': {
+      id: '/_authenticated/fixed-assets/'
+      path: '/fixed-assets'
+      fullPath: '/fixed-assets/'
+      preLoaderRoute: typeof AuthenticatedFixedAssetsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fixed-assets/new': {
+      id: '/_authenticated/fixed-assets/new'
+      path: '/fixed-assets/new'
+      fullPath: '/fixed-assets/new'
+      preLoaderRoute: typeof AuthenticatedFixedAssetsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hr/': {
@@ -4433,7 +4453,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiAssistantRoute: typeof AuthenticatedAiAssistantRoute
   AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
   AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
-  AuthenticatedFixedAssetsRoute: typeof AuthenticatedFixedAssetsRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedImportsRoute: typeof AuthenticatedImportsRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
@@ -4462,6 +4481,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsBrandingRoute: typeof AuthenticatedDocumentsBrandingRoute
   AuthenticatedExpenseManagementSectionRoute: typeof AuthenticatedExpenseManagementSectionRoute
   AuthenticatedFirmInviteTokenRoute: typeof AuthenticatedFirmInviteTokenRoute
+  AuthenticatedFixedAssetsNewRoute: typeof AuthenticatedFixedAssetsNewRoute
   AuthenticatedHrSectionRoute: typeof AuthenticatedHrSectionRoute
   AuthenticatedInviteTokenRoute: typeof AuthenticatedInviteTokenRoute
   AuthenticatedMessagesSettingsRoute: typeof AuthenticatedMessagesSettingsRoute
@@ -4476,6 +4496,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCrmIndexRoute: typeof AuthenticatedCrmIndexRoute
   AuthenticatedDeveloperIndexRoute: typeof AuthenticatedDeveloperIndexRoute
   AuthenticatedExpenseManagementIndexRoute: typeof AuthenticatedExpenseManagementIndexRoute
+  AuthenticatedFixedAssetsIndexRoute: typeof AuthenticatedFixedAssetsIndexRoute
   AuthenticatedHrIndexRoute: typeof AuthenticatedHrIndexRoute
   AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
   AuthenticatedPosIndexRoute: typeof AuthenticatedPosIndexRoute
@@ -4502,7 +4523,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiAssistantRoute: AuthenticatedAiAssistantRoute,
   AuthenticatedFilesRoute: AuthenticatedFilesRoute,
   AuthenticatedFirmRoute: AuthenticatedFirmRoute,
-  AuthenticatedFixedAssetsRoute: AuthenticatedFixedAssetsRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedImportsRoute: AuthenticatedImportsRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
@@ -4536,6 +4556,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExpenseManagementSectionRoute:
     AuthenticatedExpenseManagementSectionRoute,
   AuthenticatedFirmInviteTokenRoute: AuthenticatedFirmInviteTokenRoute,
+  AuthenticatedFixedAssetsNewRoute: AuthenticatedFixedAssetsNewRoute,
   AuthenticatedHrSectionRoute: AuthenticatedHrSectionRoute,
   AuthenticatedInviteTokenRoute: AuthenticatedInviteTokenRoute,
   AuthenticatedMessagesSettingsRoute: AuthenticatedMessagesSettingsRoute,
@@ -4552,6 +4573,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDeveloperIndexRoute: AuthenticatedDeveloperIndexRoute,
   AuthenticatedExpenseManagementIndexRoute:
     AuthenticatedExpenseManagementIndexRoute,
+  AuthenticatedFixedAssetsIndexRoute: AuthenticatedFixedAssetsIndexRoute,
   AuthenticatedHrIndexRoute: AuthenticatedHrIndexRoute,
   AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
   AuthenticatedPosIndexRoute: AuthenticatedPosIndexRoute,

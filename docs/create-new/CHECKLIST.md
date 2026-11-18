@@ -29,7 +29,7 @@ These navigate to dedicated routes (browser history, Back, deep links):
 | Recurring journal | `/accounting/journals/new?mode=template` |
 | Customer / Supplier | `/contacts/new?kind=…` |
 | Product / Service | `/products-services/new` (RecordWorkspace create; list `?create=true` also sticky) |
-| Fixed asset | `/fixed-assets?create=true` (sticky until workspace closes) |
+| Fixed asset | `/fixed-assets/new` → sticky `?create=true` workspace |
 
 ## Enabled (list / tooling / flyover)
 

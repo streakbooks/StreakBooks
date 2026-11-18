@@ -440,9 +440,9 @@ export const CREATE_ACTIONS: readonly CreateAction[] = [
     status: "REUSABLE",
     availability: "ready",
     width: "wide",
-    route: "/fixed-assets",
+    route: "/fixed-assets/new",
     component: "FixedAssetsPage",
-    backend: "saveFixedAsset (?create=true sticky until workspace closes)",
+    backend: "saveFixedAsset (/new redirects to sticky ?create=true workspace)",
     blocker: null,
   },
   {

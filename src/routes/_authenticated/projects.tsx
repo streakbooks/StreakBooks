@@ -57,8 +57,21 @@ function ProjectsPage() {
   useEffect(() => {
     if (!forceCreate) return;
     setShowCreate(true);
-    void navigate({ search: { create: undefined }, replace: true });
-  }, [forceCreate, navigate]);
+    // Keep ?create=true sticky until the create panel closes (refresh-safe).
+  }, [forceCreate]);
+
+  function closeCreate() {
+    setShowCreate(false);
+    if (!forceCreate) return;
+    void navigate({
+      search: (prev) => {
+        const next = { ...prev };
+        delete next.create;
+        return next;
+      },
+      replace: true,
+    });
+  }
 
   const query = useQuery({
     queryKey: ["project-profitability", companyId, from, to, basis],
@@ -203,11 +216,11 @@ function ProjectsPage() {
         <div id="projects-new-panel" className="mt-8 max-w-md scroll-mt-24">
           <div className="mb-2 flex items-center justify-between gap-2">
             <h2 className="text-lg font-semibold">New project</h2>
-            <Button size="sm" variant="ghost" onClick={() => setShowCreate(false)}>
+            <Button size="sm" variant="ghost" onClick={closeCreate}>
               Close
             </Button>
           </div>
-          <ProjectPanel />
+          <ProjectPanel onSaved={closeCreate} />
         </div>
       ) : null}
     </ListWorkspace>

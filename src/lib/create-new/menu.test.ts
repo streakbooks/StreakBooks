@@ -134,8 +134,7 @@ describe("create full-page destinations", () => {
     const fixedAsset = CREATE_ACTIONS.find((a) => a.id === "fixed_asset")!;
     expect(createNavTarget(fixedAsset)).toEqual({
       kind: "route",
-      to: "/fixed-assets",
-      search: { create: true },
+      to: "/fixed-assets/new",
     });
   });
 });

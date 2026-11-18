@@ -1,6 +1,6 @@
 /** Allowed, user-selectable columns in the Contacts directory. */
 export const CONTACT_DIRECTORY_COLUMNS = [
-  { id: "name", label: "Contact", sortField: "name" },
+  { id: "name", label: "Contact", sortField: "name", required: true },
   { id: "account_number", label: "Account #", sortField: "account" },
   { id: "kind", label: "Roles", sortField: "roles" },
   { id: "email", label: "Email", sortField: "email" },
@@ -70,4 +70,48 @@ export function toggleContactDirectoryColumn(
 export function selectedContactsOnPage(selected: string[], pageContactIds: string[]): string[] {
   const allowed = new Set(pageContactIds);
   return [...new Set(selected)].filter((id) => allowed.has(id));
+}
+
+/** Preserve current saved-column IDs while supporting earlier directory aliases. */
+const LEGACY_CONTACT_COLUMN_ALIASES = {
+  account: "account_number", roles: "kind", terms: "payment_terms_days",
+  city: "billing_city", state: "billing_region", postal: "billing_postal",
+  country: "billing_country", address: "billing_address_line1",
+  currency: "default_currency", status: "is_active",
+} as const;
+export const DEFAULT_HIDDEN_CONTACT_COLUMNS: ContactDirectoryColumnId[] =
+  CONTACT_DIRECTORY_COLUMNS.map((column) => column.id).filter(
+    (id) => !DEFAULT_CONTACT_DIRECTORY_COLUMNS.includes(id),
+  );
+export type ContactDirectoryRecord = Partial<Record<ContactDirectoryColumnId, string | number | boolean | null>> & {
+  id: string;
+  name: string;
+  kind: string;
+  email: string | null;
+  phone: string | null;
+  payment_terms_days: number;
+  account_number: string | null;
+  is_active: boolean;
+  billing_city: string | null;
+  billing_region: string | null;
+  billing_postal: string | null;
+  billing_country: string | null;
+  billing_address_line1: string | null;
+  legal_name: string | null;
+  tax_number: string | null;
+  website: string | null;
+  default_currency: string | null;
+};
+
+export function contactDirectoryCellValue(
+  row: ContactDirectoryRecord,
+  column: ContactDirectoryColumnId | keyof typeof LEGACY_CONTACT_COLUMN_ALIASES,
+): string {
+  const resolved = column in LEGACY_CONTACT_COLUMN_ALIASES
+    ? LEGACY_CONTACT_COLUMN_ALIASES[column as keyof typeof LEGACY_CONTACT_COLUMN_ALIASES]
+    : column as ContactDirectoryColumnId;
+  const values = { ...row, kind: row.kind === "both" ? "Customer & supplier" : row.kind,
+    payment_terms_days: `${row.payment_terms_days}d`, is_active: row.is_active ? "Active" : "Inactive" };
+  const value = values[resolved];
+  return value == null || value === "" ? "—" : String(value);
 }

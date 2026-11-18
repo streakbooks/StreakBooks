@@ -123,7 +123,6 @@ type BillPayload = {
   due_date_manual_override?: boolean | null;
   tax_calculation?: string | null;
   duplicate_override?: boolean | null;
-  purchase_order_id?: string | null;
   supplier_address_line1?: string | null;
   supplier_address_line2?: string | null;
   supplier_address_city?: string | null;

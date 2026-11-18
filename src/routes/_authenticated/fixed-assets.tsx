@@ -1,5 +1,5 @@
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -83,18 +83,28 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/fixed-assets")({
-  validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
-    tab: [
-      "dashboard",
-      "register",
-      "depreciation",
-      "types",
-      "reconciliation",
-      "bill-review",
-    ].includes(String(raw["tab"]))
-      ? String(raw["tab"])
-      : undefined,
-  }),
+  validateSearch: (
+    raw: Record<string, unknown>,
+  ): { tab?: string | undefined; create?: boolean | undefined } => {
+    const create =
+      raw["create"] === true ||
+      raw["create"] === "true" ||
+      raw["create"] === "1" ||
+      raw["create"] === 1;
+    return {
+      tab: [
+        "dashboard",
+        "register",
+        "depreciation",
+        "types",
+        "reconciliation",
+        "bill-review",
+      ].includes(String(raw["tab"]))
+        ? String(raw["tab"])
+        : undefined,
+      ...(create ? { create: true } : {}),
+    };
+  },
   head: () => ({ meta: [{ title: "Fixed assets — LinkBooks" }] }),
   component: FixedAssetsPage,
 });
@@ -112,7 +122,8 @@ type Dialogs =
 function FixedAssetsPage() {
   const { company } = useActiveCompany();
   const companyId = company?.id;
-  const { tab: requestedTab } = Route.useSearch();
+  const { tab: requestedTab, create: forceCreate } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const tab = requestedTab ?? "register";
   const fmt = useFormat();
   const canManage = useCanDo("accounts.manage");
@@ -123,6 +134,14 @@ function FixedAssetsPage() {
   const pageFn = useServerFn(getAssetRegisterPage);
   const registerFn = useServerFn(getFixedAssetRegister);
   const [dialog, setDialog] = useState<Dialogs>(null);
+  useEffect(() => {
+    if (!forceCreate || !canManage) return;
+    setDialog({ kind: "asset", editing: null, fromBillLine: null });
+    void navigate({
+      search: (prev) => ({ ...prev, create: undefined }),
+      replace: true,
+    });
+  }, [forceCreate, canManage, navigate]);
   const [assetSearch, setAssetSearch] = useState("");
   const [assetStatus, setAssetStatus] = useState<"all" | "active" | "disposed">("all");
   const [assetTypeId, setAssetTypeId] = useState("");

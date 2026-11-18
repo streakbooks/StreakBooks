@@ -29,6 +29,9 @@ describe("command palette (U-07)", () => {
     expect(receivePayment?.href).toBe("/sales/receipts/new");
     expect(actions.some((a) => a.id === "new-manual-journal")).toBe(true);
     expect(actions.some((a) => a.id === "new-bank-transfer")).toBe(true);
+    const salesOrder = actions.find((a) => a.id === "new-sales-order");
+    expect(salesOrder?.href).toBe("/sales/orders");
+    expect(salesOrder?.search).toEqual({ create: "true" });
   });
   it("matches every word against label and keywords", () => {
     expect(filterPaletteActions(actions, "new bill").map((a) => a.id)).toContain("new-bill");

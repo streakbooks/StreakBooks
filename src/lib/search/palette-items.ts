@@ -55,6 +55,14 @@ const CREATE: PaletteAction[] = [
     href: "/sales/quotes/new",
   },
   {
+    id: "new-sales-order",
+    group: "Create",
+    label: "New sales order",
+    keywords: "customer order confirmation draft invoice",
+    href: "/sales/orders",
+    search: { create: "true" },
+  },
+  {
     id: "new-sales-credit-note",
     group: "Create",
     label: "New sales credit note",

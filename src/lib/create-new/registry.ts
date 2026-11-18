@@ -260,7 +260,7 @@ export const CREATE_ACTIONS: readonly CreateAction[] = [
     width: "wide",
     route: "/expense-management/my-expenses",
     component: "ExpenseManagementClaimsPage",
-    backend: "Expense Management module (legacy submit remains on employee-expenses)",
+    backend: "Expense Management module (Create menu opens ?create=true)",
     blocker: null,
   },
   {

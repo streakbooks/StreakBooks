@@ -2,11 +2,15 @@ import { describe, expect, it, vi } from "vitest";
 
 // Exercise actual route registration/search validation without mounting or fetching ledgers.
 vi.mock("@/screens/accounting", () => ({ Accounting: () => null }));
-vi.mock("@/screens/banking/transfers", () => ({ Transfers: () => null }));
+vi.mock("@/screens/banking/transfers", () => ({
+  Transfers: () => null,
+  NewTransfer: () => null,
+}));
 vi.mock("@/screens/sales/invoices.new", () => ({ NewInvoiceRoute: () => null }));
 vi.mock("@/screens/sales/receipts.new", () => ({ NewReceiptRoute: () => null }));
 import { Route as AccountingRoute } from "@/routes/_authenticated/accounting";
-import { Route as TransferRoute } from "@/routes/_authenticated/banking/transfers";
+import { Route as TransferRoute } from "@/routes/_authenticated/banking/transfers.index";
+import { Route as TransferNewRoute } from "@/routes/_authenticated/banking/transfers.new";
 import { Route as InvoiceRoute } from "@/routes/_authenticated/sales/invoices.new";
 import { Route as ReceiptRoute } from "@/routes/_authenticated/sales/receipts.new";
 
@@ -32,13 +36,16 @@ describe("financial deep links after screen extraction", () => {
     expect(validate({ contactId: {}, invoiceId: 42 })).toEqual({});
   });
   it("preserves transfer amount text and direction without floating-point conversion", () => {
-    const validate = functionValidator(TransferRoute.options.validateSearch);
-    expect(validate({ bankAccountId: "bank-a", amount: "1,250.50", direction: "in" })).toEqual({
-      bankAccountId: "bank-a",
-      amount: "1,250.50",
-      direction: "in",
-    });
-    expect(validate({ amount: 1250.5, direction: "sideways" })).toEqual({});
+    const validateList = functionValidator(TransferRoute.options.validateSearch);
+    const validateNew = functionValidator(TransferNewRoute.options.validateSearch);
+    for (const validate of [validateList, validateNew]) {
+      expect(validate({ bankAccountId: "bank-a", amount: "1,250.50", direction: "in" })).toEqual({
+        bankAccountId: "bank-a",
+        amount: "1,250.50",
+        direction: "in",
+      });
+      expect(validate({ amount: 1250.5, direction: "sideways" })).toEqual({});
+    }
   });
   it("keeps journal and period links used by accounting drill-downs", () => {
     const validate = functionValidator(AccountingRoute.options.validateSearch);

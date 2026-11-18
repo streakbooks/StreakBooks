@@ -37,6 +37,7 @@
 | Money editor + CRM/PM subnav Batch 45 | Merged | PR #292 → `e186afd5` — Spend Money spreadsheet roll-up; Receive Save & add another; CRM/PM ListWorkspace subnav |
 | Create workflows Batch 46 | Merged | PR #293 → `9a9e6b6f` — journal/recurring/transfer full-page creates; product/claim Create deep-links; local gates PASS; CI blocked by org billing |
 | Create edit hardening Batch 47 | Merged | PR #294 → `32b2c6db` — recurring edit URLs; bank documents New CTA; CHECKLIST sync; merge-without-CI-billing standing rule |
+| Create hardening Batch 48 | In progress | `feature/premium-ui-batch48-create-hardening` — see CI_BILLING_AND_CREATE_WHY.md |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

@@ -560,11 +560,7 @@ export function ExpenseManagementClaimsPage({
       {mode === "my-expenses" && canSubmit ? (
         <form
           id="expense-claim-create"
-          className={
-            forceCreate
-              ? "mb-8 grid gap-4 rounded-lg border border-border/70 bg-card/80 p-4 sm:p-5"
-              : "mb-8 grid max-w-4xl gap-4 rounded-lg border p-4"
-          }
+          className="mb-8 grid gap-4 rounded-lg border border-border/70 bg-card/80 p-4 sm:p-5"
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate();
@@ -599,7 +595,7 @@ export function ExpenseManagementClaimsPage({
                 <Label htmlFor="em-template">Load template</Label>
                 <RecordLookupSelect
                   id="em-template"
-                  className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  className="flex h-[var(--lb-control-height)] rounded-md border border-input bg-background px-3 text-sm"
                   defaultValue=""
                   onValueChange={(event) => {
                     if (event) applyTemplate(event);
@@ -639,7 +635,7 @@ export function ExpenseManagementClaimsPage({
               <Label htmlFor="em-claim-source">Payment source</Label>
               <select
                 id="em-claim-source"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={paymentSource}
                 onChange={(event) => {
                   const next = event.target.value as ExpensePaymentSource;
@@ -660,7 +656,7 @@ export function ExpenseManagementClaimsPage({
                 <Label htmlFor="em-claim-advance">Cash advance</Label>
                 <RecordLookupSelect
                   id="em-claim-advance"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={cashAdvanceId}
                   onValueChange={(event) => setCashAdvanceId(event)}
                 >
@@ -679,7 +675,7 @@ export function ExpenseManagementClaimsPage({
                 <Label htmlFor="em-claim-petty">Petty cash float</Label>
                 <RecordLookupSelect
                   id="em-claim-petty"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={pettyCashFloatId}
                   onValueChange={(event) => setPettyCashFloatId(event)}
                 >
@@ -698,7 +694,7 @@ export function ExpenseManagementClaimsPage({
                 <Label htmlFor="em-claim-card">Corporate card</Label>
                 <RecordLookupSelect
                   id="em-claim-card"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={corporateCardId}
                   onValueChange={(event) => setCorporateCardId(event)}
                 >

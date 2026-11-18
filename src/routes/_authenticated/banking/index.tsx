@@ -168,18 +168,39 @@ function BankingAccounts() {
               hint: "No live feed is connected for this organisation",
             },
             {
-              label: "Transfers",
-              to: "/banking/transfers",
+              label: "New transfer",
+              to: "/banking/transfers/new",
               hint: "Move funds between bank accounts",
+            },
+            {
+              label: "Spend money",
+              to: "/banking/spend-money",
+              hint: "Pay from a bank account with GL allocation",
+            },
+            {
+              label: "Receive money",
+              to: "/banking/receive-money",
+              hint: "Record other income into a bank account",
             },
           ]}
           footer="Shortcuts only. Feed emptiness is not treated as a successful sync."
         />
       }
       actions={
-        <Button size="sm" asChild>
-          <Link to="/banking/import">Import CSV</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/banking/import">Import CSV</Link>
+          </Button>
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/banking/receive-money">Receive money</Link>
+          </Button>
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/banking/spend-money">Spend money</Link>
+          </Button>
+          <Button size="sm" asChild>
+            <Link to="/banking/transfers/new">New transfer</Link>
+          </Button>
+        </div>
       }
     >
       <BankIntegrityBanner />

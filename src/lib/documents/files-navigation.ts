@@ -23,7 +23,13 @@ export function parseFilesListSearch(raw: Record<string, unknown>): FilesListSea
     if (typeof id === "string" && UUID.test(id)) result[key] = id;
   }
   const q = raw["q"];
-  if (typeof q === "string" && q.length > 0 && q.length <= 120) result.q = q;
+  // Normalize bookmarked searches, but reject invisible controls that can spoof file names.
+  if (typeof q === "string") {
+    const normalized = q.trim();
+    if (normalized.length > 0 && normalized.length <= 120 &&
+      !/[\u0000-\u001f\u007f-\u009f\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]/u.test(normalized))
+      result.q = normalized;
+  }
 
   const type = raw["type"];
   if (type === "all" || isAttachmentEntityType(type)) result.type = type;

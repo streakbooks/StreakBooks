@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Settings sparse nested-history validation (2026-11-18)
+
+- `src/lib/settings/panels.ts`: reject sparse `settingsTrail` arrays containing holes, which `Array.every` otherwise skips, preventing undefined ancestor IDs from surviving URL-backed Settings navigation. Code commit `75b87dc1a819f93ad12667722dd4ba5f02a21698`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/settings/panels.test.ts`: regression for sparse refresh history and safe panel opening; test commit `8d4dcbeea92cf30d3905be8ea0f6279f13fa09e8`. **WRITTEN, NOT RUN.**
+- Manifest updated with partial Settings evidence; no module/workflow marked fully verified. **NOT RUN:** local inventory guard, Vitest, TypeScript, lint, build, authenticated browser, accessibility, RLS/accounting regression. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production DB or deployment.
+
+
 ### Payroll payment records table accessibility (2026-11-18)
 
 - `src/screens/payroll/payments.tsx`: add `aria-label="Payroll payment records"` to the payment records table so assistive technology can identify the table independently of adjacent filters. Source commit `54f915dc76363fad343ec955b1c4034861ee0b0f`. **SOURCE ONLY; NOT RUN.** No payment, reversal or journal operations changed.

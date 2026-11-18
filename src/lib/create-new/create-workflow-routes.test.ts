@@ -35,4 +35,21 @@ describe("create workflow routes (Batch 46)", () => {
       "/sales/recurring",
     );
   });
+
+  it("keeps money-document kinds on money-documents/new (kind supplied by Create menu search)", () => {
+    const moneyIds = [
+      "sales_receipt",
+      "customer_refund",
+      "supplier_refund",
+      "bank_deposit",
+      "card_payment",
+      "bank_adjustment",
+    ] as const;
+    for (const id of moneyIds) {
+      const action = CREATE_ACTIONS.find((entry) => entry.id === id);
+      expect(action?.route).toBe("/banking/money-documents/new");
+      expect(action?.id).not.toBe("receive_money");
+      expect(action?.id).not.toBe("expense");
+    }
+  });
 });

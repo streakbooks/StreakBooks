@@ -365,6 +365,25 @@ export function NewRecurringInvoice() {
   );
 }
 
+/** Full-page edit destination with browser history and deep links. */
+export function EditRecurringInvoice({ recurringId }: { recurringId: string }) {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { company } = useActiveCompany();
+  const companyId = company?.id;
+
+  return (
+    <RecurringInvoiceWorkspace
+      editingId={recurringId}
+      onCancel={() => void navigate({ to: "/sales/recurring" })}
+      onSaved={async () => {
+        await qc.invalidateQueries({ queryKey: ["sales-recurring", companyId] });
+        void navigate({ to: "/sales/recurring" });
+      }}
+    />
+  );
+}
+
 export function RecurringInvoices() {
   const { company } = useActiveCompany();
   const companyId = company?.id;
@@ -382,7 +401,6 @@ export function RecurringInvoices() {
     queryFn: () => fetchList({ data: { companyId: companyId! } }),
   });
 
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const genM = useMutation({
@@ -416,19 +434,6 @@ export function RecurringInvoices() {
   });
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
-
-  if (editingId) {
-    return (
-      <RecurringInvoiceWorkspace
-        editingId={editingId}
-        onCancel={() => setEditingId(null)}
-        onSaved={async () => {
-          await qc.invalidateQueries({ queryKey: ["sales-recurring", companyId] });
-          setEditingId(null);
-        }}
-      />
-    );
-  }
 
   const rows = listQ.data ?? [];
 
@@ -510,8 +515,10 @@ export function RecurringInvoices() {
                     ) : null}
                   </TableCell>
                   <TableCell className="space-x-1 text-right">
-                    <Button size="sm" variant="ghost" onClick={() => setEditingId(r.id)}>
-                      Edit
+                    <Button size="sm" variant="ghost" asChild>
+                      <Link to="/sales/recurring/$id/edit" params={{ id: r.id }}>
+                        Edit
+                      </Link>
                     </Button>
                     {!ended ? (
                       <Button

@@ -110,6 +110,13 @@ export function CrmRelationshipsPage() {
             <EmptyState
               title="No linked quotes yet"
               description="Create a Sales quote from an opportunity on Quotes & Proposals first."
+              action={
+                <Button asChild size="sm">
+                  <Link to="/crm/$section" params={{ section: "quotes" }}>
+                    Open Quotes & Proposals
+                  </Link>
+                </Button>
+              }
             />
           ) : null}
           {rows.length > 0 ? (

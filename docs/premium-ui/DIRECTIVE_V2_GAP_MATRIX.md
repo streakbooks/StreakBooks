@@ -94,3 +94,12 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | PM leases / owners / agreements / payouts / statements / reservations | EmptyState New/Link/Generate CTAs |
 | CRM campaigns | EmptyState New campaign CTA |
 
+## Batch 60 (empty CTA wave 3)
+
+| Gap | Action |
+| --- | --- |
+| PM rent charges / portals / ownership panel | EmptyState Generate/Invite/Add share CTAs |
+| HR self-service leave empty | Request leave CTA |
+| Messages conversation empties | New message / New group CTAs |
+| CRM quotes / relationships / forecasting empties | Links to opportunities / quotes / pipelines |
+

@@ -1,14 +1,14 @@
 Requirement,Title,Implemented in this batch,Executed test evidence,Acceptance verified,Remaining
 CM-01,Approved learning,Approved linked immutable event learning; no legacy backfill,Batch 04 report and machine-readable evidence; isolated/local scope,No,Tax/contact/split learning and full criterion acceptance remain open
 CM-02,Smart recommendations,Approved evidence scoped by bank/currency/direction; matching-strength labels,Batch 04 report and machine-readable evidence; isolated/local scope,No,Broader split recommendations and calibrated/scale acceptance remain open
-CM-03,User controls,Use/reject and disable/re-enable with real authenticated controls,Batch 04 report and machine-readable evidence; isolated/local scope,No,Preference reset and full user-control acceptance remain open
-CM-04,Feedback lifecycle,Durable account feedback; automatic/manual retry after committed lost responses,Batch 04 report and machine-readable evidence; isolated/local scope,No,Broader tax/contact/split feedback lifecycle acceptance remains open
+CM-03,User controls,Use/reject; scoped disable/re-enable and authorised reset preserving journals and approval evidence,Batch 05 report and machine-readable evidence; isolated/local scope,No,Hosted and complete user-control acceptance remain open
+CM-04,Feedback lifecycle,Durable feedback and reset receipts; committed retries survive lost responses and later eligibility changes,Batch 05 report and machine-readable evidence; isolated/local scope,No,Broader tax/contact/split feedback lifecycle acceptance remains open
 CM-05,Conflict detection,Conflicting account history flagged,Unit/mocked tests,No,Full directive acceptance remains open
 CM-06,Historical integrity,Immutable evidence retained; real reversals remove precedents; real MFA/RLS denial,Batch 04 report and machine-readable evidence; isolated/local scope,No,Complete void/deletion/edit/concurrency acceptance matrix remains open
 CM-07,Accounting integration,Canonical balanced posting and linked/reversed event integration,Batch 04 report and machine-readable evidence; isolated/local scope,No,Full tax/split/FX/closed-period acceptance remains open
 CM-08,UX integration,Real company switch and posting/retry flows; desktop/mobile permission gates,Batch 04 report and machine-readable evidence; isolated/local scope,No,Complete touch and screen-reader acceptance across all screens remains open
-CM-09,Database,357-migration clean local schema; unique identities; guarded audit RPC and RLS,Batch 04 report and machine-readable evidence; isolated/local scope,No,Historical checksum provenance and hosted upgrade/restore verification remain open
-CM-10,Validation,Current local unit/SQL/real API/MFA/browser results recorded in Batch 04 evidence,Batch 04 report and machine-readable evidence; isolated/local scope,No,Hosted CI/staging and complete programme acceptance remain open
+CM-09,Database,359-migration clean local schema; scoped controls and immutable reset receipts with MFA/RLS,Batch 05 report and machine-readable evidence; isolated/local scope,No,Historical checksum provenance and hosted upgrade/restore verification remain open
+CM-10,Validation,Batch 05 local unit/SQL/real API/MFA/browser verification recorded with tested revision,Batch 05 report and machine-readable evidence; isolated/local scope,No,Hosted CI/staging and complete programme acceptance remain open
 ES-01,Duplicate transaction risk,Not completed in this batch,Not established,No,Full directive acceptance remains open
 ES-02,Account coding anomalies,Not completed in this batch,Not established,No,Full directive acceptance remains open
 ES-03,Vendor and payment risk,Not completed in this batch,Not established,No,Full directive acceptance remains open

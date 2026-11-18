@@ -1,0 +1,268 @@
+{
+  "date": "2026-11-18",
+  "status": "local implementation verified; whole programme and hosted release remain partial and blocked",
+  "runtime_revision": "89f7078cb1590de054b107afa600252f382fca70",
+  "frontend_unit_and_type_revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557",
+  "frontend_sources_identical_between_revisions": true,
+  "integrated_main_snapshot": "8c79ac08e1f21884395a6066a71267f04ffda6d5",
+  "pull_request": "https://github.com/linkbusinessadvisory/LinkBooks/pull/251",
+  "typecheck": {
+    "exit_code": 0,
+    "revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557",
+    "node_options": "--max-old-space-size=6144"
+  },
+  "checks": [
+    {
+      "name": "repository",
+      "command": ["npm", "run", "check:repository"],
+      "exit_code": 0,
+      "duration_seconds": 0.33,
+      "revision": "89f7078cb1590de054b107afa600252f382fca70"
+    },
+    {
+      "name": "migration-identities",
+      "command": ["npm", "run", "check:migrations"],
+      "exit_code": 0,
+      "duration_seconds": 0.32,
+      "revision": "89f7078cb1590de054b107afa600252f382fca70"
+    },
+    {
+      "name": "modules",
+      "command": ["npm", "run", "check:modules"],
+      "exit_code": 0,
+      "duration_seconds": 0.67,
+      "revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557"
+    },
+    {
+      "name": "ui-contract",
+      "command": ["npm", "run", "check:ui"],
+      "exit_code": 0,
+      "duration_seconds": 3.67,
+      "revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557"
+    },
+    {
+      "name": "ui-route-resolver",
+      "command": ["node", "--test", "scripts/lib/ui-route-source.test.mjs"],
+      "exit_code": 0,
+      "duration_seconds": 0.56,
+      "revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557"
+    },
+    {
+      "name": "navigation",
+      "command": ["npm", "run", "check:navigation"],
+      "exit_code": 0,
+      "duration_seconds": 0.74,
+      "revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557"
+    },
+    {
+      "name": "lookups",
+      "command": ["npm", "run", "check:lookups"],
+      "exit_code": 0,
+      "duration_seconds": 2.18,
+      "revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557"
+    },
+    {
+      "name": "lint",
+      "command": ["npm", "run", "lint", "--", "--max-warnings=0"],
+      "exit_code": 0,
+      "duration_seconds": 61.45,
+      "revision": "89f7078cb1590de054b107afa600252f382fca70"
+    },
+    {
+      "name": "unit",
+      "command": ["npm", "test", "--", "--maxWorkers=4"],
+      "exit_code": 0,
+      "duration_seconds": 74.84,
+      "revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557"
+    },
+    {
+      "name": "browser-memory",
+      "command": ["npm", "run", "test:banking:ui"],
+      "exit_code": 0,
+      "duration_seconds": 25.28,
+      "revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557"
+    },
+    {
+      "name": "browser-ui",
+      "command": ["npm", "run", "test:ui"],
+      "exit_code": 0,
+      "duration_seconds": 139.77,
+      "revision": "89f7078cb1590de054b107afa600252f382fca70"
+    },
+    {
+      "name": "postgres-banking",
+      "command": ["npm", "run", "test:banking:postgres"],
+      "exit_code": 0,
+      "duration_seconds": 26.17,
+      "revision": "89f7078cb1590de054b107afa600252f382fca70"
+    },
+    {
+      "name": "postgres-workflows",
+      "command": ["npm", "run", "test:workflows:postgres"],
+      "exit_code": 0,
+      "duration_seconds": 16.36,
+      "revision": "89f7078cb1590de054b107afa600252f382fca70"
+    },
+    {
+      "name": "postgres-platform",
+      "command": ["npm", "run", "test:platform:postgres"],
+      "exit_code": 0,
+      "duration_seconds": 25.4,
+      "revision": "89f7078cb1590de054b107afa600252f382fca70"
+    },
+    {
+      "name": "build",
+      "command": ["npm", "run", "build"],
+      "exit_code": 0,
+      "duration_seconds": 53.44,
+      "revision": "89f7078cb1590de054b107afa600252f382fca70"
+    },
+    {
+      "name": "bundle",
+      "command": ["npm", "run", "check:bundle"],
+      "exit_code": 0,
+      "duration_seconds": 1.64,
+      "revision": "89f7078cb1590de054b107afa600252f382fca70"
+    }
+  ],
+  "unit": {
+    "files_passed": 591,
+    "passed": 4012,
+    "failed": 0,
+    "skipped": 0,
+    "revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557"
+  },
+  "browser": {
+    "real_local": {
+      "passed": 8,
+      "failed": 0,
+      "revision": "89f7078cb1590de054b107afa600252f382fca70"
+    },
+    "shared_ui_fixture": {
+      "passed": 79,
+      "failed": 0,
+      "revision": "89f7078cb1590de054b107afa600252f382fca70"
+    },
+    "coding_memory_fixture": {
+      "passed": 7,
+      "failed": 0,
+      "revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557"
+    }
+  },
+  "real_local_api": {
+    "setup": {
+      "target": "isolated localhost Supabase; real Auth and RLS",
+      "passed": 28,
+      "assertions": [
+        "Real Auth password session created",
+        "Real Auth password session created",
+        "Canonical company creation returned a company identity",
+        "Authoritative posting retries reuse the same journal",
+        "Authoritative journal is balanced",
+        "Linked approved posting becomes exactly one recommendation",
+        "Real API feedback retries deduplicate",
+        "Rejected feedback adds no learning",
+        "Preference False persists through the real API",
+        "Preference True persists through the real API",
+        "Real RLS hides another company learning evidence",
+        "Direct learning-event forgery is denied",
+        "App audit RPC resolves UUID strings and preserves the actor while removing secret fields",
+        "App audit RPC preserves non-UUID entity references",
+        "App audit RPC rejects another company user",
+        "Anonymous app audit writes are denied",
+        "Same owner has a second isolated company for real UI switching",
+        "Real Auth password session created",
+        "Real read-only company member can view coding memory",
+        "Real read-only member cannot submit coding feedback",
+        "Real read-only member cannot change memory preferences",
+        "Real read-only member cannot reset learned preferences",
+        "Cross-company reset is denied by the real API",
+        "Anonymous reset is denied",
+        "Direct scoped watermark forgery is denied",
+        "Real RLS hides another company scoped controls",
+        "Real read-only member cannot bypass the UI to post a journal",
+        "Denied posting leaves the original journal unchanged"
+      ]
+    },
+    "reversal": {
+      "target": "isolated localhost Supabase; real Auth and RLS",
+      "passed": 4,
+      "assertions": [
+        "Reversal remains on the same local endpoint",
+        "Authoritative reversals remove all fixture precedents",
+        "Reversal retains immutable learning evidence",
+        "Committed feedback retry survives authoritative reversal"
+      ]
+    },
+    "mfa": {
+      "target": "isolated localhost Supabase; real Auth and RLS",
+      "passed": 9,
+      "assertions": [
+        "MFA remains on the same explicit local endpoint",
+        "Normal password session can read its fixture evidence before enrollment",
+        "Real Auth enrollment and challenge return an AAL2 session",
+        "MFA protects the reset endpoint before any preference lookup",
+        "Old AAL1 session cannot read evidence after verified enrollment",
+        "Verified AAL2 session restores only its existing company evidence",
+        "Coding Memory RPC accepts the real AAL2 session",
+        "AAL2 does not permit direct learning-event forgery",
+        "Both app and legacy audit endpoints enforce MFA while AAL2 audit writes succeed"
+      ]
+    }
+  },
+  "banking_postgres": {
+    "passed": 111,
+    "failed": 0,
+    "revision": "89f7078cb1590de054b107afa600252f382fca70",
+    "scope": "disposable PostgreSQL 17; concurrent relink, reversal, feedback, reset, bank currency/transaction reassignment and cancellation rollback"
+  },
+  "helper_smoke": {
+    "passed": 19,
+    "caller_search_path": "pg_temp"
+  },
+  "local_security_advisors": {
+    "warning_error_findings": 0,
+    "info_and_performance_certified": false
+  },
+  "local_schema": {
+    "expected_migration_count": 359,
+    "applied_migration_count": 359,
+    "all_repository_versions_match": true,
+    "cli_exit_code": 1,
+    "service_health_probe_failed": true,
+    "host_http_status": {
+      "auth": 200,
+      "rest": 200
+    }
+  },
+  "github_ci": {
+    "runtime_revision": "89f7078cb1590de054b107afa600252f382fca70",
+    "run_id": 44258135155,
+    "url": "https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44258135155",
+    "conclusion": "failure",
+    "failed_jobs": 5,
+    "validate_steps": [],
+    "validate_log_download": "NOT_FOUND",
+    "confirmed_prior_run": 44256575474,
+    "annotation_source": "User supplied all five job error annotations from GitHub run 44256575474",
+    "job_start_error": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+    "root_cause": "GitHub account billing/spending restriction; the annotation does not distinguish the specific cause",
+    "ubuntu_26_notice": "informational, separate from job-start failure",
+    "account_settings_changed": false
+  },
+  "discovery_runs": [
+    "Unconfigured-heap typecheck was interrupted and replaced by a successful 6 GiB run.",
+    "First real browser run hit Vite dependency reload; final unchanged-timeout run passed all eight cases.",
+    "First shared UI run had two blank pages during database recreation; final serialized run passed all 79 cases without assertion or timeout changes.",
+    "Fixture-only missing JWT settings were corrected in newly added reset/scope-lock scenarios before the final SQL pass."
+  ],
+  "production_migrations_performed": false,
+  "main_merge_performed": false,
+  "deployment_performed": false,
+  "authenticated_hosted_staging": "not executed",
+  "production_verified": false,
+  "complete_directive_criteria_acceptance": {
+    "verified": 0,
+    "total": 53
+  }
+}

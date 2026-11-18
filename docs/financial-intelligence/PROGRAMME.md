@@ -1,6 +1,6 @@
 # LinkBooks financial intelligence programme — 17 November 2026
 
-Latest continuation: [Batch 04 shared lookups, audit/permission repairs and real verification](BATCH-04-LOOKUPS-AND-VERIFICATION.md). The original audit matrix below is historical; use the current batch evidence for executed gate results. Full programme acceptance remains 0/53.
+Latest continuation: [Batch 05 scoped Coding Memory reset](BATCH-05-SCOPED-MEMORY-RESET.md). The earlier audit matrices and batches are historical; use the latest evidence for current results. Full programme acceptance remains 0/53.
 
 ## Result and baseline
 

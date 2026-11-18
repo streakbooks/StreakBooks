@@ -1,6 +1,6 @@
 # Verification and review — draft PR #225
 
-Current continuation: [Batch 04 verification report](BATCH-04-LOOKUPS-AND-VERIFICATION.md). Earlier counts and failed baseline gates below are historical; use the Batch 04 evidence for current status.
+Current continuation: [Batch 05 scoped Coding Memory reset](BATCH-05-SCOPED-MEMORY-RESET.md). Earlier counts and failed baseline gates below are historical; use the latest batch evidence for current status.
 
 Result: PARTIALLY COMPLETED. [Draft PR #225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225) is open; no merge requested or performed. [Main baseline](https://github.com/linkbusinessadvisory/LinkBooks/commit/a2a8a79efbf8ad11b0aa64bd00a7e64095ba0484). [Code commit](https://github.com/linkbusinessadvisory/LinkBooks/commit/743c73fcddf9611657c8b0d3a2c0351bf3de4bc6). Documentation-only follow-up does not alter tested runtime source.
 

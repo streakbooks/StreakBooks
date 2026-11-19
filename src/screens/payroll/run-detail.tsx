@@ -840,6 +840,11 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
           </DialogHeader>
           {settingsQ.isPending ? (
             <LoadingState />
+          ) : settingsQ.isError ? (
+            <QueryErrorState
+              queries={[settingsQ]}
+              title="Could not load payroll components"
+            />
           ) : manualComponents.length === 0 && adjustHourlyUnitComponents.length === 0 ? (
             <EmptyState
               title="Nothing to adjust yet"
@@ -907,6 +912,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
               disabled={
                 adjustMut.isPending ||
                 settingsQ.isPending ||
+                settingsQ.isError ||
                 (manualComponents.length === 0 && adjustHourlyUnitComponents.length === 0)
               }
               onClick={() => adjustMut.mutate()}

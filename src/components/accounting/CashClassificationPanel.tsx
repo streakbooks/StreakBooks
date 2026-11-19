@@ -679,6 +679,9 @@ function OpeningForm({
             Enter source tax details to support cash tax reporting. Net plus tax must equal the full
             document gross. Leaving this empty preserves an explicit tax exception.
           </p>
+          {codes.isError && codes.data === undefined ? (
+            <QueryErrorState queries={[codes]} title="Could not load tax codes" />
+          ) : null}
           {taxLines.map((line, index) => (
             <div key={line.id} className="grid gap-2 sm:grid-cols-4">
               <Input
@@ -722,6 +725,7 @@ function OpeningForm({
                   const c = raw as unknown as { id: string; code: string; name: string };
                   return { id: c.id, label: `${c.code} — ${c.name}` };
                 })}
+                disabled={codes.isError || codes.isPending}
               />
 
               <Button

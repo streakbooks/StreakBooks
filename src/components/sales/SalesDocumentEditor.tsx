@@ -776,7 +776,7 @@ export function SalesDocumentEditor({
   ) {
     return <LoadingState />;
   }
-  const documentOptionQueries = [customersQ, accountsQ, configQ, settingsQ];
+  const documentOptionQueries = [customersQ, accountsQ, configQ, settingsQ, productsQ];
   if (documentOptionQueries.some((query) => query.isError && query.data === undefined)) {
     return (
       <QueryErrorState queries={documentOptionQueries} title="Could not load document options" />
@@ -921,21 +921,32 @@ export function SalesDocumentEditor({
               {kind === "credit_note" ? (
                 <FormControlShell width="contact">
                   <Label>Credit against invoice (optional)</Label>
-                  <EntityCombobox
-                    aria-label="Source invoice"
-                    options={creditableInvoices.map((i) => ({
-                      value: i.id,
-                      label: `${i.invoice_number ?? i.id.slice(0, 8)} (${i.status.replace("_", " ")}, ${i.currency_code})`,
-                    }))}
-                    value={sourceInvoiceId}
-                    onChange={(v) => {
-                      setSourceInvoiceId(v);
-                      const inv = creditableInvoices.find((i) => i.id === v);
-                      if (inv) setCurrency(inv.currency_code);
-                    }}
-                    placeholder={contactId ? "None — standalone credit" : "Choose a customer first"}
-                    disabled={!contactId}
-                  />
+                  {contactId &&
+                  customerInvoicesQ.isError &&
+                  customerInvoicesQ.data === undefined ? (
+                    <QueryErrorState
+                      queries={[customerInvoicesQ]}
+                      title="Could not load invoices for this customer"
+                    />
+                  ) : (
+                    <EntityCombobox
+                      aria-label="Source invoice"
+                      options={creditableInvoices.map((i) => ({
+                        value: i.id,
+                        label: `${i.invoice_number ?? i.id.slice(0, 8)} (${i.status.replace("_", " ")}, ${i.currency_code})`,
+                      }))}
+                      value={sourceInvoiceId}
+                      onChange={(v) => {
+                        setSourceInvoiceId(v);
+                        const inv = creditableInvoices.find((i) => i.id === v);
+                        if (inv) setCurrency(inv.currency_code);
+                      }}
+                      placeholder={
+                        contactId ? "None — standalone credit" : "Choose a customer first"
+                      }
+                      disabled={!contactId || customerInvoicesQ.isPending}
+                    />
+                  )}
                 </FormControlShell>
               ) : null}
               <FormControlShell width="date">

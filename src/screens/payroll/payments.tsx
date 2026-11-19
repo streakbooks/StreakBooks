@@ -707,6 +707,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <Label>Allocate to payslips (optional)</Label>
               {payslipsQ.isPending ? (
                 <p className="text-sm text-muted-foreground">Loading open payslips…</p>
+              ) : payslipsQ.isError ? (
+                <QueryErrorState queries={[payslipsQ]} title="Could not load open payslips" />
               ) : openPayslips.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No outstanding {payCurrency} payslips on posted runs

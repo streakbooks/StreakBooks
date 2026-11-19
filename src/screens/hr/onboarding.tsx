@@ -200,7 +200,11 @@ export function HrOnboardingPage() {
             <Button type="button" variant="outline" onClick={() => setTemplateOpen(true)}>
               New template
             </Button>
-            <Button type="button" onClick={() => setCaseOpen(true)}>
+            <Button
+              type="button"
+              disabled={templatesQ.isError}
+              onClick={() => setCaseOpen(true)}
+            >
               Start onboarding
             </Button>
           </div>
@@ -423,22 +427,26 @@ export function HrOnboardingPage() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Template</Label>
-              <RecordLookupSelect
-                value={templateId || "__none"}
-                onValueChange={(v) => setTemplateId(v === "__none" ? "" : v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Optional template" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none">None</SelectItem>
-                  {(templatesQ.data?.templates ?? []).map((row) => (
-                    <SelectItem key={row.id} value={row.id}>
-                      {row.code} — {row.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {templatesQ.isError && templatesQ.data === undefined ? (
+                <QueryErrorState queries={[templatesQ]} title="Could not load templates" />
+              ) : (
+                <RecordLookupSelect
+                  value={templateId || "__none"}
+                  onValueChange={(v) => setTemplateId(v === "__none" ? "" : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Optional template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">None</SelectItem>
+                    {(templatesQ.data?.templates ?? []).map((row) => (
+                      <SelectItem key={row.id} value={row.id}>
+                        {row.code} — {row.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
             <div className="space-y-1">
               <Label>Employee</Label>
@@ -477,7 +485,15 @@ export function HrOnboardingPage() {
             <Button type="button" variant="outline" onClick={() => setCaseOpen(false)}>
               Cancel
             </Button>
-            <Button type="button" disabled={caseMut.isPending} onClick={() => caseMut.mutate()}>
+            <Button
+              type="button"
+              disabled={
+                caseMut.isPending ||
+                templatesQ.isError ||
+                (Boolean(employeeId) && !employeesQ.isSuccess)
+              }
+              onClick={() => caseMut.mutate()}
+            >
               {caseMut.isPending ? "Creating…" : "Create case"}
             </Button>
           </DialogFooter>

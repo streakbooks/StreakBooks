@@ -156,6 +156,7 @@ export function HrTrainingPage() {
             </Button>
             <Button
               type="button"
+              disabled={!dataQ.isSuccess || active.length === 0}
               onClick={() => {
                 setCourseId(active[0]?.id ?? "");
                 setEmployeeId("");
@@ -327,18 +328,22 @@ export function HrTrainingPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Course</Label>
-              <RecordLookupSelect value={courseId} onValueChange={setCourseId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select course" />
-                </SelectTrigger>
-                <SelectContent>
-                  {active.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.code} — {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {dataQ.isError && dataQ.data === undefined ? (
+                <QueryErrorState queries={[dataQ]} title="Could not load training" />
+              ) : (
+                <RecordLookupSelect value={courseId} onValueChange={setCourseId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {active.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.code} — {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label>Employee</Label>
@@ -366,7 +371,13 @@ export function HrTrainingPage() {
             </Button>
             <Button
               type="button"
-              disabled={!courseId || !employeeId || enrollM.isPending}
+              disabled={
+                !courseId ||
+                !employeeId ||
+                enrollM.isPending ||
+                !dataQ.isSuccess ||
+                !empQ.isSuccess
+              }
               onClick={() => enrollM.mutate()}
             >
               Save

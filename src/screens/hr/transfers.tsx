@@ -303,51 +303,57 @@ export function HrTransfersPage() {
                 onChange={(e) => setEffectiveOn(e.target.value)}
               />
             </div>
-            <div className="grid gap-1.5">
-              <Label>To department</Label>
-              <RecordLookupSelect value={toDepartmentId} onValueChange={setToDepartmentId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Optional" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
-            </div>
-            <div className="grid gap-1.5">
-              <Label>To designation</Label>
-              <RecordLookupSelect value={toDesignationId} onValueChange={setToDesignationId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Optional" />
-                </SelectTrigger>
-                <SelectContent>
-                  {designations.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
-            </div>
-            <div className="grid gap-1.5">
-              <Label>To location</Label>
-              <RecordLookupSelect value={toLocationId} onValueChange={setToLocationId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Optional" />
-                </SelectTrigger>
-                <SelectContent>
-                  {locations.map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
-            </div>
+            {orgQ.isError && orgQ.data === undefined ? (
+              <QueryErrorState queries={[orgQ]} title="Could not load organisation structure" />
+            ) : (
+              <>
+                <div className="grid gap-1.5">
+                  <Label>To department</Label>
+                  <RecordLookupSelect value={toDepartmentId} onValueChange={setToDepartmentId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Optional" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </RecordLookupSelect>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>To designation</Label>
+                  <RecordLookupSelect value={toDesignationId} onValueChange={setToDesignationId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Optional" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {designations.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </RecordLookupSelect>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>To location</Label>
+                  <RecordLookupSelect value={toLocationId} onValueChange={setToLocationId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Optional" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locations.map((l) => (
+                        <SelectItem key={l.id} value={l.id}>
+                          {l.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </RecordLookupSelect>
+                </div>
+              </>
+            )}
             <div className="grid gap-1.5">
               <Label>To manager</Label>
               {empQ.isError && empQ.data === undefined ? (
@@ -381,7 +387,13 @@ export function HrTransfersPage() {
             </Button>
             <Button
               type="button"
-              disabled={!employeeId || !effectiveOn || saveM.isPending}
+              disabled={
+                !employeeId ||
+                !effectiveOn ||
+                saveM.isPending ||
+                !empQ.isSuccess ||
+                orgQ.isError
+              }
               onClick={() => saveM.mutate()}
             >
               Submit

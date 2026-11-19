@@ -215,7 +215,12 @@ export function HrRecruitmentPage() {
             <Button type="button" onClick={() => setReqOpen(true)}>
               New requisition
             </Button>
-            <Button type="button" variant="outline" onClick={() => setAppOpen(true)}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!reqsQ.isSuccess || !(reqsQ.data?.items.length ?? 0)}
+              onClick={() => setAppOpen(true)}
+            >
               New application
             </Button>
           </div>
@@ -422,18 +427,22 @@ export function HrRecruitmentPage() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Requisition</Label>
-              <RecordLookupSelect value={selectedReqId} onValueChange={setSelectedReqId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select requisition" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(reqsQ.data?.items ?? []).map((row) => (
-                    <SelectItem key={row.id} value={row.id}>
-                      {row.requisitionNumber} — {row.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {reqsQ.isError && reqsQ.data === undefined ? (
+                <QueryErrorState queries={[reqsQ]} title="Could not load requisitions" />
+              ) : (
+                <RecordLookupSelect value={selectedReqId} onValueChange={setSelectedReqId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select requisition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(reqsQ.data?.items ?? []).map((row) => (
+                      <SelectItem key={row.id} value={row.id}>
+                        {row.requisitionNumber} — {row.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
@@ -484,7 +493,13 @@ export function HrRecruitmentPage() {
             </Button>
             <Button
               type="button"
-              disabled={!selectedReqId || !firstName.trim() || !lastName.trim() || appMut.isPending}
+              disabled={
+                !selectedReqId ||
+                !firstName.trim() ||
+                !lastName.trim() ||
+                appMut.isPending ||
+                !reqsQ.isSuccess
+              }
               onClick={() => appMut.mutate()}
             >
               {appMut.isPending ? "Saving…" : "Save"}

@@ -1,5 +1,5 @@
 import { QueryErrorState } from "@/components/common/QueryErrorState";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -42,6 +42,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
+import { interpretLineGridKey } from "@/lib/ui/line-grid-keyboard";
+import { parseLineGridClipboard } from "@/lib/ui/line-grid-paste";
 import { Trash2 } from "lucide-react";
 
 let lineKeySeed = 0;
@@ -176,12 +178,79 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
   const update = (key: string, patch: Partial<CreditFormLine>) =>
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
 
+  const CN_GRID_COLS = 3; // description, net, tax
+
+  const onCreditLineKeyDown = (
+    event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+    rowIndex: number,
+    colIndex: number,
+  ) => {
+    const action = interpretLineGridKey(event.key, {
+      shiftKey: event.shiftKey,
+      atLastRow: rowIndex === lines.length - 1,
+      atLastCol: colIndex === CN_GRID_COLS - 1,
+    });
+    if (action.type === "none") return;
+    if (action.type === "add-row") {
+      event.preventDefault();
+      setLines((ls) => [...ls, blankLine()]);
+      queueMicrotask(() => {
+        document
+          .querySelector<HTMLElement>(`[data-cn-cell="${rowIndex + 1}-${colIndex}"]`)
+          ?.focus();
+      });
+      return;
+    }
+    if (
+      action.type === "move" &&
+      (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp")
+    ) {
+      event.preventDefault();
+      const nextRow = Math.max(0, Math.min(lines.length - 1, rowIndex + action.rowDelta));
+      document.querySelector<HTMLElement>(`[data-cn-cell="${nextRow}-${colIndex}"]`)?.focus();
+    }
+  };
+
+  const onCreditMoneyPaste = (
+    event: ClipboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    field: "net" | "tax",
+  ) => {
+    const grid = parseLineGridClipboard(event.clipboardData.getData("text"));
+    if (grid.length <= 1 && (grid[0]?.length ?? 0) <= 1) return;
+    event.preventDefault();
+    setLines((current) => {
+      const next = current.map((line) => ({ ...line }));
+      for (let r = 0; r < grid.length; r++) {
+        const targetRow = rowIndex + r;
+        while (next.length <= targetRow) next.push(blankLine());
+        const cells = grid[r] ?? [];
+        const row = next[targetRow]!;
+        if (field === "net") {
+          next[targetRow] = {
+            ...row,
+            net: cells[0] ?? row.net,
+            tax: cells[1] ?? row.tax,
+          };
+        } else {
+          next[targetRow] = {
+            ...row,
+            tax: cells[0] ?? row.tax,
+          };
+        }
+      }
+      return next;
+    });
+  };
+
   const parsed = lines.map((l) => ({
     net: tryParseMinor(l.net || "0", currency),
     tax: tryParseMinor(l.tax || "0", currency),
   }));
   const anyInvalid = parsed.some((p) => p.net === null || p.tax === null);
-  const totalMinor = parsed.reduce((sum, p) => sum + Number((p.net ?? 0n) + (p.tax ?? 0n)), 0);
+  const netMinorTotal = parsed.reduce((sum, p) => sum + Number(p.net ?? 0n), 0);
+  const taxMinorTotal = parsed.reduce((sum, p) => sum + Number(p.tax ?? 0n), 0);
+  const totalMinor = netMinorTotal + taxMinorTotal;
   const incomplete = lines.some((l) => !l.description.trim() || !l.accountId);
   const fxInvalid = foreign && fxRate.trim() !== "" && !(Number(fxRate) > 0);
 
@@ -391,12 +460,14 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
             <TableRow key={l.key}>
               <TableCell className="p-0 align-top">
                 <Textarea
+                  data-cn-cell={`${i}-0`}
                   aria-label={`Line ${i + 1} description`}
                   placeholder="Description"
                   value={l.description}
                   rows={1}
                   className="lb-spreadsheet-wrap min-h-8"
                   onChange={(e) => update(l.key, { description: e.target.value })}
+                  onKeyDown={(e) => onCreditLineKeyDown(e, i, 0)}
                 />
               </TableCell>
               <TableCell className="p-0 align-middle">
@@ -426,22 +497,28 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
               </TableCell>
               <TableCell className="p-0 align-middle">
                 <Input
+                  data-cn-cell={`${i}-1`}
                   aria-label={`Line ${i + 1} net`}
                   value={l.net}
                   inputMode="decimal"
                   className="h-8 rounded-none border-0 bg-transparent text-right shadow-none"
                   aria-invalid={tryParseMinor(l.net || "0", currency) === null}
                   onChange={(e) => update(l.key, { net: e.target.value })}
+                  onKeyDown={(e) => onCreditLineKeyDown(e, i, 1)}
+                  onPaste={(e) => onCreditMoneyPaste(e, i, "net")}
                 />
               </TableCell>
               <TableCell className="p-0 align-middle">
                 <Input
+                  data-cn-cell={`${i}-2`}
                   aria-label={`Line ${i + 1} tax`}
                   value={l.tax}
                   inputMode="decimal"
                   className="h-8 rounded-none border-0 bg-transparent text-right shadow-none"
                   aria-invalid={tryParseMinor(l.tax || "0", currency) === null}
                   onChange={(e) => update(l.key, { tax: e.target.value })}
+                  onKeyDown={(e) => onCreditLineKeyDown(e, i, 2)}
+                  onPaste={(e) => onCreditMoneyPaste(e, i, "tax")}
                 />
               </TableCell>
               <TableCell className="p-0 align-middle">
@@ -463,6 +540,17 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
       totals={
         <TotalsSummary
           lines={[
+            {
+              id: "net",
+              label: "Net",
+              value: `${fromMinorUnits(netMinorTotal, currency)} ${currency}`,
+            },
+            {
+              id: "tax",
+              label: "Tax",
+              value: `${fromMinorUnits(taxMinorTotal, currency)} ${currency}`,
+              emphasis: "muted",
+            },
             {
               id: "total",
               label: "Credit total",

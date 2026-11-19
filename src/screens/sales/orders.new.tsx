@@ -16,7 +16,10 @@ import { emptyOrderLine } from "@/lib/purchases/purchase-order";
 import { sumLines } from "@/lib/sales/line-helpers";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { ContactLookup } from "@/components/lookup";
 import { OrderEntryLines } from "@/components/orders/OrderEntryLines";
 import { Button } from "@/components/ui/button";
@@ -33,23 +36,14 @@ export function NewSalesOrder() {
     );
   }
   return (
-    <TransactionWorkspace
+    <SalesOrderForm
+      companyId={company.id}
+      currency={company.base_currency}
+      initial={undefined}
       title="New sales order"
-      description="Agree the customer order. Saving a draft has no ledger impact until you confirm and invoice."
-      breadcrumbs={[
-        { label: "Sales", to: "/sales" },
-        { label: "Orders", to: "/sales/orders" },
-        { label: "New" },
-      ]}
-    >
-      <SalesOrderForm
-        companyId={company.id}
-        currency={company.base_currency}
-        initial={undefined}
-        onSaved={(id) => void navigate({ to: "/sales/orders", search: { order: id } })}
-        onCancel={() => void navigate({ to: "/sales/orders" })}
-      />
-    </TransactionWorkspace>
+      onSaved={(id) => void navigate({ to: "/sales/orders", search: { order: id } })}
+      onCancel={() => void navigate({ to: "/sales/orders" })}
+    />
   );
 }
 
@@ -57,12 +51,14 @@ export function SalesOrderForm({
   companyId,
   currency: baseCurrency,
   initial,
+  title = initial ? "Edit sales order" : "New sales order",
   onSaved,
   onCancel,
 }: {
   companyId: string;
   currency: string;
   initial: SalesOrder | undefined;
+  title?: string;
   onSaved: (id: string) => void;
   onCancel: () => void;
 }) {
@@ -103,11 +99,10 @@ export function SalesOrderForm({
         }))
       : [emptyOrderLine()],
   );
-  const parsed = () =>
-    salesOrderLinesFromForm(lines, currency, config.data?.treatment ?? "exclusive");
-  let total: string | null = null;
+  const treatment = config.data?.treatment ?? "exclusive";
+  let totals: { subtotal_minor: bigint; tax_minor: bigint; total_minor: bigint } | null = null;
   try {
-    total = fmt.money(sumLines(parsed()).total_minor, currency);
+    totals = sumLines(salesOrderLinesFromForm(lines, currency, treatment));
   } catch {
     /* Incomplete input is validated on submit. */
   }
@@ -122,7 +117,7 @@ export function SalesOrderForm({
           currencyCode: currency,
           fxRate: currency === baseCurrency ? 1 : Number(fx),
           memo,
-          lines: parsed().map(
+          lines: salesOrderLinesFromForm(lines, currency, treatment).map(
             ({ description, accountId, quantity, unitPriceMinor, discountMinor, taxRateBps }) => ({
               description,
               accountId,
@@ -155,80 +150,136 @@ export function SalesOrderForm({
       />
     );
   return (
-    <fieldset disabled={mutation.isPending} className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label>Customer</Label>
-          <ContactLookup
-            ariaLabel="Sales order customer"
-            companyId={companyId}
-            contacts={customers.data ?? []}
-            value={contactId}
-            onChange={setContactId}
-            allowClear={false}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="sales-order-date">Order date</Label>
-          <Input
-            id="sales-order-date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="sales-order-currency">Currency</Label>
-          <Input
-            id="sales-order-currency"
-            maxLength={3}
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-          />
-        </div>
-        {currency !== baseCurrency ? (
-          <div className="space-y-2">
-            <Label htmlFor="sales-order-fx">Exchange rate to {baseCurrency}</Label>
-            <Input
-              id="sales-order-fx"
-              inputMode="decimal"
-              value={fx}
-              onChange={(e) => setFx(e.target.value)}
+    <TransactionWorkspace
+      title={title}
+      description="Agree the customer order. Saving a draft has no ledger impact until you confirm and invoice."
+      breadcrumbs={[
+        { label: "Sales", to: "/sales" },
+        { label: "Orders", to: "/sales/orders" },
+        { label: initial ? "Edit" : "New" },
+      ]}
+      meta={<StatusBadge status="draft" label={initial ? "Editing draft" : "Draft"} />}
+      details={
+        <FormGrid columns={4}>
+          <FormControlShell width="contact">
+            <Label>Customer</Label>
+            <ContactLookup
+              ariaLabel="Sales order customer"
+              companyId={companyId}
+              contacts={customers.data ?? []}
+              value={contactId}
+              onChange={setContactId}
+              allowClear={false}
             />
-          </div>
-        ) : null}
-      </div>
-      <p className="text-sm text-muted-foreground">
-        Prices {config.data.treatment === "inclusive" ? "include" : "exclude"} tax, using the
-        organisation's current sales tax treatment.
-      </p>
-      <OrderEntryLines
-        lines={lines}
-        onChange={setLines}
-        accounts={(accounts.data ?? []).filter((a) => a.is_active && a.is_postable)}
-        companyId={companyId}
-        currency={currency}
-      />
-      <p className="text-right font-semibold">Total: {total ?? "Complete valid lines"}</p>
-      <Label htmlFor="sales-order-memo">Memo</Label>
-      <Textarea
-        id="sales-order-memo"
-        value={memo}
-        maxLength={500}
-        onChange={(e) => setMemo(e.target.value)}
-      />
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          disabled={mutation.isPending || !can("sales.draft") || !contactId || !total}
-          onClick={() => mutation.mutate()}
-        >
-          Save draft
-        </Button>
-        <Button size="sm" variant="outline" type="button" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    </fieldset>
+          </FormControlShell>
+          <FormControlShell width="date">
+            <Label htmlFor="sales-order-date">Order date</Label>
+            <Input
+              id="sales-order-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </FormControlShell>
+          <FormControlShell width="currency">
+            <Label htmlFor="sales-order-currency">Currency</Label>
+            <Input
+              id="sales-order-currency"
+              maxLength={3}
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+            />
+          </FormControlShell>
+          {currency !== baseCurrency ? (
+            <FormControlShell width="money">
+              <Label htmlFor="sales-order-fx">Exchange rate to {baseCurrency}</Label>
+              <Input
+                id="sales-order-fx"
+                inputMode="decimal"
+                value={fx}
+                onChange={(e) => setFx(e.target.value)}
+              />
+            </FormControlShell>
+          ) : null}
+          <FormControlShell className="sm:col-span-2">
+            <Label htmlFor="sales-order-memo">Memo</Label>
+            <Textarea
+              id="sales-order-memo"
+              value={memo}
+              maxLength={500}
+              rows={1}
+              className="lb-spreadsheet-wrap min-h-8"
+              onChange={(e) => setMemo(e.target.value)}
+            />
+          </FormControlShell>
+          <FormControlShell className="sm:col-span-2">
+            <p className="text-sm text-muted-foreground">
+              Prices {treatment === "inclusive" ? "include" : "exclude"} tax, using the
+              organisation&apos;s current sales tax treatment.
+            </p>
+          </FormControlShell>
+        </FormGrid>
+      }
+      lines={
+        <fieldset disabled={mutation.isPending} className="disabled:opacity-70">
+          <OrderEntryLines
+            lines={lines}
+            onChange={setLines}
+            accounts={(accounts.data ?? []).filter((a) => a.is_active && a.is_postable)}
+            companyId={companyId}
+            currency={currency}
+          />
+        </fieldset>
+      }
+      totals={
+        <TotalsSummary
+          aria-label="Sales order totals"
+          lines={
+            totals
+              ? [
+                  {
+                    id: "subtotal",
+                    label: "Subtotal",
+                    value: fmt.money(totals.subtotal_minor, currency),
+                  },
+                  {
+                    id: "tax",
+                    label: treatment === "inclusive" ? "Tax (included)" : "Tax",
+                    value: fmt.money(totals.tax_minor, currency),
+                    emphasis: "muted",
+                  },
+                  {
+                    id: "total",
+                    label: "Total",
+                    value: fmt.money(totals.total_minor, currency),
+                    emphasis: "total",
+                  },
+                ]
+              : [
+                  {
+                    id: "total",
+                    label: "Total",
+                    value: "Complete valid lines",
+                    emphasis: "total",
+                  },
+                ]
+          }
+        />
+      }
+      stickyActions={
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" type="button" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            disabled={mutation.isPending || !can("sales.draft") || !contactId || !totals}
+            onClick={() => mutation.mutate()}
+          >
+            Save draft
+          </Button>
+        </div>
+      }
+    />
   );
 }

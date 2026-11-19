@@ -19,6 +19,7 @@ import {
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
 import { LoadingState, EmptyState } from "@/components/common/states";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -436,11 +437,33 @@ function ReceiptForm({
                 </TableBody>
               </Table>
             )}
-            <p className="text-sm text-muted-foreground">
-              Allocated {money(allocatedMinor, cur)} · Unallocated{" "}
-              {Number.isFinite(unallocatedMinor) ? money(unallocatedMinor, cur) : "—"}
-            </p>
           </div>
+        ) : null
+      }
+      totals={
+        contactId ? (
+          <TotalsSummary
+            aria-label="Receipt allocation totals"
+            lines={[
+              {
+                id: "amount",
+                label: "Amount",
+                value: Number.isFinite(amountMinor) ? money(amountMinor, cur) : "—",
+              },
+              {
+                id: "allocated",
+                label: "Allocated",
+                value: money(allocatedMinor, cur),
+                emphasis: "muted",
+              },
+              {
+                id: "unallocated",
+                label: "Unallocated",
+                value: Number.isFinite(unallocatedMinor) ? money(unallocatedMinor, cur) : "—",
+                emphasis: "total",
+              },
+            ]}
+          />
         ) : null
       }
       support={

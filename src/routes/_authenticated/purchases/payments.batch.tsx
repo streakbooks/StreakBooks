@@ -15,7 +15,10 @@ import { buildBatchPayments, type BatchBill } from "@/lib/purchases/batch-paymen
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { AccountLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -121,68 +124,82 @@ function BatchPayment() {
     );
 
   return (
-    <ListWorkspace
+    <TransactionWorkspace
       title="Batch payment"
       description="Pay several bills in one go. One payment is created per supplier and currency; all post together or not at all."
+      breadcrumbs={[
+        { label: "Purchases", to: "/purchases" },
+        { label: "Payments", to: "/purchases/payments" },
+        { label: "Batch" },
+      ]}
+      meta={<StatusBadge status="draft" label="Batch" />}
       actions={
         <Button size="sm" variant="outline" asChild>
           <Link to="/purchases/payments">Cancel</Link>
         </Button>
       }
-    >
-      <div className="max-w-4xl space-y-4">
-        {accountsQ.isError ? (
-          <ErrorState
-            compact
-            title="Could not load payment accounts"
-            description={friendlyAuthError(accountsQ.error)}
-            onRetry={() => void accountsQ.refetch()}
-          />
-        ) : null}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="batch-bank">Bank / cash account</Label>
-            <AccountLookup
-              id="batch-bank"
-              ariaLabel="Bank / cash account"
-              accounts={(accountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>}
-              value={bankAccountId}
-              onChange={setBankAccountId}
-              companyId={companyId}
-              purpose="posting"
-              createKind="bank"
-              disabled={accountsQ.isPending || accountsQ.isError || mutation.isPending}
-              placeholder={
-                accountsQ.isPending
-                  ? "Loading payment accounts…"
-                  : "Paid from (bank or cash account)"
-              }
-              allowClear={false}
+      details={
+        <div className="space-y-3">
+          {accountsQ.isError ? (
+            <ErrorState
+              compact
+              title="Could not load payment accounts"
+              description={friendlyAuthError(accountsQ.error)}
+              onRetry={() => void accountsQ.refetch()}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="batch-payment-date">Payment date</Label>
-            <Input
-              id="batch-payment-date"
-              type="date"
-              value={paymentDate}
-              onChange={(e) => setPaymentDate(e.target.value)}
-            />
-          </div>
+          ) : null}
+          <FormGrid columns={4}>
+            <FormControlShell width="contact" className="sm:col-span-2">
+              <Label htmlFor="batch-bank">Bank / cash account</Label>
+              <AccountLookup
+                id="batch-bank"
+                ariaLabel="Bank / cash account"
+                accounts={
+                  (accountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>
+                }
+                value={bankAccountId}
+                onChange={setBankAccountId}
+                companyId={companyId}
+                purpose="posting"
+                createKind="bank"
+                disabled={accountsQ.isPending || accountsQ.isError || mutation.isPending}
+                placeholder={
+                  accountsQ.isPending
+                    ? "Loading payment accounts…"
+                    : "Paid from (bank or cash account)"
+                }
+                allowClear={false}
+              />
+            </FormControlShell>
+            <FormControlShell width="date">
+              <Label htmlFor="batch-payment-date">Payment date</Label>
+              <Input
+                id="batch-payment-date"
+                type="date"
+                value={paymentDate}
+                onChange={(e) => setPaymentDate(e.target.value)}
+              />
+            </FormControlShell>
+            <FormControlShell className="sm:col-span-2">
+              <p className="text-sm text-muted-foreground">
+                Each selected bill is paid in full. Foreign-currency bills are settled at the rate
+                they were booked at; use “New payment” to enter a different rate and book exchange
+                gain or loss.
+              </p>
+            </FormControlShell>
+          </FormGrid>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Each selected bill is paid in full. Foreign-currency bills are settled at the rate they
-          were booked at; use “New payment” to enter a different rate and book exchange gain or
-          loss.
-        </p>
-
-        {bills.length === 0 ? (
+      }
+      lines={
+        bills.length === 0 ? (
           <EmptyState title="Nothing to pay" description="No authorised bills have a balance." />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-10" />
+                <TableHead className="w-10">
+                  <span className="sr-only">Select</span>
+                </TableHead>
                 <TableHead>Supplier</TableHead>
                 <TableHead>Bill</TableHead>
                 <TableHead>Due</TableHead>
@@ -204,7 +221,7 @@ function BatchPayment() {
                     <TableCell>{b.contacts?.name ?? "—"}</TableCell>
                     <TableCell>{b.supplier_invoice_number || b.bill_number || "—"}</TableCell>
                     <TableCell>{b.due_date}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right tabular-nums">
                       {b.currency_code} {fromMinorUnits(BigInt(due), b.currency_code)}
                     </TableCell>
                   </TableRow>
@@ -212,14 +229,51 @@ function BatchPayment() {
               })}
             </TableBody>
           </Table>
-        )}
-
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4 text-sm">
-          <span>
-            {chosen.length} bill{chosen.length === 1 ? "" : "s"} → {payments.length} payment
-            {payments.length === 1 ? "" : "s"}
-          </span>
+        )
+      }
+      totals={
+        <TotalsSummary
+          aria-label="Batch payment totals"
+          lines={[
+            {
+              id: "bills",
+              label: "Bills selected",
+              value: String(chosen.length),
+            },
+            {
+              id: "payments",
+              label: "Payments to post",
+              value: String(payments.length),
+              emphasis: "muted",
+            },
+            ...(payments.length === 0
+              ? [
+                  {
+                    id: "outstanding",
+                    label: "Outstanding",
+                    value: "—",
+                    emphasis: "total" as const,
+                  },
+                ]
+              : payments.map((p, index) => ({
+                  id: `cur-${p.contactId}-${p.currencyCode}`,
+                  label: p.currencyCode,
+                  value: fromMinorUnits(p.totalMinor, p.currencyCode),
+                  emphasis: (index === payments.length - 1 ? "total" : "default") as
+                    "total" | "default",
+                }))),
+          ]}
+        />
+      }
+      stickyActions={
+        <div className="flex flex-wrap items-center gap-3">
+          {!canPay ? (
+            <p className="text-sm text-muted-foreground">
+              You do not have permission to record supplier payments.
+            </p>
+          ) : null}
           <Button
+            size="sm"
             disabled={
               !canPay ||
               accountsQ.isPending ||
@@ -232,11 +286,11 @@ function BatchPayment() {
             onClick={() => mutation.mutate()}
             aria-busy={mutation.isPending}
           >
-            {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
             Pay selected
           </Button>
         </div>
-      </div>
-    </ListWorkspace>
+      }
+    />
   );
 }

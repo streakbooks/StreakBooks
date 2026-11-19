@@ -1,5 +1,12 @@
 import { QueryErrorState } from "@/components/common/QueryErrorState";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type KeyboardEvent,
+} from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -33,6 +40,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { fromMinorUnits } from "@/lib/accounting/money";
+import { interpretLineGridKey } from "@/lib/ui/line-grid-keyboard";
+import { parseLineGridClipboard } from "@/lib/ui/line-grid-paste";
 
 export function NewExpense({
   ownership = "purchases",
@@ -111,6 +120,68 @@ export function NewExpense({
   function updateLine(id: string, patch: Partial<SpendMoneyLine>) {
     setLines((previous) => previous.map((line) => (line.id === id ? { ...line, ...patch } : line)));
   }
+
+  const SPEND_NUMERIC_COLS = ["quantity", "unitPrice"] as const;
+
+  const onSpendLineKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colKey: "description" | "quantity" | "unitPrice",
+  ) => {
+    const focusable = ["description", ...SPEND_NUMERIC_COLS] as const;
+    const colIndex = focusable.indexOf(colKey);
+    if (colIndex < 0) return;
+    const action = interpretLineGridKey(event.key, {
+      shiftKey: event.shiftKey,
+      atLastRow: rowIndex === lines.length - 1,
+      atLastCol: colIndex === focusable.length - 1,
+    });
+    if (action.type === "none") return;
+    if (action.type === "add-row") {
+      event.preventDefault();
+      setLines((previous) => [...previous, emptySpendMoneyLine()]);
+      queueMicrotask(() => {
+        document
+          .querySelector<HTMLElement>(`[data-spend-cell="${rowIndex + 1}-${colKey}"]`)
+          ?.focus();
+      });
+      return;
+    }
+    if (
+      action.type === "move" &&
+      (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp")
+    ) {
+      event.preventDefault();
+      const nextRow = Math.max(0, Math.min(lines.length - 1, rowIndex + action.rowDelta));
+      document.querySelector<HTMLElement>(`[data-spend-cell="${nextRow}-${colKey}"]`)?.focus();
+    }
+  };
+
+  const onSpendNumericPaste = (
+    event: ClipboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colKey: "quantity" | "unitPrice",
+  ) => {
+    const grid = parseLineGridClipboard(event.clipboardData.getData("text"));
+    if (grid.length <= 1 && (grid[0]?.length ?? 0) <= 1) return;
+    event.preventDefault();
+    const startCol = SPEND_NUMERIC_COLS.indexOf(colKey);
+    if (startCol < 0) return;
+    setLines((previous) => {
+      const next = previous.map((line) => ({ ...line }));
+      for (let r = 0; r < grid.length; r++) {
+        const targetRow = rowIndex + r;
+        while (next.length <= targetRow) next.push(emptySpendMoneyLine());
+        const cells = grid[r] ?? [];
+        for (let c = 0; c < cells.length; c++) {
+          const key = SPEND_NUMERIC_COLS[startCol + c];
+          if (!key) break;
+          next[targetRow] = { ...next[targetRow]!, [key]: cells[c] ?? "" };
+        }
+      }
+      return next;
+    });
+  };
 
   function resetForm() {
     setPayeeName("");
@@ -358,28 +429,36 @@ export function NewExpense({
               <TableRow key={line.id}>
                 <TableCell className="p-0">
                   <Input
+                    data-spend-cell={`${index}-description`}
                     aria-label={`Line ${index + 1} description`}
                     value={line.description}
                     onChange={(e) => updateLine(line.id, { description: e.target.value })}
+                    onKeyDown={(e) => onSpendLineKeyDown(e, index, "description")}
                     placeholder="What was purchased"
                   />
                 </TableCell>
                 <TableCell className="p-0">
                   <Input
+                    data-spend-cell={`${index}-quantity`}
                     aria-label={`Line ${index + 1} quantity`}
                     value={line.quantity}
                     inputMode="decimal"
                     className="text-right tabular-nums"
                     onChange={(e) => updateLine(line.id, { quantity: e.target.value })}
+                    onKeyDown={(e) => onSpendLineKeyDown(e, index, "quantity")}
+                    onPaste={(e) => onSpendNumericPaste(e, index, "quantity")}
                   />
                 </TableCell>
                 <TableCell className="p-0">
                   <Input
+                    data-spend-cell={`${index}-unitPrice`}
                     aria-label={`Line ${index + 1} unit price`}
                     value={line.unitPrice}
                     inputMode="decimal"
                     className="text-right tabular-nums"
                     onChange={(e) => updateLine(line.id, { unitPrice: e.target.value })}
+                    onKeyDown={(e) => onSpendLineKeyDown(e, index, "unitPrice")}
+                    onPaste={(e) => onSpendNumericPaste(e, index, "unitPrice")}
                   />
                 </TableCell>
                 <TableCell className="px-2 text-right tabular-nums text-sm">

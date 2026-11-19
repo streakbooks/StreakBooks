@@ -3,14 +3,16 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -39,6 +41,9 @@ import {
   type ExpenseDraftLineForm,
 } from "@/lib/expenses/draft-lines";
 import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
+import { interpretLineGridKey } from "@/lib/ui/line-grid-keyboard";
+import { parseLineGridClipboard } from "@/lib/ui/line-grid-paste";
+import { minorOrZero } from "@/lib/purchases/money-input";
 import {
   deleteExpenseClaimDraft,
   duplicateExpenseClaim,
@@ -249,6 +254,81 @@ export function ExpenseManagementClaimsPage({
   const updateLine = (key: string, patch: Partial<ExpenseDraftLineForm>) => {
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
   };
+
+  const CLAIM_GRID_COLS = 5; // date, merchant, description, net, tax
+
+  const onClaimLineKeyDown = (
+    event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+    rowIndex: number,
+    colIndex: number,
+  ) => {
+    const action = interpretLineGridKey(event.key, {
+      shiftKey: event.shiftKey,
+      atLastRow: rowIndex === lines.length - 1,
+      atLastCol: colIndex === CLAIM_GRID_COLS - 1,
+    });
+    if (action.type === "none") return;
+    if (action.type === "add-row") {
+      event.preventDefault();
+      setLines((current) => [...current, emptyDraftLine(today)]);
+      queueMicrotask(() => {
+        document
+          .querySelector<HTMLElement>(`[data-claim-cell="${rowIndex + 1}-${colIndex}"]`)
+          ?.focus();
+      });
+      return;
+    }
+    if (
+      action.type === "move" &&
+      (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp")
+    ) {
+      event.preventDefault();
+      const nextRow = Math.max(0, Math.min(lines.length - 1, rowIndex + action.rowDelta));
+      document.querySelector<HTMLElement>(`[data-claim-cell="${nextRow}-${colIndex}"]`)?.focus();
+    }
+  };
+
+  const onClaimMoneyPaste = (
+    event: ClipboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    field: "netInput" | "taxInput",
+  ) => {
+    const grid = parseLineGridClipboard(event.clipboardData.getData("text"));
+    if (grid.length <= 1 && (grid[0]?.length ?? 0) <= 1) return;
+    event.preventDefault();
+    setLines((current) => {
+      const next = current.map((line) => ({ ...line }));
+      for (let r = 0; r < grid.length; r++) {
+        const targetRow = rowIndex + r;
+        while (next.length <= targetRow) next.push(emptyDraftLine(today));
+        const cells = grid[r] ?? [];
+        const row = next[targetRow]!;
+        if (field === "netInput") {
+          next[targetRow] = {
+            ...row,
+            netInput: cells[0] ?? row.netInput,
+            taxInput: cells[1] ?? row.taxInput,
+          };
+        } else {
+          next[targetRow] = {
+            ...row,
+            taxInput: cells[0] ?? row.taxInput,
+          };
+        }
+      }
+      return next;
+    });
+  };
+
+  const draftTotals = useMemo(() => {
+    let net = 0n;
+    let tax = 0n;
+    for (const line of lines) {
+      net += minorOrZero(line.netInput, currency);
+      tax += minorOrZero(line.taxInput, currency);
+    }
+    return { net, tax, total: net + tax };
+  }, [lines, currency]);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -608,8 +688,8 @@ export function ExpenseManagementClaimsPage({
           ) : null}
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="grid gap-2">
+        <FormGrid columns={4}>
+          <FormControlShell className="sm:col-span-2">
             <Label htmlFor="em-claim-title">Title</Label>
             <Input
               id="em-claim-title"
@@ -617,16 +697,16 @@ export function ExpenseManagementClaimsPage({
               onChange={(event) => setTitle(event.target.value)}
               required
             />
-          </div>
-          <div className="grid gap-2">
+          </FormControlShell>
+          <FormControlShell className="sm:col-span-2">
             <Label htmlFor="em-claim-desc">Description</Label>
             <Input
               id="em-claim-desc"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
             />
-          </div>
-          <div className="grid gap-2">
+          </FormControlShell>
+          <FormControlShell width="contact">
             <Label htmlFor="em-claim-source">Payment source</Label>
             <select
               id="em-claim-source"
@@ -645,9 +725,9 @@ export function ExpenseManagementClaimsPage({
               <option value="company_paid">Petty cash (company paid)</option>
               <option value="corporate_card">Corporate card</option>
             </select>
-          </div>
+          </FormControlShell>
           {paymentSource === "cash_advance" ? (
-            <div className="grid gap-2">
+            <FormControlShell width="contact">
               <Label htmlFor="em-claim-advance">Cash advance</Label>
               <RecordLookupSelect
                 id="em-claim-advance"
@@ -663,10 +743,10 @@ export function ExpenseManagementClaimsPage({
                   </option>
                 ))}
               </RecordLookupSelect>
-            </div>
+            </FormControlShell>
           ) : null}
           {paymentSource === "company_paid" ? (
-            <div className="grid gap-2">
+            <FormControlShell width="contact">
               <Label htmlFor="em-claim-petty">Petty cash float</Label>
               <RecordLookupSelect
                 id="em-claim-petty"
@@ -682,10 +762,10 @@ export function ExpenseManagementClaimsPage({
                   </option>
                 ))}
               </RecordLookupSelect>
-            </div>
+            </FormControlShell>
           ) : null}
           {paymentSource === "corporate_card" ? (
-            <div className="grid gap-2">
+            <FormControlShell width="contact">
               <Label htmlFor="em-claim-card">Corporate card</Label>
               <RecordLookupSelect
                 id="em-claim-card"
@@ -700,9 +780,9 @@ export function ExpenseManagementClaimsPage({
                   </option>
                 ))}
               </RecordLookupSelect>
-            </div>
+            </FormControlShell>
           ) : null}
-        </div>
+        </FormGrid>
 
         <EditableLineItemGrid
           aria-label="Expense claim lines"
@@ -734,32 +814,62 @@ export function ExpenseManagementClaimsPage({
               {create.isPending ? "Saving…" : "Save draft"}
             </Button>
           }
+          footer={
+            <TotalsSummary
+              aria-label="Expense claim draft totals"
+              lines={[
+                {
+                  id: "net",
+                  label: "Net",
+                  value: fromMinorUnits(Number(draftTotals.net), currency),
+                },
+                {
+                  id: "tax",
+                  label: "Tax",
+                  value: fromMinorUnits(Number(draftTotals.tax), currency),
+                  emphasis: "muted",
+                },
+                {
+                  id: "total",
+                  label: "Total",
+                  value: fromMinorUnits(Number(draftTotals.total), currency),
+                  emphasis: "total",
+                },
+              ]}
+            />
+          }
         >
           {lines.map((line, index) => (
             <TableRow key={line.key}>
               <TableCell className="align-top p-0">
                 <Input
                   type="date"
+                  data-claim-cell={`${index}-0`}
                   aria-label={`Line ${index + 1} date`}
                   value={line.expenseDate}
                   onChange={(event) => updateLine(line.key, { expenseDate: event.target.value })}
+                  onKeyDown={(event) => onClaimLineKeyDown(event, index, 0)}
                 />
               </TableCell>
               <TableCell className="align-top p-0">
                 <Input
+                  data-claim-cell={`${index}-1`}
                   aria-label={`Line ${index + 1} merchant`}
                   value={line.merchantName}
                   onChange={(event) => updateLine(line.key, { merchantName: event.target.value })}
+                  onKeyDown={(event) => onClaimLineKeyDown(event, index, 1)}
                   placeholder="Merchant"
                 />
               </TableCell>
               <TableCell className="align-top p-0">
                 <Textarea
+                  data-claim-cell={`${index}-2`}
                   aria-label={`Line ${index + 1} description`}
                   value={line.description}
                   rows={1}
                   className="lb-spreadsheet-wrap min-h-8"
                   onChange={(event) => updateLine(line.key, { description: event.target.value })}
+                  onKeyDown={(event) => onClaimLineKeyDown(event, index, 2)}
                   required
                 />
               </TableCell>
@@ -777,21 +887,27 @@ export function ExpenseManagementClaimsPage({
               </TableCell>
               <TableCell className="align-top p-0">
                 <Input
+                  data-claim-cell={`${index}-3`}
                   aria-label={`Line ${index + 1} net`}
                   className="text-right"
                   inputMode="decimal"
                   value={line.netInput}
                   onChange={(event) => updateLine(line.key, { netInput: event.target.value })}
+                  onKeyDown={(event) => onClaimLineKeyDown(event, index, 3)}
+                  onPaste={(event) => onClaimMoneyPaste(event, index, "netInput")}
                   required
                 />
               </TableCell>
               <TableCell className="align-top p-0">
                 <Input
+                  data-claim-cell={`${index}-4`}
                   aria-label={`Line ${index + 1} tax`}
                   className="text-right"
                   inputMode="decimal"
                   value={line.taxInput}
                   onChange={(event) => updateLine(line.key, { taxInput: event.target.value })}
+                  onKeyDown={(event) => onClaimLineKeyDown(event, index, 4)}
+                  onPaste={(event) => onClaimMoneyPaste(event, index, "taxInput")}
                 />
               </TableCell>
               <TableCell className="align-top">

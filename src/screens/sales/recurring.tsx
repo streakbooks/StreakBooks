@@ -20,9 +20,11 @@ import {
   setRecurringActive,
 } from "@/lib/sales/sales-recurring.functions";
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
-import { toMinorUnits } from "@/lib/accounting/money";
+import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
@@ -31,6 +33,7 @@ import { ContactCreateForm } from "@/components/lookup/create-forms";
 import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
 import { emptySalesLine, type SalesLineFormState } from "@/lib/sales/line-form-state";
 import { lineFormToInput, lineRowToForm } from "@/components/sales/sales-form-utils";
+import { computeTaxLineRounded } from "@/lib/sales/line-math-rounded";
 import { Button } from "@/components/ui/button";
 import { RunDueButton } from "@/components/recurring/RunDueButton";
 import { runDueRecurringInvoices } from "@/lib/recurring/run-due.functions";
@@ -184,6 +187,35 @@ function RecurringInvoiceWorkspace({
     }),
   );
 
+  const treatment = configQ.data?.treatment ?? "exclusive";
+  const taxCodes = configQ.data?.taxCodes;
+  const codeById = useMemo(
+    () => new Map((taxCodes ?? []).map((c) => [c.id, c] as const)),
+    [taxCodes],
+  );
+  const lineTotals = useMemo(() => {
+    try {
+      const computed = lines.map((l) => {
+        const code = l.taxCodeId ? codeById.get(l.taxCodeId) : undefined;
+        const tax_rate_bps = code ? code.rate_bps : Number(l.taxRateBps || 0);
+        return computeTaxLineRounded({
+          quantity: Number(l.quantity),
+          unit_price_minor: Number(toMinorUnits(l.unitPrice || "0", base)),
+          discount_minor: Number(toMinorUnits(l.discount || "0", base)),
+          tax_rate_bps,
+          treatment,
+        });
+      });
+      return {
+        subtotal: computed.reduce((s, c) => s + Number(c.net_minor), 0),
+        tax: computed.reduce((s, c) => s + Number(c.tax_minor), 0),
+        total: computed.reduce((s, c) => s + Number(c.gross_minor), 0),
+      };
+    } catch {
+      return null;
+    }
+  }, [lines, base, treatment, codeById]);
+
   const saveM = useMutation({
     mutationFn: () => {
       if (!contactId) throw new Error("Choose a customer");
@@ -239,6 +271,7 @@ function RecurringInvoiceWorkspace({
         { label: "Recurring invoices", to: "/sales/recurring" },
         { label: editingId ? "Edit" : "New" },
       ]}
+      meta={<StatusBadge status="draft" label={editingId ? "Editing schedule" : "Draft"} />}
       stickyActions={
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" size="sm" onClick={onCancel}>
@@ -338,11 +371,46 @@ function RecurringInvoiceWorkspace({
           products={(productsQ.data ?? []) as never}
           accounts={incomeAccounts}
           currency={base}
-          treatment={configQ.data?.treatment ?? "exclusive"}
-          taxCodes={configQ.data?.taxCodes ?? []}
+          treatment={treatment}
+          taxCodes={taxCodes ?? []}
           toMinor={(d) => toMinorUnits(d, base)}
           companyId={companyId}
           baseCurrency={base}
+        />
+      }
+      totals={
+        <TotalsSummary
+          aria-label="Recurring invoice totals"
+          lines={
+            lineTotals
+              ? [
+                  {
+                    id: "subtotal",
+                    label: "Subtotal",
+                    value: `${base} ${fromMinorUnits(lineTotals.subtotal, base)}`,
+                  },
+                  {
+                    id: "tax",
+                    label: treatment === "inclusive" ? "Tax (included)" : "Tax",
+                    value: `${base} ${fromMinorUnits(lineTotals.tax, base)}`,
+                    emphasis: "muted",
+                  },
+                  {
+                    id: "total",
+                    label: "Total",
+                    value: `${base} ${fromMinorUnits(lineTotals.total, base)}`,
+                    emphasis: "total",
+                  },
+                ]
+              : [
+                  {
+                    id: "total",
+                    label: "Total",
+                    value: "Complete valid lines",
+                    emphasis: "total",
+                  },
+                ]
+          }
         />
       }
     />

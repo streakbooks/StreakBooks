@@ -74,6 +74,18 @@ Chrome **PASS** (directory + detail RecordWorkspace). Import/duplicates ListWork
 
 Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails on payslip, App Store detail, Accounting, Products & Services, and Dashboard. Per-screen action/permission/staging gates remain **NOT VERIFIED** / **PARTIAL**.
 
+**Expense Management local evidence (Batches 65–67):** New claim create uses `TransactionWorkspace` + `EditableLineItemGrid` + `TotalsSummary` (parity with Banking Spend Money), plus spreadsheet Enter/Arrow keyboard and net/tax paste. `check:workspace` enforces claim create + spend/receive-money composition. Staging/RBAC/manual a11y still **NOT VERIFIED** — module remains **IN PROGRESS**, not COMPLETE.
+
+**Purchases requisitions + claims FormGrid (Batch 71):** Requisition create/edit exposes FormGrid + TotalsSummary with sticky save; claim create header uses FormGrid; journal and sales document editors locked in `check:workspace`.
+
+**Sales / Purchases create chrome (Batch 70):** Recurring invoices and sales orders expose TotalsSummary; batch payment uses TransactionWorkspace with allocation totals. `check:workspace` enforces those surfaces.
+
+**Sales / Purchases / Banking allocate evidence (Batch 69):** Receipt and payment creates expose TotalsSummary allocation strips; payments use a dense allocate table; transfers show Amount/Received totals. `check:workspace` enforces those surfaces.
+
+**Purchases / Banking local evidence (Batch 68):** Spend Money, purchase orders, and purchase credit notes wire `interpretLineGridKey` + paste; CN TotalsSummary shows net/tax/total. `check:workspace` enforces those create surfaces.
+
+**Banking local evidence (Batch 67):** `check:workspace` requires Receive Money (`MoneyDocumentPanel`) and Spend Money (`NewExpense`) compose TransactionWorkspace / TotalsSummary. Staging still **NOT VERIFIED**.
+
 ## How to promote a module to DONE
 
 1. Fill Section 14 checklist with browser evidence (desktop/mobile, keyboard, light/dark).

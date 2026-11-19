@@ -39,7 +39,7 @@
 | Requirement | Status | Evidence / notes |
 | --- | --- | --- |
 | TransactionWorkspace / RecordWorkspace / ListWorkspace | PARTIAL | Adopted on create/list surfaces in Batches 25–54; module DoD incomplete |
-| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money; Batch 65 expense claims spreadsheet; residual modules TBD |
+| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money/claims; Batch 68 spend/PO/CN keyboard+paste; residual module DoD / staging TBD |
 | Consistent +New / empty CTAs | PARTIAL | Batches 49–63 closed create empties; Batch 64 App Store + approval queue bridges; residual queue-only empties intentional |
 | Module finished-screen DoD (34 modules) | PARTIAL | **0/34 COMPLETE** — continue without duplicating create work |
 | Staging / live RBAC / prod migrations | BLOCKED | Batches 23–24; require separate auth |
@@ -148,4 +148,59 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | --- | --- |
 | Expense claim create still card-stack lines (G15 deferred) | Migrate New claim lines to EditableLineItemGrid + DEFAULT_DOCUMENT_LINE_ROWS |
 | EditableLineItemGrid residual | Claims create path closed; module DoD / staging still open |
+
+## Batch 66 (claims totals + workspace adoption)
+
+| Gap | Action |
+| --- | --- |
+| Claim create grid missing TotalsSummary | Live net/tax/total footer via TotalsSummary + minorOrZero |
+| Workspace adoption gaps for spend/claims | Enforce TransactionWorkspace / EditableLineItemGrid / TotalsSummary in check:workspace |
+| Expense DoD honesty | Document local evidence in FINISHED-SCREEN-DOD-CORE (still IN PROGRESS) |
+
+## Batch 67 (claim keyboard + receive-money adoption)
+
+| Gap | Action |
+| --- | --- |
+| Claim spreadsheet keyboard/paste | Enter/Arrow navigation + net/tax multi-cell paste (journal parity) |
+| Receive Money workspace adoption | Enforce MoneyDocumentPanel TransactionWorkspace + TotalsSummary in check:workspace |
+| Includes Batch 66 | Claim TotalsSummary + spend/claims workspace rules rebased onto current main |
+
+## Batch 68 (spend / PO / CN keyboard + workspace gates)
+
+| Gap | Action |
+| --- | --- |
+| Spend Money spreadsheet keyboard/paste | Enter/Arrow + qty/price paste on expenses.new (banking Spend Money) |
+| Purchase order numeric keyboard/paste | qty/price/discount/tax% journal-parity helpers |
+| Purchase credit note keyboard/paste + totals | description/net/tax nav; net+tax TotalsSummary rows |
+| Workspace adoption | check:workspace enforces interpretLineGridKey on claims/spend/PO/CN |
+| Includes Batches 66–67 | Rebased onto current main (supersedes PR #338) |
+
+## Batch 69 (allocate / transfer TotalsSummary)
+
+| Gap | Action |
+| --- | --- |
+| Receipt allocate totals | TotalsSummary Amount / Allocated / Unallocated on receipts.new |
+| Payment allocate chrome + totals | Dense bill table + Allocate oldest first + TotalsSummary Remaining |
+| Transfer totals | TotalsSummary Amount (+ Received on FX mismatch) on NewTransfer |
+| Workspace adoption | check:workspace gates receipts/payments/transfers TotalsSummary |
+| Includes Batches 66–68 | Carried on feature branch (supersedes PR #340) |
+
+## Batch 70 (recurring / sales order / batch payment chrome)
+
+| Gap | Action |
+| --- | --- |
+| Recurring invoice totals | TotalsSummary Subtotal/Tax/Total on create/edit |
+| Sales order create/edit chrome | FormGrid + TotalsSummary + stickyActions; form owns TransactionWorkspace |
+| Batch payment wrong chrome | ListWorkspace → TransactionWorkspace + FormGrid + TotalsSummary + sticky Pay |
+| Workspace adoption | check:workspace gates recurring/orders.new/payments.batch |
+| Includes Batches 66–69 | Rebased onto current main (supersedes PR #341) |
+
+## Batch 71 (requisitions chrome + adoption locks)
+
+| Gap | Action |
+| --- | --- |
+| Requisition create/edit chrome | FormGrid + TotalsSummary + sticky Save/Cancel; editor owns TransactionWorkspace |
+| Claims header FormGrid | Create header fields use FormGrid (no redo of totals/keyboard) |
+| Journal / sales-doc adoption | check:workspace locks JournalPanels + SalesDocumentEditor chrome |
+| Includes Batches 66–70 | Rebased onto current main (supersedes PR #343) |
 

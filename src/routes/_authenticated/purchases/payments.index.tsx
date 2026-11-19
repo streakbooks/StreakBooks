@@ -5,8 +5,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { listPayments } from "@/lib/purchases/purchases.functions";
-import { friendlyAuthError } from "@/lib/auth-helpers";
-import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { ListSkeleton, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ListToolbar } from "@/components/common/ListTools";
 import { useListSearch } from "@/hooks/use-list-search";
@@ -81,12 +81,8 @@ function PaymentsList() {
     >
       {query.isPending ? (
         <ListSkeleton />
-      ) : query.isError ? (
-        <ErrorState
-          onRetry={() => void query.refetch()}
-          title="Could not load payments"
-          description={friendlyAuthError(query.error)}
-        />
+      ) : query.isError && query.data === undefined ? (
+        <QueryErrorState queries={[query]} title="Could not load payments" />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState
           title="No payments"

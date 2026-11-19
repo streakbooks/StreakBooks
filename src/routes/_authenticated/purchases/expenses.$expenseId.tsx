@@ -13,7 +13,8 @@ import {
 } from "@/lib/purchases/purchases.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { StatusBadge } from "@/components/common/stat-card";
@@ -86,16 +87,14 @@ function ExpenseDetail() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
   if (query.isError) {
-    return (
-      <ErrorState
-        onRetry={() => void query.refetch()}
-        title="Expense not found"
-        description={friendlyAuthError(query.error)}
-      />
-    );
+    return <QueryErrorState queries={[query]} title="Could not load expense" />;
+  }
+  const expense = query.data;
+  if (!expense) {
+    return <EmptyState title="Expense not found" description="This expense is unavailable." />;
   }
 
-  const e = query.data as {
+  const e = expense as {
     payee_name: string;
     expense_date: string;
     status: string;

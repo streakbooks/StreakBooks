@@ -30,7 +30,7 @@ import {
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
@@ -220,12 +220,8 @@ function RequisitionsWorkspace({
       </div>
       {query.isPending ? (
         <LoadingState />
-      ) : query.isError ? (
-        <ErrorState
-          title="Could not load requisitions"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
+      ) : query.isError && query.data === undefined ? (
+        <QueryErrorState queries={[query]} title="Could not load requisitions" />
       ) : !query.data.rows.length ? (
         <EmptyState
           title={

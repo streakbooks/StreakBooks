@@ -22,7 +22,7 @@ Labels: `missing` | `partial` | `existing` | `blocked` | `drift`
 | G13 | Journals premium entry workspace | High | 27–39 | Full-page `/accounting/journals/new` + TransactionWorkspace |
 | G17 | Receipt/payment/expense still ListWorkspace | Medium | 39 | closed — TransactionWorkspace + compact FormGrid |
 | G14 | Cross-module visual inconsistency beyond chrome | High | 29–41 | Batch 41 GroupedModuleSubnav for HR/CRM/PM/Expenses; remaining module DoD open |
-| G15 | Competitor screenshot usability not yet coded as LinkBooks contract | Medium | 25–40 | Batch 40 `FormControlShell` + density Playwright; claims spreadsheet still deferred |
+| G15 | Competitor screenshot usability not yet coded as LinkBooks contract | Medium | 25–40 / 65 | Batch 40 `FormControlShell` + density Playwright; Batch 65 claims EditableLineItemGrid |
 | G16 | Dense bordered line cells / single default row / horizontal tax | High | 36 | closed on bills/invoices/quotes/credits/POs/journals/claims — quiet cells, 5 rows, wrap text, bottom TotalsSummary |
 
 ## Preserved / reuse (not gaps)

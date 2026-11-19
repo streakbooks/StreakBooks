@@ -353,10 +353,11 @@ export function CrmOpportunitiesPage() {
                     needed before creating a Sales quote.
                   </p>
                   {accounts.isError ? (
-                    <p role="alert" className="text-xs text-destructive">
-                      Customer list unavailable. An unlinked deal can be saved, but quote creation
-                      will remain blocked.
-                    </p>
+                    <QueryErrorState
+                      queries={[accounts]}
+                      title="Customer list unavailable"
+                      description="An unlinked deal can be saved, but quote creation will remain blocked."
+                    />
                   ) : null}
                 </div>
                 <div className="space-y-2">
@@ -387,9 +388,11 @@ export function CrmOpportunitiesPage() {
                     </p>
                   ) : null}
                   {pipelines.isError ? (
-                    <p role="alert" className="text-sm text-destructive">
-                      Could not load pipelines. Retry before creating a deal.
-                    </p>
+                    <QueryErrorState
+                      queries={[pipelines]}
+                      title="Could not load pipelines"
+                      description="Retry before creating a deal."
+                    />
                   ) : null}
                   <Button
                     type="button"

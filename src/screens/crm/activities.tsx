@@ -394,9 +394,11 @@ export function CrmActivitiesPage({
                       </SelectContent>
                     </RecordLookupSelect>
                     {leads.isError ? (
-                      <p role="alert" className="text-xs text-destructive">
-                        Could not load leads. Retry the form.
-                      </p>
+                      <QueryErrorState
+                        queries={[leads]}
+                        title="Could not load leads"
+                        description="Retry the form."
+                      />
                     ) : null}
                   </div>
                 ) : relatedType === "opportunity" ? (
@@ -419,9 +421,11 @@ export function CrmActivitiesPage({
                       </SelectContent>
                     </RecordLookupSelect>
                     {opportunities.isError ? (
-                      <p role="alert" className="text-xs text-destructive">
-                        Could not load opportunities. Retry the form.
-                      </p>
+                      <QueryErrorState
+                        queries={[opportunities]}
+                        title="Could not load opportunities"
+                        description="Retry the form."
+                      />
                     ) : null}
                   </div>
                 ) : (
@@ -444,9 +448,11 @@ export function CrmActivitiesPage({
                       </SelectContent>
                     </RecordLookupSelect>
                     {accounts.isError ? (
-                      <p role="alert" className="text-xs text-destructive">
-                        Could not load Contacts. Retry the form.
-                      </p>
+                      <QueryErrorState
+                        queries={[accounts]}
+                        title="Could not load Contacts"
+                        description="Retry the form."
+                      />
                     ) : null}
                   </div>
                 )}

@@ -186,7 +186,7 @@ function CashCoding() {
       await invalidate();
       toast.success(`Posted ${r.succeeded}; failed ${r.failed}`);
       const first = r.results.find((x) => !x.ok);
-      if (first?.error) toast.error(first.error);
+      if (first?.error) toast.error(friendlyAuthError(first.error));
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -220,7 +220,9 @@ function CashCoding() {
       setProgress(null);
       await invalidate();
       if (r.failed)
-        toast.warning(`${r.coded} coded, ${r.failed} could not be coded. ${r.firstError}`);
+        toast.warning(
+          `${r.coded} coded, ${r.failed} could not be coded. ${friendlyAuthError(r.firstError)}`,
+        );
       else toast.success(`${r.coded} lines coded`);
     },
     onError: async (e) => {

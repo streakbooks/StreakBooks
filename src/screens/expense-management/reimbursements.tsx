@@ -233,7 +233,7 @@ export function ExpenseManagementReimbursementsPage() {
       toast.success(formatBatchReimburseSummary(result));
       if (result.failedCount > 0) {
         const firstError = result.results.find((row) => !row.ok)?.error;
-        if (firstError) toast.error(firstError);
+        if (firstError) toast.error(friendlyAuthError(firstError));
       }
     },
     onError: (error) => {

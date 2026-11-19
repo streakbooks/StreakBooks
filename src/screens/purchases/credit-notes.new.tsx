@@ -344,12 +344,7 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
         { label: "Credit notes", to: "/purchases/credit-notes" },
         { label: "New" },
       ]}
-      meta={
-        <StatusBadge
-          status="draft"
-          label={savedCreditNoteId ? "Saved draft" : "Draft"}
-        />
-      }
+      meta={<StatusBadge status="draft" label={savedCreditNoteId ? "Saved draft" : "Draft"} />}
       details={
         <FormGrid columns={4}>
           <FormControlShell width="contact">

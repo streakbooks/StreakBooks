@@ -126,9 +126,7 @@ export function OrderEntryLines({
           { id: "tax", header: "Tax %", align: "right", widthPx: 80, minWidthPx: 64 },
           { id: "actions", header: "", widthPx: 48, minWidthPx: 40, resizable: false },
         ]}
-        {...(lines.length < 200
-          ? { onAddRow: () => onChange([...lines, emptyOrderLine()]) }
-          : {})}
+        {...(lines.length < 200 ? { onAddRow: () => onChange([...lines, emptyOrderLine()]) } : {})}
         addRowLabel="Add line"
       >
         {lines.map((line, index) => (

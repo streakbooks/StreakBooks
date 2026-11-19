@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { codeBankTransaction, type listCodingOptions } from "@/lib/banking/coding.functions";
@@ -26,6 +26,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { TableCell, TableRow } from "@/components/ui/table";
 
 export type CodingOptions = Awaited<ReturnType<typeof listCodingOptions>>;
 
@@ -166,6 +169,57 @@ export function BankCodingPanel({
 
   const money = (v: bigint) => fromMinorUnits(v, currency);
 
+  const summaryLines = [
+    {
+      id: "statement",
+      label: direction === "in" ? "Statement received" : "Statement spent",
+      value: `${money(statementAbs)} ${currency}`,
+    },
+    ...(totals
+      ? [
+          {
+            id: "net",
+            label: "Net",
+            value: `${money(totals.netMinor)} ${currency}`,
+            emphasis: "muted" as const,
+          },
+          {
+            id: "tax",
+            label: "Tax",
+            value: `${money(totals.taxMinor)} ${currency}`,
+            emphasis: "muted" as const,
+          },
+          {
+            id: "gross",
+            label: "Gross",
+            value: `${money(totals.grossMinor)} ${currency}`,
+            emphasis: "total" as const,
+          },
+          {
+            id: "remaining",
+            label:
+              remaining === 0n
+                ? "Allocation"
+                : remaining! > 0n
+                  ? "Still to allocate"
+                  : "Over-allocated",
+            value:
+              remaining === 0n
+                ? "Fully allocated"
+                : `${money(remaining! < 0n ? -remaining! : remaining!)} ${currency}`,
+            emphasis: remaining === 0n ? ("muted" as const) : ("default" as const),
+          },
+        ]
+      : [
+          {
+            id: "hint",
+            label: "Allocation",
+            value: "Enter valid amounts for every line",
+            emphasis: "muted" as const,
+          },
+        ]),
+  ];
+
   return (
     <div className="space-y-3 rounded-md border bg-muted/30 p-3 text-sm">
       <div className="grid gap-3 sm:grid-cols-3">
@@ -215,143 +269,153 @@ export function BankCodingPanel({
         </div>
       </div>
 
-      <div className="space-y-2">
+      <EditableLineItemGrid
+        aria-label="Bank coding split lines"
+        columns={[
+          { id: "account", header: "Account", widthPx: 220, minWidthPx: 160 },
+          {
+            id: "description",
+            header: "Description",
+            widthPx: 220,
+            minWidthPx: 140,
+            fluid: true,
+          },
+          { id: "tax", header: "Tax code", widthPx: 160, minWidthPx: 120 },
+          {
+            id: "amount",
+            header: "Amount",
+            align: "right",
+            widthPx: 120,
+            minWidthPx: 96,
+          },
+          {
+            id: "actions",
+            header: <span className="sr-only">Actions</span>,
+            widthPx: 48,
+            minWidthPx: 40,
+            resizable: false,
+          },
+        ]}
+        onAddRow={splits.length >= 30 ? undefined : addLine}
+        addRowLabel="Add split line"
+        footer={<TotalsSummary aria-label="Bank coding totals" lines={summaryLines} />}
+      >
         {splits.map((s, i) => (
-          <div key={s.key} className="grid gap-2 sm:grid-cols-[2fr_2fr_1.2fr_1fr_auto]">
-            <AccountLookup
-              ariaLabel="Account"
-              accounts={options.accounts}
-              value={s.accountId}
-              onChange={(accountId) => update(s.key, { accountId })}
-              companyId={companyId}
-              placeholder="Account"
-              allowClear={false}
-              canCreate={can("accounts.manage")}
-              createTitle="New account"
-              renderCreate={
-                can("accounts.manage")
-                  ? (ctx) => (
-                      <AccountCreateForm
-                        companyId={companyId}
-                        currency={currency}
-                        initialKind="expense"
-                        ctx={ctx}
-                      />
-                    )
-                  : undefined
-              }
-            />
-            <Input
-              aria-label="Description"
-              placeholder="Description"
-              maxLength={500}
-              value={s.description}
-              onChange={(e) => update(s.key, { description: e.target.value })}
-            />
-            <TaxLookup
-              ariaLabel="Tax code"
-              today={new Date().toISOString().slice(0, 10)}
-              usage={direction === "in" ? "sales" : "purchases"}
-              taxes={taxChoices.map((tax) => ({
-                id: tax.id,
-                code: tax.code,
-                name: tax.name,
-                rateLabel: `${(tax.rateBps / 100).toFixed(2).replace(/\.00$/, "")}%`,
-                appliesTo: tax.appliesTo,
-                effective_from: tax.effectiveFrom ?? "1970-01-01",
-                effective_to: tax.effectiveTo,
-                is_active: tax.rateActive,
-              }))}
-              value={s.taxCodeId}
-              onChange={(taxCodeId) => update(s.key, { taxCodeId })}
-              companyId={companyId}
-              placeholder="No tax"
-              allowClear
-              canCreate={can("tax.settings")}
-              createTitle="New tax code"
-              renderCreate={
-                can("tax.settings")
-                  ? (ctx) => (
-                      <TaxCodeCreateForm
-                        companyId={companyId}
-                        appliesTo={direction === "in" ? "sales" : "purchases"}
-                        ctx={ctx}
-                      />
-                    )
-                  : undefined
-              }
-            />
-            <MoneyField
-              label="Amount"
-              value={s.amount}
-              currency={currency}
-              options={{ allowNegative: false }}
-              onChange={(v) => update(s.key, { amount: v })}
-            />
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              aria-label={`Remove line ${i + 1}`}
-              disabled={splits.length === 1}
-              onClick={() => setSplits((rows) => rows.filter((r) => r.key !== s.key))}
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </div>
+          <TableRow key={s.key}>
+            <TableCell className="p-0 align-middle">
+              <AccountLookup
+                ariaLabel={`Line ${i + 1} account`}
+                accounts={options.accounts}
+                value={s.accountId}
+                onChange={(accountId) => update(s.key, { accountId })}
+                companyId={companyId}
+                placeholder="Account"
+                allowClear={false}
+                canCreate={can("accounts.manage")}
+                createTitle="New account"
+                renderCreate={
+                  can("accounts.manage")
+                    ? (ctx) => (
+                        <AccountCreateForm
+                          companyId={companyId}
+                          currency={currency}
+                          initialKind="expense"
+                          ctx={ctx}
+                        />
+                      )
+                    : undefined
+                }
+              />
+            </TableCell>
+            <TableCell className="p-0 align-middle">
+              <Input
+                aria-label={`Line ${i + 1} description`}
+                placeholder="Description"
+                maxLength={500}
+                value={s.description}
+                className="h-8 rounded-none border-0 bg-transparent shadow-none"
+                onChange={(e) => update(s.key, { description: e.target.value })}
+              />
+            </TableCell>
+            <TableCell className="p-0 align-middle">
+              <TaxLookup
+                ariaLabel={`Line ${i + 1} tax code`}
+                today={new Date().toISOString().slice(0, 10)}
+                usage={direction === "in" ? "sales" : "purchases"}
+                taxes={taxChoices.map((tax) => ({
+                  id: tax.id,
+                  code: tax.code,
+                  name: tax.name,
+                  rateLabel: `${(tax.rateBps / 100).toFixed(2).replace(/\.00$/, "")}%`,
+                  appliesTo: tax.appliesTo,
+                  effective_from: tax.effectiveFrom ?? "1970-01-01",
+                  effective_to: tax.effectiveTo,
+                  is_active: tax.rateActive,
+                }))}
+                value={s.taxCodeId}
+                onChange={(taxCodeId) => update(s.key, { taxCodeId })}
+                companyId={companyId}
+                placeholder="No tax"
+                allowClear
+                canCreate={can("tax.settings")}
+                createTitle="New tax code"
+                renderCreate={
+                  can("tax.settings")
+                    ? (ctx) => (
+                        <TaxCodeCreateForm
+                          companyId={companyId}
+                          appliesTo={direction === "in" ? "sales" : "purchases"}
+                          ctx={ctx}
+                        />
+                      )
+                    : undefined
+                }
+              />
+            </TableCell>
+            <TableCell className="p-1 align-middle">
+              <MoneyField
+                label={`Line ${i + 1} amount`}
+                value={s.amount}
+                currency={currency}
+                options={{ allowNegative: false }}
+                onChange={(v) => update(s.key, { amount: v })}
+              />
+            </TableCell>
+            <TableCell className="p-0 align-middle">
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                aria-label={`Remove line ${i + 1}`}
+                disabled={splits.length === 1}
+                onClick={() => setSplits((rows) => rows.filter((r) => r.key !== s.key))}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </TableCell>
+          </TableRow>
         ))}
+      </EditableLineItemGrid>
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Input
+          className="w-48"
+          placeholder="Memo (optional)"
+          maxLength={500}
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+        />
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
         <Button
           type="button"
           size="sm"
-          variant="outline"
-          onClick={addLine}
-          disabled={splits.length >= 30}
+          disabled={!canPost || postM.isPending}
+          onClick={() => postM.mutate()}
         >
-          <Plus className="mr-1 size-4" /> Add split line
+          {postM.isPending ? "Posting…" : "Post"}
         </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
-        <div className="space-y-0.5 font-mono text-xs">
-          <div>
-            Statement {direction === "in" ? "received" : "spent"}: {money(statementAbs)} {currency}
-          </div>
-          {totals ? (
-            <>
-              <div>
-                Net {money(totals.netMinor)} · Tax {money(totals.taxMinor)} · Gross{" "}
-                {money(totals.grossMinor)}
-              </div>
-              <div className={remaining === 0n ? "text-emerald-600" : "text-destructive"}>
-                {remaining === 0n
-                  ? "Fully allocated"
-                  : `${remaining! > 0n ? "Still to allocate" : "Over-allocated by"}: ${money(remaining! < 0n ? -remaining! : remaining!)}`}
-              </div>
-            </>
-          ) : (
-            <div className="text-muted-foreground">Enter valid amounts for every line.</div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Input
-            className="w-48"
-            placeholder="Memo (optional)"
-            maxLength={500}
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-          />
-          <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            disabled={!canPost || postM.isPending}
-            onClick={() => postM.mutate()}
-          >
-            {postM.isPending ? "Posting…" : "Post"}
-          </Button>
-        </div>
       </div>
     </div>
   );

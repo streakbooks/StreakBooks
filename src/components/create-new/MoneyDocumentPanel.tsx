@@ -28,6 +28,7 @@ import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import type { FormControlWidth } from "@/lib/ui/form-density";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import type { BankAdjustmentType } from "@/lib/create-new/journal-contracts";
 
@@ -210,6 +211,21 @@ export function MoneyDocumentPanel({
   }, [kind]);
 
   if (!companyId) return null;
+
+  const requiredQueries = [
+    accountsQ,
+    ...(kind !== "bank_deposit" &&
+    kind !== "card_payment" &&
+    kind !== "bank_adjustment"
+      ? [contactsQ]
+      : []),
+    ...(kind === "bank_deposit" ? [undepositedQ] : []),
+  ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined)) {
+    return (
+      <QueryErrorState queries={requiredQueries} title="Could not load money document options" />
+    );
+  }
 
   const moneyTotals = (() => {
     try {

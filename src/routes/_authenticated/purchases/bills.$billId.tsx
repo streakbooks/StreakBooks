@@ -64,6 +64,7 @@ import {
   type BillPaymentAllocation,
 } from "@/components/purchases/BillMakePaymentPanel";
 import { PurchasesDocumentLines } from "@/components/purchases/PurchasesDocumentLines";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { emptyPurchaseLine, type PurchaseLineFormState } from "@/lib/purchases/line-form-state";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/common/stat-card";
@@ -1436,25 +1437,29 @@ function BillDocumentWorkspace() {
                 ))}
               </TableBody>
             </Table>
-            <div className="mt-4 flex flex-col items-end gap-1 text-sm">
-              <div className="flex w-56 justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="tabular-nums">
-                  {fromMinorUnits(BigInt(bill.subtotal_minor), currency)}
-                </span>
-              </div>
-              <div className="flex w-56 justify-between">
-                <span className="text-muted-foreground">Tax</span>
-                <span className="tabular-nums">
-                  {fromMinorUnits(BigInt(bill.tax_minor), currency)}
-                </span>
-              </div>
-              <div className="flex w-56 justify-between font-semibold">
-                <span>Total</span>
-                <span className="tabular-nums">
-                  {fromMinorUnits(BigInt(bill.total_minor), currency)}
-                </span>
-              </div>
+            <div className="mt-4 flex justify-end">
+              <TotalsSummary
+                aria-label="Bill totals"
+                lines={[
+                  {
+                    id: "subtotal",
+                    label: "Subtotal",
+                    value: fromMinorUnits(BigInt(bill.subtotal_minor), currency),
+                  },
+                  {
+                    id: "tax",
+                    label: "Tax",
+                    value: fromMinorUnits(BigInt(bill.tax_minor), currency),
+                    emphasis: "muted",
+                  },
+                  {
+                    id: "total",
+                    label: "Total",
+                    value: fromMinorUnits(BigInt(bill.total_minor), currency),
+                    emphasis: "total",
+                  },
+                ]}
+              />
             </div>
             {bill.memo ? (
               <p className="mt-4 rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">

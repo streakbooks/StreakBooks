@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Files Proxy descriptor-safe URL restoration (2026-11-19)
+
+- `src/lib/documents/files-navigation.ts`: catch throwing `getOwnPropertyDescriptor` Proxy traps per search field; preserve independent valid URL filters. Commit `6ac80cee01b798d5cb4fb73c85e1925b15f25641`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: regression for throwing Proxy descriptor and retained sort/page. Commit `196a11552dbeefc24caf083480d0b5e44106ac0a`. **WRITTEN, NOT RUN.**
+- Manifest updated with partial evidence. **NOT RUN:** local browsing coverage guard, TypeScript, lint, Vitest, build, authenticated browser, accessibility, security/RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows; fully verified **0/21 modules, 0/15 supporting routes, 0/12 batches**. No main, manual CI, production DB or deployment changes.
+
+
 ### Files accessor-safe URL search parsing (2026-11-19)
 
 - `src/lib/documents/files-navigation.ts`: use own data-property descriptors when reading URL search state; ignore accessor-backed values rather than invoking untrusted getters. Commit `db58187c0d55288891a2a07d80cab5e0b50f8099`. **SOURCE ONLY; NOT RUN.**

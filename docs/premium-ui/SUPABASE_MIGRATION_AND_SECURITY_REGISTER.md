@@ -55,3 +55,26 @@ latest applied version, or the corrected firm bulk-profile migration already rec
 on the target. A passing comparison establishes identity alignment for the exported
 history. SQL equivalence, backup and restore rehearsal, and hosted acceptance still
 require separate verification.
+
+### Reconciliation evidence from 19 November 2026
+
+The read-only production comparison used checkout `6577c3a4`. Production recorded
+390 versions and a fresh isolated Supabase replay matched all 375 checkout versions.
+
+- The histories share 320 versions. Among the 300 with recorded SQL on both sides,
+  117 have identical ordered statement fingerprints and 183 differ. The other
+  20 have insufficient statement metadata. Differences can reflect formatting
+  or statement grouping and require further comparison before making schema claims.
+- No exact fingerprint matched across the 55 checkout-only and 69 production-only
+  versions with recorded SQL on both sides. The remaining production-only version
+  lacks a fingerprint. These findings leave version reassignment unresolved.
+- Production's three functions for the corrected firm bulk-profile migration match
+  the function definitions from the fresh replay. The expected audit table and two
+  triggers exist in production. The stored migration text digest differs from the
+  checkout, so this verifies those schema objects only.
+- The isolated POS integration suite passed its AAL1 denial and authorised AAL2 read
+  cases. An isolated logical backup of the migration-history schema restored into a
+  separate database with exactly 375 entries and an identical history digest.
+
+The restore rehearsal covered isolated migration history. A hosted backup restore
+and a staged upgrade rehearsal are still pending. No hosted schema or data changed.

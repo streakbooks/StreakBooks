@@ -249,6 +249,8 @@ export function HrAssetsPage() {
         </h2>
         {assignQ.isPending ? (
           <LoadingState />
+        ) : assignQ.isError ? (
+          <QueryErrorState queries={[assignQ]} title="Could not load asset assignments" />
         ) : assignments.length === 0 ? (
           <EmptyState
             title="No assignments"

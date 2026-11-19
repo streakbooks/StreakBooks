@@ -166,7 +166,7 @@ export function CorrectionApprovalsPanel({
         <QueryErrorState queries={[rowsQ]} title="Could not load approval requests" />
       ) : null}
       {rowsQ.isPending ? <p>Loading approval queue…</p> : null}
-      {!rowsQ.isPending && all.length === 0 ? (
+      {!rowsQ.isPending && !rowsQ.isError && all.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No approval requests on this page. Preview a correction, then submit it for review.
         </p>

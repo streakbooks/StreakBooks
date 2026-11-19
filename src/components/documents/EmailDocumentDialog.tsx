@@ -93,7 +93,7 @@ export function EmailDocumentDialog(props: Props) {
     onSuccess: (r) => {
       if (r.sent) {
         toast.success("Email sent");
-        if (r.recordWarning) toast.warning(r.recordWarning);
+        if (r.recordWarning) toast.warning(friendlyAuthError(r.recordWarning));
         props.onOpenChange(false);
         props.onSent?.();
       } else {

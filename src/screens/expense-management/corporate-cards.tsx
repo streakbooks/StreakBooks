@@ -375,7 +375,7 @@ export function ExpenseManagementCorporateCardsPage() {
         <h2 className="text-lg font-medium">Cards</h2>
         {cardsQ.isLoading ? (
           <LoadingState />
-        ) : (cardsQ.data ?? []).length === 0 ? (
+        ) : cardsQ.isError ? null : (cardsQ.data ?? []).length === 0 ? (
           <EmptyState
             title="No corporate cards"
             description="Register a card with its liability account to start matching spend."

@@ -263,6 +263,8 @@ export function HrShiftsPage() {
         </h2>
         {assignmentsQ.isPending ? (
           <LoadingState />
+        ) : assignmentsQ.isError ? (
+          <QueryErrorState queries={[assignmentsQ]} title="Could not load shift assignments" />
         ) : assignments.length === 0 ? (
           <EmptyState
             title="No roster assignments"

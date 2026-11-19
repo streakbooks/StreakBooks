@@ -252,6 +252,8 @@ export function HrPerformancePage() {
         </h2>
         {goalsQ.isPending ? (
           <LoadingState />
+        ) : goalsQ.isError ? (
+          <QueryErrorState queries={[goalsQ]} title="Could not load goals" />
         ) : goals.length === 0 ? (
           <EmptyState
             title="No goals"

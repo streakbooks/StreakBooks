@@ -222,13 +222,20 @@ export function FirmBulkClientActions({
                 placeholder="Bookkeeping, Payroll, Advisory…"
                 list="firm-bulk-service-category-options"
               />
-              <datalist id="firm-bulk-service-category-options">
-                {(servicesQ.data ?? [])
-                  .filter((item) => item.is_active)
-                  .map((item) => (
-                    <option key={item.id} value={item.name} />
-                  ))}
-              </datalist>
+              {servicesQ.isError && servicesQ.data === undefined ? (
+                <QueryErrorState
+                  queries={[servicesQ]}
+                  title="Could not load service catalogue suggestions"
+                />
+              ) : (
+                <datalist id="firm-bulk-service-category-options">
+                  {(servicesQ.data ?? [])
+                    .filter((item) => item.is_active)
+                    .map((item) => (
+                      <option key={item.id} value={item.name} />
+                    ))}
+                </datalist>
+              )}
             </div>
           ) : field === "tags" ? (
             <>

@@ -277,7 +277,7 @@ export function ExpenseManagementPettyCashPage() {
 
       {floatsQ.isLoading ? (
         <LoadingState />
-      ) : (floatsQ.data ?? []).length === 0 ? (
+      ) : floatsQ.isError ? null : (floatsQ.data ?? []).length === 0 ? (
         <EmptyState
           title="No petty cash floats"
           description="Create a float, fund it from bank, then record spends as company-paid claims."

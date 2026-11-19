@@ -5,8 +5,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { listInvoices } from "@/lib/sales/sales.functions";
 import { getSalesOverview } from "@/lib/sales/sales-statements.functions";
 import { money } from "@/components/sales/sales-form-utils";
-import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { StatCard } from "@/components/common/stat-card";
@@ -99,11 +99,7 @@ function SalesOverview() {
       {overviewQ.isPending ? (
         <LoadingState />
       ) : overviewQ.isError ? (
-        <ErrorState
-          title="Could not load overview"
-          description={friendlyAuthError(overviewQ.error)}
-          onRetry={() => overviewQ.refetch()}
-        />
+        <QueryErrorState queries={[overviewQ]} title="Could not load overview" />
       ) : (
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
@@ -209,11 +205,7 @@ function SalesOverview() {
       {invoicesQ.isPending ? (
         <LoadingState />
       ) : invoicesQ.isError ? (
-        <ErrorState
-          onRetry={() => void invoicesQ.refetch()}
-          title="Could not load invoices"
-          description={friendlyAuthError(invoicesQ.error)}
-        />
+        <QueryErrorState queries={[invoicesQ]} title="Could not load invoices" />
       ) : (invoicesQ.data?.rows ?? []).length === 0 ? (
         <EmptyState
           title="No invoices yet"

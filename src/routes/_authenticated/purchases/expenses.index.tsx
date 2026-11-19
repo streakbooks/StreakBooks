@@ -4,8 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { listExpenses } from "@/lib/purchases/purchases.functions";
-import { friendlyAuthError } from "@/lib/auth-helpers";
-import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ListToolbar } from "@/components/common/ListTools";
 import { useListSearch } from "@/hooks/use-list-search";
@@ -66,11 +66,7 @@ function ExpensesList() {
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
-        <ErrorState
-          title="Could not load expenses"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => query.refetch()}
-        />
+        <QueryErrorState queries={[query]} title="Could not load expenses" />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState
           title="No expenses"

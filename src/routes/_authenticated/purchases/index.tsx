@@ -8,7 +8,8 @@ import {
   getPurchasesOverview,
 } from "@/lib/purchases/purchases.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Button } from "@/components/ui/button";
@@ -42,12 +43,9 @@ function PurchasesOverview() {
     return <EmptyState title="No organisation" description="Create an organisation first." />;
   if (summaryQ.isError || overviewQ.isError) {
     return (
-      <ErrorState
-        description="Could not load purchasing information. Please try again."
-        onRetry={() => {
-          void summaryQ.refetch();
-          void overviewQ.refetch();
-        }}
+      <QueryErrorState
+        queries={[summaryQ, overviewQ]}
+        title="Could not load purchasing information"
       />
     );
   }

@@ -189,7 +189,9 @@ test("supplier payment actions follow payment permission in an empty register", 
     await expect(link).toHaveAttribute("href", "/purchases/payments/new");
   }
   await expect(batchPayment).toHaveAttribute("href", "/purchases/payments/batch");
-  await page.evaluate(() => window.voiceFixture.setContext({ permissions: ["purchases.view"] }));
+  await page.evaluate(() =>
+    window.voiceFixture.setContext({ role: "read_only", permissions: ["purchases.view"] }),
+  );
   await expect(newPayments).toHaveCount(0);
   await expect(batchPayment).toHaveCount(0);
   await expect(page.getByText("Supplier payments will appear here.")).toBeVisible();

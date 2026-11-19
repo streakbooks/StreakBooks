@@ -6,6 +6,25 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { nitro } from "nitro/vite";
+import type { Plugin } from "vite";
+
+function releaseRevision(): Plugin {
+  return {
+    name: "linkbooks-release-revision",
+    apply: "build",
+    applyToEnvironment: (environment) => environment.name === "client",
+    generateBundle() {
+      const commit = process.env["VERCEL_GIT_COMMIT_SHA"];
+      if (process.env["VERCEL_ENV"] !== "production" || !commit || !/^[a-f0-9]{40}$/.test(commit))
+        return;
+      this.emitFile({
+        type: "asset",
+        fileName: "release-revision.json",
+        source: JSON.stringify({ commit, environment: "production" }),
+      });
+    },
+  };
+}
 
 export default defineConfig({
   tanstackStart: {
@@ -15,6 +34,6 @@ export default defineConfig({
   },
   // Override Lovable's default Cloudflare Nitro preset for Vercel deploys.
   vite: {
-    plugins: [nitro({ preset: "vercel" })],
+    plugins: [releaseRevision(), nitro({ preset: "vercel" })],
   },
 });

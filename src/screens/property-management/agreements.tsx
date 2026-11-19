@@ -263,7 +263,7 @@ export function PmAgreementsPage() {
           {agreements.isError ? (
             <QueryErrorState queries={[agreements]} title="Could not load agreements" />
           ) : null}
-          {agreements.data?.length === 0 ? (
+          {!agreements.isError && agreements.data?.length === 0 ? (
             <EmptyState
               title="No agreements yet"
               description="Create a draft or active management agreement for a property."

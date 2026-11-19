@@ -363,24 +363,26 @@ export function CrmOpportunitiesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Stage</Label>
-                  <RecordLookupSelect
-                    value={stageId || "__default"}
-                    onValueChange={(v) => setStageId(v === "__default" ? "" : v)}
-                  >
-                    <SelectTrigger aria-label="Opportunity stage">
-                      <SelectValue placeholder="Default first stage" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__default">Default first stage</SelectItem>
-                      {stages
-                        .filter((s) => !s.isWon && !s.isLost)
-                        .map((stage) => (
-                          <SelectItem key={stage.id} value={stage.id}>
-                            {stage.name} ({stage.probabilityPct}%)
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
+                  {pipelines.isError ? null : (
+                    <RecordLookupSelect
+                      value={stageId || "__default"}
+                      onValueChange={(v) => setStageId(v === "__default" ? "" : v)}
+                    >
+                      <SelectTrigger aria-label="Opportunity stage">
+                        <SelectValue placeholder="Default first stage" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__default">Default first stage</SelectItem>
+                        {stages
+                          .filter((s) => !s.isWon && !s.isLost)
+                          .map((stage) => (
+                            <SelectItem key={stage.id} value={stage.id}>
+                              {stage.name} ({stage.probabilityPct}%)
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  )}
                 </div>
                 <div className="sm:col-span-2 space-y-2">
                   {!formValidation.valid ? (

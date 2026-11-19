@@ -363,9 +363,6 @@ function AccountantTools() {
               </AlertDescription>
             </Alert>
           )}
-          {accountsQ.isError && (
-            <QueryErrorState queries={[accountsQ]} title="Could not load posting accounts" />
-          )}
           <h2 className="mt-8 mb-3 border-b border-border/70 pb-2 text-base font-bold tracking-[-0.02em] text-foreground">
             Tax adjustment (period-end)
           </h2>
@@ -376,6 +373,9 @@ function AccountantTools() {
               file a return.
             </AlertDescription>
           </Alert>
+          {accountsQ.isError ? (
+            <QueryErrorState queries={[accountsQ]} title="Could not load posting accounts" />
+          ) : (
           <div className="mb-8 grid max-w-2xl gap-4 rounded-xl border border-border/85 bg-card p-5 shadow-card">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
@@ -446,6 +446,7 @@ function AccountantTools() {
                 !canAdjust ||
                 adjustM.isPending ||
                 accountsQ.isPending ||
+                !accountsQ.isSuccess ||
                 !taxAcc ||
                 !offsetAcc ||
                 taxAcc === offsetAcc ||
@@ -460,6 +461,7 @@ function AccountantTools() {
               Post tax adjustment
             </Button>
           </div>
+          )}
         </TabsContent>
       </Tabs>
     </ListWorkspace>

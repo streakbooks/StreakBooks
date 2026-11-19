@@ -282,7 +282,7 @@ export function PmOwnerStatementsPage() {
             {statements.isError ? (
               <QueryErrorState queries={[statements]} title="Could not load statements" />
             ) : null}
-            {statements.data?.length === 0 ? (
+            {!statements.isError && statements.data?.length === 0 ? (
               <EmptyState
                 title="No statements yet"
                 description="Generate a statement for an owner and period."

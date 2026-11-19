@@ -1034,34 +1034,43 @@ export function SalesDocumentEditor({
                 <div className="flex flex-wrap items-end gap-2">
                   <FormControlShell width="contact">
                     <Label htmlFor="sales-price-list">Sales price list</Label>
-                    <RecordLookupSelect
-                      value={selectedPriceListId || "none"}
-                      onValueChange={(value) => {
-                        setManualPriceListId(value === "none" ? "" : value);
-                        setApplyPriceListOpen(false);
-                        setLines((previous) =>
-                          previous.map((line) => ({
-                            ...line,
-                            pricingTrace:
-                              line.pricingTrace?.price_list_id === value ? line.pricingTrace : null,
-                          })),
-                        );
-                      }}
-                    >
-                      <SelectTrigger id="sales-price-list" aria-label="Sales price list">
-                        <SelectValue placeholder="Catalogue prices" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Catalogue prices (default)</SelectItem>
-                        {(priceListsQ.data ?? [])
-                          .filter((list) => list.is_active && list.currency_code === currency)
-                          .map((list) => (
-                            <SelectItem key={list.id} value={list.id}>
-                              {list.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </RecordLookupSelect>
+                    {priceListsQ.isError ? (
+                      <QueryErrorState
+                        queries={[priceListsQ]}
+                        title="Could not load price lists"
+                      />
+                    ) : (
+                      <RecordLookupSelect
+                        value={selectedPriceListId || "none"}
+                        onValueChange={(value) => {
+                          setManualPriceListId(value === "none" ? "" : value);
+                          setApplyPriceListOpen(false);
+                          setLines((previous) =>
+                            previous.map((line) => ({
+                              ...line,
+                              pricingTrace:
+                                line.pricingTrace?.price_list_id === value
+                                  ? line.pricingTrace
+                                  : null,
+                            })),
+                          );
+                        }}
+                      >
+                        <SelectTrigger id="sales-price-list" aria-label="Sales price list">
+                          <SelectValue placeholder="Catalogue prices" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Catalogue prices (default)</SelectItem>
+                          {(priceListsQ.data ?? [])
+                            .filter((list) => list.is_active && list.currency_code === currency)
+                            .map((list) => (
+                              <SelectItem key={list.id} value={list.id}>
+                                {list.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </RecordLookupSelect>
+                    )}
                   </FormControlShell>
                   <Button
                     variant="outline"
@@ -1105,9 +1114,6 @@ export function SalesDocumentEditor({
                     queries={[customerDefaultQ]}
                     title="Could not load customer default price list"
                   />
-                ) : null}
-                {priceListsQ.isError ? (
-                  <QueryErrorState queries={[priceListsQ]} title="Could not load price lists" />
                 ) : null}
                 {priceListTooLarge && selectedPriceListId ? (
                   <p role="alert" className="text-sm text-destructive">

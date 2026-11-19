@@ -209,7 +209,7 @@ export function PmPropertiesPage() {
           {properties.isError ? (
             <QueryErrorState queries={[properties]} title="Could not load properties" />
           ) : null}
-          {properties.data?.length === 0 ? (
+          {!properties.isError && properties.data?.length === 0 ? (
             <EmptyState
               title="No properties yet"
               description="Create the first property to begin the portfolio register."

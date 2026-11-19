@@ -292,7 +292,7 @@ function CatalogueCart({ companyId }: { companyId: string }) {
           </form>
           <QueryErrorState queries={[products]} />
           {products.isPending ? <LoadingState /> : null}
-          {products.data?.length === 0 ? (
+          {products.isSuccess && products.data.length === 0 ? (
             <EmptyState
               title="No matching items"
               description="Try another name or SKU, or add an active item in Products & Services."

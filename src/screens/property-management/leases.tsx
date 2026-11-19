@@ -249,7 +249,7 @@ export function PmLeasesPage() {
           {leases.isError ? (
             <QueryErrorState queries={[leases]} title="Could not load leases" />
           ) : null}
-          {leases.data?.length === 0 ? (
+          {!leases.isError && leases.data?.length === 0 ? (
             <EmptyState
               title="No leases yet"
               description="Create a lease for an active tenant."

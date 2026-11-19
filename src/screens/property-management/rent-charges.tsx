@@ -204,7 +204,7 @@ export function PmRentChargesPage() {
           {charges.isError ? (
             <QueryErrorState queries={[charges]} title="Could not load rent charges" />
           ) : null}
-          {charges.data?.length === 0 ? (
+          {!charges.isError && charges.data?.length === 0 ? (
             <EmptyState
               title="No rent charges"
               description="Generate a charge for an active lease period."

@@ -1,6 +1,7 @@
 import { useReportingAccess } from "@/hooks/use-reporting-access";
 import { LegacyProfitLossView, LegacyBalanceSheetView } from "./LegacyStatementViews";
 import { LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { StandardStatementView } from "./StandardStatementView";
 import { useQuery } from "@tanstack/react-query";
@@ -178,6 +179,8 @@ function StatementAccessView({
 }) {
   const access = useReportingAccess(ctx.companyId);
   if (access.isPending) return <LoadingState />;
+  if (access.isError)
+    return <QueryErrorState queries={[access]} title="Could not verify report access" />;
   if (access.data?.allowed) return <StandardStatementView ctx={ctx} report={report} />;
   if (ctx.search.settings)
     return (

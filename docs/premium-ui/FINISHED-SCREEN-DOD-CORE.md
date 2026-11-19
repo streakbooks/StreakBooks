@@ -84,6 +84,8 @@ Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails
 
 **Create QueryErrorState (Batch 79):** Sales/PO orders, requisitions editor, and batch payment use `QueryErrorState` for options/load failures. Staging/RBAC still **NOT VERIFIED**.
 
+**QueryErrorState sweep (Batches 88–99):** High-traffic and module-shell query load failures use shared `QueryErrorState` (optional description override for migration hints). Intentional deny-path `ErrorState` remains only where access succeeded but customization is disallowed (`StatementViews`). Staging/RBAC still **NOT VERIFIED** — modules remain **IN PROGRESS**, not COMPLETE.
+
 **Bank coding + record totals (Batch 75):** `BankCodingPanel` uses shared `EditableLineItemGrid` + `TotalsSummary`. Bill and invoice read-only records use `TotalsSummary`. `MoneyDocumentPanel` fails closed with `QueryErrorState` when options queries fail. Staging/RBAC still **NOT VERIFIED**.
 
 **Bills line grid ELG (Batch 74):** `PurchasesDocumentLines` composes shared `EditableLineItemGrid` (Sales parity). Drag reorder, tracking columns, tax modes, keyboard/paste, Add-lines Select, and TotalsSummary preserved. Staging/RBAC still **NOT VERIFIED**.

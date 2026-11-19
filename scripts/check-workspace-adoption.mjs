@@ -342,6 +342,8 @@ const required = [
   ["src/screens/property-management/overview.tsx", "QueryErrorState"],
   ["src/screens/property-management/portals.tsx", "QueryErrorState"],
   ["src/screens/property-management/properties.tsx", "QueryErrorState"],
+  ["src/components/common/QueryErrorState.tsx", "friendlyAuthError"],
+  ["src/components/reports/StatementViews.tsx", "QueryErrorState"],
   ["src/screens/property-management/rent-charges.tsx", "QueryErrorState"],
   ["src/screens/property-management/reservations.tsx", "QueryErrorState"],
   ["src/screens/property-management/settings.tsx", "QueryErrorState"],

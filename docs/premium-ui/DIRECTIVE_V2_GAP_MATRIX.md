@@ -40,7 +40,7 @@
 | --- | --- | --- |
 | TransactionWorkspace / RecordWorkspace / ListWorkspace | PARTIAL | Adopted on create/list surfaces in Batches 25–54; module DoD incomplete |
 | EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money; residual modules TBD |
-| Consistent +New / empty CTAs | PARTIAL | Batches 49–54 closed many; continue only on confirmed misses |
+| Consistent +New / empty CTAs | PARTIAL | Batches 49–63 closed create empties; Batch 64 App Store + approval queue bridges; residual queue-only empties intentional |
 | Module finished-screen DoD (34 modules) | PARTIAL | **0/34 COMPLETE** — continue without duplicating create work |
 | Staging / live RBAC / prod migrations | BLOCKED | Batches 23–24; require separate auth |
 
@@ -132,4 +132,13 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | HR self-service attendance / automations | Check in; Refresh rules / Run all |
 | App Store explore/billing | Clear filters; Explore apps |
 | Sales statements | Choose customer scroll |
+
+## Batch 64 (empty CTA wave 7 / App Store + queues)
+
+| Gap | Action |
+| --- | --- |
+| App Store featured/register/reviews/sync/exceptions/trust/requests/section | Explore / clear filters / connections / sync bridges |
+| EM approvals queue empties | Bridge to my expenses / all claims |
+| HR approvals queue empties | Bridge to leave / attendance |
+| PM owner statements select empty | Generate statement when permitted |
 

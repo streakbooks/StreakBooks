@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
@@ -5,6 +6,7 @@ import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -74,7 +76,17 @@ export function AppStoreReviewsPage() {
 
       {!catalogue.isLoading && !catalogue.isError ? (
         apps.length === 0 ? (
-          <EmptyState title="No listings" description="Catalogue is empty." />
+          <EmptyState
+            title="No listings"
+            description="Catalogue is empty."
+            action={
+              <Button asChild size="sm">
+                <Link to="/app-store/$section" params={{ section: "explore" }}>
+                  Explore apps
+                </Link>
+              </Button>
+            }
+          />
         ) : (
           <div className="rounded-lg border">
             <Table>

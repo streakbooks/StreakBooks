@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
@@ -243,6 +244,13 @@ export function AppStoreTrustPage() {
               <EmptyState
                 title="No security reviews yet"
                 description="Developer submissions appear here for administrator approval. Approval never enables real customer data alone."
+                action={
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/app-store/$section" params={{ section: "explore" }}>
+                      Explore apps
+                    </Link>
+                  </Button>
+                }
               />
             ) : (
               <div className="rounded-lg border">

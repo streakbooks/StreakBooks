@@ -23,6 +23,7 @@ import {
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -178,7 +179,7 @@ export function AttachmentsPanel({
         {listQ.isPending ? (
           <p className="text-muted-foreground">Loading files…</p>
         ) : listQ.isError ? (
-          <p className="text-destructive">{friendlyAuthError(listQ.error)}</p>
+          <QueryErrorState queries={[listQ]} title="Could not load attachments" />
         ) : rows.length === 0 ? (
           <p className="text-muted-foreground">
             No files attached.{" "}

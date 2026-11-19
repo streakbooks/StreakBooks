@@ -77,7 +77,7 @@ export function Fixture() {
         }}
         history={{ rows: history, has_more: false, page: 0 }}
         historyLoading={false}
-        historyError=""
+        historyLoad={{ isError: false, error: null, refetch: () => undefined }}
         onHistoryPage={() => {}}
         onHistoryRefresh={() => {}}
         onSearch={async (filters) => {

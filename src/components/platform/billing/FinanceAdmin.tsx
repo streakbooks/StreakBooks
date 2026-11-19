@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LookupSelect } from "@/components/lookup";
 import { MultiLookupSelect } from "@/components/lookup/MultiLookupSelect";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,9 +80,7 @@ export function FinanceAdmin({ canEdit, isOwner }: { canEdit: boolean; isOwner: 
       </header>
       {query.isLoading ? <p className="text-sm">Loading finance settings…</p> : null}
       {query.isError ? (
-        <p className="text-sm text-destructive">
-          {errorText(query.error, "Finance settings could not be loaded.")}
-        </p>
+        <QueryErrorState queries={[query]} title="Could not load finance settings" />
       ) : null}
       {query.data ? (
         <>

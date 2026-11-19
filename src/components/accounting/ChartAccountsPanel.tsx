@@ -851,9 +851,7 @@ export function ChartAccountsPanel({
             <p className="text-sm text-muted-foreground">Checking what will be posted…</p>
           ) : null}
           {mergePreview.isError ? (
-            <p role="alert" className="text-sm text-destructive">
-              {friendlyAuthError(mergePreview.error)}
-            </p>
+            <QueryErrorState queries={[mergePreview]} title="Could not preview account merge" />
           ) : null}
           {mergePreview.data && "unavailable" in mergePreview.data ? (
             <p className="text-sm text-muted-foreground">{mergePreview.data.unavailable}</p>

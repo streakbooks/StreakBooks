@@ -31,12 +31,14 @@ import {
   filterCorrectionHistory,
   type CorrectionHistoryFilter,
 } from "@/lib/accounting/corrections/history-review";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { CorrectionConditions } from "./CorrectionConditions";
 
 type PostRequest = { input: CorrectionInput; requestKey: string; previewHash: string };
+type HistoryQuery = { isError: boolean; error: unknown; refetch: () => unknown };
 type Props = {
   companyId: string;
   setup: CorrectionSetup;
@@ -53,7 +55,7 @@ type Props = {
   }) => Promise<CorrectionBatch>;
   history: { rows: CorrectionBatch[]; has_more: boolean; page: number };
   historyLoading: boolean;
-  historyError: string;
+  historyLoad: HistoryQuery;
   onHistoryPage: (page: number) => void;
   onHistoryRefresh: () => void;
 };
@@ -82,7 +84,7 @@ export function TransactionCorrectionsView({
   onUndo,
   history,
   historyLoading,
-  historyError,
+  historyLoad,
   onHistoryPage,
   onHistoryRefresh,
 }: Props) {
@@ -927,11 +929,9 @@ export function TransactionCorrectionsView({
             Export loaded history CSV
           </Button>
         </div>
-        {historyError && (
-          <p role="alert" className="text-destructive">
-            {historyError}
-          </p>
-        )}
+        {historyLoad.isError ? (
+          <QueryErrorState queries={[historyLoad]} title="Could not load correction history" />
+        ) : null}
         {historyLoading ? (
           <p role="status">Loading correction history…</p>
         ) : history.rows.length === 0 ? (

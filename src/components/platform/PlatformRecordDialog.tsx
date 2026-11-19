@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getPlatformRecord, getSupervisedSupport } from "@/lib/platform/platform.functions";
 import type { PlatformContext } from "@/lib/platform/catalog";
 import type { RecordResource } from "@/lib/platform/navigation";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -67,12 +68,7 @@ export function PlatformRecordDialog({
         {query.isPending ? (
           <p role="status">Loading platform record…</p>
         ) : query.isError ? (
-          <div role="alert">
-            <p>{query.error.message}</p>
-            <Button variant="outline" className="mt-3" onClick={() => void query.refetch()}>
-              Retry record
-            </Button>
-          </div>
+          <QueryErrorState queries={[query]} title="Could not load platform record" />
         ) : query.data ? (
           resource === "businesses" ? (
             <PlatformCustomer360

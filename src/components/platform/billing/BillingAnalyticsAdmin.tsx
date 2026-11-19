@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import {
   ANALYTICS_RANGES,
@@ -72,14 +73,7 @@ export function BillingAnalyticsAdmin() {
       </header>
       {query.isLoading ? <p className="text-sm text-muted-foreground">Loading analytics…</p> : null}
       {query.isError ? (
-        <div className="space-y-2 text-sm" role="alert">
-          <p className="text-destructive">
-            {query.error instanceof Error ? query.error.message : "Analytics could not be loaded."}
-          </p>
-          <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
-            Retry
-          </Button>
-        </div>
+        <QueryErrorState queries={[query]} title="Could not load billing analytics" />
       ) : null}
       {query.data ? <AnalyticsBody data={query.data} /> : null}
     </section>

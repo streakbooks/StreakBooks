@@ -585,7 +585,9 @@ export function ExpenseManagementCorporateCardsPage() {
 
           <section className="mt-8 space-y-3">
             <h2 className="text-lg font-medium">Disputed transactions</h2>
-            {txQ.isError ? null : disputedTx.length === 0 ? (
+            {txQ.isError ? (
+              <QueryErrorState queries={[txQ]} title="Could not load card transactions" />
+            ) : disputedTx.length === 0 ? (
               <EmptyState
                 title="No disputes"
                 description="Disputed statement lines appear here until resolved."

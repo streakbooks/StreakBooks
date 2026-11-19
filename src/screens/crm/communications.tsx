@@ -62,6 +62,8 @@ export function CrmCommunicationsPage() {
 
       {settings.isError ? (
         <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
+      ) : settings.isLoading ? (
+        <LoadingState />
       ) : null}
 
       {settings.data?.enabled ? (

@@ -77,6 +77,8 @@ export function CrmProductsPage() {
     >
       {settings.isError ? (
         <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
+      ) : settings.isLoading ? (
+        <LoadingState />
       ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState

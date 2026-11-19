@@ -82,6 +82,8 @@ export function CrmForecastingPage() {
     >
       {settings.isError ? (
         <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
+      ) : settings.isLoading ? (
+        <LoadingState />
       ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before reviewing forecasts." />

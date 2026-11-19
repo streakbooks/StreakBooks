@@ -533,7 +533,11 @@ function FirmPage() {
 
             <TabsContent value="activity" className="space-y-4">
               <h2 className="text-lg font-semibold">Client activity history</h2>
-              {(clientsQ.data ?? []).length === 0 ? (
+              {clientsQ.isPending ? (
+                <LoadingState />
+              ) : clientsQ.isError ? (
+                <QueryErrorState queries={[clientsQ]} title="Could not load clients" />
+              ) : (clientsQ.data ?? []).length === 0 ? (
                 <EmptyState
                   title="No linked clients"
                   description="Client activity is available after your first organisation is linked."

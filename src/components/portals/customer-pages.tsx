@@ -451,6 +451,9 @@ export function PortalStatement() {
       {query.isError ? (
         <QueryErrorState queries={[query]} />
       ) : null}
+      {!query.isPending && !query.isError && (query.data ?? []).length === 0 ? (
+        <p className="text-sm text-muted-foreground">No statement lines in this period.</p>
+      ) : null}
       {(query.data ?? []).map((section) => (
         <Card key={String(section["currency"])}>
           <CardHeader>

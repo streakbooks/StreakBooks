@@ -54,7 +54,7 @@
 | Empty CTA wave 4 Batch 61 | Done | [PR #319](https://github.com/linkbusinessadvisory/LinkBooks/pull/319) → `b03a9fab` |
 | Empty CTA wave 5 Batch 62 | Done | [PR #321](https://github.com/linkbusinessadvisory/LinkBooks/pull/321) → `6ab92ab6` |
 | Empty CTA wave 6 Batch 63 | Done | [PR #324](https://github.com/linkbusinessadvisory/LinkBooks/pull/324) → `41468621` |
-| Empty CTA wave 7 Batch 64 | In progress | App Store bridges; EM/HR queues; PM statements |
+| Empty CTA wave 7 Batch 64 | Done | [PR #328](https://github.com/linkbusinessadvisory/LinkBooks/pull/328) → `10876d52` |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

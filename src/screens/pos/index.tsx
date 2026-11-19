@@ -494,7 +494,12 @@ function CatalogueCart({ companyId }: { companyId: string }) {
               </p>
             </section>
           ) : null}
-          {recentSales.data && recentSales.data.length > 0 ? (
+          {recentSales.isError ? (
+            <section aria-label="Recent sales" className="space-y-2">
+              <h3 className="font-semibold">Recent sales</h3>
+              <QueryErrorState queries={[recentSales]} title="Could not load recent sales" />
+            </section>
+          ) : recentSales.data && recentSales.data.length > 0 ? (
             <section aria-label="Recent sales" className="space-y-2">
               <h3 className="font-semibold">Recent sales</h3>
               <p className="text-sm text-muted-foreground">

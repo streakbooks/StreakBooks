@@ -11,6 +11,7 @@ import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EmptyState, LoadingState } from "@/components/common/states";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { SalesOrderForm } from "@/screens/sales/orders.new";
@@ -223,6 +224,52 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
                 Print order
               </Button>
             </div>
+            {(detail.data.lines ?? []).length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Net</TableHead>
+                    <TableHead className="text-right">Tax</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detail.data.lines.map((line, index) => (
+                    <TableRow key={`${line.description}-${index}`}>
+                      <TableCell>{line.description}</TableCell>
+                      <TableCell className="text-right tabular-nums">{line.quantity}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmt.money(line.net_minor, detail.data.currency_code)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmt.money(line.tax_minor, detail.data.currency_code)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : null}
+            <TotalsSummary
+              lines={[
+                {
+                  id: "subtotal",
+                  label: "Subtotal",
+                  value: fmt.money(detail.data.subtotal_minor, detail.data.currency_code),
+                },
+                {
+                  id: "tax",
+                  label: "Tax",
+                  value: fmt.money(detail.data.tax_minor, detail.data.currency_code),
+                },
+                {
+                  id: "total",
+                  label: "Total",
+                  value: fmt.money(detail.data.total_minor, detail.data.currency_code),
+                  emphasis: "total",
+                },
+              ]}
+            />
           </section>
         )
       ) : null}

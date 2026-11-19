@@ -41,6 +41,7 @@ import {
   type CreatePrefs,
 } from "@/lib/create-new/preferences";
 import { loadCreatePanel } from "@/components/create-new/load-panel";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -171,7 +172,7 @@ export function CreateNewMenu() {
     void loadCreatePanel(action.id)
       .then((Loaded) => setPanel(() => Loaded))
       .catch((error: unknown) => {
-        setPanelError(error instanceof Error ? error.message : "Could not open the form");
+        setPanelError(friendlyAuthError(error));
       });
   }
 

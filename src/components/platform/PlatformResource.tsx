@@ -20,6 +20,7 @@ import {
   getPlatformSubscriptionCohorts,
   getSupervisedSupport,
 } from "@/lib/platform/platform.functions";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { rowsCsv, recordFields, platformColumnLabel } from "@/lib/platform/catalog";
 import type { PlatformContext, Row, Section } from "@/lib/platform/catalog";
 import { PlatformRecordFields, MetadataTable } from "./PlatformCustomer360";
@@ -77,7 +78,7 @@ export function PlatformResource({
     try {
       setDiagnostics(await read({ data: { companyId } }));
     } catch (error) {
-      setDiagnosticError(error instanceof Error ? error.message : "Diagnostic read failed");
+      setDiagnosticError(friendlyAuthError(error));
       setDiagnostics(null);
     } finally {
       setDiagnosticBusy(false);
@@ -140,7 +141,7 @@ export function PlatformResource({
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
-      setExportError(error instanceof Error ? error.message : "Export failed");
+      setExportError(friendlyAuthError(error));
     } finally {
       setExporting(false);
     }

@@ -29,6 +29,7 @@ import {
 } from "@/lib/notifications/notification-utils";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Input } from "@/components/ui/input";
@@ -241,7 +242,9 @@ function ActionCenterPage() {
       }
       if (result.failedIds.length) {
         setBulkError(
-          `${result.failedIds.length} notification(s) could not be updated. ${result.firstError ?? ""}`,
+          `${result.failedIds.length} notification(s) could not be updated.${
+            result.firstError ? ` ${friendlyAuthError(result.firstError)}` : ""
+          }`,
         );
         setRetryAction(action);
       }
@@ -252,7 +255,7 @@ function ActionCenterPage() {
         await refresh();
       } catch (error) {
         if (isCurrent()) {
-          setBulkError(error instanceof Error ? error.message : "Could not refresh alerts");
+          setBulkError(friendlyAuthError(error));
         }
       }
       if (isCurrent()) {

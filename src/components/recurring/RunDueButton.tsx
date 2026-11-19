@@ -21,7 +21,7 @@ export function RunDueButton({
     onSuccess: async (summary) => {
       for (const key of invalidateKeys) await qc.invalidateQueries({ queryKey: key });
       const text = describeRunDue(label, summary);
-      if (summary.failed.length) toast.error(`${text}: ${summary.failed[0]!.message}`);
+      if (summary.failed.length) toast.error(`${text}: ${friendlyAuthError(summary.failed[0]!.message)}`);
       else toast.success(text);
     },
     onError: (e) => toast.error(friendlyAuthError(e)),

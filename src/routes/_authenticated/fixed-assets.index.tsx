@@ -1162,7 +1162,7 @@ function DepreciationPanel({
     } catch (error) {
       return {
         summary: null,
-        issue: error instanceof Error ? error.message : "Invalid preview data.",
+        issue: friendlyAuthError(error),
       };
     }
   }, [preview.data, periodEnd]);

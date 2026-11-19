@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { LookupSelect } from "@/components/lookup/LookupSelect";
 import { useLookupQuery } from "@/components/lookup/use-lookup-query";
 import { searchReportingModels, getReportingModel } from "@/lib/reports/ecosystem.functions";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 export type ReportingModelChoice = {
   id: string;
   name: string;
@@ -79,7 +80,7 @@ export function ReportingModelSelect({
             onSelect(model);
           } catch (error) {
             if (scope.active && attempt === request.current)
-              setOpenError(error instanceof Error ? error.message : "Could not open this model");
+              setOpenError(friendlyAuthError(error));
           } finally {
             if (scope.active && attempt === request.current) setOpening(false);
           }

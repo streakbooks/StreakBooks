@@ -84,7 +84,12 @@ repairs. The release retains the newer creation workflows from main.
 - Hosted staging and production acceptance remain open. Section 18 still requires
   authenticated staging, hosted two-tenant permission and accounting evidence,
   manual accessibility review, and external integration sandbox validation.
-  Recurring journal schedule editing and exhaustive module acceptance remain open.
+  Exhaustive module acceptance remains open.
+
+- Recurring journal schedules can be edited from the journal list by users with
+  manual journal permission. Edits cover the name, repeat interval, end date and
+  total posting limit. The editor preserves the existing posting history and next
+  scheduled date, and detects concurrent changes before saving.
 
 ## DoD gates (every screen)
 

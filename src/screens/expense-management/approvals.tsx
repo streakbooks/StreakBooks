@@ -526,20 +526,27 @@ export function ExpenseManagementApprovalsPage() {
                 <div className="grid gap-2 md:col-span-2">
                   <Label>Delegate</Label>
                   {canListMembers ? (
-                    <RecordLookupSelect value={delegateUserId} onValueChange={setDelegateUserId}>
-                      <SelectTrigger aria-label="Choose approval delegate">
-                        <SelectValue placeholder="Select member" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(membersQ.data ?? [])
-                          .filter((member) => member.status === "active" && !member.is_you)
-                          .map((member) => (
-                            <SelectItem key={member.user_id} value={member.user_id}>
-                              {member.full_name || member.email || member.user_id}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </RecordLookupSelect>
+                    membersQ.isError && membersQ.data === undefined ? (
+                      <QueryErrorState
+                        queries={[membersQ]}
+                        title="Could not load organisation members"
+                      />
+                    ) : (
+                      <RecordLookupSelect value={delegateUserId} onValueChange={setDelegateUserId}>
+                        <SelectTrigger aria-label="Choose approval delegate">
+                          <SelectValue placeholder="Select member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(membersQ.data ?? [])
+                            .filter((member) => member.status === "active" && !member.is_you)
+                            .map((member) => (
+                              <SelectItem key={member.user_id} value={member.user_id}>
+                                {member.full_name || member.email || member.user_id}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </RecordLookupSelect>
+                    )
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       Member picker needs members.view.

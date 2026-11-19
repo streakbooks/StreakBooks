@@ -234,6 +234,10 @@ export function ExpenseManagementTravelPage() {
         <QueryErrorState queries={[ratesQ]} title="Could not load per diem rates" />
       ) : null}
 
+      {canAdmin && accountsQ.isError && accountsQ.data === undefined ? (
+        <QueryErrorState queries={[accountsQ]} title="Could not load expense accounts" />
+      ) : null}
+
       {canSubmit ? (
         <section className="mb-10 space-y-4 rounded-lg border p-4">
           <h2 className="text-lg font-medium">New travel trip (per diem)</h2>

@@ -6,7 +6,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -230,11 +231,7 @@ export function ExpenseManagementTravelPage() {
       ) : null}
 
       {ratesQ.isError && !migrationMissing ? (
-        <ErrorState
-          title="Could not load per diem rates"
-          description={friendlyAuthError(ratesQ.error)}
-          onRetry={() => void ratesQ.refetch()}
-        />
+        <QueryErrorState queries={[ratesQ]} title="Could not load per diem rates" />
       ) : null}
 
       {canSubmit ? (

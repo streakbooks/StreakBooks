@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { AccountLookup } from "@/components/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -250,11 +251,7 @@ export function ExpenseManagementSettingsPage() {
             <AlertDescription>{EXPENSE_MANAGEMENT_MIGRATION}</AlertDescription>
           </Alert>
         ) : (
-          <ErrorState
-            title="Could not load expense settings"
-            description={message}
-            onRetry={() => settingsQ.refetch()}
-          />
+          <QueryErrorState queries={[settingsQ]} title="Could not load expense settings" />
         )}
       </ListWorkspace>
     );
@@ -510,11 +507,7 @@ export function ExpenseManagementSettingsPage() {
                 <AlertDescription>{EXPENSE_NOTIFICATIONS_MIGRATION}</AlertDescription>
               </Alert>
             ) : (
-              <ErrorState
-                title="Could not preview legacy claims"
-                description={friendlyAuthError(legacyQ.error)}
-                onRetry={() => legacyQ.refetch()}
-              />
+              <QueryErrorState queries={[legacyQ]} title="Could not preview legacy claims" />
             )
           ) : (
             <>

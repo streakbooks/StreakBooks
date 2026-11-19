@@ -6,7 +6,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -279,11 +280,7 @@ export function ExpenseManagementReimbursementsPage() {
             <AlertDescription>{EXPENSE_REIMBURSEMENT_MIGRATION}</AlertDescription>
           </Alert>
         ) : (
-          <ErrorState
-            title="Could not load reimbursements"
-            description={message}
-            onRetry={() => claimsQ.refetch()}
-          />
+          <QueryErrorState queries={[claimsQ]} title="Could not load reimbursements" />
         )}
       </ListWorkspace>
     );
@@ -482,11 +479,7 @@ export function ExpenseManagementReimbursementsPage() {
               <AlertDescription>{EXPENSE_BANK_MATCH_MIGRATION}</AlertDescription>
             </Alert>
           ) : (
-            <ErrorState
-              title="Could not load bank suggestions"
-              description={friendlyAuthError(bankSuggestQ.error)}
-              onRetry={() => bankSuggestQ.refetch()}
-            />
+            <QueryErrorState queries={[bankSuggestQ]} title="Could not load bank suggestions" />
           )
         ) : (bankSuggestQ.data ?? []).length === 0 ? (
           <p className="text-sm text-muted-foreground">No amount/date matches right now.</p>

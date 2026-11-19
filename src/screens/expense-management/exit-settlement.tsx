@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { ExpenseManagementLoadingShell } from "@/components/expenses/ExpenseManagementLoadingShell";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -186,11 +187,7 @@ export function ExpenseManagementExitSettlementPage() {
             <AlertDescription>{EXPENSE_EXIT_SETTLEMENT_MIGRATION}</AlertDescription>
           </Alert>
         ) : (
-          <ErrorState
-            title="Could not load exit settlements"
-            description={message}
-            onRetry={() => settlementsQ.refetch()}
-          />
+          <QueryErrorState queries={[settlementsQ]} title="Could not load exit settlements" />
         )}
       </ListWorkspace>
     );
@@ -281,11 +278,7 @@ export function ExpenseManagementExitSettlementPage() {
           {outstandingQ.isLoading ? (
             <LoadingState />
           ) : outstandingQ.isError ? (
-            <ErrorState
-              title="Could not load outstanding items"
-              description={friendlyAuthError(outstandingQ.error)}
-              onRetry={() => outstandingQ.refetch()}
-            />
+            <QueryErrorState queries={[outstandingQ]} title="Could not load outstanding items" />
           ) : outstandingQ.data && summary ? (
             <>
               <div className="mb-3 flex flex-wrap gap-2">

@@ -3,14 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getExpenseManagementOverview } from "@/lib/expenses/expenses.functions";
 import type { Permission } from "@/lib/permissions";
 
@@ -106,11 +106,7 @@ export function ExpenseManagementOverviewPage() {
   }
   if (overview.isError) {
     return (
-      <ErrorState
-        title="Could not load expense overview"
-        description={friendlyAuthError(overview.error)}
-        onRetry={() => overview.refetch()}
-      />
+      <QueryErrorState queries={[overview]} title="Could not load expense overview" />
     );
   }
 

@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { ExpenseManagementLoadingShell } from "@/components/expenses/ExpenseManagementLoadingShell";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -130,11 +131,7 @@ export function ExpenseManagementReportsPage() {
             <AlertDescription>{EXPENSE_REPORTS_MIGRATION}</AlertDescription>
           </Alert>
         ) : (
-          <ErrorState
-            title="Could not load expense report"
-            description={message}
-            onRetry={() => reportQ.refetch()}
-          />
+          <QueryErrorState queries={[reportQ]} title="Could not load expense report" />
         )}
       </ListWorkspace>
     );
@@ -214,11 +211,7 @@ export function ExpenseManagementReportsPage() {
         {auditQ.isLoading ? (
           <LoadingState />
         ) : auditQ.isError ? (
-          <ErrorState
-            title="Could not load audit events"
-            description={friendlyAuthError(auditQ.error)}
-            onRetry={() => auditQ.refetch()}
-          />
+          <QueryErrorState queries={[auditQ]} title="Could not load audit events" />
         ) : (auditQ.data ?? []).length === 0 ? (
           <EmptyState
             title="No claim events yet"

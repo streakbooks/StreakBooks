@@ -6,7 +6,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -208,11 +209,7 @@ export function ExpenseManagementPettyCashPage() {
       ) : null}
 
       {floatsQ.isError && !migrationMissing ? (
-        <ErrorState
-          title="Could not load petty cash floats"
-          description={friendlyAuthError(floatsQ.error)}
-          onRetry={() => void floatsQ.refetch()}
-        />
+        <QueryErrorState queries={[floatsQ]} title="Could not load petty cash floats" />
       ) : null}
 
       {canManage ? (

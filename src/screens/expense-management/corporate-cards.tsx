@@ -343,16 +343,18 @@ export function ExpenseManagementCorporateCardsPage() {
             </div>
             <div className="grid gap-2">
               <Label>Liability account</Label>
-              <AccountLookup
-                companyId={company.id}
-                accounts={liabilityAccounts}
-                value={liabilityAccountId}
-                onChange={(next) => setLiabilityAccountId(next ?? "")}
-                allowClear
-                disabled={createCardMut.isPending}
-                ariaLabel="Card liability account"
-                purpose="posting"
-              />
+              {accountsQ.isError && accountsQ.data === undefined ? null : (
+                <AccountLookup
+                  companyId={company.id}
+                  accounts={liabilityAccounts}
+                  value={liabilityAccountId}
+                  onChange={(next) => setLiabilityAccountId(next ?? "")}
+                  allowClear
+                  disabled={createCardMut.isPending}
+                  ariaLabel="Card liability account"
+                  purpose="posting"
+                />
+              )}
             </div>
             <div>
               <Button
@@ -361,7 +363,8 @@ export function ExpenseManagementCorporateCardsPage() {
                   createCardMut.isPending ||
                   !label.trim() ||
                   last4.length !== 4 ||
-                  !liabilityAccountId
+                  !liabilityAccountId ||
+                  (accountsQ.isError && accountsQ.data === undefined)
                 }
               >
                 {createCardMut.isPending ? "Saving…" : "Save card"}
@@ -488,18 +491,22 @@ export function ExpenseManagementCorporateCardsPage() {
 
           <section className="mb-6 grid max-w-lg gap-2">
             <Label>Claim for matching</Label>
-            <RecordLookupSelect value={matchClaimId} onValueChange={setMatchClaimId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select corporate-card claim" />
-              </SelectTrigger>
-              <SelectContent>
-                {cardClaims.map((claim) => (
-                  <SelectItem key={claim.id} value={claim.id}>
-                    {claim.claimNumber} — {fromMinorUnits(claim.totalMinor, claim.claimCurrency)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </RecordLookupSelect>
+            {claimsQ.isError && claimsQ.data === undefined ? (
+              <QueryErrorState queries={[claimsQ]} title="Could not load card claims for matching" />
+            ) : (
+              <RecordLookupSelect value={matchClaimId} onValueChange={setMatchClaimId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select corporate-card claim" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cardClaims.map((claim) => (
+                    <SelectItem key={claim.id} value={claim.id}>
+                      {claim.claimNumber} — {fromMinorUnits(claim.totalMinor, claim.claimCurrency)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </RecordLookupSelect>
+            )}
           </section>
 
           <section className="space-y-3">

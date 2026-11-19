@@ -934,7 +934,7 @@ export function TransactionCorrectionsView({
         ) : null}
         {historyLoading ? (
           <p role="status">Loading correction history…</p>
-        ) : history.rows.length === 0 ? (
+        ) : historyLoad.isError ? null : history.rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">No correction batches on this page.</p>
         ) : filteredHistory.length === 0 ? (
           <p className="text-sm text-muted-foreground">

@@ -150,6 +150,8 @@ export function PmLeasesPage() {
     >
       {settings.isError ? (
         <QueryErrorState queries={[settings]} title="Could not load Property Management settings" />
+      ) : settings.isLoading ? (
+        <LoadingState />
       ) : !settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (

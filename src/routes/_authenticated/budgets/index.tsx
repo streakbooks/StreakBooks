@@ -1,6 +1,6 @@
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   parseBudgetListSearch,
   encodeBudgetListReturnContext,
@@ -59,7 +59,7 @@ export const Route = createFileRoute("/_authenticated/budgets/")({
 function BudgetsPage() {
   const { company } = useActiveCompany();
   const fmt = useFormat();
-  const navigate = useNavigate();
+  const navigate = Route.useNavigate();
   const searchState = Route.useSearch();
   const forceCreate = searchState.create;
   const search = searchState.q ?? "";

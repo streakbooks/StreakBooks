@@ -352,6 +352,13 @@ export function ExpenseManagementReimbursementsPage() {
         <EmptyState
           title="No claims ready to reimburse"
           description="Approved, posted employee-paid claims awaiting payment appear here."
+          action={
+            <Button asChild size="sm" variant="outline">
+              <Link to="/expense-management/$section" params={{ section: "approvals" }}>
+                Open approvals
+              </Link>
+            </Button>
+          }
         />
       ) : (
         <Table>

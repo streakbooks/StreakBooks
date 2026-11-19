@@ -1,4 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
+import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -172,6 +173,24 @@ export function AdvisorsAdminInquiriesPage() {
               <EmptyState
                 title="No inquiries match"
                 description="Try clearing filters, or capture a lead from the public Advisors chat."
+                action={
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setSearch("");
+                        setStatus("all");
+                      }}
+                    >
+                      Clear filters
+                    </Button>
+                    <Button asChild size="sm">
+                      <Link to="/advisors">Open Advisors site</Link>
+                    </Button>
+                  </div>
+                }
               />
             ) : (
               query.data.map((inquiry) => (

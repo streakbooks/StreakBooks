@@ -382,7 +382,20 @@ export function HrSelfServicePage() {
             {attendanceQ.isPending ? (
               <LoadingState />
             ) : (attendanceQ.data?.items.length ?? 0) === 0 ? (
-              <EmptyState title="No attendance yet" description="Use Check in / Check out above." />
+              <EmptyState
+                title="No attendance yet"
+                description="Use Check in / Check out above."
+                action={
+                  <Button
+                    size="sm"
+                    type="button"
+                    disabled={clockM.isPending}
+                    onClick={() => clockM.mutate("check_in")}
+                  >
+                    Check in
+                  </Button>
+                }
+              />
             ) : (
               <TableCard>
                 <Table>

@@ -170,6 +170,21 @@ export function AppStoreExplorePage() {
             <EmptyState
               title="No matching apps"
               description="Try clearing filters or searching a different term."
+              action={
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    setCategory("all");
+                    setCountry("all");
+                    setPricing("all");
+                    setKind("all");
+                  }}
+                >
+                  Clear filters
+                </Button>
+              }
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

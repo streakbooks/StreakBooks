@@ -86,6 +86,11 @@ export function AdvisorsPortalHomePage() {
             <EmptyState
               title="No active plan"
               description="Your advisor will attach a plan after onboarding."
+              action={
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/advisors-portal/messages">Message your advisor</Link>
+                </Button>
+              }
             />
           )}
           {home.subscription ? (

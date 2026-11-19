@@ -331,6 +331,7 @@ export function ExpenseManagementReceiptsPage() {
 
       {canSubmit ? (
         <form
+          id="em-receipt-upload"
           className="mb-8 grid max-w-xl gap-3 rounded-lg border p-4"
           onSubmit={(event) => {
             event.preventDefault();
@@ -391,6 +392,22 @@ export function ExpenseManagementReceiptsPage() {
         <EmptyState
           title="No open receipts"
           description="Upload a receipt above, or attach files directly on a claim detail page."
+          action={
+            canSubmit ? (
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => {
+                  document
+                    .getElementById("em-receipt-upload")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  document.getElementById("em-receipt-file")?.click();
+                }}
+              >
+                Upload receipt
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <Table>

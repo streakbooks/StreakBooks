@@ -5,6 +5,7 @@ import { ShieldCheck, ArrowLeft, LogOut } from "lucide-react";
 import { getPlatformContext } from "@/lib/platform/platform.functions";
 import { visibleSections } from "@/lib/platform/catalog";
 import { PlatformSearch } from "@/components/platform/PlatformSearch";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -45,7 +46,7 @@ function PlatformLayout() {
       <main className="mx-auto max-w-xl space-y-4 p-8">
         <ShieldCheck className="size-10 text-primary" />
         <h1 className="text-2xl font-semibold">Platform access required</h1>
-        <p role="alert">{query.error.message}</p>
+        <QueryErrorState queries={[query]} title="Could not verify platform access" />
         <p className="text-sm text-muted-foreground">
           Platform staff must enroll an authenticator in Profile → Security and complete
           verification. Business roles do not grant access to this console.
@@ -61,9 +62,6 @@ function PlatformLayout() {
           >
             Verify MFA
           </Link>
-          <Button variant="outline" onClick={() => void query.refetch()}>
-            Retry
-          </Button>
         </div>
       </main>
     );

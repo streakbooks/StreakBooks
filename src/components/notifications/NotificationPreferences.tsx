@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const OPTIONS = [
@@ -105,11 +106,9 @@ export function NotificationPreferences({
       </CardHeader>
       <CardContent className="space-y-3">
         {prefs.isPending && <p className="text-sm text-muted-foreground">Loading preferences…</p>}
-        {prefs.isError && (
-          <p role="alert" className="text-sm text-destructive">
-            Could not load preferences
-          </p>
-        )}
+        {prefs.isError ? (
+          <QueryErrorState queries={[prefs]} title="Could not load preferences" />
+        ) : null}
         {!prefs.isPending &&
           !prefs.isError &&
           OPTIONS.map((option) => {

@@ -16,6 +16,7 @@ import { downloadReportFile } from "@/lib/reports/download";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { displayDocumentValue } from "@/lib/reports/document-format";
 import { standardDocumentExplorerCsv } from "@/lib/reports/report-explorer";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ReportShell, ReportPane, Stat, type ReportCtx } from "./ReportShell";
 import { StandardReportControls } from "./StandardReportControls";
 import { DocumentPreview } from "./DocumentPreview";
@@ -96,6 +97,9 @@ export function StandardStatementView({
         }
         extraControls={
           <>
+            {choices.isError ? (
+              <QueryErrorState queries={[choices]} title="Could not load report filter options" />
+            ) : null}
             <StandardReportControls
               settings={settings}
               onApply={(value) =>

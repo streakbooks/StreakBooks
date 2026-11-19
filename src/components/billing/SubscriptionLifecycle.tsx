@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -47,7 +48,11 @@ export function SubscriptionLifecycle({ companyId }: { companyId: string }) {
     queryFn: () => load({ data: { companyId } }),
     retry: false,
   });
-  if (query.isLoading || query.isError || !query.data?.status) return null;
+  if (query.isLoading) return null;
+  if (query.isError) {
+    return <QueryErrorState queries={[query]} title="Could not load subscription lifecycle" />;
+  }
+  if (!query.data?.status) return null;
   return <LifecyclePanel companyId={companyId} state={query.data} />;
 }
 

@@ -14,6 +14,7 @@ import {
 import type { TaggableKind } from "@/lib/projects/projects";
 import { LookupSelect } from "@/components/lookup/LookupSelect";
 import { toTrackingLookupOption } from "@/lib/lookup/eligibility";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 
 const NONE = "";
@@ -73,7 +74,10 @@ export function ProjectTagControl({
     );
   }
   if (tagQ.isPending || projectsQ.isPending) return null;
-  if (tagQ.isError || projectsQ.isError || !tagQ.data?.available) return null;
+  if (tagQ.isError || projectsQ.isError) {
+    return <QueryErrorState queries={[tagQ, projectsQ]} title="Could not load project tags" />;
+  }
+  if (!tagQ.data?.available) return null;
   const projects = projectsQ.data ?? [];
 
   const current = tagQ.data.mixed ? "__mixed__" : (tagQ.data.projectId ?? NONE);

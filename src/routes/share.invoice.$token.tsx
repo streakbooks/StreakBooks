@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Printer } from "lucide-react";
 import { getSharedInvoice } from "@/lib/documents/documents.functions";
 import { DocumentSheet } from "@/components/documents/DocumentSheet";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -41,10 +42,9 @@ function SharedInvoicePage() {
   }
   if (q.isError) {
     return (
-      <Message
-        title="This invoice could not be opened"
-        text="Something went wrong. Please try again in a moment."
-      />
+      <div className="grid min-h-screen place-items-center bg-background p-6">
+        <QueryErrorState queries={[q]} title="This invoice could not be opened" />
+      </div>
     );
   }
   if (!q.data) {

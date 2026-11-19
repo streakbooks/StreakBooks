@@ -70,30 +70,38 @@ export function CouponsAdmin({ canEdit }: { canEdit: boolean }) {
       </header>
       {query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load promo codes" />
-      ) : null}
-      <ul className="space-y-2 text-sm">
-        {(query.data ?? []).map((coupon) => (
-          <li key={coupon.code} className="flex flex-wrap items-center gap-2">
-            <Badge variant={coupon.is_active ? "success" : "secondary"}>
-              {coupon.is_active ? "active" : "off"}
-            </Badge>
-            <span className="font-medium">{coupon.code}</span>
-            <span>
-              {describe(coupon)}
-              {coupon.plan_codes?.length ? ` · ${coupon.plan_codes.join(", ")}` : " · all plans"}
-              {coupon.countries?.length ? ` · ${coupon.countries.join(", ")}` : ""} · used{" "}
-              {coupon.redemption_count}
-              {coupon.max_redemptions ? ` of ${coupon.max_redemptions}` : ""}
-              {coupon.reserved ? ` (${coupon.reserved} in checkout)` : ""}
-              {coupon.mappings.length
-                ? ` · ${coupon.mappings.map((m) => `${m.provider} ${m.mode}`).join(", ")}`
-                : ""}
-            </span>
-          </li>
-        ))}
-      </ul>
-      {canEdit ? <CouponForm /> : null}
-      {canEdit ? <LinkForm codes={(query.data ?? []).map((c) => c.code)} /> : null}
+      ) : (
+        <>
+          <ul className="space-y-2 text-sm">
+            {(query.data ?? []).map((coupon) => (
+              <li key={coupon.code} className="flex flex-wrap items-center gap-2">
+                <Badge variant={coupon.is_active ? "success" : "secondary"}>
+                  {coupon.is_active ? "active" : "off"}
+                </Badge>
+                <span className="font-medium">{coupon.code}</span>
+                <span>
+                  {describe(coupon)}
+                  {coupon.plan_codes?.length ? ` · ${coupon.plan_codes.join(", ")}` : " · all plans"}
+                  {coupon.countries?.length ? ` · ${coupon.countries.join(", ")}` : ""} · used{" "}
+                  {coupon.redemption_count}
+                  {coupon.max_redemptions ? ` of ${coupon.max_redemptions}` : ""}
+                  {coupon.reserved ? ` (${coupon.reserved} in checkout)` : ""}
+                  {coupon.mappings.length
+                    ? ` · ${coupon.mappings.map((m) => `${m.provider} ${m.mode}`).join(", ")}`
+                    : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {canEdit ? <CouponForm /> : null}
+          {canEdit ? (
+            <LinkForm
+              codes={(query.data ?? []).map((c) => c.code)}
+              codesReady={query.isSuccess}
+            />
+          ) : null}
+        </>
+      )}
     </section>
   );
 }
@@ -360,7 +368,7 @@ function CouponForm() {
   );
 }
 
-function LinkForm({ codes }: { codes: string[] }) {
+function LinkForm({ codes, codesReady }: { codes: string[]; codesReady: boolean }) {
   const link = useServerFn(linkProviderCoupon);
   const queryClient = useQueryClient();
   const [code, setCode] = useState("");
@@ -391,6 +399,7 @@ function LinkForm({ codes }: { codes: string[] }) {
           value={code}
           onChange={setCode}
           ariaLabel="Code"
+          disabled={!codesReady}
         />
       </label>
       <label className="text-sm">
@@ -417,7 +426,11 @@ function LinkForm({ codes }: { codes: string[] }) {
         Reason
         <Input className="mt-1" value={reason} onChange={(e) => setReason(e.target.value)} />
       </label>
-      <Button type="submit" className="self-end sm:w-fit" disabled={mutation.isPending || !code}>
+      <Button
+        type="submit"
+        className="self-end sm:w-fit"
+        disabled={mutation.isPending || !code || !codesReady}
+      >
         Link offer
       </Button>
     </form>

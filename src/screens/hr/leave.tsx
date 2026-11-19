@@ -606,18 +606,22 @@ export function HrLeavePage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Leave type</Label>
-              <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeTypes.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.code} — {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {typesQ.isError && typesQ.data === undefined ? (
+                <QueryErrorState queries={[typesQ]} title="Could not load leave types" />
+              ) : (
+                <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeTypes.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.code} — {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
@@ -661,7 +665,15 @@ export function HrLeavePage() {
             </Button>
             <Button
               type="button"
-              disabled={!employeeId || !leaveTypeId || !startDate || !endDate || saveReqM.isPending}
+              disabled={
+                !employeeId ||
+                !leaveTypeId ||
+                !startDate ||
+                !endDate ||
+                saveReqM.isPending ||
+                !typesQ.isSuccess ||
+                !employeesQ.isSuccess
+              }
               onClick={() => saveReqM.mutate()}
             >
               Save
@@ -697,18 +709,22 @@ export function HrLeavePage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Leave type</Label>
-              <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeTypes.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.code} — {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {typesQ.isError && typesQ.data === undefined ? (
+                <QueryErrorState queries={[typesQ]} title="Could not load leave types" />
+              ) : (
+                <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeTypes.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.code} — {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -717,7 +733,13 @@ export function HrLeavePage() {
             </Button>
             <Button
               type="button"
-              disabled={!employeeId || !leaveTypeId || ensureBalM.isPending}
+              disabled={
+                !employeeId ||
+                !leaveTypeId ||
+                ensureBalM.isPending ||
+                !typesQ.isSuccess ||
+                !employeesQ.isSuccess
+              }
               onClick={() => ensureBalM.mutate()}
             >
               Ensure

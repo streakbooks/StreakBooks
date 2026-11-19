@@ -259,36 +259,40 @@ export function FirmOnboardingReportingPanel({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1">
           <Label>Client</Label>
-          <RecordLookupSelect value={effectiveCompany} onValueChange={setSelectedCompany}>
-            <SelectTrigger aria-label="Filter onboarding report by client">
-              <SelectValue placeholder="All accessible clients" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All accessible clients</SelectItem>
-              {knownClients.map((c) => (
-                <SelectItem key={c.company_id} value={c.company_id}>
-                  {getFirmClientName(c)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </RecordLookupSelect>
+          {overviewQ.isError ? null : (
+            <RecordLookupSelect value={effectiveCompany} onValueChange={setSelectedCompany}>
+              <SelectTrigger aria-label="Filter onboarding report by client">
+                <SelectValue placeholder="All accessible clients" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All accessible clients</SelectItem>
+                {knownClients.map((c) => (
+                  <SelectItem key={c.company_id} value={c.company_id}>
+                    {getFirmClientName(c)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </RecordLookupSelect>
+          )}
         </div>
         <div className="space-y-1">
           <Label>Assigned staff</Label>
-          <RecordLookupSelect value={effectiveAssignee} onValueChange={setSelectedAssignee}>
-            <SelectTrigger aria-label="Filter onboarding report by staff">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All assigned staff</SelectItem>
-              <SelectItem value="unassigned">Unassigned tasks</SelectItem>
-              {staff.map((member) => (
-                <SelectItem key={member.user_id} value={member.user_id}>
-                  {member.display_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </RecordLookupSelect>
+          {staffQ.isError ? null : (
+            <RecordLookupSelect value={effectiveAssignee} onValueChange={setSelectedAssignee}>
+              <SelectTrigger aria-label="Filter onboarding report by staff">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All assigned staff</SelectItem>
+                <SelectItem value="unassigned">Unassigned tasks</SelectItem>
+                {staff.map((member) => (
+                  <SelectItem key={member.user_id} value={member.user_id}>
+                    {member.display_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </RecordLookupSelect>
+          )}
         </div>
         <div className="space-y-1">
           <Label>Overdue age</Label>

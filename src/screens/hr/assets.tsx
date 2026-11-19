@@ -175,6 +175,7 @@ export function HrAssetsPage() {
             </Button>
             <Button
               type="button"
+              disabled={!typesQ.isSuccess || activeTypes.length === 0}
               onClick={() => {
                 setEmployeeId("");
                 setAssetTypeId(activeTypes[0]?.id ?? "");
@@ -360,18 +361,22 @@ export function HrAssetsPage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Asset type</Label>
-              <RecordLookupSelect value={assetTypeId} onValueChange={setAssetTypeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeTypes.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.code} — {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {typesQ.isError && typesQ.data === undefined ? (
+                <QueryErrorState queries={[typesQ]} title="Could not load asset types" />
+              ) : (
+                <RecordLookupSelect value={assetTypeId} onValueChange={setAssetTypeId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeTypes.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.code} — {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label>Asset tag</Label>
@@ -403,7 +408,14 @@ export function HrAssetsPage() {
             </Button>
             <Button
               type="button"
-              disabled={!employeeId || !assetTypeId || !assetTag.trim() || assignM.isPending}
+              disabled={
+                !employeeId ||
+                !assetTypeId ||
+                !assetTag.trim() ||
+                assignM.isPending ||
+                !typesQ.isSuccess ||
+                !employeesQ.isSuccess
+              }
               onClick={() => assignM.mutate()}
             >
               Save

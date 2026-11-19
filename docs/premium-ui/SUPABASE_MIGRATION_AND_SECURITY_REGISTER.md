@@ -35,3 +35,23 @@ Full authorization does **not** skip these steps for **future** schema:
 5. Only then apply production; if postflight fails, execute the recorded rollback and stop go-live claims.
 
 Batch 23 used owner-authorized direct apply on the linked production project with additive SQL and postflight object checks recorded in `MIGRATIONS-APPLIED-20261107-BATCH23.md`.
+
+## Consolidated history preflight
+
+Connect `psql` to the intended target using your private connection settings. Use an
+account with read access to `supabase_migrations.schema_migrations`. Export only the
+recorded versions and names, then compare them from the release checkout.
+
+```powershell
+psql -X -qAt -v ON_ERROR_STOP=1 -f scripts/export-migration-history.sql -o target-migration-history.json
+if ($LASTEXITCODE -ne 0) { throw "Migration history export failed." }
+npm.cmd run check:migration-history -- target-migration-history.json
+```
+
+The export runs in a read-only transaction. The comparison runs offline. Exit code
+`1` identifies history that needs investigation, including reused version slots,
+previously applied Files migrations with old version numbers, gaps before the target's
+latest applied version, or the corrected firm bulk-profile migration already recorded
+on the target. A passing comparison establishes identity alignment for the exported
+history. SQL equivalence, backup and restore rehearsal, and hosted acceptance still
+require separate verification.

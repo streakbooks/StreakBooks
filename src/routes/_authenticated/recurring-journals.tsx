@@ -16,7 +16,8 @@ import {
 import { generateRecurringJournal } from "@/lib/create-new/money-documents.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -150,11 +151,7 @@ function RecurringJournalsPage() {
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
-        <ErrorState
-          title="Could not load recurring journals"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => query.refetch()}
-        />
+        <QueryErrorState queries={[query]} title="Could not load recurring journals" />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No recurring journals"

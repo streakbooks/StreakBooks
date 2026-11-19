@@ -4,12 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getProjectProfitability } from "@/lib/projects/projects.functions";
 import { budgetUsedPercent, marginPercent, totalsOf } from "@/lib/projects/projects";
 import { ProjectPanel } from "@/components/create-new/ProjectPanel";
 import { StatementBasisSelect } from "@/components/reports/StatementBasisSelect";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -127,11 +127,7 @@ function ProjectsPage() {
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
-        <ErrorState
-          onRetry={() => void query.refetch()}
-          title="Could not load projects"
-          description={friendlyAuthError(query.error)}
-        />
+        <QueryErrorState queries={[query]} title="Could not load projects" />
       ) : !query.data.available ? (
         <Alert className="mb-6">
           <AlertDescription>

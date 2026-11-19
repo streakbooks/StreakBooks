@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getJournalDetail } from "@/lib/banking/journal.functions";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import {
@@ -52,14 +52,7 @@ function JournalDetail() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (q.isPending) return <LoadingState />;
-  if (q.isError)
-    return (
-      <ErrorState
-        onRetry={() => void q.refetch()}
-        title="Could not load journal"
-        description={friendlyAuthError(q.error)}
-      />
-    );
+  if (q.isError) return <QueryErrorState queries={[q]} title="Could not load journal" />;
 
   const { journal, lines } = q.data;
   const currency = journal.currency_code ?? company?.base_currency ?? "GBP";

@@ -24,7 +24,8 @@ import {
   saveBudget,
   type BudgetSummary,
 } from "@/lib/budgets/budgets.functions";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -309,11 +310,7 @@ function BudgetsPage() {
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
-        <ErrorState
-          title="Could not load budgets"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
+        <QueryErrorState queries={[query]} title="Could not load budgets" />
       ) : !query.data.available ? (
         <Alert>
           <AlertDescription>

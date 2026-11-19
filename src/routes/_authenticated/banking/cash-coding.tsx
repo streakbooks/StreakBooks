@@ -24,7 +24,7 @@ import {
   TaxCodeCreateForm,
 } from "@/components/lookup/create-forms";
 import { toContactLookupOption } from "@/lib/lookup/eligibility";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -433,11 +433,7 @@ function CashCoding() {
       {txnsQ.isPending ? (
         <LoadingState />
       ) : txnsQ.isError ? (
-        <ErrorState
-          onRetry={() => void txnsQ.refetch()}
-          title="Could not load"
-          description={friendlyAuthError(txnsQ.error)}
-        />
+        <QueryErrorState queries={[txnsQ]} title="Could not load transactions" />
       ) : rows.length === 0 ? (
         <EmptyState title="Nothing to code" description="No uncategorised transactions." />
       ) : (

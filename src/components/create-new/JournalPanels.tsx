@@ -28,7 +28,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { AccountLookup } from "@/components/lookup";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
@@ -221,14 +222,8 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
 
   if (!companyId) return null;
   if (accountsQ.isPending) return <LoadingState />;
-  if (accountsQ.isError) {
-    return (
-      <ErrorState
-        title="Could not load chart of accounts"
-        description={friendlyAuthError(accountsQ.error)}
-        onRetry={() => void accountsQ.refetch()}
-      />
-    );
+  if (accountsQ.isError && accountsQ.data === undefined) {
+    return <QueryErrorState queries={[accountsQ]} title="Could not load chart of accounts" />;
   }
 
   const onLineKeyDown = (

@@ -26,6 +26,7 @@ import { LoadingState, ErrorState, EmptyState } from "@/components/common/states
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { StatusBadge } from "@/components/common/stat-card";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
@@ -544,28 +545,72 @@ function CreditNoteDetail() {
             </div>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Net</TableHead>
-                <TableHead className="text-right">Tax</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {cn.purchase_credit_note_lines.map((l) => (
-                <TableRow key={l.id}>
-                  <TableCell>{l.description}</TableCell>
-                  <TableCell className="text-right">
-                    {fromMinorUnits(l.net_minor, currency)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {fromMinorUnits(l.tax_minor, currency)}
-                  </TableCell>
+          <div className="space-y-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Net</TableHead>
+                  <TableHead className="text-right">Tax</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {cn.purchase_credit_note_lines.map((l) => (
+                  <TableRow key={l.id}>
+                    <TableCell>{l.description}</TableCell>
+                    <TableCell className="text-right">
+                      {fromMinorUnits(l.net_minor, currency)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {fromMinorUnits(l.tax_minor, currency)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="flex justify-end">
+              <TotalsSummary
+                aria-label="Credit note totals"
+                lines={[
+                  {
+                    id: "net",
+                    label: "Net",
+                    value: fromMinorUnits(
+                      cn.purchase_credit_note_lines.reduce((sum, l) => sum + l.net_minor, 0),
+                      currency,
+                    ),
+                  },
+                  {
+                    id: "tax",
+                    label: "Tax",
+                    value: fromMinorUnits(
+                      cn.purchase_credit_note_lines.reduce((sum, l) => sum + l.tax_minor, 0),
+                      currency,
+                    ),
+                    emphasis: "muted",
+                  },
+                  {
+                    id: "total",
+                    label: "Total",
+                    value: fromMinorUnits(cn.total_minor, currency),
+                    emphasis: "total",
+                  },
+                  {
+                    id: "allocated",
+                    label: "Allocated",
+                    value: fromMinorUnits(cn.amount_allocated_minor, currency),
+                    emphasis: "muted",
+                  },
+                  {
+                    id: "remaining",
+                    label: "Remaining",
+                    value: fromMinorUnits(remaining, currency),
+                    emphasis: "total",
+                  },
+                ]}
+              />
+            </div>
+          </div>
         )}
 
         {cn.purchase_credit_allocations.length > 0 ? (

@@ -82,7 +82,8 @@ import {
   incompletePurchaseLines,
   isCompletelyBlankPurchaseLine,
 } from "@/lib/purchases/blank-lines";
-import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
@@ -1415,17 +1416,12 @@ export function NewBill({
   );
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (suppliersQ.isPending || accountsQ.isPending) return <LoadingState />;
-  if (suppliersQ.isError || accountsQ.isError)
+  const billOptionQueries = [suppliersQ, accountsQ];
+  if (billOptionQueries.some((query) => query.isError && query.data === undefined)) {
     return (
-      <ErrorState
-        title="Could not load bill entry options"
-        description={friendlyAuthError(suppliersQ.error ?? accountsQ.error)}
-        onRetry={() => {
-          void suppliersQ.refetch();
-          void accountsQ.refetch();
-        }}
-      />
+      <QueryErrorState queries={billOptionQueries} title="Could not load bill entry options" />
     );
+  }
 
   const headerBar: ReactNode = (
     <div className="flex flex-wrap items-center gap-2">

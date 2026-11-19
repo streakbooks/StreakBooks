@@ -127,33 +127,36 @@ export function AdvisorsManageAppointmentPage({ manageToken }: { manageToken: st
             ) : null}
             {slotsQ.isError ? (
               <QueryErrorState queries={[slotsQ]} title="Could not load available slots" />
-            ) : null}
-            {slotsQ.data && !slotsQ.data.ready ? (
-              <p className="text-sm text-muted-foreground">{slotsQ.data.reason}</p>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              {(slotsQ.data?.slots ?? []).map((slot) => (
-                <Button
-                  key={slot.startsAt}
-                  type="button"
-                  size="sm"
-                  variant={selectedSlot === slot.startsAt ? "default" : "outline"}
-                  onClick={() => setSelectedSlot(slot.startsAt)}
-                >
-                  {formatSlotLabel(new Date(slot.startsAt), timezone)}
-                </Button>
-              ))}
-            </div>
-            {slotsQ.data?.ready && (slotsQ.data.slots ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No open slots on this day.</p>
-            ) : null}
+            ) : (
+              <>
+                {slotsQ.data && !slotsQ.data.ready ? (
+                  <p className="text-sm text-muted-foreground">{slotsQ.data.reason}</p>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  {(slotsQ.data?.slots ?? []).map((slot) => (
+                    <Button
+                      key={slot.startsAt}
+                      type="button"
+                      size="sm"
+                      variant={selectedSlot === slot.startsAt ? "default" : "outline"}
+                      onClick={() => setSelectedSlot(slot.startsAt)}
+                    >
+                      {formatSlotLabel(new Date(slot.startsAt), timezone)}
+                    </Button>
+                  ))}
+                </div>
+                {slotsQ.data?.ready && (slotsQ.data.slots ?? []).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No open slots on this day.</p>
+                ) : null}
+              </>
+            )}
             <div className="space-y-1">
               <Label htmlFor="reschedule-slot">Selected slot (ISO)</Label>
               <Input id="reschedule-slot" value={selectedSlot} readOnly />
             </div>
             <Button
               type="button"
-              disabled={!selectedSlot || rescheduleM.isPending}
+              disabled={!selectedSlot || rescheduleM.isPending || slotsQ.isError}
               onClick={() => rescheduleM.mutate()}
             >
               Confirm reschedule

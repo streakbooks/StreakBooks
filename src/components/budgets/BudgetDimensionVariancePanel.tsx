@@ -196,19 +196,21 @@ export function BudgetDimensionVariancePanel({
             </div>
             <div className="space-y-1">
               <Label htmlFor="dim-report-view">View</Label>
-              <RecordLookupSelect
-                id="dim-report-view"
-                value={viewMonth}
-                onValueChange={(nextValue) => setViewMonth(nextValue)}
-                className="flex h-10 border-input px-3"
-              >
-                <option value="ytd">Year to date</option>
-                {(report?.months ?? []).map((m, i) => (
-                  <option key={m} value={String(i)}>
-                    {monthLabel(m)}
-                  </option>
-                ))}
-              </RecordLookupSelect>
+              {query.isError ? null : (
+                <RecordLookupSelect
+                  id="dim-report-view"
+                  value={viewMonth}
+                  onValueChange={(nextValue) => setViewMonth(nextValue)}
+                  className="flex h-10 border-input px-3"
+                >
+                  <option value="ytd">Year to date</option>
+                  {(report?.months ?? []).map((m, i) => (
+                    <option key={m} value={String(i)}>
+                      {monthLabel(m)}
+                    </option>
+                  ))}
+                </RecordLookupSelect>
+              )}
             </div>
             <Button
               type="button"

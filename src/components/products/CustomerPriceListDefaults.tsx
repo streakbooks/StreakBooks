@@ -57,7 +57,10 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
       saveDefault({ data: { companyId, ...args } }),
     onSuccess: async (result) => {
       toast.success("Customer price-list default saved");
-      if (result.auditError) toast.warning("Saved, but audit recording failed");
+      if (result.auditError)
+        toast.warning(
+          `Saved, but audit recording failed: ${friendlyAuthError(result.auditError)}`,
+        );
       setContactId("");
       setPriceListId("none");
       await Promise.all([

@@ -182,6 +182,13 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
       </RecordWorkspace>
     );
   }
+  if (orgQ.isError && orgQ.data === undefined) {
+    return (
+      <RecordWorkspace title="Employee" description="HR profile">
+        <QueryErrorState queries={[orgQ]} title="Could not load organisation structure" />
+      </RecordWorkspace>
+    );
+  }
 
   const emp = detailQ.data.employee;
   const title = `${emp.firstName} ${emp.lastName}`;

@@ -136,26 +136,33 @@ export function PmUnitsPage() {
       ) : null}
       {settings.data?.enabled ? (
         <>
-          <div className="mb-4 max-w-sm">
-            <Label className="mb-2 block">Filter by property</Label>
-            <RecordLookupSelect
-              value={propertyId || "all"}
-              onValueChange={(value) => setPropertyId(value === "all" ? "" : value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All properties" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All properties</SelectItem>
-                {(properties.data ?? []).map((property) => (
-                  <SelectItem key={property.id} value={property.id}>
-                    {property.code} — {property.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </RecordLookupSelect>
-          </div>
+          {properties.isError && properties.data === undefined ? (
+            <QueryErrorState queries={[properties]} title="Could not load properties" />
+          ) : (
+            <div className="mb-4 max-w-sm">
+              <Label className="mb-2 block">Filter by property</Label>
+              <RecordLookupSelect
+                value={propertyId || "all"}
+                onValueChange={(value) => setPropertyId(value === "all" ? "" : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All properties" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All properties</SelectItem>
+                  {(properties.data ?? []).map((property) => (
+                    <SelectItem key={property.id} value={property.id}>
+                      {property.code} — {property.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </RecordLookupSelect>
+            </div>
+          )}
           {showForm && canManage ? (
+            properties.isError && properties.data === undefined ? (
+              <QueryErrorState queries={[properties]} title="Could not load properties for new unit" />
+            ) : (
             <Card className="mb-4">
               <CardHeader>
                 <CardTitle>New unit</CardTitle>
@@ -196,6 +203,7 @@ export function PmUnitsPage() {
                 </div>
               </CardContent>
             </Card>
+            )
           ) : null}
           {units.isLoading ? <LoadingState /> : null}
           {units.isError ? (

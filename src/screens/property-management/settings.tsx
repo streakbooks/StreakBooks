@@ -237,6 +237,9 @@ export function PmSettingsPage() {
       {settings.isError ? (
         <QueryErrorState queries={[settings]} title="Could not load settings" />
       ) : null}
+      {accounts.isError && accounts.data === undefined ? (
+        <QueryErrorState queries={[accounts]} title="Could not load chart accounts" />
+      ) : null}
       {current ? (
         <div className="grid gap-4">
           <Card>

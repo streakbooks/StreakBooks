@@ -174,6 +174,15 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
       ) : (
         <>
           {showForm && canManage ? (
+            (contacts.isError && contacts.data === undefined) ||
+            (kind === "owner"
+              ? owners.isError && owners.data === undefined
+              : tenants.isError && tenants.data === undefined) ? (
+              <QueryErrorState
+                queries={[contacts, kind === "owner" ? owners : tenants]}
+                title="Could not load portal invite options"
+              />
+            ) : (
             <Card className="mb-4">
               <CardHeader>
                 <CardTitle>Invite {kind}</CardTitle>
@@ -238,6 +247,7 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
                 </div>
               </CardContent>
             </Card>
+            )
           ) : null}
           {access.isLoading ? <LoadingState /> : null}
           {access.isError ? (

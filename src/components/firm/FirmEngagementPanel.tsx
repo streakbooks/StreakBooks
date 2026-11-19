@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LookupSelect } from "@/components/lookup";
-import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
@@ -165,11 +166,7 @@ export function FirmEngagementPanel({
           {engagementsQ.isPending ? (
             <LoadingState />
           ) : engagementsQ.isError ? (
-            <ErrorState
-              onRetry={() => void engagementsQ.refetch()}
-              title="Could not load engagements"
-              description={friendlyAuthError(engagementsQ.error)}
-            />
+            <QueryErrorState queries={[engagementsQ]} title="Could not load engagements" />
           ) : (engagementsQ.data ?? []).length === 0 ? (
             <EmptyState
               title="No engagements yet"

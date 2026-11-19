@@ -19,7 +19,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { OpsField, EnumField, ErrorState, OpsAction, OpsEditor } from "./PlatformOperationForms";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { OpsField, EnumField, OpsAction, OpsEditor } from "./PlatformOperationForms";
 import { PlatformRecordLookup } from "./PlatformRecordLookup";
 const labels: Record<OpsModule, string> = {
   cases: "Service cases",
@@ -72,7 +73,7 @@ export function OpsDetails({
         {query.isPending ? (
           <p role="status">Loading record…</p>
         ) : query.isError ? (
-          <ErrorState error={query.error} retry={() => void query.refetch()} />
+          <QueryErrorState queries={[query]} title="Could not load record" />
         ) : r ? (
           <>
             <div className="flex flex-wrap gap-2 border-b pb-3">
@@ -348,7 +349,7 @@ function SegmentMembers({ record, canManage }: { record: OpsRecord; canManage: b
       {query.isPending ? (
         <p role="status">Loading members…</p>
       ) : query.isError ? (
-        <ErrorState error={query.error} retry={() => void query.refetch()} />
+        <QueryErrorState queries={[query]} title="Could not load members" />
       ) : (
         <>
           <ul className="divide-y rounded border">

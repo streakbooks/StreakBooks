@@ -19,7 +19,8 @@ import { LookupSelect } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 
 export function FirmBillingPanel({
   firmId,
@@ -171,11 +172,7 @@ export function FirmBillingPanel({
           {engagementsQ.isPending ? (
             <LoadingState rows={2} />
           ) : engagementsQ.isError ? (
-            <ErrorState
-              onRetry={() => void engagementsQ.refetch()}
-              title="Could not load engagements"
-              description={friendlyAuthError(engagementsQ.error)}
-            />
+            <QueryErrorState queries={[engagementsQ]} title="Could not load engagements" />
           ) : !engagements.length ? (
             <EmptyState
               title="No engagements"
@@ -205,11 +202,7 @@ export function FirmBillingPanel({
               {linksQ.isPending ? (
                 <LoadingState rows={2} />
               ) : linksQ.isError ? (
-                <ErrorState
-                  onRetry={() => void linksQ.refetch()}
-                  title="Could not load linked invoices"
-                  description={friendlyAuthError(linksQ.error)}
-                />
+                <QueryErrorState queries={[linksQ]} title="Could not load linked invoices" />
               ) : (linksQ.data ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No linked practice invoices for this engagement.
@@ -255,11 +248,7 @@ export function FirmBillingPanel({
                 invoicesQ.isPending ? (
                   <LoadingState rows={2} />
                 ) : invoicesQ.isError ? (
-                  <ErrorState
-                    onRetry={() => void invoicesQ.refetch()}
-                    title="Could not list practice invoices"
-                    description={friendlyAuthError(invoicesQ.error)}
-                  />
+                  <QueryErrorState queries={[invoicesQ]} title="Could not list practice invoices" />
                 ) : !invoices.length ? (
                   <p className="text-sm text-muted-foreground">
                     No recent invoices in the active billing company.
@@ -318,11 +307,7 @@ export function FirmAnalyticsPanel({ firmId }: { firmId: string }) {
   if (pulse.isPending) return <LoadingState />;
   if (pulse.isError)
     return (
-      <ErrorState
-        onRetry={() => void pulse.refetch()}
-        title="Could not load practice insights"
-        description={friendlyAuthError(pulse.error)}
-      />
+      <QueryErrorState queries={[pulse]} title="Could not load practice insights" />
     );
   const item = pulse.data;
   const metrics = [

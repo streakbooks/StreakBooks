@@ -20,7 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 
 export function FirmRecurringBillingPanel({
   firmId,
@@ -214,23 +215,15 @@ export function FirmRecurringBillingPanel({
           ) : engagementsQ.isPending || templatesQ.isPending ? (
             <LoadingState rows={2} />
           ) : engagementsQ.isError || templatesQ.isError ? (
-            <ErrorState
+            <QueryErrorState
+              queries={[engagementsQ, templatesQ]}
               title="Cannot load recurring billing"
-              description={friendlyAuthError(engagementsQ.error ?? templatesQ.error)}
-              onRetry={() => {
-                void engagementsQ.refetch();
-                void templatesQ.refetch();
-              }}
             />
           ) : (
             <>
               {linksQ.isPending ? <LoadingState rows={2} /> : null}
               {linksQ.isError ? (
-                <ErrorState
-                  onRetry={() => void linksQ.refetch()}
-                  title="Cannot load recurring links"
-                  description={friendlyAuthError(linksQ.error)}
-                />
+                <QueryErrorState queries={[linksQ]} title="Cannot load recurring links" />
               ) : null}
               {(linksQ.data ?? []).map((item) => {
                 const schedule = item.sales_recurring_invoices;

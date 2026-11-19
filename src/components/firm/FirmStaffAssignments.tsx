@@ -25,7 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 
 export function FirmStaffAssignments({
   firmId,
@@ -147,13 +148,9 @@ export function FirmStaffAssignments({
           {assignmentsQ.isPending || membersQ.isPending ? (
             <LoadingState />
           ) : assignmentsQ.isError || membersQ.isError ? (
-            <ErrorState
+            <QueryErrorState
+              queries={[assignmentsQ, membersQ]}
               title="Could not load staff assignments"
-              description={friendlyAuthError(assignmentsQ.error ?? membersQ.error)}
-              onRetry={() => {
-                void assignmentsQ.refetch();
-                void membersQ.refetch();
-              }}
             />
           ) : (
             <div className="space-y-3">
@@ -245,11 +242,7 @@ export function FirmStaffAssignments({
               {candidatesQ.isPending ? (
                 <LoadingState rows={2} />
               ) : candidatesQ.isError ? (
-                <ErrorState
-                  onRetry={() => void candidatesQ.refetch()}
-                  title="Could not load eligible colleagues"
-                  description={friendlyAuthError(candidatesQ.error)}
-                />
+                <QueryErrorState queries={[candidatesQ]} title="Could not load eligible colleagues" />
               ) : candidates.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No eligible unlinked colleagues in this company.

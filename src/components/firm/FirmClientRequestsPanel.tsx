@@ -16,7 +16,8 @@ import {
   type FirmClientRequestInput,
 } from "@/lib/firm/firm-requests.functions";
 import { listFirmTeam } from "@/lib/firm/firm-workflows.functions";
-import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { LookupSelect } from "@/components/lookup";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -174,11 +175,7 @@ export function FirmClientRequestsPanel({
           {requestsQ.isPending ? (
             <LoadingState />
           ) : requestsQ.isError ? (
-            <ErrorState
-              title="Could not load requests"
-              onRetry={() => void requestsQ.refetch()}
-              description={friendlyAuthError(requestsQ.error)}
-            />
+            <QueryErrorState queries={[requestsQ]} title="Could not load requests" />
           ) : (
             <>
               <div className="grid gap-3 sm:grid-cols-4">

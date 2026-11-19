@@ -21,7 +21,8 @@ import { toCsv } from "@/lib/sales/csv";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import {
   Table,
   TableBody,
@@ -216,11 +217,7 @@ export function BulkJournalImportPanel({
           </p>
           {accountsQ.isPending ? <LoadingState /> : null}
           {accountsQ.isError ? (
-            <ErrorState
-              title="Chart of accounts unavailable"
-              description={friendlyAuthError(accountsQ.error)}
-              onRetry={() => void accountsQ.refetch()}
-            />
+            <QueryErrorState queries={[accountsQ]} title="Chart of accounts unavailable" />
           ) : null}
           {error ? (
             <p role="alert" className="text-sm text-destructive">

@@ -9,7 +9,8 @@ import { listAccountantExceptionReviews } from "@/lib/accountant/exception-revie
 import { JournalExceptionReviewDetails } from "@/components/accountant/JournalExceptionReviewDetails";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { toCsv } from "@/lib/sales/csv";
-import { LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -150,11 +151,7 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
           ) : query.isPending ? (
             <LoadingState />
           ) : query.isError ? (
-            <ErrorState
-              title="Could not review manual journals"
-              description={friendlyAuthError(query.error)}
-              onRetry={() => void query.refetch()}
-            />
+            <QueryErrorState queries={[query]} title="Could not review manual journals" />
           ) : query.data ? (
             <>
               <div className="flex flex-wrap items-center gap-2 text-sm">

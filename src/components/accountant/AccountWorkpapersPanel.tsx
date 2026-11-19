@@ -21,7 +21,8 @@ import {
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { toCsv } from "@/lib/sales/csv";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -185,20 +186,12 @@ export function AccountWorkpapersPanel({
   if (trial.isPending || papers.isPending) return <LoadingState />;
   if (trial.isError) {
     return (
-      <ErrorState
-        onRetry={() => void trial.refetch()}
-        title="Trial balance unavailable"
-        description={friendlyAuthError(trial.error)}
-      />
+      <QueryErrorState queries={[trial]} title="Trial balance unavailable" />
     );
   }
   if (papers.isError) {
     return (
-      <ErrorState
-        onRetry={() => void papers.refetch()}
-        title="Workpaper register unavailable"
-        description={friendlyAuthError(papers.error)}
-      />
+      <QueryErrorState queries={[papers]} title="Workpaper register unavailable" />
     );
   }
   const reviewed = rows.filter(

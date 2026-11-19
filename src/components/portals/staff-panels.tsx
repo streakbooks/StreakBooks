@@ -4,7 +4,8 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,10 +93,10 @@ export function PortalSettingsPanel({
   });
 
   if (query.isPending) return <LoadingState />;
-  if (query.isError || !current)
-    return (
-      <ErrorState description={friendlyAuthError(query.error)} onRetry={() => query.refetch()} />
-    );
+  if (query.isError) {
+    return <QueryErrorState queries={[query]} title="Could not load portal settings" />;
+  }
+  if (!current) return null;
 
   function set<K extends string>(key: K, value: unknown) {
     setForm({ ...(form ?? settings ?? {}), [key]: value });
@@ -188,10 +189,7 @@ export function PortalSettingsPanel({
       <section className="space-y-2">
         <h2 className="font-semibold">Payment alerts</h2>
         {alerts.isError ? (
-          <ErrorState
-            description={friendlyAuthError(alerts.error)}
-            onRetry={() => alerts.refetch()}
-          />
+          <QueryErrorState queries={[alerts]} title="Could not load portal alerts" />
         ) : null}
         <ul className="divide-y divide-border rounded-md border border-border text-sm">
           {(alerts.data ?? []).map((alert) => (
@@ -338,10 +336,7 @@ export function ContactPortalPanel({
         <p className="break-all rounded-md border border-border p-3 text-sm">Shown once: {link}</p>
       ) : null}
       {access.isError ? (
-        <ErrorState
-          description={friendlyAuthError(access.error)}
-          onRetry={() => access.refetch()}
-        />
+        <QueryErrorState queries={[access]} title="Could not load portal access" />
       ) : null}
       <ul className="divide-y divide-border rounded-md border border-border text-sm">
         {(access.data ?? []).map((row) => (
@@ -437,10 +432,7 @@ export function PortalInbox({ companyId }: { companyId: string }) {
           draft. Neither is posted until the usual authorise step.
         </p>
         {submissions.isError ? (
-          <ErrorState
-            description={friendlyAuthError(submissions.error)}
-            onRetry={() => submissions.refetch()}
-          />
+          <QueryErrorState queries={[submissions]} title="Could not load submissions" />
         ) : null}
         <ul className="space-y-3">
           {(submissions.data ?? [])
@@ -521,10 +513,7 @@ export function PortalInbox({ companyId }: { companyId: string }) {
           Accepting stores the details on the supplier. It does not move money.
         </p>
         {banks.isError ? (
-          <ErrorState
-            description={friendlyAuthError(banks.error)}
-            onRetry={() => banks.refetch()}
-          />
+          <QueryErrorState queries={[banks]} title="Could not load bank accounts" />
         ) : null}
         <ul className="space-y-3">
           {(banks.data ?? []).map((row) => (

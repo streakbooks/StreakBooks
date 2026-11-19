@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LookupSelect } from "@/components/lookup";
-import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -227,11 +228,7 @@ export function FirmOnboardingPanel({
           {stepsQ.isPending ? (
             <LoadingState />
           ) : stepsQ.isError ? (
-            <ErrorState
-              onRetry={() => void stepsQ.refetch()}
-              title="Could not load onboarding"
-              description={friendlyAuthError(stepsQ.error)}
-            />
+            <QueryErrorState queries={[stepsQ]} title="Could not load onboarding" />
           ) : (
             <>
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-4">
@@ -548,11 +545,7 @@ export function FirmTeamPanel({ firmId }: { firmId: string }) {
   if (teamQ.isPending) return <LoadingState />;
   if (teamQ.isError)
     return (
-      <ErrorState
-        onRetry={() => void teamQ.refetch()}
-        title="Could not load firm team"
-        description={friendlyAuthError(teamQ.error)}
-      />
+      <QueryErrorState queries={[teamQ]} title="Could not load firm team" />
     );
   return (
     <section className="space-y-4">

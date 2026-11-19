@@ -528,10 +528,7 @@ function TaxConfigPage() {
               </div>
             </div>
             {accountsQ.isError ? (
-              <Alert variant="destructive">
-                <AlertTitle>Accounts unavailable</AlertTitle>
-                <AlertDescription>{friendlyAuthError(accountsQ.error)}</AlertDescription>
-              </Alert>
+              <QueryErrorState queries={[accountsQ]} title="Could not load tax accounts" />
             ) : null}
             <div className="flex flex-wrap gap-2">
               <Button

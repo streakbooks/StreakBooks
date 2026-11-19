@@ -54,7 +54,7 @@ export function CalculatorPopover() {
       setCopied(false);
       setHistory((previous) => [{ expression, result: value }, ...previous].slice(0, 30));
     } catch (cause) {
-      setError((cause as Error).message);
+      setError(cause instanceof Error ? cause.message : "Could not calculate that expression.");
     }
   }
   function press(key: string) {

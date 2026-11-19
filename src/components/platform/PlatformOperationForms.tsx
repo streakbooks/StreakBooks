@@ -194,7 +194,7 @@ export function OpsEditor({
   try {
     instant = localDateToUtc(time);
   } catch (e) {
-    timeError = (e as Error).message;
+    timeError = friendlyAuthError(e);
   }
   const base = record ? { id: record.id, row_version: record.row_version } : {};
   const fields =

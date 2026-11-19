@@ -80,7 +80,7 @@ export function DocumentOcrPanel({
       if (liveScope.current !== `${input.companyId}:${input.attachmentId}`) return;
       setResult(value);
       if (value.status === "pending") toast.info("OCR is still processing. Check again shortly.");
-      else if (value.status === "failed") toast.error(value.message);
+      else if (value.status === "failed") toast.error(friendlyAuthError(value.message));
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });

@@ -451,7 +451,9 @@ function ProductsWorkspace({
     onSuccess: async (result) => {
       toast.success(`Updated the price of ${result.changed} catalogue item(s)`);
       if (result.auditError) {
-        toast.warning(`Prices saved, but audit recording failed: ${result.auditError}`);
+        toast.warning(
+          `Prices saved, but audit recording failed: ${friendlyAuthError(result.auditError)}`,
+        );
       }
       setBulkPriceOpen(false);
       setBulkPriceAmount("");

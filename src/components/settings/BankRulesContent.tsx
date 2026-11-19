@@ -198,13 +198,27 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
       await qc.invalidateQueries({ queryKey: ["bank-transactions", companyId] });
       await qc.invalidateQueries({ queryKey: ["banking-counts", companyId] });
       const bad = r.results.find((x) => !x.ok);
-      if (r.failed) toast.warning(`${r.succeeded} coded, ${r.failed} failed. ${bad?.error ?? ""}`);
+      if (r.failed)
+        toast.warning(
+          `${r.succeeded} coded, ${r.failed} failed. ${bad?.error ? friendlyAuthError(bad.error) : ""}`,
+        );
       else toast.success(`${r.succeeded} coded`);
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
+  if (
+    (optionsQ.isError && optionsQ.data === undefined) ||
+    (accountsQ.isError && accountsQ.data === undefined)
+  ) {
+    return (
+      <QueryErrorState
+        queries={[optionsQ, accountsQ]}
+        title="Could not load coding options for bank rules"
+      />
+    );
+  }
 
   const accounts = optionsQ.data?.accounts ?? [];
   const accountLabel = (id: string) => {

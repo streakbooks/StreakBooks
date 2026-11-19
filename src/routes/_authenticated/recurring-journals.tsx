@@ -85,7 +85,9 @@ function RecurringJournalsPage() {
       await refresh();
       await qc.invalidateQueries({ queryKey: ["journals", companyId] });
       if (r.failed.length > 0) {
-        toast.error(`${r.posted} posted, ${r.failed.length} failed: ${r.failed[0]!.message}`);
+        toast.error(
+          `${r.posted} posted, ${r.failed.length} failed: ${friendlyAuthError(r.failed[0]!.message)}`,
+        );
       } else {
         toast.success(r.posted === 0 ? "Nothing is due" : `${r.posted} journal(s) posted`);
       }

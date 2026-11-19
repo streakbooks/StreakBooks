@@ -203,6 +203,13 @@ export function ExpenseManagementExitSettlementPage() {
       description="Clear open advances, drafts and card lines when an employee leaves."
       subnav={<ExpenseManagementSubnav current="exit-settlement" />}
     >
+      {canManage && membersQ.isError && membersQ.data === undefined ? (
+        <QueryErrorState queries={[membersQ]} title="Could not load company members" />
+      ) : null}
+      {canManage && banksQ.isError && banksQ.data === undefined ? (
+        <QueryErrorState queries={[banksQ]} title="Could not load bank accounts" />
+      ) : null}
+
       {canManage ? (
         <section id="em-exit-review" className="mb-8 space-y-4 rounded-lg border p-4">
           <h2 className="text-lg font-medium">Review employee</h2>

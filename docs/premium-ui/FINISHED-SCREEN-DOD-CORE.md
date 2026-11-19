@@ -122,6 +122,8 @@ Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails
 
 **Production honesty Batch 120:** Shared lookup fetch errors, expense batch-reimburse partial failures, cash-coding bulk/all-matching failures, and bank transfer statement-match errors use `friendlyAuthError`. Staging/RBAC still **NOT VERIFIED**.
 
+**Production honesty Batch 121:** Expense reimbursements/advances/petty-cash/exit-settlement bank (and member) lookups fail closed with `QueryErrorState` instead of empty pickers; bank rules coding options and banking hub GL/details likewise; banking bulk code, recurring journal run, sales/purchases authorise, credit allocation, and product price audit partial failures use `friendlyAuthError`. Staging/RBAC still **NOT VERIFIED**.
+
 **Bank coding + record totals (Batch 75):** `BankCodingPanel` uses shared `EditableLineItemGrid` + `TotalsSummary`. Bill and invoice read-only records use `TotalsSummary`. `MoneyDocumentPanel` fails closed with `QueryErrorState` when options queries fail. Staging/RBAC still **NOT VERIFIED**.
 
 **Bills line grid ELG (Batch 74):** `PurchasesDocumentLines` composes shared `EditableLineItemGrid` (Sales parity). Drag reorder, tracking columns, tax modes, keyboard/paste, Add-lines Select, and TotalsSummary preserved. Staging/RBAC still **NOT VERIFIED**.

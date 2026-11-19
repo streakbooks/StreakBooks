@@ -639,13 +639,15 @@ export function SalesDocumentEditor({
       if (res.authoriseError) {
         if (res.statusHint === "posted_unauthorised") {
           setFormError(
-            `The journal was posted but the invoice status was not linked${res.journalId ? ` (${res.journalId.slice(0, 8)}…)` : ""}. Open the invoice and click Authorise again — it will not post twice. ${res.authoriseError}`,
+            `The journal was posted but the invoice status was not linked${res.journalId ? ` (${res.journalId.slice(0, 8)}…)` : ""}. Open the invoice and click Authorise again — it will not post twice. ${friendlyAuthError(res.authoriseError)}`,
           );
           toast.error("Journal posted — retry Authorise to link status");
           navigate({ to: "/sales/invoices/$invoiceId", params: { invoiceId: res.id } });
           return;
         }
-        setFormError(`Saved as a draft, but it could not be authorised: ${res.authoriseError}`);
+        setFormError(
+          `Saved as a draft, but it could not be authorised: ${friendlyAuthError(res.authoriseError)}`,
+        );
         toast.error("Saved as draft — authorise failed");
         return;
       }

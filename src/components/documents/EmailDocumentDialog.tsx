@@ -97,7 +97,7 @@ export function EmailDocumentDialog(props: Props) {
         props.onOpenChange(false);
         props.onSent?.();
       } else {
-        setError(r.message);
+        setError(friendlyAuthError(r.message));
       }
     },
     onError: (e) => setError(friendlyAuthError(e)),

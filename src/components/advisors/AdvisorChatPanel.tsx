@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import type { AdvisorServiceCode } from "@/lib/advisors/catalogue";
 import type { AdvisorChatMessage, AdvisorChatState } from "@/lib/advisors/chat-engine";
 import { sendAdvisorChatMessage, startAdvisorChat } from "@/lib/advisors/chat.functions";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -54,7 +55,7 @@ export function AdvisorChatPanel({ serviceCode, enabled }: Props) {
       setOpen(true);
       setMinimized(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start chat.");
+      setError(friendlyAuthError(err));
     } finally {
       setBusy(false);
     }
@@ -78,7 +79,7 @@ export function AdvisorChatPanel({ serviceCode, enabled }: Props) {
       setState(result.state);
       setMessages((current) => [...current, ...result.messages]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send message.");
+      setError(friendlyAuthError(err));
     } finally {
       setBusy(false);
     }

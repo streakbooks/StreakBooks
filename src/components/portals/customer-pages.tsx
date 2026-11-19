@@ -739,7 +739,7 @@ export function PortalSecurity() {
               .enroll({ factorType: "totp", friendlyName: "LinkBooks portal" })
               .then(({ data, error }) => {
                 if (error || !data) {
-                  setMessage(error?.message ?? "An authenticator could not be started.");
+                  setMessage(friendlyAuthError(error ?? "An authenticator could not be started."));
                   return;
                 }
                 setFactor({ id: data.id, qr: data.totp.qr_code });
@@ -757,7 +757,7 @@ export function PortalSecurity() {
                 .challenge({ factorId: factor.id })
                 .then(async ({ data, error }) => {
                   if (error || !data) {
-                    setMessage(error?.message ?? "The challenge failed.");
+                    setMessage(friendlyAuthError(error ?? "The challenge failed."));
                     return;
                   }
                   const verified = await supabase.auth.mfa.verify({
@@ -767,7 +767,7 @@ export function PortalSecurity() {
                   });
                   setMessage(
                     verified.error
-                      ? verified.error.message
+                      ? friendlyAuthError(verified.error)
                       : "Authenticator is on. Sign in again if a page asks for the second step.",
                   );
                 });

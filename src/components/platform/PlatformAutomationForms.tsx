@@ -6,6 +6,7 @@ import { actAutomation } from "@/lib/platform/automation.functions";
 import { automationActionSchema, alertMetrics, metricLabels } from "@/lib/platform/automation";
 import type { AutomationCommand, AutomationRow } from "@/lib/platform/automation";
 import { OpsField, EnumField } from "./PlatformOperationForms";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,7 @@ export function AutomationAction({
       busy.current = true;
       await mutation.mutateAsync(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Operation failed");
+      setError(friendlyAuthError(e));
     } finally {
       busy.current = false;
     }

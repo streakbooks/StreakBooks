@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Files accessor-safe URL search parsing (2026-11-19)
+
+- `src/lib/documents/files-navigation.ts`: use own data-property descriptors when reading URL search state; ignore accessor-backed values rather than invoking untrusted getters. Commit `db58187c0d55288891a2a07d80cab5e0b50f8099`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: throwing-getter regression verifies no accessor invocation and preservation of valid independent sort/page. Commit `1b60a72d465e6f6cb1a080fba685a88ebb5a4df9`. **WRITTEN, NOT RUN.**
+- Manifest evidence updated in `c09ba45c9d124ee910231dc7942da243257d2370`. **NOT RUN:** local browsing inventory guard, typecheck, lint, Vitest, build, authenticated browser, accessibility, RLS/accounting regression. Baseline 21 modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; fully verified **0/21 modules, 0/15 supporting routes, 0/12 batches**. No main, manual CI, production database or deployment changes.
+
 ### Files malformed runtime search container handling (2026-11-19)
 
 - `src/lib/documents/files-navigation.ts`: null, undefined, primitive and array search containers now fail closed before property access; commit `e46d86a0234d1f149d865bc04713155bf00d5736`. **SOURCE ONLY; NOT RUN.**

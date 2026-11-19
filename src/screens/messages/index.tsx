@@ -130,6 +130,8 @@ export function MessagesScreen({
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const [peerSearch, setPeerSearch] = useState("");
   const [peers, setPeers] = useState<MessagingParticipant[]>([]);
+  const [peersLoading, setPeersLoading] = useState(false);
+  const [peersError, setPeersError] = useState(false);
   const [groupTitle, setGroupTitle] = useState("");
   const [selectedPeers, setSelectedPeers] = useState<string[]>([]);
   const [showNew, setShowNew] = useState<
@@ -227,8 +229,17 @@ export function MessagesScreen({
   async function loadPeers(q: string) {
     setPeerSearch(q);
     if (!companyId) return;
-    const rows = await actions.listParticipants(q);
-    setPeers(rows);
+    setPeersLoading(true);
+    setPeersError(false);
+    try {
+      const rows = await actions.listParticipants(q);
+      setPeers(rows);
+    } catch {
+      setPeers([]);
+      setPeersError(true);
+    } finally {
+      setPeersLoading(false);
+    }
   }
 
   async function handleSend() {
@@ -1153,7 +1164,13 @@ export function MessagesScreen({
                 </div>
                 {showMentionPicker ? (
                   <div className="mt-2 max-h-36 overflow-y-auto rounded border">
-                    {peers.length === 0 ? (
+                    {peersLoading ? (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">Loading people…</p>
+                    ) : peersError ? (
+                      <p className="px-3 py-2 text-xs text-destructive" role="alert">
+                        Could not load eligible people. Try again.
+                      </p>
+                    ) : peers.length === 0 ? (
                       <p className="px-3 py-2 text-xs text-muted-foreground">
                         No eligible people found.
                       </p>
@@ -1359,34 +1376,46 @@ export function MessagesScreen({
                 placeholder="Search by name or email"
               />
               <ul className="max-h-48 overflow-y-auto rounded border">
-                {peers.map((peer) => (
-                  <li key={peer.user_id}>
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted/50"
-                      onClick={() => {
-                        if (!companyId || !conversationId) return;
-                        void addMembers({
-                          data: {
-                            companyId,
-                            conversationId,
-                            memberUserIds: [peer.user_id],
-                          },
-                        })
-                          .then((result) => {
-                            notify.success(result.added > 0 ? "Member added" : "Already a member");
-                            setShowAddMembers(false);
-                          })
-                          .catch((error) => notify.error(error, "Could not add member"));
-                      }}
-                    >
-                      <span>
-                        {peer.full_name || peer.email || peer.user_id}
-                        <span className="block text-xs text-muted-foreground">{peer.email}</span>
-                      </span>
-                    </button>
+                {peersLoading ? (
+                  <li className="px-3 py-2 text-xs text-muted-foreground">Loading people…</li>
+                ) : peersError ? (
+                  <li className="px-3 py-2 text-xs text-destructive" role="alert">
+                    Could not load eligible people. Try again.
                   </li>
-                ))}
+                ) : peers.length === 0 ? (
+                  <li className="px-3 py-2 text-xs text-muted-foreground">No eligible people found.</li>
+                ) : (
+                  peers.map((peer) => (
+                    <li key={peer.user_id}>
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted/50"
+                        onClick={() => {
+                          if (!companyId || !conversationId) return;
+                          void addMembers({
+                            data: {
+                              companyId,
+                              conversationId,
+                              memberUserIds: [peer.user_id],
+                            },
+                          })
+                            .then((result) => {
+                              notify.success(
+                                result.added > 0 ? "Member added" : "Already a member",
+                              );
+                              setShowAddMembers(false);
+                            })
+                            .catch((error) => notify.error(error, "Could not add member"));
+                        }}
+                      >
+                        <span>
+                          {peer.full_name || peer.email || peer.user_id}
+                          <span className="block text-xs text-muted-foreground">{peer.email}</span>
+                        </span>
+                      </button>
+                    </li>
+                  ))
+                )}
               </ul>
             </div>
             <div className="mt-4 flex justify-end">
@@ -1484,113 +1513,125 @@ export function MessagesScreen({
                 placeholder="Search by name or email"
               />
               <ul className="max-h-48 overflow-y-auto rounded border">
-                {peers.map((peer) => (
-                  <li key={peer.user_id}>
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted/50"
-                      onClick={() => {
-                        if (showNew === "dm") {
-                          actions.dmMutation.mutate(peer.user_id, {
-                            onSuccess: (result) => {
-                              setShowNew(null);
-                              void navigate({
-                                to: "/messages",
-                                search: messagesSearch({
-                                  filter: "dm",
-                                  conversation: result.conversationId,
-                                }),
-                              });
-                            },
-                          });
-                          return;
-                        }
-                        if (showNew === "hr" && companyId) {
-                          void openHr({
-                            data: {
-                              companyId,
-                              title: groupTitle || "Private HR discussion",
-                              peerUserId: peer.user_id,
-                            },
-                          })
-                            .then((result) => {
-                              setShowNew(null);
-                              setGroupTitle("");
-                              void navigate({
-                                to: "/messages",
-                                search: messagesSearch({
-                                  filter: "inbox",
-                                  conversation: result.conversationId,
-                                }),
-                              });
-                            })
-                            .catch((error) => notify.error(error, "Could not open HR discussion"));
-                          return;
-                        }
-                        if (showNew === "advisor" && companyId) {
-                          void openAdvisor({
-                            data: {
-                              companyId,
-                              title: groupTitle || "Advisor engagement",
-                              peerUserId: peer.user_id,
-                            },
-                          })
-                            .then((result) => {
-                              setShowNew(null);
-                              setGroupTitle("");
-                              void navigate({
-                                to: "/messages",
-                                search: messagesSearch({
-                                  filter: "transactions",
-                                  conversation: result.conversationId,
-                                }),
-                              });
-                            })
-                            .catch((error) =>
-                              notify.error(error, "Could not open advisor conversation"),
-                            );
-                          return;
-                        }
-                        if (showNew === "accountant" && companyId) {
-                          void openAccountant({
-                            data: {
-                              companyId,
-                              title: groupTitle || "Accountant discussion",
-                              peerUserId: peer.user_id,
-                            },
-                          })
-                            .then((result) => {
-                              setShowNew(null);
-                              setGroupTitle("");
-                              void navigate({
-                                to: "/messages",
-                                search: messagesSearch({
-                                  filter: "transactions",
-                                  conversation: result.conversationId,
-                                }),
-                              });
-                            })
-                            .catch((error) =>
-                              notify.error(error, "Could not open accountant conversation"),
-                            );
-                          return;
-                        }
-                        setSelectedPeers((prev) =>
-                          prev.includes(peer.user_id)
-                            ? prev.filter((id) => id !== peer.user_id)
-                            : [...prev, peer.user_id],
-                        );
-                      }}
-                    >
-                      <span>
-                        {peer.full_name || peer.email || peer.user_id}
-                        <span className="block text-xs text-muted-foreground">{peer.email}</span>
-                      </span>
-                      {(showNew === "group" || showNew === "channel") &&
-                        selectedPeers.includes(peer.user_id) && <Badge>Selected</Badge>}
-                    </button>
+                {peersLoading ? (
+                  <li className="px-3 py-2 text-xs text-muted-foreground">Loading people…</li>
+                ) : peersError ? (
+                  <li className="px-3 py-2 text-xs text-destructive" role="alert">
+                    Could not load eligible people. Try again.
                   </li>
-                ))}
+                ) : peers.length === 0 ? (
+                  <li className="px-3 py-2 text-xs text-muted-foreground">No eligible people found.</li>
+                ) : (
+                  peers.map((peer) => (
+                    <li key={peer.user_id}>
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted/50"
+                        onClick={() => {
+                          if (showNew === "dm") {
+                            actions.dmMutation.mutate(peer.user_id, {
+                              onSuccess: (result) => {
+                                setShowNew(null);
+                                void navigate({
+                                  to: "/messages",
+                                  search: messagesSearch({
+                                    filter: "dm",
+                                    conversation: result.conversationId,
+                                  }),
+                                });
+                              },
+                            });
+                            return;
+                          }
+                          if (showNew === "hr" && companyId) {
+                            void openHr({
+                              data: {
+                                companyId,
+                                title: groupTitle || "Private HR discussion",
+                                peerUserId: peer.user_id,
+                              },
+                            })
+                              .then((result) => {
+                                setShowNew(null);
+                                setGroupTitle("");
+                                void navigate({
+                                  to: "/messages",
+                                  search: messagesSearch({
+                                    filter: "inbox",
+                                    conversation: result.conversationId,
+                                  }),
+                                });
+                              })
+                              .catch((error) =>
+                                notify.error(error, "Could not open HR discussion"),
+                              );
+                            return;
+                          }
+                          if (showNew === "advisor" && companyId) {
+                            void openAdvisor({
+                              data: {
+                                companyId,
+                                title: groupTitle || "Advisor engagement",
+                                peerUserId: peer.user_id,
+                              },
+                            })
+                              .then((result) => {
+                                setShowNew(null);
+                                setGroupTitle("");
+                                void navigate({
+                                  to: "/messages",
+                                  search: messagesSearch({
+                                    filter: "transactions",
+                                    conversation: result.conversationId,
+                                  }),
+                                });
+                              })
+                              .catch((error) =>
+                                notify.error(error, "Could not open advisor conversation"),
+                              );
+                            return;
+                          }
+                          if (showNew === "accountant" && companyId) {
+                            void openAccountant({
+                              data: {
+                                companyId,
+                                title: groupTitle || "Accountant discussion",
+                                peerUserId: peer.user_id,
+                              },
+                            })
+                              .then((result) => {
+                                setShowNew(null);
+                                setGroupTitle("");
+                                void navigate({
+                                  to: "/messages",
+                                  search: messagesSearch({
+                                    filter: "transactions",
+                                    conversation: result.conversationId,
+                                  }),
+                                });
+                              })
+                              .catch((error) =>
+                                notify.error(error, "Could not open accountant conversation"),
+                              );
+                            return;
+                          }
+                          setSelectedPeers((prev) =>
+                            prev.includes(peer.user_id)
+                              ? prev.filter((id) => id !== peer.user_id)
+                              : [...prev, peer.user_id],
+                          );
+                        }}
+                      >
+                        <span>
+                          {peer.full_name || peer.email || peer.user_id}
+                          <span className="block text-xs text-muted-foreground">{peer.email}</span>
+                        </span>
+                        {(showNew === "group" || showNew === "channel") &&
+                          selectedPeers.includes(peer.user_id) && <Badge>Selected</Badge>}
+                      </button>
+                    </li>
+                  ))
+                )}
               </ul>
             </div>
             <div className="mt-4 flex justify-end gap-2">

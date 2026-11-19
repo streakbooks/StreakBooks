@@ -42,7 +42,8 @@ import {
   parseBudgetCsv,
 } from "@/lib/budgets/budget-csv";
 import { csvFilename, downloadCsv, toCsv } from "@/lib/reports/csv";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -88,13 +89,7 @@ function BudgetEditorPage() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
   if (query.isError) {
-    return (
-      <ErrorState
-        title="Could not load budget"
-        description={friendlyAuthError(query.error)}
-        onRetry={() => void query.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[query]} title="Could not load budget" />;
   }
   // Re-mount after every save so the grid always reflects what is stored.
   return (

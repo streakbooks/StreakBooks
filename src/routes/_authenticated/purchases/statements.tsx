@@ -8,8 +8,7 @@ import { Printer } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { getSupplierStatement, listSuppliers } from "@/lib/purchases/purchases.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ContactLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
@@ -139,11 +138,7 @@ function Statements() {
       ) : stmtQ.isPending ? (
         <LoadingState />
       ) : stmtQ.isError ? (
-        <ErrorState
-          onRetry={() => void stmtQ.refetch()}
-          title="Could not load statement"
-          description={friendlyAuthError(stmtQ.error)}
-        />
+        <QueryErrorState queries={[stmtQ]} title="Could not load statement" />
       ) : (
         <div className="space-y-4">
           <div>

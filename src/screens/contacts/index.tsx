@@ -61,7 +61,8 @@ import {
 } from "@/lib/contacts/contact-directory-preferences.functions";
 import type { ContactPreferenceKind } from "@/lib/contacts/contact-directory-preferences";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import {
   encodeContactsReturnContext,
@@ -1526,11 +1527,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
           {query.isPending ? (
             <ListSkeleton />
           ) : query.isError ? (
-            <ErrorState
-              onRetry={() => void query.refetch()}
-              title="Could not load contacts"
-              description={friendlyAuthError(query.error)}
-            />
+            <QueryErrorState queries={[query]} title="Could not load contacts" />
           ) : (query.data ?? []).length === 0 ? (
             <EmptyState
               icon={Users}

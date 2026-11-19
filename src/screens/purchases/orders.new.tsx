@@ -39,6 +39,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
 import { interpretLineGridKey } from "@/lib/ui/line-grid-keyboard";
 import { parseLineGridClipboard } from "@/lib/ui/line-grid-paste";
 
@@ -118,7 +119,7 @@ function OrderForm({
   );
   const [currencyOverride, setCurrencyOverride] = useState(initial?.currency_code.trim() ?? "");
   const [memo, setMemo] = useState(initial?.memo ?? "");
-  const nextKey = useRef(initial?.purchase_order_lines.length ?? 5);
+  const nextKey = useRef(initial?.purchase_order_lines.length ?? 0);
   const [lines, setLines] = useState(() =>
     initial
       ? [...initial.purchase_order_lines]
@@ -133,7 +134,7 @@ function OrderForm({
             discount: fromMinorUnits(impliedDiscountMinor(l), initial.currency_code),
             taxPercent: String(l.tax_rate_bps / 100),
           }))
-      : Array.from({ length: 5 }, (_, i) => ({ ...emptyOrderLine(), key: i })),
+      : createEmptyDocumentLines(() => ({ ...emptyOrderLine(), key: nextKey.current++ })),
   );
   const [savedId, setSavedId] = useState<string | null>(null);
   const recordRef = useRef<DocumentRecordHandle>(null);

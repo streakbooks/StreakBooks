@@ -369,27 +369,32 @@ export function FirmClientRequestsPanel({
               </div>
               <div className="space-y-1">
                 <Label>Responsible team member</Label>
-                <RecordLookupSelect
-                  value={draft.assigned_to ?? "unassigned"}
-                  onValueChange={(value) =>
-                    setDraft((current) => ({
-                      ...current,
-                      assigned_to: value === "unassigned" ? null : value,
-                    }))
-                  }
-                >
-                  <SelectTrigger aria-label="Assign firm member">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
-                    {(teamQ.data ?? []).map((member) => (
-                      <SelectItem key={member.user_id} value={member.user_id}>
-                        {member.full_name || member.email || "Firm member"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </RecordLookupSelect>
+                {teamQ.isError && teamQ.data === undefined ? (
+                  <QueryErrorState queries={[teamQ]} title="Could not load firm team" />
+                ) : (
+                  <RecordLookupSelect
+                    value={draft.assigned_to ?? "unassigned"}
+                    onValueChange={(value) =>
+                      setDraft((current) => ({
+                        ...current,
+                        assigned_to: value === "unassigned" ? null : value,
+                      }))
+                    }
+                    disabled={teamQ.isPending}
+                  >
+                    <SelectTrigger aria-label="Assign firm member">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {(teamQ.data ?? []).map((member) => (
+                        <SelectItem key={member.user_id} value={member.user_id}>
+                          {member.full_name || member.email || "Firm member"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </RecordLookupSelect>
+                )}
               </div>
             </div>
             <div className="space-y-1">

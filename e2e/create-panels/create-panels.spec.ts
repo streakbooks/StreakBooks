@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 const externalRequests = new WeakMap<Page, string[]>();
@@ -195,4 +196,35 @@ test("supplier payment actions follow payment permission in an empty register", 
   await expect(newPayments).toHaveCount(0);
   await expect(batchPayment).toHaveCount(0);
   await expect(page.getByText("Supplier payments will appear here.")).toBeVisible();
+});
+
+test.describe("touch dialogs", () => {
+  test.use({ viewport: { width: 320, height: 420 }, hasTouch: true });
+
+  test("recurring journal heading and close target remain accessible", async ({ page }) => {
+    await page.goto("/recurring-journals");
+    const edit = page.getByRole("button", { name: "Edit schedule for Monthly rent" });
+    await edit.focus();
+    await page.keyboard.press("Enter");
+
+    const dialog = page.getByRole("dialog", { name: "Edit recurring journal schedule" });
+    await expect(dialog.getByRole("textbox", { name: "Name" })).toBeFocused();
+    const heading = await dialog.getByRole("heading").boundingBox();
+    const close = dialog.getByRole("button", { name: "Close", exact: true });
+    const target = await close.boundingBox();
+    expect(heading).toBeTruthy();
+    expect(target).toBeTruthy();
+    await expect(close).toHaveCSS("width", "44px");
+    await expect(close).toHaveCSS("height", "44px");
+    expect(heading!.x + heading!.width).toBeLessThanOrEqual(target!.x);
+
+    const accessibility = await new AxeBuilder({ page }).include('[role="dialog"]').analyze();
+    expect(accessibility.violations).toEqual([]);
+    await close.focus();
+    await page.keyboard.press("Tab");
+    await expect(dialog.getByRole("textbox", { name: "Name" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(edit).toBeFocused();
+  });
 });

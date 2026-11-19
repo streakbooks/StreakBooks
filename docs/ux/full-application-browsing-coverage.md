@@ -1,5 +1,44 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Files Proxy descriptor-safe URL restoration (2026-11-19)
+
+- `src/lib/documents/files-navigation.ts`: catch throwing `getOwnPropertyDescriptor` Proxy traps per search field; preserve independent valid URL filters. Commit `6ac80cee01b798d5cb4fb73c85e1925b15f25641`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: regression for throwing Proxy descriptor and retained sort/page. Commit `196a11552dbeefc24caf083480d0b5e44106ac0a`. **WRITTEN, NOT RUN.**
+- Manifest updated with partial evidence. **NOT RUN:** local browsing coverage guard, TypeScript, lint, Vitest, build, authenticated browser, accessibility, security/RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows; fully verified **0/21 modules, 0/15 supporting routes, 0/12 batches**. No main, manual CI, production DB or deployment changes.
+
+
+### Files accessor-safe URL search parsing (2026-11-19)
+
+- `src/lib/documents/files-navigation.ts`: use own data-property descriptors when reading URL search state; ignore accessor-backed values rather than invoking untrusted getters. Commit `db58187c0d55288891a2a07d80cab5e0b50f8099`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: throwing-getter regression verifies no accessor invocation and preservation of valid independent sort/page. Commit `1b60a72d465e6f6cb1a080fba685a88ebb5a4df9`. **WRITTEN, NOT RUN.**
+- Manifest evidence updated in `c09ba45c9d124ee910231dc7942da243257d2370`. **NOT RUN:** local browsing inventory guard, typecheck, lint, Vitest, build, authenticated browser, accessibility, RLS/accounting regression. Baseline 21 modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; fully verified **0/21 modules, 0/15 supporting routes, 0/12 batches**. No main, manual CI, production database or deployment changes.
+
+### Files malformed runtime search container handling (2026-11-19)
+
+- `src/lib/documents/files-navigation.ts`: null, undefined, primitive and array search containers now fail closed before property access; commit `e46d86a0234d1f149d865bc04713155bf00d5736`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: malformed container regression; commit `a745640ef3d88a847c4b9c5a32ae621ad2a3e98d`. **WRITTEN, NOT RUN.**
+- Manifest partial evidence commit `4438d5de38e9eb0d4cbb1c32d78d54218d05140e`. Inventory guard, typecheck, lint, Vitest, build, authenticated browser, accessibility, RLS and accounting regression **NOT RUN**. Baseline 21 modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. Fully verified **0/21 modules, 0/15 supporting routes, 0/12 batches**. No main, manual CI, production DB or deployment changes.
+
+### Files own-query URL restoration (2026-11-19)
+
+- `src/lib/documents/files-navigation.ts`: only own URL query fields are accepted; inherited prototype values for folder, file, search, type, sort, view and page are ignored. Commit `38ab1375691dd0f702d89fe3d8900ed05b57d245`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: inherited-property and null-prototype regression scenarios. Commit `639f1877e4da54ab8b036ac06bff2d4f2ff03f4a`. **WRITTEN, NOT RUN.**
+- Manifest evidence updated in `24f26e6de7a995ae7a723461282a4f36062efefb`. **NOT RUN:** inventory guard, TypeScript, lint, Vitest, build, authenticated browser/accessibility, security/RLS or accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main changes, manually triggered CI, production DB changes or deployment.
+
+
+### Files canonical pagination and regression fixture correction (2026-11-18)
+
+- `src/lib/documents/files-navigation.ts`: reject padded and leading-zero page query strings while retaining the existing page cap and independent filters; commit `084bc882ebc8bc6e238ebb3e2c8ee4848ff41c71`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: add canonical page regressions and replace escaped literal backslash sequences with actual runtime control-character test inputs; commits `ee46dc2d7e94edac49c4f24c71d12e1dbd92297c`, `c599a321941681e12c2e9d56867f116f474815a9`. **WRITTEN, NOT RUN.**
+- **NOT RUN:** inventory guard, TypeScript, lint, Vitest, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main changes, manually triggered CI, production DB changes or deployment.
+
+### Files search deep-link validation (2026-11-18)
+
+- `src/lib/documents/files-navigation.ts`: trim effective Files search and reject control, bidi and invisible characters while retaining independent sort/view/page filters; commit `91dfacb202ba895bad4e9e1e96bc4bbf22767af4`. **SOURCE ONLY; NOT RUN.**
+- `src/lib/documents/files-navigation.test.ts`: whitespace, 120/121 boundary, multilingual and invisible-character regressions; commit `531d8901d9bf4f5e1eb5107929ab9b4fc0231101`. **WRITTEN, NOT RUN.**
+- Manifest updated in `3cf85a216159b75ef9317ca784ce5c94ae78b90d`. **NOT RUN:** browsing coverage guard, TypeScript, lint, Vitest, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows; **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. No main changes, manually triggered CI, production DB or deployment.
+
+
 ### Settings inherited navigation-slot validation (2026-11-18)
 
 - `src/lib/settings/panels.ts`: reject prototype-inherited array slots in `settingsTrail` during deep-link restoration, so only explicitly owned ancestor positions are accepted. Code commit `fddfb10594f6d1e787d10d4dbef850d6df8e5ebf`. **SOURCE ONLY; NOT RUN.**

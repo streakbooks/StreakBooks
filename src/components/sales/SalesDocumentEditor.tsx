@@ -45,7 +45,7 @@ import { decodeInvoiceReturnContext } from "@/lib/sales/invoice-list-navigation"
 import { useVoiceForm } from "@/components/ai-voice/voice-context";
 import { validateVoiceDraft } from "@/lib/ai-voice/form-adapter";
 import { recordVoiceDraftOutcome } from "@/lib/ai-voice/voice-audit.functions";
-import { LoadingState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
@@ -772,6 +772,22 @@ export function SalesDocumentEditor({
     (kind === "credit_note" && Boolean(fromInvoiceId) && !existing && sourceInvQ.isPending)
   ) {
     return <LoadingState />;
+  }
+  if (customersQ.isError || accountsQ.isError || configQ.isError || settingsQ.isError) {
+    return (
+      <ErrorState
+        title="Could not load document options"
+        description={friendlyAuthError(
+          customersQ.error ?? accountsQ.error ?? configQ.error ?? settingsQ.error,
+        )}
+        onRetry={() => {
+          void customersQ.refetch();
+          void accountsQ.refetch();
+          void configQ.refetch();
+          void settingsQ.refetch();
+        }}
+      />
+    );
   }
 
   const backTo =

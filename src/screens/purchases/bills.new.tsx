@@ -83,6 +83,7 @@ import {
   isCompletelyBlankPurchaseLine,
 } from "@/lib/purchases/blank-lines";
 import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { AccountLookup } from "@/components/lookup";
@@ -1432,10 +1433,29 @@ export function NewBill({
         <h1 className="text-xl font-semibold tracking-tight">
           {isTemplate ? "Recurring bill template" : "New bill"}
         </h1>
-        <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-          {isTemplate
-            ? `Template · Status: ${templateId ? (scheduleActive ? "Active schedule" : "Saved template") : "Unsaved"} · Not posted · View: `
-            : `Draft · Status: ${billId ? "Saved draft" : "Unsaved"} · View: `}
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <StatusBadge
+            status="draft"
+            label={
+              isTemplate
+                ? templateId
+                  ? scheduleActive
+                    ? "Active schedule"
+                    : "Saved template"
+                  : "Unsaved template"
+                : billId
+                  ? "Saved draft"
+                  : "Draft"
+            }
+          />
+          {isTemplate ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>Not posted</span>
+            </>
+          ) : null}
+          <span aria-hidden="true">·</span>
+          <span>View:</span>
           <Select
             value={viewMode}
             onValueChange={(v) =>

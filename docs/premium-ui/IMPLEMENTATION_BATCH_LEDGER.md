@@ -74,9 +74,10 @@ eature/premium-ui-batch40-density-acceptance | [PR #286](https://github.com/link
 | 75 | Phase 3–5 | BankCodingPanel ELG + TotalsSummary; bill/invoice record TotalsSummary; MoneyDocumentPanel QueryErrorState | `feature/premium-ui-batch75-production-gaps` | [PR #352](https://github.com/linkbusinessadvisory/LinkBooks/pull/352) merged | banking + sales + purchases | done |
 | 76 | Phase 3–5 | ConversionBalancesPanel → EditableLineItemGrid + TotalsSummary | `feature/premium-ui-batch76-production-gaps` | [PR #353](https://github.com/linkbusinessadvisory/LinkBooks/pull/353) merged | accounting / conversion | done |
 | 77 | Phase 3–5 | Quote/CN record TotalsSummary; bills/sales/journal QueryErrorState | `feature/premium-ui-batch77-production-gaps` | [PR #354](https://github.com/linkbusinessadvisory/LinkBooks/pull/354) merged | sales + purchases + accounting | done |
-| 78 | Phase 3–5 | Receipt + supplier payment record TotalsSummary / QueryErrorState | `feature/premium-ui-batch78-production-gaps` | [PR #356](https://github.com/linkbusinessadvisory/LinkBooks/pull/356) OPEN | sales + purchases | PR open |
-| 79 | Phase 3–5 | Orders/requisitions/batch-pay QueryErrorState create parity | `feature/premium-ui-batch78-production-gaps` | [PR #356](https://github.com/linkbusinessadvisory/LinkBooks/pull/356) OPEN | sales + purchases | PR open |
-| 80 | Phase 3–5 | Expense claim detail TotalsSummary (create parity) | `feature/premium-ui-batch78-production-gaps` | [PR #356](https://github.com/linkbusinessadvisory/LinkBooks/pull/356) OPEN | expense-management | PR open |
-| 81+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do Batches 46–80) | TBD | — | all modules | planned |
+| 78 | Phase 3–5 | Receipt + supplier payment record TotalsSummary / QueryErrorState | `feature/premium-ui-batch78-production-gaps` | [PR #356](https://github.com/linkbusinessadvisory/LinkBooks/pull/356) merged | sales + purchases | done |
+| 79 | Phase 3–5 | Orders/requisitions/batch-pay QueryErrorState create parity | `feature/premium-ui-batch78-production-gaps` | [PR #356](https://github.com/linkbusinessadvisory/LinkBooks/pull/356) merged | sales + purchases | done |
+| 80 | Phase 3–5 | Expense claim detail TotalsSummary (create parity) | `feature/premium-ui-batch78-production-gaps` | [PR #356](https://github.com/linkbusinessadvisory/LinkBooks/pull/356) merged | expense-management | done |
+| 81 | Phase 3–5 | Recurring invoices list/edit QueryErrorState (schedule useQuery) | `feature/premium-ui-batch81-production-gaps` | pending PR | sales | in progress |
+| 82+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do Batches 46–81) | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

@@ -27,3 +27,14 @@
 Machine-readable honesty: `npm run check:section18` (add `--require-go-live` only when claiming Section 18 DONE).
 
 Production URL: https://linkbooks-puce.vercel.app — presence of a URL is **not** Section 14/18 DONE evidence.
+
+## Verify the deployed revision
+
+Vercel production builds publish `/release-revision.json` when the system environment
+provides a full `VERCEL_GIT_COMMIT_SHA` and `VERCEL_ENV=production`. The file contains
+the Git commit and deployment environment.
+
+Set `E2E_PRODUCTION_URL` to the authorised production HTTPS origin, check out the
+release commit, and run `npm run check:section18 -- --verify-production`. The checker
+makes a read-only request, rejects redirects and compares the full deployed commit to
+`HEAD`. Add `--require-go-live` to require all Section 18 gates to pass.

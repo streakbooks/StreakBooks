@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { verifyProductionRevision } from "./lib/production-revision.mjs";
 
 const report = fileURLToPath(new URL("./check-section18-gates.mjs", import.meta.url));
 const preflight = fileURLToPath(new URL("./check-staging-target.mjs", import.meta.url));
@@ -58,4 +59,55 @@ test("staging requires production separation and a configured account", () => {
     assert.equal(result.status, 0);
     assert.match(result.stdout, /\[BLOCKED\] Authenticated staging E2E/);
   }
+});
+
+const expectedCommit = "a".repeat(40);
+const productionUrl = staging.E2E_PRODUCTION_URL;
+
+test("production verification requires an exact revision on the configured HTTPS origin", async () => {
+  await verifyProductionRevision({
+    productionUrl,
+    expectedCommit,
+    request: async (url, options) => {
+      assert.equal(url.origin, productionUrl);
+      assert.equal(url.pathname, "/release-revision.json");
+      assert.equal(url.searchParams.get("expected"), expectedCommit);
+      assert.equal(options.redirect, "manual");
+      return Response.json({ commit: expectedCommit, environment: "production" });
+    },
+  });
+});
+
+test("production verification rejects missing or stale files and preview metadata", async () => {
+  const cases = [
+    [new Response(null, { status: 404 }), /HTTP 404/],
+    [new Response("<html/>"), /did not return a revision JSON file/],
+    [Response.json({ commit: "b".repeat(40), environment: "production" }), /expected/],
+    [Response.json({ commit: expectedCommit, environment: "preview" }), /valid build metadata/],
+  ];
+  for (const [response, message] of cases) {
+    await assert.rejects(
+      verifyProductionRevision({ productionUrl, expectedCommit, request: async () => response }),
+      message,
+    );
+  }
+});
+
+test("production verification does not request plain HTTP or follow a redirect", async () => {
+  await assert.rejects(
+    verifyProductionRevision({
+      productionUrl: "http://production.example.invalid",
+      expectedCommit,
+      request: async () => assert.fail("Unsafe URL was requested"),
+    }),
+    /must use HTTPS/,
+  );
+  await assert.rejects(
+    verifyProductionRevision({
+      productionUrl,
+      expectedCommit,
+      request: async () => Response.redirect("https://other.example.invalid/"),
+    }),
+    /returned a redirect/,
+  );
 });

@@ -2,11 +2,12 @@ import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
+import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
@@ -37,6 +38,7 @@ import {
   toClaimLineInputs,
   type ExpenseDraftLineForm,
 } from "@/lib/expenses/draft-lines";
+import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
 import {
   deleteExpenseClaimDraft,
   duplicateExpenseClaim,
@@ -99,7 +101,7 @@ export function ExpenseManagementClaimsPage({
   const [pettyCashFloatId, setPettyCashFloatId] = useState("");
   const [corporateCardId, setCorporateCardId] = useState("");
   const [lines, setLines] = useState<ExpenseDraftLineForm[]>(() =>
-    Array.from({ length: 5 }, () => emptyDraftLine(today)),
+    createEmptyDocumentLines(() => emptyDraftLine(today)),
   );
 
   useEffect(() => {
@@ -702,63 +704,66 @@ export function ExpenseManagementClaimsPage({
           ) : null}
         </div>
 
-        <div className="space-y-3">
+        <EditableLineItemGrid
+          aria-label="Expense claim lines"
+          columns={[
+            { id: "date", header: "Date", widthPx: 132, minWidthPx: 112 },
+            { id: "merchant", header: "Merchant", widthPx: 140, minWidthPx: 100 },
+            {
+              id: "description",
+              header: "Description",
+              widthPx: 220,
+              minWidthPx: 160,
+              fluid: true,
+            },
+            { id: "account", header: "Account", widthPx: 180, minWidthPx: 140 },
+            {
+              id: "net",
+              header: `Net (${currency})`,
+              align: "right",
+              widthPx: 112,
+              minWidthPx: 88,
+            },
+            { id: "tax", header: "Tax", align: "right", widthPx: 96, minWidthPx: 72 },
+            { id: "actions", header: "", widthPx: 96, minWidthPx: 80, resizable: false },
+          ]}
+          onAddRow={() => setLines((current) => [...current, emptyDraftLine(today)])}
+          addRowLabel="Add line"
+          footerStart={
+            <Button type="submit" size="sm" disabled={create.isPending}>
+              {create.isPending ? "Saving…" : "Save draft"}
+            </Button>
+          }
+        >
           {lines.map((line, index) => (
-            <div key={line.key} className="grid gap-3 rounded-md border p-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium">Line {index + 1}</p>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSplitLineKey(line.key)}
-                  >
-                    Split equally
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    disabled={lines.length === 1}
-                    onClick={() =>
-                      setLines((current) => current.filter((row) => row.key !== line.key))
-                    }
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Remove line</span>
-                  </Button>
-                </div>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label>Date</Label>
-                  <Input
-                    type="date"
-                    value={line.expenseDate}
-                    onChange={(event) => updateLine(line.key, { expenseDate: event.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Merchant</Label>
-                  <Input
-                    value={line.merchantName}
-                    onChange={(event) => updateLine(line.key, { merchantName: event.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label>Description</Label>
+            <TableRow key={line.key}>
+              <TableCell className="align-top p-0">
+                <Input
+                  type="date"
+                  aria-label={`Line ${index + 1} date`}
+                  value={line.expenseDate}
+                  onChange={(event) => updateLine(line.key, { expenseDate: event.target.value })}
+                />
+              </TableCell>
+              <TableCell className="align-top p-0">
+                <Input
+                  aria-label={`Line ${index + 1} merchant`}
+                  value={line.merchantName}
+                  onChange={(event) => updateLine(line.key, { merchantName: event.target.value })}
+                  placeholder="Merchant"
+                />
+              </TableCell>
+              <TableCell className="align-top p-0">
                 <Textarea
+                  aria-label={`Line ${index + 1} description`}
                   value={line.description}
-                  rows={2}
-                  className="lb-spreadsheet-wrap min-h-16"
+                  rows={1}
+                  className="lb-spreadsheet-wrap min-h-8"
                   onChange={(event) => updateLine(line.key, { description: event.target.value })}
                   required
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label>Expense account</Label>
+              </TableCell>
+              <TableCell className="align-middle p-0">
                 <AccountLookup
                   ariaLabel={`Expense account for line ${index + 1}`}
                   purpose="expense"
@@ -769,27 +774,53 @@ export function ExpenseManagementClaimsPage({
                   placeholder="Select expense account"
                   allowClear={false}
                 />
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label>Net ({currency})</Label>
-                  <Input
-                    value={line.netInput}
-                    onChange={(event) => updateLine(line.key, { netInput: event.target.value })}
-                    required
-                  />
+              </TableCell>
+              <TableCell className="align-top p-0">
+                <Input
+                  aria-label={`Line ${index + 1} net`}
+                  className="text-right"
+                  inputMode="decimal"
+                  value={line.netInput}
+                  onChange={(event) => updateLine(line.key, { netInput: event.target.value })}
+                  required
+                />
+              </TableCell>
+              <TableCell className="align-top p-0">
+                <Input
+                  aria-label={`Line ${index + 1} tax`}
+                  className="text-right"
+                  inputMode="decimal"
+                  value={line.taxInput}
+                  onChange={(event) => updateLine(line.key, { taxInput: event.target.value })}
+                />
+              </TableCell>
+              <TableCell className="align-top">
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSplitLineKey(line.key)}
+                  >
+                    Split
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    disabled={lines.length === 1}
+                    aria-label={`Remove line ${index + 1}`}
+                    onClick={() =>
+                      setLines((current) => current.filter((row) => row.key !== line.key))
+                    }
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="grid gap-2">
-                  <Label>Tax</Label>
-                  <Input
-                    value={line.taxInput}
-                    onChange={(event) => updateLine(line.key, { taxInput: event.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
+              </TableCell>
+            </TableRow>
           ))}
-        </div>
+        </EditableLineItemGrid>
 
         {splitLineKey ? (
           <div className="grid gap-3 rounded-md border border-dashed p-3">
@@ -832,21 +863,6 @@ export function ExpenseManagementClaimsPage({
             </div>
           </div>
         ) : null}
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setLines((current) => [...current, emptyDraftLine(today)])}
-          >
-            <Plus className="mr-1 h-4 w-4" />
-            Add line
-          </Button>
-          <Button type="submit" disabled={create.isPending}>
-            {create.isPending ? "Saving…" : "Save draft"}
-          </Button>
-        </div>
 
         <div className="grid gap-2 border-t pt-4 sm:grid-cols-[1fr_auto] sm:items-end">
           <div className="grid gap-2">

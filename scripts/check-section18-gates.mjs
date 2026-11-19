@@ -4,8 +4,10 @@
  * Exit 0 with a status table by default. Pass --require-go-live to fail when
  * any blocker remains (used only when explicitly requesting a go-live claim).
  */
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { verifyProductionRevision } from "./lib/production-revision.mjs";
 import { validateStagingEnvironment } from "./lib/staging-target.mjs";
 
 const root = process.cwd();
@@ -28,6 +30,29 @@ function stagingGate() {
   }
 }
 
+async function productionGate() {
+  if (!process.argv.includes("--verify-production")) {
+    return {
+      status: "UNVERIFIED",
+      detail: "Use --verify-production with E2E_PRODUCTION_URL to verify the checked-out revision.",
+    };
+  }
+
+  try {
+    const expectedCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    await verifyProductionRevision({
+      productionUrl: process.env.E2E_PRODUCTION_URL,
+      expectedCommit,
+    });
+    return { status: "PASS", detail: `The production origin reports revision ${expectedCommit}.` };
+  } catch (error) {
+    return { status: "UNVERIFIED", detail: error.message };
+  }
+}
+
 const gates = [
   {
     id: "local-chrome-gates",
@@ -44,9 +69,7 @@ const gates = [
   {
     id: "production-deploy",
     label: "Production deployment of the release revision",
-    status: "UNVERIFIED",
-    detail:
-      "The recorded Vercel alias does not identify the deployed commit. Release deployment evidence is required.",
+    ...(await productionGate()),
   },
   {
     id: "staging-e2e",

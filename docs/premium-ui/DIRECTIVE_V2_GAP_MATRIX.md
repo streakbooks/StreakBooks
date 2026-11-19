@@ -39,7 +39,7 @@
 | Requirement | Status | Evidence / notes |
 | --- | --- | --- |
 | TransactionWorkspace / RecordWorkspace / ListWorkspace | PARTIAL | Adopted on create/list surfaces in Batches 25–54; module DoD incomplete |
-| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money; residual modules TBD |
+| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money; Batch 65 expense claims spreadsheet; residual modules TBD |
 | Consistent +New / empty CTAs | PARTIAL | Batches 49–63 closed create empties; Batch 64 App Store + approval queue bridges; residual queue-only empties intentional |
 | Module finished-screen DoD (34 modules) | PARTIAL | **0/34 COMPLETE** — continue without duplicating create work |
 | Staging / live RBAC / prod migrations | BLOCKED | Batches 23–24; require separate auth |
@@ -141,4 +141,11 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | EM approvals queue empties | Bridge to my expenses / all claims |
 | HR approvals queue empties | Bridge to leave / attendance |
 | PM owner statements select empty | Generate statement when permitted |
+
+## Batch 65 (claims spreadsheet + DoD progress)
+
+| Gap | Action |
+| --- | --- |
+| Expense claim create still card-stack lines (G15 deferred) | Migrate New claim lines to EditableLineItemGrid + DEFAULT_DOCUMENT_LINE_ROWS |
+| EditableLineItemGrid residual | Claims create path closed; module DoD / staging still open |
 

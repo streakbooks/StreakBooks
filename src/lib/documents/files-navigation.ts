@@ -24,8 +24,13 @@ export function parseFilesListSearch(raw: Record<string, unknown>): FilesListSea
   const own = (key: string): unknown => {
     // Never execute user-defined accessors while decoding an untrusted route search.
     // TanStack search state and URLSearchParams-derived objects use data properties.
-    const descriptor = Object.getOwnPropertyDescriptor(raw, key);
-    return descriptor && "value" in descriptor ? descriptor.value : undefined;
+    try {
+      const descriptor = Object.getOwnPropertyDescriptor(raw, key);
+      return descriptor && "value" in descriptor ? descriptor.value : undefined;
+    } catch {
+      // A Proxy may throw from getOwnPropertyDescriptor; ignore only that field.
+      return undefined;
+    }
   };
   for (const key of ["folder", "file"] as const) {
     const id = own(key);

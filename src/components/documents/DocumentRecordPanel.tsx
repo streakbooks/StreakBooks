@@ -37,6 +37,7 @@ import {
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
 import { canPreviewAttachment } from "@/lib/purchases/bill-form-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { LoadingState } from "@/components/common/states";
 import { DocumentPostingJournals } from "@/components/documents/DocumentPostingJournals";
 import { postingJournalSourceTypes } from "@/lib/documents/posting-journal-sources";
@@ -305,7 +306,7 @@ export const DocumentRecordPanel = forwardRef<
           ))}
         </ul>
         {filesQ.isError ? (
-          <p className="text-sm text-destructive">{friendlyAuthError(filesQ.error)}</p>
+          <QueryErrorState queries={[filesQ]} title="Could not load document files" />
         ) : null}
         <p className="text-xs text-muted-foreground">
           Limit {MAX_FILE_BYTES / (1024 * 1024)} MB per file.
@@ -347,7 +348,7 @@ export const DocumentRecordPanel = forwardRef<
           {entityId && notesQ.isLoading ? (
             <LoadingState />
           ) : notesQ.isError ? (
-            <p className="text-sm text-destructive">{friendlyAuthError(notesQ.error)}</p>
+            <QueryErrorState queries={[notesQ]} title="Could not load internal notes" />
           ) : notes.length > 0 ? (
             <ul className="space-y-2 text-sm">
               {notes.map((note) => (
@@ -372,7 +373,7 @@ export const DocumentRecordPanel = forwardRef<
           ) : activityQ.isPending ? (
             <LoadingState />
           ) : activityQ.isError ? (
-            <p className="text-sm text-destructive">{friendlyAuthError(activityQ.error)}</p>
+            <QueryErrorState queries={[activityQ]} title="Could not load activity history" />
           ) : activity.length === 0 ? (
             <p className="text-sm text-muted-foreground">{activityEmptyMessage(true)}</p>
           ) : (

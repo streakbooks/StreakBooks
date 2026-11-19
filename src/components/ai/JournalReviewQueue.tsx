@@ -414,9 +414,10 @@ export function AiJournalReviewQueue({
                         ))}
                     </RecordLookupSelect>
                     {reviewersQ.isError ? (
-                      <p className="text-xs text-destructive">
-                        {friendlyAuthError(reviewersQ.error)}
-                      </p>
+                      <QueryErrorState
+                        queries={[reviewersQ]}
+                        title="Could not load eligible reviewers"
+                      />
                     ) : null}
                     <Button
                       type="button"

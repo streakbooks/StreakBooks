@@ -385,12 +385,12 @@ export function FirmOnboardingPanel({
                                         label: member.full_name || member.email || "Colleague",
                                       }))}
                                     />
-                                    {assigneesQ.isError && (
-                                      <p className="text-xs text-destructive">
-                                        Eligible staff unavailable:{" "}
-                                        {friendlyAuthError(assigneesQ.error)}
-                                      </p>
-                                    )}
+                                    {assigneesQ.isError ? (
+                                      <QueryErrorState
+                                        queries={[assigneesQ]}
+                                        title="Eligible staff unavailable"
+                                      />
+                                    ) : null}
                                   </div>
                                   <div className="space-y-1">
                                     <Label htmlFor={"onboarding-due-" + step.task_key}>

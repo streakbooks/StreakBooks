@@ -716,7 +716,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
                 ) : null}
               </p>
               {dupQ.isError ? (
-                <p className="text-sm text-destructive">{friendlyAuthError(dupQ.error)}</p>
+                <QueryErrorState queries={[dupQ]} title="Could not check import duplicates" />
               ) : null}
               {mapped.errors.length > 0 ? (
                 <Alert variant="destructive">

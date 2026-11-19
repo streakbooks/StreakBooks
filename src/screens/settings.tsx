@@ -684,15 +684,10 @@ export function SettingsForCompany({
           {!detail &&
           extendedQuery.isError &&
           ["organisation", "documents", "currencies"].includes(section) ? (
-            <Alert variant="destructive">
-              <AlertTitle>Additional organisation settings could not be loaded</AlertTitle>
-              <AlertDescription className="flex flex-wrap items-center gap-3">
-                <span>{friendlyAuthError(extendedQuery.error)}</span>
-                <Button variant="outline" size="sm" onClick={() => void extendedQuery.refetch()}>
-                  Retry
-                </Button>
-              </AlertDescription>
-            </Alert>
+            <QueryErrorState
+              queries={[extendedQuery]}
+              title="Additional organisation settings could not be loaded"
+            />
           ) : null}
           {detail ? (
             <InPlaceSettingsPanel panel={detail} insideCentre />

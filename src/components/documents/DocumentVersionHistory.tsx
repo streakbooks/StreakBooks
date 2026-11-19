@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { type AttachmentEntityType, formatFileSize } from "@/lib/documents/attachments";
 import {
@@ -144,12 +145,7 @@ export function DocumentVersionHistory({
           Loading version history…
         </p>
       ) : history.isError ? (
-        <div role="alert" className="space-y-2 text-xs text-destructive">
-          {friendlyAuthError(history.error)}
-          <Button size="sm" variant="outline" onClick={() => void history.refetch()}>
-            Retry
-          </Button>
-        </div>
+        <QueryErrorState queries={[history]} title="Could not load version history" />
       ) : history.data ? (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">

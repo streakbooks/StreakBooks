@@ -864,7 +864,10 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
               {recentPayslipsQ.isPending ? (
                 <p className="text-sm text-muted-foreground">Loading…</p>
               ) : recentPayslipsQ.isError ? (
-                <p className="text-sm text-muted-foreground">Could not load payslips.</p>
+                <QueryErrorState
+                  queries={[recentPayslipsQ]}
+                  title="Could not load recent payslips"
+                />
               ) : recentPayslips.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No payslips issued yet.</p>
               ) : (

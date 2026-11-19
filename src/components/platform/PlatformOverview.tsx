@@ -224,11 +224,12 @@ export function PlatformOverview({ allowedSections }: { allowedSections: readonl
                   Checking stored MRR…
                 </p>
               ) : reconciliation.isError ? (
-                <p className="mt-2" role="alert">
-                  {reconciliation.error instanceof Error
-                    ? reconciliation.error.message
-                    : "MRR reconciliation failed."}
-                </p>
+                <div className="mt-2">
+                  <QueryErrorState
+                    queries={[reconciliation]}
+                    title="Could not reconcile stored MRR"
+                  />
+                </div>
               ) : reconciliation.data?.message ? (
                 <p className="mt-2" role="status">
                   {reconciliation.data.message}

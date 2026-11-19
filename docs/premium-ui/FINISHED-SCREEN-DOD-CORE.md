@@ -76,6 +76,8 @@ Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails
 
 **Expense Management local evidence (Batches 65–67):** New claim create uses `TransactionWorkspace` + `EditableLineItemGrid` + `TotalsSummary` (parity with Banking Spend Money), plus spreadsheet Enter/Arrow keyboard and net/tax paste. `check:workspace` enforces claim create + spend/receive-money composition. Staging/RBAC/manual a11y still **NOT VERIFIED** — module remains **IN PROGRESS**, not COMPLETE.
 
+**Sales / Purchases / Banking allocate evidence (Batch 69):** Receipt and payment creates expose TotalsSummary allocation strips; payments use a dense allocate table; transfers show Amount/Received totals. `check:workspace` enforces those surfaces.
+
 **Purchases / Banking local evidence (Batch 68):** Spend Money, purchase orders, and purchase credit notes wire `interpretLineGridKey` + paste; CN TotalsSummary shows net/tax/total. `check:workspace` enforces those create surfaces.
 
 **Banking local evidence (Batch 67):** `check:workspace` requires Receive Money (`MoneyDocumentPanel`) and Spend Money (`NewExpense`) compose TransactionWorkspace / TotalsSummary. Staging still **NOT VERIFIED**.

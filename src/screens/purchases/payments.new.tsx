@@ -19,6 +19,7 @@ import { useCan, useCanDo } from "@/hooks/use-can";
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState } from "@/components/common/states";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -29,6 +30,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export function NewPayment() {
   const { company } = useActiveCompany();
@@ -130,6 +139,22 @@ export function NewPayment() {
     0,
   );
   const remaining = amountMinor - allocatedSum;
+
+  const autoAllocate = () => {
+    if (amountInvalid || !(amountMinor > 0)) return;
+    let left = amountMinor;
+    const next: Record<string, string> = {};
+    for (const b of openBills) {
+      if (!(left > 0)) break;
+      const outstanding = b.total_minor - b.amount_paid_minor - b.amount_credited_minor;
+      const take = Math.min(left, outstanding);
+      if (take > 0) {
+        next[b.id] = fromMinorUnits(take, currency);
+        left -= take;
+      }
+    }
+    setAlloc(next);
+  };
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -302,68 +327,107 @@ export function NewPayment() {
       }
       lines={
         contactId ? (
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <Label>Allocate to bills</Label>
-              <p className="text-xs text-muted-foreground">
-                Allocated {fromMinorUnits(allocatedSum, currency)} · Remaining{" "}
-                <span className={remaining < 0 ? "text-destructive" : ""}>
-                  {fromMinorUnits(remaining, currency)}
-                </span>
-              </p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <Label>Allocate to bills ({currency})</Label>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={autoAllocate}
+                disabled={amountInvalid || !(amountMinor > 0) || openBills.length === 0}
+              >
+                Allocate oldest first
+              </Button>
             </div>
-            {openBills.length === 0 ? (
+            {billsQ.isPending ? (
+              <LoadingState rows={2} />
+            ) : openBills.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No open {currency} bills for this supplier — payment can post fully unallocated.
               </p>
             ) : (
-              openBills.map((b) => {
-                const outstanding = b.total_minor - b.amount_paid_minor - b.amount_credited_minor;
-                const checked = alloc[b.id] !== undefined;
-                return (
-                  <div
-                    key={b.id}
-                    className="flex flex-wrap items-center gap-3 rounded-md border border-border/70 px-3 py-2 text-sm"
-                  >
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(v) => {
-                        setAlloc((prev) => {
-                          const next = { ...prev };
-                          if (!v) {
-                            delete next[b.id];
-                            return next;
-                          }
-                          const already = Object.entries(prev).reduce(
-                            (s, [id, amt]) =>
-                              id === b.id ? s : s + Number(minorOrZero(amt || "0", currency)),
-                            0,
-                          );
-                          const room = Math.max(0, amountMinor - already);
-                          next[b.id] = fromMinorUnits(Math.min(outstanding, room), currency);
-                          return next;
-                        });
-                      }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p>
-                        {b.bill_date} ·{" "}
-                        {b.supplier_invoice_number ?? b.bill_number ?? b.id.slice(0, 8)}
-                      </p>
-                      <p className="text-muted-foreground">
-                        Due {b.due_date} · Outstanding {fromMinorUnits(outstanding, currency)}
-                      </p>
-                    </div>
-                    {checked ? (
-                      <Input
-                        className="w-28"
-                        value={alloc[b.id] ?? ""}
-                        onChange={(e) => setAlloc({ ...alloc, [b.id]: e.target.value })}
-                      />
-                    ) : null}
-                  </div>
-                );
-              })
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
+                      <span className="sr-only">Select</span>
+                    </TableHead>
+                    <TableHead>Bill</TableHead>
+                    <TableHead>Due</TableHead>
+                    <TableHead className="text-right">Outstanding</TableHead>
+                    <TableHead className="w-40 text-right">Apply</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {openBills.map((b) => {
+                    const outstanding =
+                      b.total_minor - b.amount_paid_minor - b.amount_credited_minor;
+                    const checked = alloc[b.id] !== undefined;
+                    const applyMinor = checked
+                      ? Number(tryParseMinor(alloc[b.id] || "0", currency) ?? Number.NaN)
+                      : 0;
+                    const bad = checked && (Number.isNaN(applyMinor) || applyMinor > outstanding);
+                    return (
+                      <TableRow key={b.id}>
+                        <TableCell className="align-middle">
+                          <Checkbox
+                            checked={checked}
+                            aria-label={`Allocate to ${b.supplier_invoice_number ?? b.bill_number ?? "bill"}`}
+                            onCheckedChange={(v) => {
+                              setAlloc((prev) => {
+                                const next = { ...prev };
+                                if (!v) {
+                                  delete next[b.id];
+                                  return next;
+                                }
+                                const already = Object.entries(prev).reduce(
+                                  (s, [id, amt]) =>
+                                    id === b.id
+                                      ? s
+                                      : s + Number(minorOrZero(amt || "0", currency)),
+                                  0,
+                                );
+                                const room = Math.max(0, amountMinor - already);
+                                next[b.id] = fromMinorUnits(
+                                  Math.min(outstanding, room),
+                                  currency,
+                                );
+                                return next;
+                              });
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {b.supplier_invoice_number ?? b.bill_number ?? b.id.slice(0, 8)}
+                          <span className="mt-0.5 block text-xs text-muted-foreground">
+                            {b.bill_date}
+                          </span>
+                        </TableCell>
+                        <TableCell>{b.due_date}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fromMinorUnits(outstanding, currency)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {checked ? (
+                            <Input
+                              className={`text-right ${bad ? "border-destructive" : ""}`}
+                              value={alloc[b.id] ?? ""}
+                              inputMode="decimal"
+                              aria-label={`Apply to ${b.supplier_invoice_number ?? b.bill_number ?? "bill"}`}
+                              onChange={(e) =>
+                                setAlloc((prev) => ({ ...prev, [b.id]: e.target.value }))
+                              }
+                            />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             )}
             {totalOpenBills > openBills.length ? (
               <Button variant="outline" size="sm" onClick={() => setBillLimit((n) => n + 50)}>
@@ -371,6 +435,32 @@ export function NewPayment() {
               </Button>
             ) : null}
           </div>
+        ) : null
+      }
+      totals={
+        contactId ? (
+          <TotalsSummary
+            aria-label="Payment allocation totals"
+            lines={[
+              {
+                id: "amount",
+                label: "Amount",
+                value: amountInvalid ? "—" : fromMinorUnits(amountMinor, currency),
+              },
+              {
+                id: "allocated",
+                label: "Allocated",
+                value: fromMinorUnits(allocatedSum, currency),
+                emphasis: "muted",
+              },
+              {
+                id: "remaining",
+                label: "Remaining",
+                value: amountInvalid ? "—" : fromMinorUnits(remaining, currency),
+                emphasis: "total",
+              },
+            ]}
+          />
         ) : null
       }
       stickyActions={

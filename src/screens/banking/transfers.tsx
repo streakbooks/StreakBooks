@@ -27,6 +27,7 @@ import {
 } from "@/components/documents/DocumentRecordPanel";
 import { BankLookup } from "@/components/lookup";
 import { LoadingState, EmptyState } from "@/components/common/states";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
@@ -257,6 +258,39 @@ export function NewTransfer({
             <Input value={memo} maxLength={500} onChange={(e) => setMemo(e.target.value)} />
           </FormControlShell>
         </FormGrid>
+      }
+      totals={
+        <TotalsSummary
+          aria-label="Transfer totals"
+          lines={[
+            {
+              id: "amount",
+              label: `Amount (${currency})`,
+              value:
+                amountMinor !== null
+                  ? fromMinorUnits(Number(amountMinor), currency)
+                  : amount.trim()
+                    ? "—"
+                    : fromMinorUnits(0, currency),
+              emphasis: currencyMismatch ? "default" : "total",
+            },
+            ...(currencyMismatch
+              ? [
+                  {
+                    id: "received",
+                    label: `Received (${toCurrency})`,
+                    value:
+                      receivedMinor !== null
+                        ? fromMinorUnits(Number(receivedMinor), toCurrency)
+                        : received.trim()
+                          ? "—"
+                          : fromMinorUnits(0, toCurrency),
+                    emphasis: "total" as const,
+                  },
+                ]
+              : []),
+          ]}
+        />
       }
       support={
         <DocumentRecordPanel

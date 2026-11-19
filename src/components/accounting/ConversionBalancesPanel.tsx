@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getConversionOverview,
@@ -21,6 +21,11 @@ import { conversionReviewCsv } from "@/lib/accounting/conversion-review";
 import { ContactLookup } from "@/components/lookup";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
+import {
+  EditableLineItemGrid,
+  type EditableLineItemColumn,
+} from "@/components/common/EditableLineItemGrid";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { ErrorState, LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +34,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TableCell, TableRow } from "@/components/ui/table";
+
+const TB_GRID_COLUMNS: readonly EditableLineItemColumn[] = [
+  { id: "account", header: "Account", fluid: true, minWidthPx: 200 },
+  { id: "debit", header: "Debit", align: "right", widthPx: 160, minWidthPx: 120 },
+  { id: "credit", header: "Credit", align: "right", widthPx: 160, minWidthPx: 120 },
+];
+
+function docGridColumns(kind: "invoices" | "bills"): readonly EditableLineItemColumn[] {
+  return [
+    {
+      id: "contact",
+      header: kind === "invoices" ? "Customer" : "Supplier",
+      widthPx: 200,
+      minWidthPx: 160,
+      fluid: true,
+    },
+    { id: "reference", header: "Reference", widthPx: 140, minWidthPx: 100 },
+    { id: "documentDate", header: "Document date", widthPx: 140, minWidthPx: 120 },
+    { id: "dueDate", header: "Due date", widthPx: 140, minWidthPx: 120 },
+    { id: "currency", header: "Currency", widthPx: 88, minWidthPx: 72 },
+    { id: "fx", header: "Rate to base", widthPx: 110, minWidthPx: 88 },
+    { id: "amount", header: "Outstanding", align: "right", widthPx: 120, minWidthPx: 96 },
+    {
+      id: "actions",
+      header: <span className="sr-only">Actions</span>,
+      widthPx: 48,
+      minWidthPx: 40,
+      resizable: false,
+    },
+  ];
+}
+
+const spreadsheetInputClass = "h-8 rounded-none border-0 bg-transparent shadow-none";
 
 type DocRow = {
   key: number;
@@ -319,64 +358,94 @@ export function ConversionBalancesPanel({
     const patch = (key: number, p: Partial<DocRow>) =>
       setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...p } : r)));
     return (
-      <div className="space-y-2">
+      <EditableLineItemGrid
+        aria-label={kind === "invoices" ? "Opening customer invoices" : "Opening supplier bills"}
+        columns={docGridColumns(kind)}
+        onAddRow={() => addDoc(kind)}
+        addRowLabel={`Add ${kind === "invoices" ? "invoice" : "bill"}`}
+        empty={
+          rows.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground">
+              No {kind === "invoices" ? "invoices" : "bills"} yet.
+            </p>
+          ) : undefined
+        }
+      >
         {rows.map((r) => {
           const foreign = (r.currencyCode || currency).toUpperCase() !== currency.toUpperCase();
           return (
-            <div
-              key={r.key}
-              className="grid grid-cols-2 gap-2 rounded-md border p-2 md:grid-cols-8"
-            >
-              <ContactLookup
-                ariaLabel={kind === "invoices" ? "Customer" : "Supplier"}
-                contacts={contacts}
-                value={r.contactId}
-                onChange={(contactId) => patch(r.key, { contactId })}
-                companyId={companyId}
-                placeholder={kind === "invoices" ? "Customer…" : "Supplier…"}
-                allowClear
-              />
-              <Input
-                placeholder="Reference"
-                aria-label="Reference"
-                value={r.reference}
-                onChange={(e) => patch(r.key, { reference: e.target.value })}
-              />
-              <Input
-                type="date"
-                aria-label="Document date"
-                value={r.documentDate}
-                onChange={(e) => patch(r.key, { documentDate: e.target.value })}
-              />
-              <Input
-                type="date"
-                aria-label="Due date"
-                value={r.dueDate}
-                onChange={(e) => patch(r.key, { dueDate: e.target.value })}
-              />
-              <Input
-                placeholder="Currency"
-                aria-label="Currency"
-                maxLength={3}
-                value={r.currencyCode}
-                onChange={(e) => patch(r.key, { currencyCode: e.target.value.toUpperCase() })}
-              />
-              <Input
-                placeholder={foreign ? "Rate to base" : "—"}
-                aria-label="Exchange rate to base currency"
-                disabled={!foreign}
-                value={r.fxRate}
-                onChange={(e) => patch(r.key, { fxRate: e.target.value })}
-              />
-              <div className="flex gap-1">
+            <TableRow key={r.key}>
+              <TableCell className="p-0 align-middle" data-fluid="true">
+                <ContactLookup
+                  ariaLabel={kind === "invoices" ? "Customer" : "Supplier"}
+                  contacts={contacts}
+                  value={r.contactId}
+                  onChange={(contactId) => patch(r.key, { contactId })}
+                  companyId={companyId}
+                  placeholder={kind === "invoices" ? "Customer…" : "Supplier…"}
+                  allowClear
+                />
+              </TableCell>
+              <TableCell className="p-0 align-middle">
+                <Input
+                  placeholder="Reference"
+                  aria-label="Reference"
+                  value={r.reference}
+                  className={spreadsheetInputClass}
+                  onChange={(e) => patch(r.key, { reference: e.target.value })}
+                />
+              </TableCell>
+              <TableCell className="p-0 align-middle">
+                <Input
+                  type="date"
+                  aria-label="Document date"
+                  value={r.documentDate}
+                  className={spreadsheetInputClass}
+                  onChange={(e) => patch(r.key, { documentDate: e.target.value })}
+                />
+              </TableCell>
+              <TableCell className="p-0 align-middle">
+                <Input
+                  type="date"
+                  aria-label="Due date"
+                  value={r.dueDate}
+                  className={spreadsheetInputClass}
+                  onChange={(e) => patch(r.key, { dueDate: e.target.value })}
+                />
+              </TableCell>
+              <TableCell className="p-0 align-middle">
+                <Input
+                  placeholder="Currency"
+                  aria-label="Currency"
+                  maxLength={3}
+                  value={r.currencyCode}
+                  className={spreadsheetInputClass}
+                  onChange={(e) => patch(r.key, { currencyCode: e.target.value.toUpperCase() })}
+                />
+              </TableCell>
+              <TableCell className="p-0 align-middle">
+                <Input
+                  placeholder={foreign ? "Rate to base" : "—"}
+                  aria-label="Exchange rate to base currency"
+                  disabled={!foreign}
+                  value={r.fxRate}
+                  className={spreadsheetInputClass}
+                  onChange={(e) => patch(r.key, { fxRate: e.target.value })}
+                />
+              </TableCell>
+              <TableCell className="p-1 align-middle">
                 <Input
                   placeholder="Outstanding"
                   aria-label="Outstanding amount"
                   inputMode="decimal"
                   value={r.amount}
+                  className={spreadsheetInputClass}
                   onChange={(e) => patch(r.key, { amount: e.target.value })}
                 />
+              </TableCell>
+              <TableCell className="p-0 align-middle">
                 <Button
+                  type="button"
                   size="icon"
                   variant="ghost"
                   aria-label="Remove row"
@@ -384,14 +453,11 @@ export function ConversionBalancesPanel({
                 >
                   <Trash2 className="size-4" />
                 </Button>
-              </div>
-            </div>
+              </TableCell>
+            </TableRow>
           );
         })}
-        <Button size="sm" variant="outline" onClick={() => addDoc(kind)}>
-          <Plus className="size-4" /> Add {kind === "invoices" ? "invoice" : "bill"}
-        </Button>
-      </div>
+      </EditableLineItemGrid>
     );
   };
 
@@ -448,53 +514,50 @@ export function ConversionBalancesPanel({
             Receivables and payables are entered below as invoices and bills per contact, so they
             are not listed here.
           </p>
-          <Input
-            placeholder="Filter accounts"
-            aria-label="Filter accounts"
-            className="max-w-xs"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
           {setup.isPending ? <LoadingState /> : null}
-          <div className="max-h-96 overflow-auto rounded-md border">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-muted text-left">
-                <tr>
-                  <th className="p-2">Account</th>
-                  <th className="w-40 p-2">Debit</th>
-                  <th className="w-40 p-2">Credit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleAccounts.map((a) => (
-                  <tr key={a.id} className="border-t">
-                    <td className="p-2">
-                      <span className="font-mono text-xs text-muted-foreground">{a.code}</span>{" "}
-                      {a.name}
-                    </td>
-                    {(["debit", "credit"] as const).map((side) => (
-                      <td key={side} className="p-1">
-                        <Input
-                          aria-label={`${side} for ${a.code}`}
-                          inputMode="decimal"
-                          value={tbInput[a.id]?.[side] ?? ""}
-                          onChange={(e) =>
-                            setTbInput((cur) => ({
-                              ...cur,
-                              [a.id]: {
-                                debit: cur[a.id]?.debit ?? "",
-                                credit: cur[a.id]?.credit ?? "",
-                                [side]: e.target.value,
-                              },
-                            }))
-                          }
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="max-h-96 overflow-auto">
+            <EditableLineItemGrid
+              aria-label="Trial balance"
+              columns={TB_GRID_COLUMNS}
+              toolbar={
+                <Input
+                  placeholder="Filter accounts"
+                  aria-label="Filter accounts"
+                  className="max-w-xs"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                />
+              }
+            >
+              {visibleAccounts.map((a) => (
+                <TableRow key={a.id}>
+                  <TableCell className="px-2 py-1.5 align-middle text-sm" data-fluid="true">
+                    <span className="font-mono text-xs text-muted-foreground">{a.code}</span>{" "}
+                    {a.name}
+                  </TableCell>
+                  {(["debit", "credit"] as const).map((side) => (
+                    <TableCell key={side} className="p-1 align-middle">
+                      <Input
+                        aria-label={`${side} for ${a.code}`}
+                        inputMode="decimal"
+                        value={tbInput[a.id]?.[side] ?? ""}
+                        className={spreadsheetInputClass}
+                        onChange={(e) =>
+                          setTbInput((cur) => ({
+                            ...cur,
+                            [a.id]: {
+                              debit: cur[a.id]?.debit ?? "",
+                              credit: cur[a.id]?.credit ?? "",
+                              [side]: e.target.value,
+                            },
+                          }))
+                        }
+                      />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </EditableLineItemGrid>
           </div>
         </CardContent>
       </Card>
@@ -518,18 +581,24 @@ export function ConversionBalancesPanel({
           <CardTitle className="text-base">5. Check and post</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <div className="grid max-w-md grid-cols-2 gap-1">
-            <span>Total debits</span>
-            <span className="text-right tabular-nums">{f.money(s.debits)}</span>
-            <span>Total credits</span>
-            <span className="text-right tabular-nums">{f.money(s.credits)}</span>
-            <span className="font-medium">Difference</span>
-            <span
-              className={`text-right font-medium tabular-nums ${s.balanced ? "text-green-600" : "text-destructive"}`}
-            >
-              {f.money(s.difference)}
-            </span>
-          </div>
+          <TotalsSummary
+            aria-label="Conversion review totals"
+            className="max-w-md"
+            lines={[
+              { id: "debits", label: "Total debits", value: f.money(s.debits) },
+              { id: "credits", label: "Total credits", value: f.money(s.credits) },
+              {
+                id: "difference",
+                label: "Difference",
+                value: (
+                  <span className={s.balanced ? "text-green-600" : "text-destructive"}>
+                    {f.money(s.difference)}
+                  </span>
+                ),
+                emphasis: "total",
+              },
+            ]}
+          />
           {!nothingEntered && !s.balanced ? (
             <div className="space-y-1">
               <p className="text-destructive">

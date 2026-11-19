@@ -39,7 +39,7 @@
 | Requirement | Status | Evidence / notes |
 | --- | --- | --- |
 | TransactionWorkspace / RecordWorkspace / ListWorkspace | PARTIAL | Adopted on create/list surfaces in Batches 25–54; module DoD incomplete |
-| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money/claims/requisitions/SO/bills + bank coding via shared ELG; Batch 75 BankCodingPanel; residual module DoD / staging TBD |
+| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money/claims/requisitions/SO/bills/bank coding + conversion balances via shared ELG; Batch 76 ConversionBalancesPanel; residual module DoD / staging TBD |
 | Consistent +New / empty CTAs | PARTIAL | Batches 49–63 closed create empties; Batch 64 App Store + approval queue bridges; residual queue-only empties intentional |
 | Module finished-screen DoD (34 modules) | PARTIAL | **0/34 COMPLETE** — continue without duplicating create work |
 | Staging / live RBAC / prod migrations | BLOCKED | Batches 23–24; require separate auth |
@@ -240,4 +240,13 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Bill / invoice record totals | Read-only TotalsSummary (create/edit paths unchanged) |
 | MoneyDocumentPanel load failure | QueryErrorState when required options queries fail |
 | Workspace locks | check:workspace rows for BankCodingPanel, bills/invoice TotalsSummary, MoneyDocumentPanel QueryErrorState |
+
+## Batch 76 (ConversionBalancesPanel → EditableLineItemGrid)
+
+| Gap | Action |
+| --- | --- |
+| Conversion trial balance table | EditableLineItemGrid (account + debit/credit) |
+| Opening AR/AP document cards | EditableLineItemGrid for invoices/bills |
+| Review totals strip | TotalsSummary (debits/credits/difference) |
+| Workspace lock | check:workspace requires ELG + TotalsSummary on ConversionBalancesPanel |
 

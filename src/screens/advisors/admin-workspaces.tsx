@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -232,6 +233,11 @@ export function AdvisorsAdminWorkspacesPage() {
               <EmptyState
                 title="No delivery workspaces"
                 description="Activate an engagement, then open a bookkeeping or coaching workspace."
+                action={
+                  <Button asChild size="sm">
+                    <Link to="/advisors-admin/engagements">Open engagements</Link>
+                  </Button>
+                }
               />
             ) : (
               listQ.data.map((workspace) => (

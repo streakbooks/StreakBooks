@@ -57,7 +57,8 @@
 | Empty CTA wave 7 Batch 64 | Done | [PR #328](https://github.com/linkbusinessadvisory/LinkBooks/pull/328) → `10876d52` |
 | Claims spreadsheet Batch 65 | Done | [PR #332](https://github.com/linkbusinessadvisory/LinkBooks/pull/332) → `e3a691de` |
 | Claims totals + workspace Batch 66 | In progress | TotalsSummary on claim create; check:workspace spend/claims |
-| Claim keyboard + receive-money Batch 67 | In progress | Keyboard/paste on claims; receive-money check:workspace |
+| Claim keyboard + receive-money Batch 67 | Superseded by Batch 68 | Keyboard/paste on claims; receive-money check:workspace |
+| Spend/PO/CN keyboard Batch 68 | In progress | Keyboard/paste on spend money, PO, purchase CN; workspace gates |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

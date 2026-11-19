@@ -945,38 +945,38 @@
 /* Optional premium presets; Classic intentionally inherits the original LinkBooks theme. */
 /* sapphire — coherent light/dark surface, action and navigator palette. */
 :root[data-linkbooks-palette="sapphire"] {
-  --background: #f4f8ff;
-  --primary: #3b6de0;
+  --background: #faf8f5;
+  --primary: #563d57;
   --card: #ffffff;
-  --muted: #edf3fc;
-  --border: #dce5f5;
+  --muted: #f4f0ec;
+  --border: #e6dfd8;
   --sidebar: #ffffff;
-  --sidebar-top: #fbfdff;
-  --sidebar-bottom: #f4f8ff;
-  --sidebar-active: #eef4ff;
-  --sidebar-active-strong: #3b6de0;
-  --sidebar-ring: #3b6de0;
+  --sidebar-top: #ffffff;
+  --sidebar-bottom: #faf8f5;
+  --sidebar-active: #f1e9ee;
+  --sidebar-active-strong: #563d57;
+  --sidebar-ring: #563d57;
   --primary-foreground: #ffffff;
   --foreground: #1f2a37;
   --card-foreground: #1f2a37;
   --popover: #ffffff;
   --popover-foreground: #1f2a37;
-  --secondary: #fbfdff;
+  --secondary: #ffffff;
   --secondary-foreground: #1f2a37;
-  --accent: #eef4ff;
+  --accent: #f1e9ee;
   --accent-foreground: #1f2a37;
   --muted-foreground: #5b6b7f;
-  --input: #dce5f5;
-  --ring: #3b6de0;
+  --input: #e6dfd8;
+  --ring: #563d57;
   --sidebar-foreground: #5b6b7f;
-  --sidebar-primary: #3b6de0;
+  --sidebar-primary: #563d57;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef4ff;
+  --sidebar-accent: #f1e9ee;
   --sidebar-accent-foreground: #1f2a37;
   --sidebar-border: #e6edf5;
   --sidebar-active-foreground: #1f2a37;
-  --sidebar-active-border: #d6e4ff;
-  --sidebar-active-indicator: #3b6de0;
+  --sidebar-active-border: #ddcbd5;
+  --sidebar-active-indicator: #563d57;
 }
 :root.dark[data-linkbooks-palette="sapphire"] {
   --background: #111a2c;

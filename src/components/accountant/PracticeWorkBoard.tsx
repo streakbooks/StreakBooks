@@ -10,7 +10,8 @@ import {
   listPracticeAssignees,
 } from "@/lib/accountant/practice.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import {
   PracticeWorkBoardView,
   type TaskInput,
@@ -56,11 +57,7 @@ export function PracticeWorkBoard({ companyId, firmId }: { companyId?: string; f
   if (workspace.isPending) return <LoadingState />;
   if (workspace.isError)
     return (
-      <ErrorState
-        onRetry={() => void workspace.refetch()}
-        title="Could not load practice work"
-        description={friendlyAuthError(workspace.error)}
-      />
+      <QueryErrorState queries={[workspace]} title="Could not load practice work" />
     );
   return (
     <PracticeWorkBoardView

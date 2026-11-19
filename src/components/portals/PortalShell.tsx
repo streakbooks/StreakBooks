@@ -3,8 +3,7 @@ import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { ErrorState } from "@/components/common/states";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { cn } from "@/lib/utils";
 import { usePortal } from "@/components/portals/use-portal";
 
@@ -45,11 +44,7 @@ export function PortalShell() {
   if (portal.isError) {
     return (
       <div className="mx-auto flex min-h-screen max-w-lg items-center px-4">
-        <ErrorState
-          title="The portal could not be opened"
-          description={friendlyAuthError(portal.error)}
-          onRetry={() => portal.refetch()}
-        />
+        <QueryErrorState queries={[portal]} title="The portal could not be opened" />
       </div>
     );
   }

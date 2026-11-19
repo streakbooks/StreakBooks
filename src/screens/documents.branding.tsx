@@ -14,7 +14,8 @@ import type { DocumentBranding, PrintDocument } from "@/lib/documents/types";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { DocumentThemes } from "@/components/documents/DocumentThemes";
 import { DocumentSheet } from "@/components/documents/DocumentSheet";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -173,14 +174,7 @@ export function BrandingWorkspace({
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (q.isPending) return <LoadingState />;
-  if (q.isError)
-    return (
-      <ErrorState
-        title="Could not load branding"
-        description={friendlyAuthError(q.error)}
-        onRetry={() => q.refetch()}
-      />
-    );
+  if (q.isError) return <QueryErrorState queries={[q]} title="Could not load branding" />;
 
   const brandingTitle =
     from === "purchases" ? "Purchase document themes & branding" : "Invoice themes & branding";

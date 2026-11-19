@@ -19,7 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { firmRequestVisualStatus } from "@/lib/firm/request-visual-status";
 
@@ -62,11 +63,7 @@ function RequestCompletion({
   if (files.isPending) return <LoadingState rows={1} />;
   if (files.isError)
     return (
-      <ErrorState
-        onRetry={() => void files.refetch()}
-        title="Could not load eligible documents"
-        description={friendlyAuthError(files.error)}
-      />
+      <QueryErrorState queries={[files]} title="Could not load eligible documents" />
     );
   return (
     <div className="mt-3 space-y-2 rounded-md border bg-muted/20 p-3">
@@ -216,11 +213,7 @@ export function FirmRequestsPanel({
               {recipientsQ.isPending ? (
                 <LoadingState rows={1} />
               ) : recipientsQ.isError ? (
-                <ErrorState
-                  onRetry={() => void recipientsQ.refetch()}
-                  title="Could not load authorised recipients"
-                  description={friendlyAuthError(recipientsQ.error)}
-                />
+                <QueryErrorState queries={[recipientsQ]} title="Could not load authorised recipients" />
               ) : recipients.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No other eligible active company staff. Invite an authorised company user through
@@ -289,11 +282,7 @@ export function FirmRequestsPanel({
           {requestsQ.isPending ? (
             <LoadingState />
           ) : requestsQ.isError ? (
-            <ErrorState
-              onRetry={() => void requestsQ.refetch()}
-              title="Could not load document requests"
-              description={friendlyAuthError(requestsQ.error)}
-            />
+            <QueryErrorState queries={[requestsQ]} title="Could not load document requests" />
           ) : (requestsQ.data ?? []).length === 0 ? (
             <EmptyState
               title="No tracked requests"

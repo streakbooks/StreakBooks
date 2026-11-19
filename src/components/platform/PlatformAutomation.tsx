@@ -14,7 +14,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { OpsField, EnumField, ErrorState } from "./PlatformOperationForms";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { OpsField, EnumField } from "./PlatformOperationForms";
 import { AutomationAction, RuleEditor } from "./PlatformAutomationForms";
 const label: Record<AutomationModule, string> = {
   jobs: "Background jobs",
@@ -75,8 +76,9 @@ export function PlatformAutomation({
     refetchInterval: 15000,
   });
   if (context.isPending) return <p role="status">Verifying automation permissions…</p>;
-  if (context.isError)
-    return <ErrorState error={context.error} retry={() => void context.refetch()} />;
+  if (context.isError) {
+    return <QueryErrorState queries={[context]} title="Could not load automation access" />;
+  }
   const worker = context.data!.worker;
   return (
     <div className="space-y-6">
@@ -167,7 +169,7 @@ export function PlatformAutomation({
           {list.isPending ? (
             <p role="status">Loading {label[module].toLowerCase()}…</p>
           ) : list.isError ? (
-            <ErrorState error={list.error} retry={() => void list.refetch()} />
+            <QueryErrorState queries={[list]} title={`Could not load ${label[module]}`} />
           ) : (
             <>
               <div className="space-y-3">
@@ -454,7 +456,7 @@ function JobRuns({ id, onClose }: { id: string; onClose: () => void }) {
         {query.isPending ? (
           <p role="status">Loading attempts…</p>
         ) : query.isError ? (
-          <ErrorState error={query.error} retry={() => void query.refetch()} />
+          <QueryErrorState queries={[query]} title="Could not load automation details" />
         ) : (
           <>
             <div className="space-y-3">

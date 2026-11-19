@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DocumentSheet } from "@/components/documents/DocumentSheet";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,7 +64,7 @@ export function PortalHome() {
   if (query.isPending) return <LoadingState />;
   if (query.isError)
     return (
-      <ErrorState description={friendlyAuthError(query.error)} onRetry={() => query.refetch()} />
+      <QueryErrorState queries={[query]} />
     );
   const home = query.data;
   if (home["role"] === "supplier") {
@@ -144,7 +145,7 @@ export function PortalInvoices() {
       </div>
       {query.isPending ? <LoadingState /> : null}
       {query.isError ? (
-        <ErrorState description={friendlyAuthError(query.error)} onRetry={() => query.refetch()} />
+        <QueryErrorState queries={[query]} />
       ) : null}
       <ul className="divide-y divide-border rounded-md border border-border">
         {rows.map((row) => (
@@ -239,7 +240,7 @@ export function PortalInvoiceDetail({ invoiceId }: { invoiceId: string }) {
   if (query.isPending) return <LoadingState />;
   if (query.isError)
     return (
-      <ErrorState description={friendlyAuthError(query.error)} onRetry={() => query.refetch()} />
+      <QueryErrorState queries={[query]} />
     );
   const data = query.data;
   const invoice = (data["invoice"] as Row) ?? {};
@@ -389,7 +390,7 @@ export function PortalCredits() {
   if (query.isPending) return <LoadingState />;
   if (query.isError)
     return (
-      <ErrorState description={friendlyAuthError(query.error)} onRetry={() => query.refetch()} />
+      <QueryErrorState queries={[query]} />
     );
   return (
     <ul className="divide-y divide-border rounded-md border border-border">
@@ -448,7 +449,7 @@ export function PortalStatement() {
       </div>
       {query.isPending ? <LoadingState /> : null}
       {query.isError ? (
-        <ErrorState description={friendlyAuthError(query.error)} onRetry={() => query.refetch()} />
+        <QueryErrorState queries={[query]} />
       ) : null}
       {(query.data ?? []).map((section) => (
         <Card key={String(section["currency"])}>
@@ -508,7 +509,7 @@ export function PortalPayments() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Payments and notices</h2>
       {query.isError ? (
-        <ErrorState description={friendlyAuthError(query.error)} onRetry={() => query.refetch()} />
+        <QueryErrorState queries={[query]} />
       ) : null}
       <ul className="divide-y divide-border rounded-md border border-border">
         {(query.data ?? []).map((row) => (
@@ -601,7 +602,7 @@ export function PortalDocuments() {
         />
       </div>
       {query.isError ? (
-        <ErrorState description={friendlyAuthError(query.error)} onRetry={() => query.refetch()} />
+        <QueryErrorState queries={[query]} />
       ) : null}
       <ul className="divide-y divide-border rounded-md border border-border">
         {(query.data ?? []).map((file) => (
@@ -694,7 +695,7 @@ export function PortalMessages({ conversationId }: { conversationId?: string }) 
         ))}
       </ul>
       {query.isError ? (
-        <ErrorState description={friendlyAuthError(query.error)} onRetry={() => query.refetch()} />
+        <QueryErrorState queries={[query]} />
       ) : null}
       <form
         className="space-y-2"

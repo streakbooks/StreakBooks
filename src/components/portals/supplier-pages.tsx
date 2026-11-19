@@ -4,7 +4,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -154,12 +155,7 @@ export function PortalBills() {
         </CardContent>
       </Card>
       <div className="space-y-3">
-        {query.isError ? (
-          <ErrorState
-            description={friendlyAuthError(query.error)}
-            onRetry={() => query.refetch()}
-          />
-        ) : null}
+        {query.isError ? <QueryErrorState queries={[query]} /> : null}
         <h2 className="font-semibold">Your submissions</h2>
         <ul className="divide-y divide-border rounded-md border border-border text-sm">
           {submissions.map((row) => (

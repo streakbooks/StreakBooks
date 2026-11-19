@@ -19,7 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 
 export function FirmInvitationsPanel({
   firmId,
@@ -147,11 +148,7 @@ export function FirmInvitationsPanel({
       {q.isPending ? (
         <LoadingState rows={3} />
       ) : q.isError ? (
-        <ErrorState
-          onRetry={() => void q.refetch()}
-          title="Could not load invitations"
-          description={friendlyAuthError(q.error)}
-        />
+        <QueryErrorState queries={[q]} title="Could not load invitations" />
       ) : !q.data?.length ? (
         <EmptyState
           title="No invitations yet"

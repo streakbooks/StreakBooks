@@ -15,7 +15,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { OpsField, EnumField, ErrorState, OpsEditor } from "./PlatformOperationForms";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { OpsField, EnumField, OpsEditor } from "./PlatformOperationForms";
 import { OpsDetails } from "./PlatformOperationDetails";
 const labels: Record<OpsModule, string> = {
   cases: "Service cases",
@@ -81,8 +82,9 @@ export function PlatformOperations({
     retry: false,
   });
   if (context.isPending) return <p role="status">Verifying operations access…</p>;
-  if (context.isError)
-    return <ErrorState error={context.error} retry={() => void context.refetch()} />;
+  if (context.isError) {
+    return <QueryErrorState queries={[context]} title="Could not load operations access" />;
+  }
   return (
     <div className="space-y-6">
       <div>
@@ -170,7 +172,7 @@ export function PlatformOperations({
           {query.isPending ? (
             <p role="status">Loading {labels[module].toLowerCase()}…</p>
           ) : query.isError ? (
-            <ErrorState error={query.error} retry={() => void query.refetch()} />
+            <QueryErrorState queries={[query]} title={`Could not load ${labels[module]}`} />
           ) : (
             <>
               <div className="overflow-x-auto rounded-lg border bg-card">

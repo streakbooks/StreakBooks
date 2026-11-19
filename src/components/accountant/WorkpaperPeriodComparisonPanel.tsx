@@ -13,11 +13,11 @@ import {
 } from "@/lib/accountant/workpapers";
 import { useFormat } from "@/hooks/use-format";
 import { toCsv } from "@/lib/sales/csv";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import {
   Table,
   TableBody,
@@ -162,10 +162,9 @@ export function WorkpaperPeriodComparisonPanel({
       ) : null}
       {busy ? <LoadingState /> : null}
       {failed ? (
-        <ErrorState
+        <QueryErrorState
+          queries={[previousLedger, previousPapers]}
           title="Prior-period comparison unavailable"
-          description={friendlyAuthError(previousLedger.error ?? previousPapers.error)}
-          onRetry={refresh}
         />
       ) : null}
       {valid && !busy && !failed ? (

@@ -8,8 +8,8 @@ import {
   deleteDocumentTheme,
 } from "@/lib/documents/themes/themes.functions";
 import type { DocumentBranding } from "@/lib/documents/types";
-import { ErrorState, LoadingState } from "@/components/common/states";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { DocumentThemeEditor } from "./DocumentThemeEditor";
 export function DocumentThemes({
   companyId,
@@ -39,14 +39,7 @@ export function DocumentThemes({
     });
   };
   if (q.isPending) return <LoadingState />;
-  if (q.isError)
-    return (
-      <ErrorState
-        title="Could not load themes"
-        description={friendlyAuthError(q.error)}
-        onRetry={() => q.refetch()}
-      />
-    );
+  if (q.isError) return <QueryErrorState queries={[q]} title="Could not load themes" />;
   return (
     <DocumentThemeEditor
       themes={q.data.themes}

@@ -25,6 +25,7 @@ import {
   type ProductPriceList,
 } from "@/lib/products/catalogue-masterdata.functions";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -95,12 +96,7 @@ export function CategoriesWorkspace({ companyId }: WorkspaceProps) {
           </p>
           {categoriesQ.isPending ? <p>Loading categories…</p> : null}
           {categoriesQ.isError ? (
-            <div role="alert">
-              <p className="text-sm text-destructive">{friendlyAuthError(categoriesQ.error)}</p>
-              <Button size="sm" variant="outline" onClick={() => categoriesQ.refetch()}>
-                Retry
-              </Button>
-            </div>
+            <QueryErrorState queries={[categoriesQ]} title="Could not load product categories" />
           ) : null}
           {categoriesQ.data?.length === 0 ? (
             <p className="rounded-md border p-3 text-sm">
@@ -308,12 +304,7 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
           <CardContent className="space-y-2">
             {listsQ.isPending ? <p>Loading price lists…</p> : null}
             {listsQ.isError ? (
-              <div role="alert">
-                <p className="text-destructive">{friendlyAuthError(listsQ.error)}</p>
-                <Button variant="outline" size="sm" onClick={() => listsQ.refetch()}>
-                  Retry
-                </Button>
-              </div>
+              <QueryErrorState queries={[listsQ]} title="Could not load price lists" />
             ) : null}
             {listsQ.data?.length === 0 ? (
               <p className="rounded-md border p-3 text-sm">No price lists yet.</p>
@@ -455,9 +446,7 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
                   </SelectContent>
                 </RecordLookupSelect>
                 {productsQ.isError ? (
-                  <p role="alert" className="text-sm text-destructive">
-                    {friendlyAuthError(productsQ.error)}
-                  </p>
+                  <QueryErrorState queries={[productsQ]} title="Could not load products" />
                 ) : null}
               </div>
               <div className="space-y-2">
@@ -485,12 +474,7 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
             </div>
             {pricesQ.isPending ? <p>Loading overrides…</p> : null}
             {pricesQ.isError ? (
-              <div role="alert">
-                <p className="text-sm text-destructive">{friendlyAuthError(pricesQ.error)}</p>
-                <Button size="sm" variant="outline" onClick={() => pricesQ.refetch()}>
-                  Retry
-                </Button>
-              </div>
+              <QueryErrorState queries={[pricesQ]} title="Could not load price overrides" />
             ) : null}
             {pricesQ.data?.length === 0 ? (
               <p className="rounded-md border p-3 text-sm">No price overrides for this list.</p>

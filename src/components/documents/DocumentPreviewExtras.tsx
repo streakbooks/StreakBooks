@@ -4,6 +4,7 @@ import { Download, FileText, Loader2, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { listAttachments, getAttachmentDownload } from "@/lib/documents/attachments.functions";
 import { formatFileSize } from "@/lib/documents/attachments";
 import { downloadBase64 } from "@/lib/documents/upload-client";
@@ -109,9 +110,7 @@ export function DocumentPreviewExtras({
             Loading line items…
           </p>
         ) : detailQ.isError ? (
-          <p className="text-sm text-destructive" role="alert">
-            {friendlyAuthError(detailQ.error)}
-          </p>
+          <QueryErrorState queries={[detailQ]} title="Could not load document line items" />
         ) : lines.length === 0 ? (
           <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
             No line items were recorded.
@@ -155,9 +154,7 @@ export function DocumentPreviewExtras({
             Loading attachments…
           </p>
         ) : attachmentsQ.isError ? (
-          <p role="alert" className="text-sm text-destructive">
-            {friendlyAuthError(attachmentsQ.error)}
-          </p>
+          <QueryErrorState queries={[attachmentsQ]} title="Could not load attachments" />
         ) : attachments.length === 0 ? (
           <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
             No attachments linked to this document.

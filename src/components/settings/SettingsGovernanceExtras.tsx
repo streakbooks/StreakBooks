@@ -11,6 +11,7 @@ import {
 } from "@/lib/settings/workflow-settings.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { parsePaymentTermsDays } from "@/lib/settings/workflow-defaults-validation";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -311,7 +312,7 @@ export function SettingsIntegrationsPanel({ companyId }: { companyId: string }) 
         {health.isPending ? (
           <p role="status">Checking integration configuration…</p>
         ) : health.isError ? (
-          <p role="alert">{friendlyAuthError(health.error)}</p>
+          <QueryErrorState queries={[health]} title="Could not check integration health" />
         ) : (
           health.data.map((integration) => (
             <IntegrationRow

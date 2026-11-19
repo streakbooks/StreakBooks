@@ -16,6 +16,7 @@ import {
   saveManagedPriceRule,
   type ManagedPriceRule,
 } from "@/lib/products/price-list-tiers.functions";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -172,9 +173,7 @@ export function PriceListTierRules({
               </SelectContent>
             </RecordLookupSelect>
             {productsQ.isError ? (
-              <p role="alert" className="text-xs text-destructive">
-                {friendlyAuthError(productsQ.error)}
-              </p>
+              <QueryErrorState queries={[productsQ]} title="Could not load products" />
             ) : null}
           </div>
           <div className="space-y-2">
@@ -233,12 +232,7 @@ export function PriceListTierRules({
         </div>
         {rulesQ.isPending ? <p className="text-sm">Loading pricing tiers…</p> : null}
         {rulesQ.isError ? (
-          <div role="alert" className="flex flex-wrap items-center gap-2">
-            <p className="text-sm text-destructive">{friendlyAuthError(rulesQ.error)}</p>
-            <Button size="sm" variant="outline" onClick={() => rulesQ.refetch()}>
-              Retry
-            </Button>
-          </div>
+          <QueryErrorState queries={[rulesQ]} title="Could not load pricing tiers" />
         ) : null}
         {rulesQ.data?.length === 0 ? (
           <p className="rounded-md border p-3 text-sm">

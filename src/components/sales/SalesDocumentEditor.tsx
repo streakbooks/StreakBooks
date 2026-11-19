@@ -1088,19 +1088,13 @@ export function SalesDocumentEditor({
                   </p>
                 ) : null}
                 {manualPriceListId === null && customerDefaultQ.isError ? (
-                  <div role="alert" className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm text-destructive">
-                      Customer default lookup failed: {friendlyAuthError(customerDefaultQ.error)}
-                    </p>
-                    <Button size="sm" variant="outline" onClick={() => customerDefaultQ.refetch()}>
-                      Retry
-                    </Button>
-                  </div>
+                  <QueryErrorState
+                    queries={[customerDefaultQ]}
+                    title="Could not load customer default price list"
+                  />
                 ) : null}
                 {priceListsQ.isError ? (
-                  <p role="alert" className="text-sm text-destructive">
-                    Could not load price lists: {friendlyAuthError(priceListsQ.error)}
-                  </p>
+                  <QueryErrorState queries={[priceListsQ]} title="Could not load price lists" />
                 ) : null}
                 {priceListTooLarge && selectedPriceListId ? (
                   <p role="alert" className="text-sm text-destructive">
@@ -1111,14 +1105,10 @@ export function SalesDocumentEditor({
                   <p className="text-xs text-muted-foreground">Loading price-list amounts…</p>
                 ) : null}
                 {selectedPriceListId && draftPricesQ.isError ? (
-                  <div role="alert" className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm text-destructive">
-                      Price-list amounts unavailable: {friendlyAuthError(draftPricesQ.error)}
-                    </p>
-                    <Button variant="outline" size="sm" onClick={() => draftPricesQ.refetch()}>
-                      Retry
-                    </Button>
-                  </div>
+                  <QueryErrorState
+                    queries={[draftPricesQ]}
+                    title="Could not load price-list amounts"
+                  />
                 ) : null}
                 {selectedPriceListId && !selectedPriceList && !priceListsQ.isPending ? (
                   <p role="alert" className="text-sm text-destructive">

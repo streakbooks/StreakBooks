@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { BellRing, CalendarClock } from "lucide-react";
 import { listContactFollowUps } from "@/lib/contacts/contact-interactions.functions";
 import type { ContactFollowUpScope } from "@/lib/contacts/contact-interactions";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -89,9 +89,7 @@ export function ContactFollowUpsPanel({ companyId }: { companyId: string }) {
       {query.isPending ? (
         <p className="py-4 text-sm text-muted-foreground">Loading follow-up reminders…</p>
       ) : query.isError ? (
-        <p role="alert" className="py-4 text-sm text-destructive">
-          Could not load follow-ups: {friendlyAuthError(query.error)}
-        </p>
+        <QueryErrorState queries={[query]} title="Could not load follow-ups" />
       ) : tasks.length === 0 ? (
         <p className="py-4 text-sm text-muted-foreground">
           No matching tasks need a reminder in this period.

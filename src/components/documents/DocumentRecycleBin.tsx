@@ -10,6 +10,7 @@ import {
   formatFileSize,
 } from "@/lib/documents/attachments";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { canOfferPermanentPurge, validateRetentionDays } from "@/lib/documents/recycle-bin-rules";
 import { lastFilePage } from "@/lib/documents/file-workspace";
 import {
@@ -176,9 +177,7 @@ export function DocumentRecycleBin({
           <Clock3 className="size-4" /> Organisation retention policy
         </h3>
         {policy.isError ? (
-          <p role="alert" className="text-sm text-destructive">
-            {friendlyAuthError(policy.error)}
-          </p>
+          <QueryErrorState queries={[policy]} title="Could not load retention policy" />
         ) : policy.isPending ? (
           <p role="status" className="text-sm text-muted-foreground">
             Loading retention settings…
@@ -225,12 +224,7 @@ export function DocumentRecycleBin({
       </div>
 
       {trash.isError ? (
-        <div role="alert" className="space-y-2 rounded-lg border p-3 text-sm text-destructive">
-          {friendlyAuthError(trash.error)}
-          <Button size="sm" variant="outline" onClick={() => void trash.refetch()}>
-            Retry
-          </Button>
-        </div>
+        <QueryErrorState queries={[trash]} title="Could not load recycled files" />
       ) : trash.isPending ? (
         <p role="status" className="text-sm text-muted-foreground">
           Loading recycled files…
@@ -339,9 +333,7 @@ export function DocumentRecycleBin({
               Loading cleanup backlog…
             </p>
           ) : cleanup.isError ? (
-            <p role="alert" className="text-xs text-destructive">
-              {friendlyAuthError(cleanup.error)}
-            </p>
+            <QueryErrorState queries={[cleanup]} title="Could not load cleanup backlog" />
           ) : cleanup.data.total === 0 ? (
             <p className="text-xs text-muted-foreground">No pending cleanup jobs.</p>
           ) : (

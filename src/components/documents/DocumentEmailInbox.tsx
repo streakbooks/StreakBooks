@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { ATTACHMENT_ENTITIES, formatFileSize } from "@/lib/documents/attachments";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import {
   createDocumentInbox,
   getDocumentInbox,
@@ -220,9 +221,7 @@ export function DocumentEmailInbox({
             </Button>
           </div>
           {emails.isError ? (
-            <p role="alert" className="rounded-lg border p-3 text-sm text-destructive">
-              {friendlyAuthError(emails.error)}
-            </p>
+            <QueryErrorState queries={[emails]} title="Could not load document email inbox" />
           ) : emails.isPending ? (
             <p role="status" className="text-sm text-muted-foreground">
               Checking incoming email…
@@ -302,9 +301,7 @@ export function DocumentEmailInbox({
                   Loading attachments…
                 </p>
               ) : attachments.isError ? (
-                <p role="alert" className="text-sm text-destructive">
-                  {friendlyAuthError(attachments.error)}
-                </p>
+                <QueryErrorState queries={[attachments]} title="Could not load email attachments" />
               ) : attachments.data.rows.length ? (
                 attachments.data.rows.map((file) => (
                   <div

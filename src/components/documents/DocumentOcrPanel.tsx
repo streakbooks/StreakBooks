@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { FileScan, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   checkDocumentOcr,
@@ -100,9 +101,7 @@ export function DocumentOcrPanel({
           Checking OCR configuration…
         </p>
       ) : available.isError ? (
-        <p role="alert" className="text-sm text-destructive">
-          {friendlyAuthError(available.error)}
-        </p>
+        <QueryErrorState queries={[available]} title="Could not check OCR configuration" />
       ) : !available.data?.configured ? (
         <p role="status" className="text-sm text-muted-foreground">
           OCR is not configured. Administrator setup needed:{" "}

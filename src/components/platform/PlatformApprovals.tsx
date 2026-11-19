@@ -9,6 +9,7 @@ import {
 } from "@/lib/platform/platform.functions";
 import { FEATURE_REGISTRY } from "@/lib/platform/feature-registry";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { platformDate } from "@/lib/platform/support";
@@ -193,7 +194,7 @@ export function PlatformApprovals({
           </form>
           {submitGrant.isError ? (
             <p role="alert" className="mt-3 text-sm text-destructive">
-              {submitGrant.error.message}
+              {friendlyAuthError(submitGrant.error)}
             </p>
           ) : null}
         </section>
@@ -281,7 +282,7 @@ export function PlatformApprovals({
         ) : null}
         {submitDecision.isError ? (
           <p role="alert" className="mt-3 text-sm text-destructive">
-            {submitDecision.error.message}
+            {friendlyAuthError(submitDecision.error)}
           </p>
         ) : null}
       </section>

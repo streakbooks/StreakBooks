@@ -152,12 +152,7 @@ function ReportPage() {
   }
 
   if (companyBasis.isError)
-    return (
-      <Alert>
-        <AlertTitle>Could not load accounting preferences</AlertTitle>
-        <AlertDescription>{companyBasis.error.message}</AlertDescription>
-      </Alert>
-    );
+    return <QueryErrorState queries={[companyBasis]} title="Could not load accounting preferences" />;
 
   const effectiveSearch =
     needsDefault && reportDefaults.data

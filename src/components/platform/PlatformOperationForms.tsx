@@ -11,6 +11,7 @@ import {
 } from "@/lib/platform/operations";
 import type { OpsCommand, OpsModule, OpsRecord } from "@/lib/platform/operations";
 import { viewerTimeZone } from "@/lib/platform/console-time";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,7 +71,7 @@ export function EnumField({
 export function ErrorState({ error, retry }: { error: Error; retry: () => void }) {
   return (
     <div role="alert" className="space-y-3 rounded-md border border-destructive/40 p-4">
-      <p>{error.message}</p>
+      <p>{friendlyAuthError(error)}</p>
       <Button variant="outline" onClick={retry}>
         Retry
       </Button>
@@ -126,7 +127,7 @@ export function OpsAction({
       submitting.current = true;
       await mutation.mutateAsync(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "The operation could not be completed");
+      setError(friendlyAuthError(err));
     } finally {
       submitting.current = false;
     }

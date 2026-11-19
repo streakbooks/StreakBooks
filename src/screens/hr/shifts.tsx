@@ -174,6 +174,7 @@ export function HrShiftsPage() {
             <Button
               type="button"
               variant="outline"
+              disabled={!shiftsQ.isSuccess || activeShifts.length === 0}
               onClick={() => {
                 setEmployeeId("");
                 setShiftTemplateId(activeShifts[0]?.id ?? "");
@@ -416,18 +417,22 @@ export function HrShiftsPage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Shift template</Label>
-              <RecordLookupSelect value={shiftTemplateId} onValueChange={setShiftTemplateId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select shift" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeShifts.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.code} — {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {shiftsQ.isError && shiftsQ.data === undefined ? (
+                <QueryErrorState queries={[shiftsQ]} title="Could not load shifts" />
+              ) : (
+                <RecordLookupSelect value={shiftTemplateId} onValueChange={setShiftTemplateId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select shift" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeShifts.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.code} — {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
@@ -454,7 +459,14 @@ export function HrShiftsPage() {
             </Button>
             <Button
               type="button"
-              disabled={!employeeId || !shiftTemplateId || !effectiveFrom || saveAssignM.isPending}
+              disabled={
+                !employeeId ||
+                !shiftTemplateId ||
+                !effectiveFrom ||
+                saveAssignM.isPending ||
+                !shiftsQ.isSuccess ||
+                !employeesQ.isSuccess
+              }
               onClick={() => saveAssignM.mutate()}
             >
               Save

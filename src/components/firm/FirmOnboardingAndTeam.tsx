@@ -368,29 +368,30 @@ export function FirmOnboardingPanel({
                                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                   <div className="space-y-1">
                                     <Label>Assigned staff</Label>
-                                    <LookupSelect
-                                      ariaLabel={`Assign ${step.title}`}
-                                      allowClear
-                                      value={plan.assignee_id ?? ""}
-                                      onChange={(value) =>
-                                        changePlan(step.task_key, plan, {
-                                          assignee_id: value || null,
-                                        })
-                                      }
-                                      searchPlaceholder="Search eligible staff"
-                                      disabled={assigneesQ.isPending || assigneesQ.isError}
-                                      options={(assigneesQ.data ?? []).map((member) => ({
-                                        id: member.user_id,
-                                        name: member.full_name || member.email || "Colleague",
-                                        label: member.full_name || member.email || "Colleague",
-                                      }))}
-                                    />
                                     {assigneesQ.isError ? (
                                       <QueryErrorState
                                         queries={[assigneesQ]}
                                         title="Eligible staff unavailable"
                                       />
-                                    ) : null}
+                                    ) : (
+                                      <LookupSelect
+                                        ariaLabel={`Assign ${step.title}`}
+                                        allowClear
+                                        value={plan.assignee_id ?? ""}
+                                        onChange={(value) =>
+                                          changePlan(step.task_key, plan, {
+                                            assignee_id: value || null,
+                                          })
+                                        }
+                                        searchPlaceholder="Search eligible staff"
+                                        disabled={assigneesQ.isPending}
+                                        options={(assigneesQ.data ?? []).map((member) => ({
+                                          id: member.user_id,
+                                          name: member.full_name || member.email || "Colleague",
+                                          label: member.full_name || member.email || "Colleague",
+                                        }))}
+                                      />
+                                    )}
                                   </div>
                                   <div className="space-y-1">
                                     <Label htmlFor={"onboarding-due-" + step.task_key}>

@@ -75,91 +75,106 @@ export function ApiKeysAdmin({ isOwner }: { isOwner: boolean }) {
       </header>
       {query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load billing API keys" />
-      ) : null}
-      <ul className="space-y-1 text-sm">
-        {(query.data ?? []).map((key) => (
-          <li key={key.id} className="flex flex-wrap items-center gap-2">
-            <Badge variant={key.retiredAt ? "secondary" : "success"}>
-              {key.retiredAt ? "retired" : "active"}
-            </Badge>
-            <span className="font-medium">{key.label}</span>
-            <span className="text-muted-foreground">
-              {key.scopes.length ? key.scopes.join(", ") : "no scopes"}
-              {key.lastUsedAt ? ` · last used ${new Date(key.lastUsedAt).toLocaleString()}` : ""}
-            </span>
-          </li>
-        ))}
-      </ul>
-      {shown ? (
-        <div className="space-y-1 rounded-md border border-amber-500 p-3 text-sm">
-          <p className="font-medium">Copy this key now. It will not be shown again.</p>
-          <code className="block break-all">{shown}</code>
-          <Button size="sm" variant="outline" onClick={() => setShown(null)}>
-            I have stored it
-          </Button>
-        </div>
-      ) : null}
-      {isOwner ? (
-        <div className="grid gap-3 sm:grid-cols-4">
-          <label className="text-sm">
-            Label
-            <Input className="mt-1" value={label} onChange={(e) => setLabel(e.target.value)} />
-          </label>
-          <div className="text-sm">
-            Replace key (optional)
-            <LookupSelect
-              options={active.map((key) => ({ id: key.id, label: key.label }))}
-              value={replaceId}
-              onChange={setReplaceId}
-              ariaLabel="Key to replace"
-            />
-          </div>
-          <label className="text-sm">
-            Reason
-            <Input className="mt-1" value={reason} onChange={(e) => setReason(e.target.value)} />
-          </label>
-          <div className="flex items-end">
-            <Button
-              size="sm"
-              disabled={!label.trim() || reason.trim().length < 3 || issueM.isPending}
-              onClick={() => issueM.mutate()}
-            >
-              {replaceId ? "Rotate key" : "Issue key"}
-            </Button>
-          </div>
-          <div className="text-sm">
-            Key
-            <LookupSelect
-              options={active.map((key) => ({ id: key.id, label: key.label }))}
-              value={scopeKey}
-              onChange={(id) => {
-                setScopeKey(id);
-                setScopes(active.find((key) => key.id === id)?.scopes ?? []);
-              }}
-              ariaLabel="Key scopes"
-            />
-          </div>
-          <div className="text-sm sm:col-span-2">
-            Scopes
-            <MultiLookupSelect
-              options={SCOPE_OPTIONS}
-              values={scopes}
-              onValuesChange={setScopes}
-              ariaLabel="Scopes"
-            />
-          </div>
-          <div className="flex items-end">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!scopeKey || reason.trim().length < 3 || scopeM.isPending}
-              onClick={() => scopeM.mutate()}
-            >
-              Save scopes
-            </Button>
-          </div>
-        </div>
-      ) : null}
+      ) : (
+        <>
+          <ul className="space-y-1 text-sm">
+            {(query.data ?? []).map((key) => (
+              <li key={key.id} className="flex flex-wrap items-center gap-2">
+                <Badge variant={key.retiredAt ? "secondary" : "success"}>
+                  {key.retiredAt ? "retired" : "active"}
+                </Badge>
+                <span className="font-medium">{key.label}</span>
+                <span className="text-muted-foreground">
+                  {key.scopes.length ? key.scopes.join(", ") : "no scopes"}
+                  {key.lastUsedAt
+                    ? ` · last used ${new Date(key.lastUsedAt).toLocaleString()}`
+                    : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {shown ? (
+            <div className="space-y-1 rounded-md border border-amber-500 p-3 text-sm">
+              <p className="font-medium">Copy this key now. It will not be shown again.</p>
+              <code className="block break-all">{shown}</code>
+              <Button size="sm" variant="outline" onClick={() => setShown(null)}>
+                I have stored it
+              </Button>
+            </div>
+          ) : null}
+          {isOwner ? (
+            <div className="grid gap-3 sm:grid-cols-4">
+              <label className="text-sm">
+                Label
+                <Input className="mt-1" value={label} onChange={(e) => setLabel(e.target.value)} />
+              </label>
+              <div className="text-sm">
+                Replace key (optional)
+                <LookupSelect
+                  options={active.map((key) => ({ id: key.id, label: key.label }))}
+                  value={replaceId}
+                  onChange={setReplaceId}
+                  ariaLabel="Key to replace"
+                />
+              </div>
+              <label className="text-sm">
+                Reason
+                <Input className="mt-1" value={reason} onChange={(e) => setReason(e.target.value)} />
+              </label>
+              <div className="flex items-end">
+                <Button
+                  size="sm"
+                  disabled={
+                    !label.trim() ||
+                    reason.trim().length < 3 ||
+                    issueM.isPending ||
+                    !query.isSuccess
+                  }
+                  onClick={() => issueM.mutate()}
+                >
+                  {replaceId ? "Rotate key" : "Issue key"}
+                </Button>
+              </div>
+              <div className="text-sm">
+                Key
+                <LookupSelect
+                  options={active.map((key) => ({ id: key.id, label: key.label }))}
+                  value={scopeKey}
+                  onChange={(id) => {
+                    setScopeKey(id);
+                    setScopes(active.find((key) => key.id === id)?.scopes ?? []);
+                  }}
+                  ariaLabel="Key scopes"
+                />
+              </div>
+              <div className="text-sm sm:col-span-2">
+                Scopes
+                <MultiLookupSelect
+                  options={SCOPE_OPTIONS}
+                  values={scopes}
+                  onValuesChange={setScopes}
+                  ariaLabel="Scopes"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={
+                    !scopeKey ||
+                    reason.trim().length < 3 ||
+                    scopeM.isPending ||
+                    !query.isSuccess
+                  }
+                  onClick={() => scopeM.mutate()}
+                >
+                  Save scopes
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </>
+      )}
     </section>
   );
 }

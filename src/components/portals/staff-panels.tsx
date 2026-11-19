@@ -518,50 +518,51 @@ export function PortalInbox({ companyId }: { companyId: string }) {
         </p>
         {banks.isError ? (
           <QueryErrorState queries={[banks]} title="Could not load bank accounts" />
-        ) : null}
-        <ul className="space-y-3">
-          {(banks.data ?? []).map((row) => (
-            <li key={String(row["id"])} className="rounded-md border border-border p-3 text-sm">
-              <p className="font-medium">{String(row["contact_name"])}</p>
-              <p>
-                {String(row["account_name"])} · {String(row["bank_name"])} ·{" "}
-                {String(row["account_number"])} · {String(row["routing_code"])}
-              </p>
-              <div className="mt-2 flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    void decideBank({
-                      data: { companyId, requestId: String(row["id"]), decision: "approve" },
-                    })
-                      .then(refresh)
-                      .catch((error) => toast.error(friendlyAuthError(error)));
-                  }}
-                >
-                  Verify and save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    void decideBank({
-                      data: {
-                        companyId,
-                        requestId: String(row["id"]),
-                        decision: "reject",
-                        note: "Not verified",
-                      },
-                    })
-                      .then(refresh)
-                      .catch((error) => toast.error(friendlyAuthError(error)));
-                  }}
-                >
-                  Reject
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
+        ) : (
+          <ul className="space-y-3">
+            {(banks.data ?? []).map((row) => (
+              <li key={String(row["id"])} className="rounded-md border border-border p-3 text-sm">
+                <p className="font-medium">{String(row["contact_name"])}</p>
+                <p>
+                  {String(row["account_name"])} · {String(row["bank_name"])} ·{" "}
+                  {String(row["account_number"])} · {String(row["routing_code"])}
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      void decideBank({
+                        data: { companyId, requestId: String(row["id"]), decision: "approve" },
+                      })
+                        .then(refresh)
+                        .catch((error) => toast.error(friendlyAuthError(error)));
+                    }}
+                  >
+                    Verify and save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      void decideBank({
+                        data: {
+                          companyId,
+                          requestId: String(row["id"]),
+                          decision: "reject",
+                          note: "Not verified",
+                        },
+                      })
+                        .then(refresh)
+                        .catch((error) => toast.error(friendlyAuthError(error)));
+                    }}
+                  >
+                    Reject
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

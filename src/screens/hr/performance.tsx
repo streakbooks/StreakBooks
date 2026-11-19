@@ -173,6 +173,7 @@ export function HrPerformancePage() {
             </Button>
             <Button
               type="button"
+              disabled={!cyclesQ.isSuccess || cycles.length === 0}
               onClick={() => {
                 setCycleId(cycles[0]?.id ?? "");
                 setEmployeeId("");
@@ -364,18 +365,22 @@ export function HrPerformancePage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Cycle</Label>
-              <RecordLookupSelect value={cycleId} onValueChange={setCycleId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select cycle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cycles.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.code}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {cyclesQ.isError && cyclesQ.data === undefined ? (
+                <QueryErrorState queries={[cyclesQ]} title="Could not load cycles" />
+              ) : (
+                <RecordLookupSelect value={cycleId} onValueChange={setCycleId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select cycle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cycles.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label>Employee</Label>
@@ -407,7 +412,14 @@ export function HrPerformancePage() {
             </Button>
             <Button
               type="button"
-              disabled={!cycleId || !employeeId || !title.trim() || goalM.isPending}
+              disabled={
+                !cycleId ||
+                !employeeId ||
+                !title.trim() ||
+                goalM.isPending ||
+                !cyclesQ.isSuccess ||
+                !empQ.isSuccess
+              }
               onClick={() => goalM.mutate()}
             >
               Save

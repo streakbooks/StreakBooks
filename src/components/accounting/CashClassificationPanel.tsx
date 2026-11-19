@@ -712,18 +712,20 @@ function OpeningForm({
                   )
                 }
               />
-              <LookupSelect
-                ariaLabel="Opening tax code"
-                value={line.code}
-                onChange={(code) =>
-                  setTaxLines(taxLines.map((v, i) => (i === index ? { ...v, code } : v)))
-                }
-                options={(codes.data ?? []).map((raw) => {
-                  const c = raw as unknown as { id: string; code: string; name: string };
-                  return { id: c.id, label: `${c.code} — ${c.name}` };
-                })}
-                disabled={codes.isError || codes.isPending}
-              />
+              {codes.isError ? null : (
+                <LookupSelect
+                  ariaLabel="Opening tax code"
+                  value={line.code}
+                  onChange={(code) =>
+                    setTaxLines(taxLines.map((v, i) => (i === index ? { ...v, code } : v)))
+                  }
+                  options={(codes.data ?? []).map((raw) => {
+                    const c = raw as unknown as { id: string; code: string; name: string };
+                    return { id: c.id, label: `${c.code} — ${c.name}` };
+                  })}
+                  disabled={codes.isPending}
+                />
+              )}
 
               <Button
                 type="button"
@@ -737,6 +739,7 @@ function OpeningForm({
           <Button
             type="button"
             variant="outline"
+            disabled={codes.isError}
             onClick={() =>
               setTaxLines([
                 ...taxLines,
@@ -748,7 +751,16 @@ function OpeningForm({
           </Button>
         </fieldset>
         <EvidenceFieldsForm value={evidence} onChange={setEvidence} />
-        <Button type="submit" disabled={!evidence.confirmed || !selected || !control || !equity}>
+        <Button
+          type="submit"
+          disabled={
+            !evidence.confirmed ||
+            !selected ||
+            !control ||
+            !equity ||
+            (taxLines.length > 0 && !codes.isSuccess)
+          }
+        >
           Approve verified opening split
         </Button>
       </fieldset>

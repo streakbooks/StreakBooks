@@ -212,7 +212,7 @@ export function PlatformApprovals({
         {query.isError ? (
           <QueryErrorState queries={[query]} title="Could not load pending approvals" />
         ) : null}
-        {query.data && query.data.rows.length === 0 ? (
+        {query.isSuccess && query.data.rows.length === 0 ? (
           <p className="mt-3 text-sm">No pending approvals.</p>
         ) : null}
         <ul className="mt-4 space-y-3">

@@ -2,7 +2,7 @@ import type { PurchaseOrderDetail } from "@/lib/purchases/purchase-order-data";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { impliedDiscountMinor } from "@/lib/purchases/po-convert";
 import { getPurchaseOrder } from "@/lib/purchases/purchases.functions";
-import { useRef, useState, type DragEvent } from "react";
+import { useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -39,6 +39,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { interpretLineGridKey } from "@/lib/ui/line-grid-keyboard";
+import { parseLineGridClipboard } from "@/lib/ui/line-grid-paste";
 
 export function NewOrder({ initialEditId }: { initialEditId?: string | undefined } = {}) {
   const { company } = useActiveCompany();
@@ -214,6 +216,75 @@ function OrderForm({
   });
   const updateLine = (key: number, patch: Partial<PurchaseOrderLineForm>) =>
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
+  const locked = mutation.isPending || Boolean(savedId);
+
+  const ORDER_NUMERIC_COLS = ["quantity", "unitPrice", "discount", "taxPercent"] as const;
+
+  const onOrderNumericKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colKey: (typeof ORDER_NUMERIC_COLS)[number],
+  ) => {
+    if (locked) return;
+    const colIndex = ORDER_NUMERIC_COLS.indexOf(colKey);
+    if (colIndex < 0) return;
+    const action = interpretLineGridKey(event.key, {
+      shiftKey: event.shiftKey,
+      atLastRow: rowIndex === lines.length - 1,
+      atLastCol: colIndex === ORDER_NUMERIC_COLS.length - 1,
+    });
+    if (action.type === "none") return;
+    if (action.type === "add-row") {
+      event.preventDefault();
+      if (lines.length >= 200) return;
+      setLines((current) => [...current, { ...emptyOrderLine(), key: nextKey.current++ }]);
+      queueMicrotask(() => {
+        document
+          .querySelector<HTMLElement>(`[data-order-cell="${rowIndex + 1}-${colKey}"]`)
+          ?.focus();
+      });
+      return;
+    }
+    if (
+      action.type === "move" &&
+      (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp")
+    ) {
+      event.preventDefault();
+      const nextRow = Math.max(0, Math.min(lines.length - 1, rowIndex + action.rowDelta));
+      document.querySelector<HTMLElement>(`[data-order-cell="${nextRow}-${colKey}"]`)?.focus();
+    }
+  };
+
+  const onOrderNumericPaste = (
+    event: ClipboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colKey: (typeof ORDER_NUMERIC_COLS)[number],
+  ) => {
+    if (locked) return;
+    const grid = parseLineGridClipboard(event.clipboardData.getData("text"));
+    if (grid.length <= 1 && (grid[0]?.length ?? 0) <= 1) return;
+    event.preventDefault();
+    const startCol = ORDER_NUMERIC_COLS.indexOf(colKey);
+    if (startCol < 0) return;
+    setLines((current) => {
+      const next = current.map((line) => ({ ...line }));
+      for (let r = 0; r < grid.length; r++) {
+        const targetRow = rowIndex + r;
+        while (next.length <= targetRow && next.length < 200) {
+          next.push({ ...emptyOrderLine(), key: nextKey.current++ });
+        }
+        if (targetRow >= next.length) break;
+        const cells = grid[r] ?? [];
+        for (let c = 0; c < cells.length; c++) {
+          const key = ORDER_NUMERIC_COLS[startCol + c];
+          if (!key) break;
+          next[targetRow] = { ...next[targetRow]!, [key]: cells[c] ?? "" };
+        }
+      }
+      return next;
+    });
+  };
+
   const onDragStart = (event: DragEvent, index: number) => {
     event.dataTransfer.setData("text/plain", String(index));
     event.dataTransfer.effectAllowed = "move";
@@ -249,7 +320,6 @@ function OrderForm({
         }}
       />
     );
-  const locked = mutation.isPending || Boolean(savedId);
   const title = initial ? `Edit ${initial.order_number ?? "purchase order"}` : "New purchase order";
   return (
     <TransactionWorkspace
@@ -449,11 +519,14 @@ function OrderForm({
                   <TableCell key={field} className="align-top">
                     <Input
                       id={`${field}-${line.key}`}
+                      data-order-cell={`${index}-${field}`}
                       aria-label={ariaLabel}
                       inputMode="decimal"
                       className="text-right"
                       value={line[field]}
                       onChange={(e) => updateLine(line.key, { [field]: e.target.value })}
+                      onKeyDown={(e) => onOrderNumericKeyDown(e, index, field)}
+                      onPaste={(e) => onOrderNumericPaste(e, index, field)}
                     />
                   </TableCell>
                 ))}

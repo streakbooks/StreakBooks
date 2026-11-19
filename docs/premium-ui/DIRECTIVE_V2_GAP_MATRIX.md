@@ -39,7 +39,7 @@
 | Requirement | Status | Evidence / notes |
 | --- | --- | --- |
 | TransactionWorkspace / RecordWorkspace / ListWorkspace | PARTIAL | Adopted on create/list surfaces in Batches 25–54; module DoD incomplete |
-| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money/claims; Batch 66 claim TotalsSummary + workspace adoption; residual modules TBD |
+| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money/claims; Batch 68 spend/PO/CN keyboard+paste; residual module DoD / staging TBD |
 | Consistent +New / empty CTAs | PARTIAL | Batches 49–63 closed create empties; Batch 64 App Store + approval queue bridges; residual queue-only empties intentional |
 | Module finished-screen DoD (34 modules) | PARTIAL | **0/34 COMPLETE** — continue without duplicating create work |
 | Staging / live RBAC / prod migrations | BLOCKED | Batches 23–24; require separate auth |
@@ -164,4 +164,14 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Claim spreadsheet keyboard/paste | Enter/Arrow navigation + net/tax multi-cell paste (journal parity) |
 | Receive Money workspace adoption | Enforce MoneyDocumentPanel TransactionWorkspace + TotalsSummary in check:workspace |
 | Includes Batch 66 | Claim TotalsSummary + spend/claims workspace rules rebased onto current main |
+
+## Batch 68 (spend / PO / CN keyboard + workspace gates)
+
+| Gap | Action |
+| --- | --- |
+| Spend Money spreadsheet keyboard/paste | Enter/Arrow + qty/price paste on expenses.new (banking Spend Money) |
+| Purchase order numeric keyboard/paste | qty/price/discount/tax% journal-parity helpers |
+| Purchase credit note keyboard/paste + totals | description/net/tax nav; net+tax TotalsSummary rows |
+| Workspace adoption | check:workspace enforces interpretLineGridKey on claims/spend/PO/CN |
+| Includes Batches 66–67 | Rebased onto current main (supersedes PR #338) |
 

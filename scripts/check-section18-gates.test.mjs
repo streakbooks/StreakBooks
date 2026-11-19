@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { verifyProductionRevision } from "./lib/production-revision.mjs";
@@ -16,11 +19,15 @@ const staging = {
 };
 
 function run(script, configuration, ...args) {
+  return runIn(fileURLToPath(new URL("../", import.meta.url)), script, configuration, ...args);
+}
+
+function runIn(cwd, script, configuration, ...args) {
   const inherited = Object.entries(process.env).filter(([name]) => !name.startsWith("E2E_"));
   const result = spawnSync(process.execPath, [script, ...args], {
     encoding: "utf8",
     env: { ...Object.fromEntries(inherited), ...configuration },
-    cwd: fileURLToPath(new URL("../", import.meta.url)),
+    cwd,
   });
   assert.ifError(result.error);
   return result;
@@ -29,6 +36,7 @@ function run(script, configuration, ...args) {
 test("the reporting command separates deployment evidence from the documented alias", () => {
   const result = run(report, {});
   assert.equal(result.status, 0);
+  assert.match(result.stdout, /\[PASS\] Local chrome\/honesty gates/);
   assert.match(result.stdout, /\[UNVERIFIED\] Production deployment of the release revision/);
   assert.match(result.stdout, /\[BLOCKED\] Authenticated staging E2E/);
   assert.match(result.stdout, /FORBIDDEN \(6 open gate\(s\)\)/);
@@ -59,6 +67,19 @@ test("staging requires production separation and a configured account", () => {
     assert.equal(result.status, 0);
     assert.match(result.stdout, /\[BLOCKED\] Authenticated staging E2E/);
   }
+});
+
+test("failed local checks leave the Section 18 gate open", (t) => {
+  const cwd = mkdtempSync(join(tmpdir(), "linkbooks-section18-"));
+  t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  writeFileSync(
+    join(cwd, "package.json"),
+    JSON.stringify({ scripts: { "check:modules": 'node -e "process.exit(1)"' } }),
+  );
+
+  const result = runIn(cwd, report, {}, "--require-go-live");
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /\[BLOCKED\] Local chrome\/honesty gates.*check:modules/);
 });
 
 const expectedCommit = "a".repeat(40);

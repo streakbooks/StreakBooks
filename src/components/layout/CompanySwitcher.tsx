@@ -6,10 +6,10 @@ import { Building2, Check, ChevronsUpDown, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { companyContextKey, useActiveCompany } from "@/hooks/use-active-company";
 import { openDemoCompany, setActiveCompany } from "@/lib/company.functions";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+import { friendlyAuthError, initialsFrom } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { initialsFrom } from "@/lib/auth-helpers";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +40,7 @@ export function CompanyAvatar({ name, className }: { name: string; className?: s
  * `collapsed` shows the avatar only.
  */
 export function CompanySwitcher({ collapsed = false }: { collapsed?: boolean }) {
-  const { data, company, isPending, isError, refetch } = useActiveCompany();
+  const { data, company, isPending, isError, error, refetch } = useActiveCompany();
   const switchCompany = useServerFn(setActiveCompany);
   const openDemo = useServerFn(openDemoCompany);
   const queryClient = useQueryClient();
@@ -93,15 +93,25 @@ export function CompanySwitcher({ collapsed = false }: { collapsed?: boolean }) 
   }
 
   if (isError) {
+    if (collapsed) {
+      return (
+        <Button
+          variant="outline"
+          size="sm"
+          className="mx-3 mb-3 border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent"
+          onClick={() => void refetch()}
+        >
+          Retry
+        </Button>
+      );
+    }
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        className="mx-3 mb-3 border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent"
-        onClick={() => refetch()}
-      >
-        {collapsed ? "Retry" : "Retry organisations"}
-      </Button>
+      <div className="mx-3 mb-3">
+        <QueryErrorState
+          queries={[{ isError, error, refetch }]}
+          title="Could not load organisations"
+        />
+      </div>
     );
   }
 

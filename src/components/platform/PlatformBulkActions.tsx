@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { bulkBusinessStatus } from "@/lib/platform/platform.functions";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -86,7 +87,7 @@ export function PlatformBulkActions({
             </label>
             {mutation.error ? (
               <p role="alert" className="text-destructive">
-                {mutation.error.message}
+                {friendlyAuthError(mutation.error)}
               </p>
             ) : null}
             <Button type="submit" disabled={mutation.isPending}>

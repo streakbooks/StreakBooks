@@ -20,6 +20,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { OpsField, EnumField, OpsAction, OpsEditor } from "./PlatformOperationForms";
 import { PlatformRecordLookup } from "./PlatformRecordLookup";
 const labels: Record<OpsModule, string> = {
@@ -440,7 +441,9 @@ function SegmentMembers({ record, canManage }: { record: OpsRecord; canManage: b
           >
             Preview membership change
           </Button>
-          {impact.isError ? <p role="alert">{impact.error.message}</p> : null}
+          {impact.isError ? (
+            <p role="alert">{friendlyAuthError(impact.error)}</p>
+          ) : null}
           {impact.data &&
           impact.variables?.mode === mode &&
           JSON.stringify(impact.variables.companyIds) === JSON.stringify(ids) ? (

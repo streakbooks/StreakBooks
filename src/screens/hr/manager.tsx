@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { TableCard } from "@/components/common/table-card";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -18,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+
 import { listHrApprovalsInbox, listHrManagerTeam } from "@/lib/hr/workspace.functions";
 
 export function HrManagerPage() {
@@ -90,11 +91,7 @@ export function HrManagerPage() {
           {teamQ.isPending ? (
             <LoadingState />
           ) : teamQ.isError ? (
-            <ErrorState
-              title="Could not load team"
-              description={friendlyAuthError(teamQ.error)}
-              onRetry={() => void teamQ.refetch()}
-            />
+            <QueryErrorState queries={[teamQ]} title="Could not load team" />
           ) : !teamQ.data?.linked ? (
             <EmptyState
               title="Manager account not linked"

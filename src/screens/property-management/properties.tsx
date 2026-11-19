@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { PmSubnav } from "@/components/property-management/PmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
@@ -206,11 +207,7 @@ export function PmPropertiesPage() {
           ) : null}
           {properties.isLoading ? <LoadingState /> : null}
           {properties.isError ? (
-            <ErrorState
-              title="Could not load properties"
-              description={friendlyAuthError(properties.error)}
-              onRetry={() => properties.refetch()}
-            />
+            <QueryErrorState queries={[properties]} title="Could not load properties" />
           ) : null}
           {properties.data?.length === 0 ? (
             <EmptyState

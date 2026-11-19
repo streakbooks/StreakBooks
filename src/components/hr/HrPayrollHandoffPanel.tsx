@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -100,11 +101,7 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
       {handoffQ.isPending ? (
         <LoadingState />
       ) : handoffQ.isError ? (
-        <ErrorState
-          title="Could not load handoffs"
-          description={friendlyAuthError(handoffQ.error)}
-          onRetry={() => void handoffQ.refetch()}
-        />
+        <QueryErrorState queries={[handoffQ]} title="Could not load handoffs" />
       ) : compensation.length === 0 && offboarding.length === 0 ? (
         <EmptyState
           title="No open Payroll handoffs"

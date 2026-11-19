@@ -3,14 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+
 import { getHrDashboardKpis, getHrSettings } from "@/lib/hr/hr.functions";
 import type { Permission } from "@/lib/permissions";
 
@@ -105,11 +106,7 @@ export function HrOverviewPage() {
       }
     >
       {settings.isError ? (
-        <ErrorState
-          title="Could not load HR settings"
-          description={friendlyAuthError(settings.error)}
-          onRetry={() => settings.refetch()}
-        />
+        <QueryErrorState queries={[settings]} title="Could not load HR settings" />
       ) : null}
 
       {settings.data && !settings.data.enabled ? (
@@ -140,11 +137,7 @@ export function HrOverviewPage() {
       {kpis.isPending ? (
         <LoadingState />
       ) : kpis.isError ? (
-        <ErrorState
-          title="Could not load HR overview"
-          description={friendlyAuthError(kpis.error)}
-          onRetry={() => kpis.refetch()}
-        />
+        <QueryErrorState queries={[kpis]} title="Could not load HR overview" />
       ) : kpis.data ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard

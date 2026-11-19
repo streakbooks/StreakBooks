@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { TableCard } from "@/components/common/table-card";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -28,7 +29,7 @@ import {
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useDebounced } from "@/hooks/use-debounced";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+
 import { listHrEmployees } from "@/lib/hr/hr.functions";
 
 export function HrEmployeesPage() {
@@ -110,11 +111,7 @@ export function HrEmployeesPage() {
       {listQ.isPending ? (
         <LoadingState />
       ) : listQ.isError ? (
-        <ErrorState
-          title="Could not load employees"
-          description={friendlyAuthError(listQ.error)}
-          onRetry={() => listQ.refetch()}
-        />
+        <QueryErrorState queries={[listQ]} title="Could not load employees" />
       ) : !listQ.data?.items.length ? (
         <EmptyState
           title="No employees found"

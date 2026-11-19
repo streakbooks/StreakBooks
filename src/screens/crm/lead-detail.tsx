@@ -4,7 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -171,11 +172,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
   if (leadQuery.isError) {
     return (
       <RecordWorkspace title="Lead" description="Lead detail">
-        <ErrorState
-          title="Could not load lead"
-          description={friendlyAuthError(leadQuery.error)}
-          onRetry={() => leadQuery.refetch()}
-        />
+        <QueryErrorState queries={[leadQuery]} title="Could not load lead" />
       </RecordWorkspace>
     );
   }
@@ -336,11 +333,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
             <CardContent className="space-y-4">
               {matchesQuery.isLoading ? <LoadingState /> : null}
               {matchesQuery.isError ? (
-                <ErrorState
-                  title="Could not check matches"
-                  description={friendlyAuthError(matchesQuery.error)}
-                  onRetry={() => matchesQuery.refetch()}
-                />
+                <QueryErrorState queries={[matchesQuery]} title="Could not check matches" />
               ) : null}
               {(matchesQuery.data?.matches?.length ?? 0) === 0 ? (
                 <p className="text-sm text-muted-foreground">

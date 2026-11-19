@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -272,11 +273,7 @@ export function CrmCampaignsPage() {
 
           {campaigns.isLoading ? <LoadingState /> : null}
           {campaigns.isError ? (
-            <ErrorState
-              title="Could not load campaigns"
-              description={friendlyAuthError(campaigns.error)}
-              onRetry={() => campaigns.refetch()}
-            />
+            <QueryErrorState queries={[campaigns]} title="Could not load campaigns" />
           ) : null}
           {campaigns.isSuccess && campaignRows.length === 0 ? (
             <EmptyState
@@ -335,11 +332,7 @@ export function CrmCampaignsPage() {
             <CardContent>
               {sources.isLoading ? <LoadingState /> : null}
               {sources.isError ? (
-                <ErrorState
-                  title="Could not load lead sources"
-                  description={friendlyAuthError(sources.error)}
-                  onRetry={() => sources.refetch()}
-                />
+                <QueryErrorState queries={[sources]} title="Could not load lead sources" />
               ) : null}
               {sourceRows.length > 0 ? (
                 <div className="overflow-x-auto rounded-lg border">

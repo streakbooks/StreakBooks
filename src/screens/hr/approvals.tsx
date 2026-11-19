@@ -4,7 +4,8 @@ import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { TableCard } from "@/components/common/table-card";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -121,11 +122,7 @@ export function HrApprovalsPage() {
       {inboxQ.isPending ? (
         <LoadingState />
       ) : inboxQ.isError ? (
-        <ErrorState
-          title="Could not load approvals"
-          description={friendlyAuthError(inboxQ.error)}
-          onRetry={() => void inboxQ.refetch()}
-        />
+        <QueryErrorState queries={[inboxQ]} title="Could not load approvals" />
       ) : (
         <>
           <section className="mb-8 space-y-3">

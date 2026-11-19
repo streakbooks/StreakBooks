@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { TableCard } from "@/components/common/table-card";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -116,11 +117,7 @@ export function HrAutomationsPage() {
       {dataQ.isPending ? (
         <LoadingState />
       ) : dataQ.isError ? (
-        <ErrorState
-          title="Could not load automations"
-          description={friendlyAuthError(dataQ.error)}
-          onRetry={() => void dataQ.refetch()}
-        />
+        <QueryErrorState queries={[dataQ]} title="Could not load automations" />
       ) : items.length === 0 ? (
         <EmptyState
           title="No automation rules"

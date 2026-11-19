@@ -41,7 +41,8 @@ import {
   listAiConversationHistory,
   type AiConversationRow,
 } from "@/lib/ai/history.functions";
-import { LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -818,11 +819,7 @@ function AiAssistantWorkspace({
           ) : suggestionsQ.isPending ? (
             <LoadingState rows={4} />
           ) : suggestionsQ.isError ? (
-            <ErrorState
-              title="Unable to load AI suggestions"
-              description={friendlyAuthError(suggestionsQ.error)}
-              onRetry={() => void suggestionsQ.refetch()}
-            />
+            <QueryErrorState queries={[suggestionsQ]} title="Unable to load AI suggestions" />
           ) : filtered.length === 0 ? (
             <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
               {rows.length === 0

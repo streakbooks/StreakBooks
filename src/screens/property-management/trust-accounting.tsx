@@ -3,13 +3,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { PmSubnav } from "@/components/property-management/PmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+
 import { getPmSettings } from "@/lib/property-management/pm.functions";
 import { getPmTrustSummary } from "@/lib/property-management/pm-posting.functions";
 import type { Permission } from "@/lib/permissions";
@@ -76,11 +77,7 @@ export function PmTrustAccountingPage() {
         <>
           {trust.isLoading ? <LoadingState /> : null}
           {trust.isError ? (
-            <ErrorState
-              title="Could not load trust summary"
-              description={friendlyAuthError(trust.error)}
-              onRetry={() => trust.refetch()}
-            />
+            <QueryErrorState queries={[trust]} title="Could not load trust summary" />
           ) : null}
           {summary ? (
             <div className="grid gap-4 md:grid-cols-2">

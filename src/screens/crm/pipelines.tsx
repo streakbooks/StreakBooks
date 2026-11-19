@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -234,11 +235,7 @@ export function CrmPipelinesPage() {
       ) : null}
       {pipelines.isLoading ? <LoadingState /> : null}
       {pipelines.isError ? (
-        <ErrorState
-          title="Could not load pipelines"
-          description={friendlyAuthError(pipelines.error)}
-          onRetry={() => pipelines.refetch()}
-        />
+        <QueryErrorState queries={[pipelines]} title="Could not load pipelines" />
       ) : null}
 
       {settings.data?.enabled ? (

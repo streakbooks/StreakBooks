@@ -5,7 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -167,11 +168,7 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
   if (detailQ.isError) {
     return (
       <RecordWorkspace title="Employee" description="HR profile">
-        <ErrorState
-          title="Could not load employee"
-          description={friendlyAuthError(detailQ.error)}
-          onRetry={() => detailQ.refetch()}
-        />
+        <QueryErrorState queries={[detailQ]} title="Could not load employee" />
       </RecordWorkspace>
     );
   }

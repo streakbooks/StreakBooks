@@ -5,7 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -230,11 +231,7 @@ export function CrmTeamPage() {
             <>
               {territories.isLoading ? <LoadingState /> : null}
               {territories.isError ? (
-                <ErrorState
-                  title="Could not load territories"
-                  description={friendlyAuthError(territories.error)}
-                  onRetry={() => territories.refetch()}
-                />
+                <QueryErrorState queries={[territories]} title="Could not load territories" />
               ) : null}
               {territories.isSuccess && territoryRows.length === 0 ? (
                 <EmptyState
@@ -288,11 +285,7 @@ export function CrmTeamPage() {
 
           {team.isLoading ? <LoadingState /> : null}
           {team.isError ? (
-            <ErrorState
-              title="Could not load team workload"
-              description={friendlyAuthError(team.error)}
-              onRetry={() => team.refetch()}
-            />
+            <QueryErrorState queries={[team]} title="Could not load team workload" />
           ) : null}
           {team.isSuccess && rows.length === 0 ? (
             <EmptyState

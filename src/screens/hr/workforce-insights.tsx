@@ -3,13 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+
 import { getHrDashboardKpis } from "@/lib/hr/hr.functions";
 
 function InsightCard({
@@ -105,11 +106,7 @@ export function HrWorkforceInsightsPage() {
       {kpis.isPending ? (
         <LoadingState />
       ) : kpis.isError ? (
-        <ErrorState
-          title="Could not load workforce insights"
-          description={friendlyAuthError(kpis.error)}
-          onRetry={() => kpis.refetch()}
-        />
+        <QueryErrorState queries={[kpis]} title="Could not load workforce insights" />
       ) : kpis.data ? (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <InsightCard

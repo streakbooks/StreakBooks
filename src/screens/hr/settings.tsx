@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -141,11 +142,7 @@ export function HrSettingsPage() {
       {settingsQ.isPending ? (
         <LoadingState />
       ) : settingsQ.isError ? (
-        <ErrorState
-          title="Could not load HR settings"
-          description={friendlyAuthError(settingsQ.error)}
-          onRetry={() => settingsQ.refetch()}
-        />
+        <QueryErrorState queries={[settingsQ]} title="Could not load HR settings" />
       ) : (
         <div className="max-w-xl space-y-6">
           <Alert>

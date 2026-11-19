@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { PmSubnav } from "@/components/property-management/PmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -267,11 +268,7 @@ export function PmOwnerStatementsPage() {
 
             {statements.isLoading ? <LoadingState /> : null}
             {statements.isError ? (
-              <ErrorState
-                title="Could not load statements"
-                description={friendlyAuthError(statements.error)}
-                onRetry={() => statements.refetch()}
-              />
+              <QueryErrorState queries={[statements]} title="Could not load statements" />
             ) : null}
             {statements.data?.length === 0 ? (
               <EmptyState
@@ -347,11 +344,7 @@ export function PmOwnerStatementsPage() {
             ) : detail.isLoading ? (
               <LoadingState />
             ) : detail.isError ? (
-              <ErrorState
-                title="Could not load statement"
-                description={friendlyAuthError(detail.error)}
-                onRetry={() => detail.refetch()}
-              />
+              <QueryErrorState queries={[detail]} title="Could not load statement" />
             ) : statement ? (
               <Card>
                 <CardHeader>

@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { PmSubnav } from "@/components/property-management/PmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -198,11 +199,7 @@ export function PmUnitsPage() {
           ) : null}
           {units.isLoading ? <LoadingState /> : null}
           {units.isError ? (
-            <ErrorState
-              title="Could not load units"
-              description={friendlyAuthError(units.error)}
-              onRetry={() => units.refetch()}
-            />
+            <QueryErrorState queries={[units]} title="Could not load units" />
           ) : null}
           {units.data?.length === 0 ? (
             <EmptyState

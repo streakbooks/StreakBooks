@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ADVISORS_LANDING, type AdvisorService } from "@/lib/advisors/catalogue";
 import { listPublicAdvisorServices } from "@/lib/advisors/public.functions";
 import { rememberAdvisorServiceSelection } from "@/lib/advisors/selection";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { cn } from "@/lib/utils";
 
 function ServiceCard({ service }: { service: AdvisorService }) {
@@ -88,9 +89,7 @@ export function AdvisorsLandingPage() {
           </p>
         ) : null}
         {catalogue.isError ? (
-          <p className="text-sm text-destructive" role="alert">
-            Services could not be loaded. Refresh the page to try again.
-          </p>
+          <QueryErrorState queries={[catalogue]} title="Could not load advisor services" />
         ) : null}
 
         <section

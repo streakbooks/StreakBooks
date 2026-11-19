@@ -15,6 +15,7 @@ import {
 } from "@/lib/advisors/booking.functions";
 import { isAdvisorServiceCode, type AdvisorServiceCode } from "@/lib/advisors/catalogue";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 
 function toDayKey(date: Date): string {
   const y = date.getFullYear();
@@ -161,9 +162,7 @@ export function AdvisorsBookingPage({
             <p className="text-sm text-muted-foreground">Loading slots…</p>
           ) : null}
           {slotsQ.isError ? (
-            <p className="text-sm text-destructive" role="alert">
-              {friendlyAuthError(slotsQ.error)}
-            </p>
+            <QueryErrorState queries={[slotsQ]} title="Could not load available slots" />
           ) : null}
           {slotsQ.data && !slotsQ.data.ready ? (
             <p className="text-sm text-muted-foreground">{slotsQ.data.reason}</p>

@@ -14,6 +14,7 @@ import {
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { LoadingState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
@@ -185,11 +186,28 @@ function ExpenseDetail() {
         </div>
       }
     >
-      <div className="space-y-2 text-sm">
+      <div className="space-y-4 text-sm">
         <StatusBadge status={e.status} />
-        <p>Net {fromMinorUnits(BigInt(e.net_minor), currency)}</p>
-        <p>Tax {fromMinorUnits(BigInt(e.tax_minor), currency)}</p>
-        <p>Total {fromMinorUnits(BigInt(e.total_minor), currency)}</p>
+        <TotalsSummary
+          lines={[
+            {
+              id: "net",
+              label: "Net",
+              value: fromMinorUnits(BigInt(e.net_minor), currency),
+            },
+            {
+              id: "tax",
+              label: "Tax",
+              value: fromMinorUnits(BigInt(e.tax_minor), currency),
+            },
+            {
+              id: "total",
+              label: "Total",
+              value: fromMinorUnits(BigInt(e.total_minor), currency),
+              emphasis: "total",
+            },
+          ]}
+        />
         {e.reference ? <p>Ref {e.reference}</p> : null}
         {e.memo ? <p>{e.memo}</p> : null}
         {e.posted_journal_id ? (

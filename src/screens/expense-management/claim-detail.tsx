@@ -371,14 +371,17 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
         </Alert>
       ) : null}
       {fxQ.isError ? (
-        <Alert className="mb-6">
-          <AlertTitle>FX check unavailable</AlertTitle>
-          <AlertDescription>
-            {friendlyAuthError(fxQ.error).includes("20261107154000")
-              ? EXPENSE_FX_REFUND_MIGRATION
-              : friendlyAuthError(fxQ.error)}
-          </AlertDescription>
-        </Alert>
+        <div className="mb-6">
+          <QueryErrorState
+            queries={[fxQ]}
+            title="FX check unavailable"
+            description={
+              friendlyAuthError(fxQ.error).includes("20261107154000")
+                ? EXPENSE_FX_REFUND_MIGRATION
+                : friendlyAuthError(fxQ.error)
+            }
+          />
+        </div>
       ) : null}
 
       <div className="mb-6 flex flex-wrap gap-2">

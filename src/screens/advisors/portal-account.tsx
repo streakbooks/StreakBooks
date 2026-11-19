@@ -213,17 +213,7 @@ export function AdvisorsPortalAccountPage() {
             </p>
           ) : null}
           {notesQuery.isError ? (
-            <div role="alert" className="space-y-2">
-              <p className="text-sm text-destructive">{friendlyAuthError(notesQuery.error)}</p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void notesQuery.refetch()}
-              >
-                Retry notifications
-              </Button>
-            </div>
+            <QueryErrorState queries={[notesQuery]} title="Could not load notifications" />
           ) : null}
           {notesQuery.isSuccess && notesQuery.data.length === 0 ? (
             <p className="text-sm text-muted-foreground">No notifications yet.</p>

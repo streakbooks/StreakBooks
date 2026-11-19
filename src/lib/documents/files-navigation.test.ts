@@ -110,6 +110,17 @@ describe("Files workspace native browsing state", () => {
     expect(invoked).toBe(0);
   });
 
+  it("ignores throwing Proxy descriptors without losing independent URL filters", () => {
+    const target = { q: "  safe search  ", sort: "name", page: "4" };
+    const raw = new Proxy(target, {
+      getOwnPropertyDescriptor(object, key) {
+        if (key === "q") throw new Error("malformed search descriptor");
+        return Reflect.getOwnPropertyDescriptor(object, key);
+      },
+    });
+    expect(parseFilesListSearch(raw)).toEqual({ sort: "name", page: 4 });
+  });
+
   it("preserves filter characters safely through a standard URL", () => {
     const query = "Tax & books + FY/26";
     const params = new URLSearchParams({ q: query, sort: "name", view: "to-file" });

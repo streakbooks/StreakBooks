@@ -141,7 +141,9 @@ export function PmRentChargesPage() {
       }
       subnav={<PmSubnav current="rent-charges" />}
     >
-      {!settings.data?.enabled ? (
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load Property Management settings" />
+      ) : !settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (
         <>

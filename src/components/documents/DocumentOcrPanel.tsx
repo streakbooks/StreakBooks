@@ -172,7 +172,7 @@ export function DocumentOcrPanel({
             </p>
           ) : result?.status === "failed" ? (
             <p role="alert" className="text-xs text-destructive">
-              {result.message}
+              {friendlyAuthError(result.message)}
             </p>
           ) : result?.status === "completed" ? (
             <div className="space-y-3">

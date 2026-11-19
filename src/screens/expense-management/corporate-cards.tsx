@@ -506,6 +506,8 @@ export function ExpenseManagementCorporateCardsPage() {
             <h2 className="text-lg font-medium">Unmatched transactions</h2>
             {txQ.isLoading ? (
               <LoadingState />
+            ) : txQ.isError ? (
+              <QueryErrorState queries={[txQ]} title="Could not load card transactions" />
             ) : unmatchedTx.length === 0 ? (
               <EmptyState
                 title="No unmatched lines"

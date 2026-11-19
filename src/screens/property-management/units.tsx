@@ -128,6 +128,9 @@ export function PmUnitsPage() {
       }
       subnav={<PmSubnav current="units" />}
     >
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load Property Management settings" />
+      ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="Module disabled"

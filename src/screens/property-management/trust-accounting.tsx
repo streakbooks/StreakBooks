@@ -71,7 +71,9 @@ export function PmTrustAccountingPage() {
       }
       subnav={<PmSubnav current="trust-accounting" />}
     >
-      {!settings.data?.enabled ? (
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load Property Management settings" />
+      ) : !settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (
         <>

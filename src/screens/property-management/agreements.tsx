@@ -138,6 +138,9 @@ export function PmAgreementsPage() {
       }
       subnav={<PmSubnav current="agreements" />}
     >
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load Property Management settings" />
+      ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="Module disabled"
@@ -147,6 +150,9 @@ export function PmAgreementsPage() {
       {settings.data?.enabled ? (
         <>
           {showForm && canManage ? (
+            properties.isError && properties.data === undefined ? (
+              <QueryErrorState queries={[properties]} title="Could not load properties" />
+            ) : (
             <Card className="mb-4">
               <CardHeader>
                 <CardTitle>Management agreement</CardTitle>
@@ -249,6 +255,7 @@ export function PmAgreementsPage() {
                 </div>
               </CardContent>
             </Card>
+            )
           ) : null}
           {agreements.isLoading ? <LoadingState /> : null}
           {agreements.isError ? (

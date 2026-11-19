@@ -195,22 +195,25 @@ export function PmSettingsPage() {
     <div className="grid gap-2" key={key}>
       <Label>{label}</Label>
       <p className="text-sm text-muted-foreground">{hint}</p>
-      <RecordLookupSelect
-        value={mappingValue(key)}
-        onValueChange={(value) => setMapping(key, value)}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Select account" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={NONE}>Not mapped</SelectItem>
-          {postableAccounts.map((account) => (
-            <SelectItem key={account.id} value={account.id}>
-              {account.code} — {account.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </RecordLookupSelect>
+      {accounts.isError && accounts.data === undefined ? null : (
+        <RecordLookupSelect
+          value={mappingValue(key)}
+          onValueChange={(value) => setMapping(key, value)}
+          disabled={accounts.isLoading}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select account" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NONE}>Not mapped</SelectItem>
+            {postableAccounts.map((account) => (
+              <SelectItem key={account.id} value={account.id}>
+                {account.code} — {account.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </RecordLookupSelect>
+      )}
     </div>
   );
 
@@ -367,7 +370,11 @@ export function PmSettingsPage() {
               <div className="flex items-end sm:col-span-2">
                 <Button
                   type="button"
-                  disabled={mappingMutation.isPending || accounts.isLoading}
+                  disabled={
+                    mappingMutation.isPending ||
+                    accounts.isLoading ||
+                    (accounts.isError && accounts.data === undefined)
+                  }
                   onClick={() => mappingMutation.mutate()}
                 >
                   {mappingMutation.isPending ? "Saving mappings…" : "Save account mappings"}

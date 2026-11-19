@@ -216,7 +216,14 @@ export function ExpenseManagementExitSettlementPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
               <Label>Employee</Label>
-              {members.length > 0 ? (
+              {!canListMembers ? (
+                <p className="text-sm text-muted-foreground">
+                  Members list unavailable (needs members.view). Ask an admin, or apply migrations
+                  and grant access.
+                </p>
+              ) : membersQ.isPending ? (
+                <LoadingState />
+              ) : membersQ.isError && membersQ.data === undefined ? null : members.length > 0 ? (
                 <RecordLookupSelect value={employeeUserId} onValueChange={setEmployeeUserId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select member" />
@@ -230,31 +237,38 @@ export function ExpenseManagementExitSettlementPage() {
                   </SelectContent>
                 </RecordLookupSelect>
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  Members list unavailable (needs members.view). Ask an admin, or apply migrations
-                  and grant access.
-                </p>
+                <p className="text-sm text-muted-foreground">No active members available.</p>
               )}
             </div>
             <div className="grid gap-2">
               <Label>Bank account for advance reclaim</Label>
-              <RecordLookupSelect value={bankAccountId} onValueChange={setBankAccountId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select bank" />
-                </SelectTrigger>
-                <SelectContent>
-                  {banks.map((bank) => (
-                    <SelectItem key={bank.id} value={bank.gl_account_id!}>
-                      {bank.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {banksQ.isError && banksQ.data === undefined ? null : (
+                <RecordLookupSelect value={bankAccountId} onValueChange={setBankAccountId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select bank" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {banks.map((bank) => (
+                      <SelectItem key={bank.id} value={bank.gl_account_id!}>
+                        {bank.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
-              disabled={!employeeUserId || createMut.isPending || Boolean(draftForEmployee)}
+              disabled={
+                !employeeUserId ||
+                createMut.isPending ||
+                Boolean(draftForEmployee) ||
+                !canListMembers ||
+                membersQ.isPending ||
+                (membersQ.isError && membersQ.data === undefined) ||
+                (banksQ.isError && banksQ.data === undefined)
+              }
               onClick={() => createMut.mutate()}
             >
               {createMut.isPending ? "Creating…" : "Create draft settlement"}

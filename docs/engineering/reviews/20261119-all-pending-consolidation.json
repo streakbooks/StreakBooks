@@ -1,0 +1,440 @@
+{
+  "recordedAt": "2026-11-19",
+  "repository": "linkbusinessadvisory/LinkBooks",
+  "sourceCommit": "6ee171111d3758ed84ca8b714fa68d20c0adb432",
+  "sourceTree": "5ad658ff4108dcdaadfee6d9e1c0eb114c7c21d0",
+  "branches": [
+    {
+      "branch": "feat/firm-client-portfolio-20261104",
+      "sha": "a07fa2efd750c4fea0847924014e9ce26b1a588a",
+      "included": true
+    },
+    {
+      "branch": "feature/accountant-workpaper-period-comparison-20261104",
+      "sha": "cbcab7cb7e91eb3f6bd69b89f2c9307e00dec2de",
+      "included": true
+    },
+    {
+      "branch": "feature/advisors-ad-01-landing-service-selection",
+      "sha": "1de366e8642fa02ebabc936b84acdcb59d37cb81",
+      "included": true
+    },
+    {
+      "branch": "feature/chatgpt-premium-browsing-20261107",
+      "sha": "4394758459fb6b0ca6a49663ca62f512d51acff5",
+      "included": true
+    },
+    {
+      "branch": "feature/contacts-configurable-columns-20261104",
+      "sha": "3546646825d1cc3e78bf98c7ff0901ced50a506a",
+      "included": true
+    },
+    {
+      "branch": "feature/files-workspace-ux-20261106",
+      "sha": "74d926543dd1db708be155861e7e35a6e017a8c6",
+      "included": true
+    },
+    {
+      "branch": "feature/financial-intelligence-readiness-20261117",
+      "sha": "b6a236defeaf7af559837d0ad8cde2875999017f",
+      "included": true
+    },
+    {
+      "branch": "feature/firm-client-requests-analytics-20261104",
+      "sha": "bf8fdb41952e1f92ffb1cd772c2ea738daa9907c",
+      "included": true
+    },
+    {
+      "branch": "feature/linkbooks-app-store",
+      "sha": "ba89052b5a57571a2f36bdd8df1d62c33054067a",
+      "included": true
+    },
+    {
+      "branch": "feature/linkbooks-premium-visual-redesign",
+      "sha": "41ac9c181ae01495efd9277ea24c874a40c98e4b",
+      "included": true
+    },
+    {
+      "branch": "feature/pos-catalogue-quote-foundation-20261117",
+      "sha": "4ae7d822c4cf4f470dddbf0b6ed848ef60f8d6f0",
+      "included": true
+    },
+    {
+      "branch": "feature/pos-register-sessions-20261117",
+      "sha": "f6a464fc3ce042389a775e2324816784d2cc9c68",
+      "included": true
+    },
+    {
+      "branch": "feature/premium-ui-batch65-ledger-tip",
+      "sha": "c5989169ebc271f8189d05add247e22a9a66a224",
+      "included": true
+    },
+    {
+      "branch": "financial-intelligence",
+      "sha": "1f695a50ac4936d4905aab24cdb0c634dac54e86",
+      "included": true
+    },
+    {
+      "branch": "fix/dialog-touch-accessibility",
+      "sha": "31f7610514b949ed146650b6b51ec57569336ef2",
+      "included": true
+    },
+    {
+      "branch": "fix/lint-release-gate-20261117",
+      "sha": "1fe195b1e88efc93b532fd2f961ef8c723ba765a",
+      "included": true
+    },
+    {
+      "branch": "fix/production-type-contracts",
+      "sha": "2a77cbc47a94df473f4a26868ed745dcafadede7",
+      "included": true
+    },
+    {
+      "branch": "fix/recurring-schedule-save-state",
+      "sha": "8e7a819265d057af1a8cd00e643fe0d87f4e6927",
+      "included": true
+    },
+    {
+      "branch": "fix/ui-route-screen-resolution-20261117",
+      "sha": "75e513154bad24c401213bbce699f45980e11ec7",
+      "included": true
+    },
+    {
+      "branch": "integration/all-pending-20261118",
+      "sha": "6ee171111d3758ed84ca8b714fa68d20c0adb432",
+      "included": true
+    },
+    {
+      "branch": "main",
+      "sha": "936355962545e0b5208aee62bd77e719d2dfc242",
+      "included": true
+    },
+    {
+      "branch": "ops/reporting-worker-bundle-20261103",
+      "sha": "142ef74f9d7c9dfce1da07b4cdd66e3b4a3c9685",
+      "included": true
+    }
+  ],
+  "migrationRenames": [
+    {
+      "original": "20261106140000_files_email_inbox.sql",
+      "replacement": "20261118150351_files_email_inbox.sql"
+    },
+    {
+      "original": "20261106160000_files_document_classification_tags.sql",
+      "replacement": "20261118150352_files_document_classification_tags.sql"
+    },
+    {
+      "original": "20261106170000_document_attachment_versions.sql",
+      "replacement": "20261118150353_document_attachment_versions.sql"
+    },
+    {
+      "original": "20261106183000_files_recycle_retention_cleanup.sql",
+      "replacement": "20261118150355_files_recycle_retention_cleanup.sql"
+    }
+  ],
+  "schemaReplay": {
+    "versions": 375,
+    "exactHistoryMatch": true,
+    "scope": "isolated localhost Supabase only",
+    "cliResetExit": 1,
+    "cliResetLimitation": "Native container health probe timed out after migrations; host API and exact migration-version comparison independently passed"
+  },
+  "securityAdvisors": {
+    "scope": "local warning/error",
+    "exitCode": 0,
+    "issues": 0
+  },
+  "apiSetup": {
+    "scope": "real localhost Auth/PostgREST/RLS",
+    "passed": 28
+  },
+  "mergedWorkflowSql": {
+    "scope": "transactional rollback on isolated database",
+    "exitCode": 0,
+    "restrictiveMfaPolicies": 16,
+    "nonDemoResetDenied": true,
+    "directSpoofedDeleteDenied": true,
+    "authorisedResetLeavesCleanupReceipt": true
+  },
+  "helperSearchPathSmoke": {
+    "exitCode": 0,
+    "helpers": 19
+  },
+  "sourceTestResults": "All local quality gates passed. Full unit/type/build repeated after the final recurring-dialog update; shared UI, Banking and POS evidence scopes remain explicitly identified.",
+  "preMergeCi": {
+    "run": 44451090993,
+    "status": "failure before any job steps",
+    "jobs": 6,
+    "billingContext": "User supplied account payment/spending-limit annotations for run 44256575474; standing merge exception in repository rules"
+  },
+  "hostedDatabaseMutation": false,
+  "authenticatedStaging": "not executed",
+  "manualDeployment": "not performed",
+  "productionVerification": "not performed",
+  "unit": {
+    "files": 630,
+    "passed": 4335,
+    "failed": 0,
+    "sourceCommit": "6ee171111d3758ed84ca8b714fa68d20c0adb432"
+  },
+  "realBrowser": {
+    "scope": "actual local app with real Auth/PostgREST/RLS",
+    "passed": 8,
+    "failed": 0,
+    "viewports": [1280, 768, 375],
+    "coverage": [
+      "posting and persisted learning",
+      "lost-feedback-response retry",
+      "company switching",
+      "read-only permission denial",
+      "keyboard selection",
+      "durable reset with lost responses"
+    ],
+    "coldDiscoveryLimitation": "First run was interrupted by confirmed Vite dependency-optimizer full reload; final unchanged assertions passed after read-only popup prewarm and fresh local fixtures"
+  },
+  "reversal": {
+    "passed": 4,
+    "failed": 0
+  },
+  "realMfa": {
+    "passed": 15,
+    "failed": 0
+  },
+  "postgres": [
+    {
+      "name": "banking-postgres",
+      "exitCode": 0,
+      "checks": 111
+    },
+    {
+      "name": "pos-postgres",
+      "exitCode": 0
+    },
+    {
+      "name": "purchases-postgres",
+      "exitCode": 0
+    },
+    {
+      "name": "workflows-postgres",
+      "exitCode": 0
+    },
+    {
+      "name": "platform-postgres",
+      "exitCode": 0
+    },
+    {
+      "name": "documents-postgres",
+      "exitCode": 0
+    },
+    {
+      "name": "accountant-postgres",
+      "exitCode": 0
+    },
+    {
+      "name": "approvals-postgres",
+      "exitCode": 0
+    },
+    {
+      "name": "workpaper-postgres",
+      "exitCode": 0
+    },
+    {
+      "name": "billing-postgres",
+      "exitCode": 0
+    }
+  ],
+  "lint": {
+    "scope": "full repository",
+    "errors": 0,
+    "warnings": 0,
+    "exitCode": 0
+  },
+  "vercelInspection": {
+    "team": "LinkBusiness",
+    "gitLinkedProjects": 0,
+    "deploymentStatus": "unverified; no manual deployment"
+  },
+  "build": {
+    "exitCode": 0,
+    "warnings": "Existing TanStack inputValidator deprecations and Vite integration notices; no build failure"
+  },
+  "clientBundle": {
+    "exitCode": 0,
+    "bootstrapModules": 61,
+    "bootstrapBytes": 975879,
+    "bootstrapGzipBytes": 288985
+  },
+  "section18VerificationHarness": {
+    "passed": 8,
+    "failed": 0,
+    "scopedLintExitCode": 0,
+    "revision": "a6b72a29"
+  },
+  "staticGates": [
+    {
+      "name": "repository",
+      "exitCode": 0
+    },
+    {
+      "name": "migrations",
+      "exitCode": 0
+    },
+    {
+      "name": "ui-contract",
+      "exitCode": 0
+    },
+    {
+      "name": "modules",
+      "exitCode": 0
+    },
+    {
+      "name": "lookups",
+      "exitCode": 0
+    },
+    {
+      "name": "navigation",
+      "exitCode": 0
+    },
+    {
+      "name": "browsing",
+      "exitCode": 0
+    },
+    {
+      "name": "visual",
+      "exitCode": 0
+    },
+    {
+      "name": "route-resolver",
+      "exitCode": 0
+    }
+  ],
+  "typecheck": {
+    "scope": "full repository, latest application source",
+    "exitCode": 0,
+    "sourceCommit": "6ee171111d3758ed84ca8b714fa68d20c0adb432"
+  },
+  "mainBeforeMerge": "936355962545e0b5208aee62bd77e719d2dfc242",
+  "documentationOnlyMainRefresh": {
+    "source": "f9b88e9281893b8169c960ed131d24684e986832",
+    "changedPaths": [
+      "docs/premium-ui/IMPLEMENTATION_BATCH_LEDGER.md",
+      "docs/premium-ui/TRANSFORMATION_TRACKER.md"
+    ],
+    "applicationSourceUnchangedFromTestedRevision": true
+  },
+  "liveRemoteHeadsBeforeMerge": [
+    {
+      "branch": "feature/chatgpt-premium-browsing-20261107",
+      "sha": "4394758459fb6b0ca6a49663ca62f512d51acff5",
+      "included": true
+    },
+    {
+      "branch": "feature/files-workspace-ux-20261106",
+      "sha": "74d926543dd1db708be155861e7e35a6e017a8c6",
+      "included": true
+    },
+    {
+      "branch": "feature/linkbooks-premium-visual-redesign",
+      "sha": "41ac9c181ae01495efd9277ea24c874a40c98e4b",
+      "included": true
+    },
+    {
+      "branch": "feature/premium-ui-batch65-ledger-tip",
+      "sha": "c5989169ebc271f8189d05add247e22a9a66a224",
+      "included": true
+    },
+    {
+      "branch": "integration/all-pending-20261118",
+      "sha": "6ee171111d3758ed84ca8b714fa68d20c0adb432",
+      "included": true
+    },
+    {
+      "branch": "main",
+      "sha": "936355962545e0b5208aee62bd77e719d2dfc242",
+      "included": true
+    }
+  ],
+  "sharedBrowserFixtures": {
+    "passed": 97,
+    "failed": 0
+  },
+  "memoryBrowserFixtures": {
+    "passed": 7,
+    "failed": 0
+  },
+  "additionalRecurringSaveFix": {
+    "head": "8e7a819265d057af1a8cd00e643fe0d87f4e6927",
+    "mergeCommit": "6ee171111d3758ed84ca8b714fa68d20c0adb432",
+    "paths": [
+      "src/components/ui/dialog.tsx",
+      "src/routes/_authenticated/recurring-journals.tsx",
+      "e2e/create-panels/create-panels.spec.ts",
+      "e2e/create-panels/server-fixture.ts"
+    ],
+    "status": "verified: full typecheck/unit/build, changed-file lint, UI contracts, 22 browser regressions"
+  },
+  "createBrowserFixturesBaseline": {
+    "passed": 21,
+    "failed": 0
+  },
+  "posBrowserFixtures": {
+    "passed": 10,
+    "failed": 0
+  },
+  "finalAdditionalGates": [
+    {
+      "name": "build",
+      "exit_code": 0,
+      "seconds": 77.25
+    },
+    {
+      "name": "bundle",
+      "exit_code": 0,
+      "seconds": 1.9
+    },
+    {
+      "name": "changed-lint",
+      "exit_code": 0,
+      "seconds": 3.02
+    },
+    {
+      "name": "create-fixtures",
+      "exit_code": 0,
+      "seconds": 85.89
+    },
+    {
+      "name": "ui-contract",
+      "exit_code": 0,
+      "seconds": 3.85
+    },
+    {
+      "name": "typecheck",
+      "exit_code": 0,
+      "seconds": 183.26
+    },
+    {
+      "name": "unit",
+      "exit_code": 0,
+      "seconds": 81.41
+    }
+  ],
+  "createBrowserFixtures": {
+    "passed": 22,
+    "failed": 0,
+    "sourceCommit": "6ee171111d3758ed84ca8b714fa68d20c0adb432"
+  },
+  "schemaMigrationBytesUnchangedAtFinalSource": true,
+  "deliveryAuthority": "GitHub PR 295 and main branch state; publication and actual merged SHA are verified after the report commit.",
+  "releaseHarnessRefresh": {
+    "mainCommit": "936355962545e0b5208aee62bd77e719d2dfc242",
+    "paths": [
+      "docs/premium-ui/RELEASE_READINESS.md",
+      "scripts/check-section18-gates.mjs",
+      "scripts/check-section18-gates.test.mjs"
+    ],
+    "tests": 8,
+    "failed": 0
+  },
+  "applicationFixtureMigrationTreesMatchTestedSource": true
+}

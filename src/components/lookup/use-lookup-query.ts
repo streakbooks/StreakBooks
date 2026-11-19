@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { isCurrentRequest, lookupCacheKey } from "@/lib/lookup/search";
 
 export type LookupPage<T> = {
@@ -102,7 +103,7 @@ export function useLookupQuery<T>({
       .catch((reason: unknown) => {
         if (controller.signal.aborted) return;
         if (controller.signal.aborted || !isCurrentRequest(id, requestId.current)) return;
-        setError(reason instanceof Error ? reason.message : "Could not load records");
+        setError(friendlyAuthError(reason));
         setLoading(false);
       });
     return () => controller.abort();

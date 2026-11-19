@@ -128,7 +128,7 @@ export function NewTransfer({
         toast.success("Transfer posted and statement line matched.");
       } else if (result.matchError) {
         toast.error(
-          `Transfer posted, but the statement line was not matched: ${result.matchError}`,
+          `Transfer posted, but the statement line was not matched: ${friendlyAuthError(result.matchError)}`,
         );
       } else {
         toast.success("Transfer posted. One journal only.");

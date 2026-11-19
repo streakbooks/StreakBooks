@@ -127,18 +127,24 @@ export function PortalBills() {
             <Field label="Tax basis points (2000 = 20%)" value={taxBps} onChange={setTaxBps} />
             <label className="block text-sm">
               Purchase order
-              <RecordLookupSelect
-                className="mt-1 block h-9 w-full rounded-md border border-input bg-background px-2"
-                value={orderId}
-                onValueChange={(event) => setOrderId(event)}
-              >
-                <option value="">None</option>
-                {orders.map((order) => (
-                  <option key={String(order["id"])} value={String(order["id"])}>
-                    {String(order["order_number"] ?? "Order")}
-                  </option>
-                ))}
-              </RecordLookupSelect>
+              {query.isError ? (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Purchase orders unavailable until the workspace loads.
+                </p>
+              ) : (
+                <RecordLookupSelect
+                  className="mt-1 block h-9 w-full rounded-md border border-input bg-background px-2"
+                  value={orderId}
+                  onValueChange={(event) => setOrderId(event)}
+                >
+                  <option value="">None</option>
+                  {orders.map((order) => (
+                    <option key={String(order["id"])} value={String(order["id"])}>
+                      {String(order["order_number"] ?? "Order")}
+                    </option>
+                  ))}
+                </RecordLookupSelect>
+              )}
             </label>
             <div>
               <Label htmlFor="bill-memo">Note</Label>
@@ -148,7 +154,7 @@ export function PortalBills() {
                 onChange={(event) => setMemo(event.target.value)}
               />
             </div>
-            <Button type="submit" disabled={send.isPending}>
+            <Button type="submit" disabled={send.isPending || query.isError || query.isPending}>
               Submit for approval
             </Button>
           </form>
@@ -157,6 +163,7 @@ export function PortalBills() {
       <div className="space-y-3">
         {query.isError ? <QueryErrorState queries={[query]} /> : null}
         <h2 className="font-semibold">Your submissions</h2>
+        {query.isPending ? <LoadingState /> : null}
         <ul className="divide-y divide-border rounded-md border border-border text-sm">
           {submissions.map((row) => (
             <li key={String(row["id"])} className="px-3 py-3">
@@ -173,7 +180,7 @@ export function PortalBills() {
               {row["rejection_reason"] ? <p>{String(row["rejection_reason"])}</p> : null}
             </li>
           ))}
-          {!query.isError && submissions.length === 0 ? (
+          {query.isSuccess && submissions.length === 0 ? (
             <li className="px-3 py-6 text-muted-foreground">No submissions yet.</li>
           ) : null}
         </ul>
@@ -287,6 +294,7 @@ export function PortalRemittances() {
   if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load remittances" />;
   }
+  if (query.isPending) return <LoadingState />;
   const rows = (query.data?.["remittances"] as Row[] | undefined) ?? [];
   const bills = (query.data?.["bills"] as Row[] | undefined) ?? [];
   return (

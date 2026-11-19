@@ -220,7 +220,13 @@ export function PriceListTierRules({
           <div className="flex flex-wrap items-end gap-2">
             <Button
               disabled={
-                !isActive || !canManage || !selectedProductId || !validInputs || saveMut.isPending
+                !isActive ||
+                !canManage ||
+                !selectedProductId ||
+                !validInputs ||
+                saveMut.isPending ||
+                !productsQ.isSuccess ||
+                rulesQ.isError
               }
               onClick={() => saveMut.mutate()}
             >
@@ -235,7 +241,7 @@ export function PriceListTierRules({
         {rulesQ.isError ? (
           <QueryErrorState queries={[rulesQ]} title="Could not load pricing tiers" />
         ) : null}
-        {rulesQ.data?.length === 0 ? (
+        {!rulesQ.isError && rulesQ.data?.length === 0 ? (
           <p className="rounded-md border p-3 text-sm">
             No tier rules configured for this price list.
           </p>

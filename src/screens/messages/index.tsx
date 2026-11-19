@@ -462,7 +462,7 @@ export function MessagesScreen({
               {globalHits.isPending ? (
                 <p className="text-xs text-muted-foreground">Searching messages…</p>
               ) : null}
-              {globalHits.data?.length === 0 ? (
+              {globalHits.isSuccess && globalHits.data.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No message matches</p>
               ) : null}
               <ul className="max-h-48 space-y-1 overflow-y-auto">
@@ -859,7 +859,7 @@ export function MessagesScreen({
                     {threadHits.isPending ? (
                       <p className="text-muted-foreground">Searching…</p>
                     ) : null}
-                    {threadHits.data?.length === 0 ? (
+                    {threadHits.isSuccess && threadHits.data.length === 0 ? (
                       <p className="text-muted-foreground">No matches</p>
                     ) : null}
                     {threadHits.data?.map((hit) => (

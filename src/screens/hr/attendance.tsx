@@ -246,6 +246,25 @@ export function HrAttendancePage() {
         <EmptyState
           title="No attendance logs yet"
           description="Record check-in/out entries or wait for self-service punches (HR-07)."
+          action={
+            canManage ? (
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => {
+                  setEmployeeId("");
+                  setWorkDate(new Date().toISOString().slice(0, 10));
+                  setCheckInAt(toLocalInput(new Date().toISOString()));
+                  setCheckOutAt("");
+                  setStatus("open");
+                  setNotes("");
+                  setLogOpen(true);
+                }}
+              >
+                Record attendance
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <TableCard>

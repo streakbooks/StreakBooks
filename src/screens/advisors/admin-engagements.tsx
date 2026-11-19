@@ -235,6 +235,19 @@ export function AdvisorsAdminEngagementsPage() {
               <EmptyState
                 title="No engagements yet"
                 description="Create an engagement for a client, then send a proposal."
+                action={
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={() =>
+                      document
+                        .getElementById("advisors-engagement-form")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                    }
+                  >
+                    New engagement
+                  </Button>
+                }
               />
             ) : (
               listQ.data.map((engagement) => (
@@ -269,7 +282,10 @@ export function AdvisorsAdminEngagementsPage() {
           </section>
 
           <div className="space-y-4">
-            <section className="space-y-3 rounded-xl border border-border/70 p-4">
+            <section
+              id="advisors-engagement-form"
+              className="space-y-3 rounded-xl border border-border/70 p-4"
+            >
               <h2 className="font-semibold">New engagement</h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1 sm:col-span-2">

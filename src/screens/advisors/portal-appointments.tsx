@@ -5,6 +5,7 @@ import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { listAdvisorsPortalAppointments } from "@/lib/advisors/portal.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 
@@ -45,6 +46,11 @@ export function AdvisorsPortalAppointmentsPage() {
           <EmptyState
             title="No appointments yet"
             description="Book a consultation from the public Advisors booking page."
+            action={
+              <Button asChild size="sm">
+                <Link to="/advisors/book">Book consultation</Link>
+              </Button>
+            }
           />
         ) : (
           <ul className="space-y-3">

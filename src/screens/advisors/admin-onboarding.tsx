@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -89,6 +90,11 @@ export function AdvisorsAdminOnboardingPage() {
               <EmptyState
                 title="No onboarding in progress"
                 description="Customers enter onboarding after accepting a service agreement."
+                action={
+                  <Button asChild size="sm">
+                    <Link to="/advisors-admin/engagements">Open engagements</Link>
+                  </Button>
+                }
               />
             ) : (
               query.data.map((item) => (

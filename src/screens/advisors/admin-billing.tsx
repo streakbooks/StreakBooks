@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -226,6 +227,11 @@ export function AdvisorsAdminBillingPage() {
               <EmptyState
                 title="No billable engagements"
                 description="Accept a proposal/agreement first. Billing still requires an explicit prepare + checkout step."
+                action={
+                  <Button asChild size="sm">
+                    <Link to="/advisors-admin/engagements">Open engagements</Link>
+                  </Button>
+                }
               />
             ) : (
               board.eligibleEngagements.map((engagement) => (
@@ -421,6 +427,11 @@ export function AdvisorsAdminBillingPage() {
             <EmptyState
               title="No Advisors subscriptions yet"
               description="Prepared and active Advisors billings appear here."
+              action={
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/advisors-admin/engagements">Prepare from engagements</Link>
+                </Button>
+              }
             />
           ) : (
             board.subscriptions.map((subscription) => (

@@ -39,6 +39,7 @@ export type VoiceFormAdapter = {
   selectContact(id: string): void;
   update(patch: Partial<Omit<VoiceDraft, "lines" | "contactId">>): void;
   updateLines(lines: VoiceLine[]): void;
+  isBlankLine?(index: number): boolean;
   validate(): string[];
   saveDraft(): Promise<{ id: string; warning?: string }>;
 };
@@ -50,15 +51,22 @@ export function describeDraft(form: VoiceFormAdapter): string[] {
     `Contact: ${form.contacts.find((c) => c.id === d.contactId)?.name ?? "Not selected"}`,
     `Date: ${d.date}; due/expiry: ${d.dueDate || "Not applicable"}; currency: ${d.currency}`,
     `Number: ${d.number || "Automatic"}; memo: ${d.memo || "None"}`,
-    ...d.lines.map(
-      (line, i) =>
-        `${i + 1}. ${line.description || "Blank line"}; account ${form.accounts.find((a) => a.id === line.accountId)?.name ?? "not selected"}; quantity ${line.quantity}; unit price ${d.currency} ${line.unitPrice}; discount ${line.discount}; tax ${form.taxes.find((t) => t.id === line.taxCodeId)?.name ?? `${Number(line.taxRateBps) / 100}%`}`,
+    ...d.lines.flatMap((line, i) =>
+      form.isBlankLine?.(i)
+        ? []
+        : [
+            `${i + 1}. ${line.description || "Blank line"}; account ${form.accounts.find((a) => a.id === line.accountId)?.name ?? "not selected"}; quantity ${line.quantity}; unit price ${d.currency} ${line.unitPrice}; discount ${line.discount}; tax ${form.taxes.find((t) => t.id === line.taxCodeId)?.name ?? `${Number(line.taxRateBps) / 100}%`}`,
+          ],
     ),
     "Includes notes and attachments entered in the form. Existing server validation applies.",
   ];
 }
 
-export function validateVoiceDraft(draft: VoiceDraft, dueRequired: boolean): string[] {
+export function validateVoiceDraft(
+  draft: VoiceDraft,
+  dueRequired: boolean,
+  isBlankLine?: (index: number) => boolean,
+): string[] {
   const errors: string[] = [];
   if (!draft.contactId) errors.push("Select a customer or supplier.");
   if (!draft.date) errors.push("Set the document date.");
@@ -66,8 +74,10 @@ export function validateVoiceDraft(draft: VoiceDraft, dueRequired: boolean): str
   if (draft.dueDate && draft.dueDate < draft.date)
     errors.push("Due date cannot be before the document date.");
   if (!draft.currency) errors.push("Choose the currency.");
-  if (!draft.lines.length) errors.push("Add a line item.");
+  let hasLine = false;
   for (const [i, line] of draft.lines.entries()) {
+    if (isBlankLine?.(i)) continue;
+    hasLine = true;
     if (
       !line.description.trim() ||
       !line.accountId ||
@@ -76,5 +86,6 @@ export function validateVoiceDraft(draft: VoiceDraft, dueRequired: boolean): str
     )
       errors.push(`Complete description, account, quantity and positive price on line ${i + 1}.`);
   }
+  if (!hasLine) errors.push("Add a line item.");
   return errors;
 }

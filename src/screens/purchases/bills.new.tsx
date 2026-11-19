@@ -77,7 +77,11 @@ import {
   type BillFormSnapshot,
   type TaxCalculationMode,
 } from "@/lib/purchases/bill-form-helpers";
-import { cleanupBlankPurchaseLines, incompletePurchaseLines } from "@/lib/purchases/blank-lines";
+import {
+  cleanupBlankPurchaseLines,
+  incompletePurchaseLines,
+  isCompletelyBlankPurchaseLine,
+} from "@/lib/purchases/blank-lines";
 import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
@@ -1325,6 +1329,7 @@ export function NewBill({
     number: supplierInvoiceNumber,
     lines,
   };
+  const isBlankLine = (index: number) => isCompletelyBlankPurchaseLine(lines[index]!);
   const voiceToken = useVoiceForm(
     companyId && !isTemplate
       ? {
@@ -1374,8 +1379,9 @@ export function NewBill({
           },
           updateLines: (next) =>
             setLines(next.map((line) => ({ ...emptyPurchaseLine(), ...line }))),
+          isBlankLine,
           validate: () => {
-            const errors = validateVoiceDraft(voiceDraft, true);
+            const errors = validateVoiceDraft(voiceDraft, true, isBlankLine);
             if (dupQ.isFetching) errors.push("Wait for the duplicate supplier bill check.");
             if (dupQ.data?.duplicate && !acknowledgeDuplicate)
               errors.push("Review the possible duplicate bill and acknowledge it in the form.");

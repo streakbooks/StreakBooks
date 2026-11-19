@@ -23,3 +23,18 @@ export const emptySalesLine = (): SalesLineFormState => ({
   taxRateBps: "0",
   taxCodeId: "",
 });
+
+/** Untouched grid rows do not belong in the saved document. */
+export function isBlankSalesLine(line: SalesLineFormState): boolean {
+  return (
+    !line.description.trim() &&
+    !line.productId &&
+    !line.accountId &&
+    !line.taxCodeId &&
+    !line.pricingTrace &&
+    Number(line.quantity) === 1 &&
+    Number(line.unitPrice) === 0 &&
+    Number(line.discount) === 0 &&
+    Number(line.taxRateBps) === 0
+  );
+}

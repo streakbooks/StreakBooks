@@ -49,7 +49,11 @@ import { SplitButton } from "@/components/ui/split-button";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
 import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
-import { emptySalesLine, type SalesLineFormState } from "@/lib/sales/line-form-state";
+import {
+  emptySalesLine,
+  isBlankSalesLine,
+  type SalesLineFormState,
+} from "@/lib/sales/line-form-state";
 import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
 import { computeTaxLineRounded } from "@/lib/sales/line-math-rounded";
 import {
@@ -497,7 +501,8 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
         if (!docDate) throw new Error(`${copy.dateLabel} is required`);
         const fx = isForeign ? Number(fxRate) : 1;
         if (isForeign && !(fx > 0)) throw new Error(`Enter the exchange rate to ${base}`);
-        const payloadLines = lines.map((l) => lineFormToInput(l, currency));
+        const enteredLines = lines.filter((line) => !isBlankSalesLine(line));
+        const payloadLines = enteredLines.map((line) => lineFormToInput(line, currency));
         const common = {
           companyId,
           contactId,
@@ -509,7 +514,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             ? {
                 pricing: {
                   priceListId: selectedPriceListId || null,
-                  lines: lines.map((line) =>
+                  lines: enteredLines.map((line) =>
                     verifiedLinePricing({
                       trace: line.pricingTrace,
                       selectedPriceListId: selectedPriceListId || null,
@@ -668,6 +673,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
     number,
     lines,
   };
+  const isBlankLine = (index: number) => isBlankSalesLine(lines[index]!);
   const voiceToken = useVoiceForm(
     companyId
       ? {
@@ -715,8 +721,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             if (patch.number !== undefined) setNumber(patch.number);
           },
           updateLines: (next) => setLines(next.map((line) => ({ ...emptySalesLine(), ...line }))),
+          isBlankLine,
           validate: () => [
-            ...validateVoiceDraft(voiceDraft, kind === "invoice"),
+            ...validateVoiceDraft(voiceDraft, kind === "invoice", isBlankLine),
             ...(isForeign && !(Number(fxRate) > 0) ? ["Enter the exchange rate in the form."] : []),
           ],
           saveDraft: async () => {

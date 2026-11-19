@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AssistantController } from "./assistant-controller";
 import type { BrowserRecognition, RecognitionEvent } from "./browser-recognition";
 import { validateVoiceDraft, type VoiceFormAdapter } from "./form-adapter";
+import { emptySalesLine, isBlankSalesLine } from "@/lib/sales/line-form-state";
 import { permissionsForRole } from "@/lib/permissions";
 
 class Speech implements BrowserRecognition {
@@ -383,6 +384,21 @@ describe("registered field editing", () => {
     s.controller.locationChanged("/contacts");
     expect(s.controller.getSnapshot().field).toBeNull();
     s.controller.dispose();
+  });
+  it("skips only untouched sales rows when reviewing a draft", () => {
+    const { controller, form } = setup();
+    const empty = emptySalesLine();
+    const entered = { ...empty, description: "Consulting", accountId: "income", unitPrice: "50" };
+    const partial = { ...empty, productId: "selected-product" };
+    const lines = [empty, entered, partial];
+    const draft = { ...form().draft, contactId: "abc", lines };
+    expect(validateVoiceDraft(draft, true, (index) => isBlankSalesLine(lines[index]!))).toEqual([
+      "Complete description, account, quantity and positive price on line 3.",
+    ]);
+    expect(validateVoiceDraft({ ...draft, lines: [empty] }, true, () => true)).toEqual([
+      "Add a line item.",
+    ]);
+    controller.dispose();
   });
   it("cannot start recognition after cancellation of an activation handoff", async () => {
     const s = setup();

@@ -172,7 +172,7 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
         {defaultsQ.isError ? (
           <QueryErrorState queries={[defaultsQ]} title="Could not load customer price defaults" />
         ) : null}
-        {defaults.length === 0 && !defaultsQ.isPending ? (
+        {defaults.length === 0 && !defaultsQ.isPending && !defaultsQ.isError ? (
           <p className="rounded-md border p-3 text-sm text-muted-foreground">
             No customer-specific defaults configured yet.
           </p>

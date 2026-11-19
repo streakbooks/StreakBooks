@@ -140,6 +140,8 @@ export function PmAgreementsPage() {
     >
       {settings.isError ? (
         <QueryErrorState queries={[settings]} title="Could not load Property Management settings" />
+      ) : settings.isLoading ? (
+        <LoadingState />
       ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState

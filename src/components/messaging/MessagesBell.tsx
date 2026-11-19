@@ -23,7 +23,9 @@ export function MessagesBell({ companyId }: { companyId: string | null }) {
   const settings = useMessagingSettings(companyId);
   const inbox = useMessagingConversations(companyId, "inbox");
   const count = unread.data ?? 0;
-  const enabled = settings.data?.enabled ?? false;
+  const settingsPending = settings.isPending;
+  const settingsFailed = settings.isError;
+  const enabled = settings.data?.enabled === true;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -47,17 +49,40 @@ export function MessagesBell({ companyId }: { companyId: string | null }) {
         <SheetHeader className="border-b px-4 py-3 text-left">
           <SheetTitle>Messages</SheetTitle>
           <SheetDescription>
-            {enabled
-              ? "Recent conversations. Open the full workspace for search and settings."
-              : "Messaging is disabled for this organisation. An administrator can enable it in Settings."}
+            {settingsPending
+              ? "Loading messaging settings…"
+              : settingsFailed
+                ? "Could not load messaging settings."
+                : enabled
+                  ? "Recent conversations. Open the full workspace for search and settings."
+                  : "Messaging is disabled for this organisation. An administrator can enable it in Settings."}
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto">
-          {!enabled && (
+          {settingsPending ? (
+            <p className="flex items-center gap-2 p-4 text-sm">
+              <Loader2 className="size-4 animate-spin" />
+              Loading messaging settings…
+            </p>
+          ) : null}
+          {settingsFailed ? (
+            <div role="alert" className="p-4 text-sm">
+              Could not load messaging settings.
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-2"
+                onClick={() => void settings.refetch()}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : null}
+          {!settingsPending && !settingsFailed && !enabled ? (
             <p className="p-4 text-sm text-muted-foreground">
               Enable Messaging &amp; collaboration to start chatting with authorised colleagues.
             </p>
-          )}
+          ) : null}
           {enabled && inbox.isPending && (
             <p className="flex items-center gap-2 p-4 text-sm">
               <Loader2 className="size-4 animate-spin" />

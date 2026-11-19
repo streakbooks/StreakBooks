@@ -268,13 +268,13 @@ test("sales order grid pastes numeric rows and supports keyboard movement", asyn
   const firstQuantity = page.getByRole("textbox", { name: "Line 1 quantity" });
   const secondQuantity = page.getByRole("textbox", { name: "Line 2 quantity" });
   await firstQuantity.focus();
-  const clipboard = await page.evaluateHandle(() => {
-    const data = new DataTransfer();
-    data.setData("text/plain", "2\t10.50\n3\t20.25");
-    return data;
+  await firstQuantity.evaluate((input) => {
+    const clipboardData = new DataTransfer();
+    clipboardData.setData("text/plain", "2\t10.50\n3\t20.25");
+    input.dispatchEvent(
+      new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData }),
+    );
   });
-  await firstQuantity.dispatchEvent("paste", { clipboardData: clipboard });
-  await clipboard.dispose();
   await expect(firstQuantity).toHaveValue("2");
   await expect(secondQuantity).toHaveValue("3");
   await expect(page.getByRole("textbox", { name: "Line 1 unit price" })).toHaveValue("10.50");

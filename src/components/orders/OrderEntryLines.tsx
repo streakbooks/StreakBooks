@@ -72,7 +72,7 @@ export function OrderEntryLines({
     rowIndex: number,
     colKey: (typeof ORDER_NUMERIC_COLS)[number],
   ) => {
-    if (disabled) return;
+    if (disabled || !event.clipboardData) return;
     const grid = parseLineGridClipboard(event.clipboardData.getData("text"));
     if (grid.length <= 1 && (grid[0]?.length ?? 0) <= 1) return;
     event.preventDefault();

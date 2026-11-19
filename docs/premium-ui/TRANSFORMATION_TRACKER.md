@@ -71,6 +71,7 @@
 | Receipt/payment record TotalsSummary Batch 78 | PR open (#356) | Receipt + payment record allocation TotalsSummary |
 | Create QueryErrorState Batch 79 | PR open (#356) | Orders/requisitions/batch-pay QueryErrorState |
 | Claim detail TotalsSummary Batch 80 | PR open (#356) | Expense claim detail TotalsSummary |
+| QueryErrorState sweep Batches 88–99 | Done | PRs #361–#372 — query load failures use shared QueryErrorState (384 workspace locks); intentional deny-path ErrorState only in StatementViews customization gate |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

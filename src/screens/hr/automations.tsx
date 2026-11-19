@@ -122,7 +122,15 @@ export function HrAutomationsPage() {
           onRetry={() => void dataQ.refetch()}
         />
       ) : items.length === 0 ? (
-        <EmptyState title="No automation rules" description="Defaults seed on first open." />
+        <EmptyState
+          title="No automation rules"
+          description="Defaults seed on first open."
+          action={
+            <Button size="sm" type="button" onClick={() => void dataQ.refetch()}>
+              Refresh rules
+            </Button>
+          }
+        />
       ) : (
         <TableCard>
           <Table>
@@ -182,6 +190,16 @@ export function HrAutomationsPage() {
           <EmptyState
             title="No runs yet"
             description="Run an automation to create a retry log entry."
+            action={
+              <Button
+                size="sm"
+                type="button"
+                disabled={runM.isPending}
+                onClick={() => runM.mutate(null)}
+              >
+                Run all now
+              </Button>
+            }
           />
         ) : (
           <TableCard>

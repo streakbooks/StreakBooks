@@ -122,3 +122,14 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | HR attendance empty logs | Record attendance dialog CTA |
 | CRM contacts empty people | Link to Contacts master |
 
+## Batch 63 (empty CTA wave 6)
+
+| Gap | Action |
+| --- | --- |
+| EM receipts / reimbursements | Upload receipt scroll; Open approvals bridge |
+| Advisors portal messages/tasks/docs/home plan | Compose focus; portal bridges; message advisor |
+| Advisors inquiries/conversations filter empties | Clear filters + Advisors site |
+| HR self-service attendance / automations | Check in; Refresh rules / Run all |
+| App Store explore/billing | Clear filters; Explore apps |
+| Sales statements | Choose customer scroll |
+

@@ -980,15 +980,24 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                   onChange={(e) => setInstructions(e.target.value)}
                 />
               </div>
-              {recipients.isError && (
-                <p role="alert" className="text-sm text-destructive md:col-span-2">
-                  Could not load eligible team members
-                </p>
-              )}
+              {recipients.isError ? (
+                <div className="md:col-span-2">
+                  <QueryErrorState
+                    queries={[recipients]}
+                    title="Could not load eligible team members"
+                  />
+                </div>
+              ) : null}
               <Button
                 type="submit"
                 className="justify-self-start"
-                disabled={createRequest.isPending || !recipient || subject.trim().length < 3}
+                disabled={
+                  createRequest.isPending ||
+                  recipients.isError ||
+                  recipients.isPending ||
+                  !recipient ||
+                  subject.trim().length < 3
+                }
               >
                 {createRequest.isPending ? "Sending…" : "Send request"}
               </Button>
@@ -996,11 +1005,9 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
           </CardContent>
         </Card>
       )}
-      {requests.isError && (
-        <p role="alert" className="text-sm text-destructive">
-          Could not load document requests
-        </p>
-      )}
+      {requests.isError ? (
+        <QueryErrorState queries={[requests]} title="Could not load document requests" />
+      ) : null}
       {requests.isPending && (
         <p className="text-sm text-muted-foreground">Loading document requests…</p>
       )}

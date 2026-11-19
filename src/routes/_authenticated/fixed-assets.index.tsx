@@ -374,14 +374,10 @@ function FixedAssetsPage() {
               onView={(asset) => setDialog({ kind: "details", asset })}
             />
             {register.isError ? (
-              <Alert variant="destructive">
-                <AlertDescription className="flex flex-wrap items-center gap-2">
-                  Financial summary unavailable: {friendlyAuthError(register.error)}
-                  <Button size="sm" variant="outline" onClick={() => void register.refetch()}>
-                    Retry balances
-                  </Button>
-                </AlertDescription>
-              </Alert>
+              <QueryErrorState
+                queries={[register]}
+                title="Could not load financial summary balances"
+              />
             ) : null}
           </TabsContent>
 
@@ -595,15 +591,11 @@ function FixedAssetsPage() {
               </div>
             ) : null}
             {register.isError ? (
-              <Alert variant="destructive">
-                <AlertDescription className="flex flex-wrap items-center gap-2">
-                  Depreciation balances could not be loaded. Disposal and balance exports are paused
-                  until a fresh register is available. {friendlyAuthError(register.error)}
-                  <Button size="sm" variant="outline" onClick={() => void register.refetch()}>
-                    Retry balances
-                  </Button>
-                </AlertDescription>
-              </Alert>
+              <QueryErrorState
+                queries={[register]}
+                title="Could not load depreciation balances"
+                description={`${friendlyAuthError(register.error)} Disposal and balance exports are paused until a fresh register is available.`}
+              />
             ) : null}
             {d.assets.length === 0 ? (
               <EmptyState

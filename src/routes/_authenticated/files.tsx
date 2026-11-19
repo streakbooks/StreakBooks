@@ -916,10 +916,11 @@ function FilesPage() {
           </form>
         ) : null}
         {foldersQ.isError ? (
-          <p role="alert" className="text-sm text-destructive">
-            Folder loading failed: {friendlyAuthError(foldersQ.error)}. Apply the document folders
-            migration if it is pending.
-          </p>
+          <QueryErrorState
+            queries={[foldersQ]}
+            title="Could not load folders"
+            description={`${friendlyAuthError(foldersQ.error)} Apply the document folders migration if it is pending.`}
+          />
         ) : null}
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Input
@@ -1357,11 +1358,8 @@ function FilesPage() {
       ) : null}
 
       {selectedFile && fileDetailsQ.isError && !selected ? (
-        <div
-          role="alert"
-          className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm"
-        >
-          File details unavailable: {friendlyAuthError(fileDetailsQ.error)}
+        <div className="mb-4 space-y-2">
+          <QueryErrorState queries={[fileDetailsQ]} title="Could not load file details" />
           <Button size="sm" variant="outline" onClick={() => setSelectedFile(null)}>
             Close
           </Button>
@@ -1539,9 +1537,9 @@ function FilesPage() {
           {previewQ.isPending ? (
             <p className="mt-3 text-sm text-muted-foreground">Loading secure preview…</p>
           ) : previewQ.isError ? (
-            <p role="alert" className="mt-3 text-sm text-destructive">
-              Preview unavailable: {friendlyAuthError(previewQ.error)}
-            </p>
+            <div className="mt-3">
+              <QueryErrorState queries={[previewQ]} title="Could not load file preview" />
+            </div>
           ) : preview?.kind === "unsupported" ? (
             <p className="mt-3 text-sm text-muted-foreground">
               Preview is not available for this format. Download to view it.

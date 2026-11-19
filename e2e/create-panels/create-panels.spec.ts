@@ -228,3 +228,37 @@ test.describe("touch dialogs", () => {
     await expect(edit).toBeFocused();
   });
 });
+
+test("recurring schedule save keeps submitted values locked and restores editing after failure", async ({
+  page,
+}) => {
+  let finishSave!: () => void;
+  const pendingSave = new Promise<void>((resolve) => {
+    finishSave = resolve;
+  });
+  await page.exposeFunction("waitForScheduleFixtureSave", async () => {
+    await pendingSave;
+  });
+
+  await page.goto("/recurring-journals");
+  await page.getByRole("button", { name: "Edit schedule for Monthly rent" }).click();
+  const dialog = page.getByRole("dialog", { name: "Edit recurring journal schedule" });
+  const name = dialog.getByRole("textbox", { name: "Name" });
+  await name.fill("Keep this draft");
+  await dialog.getByRole("button", { name: "Save schedule" }).click();
+  await expect(dialog.getByRole("status")).toHaveText("Saving schedule…");
+  await expect(name).not.toBeEditable();
+  await expect(
+    dialog.getByRole("spinbutton", { name: "Repeat every (months)" }),
+  ).not.toBeEditable();
+  await expect(dialog.getByRole("button", { name: "Close", exact: true })).toBeDisabled();
+  await expect(dialog.getByRole("button", { name: "Cancel" })).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeVisible();
+
+  finishSave();
+  await expect(dialog.getByRole("alert")).toHaveText("Schedule save failed. Try again.");
+  await expect(name).toBeEditable();
+  await expect(name).toHaveValue("Keep this draft");
+  await expect(dialog.getByRole("button", { name: "Close", exact: true })).toBeEnabled();
+});

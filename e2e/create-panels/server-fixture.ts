@@ -1,7 +1,16 @@
 import { call as originalCall, defaults } from "../voice/server-fixture";
 export { defaults };
+declare global {
+  interface Window {
+    waitForScheduleFixtureSave?: (submitted: Record<string, unknown>) => Promise<void>;
+  }
+}
 export async function call(name: string, args: unknown[]) {
   const data = (args[0] as { data?: Record<string, unknown> } | undefined)?.data ?? {};
+  if (name === "updateRecurringJournalSchedule" && window.waitForScheduleFixtureSave) {
+    await window.waitForScheduleFixtureSave(data);
+    throw new Error("Schedule save failed. Try again.");
+  }
   if (name === "listPayments") return [];
   if (name === "listRecurringJournals") {
     return [

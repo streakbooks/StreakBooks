@@ -98,7 +98,7 @@ export function CategoriesWorkspace({ companyId }: WorkspaceProps) {
           {categoriesQ.isError ? (
             <QueryErrorState queries={[categoriesQ]} title="Could not load product categories" />
           ) : null}
-          {categoriesQ.data?.length === 0 ? (
+          {!categoriesQ.isError && categoriesQ.data?.length === 0 ? (
             <p className="rounded-md border p-3 text-sm">
               No categories yet. Create your first category.
             </p>
@@ -306,7 +306,7 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
             {listsQ.isError ? (
               <QueryErrorState queries={[listsQ]} title="Could not load price lists" />
             ) : null}
-            {listsQ.data?.length === 0 ? (
+            {!listsQ.isError && listsQ.data?.length === 0 ? (
               <p className="rounded-md border p-3 text-sm">No price lists yet.</p>
             ) : null}
             {listsQ.data?.map((list) => (
@@ -466,7 +466,9 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
                   !chosen.is_active ||
                   !productId ||
                   !priceIsValid ||
-                  overrideMut.isPending
+                  overrideMut.isPending ||
+                  !productsQ.isSuccess ||
+                  pricesQ.isError
                 }
                 onClick={() => overrideMut.mutate()}
               >
@@ -477,7 +479,7 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
             {pricesQ.isError ? (
               <QueryErrorState queries={[pricesQ]} title="Could not load price overrides" />
             ) : null}
-            {pricesQ.data?.length === 0 ? (
+            {!pricesQ.isError && pricesQ.data?.length === 0 ? (
               <p className="rounded-md border p-3 text-sm">No price overrides for this list.</p>
             ) : null}
             <div className="space-y-2">

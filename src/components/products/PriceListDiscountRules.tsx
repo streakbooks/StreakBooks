@@ -223,7 +223,8 @@ export function PriceListDiscountRules({
                 !productId ||
                 !valid ||
                 saveMut.isPending ||
-                rulesQ.isError
+                rulesQ.isError ||
+                !productsQ.isSuccess
               }
               onClick={() => saveMut.mutate()}
             >
@@ -238,7 +239,7 @@ export function PriceListDiscountRules({
         {rulesQ.isError ? (
           <QueryErrorState queries={[rulesQ]} title="Could not load discount rules" />
         ) : null}
-        {rulesQ.data?.length === 0 ? (
+        {!rulesQ.isError && rulesQ.data?.length === 0 ? (
           <p className="rounded-md border p-3 text-sm">
             No percentage discount rules have been configured for this price list.
           </p>

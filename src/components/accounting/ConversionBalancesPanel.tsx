@@ -514,6 +514,7 @@ export function ConversionBalancesPanel({
           {setup.isError ? (
             <QueryErrorState queries={[setup]} title="Could not load conversion setup" />
           ) : null}
+          {setup.isError ? null : (
           <div className="max-h-96 overflow-auto">
             <EditableLineItemGrid
               aria-label="Trial balance"
@@ -558,6 +559,7 @@ export function ConversionBalancesPanel({
               ))}
             </EditableLineItemGrid>
           </div>
+          )}
         </CardContent>
       </Card>
 
@@ -639,7 +641,7 @@ export function ConversionBalancesPanel({
           </div>
           <Button
             disabled={
-              !validation.canPost || nothingEntered || post.isPending || setup.isError
+              !validation.canPost || nothingEntered || post.isPending || !setup.isSuccess
             }
             onClick={exportReview}
             variant="outline"
@@ -655,7 +657,7 @@ export function ConversionBalancesPanel({
               id="conv-review-confirm"
               checked={reviewMatches}
               disabled={
-                !validation.canPost || nothingEntered || post.isPending || setup.isError
+                !validation.canPost || nothingEntered || post.isPending || !setup.isSuccess
               }
               onCheckedChange={(checked) =>
                 setReviewedFingerprint(checked === true ? reviewFingerprint : "")
@@ -672,7 +674,7 @@ export function ConversionBalancesPanel({
               nothingEntered ||
               !reviewMatches ||
               post.isPending ||
-              setup.isError
+              !setup.isSuccess
             }
             onClick={() => {
               const adjustment =

@@ -9,7 +9,8 @@ import { useFormat } from "@/hooks/use-format";
 import { listSalesOrders, getSalesOrder, actSalesOrder } from "@/lib/sales/sales-orders.functions";
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { SalesOrderForm } from "@/screens/sales/orders.new";
@@ -145,11 +146,7 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
         detail.isPending ? (
           <LoadingState />
         ) : detail.isError ? (
-          <ErrorState
-            onRetry={() => void detail.refetch()}
-            title="Could not load order"
-            description={friendlyAuthError(detail.error)}
-          />
+          <QueryErrorState queries={[detail]} title="Could not load order" />
         ) : (
           <section className="mb-6 space-y-4 rounded-lg border p-4">
             <div className="flex flex-wrap items-center gap-3">
@@ -261,11 +258,7 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
         {q.isPending ? (
           <LoadingState />
         ) : q.isError ? (
-          <ErrorState
-            onRetry={() => void q.refetch()}
-            title="Could not load sales orders"
-            description={friendlyAuthError(q.error)}
-          />
+          <QueryErrorState queries={[q]} title="Could not load sales orders" />
         ) : !q.data.total && !search && status === "all" ? (
           <EmptyState
             title="No sales orders"

@@ -82,8 +82,9 @@ eature/premium-ui-batch40-density-acceptance | [PR #286](https://github.com/link
 | 83 | Phase 3–5 | Sales invoices list/record/edit + quote record QueryErrorState | `feature/premium-ui-batch83-production-gaps` | [PR #359](https://github.com/linkbusinessadvisory/LinkBooks/pull/359) → merged | sales | done |
 | 84 | Phase 3–5 | Bills list/record + bank transactions/reconcile workspace QueryErrorState | `feature/premium-ui-batch83-production-gaps` | [PR #359](https://github.com/linkbusinessadvisory/LinkBooks/pull/359) → merged | purchases + banking | done |
 | 85 | Phase 3–5 | PO record QueryErrorState/TotalsSummary; sales/purchase CN record QueryErrorState; claims list QueryErrorState | `feature/premium-ui-batch83-production-gaps` | [PR #359](https://github.com/linkbusinessadvisory/LinkBooks/pull/359) → merged | purchases + sales + expense-management | done |
-| 86 | Phase 3–5 | Sales quotes/receipts/credit-notes lists + supplier payments list QueryErrorState | `feature/premium-ui-batch86-production-gaps` | pending PR | sales + purchases | in progress |
-| 87 | Phase 3–5 | Journals list + expense record + requisitions list QueryErrorState | `feature/premium-ui-batch86-production-gaps` | pending PR | accounting + purchases | in progress |
-| 88+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do Batches 46–87) | TBD | — | all modules | planned |
+| 86 | Phase 3–5 | Sales quotes/receipts/credit-notes lists + supplier payments list QueryErrorState | `feature/premium-ui-batch86-production-gaps` | [PR #360](https://github.com/linkbusinessadvisory/LinkBooks/pull/360) merged | sales + purchases | done |
+| 87 | Phase 3–5 | Journals list + expense record + requisitions list QueryErrorState | `feature/premium-ui-batch86-production-gaps` | [PR #360](https://github.com/linkbusinessadvisory/LinkBooks/pull/360) merged | accounting + purchases | done |
+| 88 | Phase 3–5 | Quote/CN edit + sales orders/customers + purchase CN list QueryErrorState | `feature/premium-ui-batch88-production-gaps` | pending PR | sales + purchases | in progress |
+| 89+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do Batches 46–88) | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { getCreditNote } from "@/lib/sales/sales-credits.functions";
-import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { SalesDocumentEditor } from "@/components/sales/SalesDocumentEditor";
 import { Button } from "@/components/ui/button";
 
@@ -26,8 +26,7 @@ function EditCreditNote() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (q.isPending) return <LoadingState />;
-  if (q.isError)
-    return <ErrorState description={friendlyAuthError(q.error)} onRetry={() => void q.refetch()} />;
+  if (q.isError) return <QueryErrorState queries={[q]} title="Could not load credit note" />;
   const cn = q.data;
   if (cn.status !== "draft") {
     return (

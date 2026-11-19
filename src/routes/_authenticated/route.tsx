@@ -12,8 +12,7 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import { ErrorState } from "@/components/common/states";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { needsMfaStepUp } from "@/lib/auth-session";
 import { listPortalAccess } from "@/lib/portals/portals.functions";
 
@@ -98,10 +97,9 @@ function CompanyLayout() {
   if (isError) {
     return (
       <div className="mx-auto flex min-h-screen max-w-lg items-center px-4">
-        <ErrorState
+        <QueryErrorState
+          queries={[{ isError, error, refetch }]}
           title="Could not load your organisations"
-          description={friendlyAuthError(error)}
-          onRetry={() => refetch()}
         />
       </div>
     );

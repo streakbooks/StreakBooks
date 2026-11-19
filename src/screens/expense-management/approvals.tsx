@@ -6,7 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -354,11 +355,7 @@ export function ExpenseManagementApprovalsPage() {
             <AlertDescription>{EXPENSE_APPROVAL_MIGRATION}</AlertDescription>
           </Alert>
         ) : (
-          <ErrorState
-            title="Could not load approval queue"
-            description={message}
-            onRetry={() => queueQ.refetch()}
-          />
+          <QueryErrorState queries={[queueQ]} title="Could not load approval queue" />
         )}
       </ListWorkspace>
     );
@@ -442,11 +439,7 @@ export function ExpenseManagementApprovalsPage() {
                 <AlertDescription>{EXPENSE_ESCALATION_MIGRATION}</AlertDescription>
               </Alert>
             ) : (
-              <ErrorState
-                title="Could not load escalations"
-                description={friendlyAuthError(escalationsQ.error)}
-                onRetry={() => escalationsQ.refetch()}
-              />
+              <QueryErrorState queries={[escalationsQ]} title="Could not load escalations" />
             )
           ) : (
             <>
@@ -525,11 +518,7 @@ export function ExpenseManagementApprovalsPage() {
                 <AlertDescription>{EXPENSE_DELEGATION_MIGRATION}</AlertDescription>
               </Alert>
             ) : (
-              <ErrorState
-                title="Could not load delegations"
-                description={friendlyAuthError(delegationsQ.error)}
-                onRetry={() => delegationsQ.refetch()}
-              />
+              <QueryErrorState queries={[delegationsQ]} title="Could not load delegations" />
             )
           ) : (
             <>

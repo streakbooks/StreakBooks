@@ -5,7 +5,8 @@ import { useMemo } from "react";
 import { ExpenseManagementLoadingShell } from "@/components/expenses/ExpenseManagementLoadingShell";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -88,11 +89,7 @@ export function ExpenseManagementBudgetsPage() {
         description="Expenses"
         subnav={<ExpenseManagementSubnav current="budgets" />}
       >
-        <ErrorState
-          title="Could not load claim commitments"
-          description={friendlyAuthError(claimsQ.error)}
-          onRetry={() => claimsQ.refetch()}
-        />
+        <QueryErrorState queries={[claimsQ]} title="Could not load claim commitments" />
       </ListWorkspace>
     );
   }
@@ -129,11 +126,7 @@ export function ExpenseManagementBudgetsPage() {
               <AlertDescription>{EXPENSE_BUDGET_EXPOSURE_MIGRATION}</AlertDescription>
             </Alert>
           ) : (
-            <ErrorState
-              title="Could not load budget exposure"
-              description={friendlyAuthError(exposureQ.error)}
-              onRetry={() => exposureQ.refetch()}
-            />
+            <QueryErrorState queries={[exposureQ]} title="Could not load budget exposure" />
           )
         ) : (exposureQ.data?.rows.length ?? 0) === 0 ? (
           <p className="text-sm text-muted-foreground">

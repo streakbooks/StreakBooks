@@ -21,6 +21,7 @@ import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { bpsToPercentString, money } from "@/components/sales/sales-form-utils";
 import { StatusBadge } from "@/components/common/stat-card";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
@@ -318,18 +319,24 @@ function QuoteDetailPage() {
           </TableBody>
         </Table>
         <div className="mt-4 ml-auto w-64 space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span>Subtotal</span>
-            <span>{money(q.subtotal_minor, cur)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Tax</span>
-            <span>{money(q.tax_minor, cur)}</span>
-          </div>
-          <div className="flex justify-between font-medium">
-            <span>Total</span>
-            <span>{money(q.total_minor, cur)}</span>
-          </div>
+          <TotalsSummary
+            aria-label="Quote totals"
+            lines={[
+              { id: "subtotal", label: "Subtotal", value: money(q.subtotal_minor, cur) },
+              {
+                id: "tax",
+                label: "Tax",
+                value: money(q.tax_minor, cur),
+                emphasis: "muted",
+              },
+              {
+                id: "total",
+                label: "Total",
+                value: money(q.total_minor, cur),
+                emphasis: "total",
+              },
+            ]}
+          />
         </div>
       </RecordWorkspace>
 

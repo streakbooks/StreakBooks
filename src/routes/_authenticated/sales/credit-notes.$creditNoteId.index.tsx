@@ -26,6 +26,7 @@ import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
 import { bpsToPercentString, money } from "@/components/sales/sales-form-utils";
 import { StatusBadge } from "@/components/common/stat-card";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
@@ -391,18 +392,40 @@ function CreditNoteDetail() {
           </TableBody>
         </Table>
         <div className="mt-4 ml-auto w-64 space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span>Subtotal</span>
-            <span>{money(cn.subtotal_minor, cur)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Tax</span>
-            <span>{money(cn.tax_minor, cur)}</span>
-          </div>
-          <div className="flex justify-between font-medium">
-            <span>Total</span>
-            <span>{money(cn.total_minor, cur)}</span>
-          </div>
+          <TotalsSummary
+            aria-label="Credit note totals"
+            lines={[
+              { id: "subtotal", label: "Subtotal", value: money(cn.subtotal_minor, cur) },
+              {
+                id: "tax",
+                label: "Tax",
+                value: money(cn.tax_minor, cur),
+                emphasis: "muted",
+              },
+              {
+                id: "total",
+                label: "Total",
+                value: money(cn.total_minor, cur),
+                emphasis: "total",
+              },
+              {
+                id: "applied",
+                label: "Applied",
+                value: money(cn.amount_allocated_minor, cur),
+                emphasis: "muted",
+              },
+              ...(live
+                ? [
+                    {
+                      id: "remaining",
+                      label: "Remaining",
+                      value: money(remaining, cur),
+                      emphasis: "total" as const,
+                    },
+                  ]
+                : []),
+            ]}
+          />
         </div>
 
         {cn.allocations.length > 0 ? (

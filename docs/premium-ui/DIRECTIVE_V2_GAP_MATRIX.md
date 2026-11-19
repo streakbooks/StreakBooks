@@ -39,7 +39,7 @@
 | Requirement | Status | Evidence / notes |
 | --- | --- | --- |
 | TransactionWorkspace / RecordWorkspace / ListWorkspace | PARTIAL | Adopted on create/list surfaces in Batches 25–54; module DoD incomplete |
-| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money/claims/requisitions/SO/bills/bank coding + conversion balances via shared ELG; Batch 76 ConversionBalancesPanel; residual module DoD / staging TBD |
+| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money/claims/requisitions/SO via OrderEntryLines; Batch 72 ELG+keyboard; residual module DoD / staging TBD |
 | Consistent +New / empty CTAs | PARTIAL | Batches 49–63 closed create empties; Batch 64 App Store + approval queue bridges; residual queue-only empties intentional |
 | Module finished-screen DoD (34 modules) | PARTIAL | **0/34 COMPLETE** — continue without duplicating create work |
 | Staging / live RBAC / prod migrations | BLOCKED | Batches 23–24; require separate auth |
@@ -220,33 +220,14 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | StatusBadge meta honesty | Credit notes, claims create, transfers, bills header use StatusBadge |
 | Sales/journal error retry | SalesDocumentEditor + JournalPanels ErrorState when options fail |
 | FormGrid / StatusBadge locks | check:workspace expands FormGrid + StatusBadge + ErrorState tokens |
-| DoD honesty | Strengthen local evidence; PurchasesDocumentLines ELG shipped Batch 74; staging/RBAC residual (Batch 75+) |
+| DoD honesty | Strengthen local evidence; PurchasesDocumentLines still not ELG (Batch 74+) |
 | Includes Batches 66–72 | Carried on feature branch (supersedes PR #346) |
 
-## Batch 74 (PurchasesDocumentLines → EditableLineItemGrid)
+## Batch 77 (Record TotalsSummary + QueryErrorState parity)
 
 | Gap | Action |
 | --- | --- |
-| Bills line grid bespoke table | Migrate PurchasesDocumentLines to EditableLineItemGrid (Sales parity) |
-| Preserve domain | Drag reorder, tracking, tax modes, keyboard/paste, Add-lines Select, TotalsSummary |
-| Workspace lock | check:workspace requires EditableLineItemGrid on PurchasesDocumentLines |
-| Includes Batch 73 | Already on main (#347); this batch is ELG residual only |
-
-## Batch 75 (Bank coding ELG + record TotalsSummary + money ErrorState)
-
-| Gap | Action |
-| --- | --- |
-| Bank reconcile split coding | BankCodingPanel → EditableLineItemGrid + TotalsSummary |
-| Bill / invoice record totals | Read-only TotalsSummary (create/edit paths unchanged) |
-| MoneyDocumentPanel load failure | QueryErrorState when required options queries fail |
-| Workspace locks | check:workspace rows for BankCodingPanel, bills/invoice TotalsSummary, MoneyDocumentPanel QueryErrorState |
-
-## Batch 76 (ConversionBalancesPanel → EditableLineItemGrid)
-
-| Gap | Action |
-| --- | --- |
-| Conversion trial balance table | EditableLineItemGrid (account + debit/credit) |
-| Opening AR/AP document cards | EditableLineItemGrid for invoices/bills |
-| Review totals strip | TotalsSummary (debits/credits/difference) |
-| Workspace lock | check:workspace requires ELG + TotalsSummary on ConversionBalancesPanel |
+| Quote / sales CN / purchase CN record totals | TotalsSummary (invoice/bill parity) |
+| Bills create / SalesDocumentEditor / JournalPanels load failure | QueryErrorState fail-closed |
+| Workspace locks | check:workspace rows for TotalsSummary + QueryErrorState |
 

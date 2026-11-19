@@ -44,6 +44,7 @@ import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { encodeBillsReturnContext } from "@/lib/purchases/bills-return-context";
 import { cn } from "@/lib/utils";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
@@ -1081,12 +1082,8 @@ function BillsWorkspace() {
 
             {billsQ.isPending ? (
               <LoadingState />
-            ) : billsQ.isError ? (
-              <ErrorState
-                title="Could not load bills"
-                description={friendlyAuthError(billsQ.error)}
-                onRetry={() => billsQ.refetch()}
-              />
+            ) : billsQ.isError && billsQ.data === undefined ? (
+              <QueryErrorState queries={[billsQ]} title="Could not load bills" />
             ) : rows.length === 0 ? (
               <EmptyState
                 title="No bills in this view"

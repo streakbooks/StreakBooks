@@ -49,6 +49,7 @@ import {
   presentBillHistory,
 } from "@/lib/purchases/bill-history";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
@@ -643,14 +644,11 @@ function BillDocumentWorkspace() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
-  if (query.isError || !bill) {
-    return (
-      <ErrorState
-        title="Bill not found"
-        description={friendlyAuthError(query.error)}
-        onRetry={() => query.refetch()}
-      />
-    );
+  if (query.isError && query.data === undefined) {
+    return <QueryErrorState queries={[query]} title="Could not load bill" />;
+  }
+  if (!bill) {
+    return <EmptyState title="Bill not found" description="This bill is unavailable." />;
   }
 
   if (canEdit && (!hydrated || suppliersQ.isPending || accountsQ.isPending)) {

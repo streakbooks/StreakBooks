@@ -78,7 +78,10 @@ eature/premium-ui-batch40-density-acceptance | [PR #286](https://github.com/link
 | 79 | Phase 3–5 | Orders/requisitions/batch-pay QueryErrorState create parity | `feature/premium-ui-batch78-production-gaps` | [PR #356](https://github.com/linkbusinessadvisory/LinkBooks/pull/356) merged | sales + purchases | done |
 | 80 | Phase 3–5 | Expense claim detail TotalsSummary (create parity) | `feature/premium-ui-batch78-production-gaps` | [PR #356](https://github.com/linkbusinessadvisory/LinkBooks/pull/356) merged | expense-management | done |
 | 81 | Phase 3–5 | Recurring invoices list/edit QueryErrorState (schedule useQuery) | `feature/premium-ui-batch81-production-gaps` | [PR #357](https://github.com/linkbusinessadvisory/LinkBooks/pull/357) merged | sales | done |
-| 82 | Phase 3–5 | Purchases recurring list/edit QueryErrorState | `feature/premium-ui-batch82-production-gaps` | pending PR | purchases | in progress |
-| 83+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do Batches 46–82) | TBD | — | all modules | planned |
+| 82 | Phase 3–5 | Purchases recurring list/edit QueryErrorState | `feature/premium-ui-batch82-production-gaps` | merged on main trail | purchases | done |
+| 83 | Phase 3–5 | Sales invoices list/record/edit + quote record QueryErrorState | `feature/premium-ui-batch83-production-gaps` | pending PR | sales | in progress |
+| 84 | Phase 3–5 | Bills list/record + bank transactions/reconcile workspace QueryErrorState | `feature/premium-ui-batch83-production-gaps` | pending PR | purchases + banking | in progress |
+| 85 | Phase 3–5 | PO record QueryErrorState/TotalsSummary; sales/purchase CN record QueryErrorState; claims list QueryErrorState | `feature/premium-ui-batch83-production-gaps` | pending PR | purchases + sales + expense-management | in progress |
+| 86+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do Batches 46–85) | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

@@ -16,7 +16,8 @@ import { useCan } from "@/hooks/use-can";
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { isQuoteConvertible, quoteStatusActions, type QuoteStatus } from "@/lib/sales/quote-status";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { bpsToPercentString, money } from "@/components/sales/sales-form-utils";
@@ -127,14 +128,11 @@ function QuoteDetailPage() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
-  if (query.isError) {
-    return (
-      <ErrorState
-        title="Quote not found"
-        description={friendlyAuthError(query.error)}
-        onRetry={() => query.refetch()}
-      />
-    );
+  if (query.isError && query.data === undefined) {
+    return <QueryErrorState queries={[query]} title="Could not load quote" />;
+  }
+  if (!query.data) {
+    return <EmptyState title="Quote not found" description="This quote is unavailable." />;
   }
 
   const q = query.data;

@@ -559,7 +559,6 @@ function RecurringTransactionsPage() {
           )}
         </>
       )}
-
     </ListWorkspace>
   );
 }

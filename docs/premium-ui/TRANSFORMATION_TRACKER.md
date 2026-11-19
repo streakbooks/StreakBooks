@@ -11,7 +11,8 @@
 | --- | --- | --- |
 | Modules in `MODULE_REGISTRY` | 34 | `src/lib/modules/registry.ts` |
 | Sidebar modules | 29 | `check:modules` |
-| Authenticated route files (approx.) | 156 | `src/routes/_authenticated/**/*.tsx` |
+| Authenticated routes | 168 | `npm run check:browsing-coverage` |
+| Supporting routes | 15 | `npm run check:browsing-coverage` |
 | Modules COMPLETE (DoD) | 0 | No module has full gate PASS |
 | Modules chrome-adopted / in-progress | 34 | Prior batches 1–22 + Batch 25 |
 | Shared foundation Batch 25 | Merged | PR #271 → `2aafc864` |
@@ -53,6 +54,36 @@
 | Empty CTA wave 4 Batch 61 | In progress | HR assets/docs; EM rate/float/card forms; CRM users bridge |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
+
+## Accounting and financial workspace release
+
+[PR #311](https://github.com/linkbusinessadvisory/LinkBooks/pull/311) combines the
+compact Accounting workspace with the shared Create navigation and release-gate
+repairs. The release retains the newer creation workflows from main.
+
+- Accounting has native single-row tabs, URL-backed chart filters, sticky column
+  headers and contextual actions. Journal editors and Bank Documents now render
+  through their parent outlets. Legacy journal and bill edit links redirect before
+  rendering.
+- Property Management uses searchable record lookups. POS supports selecting between
+  open register sessions. The isolated POS suites exercise sale, refund, and
+  register concurrency. The POS and Platform gate repairs preserve production SQL
+  and grants.
+- A signed-in browser posted a balanced manual journal, Spend Money, and Receive
+  Money in disposable Supabase organisations. Each posting had two expected
+  minor-unit lines and denied reads by a second organisation. The browser also
+  saved a recurring journal template on mobile and read it back in the list.
+- On the combined release tree, typecheck, zero-warning lint, production build,
+  bundle budget, module and navigation contracts, lookup architecture, and all
+  4,209 Vitest cases passed. The release batch also passed 137 browser fixture
+  cases, 54 accounting invariant cases, and all four PostgreSQL fixture suites.
+- GitHub Actions reported an organisation billing block before its jobs started.
+  This release follows the repository's documented billing exception for locally
+  verified changes.
+- Hosted staging and production acceptance remain open. Section 18 still requires
+  authenticated staging, hosted two-tenant permission and accounting evidence,
+  manual accessibility review, and external integration sandbox validation.
+  Recurring journal schedule editing and exhaustive module acceptance remain open.
 
 ## DoD gates (every screen)
 

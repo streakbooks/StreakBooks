@@ -52,7 +52,6 @@ export function CrmCommunicationsPage() {
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "Communications" }]}
       subnav={<CrmSubnav current="communications" />}
     >
-
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"

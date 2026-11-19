@@ -202,60 +202,60 @@ function BudgetsPage() {
       }
     >
       {showCreate ? (
-      <section
-        aria-label="Create budget"
-        className="lb-budget-create mb-6 grid max-w-2xl gap-4 rounded-2xl border border-border/85 bg-card p-5 shadow-card sm:p-6"
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1">
-            <h2 className="text-base font-bold tracking-[-0.02em]">New budget</h2>
+        <section
+          aria-label="Create budget"
+          className="lb-budget-create mb-6 grid max-w-2xl gap-4 rounded-2xl border border-border/85 bg-card p-5 shadow-card sm:p-6"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="space-y-1">
+              <h2 className="text-base font-bold tracking-[-0.02em]">New budget</h2>
+              <p className="text-xs text-muted-foreground">
+                Create a financial-year plan, then add your accounts and monthly amounts.
+              </p>
+            </div>
+            <Button size="sm" variant="ghost" onClick={closeCreate}>
+              Close
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="budget-name">Name</Label>
+            <Input
+              id="budget-name"
+              value={name}
+              placeholder="e.g. FY budget"
+              maxLength={120}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="budget-start">Financial year starts</Label>
+            <Input
+              id="budget-start"
+              type="date"
+              value={fyStart}
+              onChange={(e) => e.target.value && setStart(e.target.value)}
+            />
             <p className="text-xs text-muted-foreground">
-              Create a financial-year plan, then add your accounts and monthly amounts.
+              The budget covers the twelve months from the month this date falls in. It cannot be
+              changed once amounts are entered.
             </p>
           </div>
-          <Button size="sm" variant="ghost" onClick={closeCreate}>
-            Close
+          <Button
+            size="sm"
+            disabled={
+              create.isPending ||
+              name.trim().length < 1 ||
+              !canManage ||
+              query.isPending ||
+              query.data?.available === false
+            }
+            title={canManage ? undefined : "You do not have permission to manage budgets"}
+            onClick={() => create.mutate()}
+          >
+            {create.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            Create budget
           </Button>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="budget-name">Name</Label>
-          <Input
-            id="budget-name"
-            value={name}
-            placeholder="e.g. FY budget"
-            maxLength={120}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="budget-start">Financial year starts</Label>
-          <Input
-            id="budget-start"
-            type="date"
-            value={fyStart}
-            onChange={(e) => e.target.value && setStart(e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            The budget covers the twelve months from the month this date falls in. It cannot be
-            changed once amounts are entered.
-          </p>
-        </div>
-        <Button
-          size="sm"
-          disabled={
-            create.isPending ||
-            name.trim().length < 1 ||
-            !canManage ||
-            query.isPending ||
-            query.data?.available === false
-          }
-          title={canManage ? undefined : "You do not have permission to manage budgets"}
-          onClick={() => create.mutate()}
-        >
-          {create.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-          Create budget
-        </Button>
-      </section>
+        </section>
       ) : null}
 
       {query.data?.available ? (

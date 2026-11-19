@@ -17,17 +17,25 @@ function relativeLuminance({ L, C, h }: { L: number; C: number; h: number }): nu
   return rgb[0]! * 0.2126 + rgb[1]! * 0.7152 + rgb[2]! * 0.0722;
 }
 
-function oklchValues(token: string): Array<{ L: number; C: number; h: number }> {
-  const pattern = new RegExp(token + ":\\s*oklch\\(([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\)", "g");
-  return Array.from(css.matchAll(pattern), (match) => ({
-    L: Number(match[1]),
-    C: Number(match[2]),
-    h: Number(match[3]),
-  }));
+function tokenLuminances(token: string): number[] {
+  const pattern = new RegExp(
+    token + ":\\s*(#[0-9a-f]{6}|oklch\\(([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\))",
+    "gi",
+  );
+  return Array.from(css.matchAll(pattern), (match) => {
+    if (match[1]!.startsWith("#")) {
+      const [r, g, b] = [1, 3, 5].map((start) => {
+        const channel = parseInt(match[1]!.slice(start, start + 2), 16) / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return r! * 0.2126 + g! * 0.7152 + b! * 0.0722;
+    }
+    return relativeLuminance({ L: Number(match[2]), C: Number(match[3]), h: Number(match[4]) });
+  });
 }
 
 describe("Original LinkBooks cross-theme completion states", () => {
-  it("keeps paid teal separate from approval green and brand colour", () => {
+  it("keeps teal completion separate from green payment and brand colour", () => {
     expect(css).toContain("--color-complete-soft: var(--complete-soft)");
     expect(css).toContain("--color-complete-ink: var(--complete-ink)");
     expect(css).toContain("--complete-soft:");
@@ -35,13 +43,13 @@ describe("Original LinkBooks cross-theme completion states", () => {
   });
 
   it("provides readable teal completion badges in light and dark modes", () => {
-    const backgrounds = oklchValues("--complete-soft");
-    const foregrounds = oklchValues("--complete-ink");
+    const backgrounds = tokenLuminances("--complete-soft");
+    const foregrounds = tokenLuminances("--complete-ink");
     expect(backgrounds).toHaveLength(2);
     expect(foregrounds).toHaveLength(2);
     for (let i = 0; i < 2; i++) {
-      const background = relativeLuminance(backgrounds[i]!);
-      const foreground = relativeLuminance(foregrounds[i]!);
+      const background = backgrounds[i]!;
+      const foreground = foregrounds[i]!;
       const ratio =
         (Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05);
       expect(ratio).toBeGreaterThanOrEqual(4.5);
@@ -49,7 +57,7 @@ describe("Original LinkBooks cross-theme completion states", () => {
   });
 
   it("never overrides the completion semantics in preset themes", () => {
-    expect(css.match(/--complete-soft:\s*oklch/g)).toHaveLength(2);
+    expect(css.match(/--complete-soft:/g)).toHaveLength(2);
     expect(css).toContain(':root[data-linkbooks-palette="rose"]');
     expect(css).toContain(':root[data-linkbooks-palette="graphite"]');
   });

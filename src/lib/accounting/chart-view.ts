@@ -3,7 +3,7 @@ import { sortRows, type SortState } from "@/lib/sort";
 
 export type ChartSortKey = "code" | "name" | "type" | "balance" | "activity";
 export type ChartSort = SortState<ChartSortKey>;
-export type ChartViewRow = { account: ChartAccount; depth: number };
+export type ChartViewRow = { account: ChartAccount; depth: number; hasChildren: boolean };
 
 /** Display balances with their normal debit/credit sign, not raw debit-minus-credit. */
 export function accountSignedMinor(
@@ -45,7 +45,7 @@ export function chartViewRows(
     sort.dir,
   );
 
-  if (mode === "flat") return ordered.map((account) => ({ account, depth: 0 }));
+  if (mode === "flat") return ordered.map((account) => ({ account, depth: 0, hasChildren: false }));
 
   // Sort siblings, never separate children from their parent when a non-code sort is applied.
   const children = new Map<string, ChartAccount[]>();
@@ -61,9 +61,10 @@ export function chartViewRows(
   const visit = (account: ChartAccount, depth: number) => {
     if (seen.has(account.id)) return; // Guard cyclic or malformed parent references.
     seen.add(account.id);
-    rows.push({ account, depth });
+    const directChildren = children.get(account.id) ?? [];
+    rows.push({ account, depth, hasChildren: directChildren.length > 0 });
     if (!collapsed.has(account.id)) {
-      for (const child of children.get(account.id) ?? []) visit(child, depth + 1);
+      for (const child of directChildren) visit(child, depth + 1);
     }
   };
   for (const root of children.get("") ?? []) visit(root, 0);

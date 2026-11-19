@@ -128,8 +128,8 @@ export function HrDocumentsPage() {
       <ListWorkspace
         title="Employee Documents"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Documents" }]}
-      subnav={<HrSubnav current="documents" />}
-    >
+        subnav={<HrSubnav current="documents" />}
+      >
         <EmptyState title="No access" description="You need hr.view to open documents." />
       </ListWorkspace>
     );

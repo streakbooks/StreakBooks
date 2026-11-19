@@ -32,6 +32,7 @@ export async function call(name: string, args: unknown[]) {
         order_date: "2026-11-05",
         currency_code: "GBP",
         status: "draft",
+        approval_state: "draft",
         subtotal_minor: 1000,
         tax_minor: 0,
         total_minor: 1000,

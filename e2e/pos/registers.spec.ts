@@ -1,7 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 async function chooseLookup(page: Page, label: string, option: string) {
-  await page.getByRole("combobox", { name: label, exact: true }).click();
+  const trigger = page.getByRole("combobox", { name: label, exact: true });
+  await trigger.click();
   await page.getByRole("option", { name: option, exact: true }).click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(trigger).toBeFocused();
 }
 for (const width of [1440, 768, 390]) {
   test(`register setup, location access and count reconciliation at ${width}px (isolated fixture)`, async ({
@@ -39,9 +42,7 @@ for (const width of [1440, 768, 390]) {
       name: "Revoke location access for Cashier One at City Store",
     });
     await revoke.click();
-    await expect(
-      page.getByText("Revoke this cashier's access to this location?"),
-    ).toBeVisible();
+    await expect(page.getByText("Revoke this cashier's access to this location?")).toBeVisible();
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(revoke).toBeVisible();
     await revoke.click();

@@ -6,11 +6,7 @@ import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
-import {
-  listSalesOrders,
-  getSalesOrder,
-  actSalesOrder,
-} from "@/lib/sales/sales-orders.functions";
+import { listSalesOrders, getSalesOrder, actSalesOrder } from "@/lib/sales/sales-orders.functions";
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";

@@ -222,7 +222,6 @@ export function HrRecruitmentPage() {
       }
       subnav={<HrSubnav current="recruitment" />}
     >
-
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Job requisitions

@@ -196,3 +196,47 @@ export async function portalOpenInvoiceDiscussion() {
 export async function portalSendMessagingMessage() {
   throw new Error("Messaging send is not configured in this browser fixture");
 }
+
+const chartAccounts = [
+  { id: "cash", code: "1000", name: "Cash", parentId: null },
+  { id: "operating", code: "1010", name: "Operating bank", parentId: "cash" },
+  { id: "petty", code: "1020", name: "Petty cash", parentId: "cash" },
+].map((account) => ({
+  ...account,
+  accountType: "asset",
+  normalBalance: "debit",
+  description: "",
+  isActive: true,
+  debitMinor: 1200,
+  creditMinor: 0,
+  ytdDebitMinor: 1200,
+  ytdCreditMinor: 0,
+  transactionCount: 1,
+}));
+
+export async function listChartAccounts() {
+  return {
+    accounts: chartAccounts,
+    review: { misclassified: [], duplicates: [] },
+    balanceLabel: "Financial year to date",
+  };
+}
+
+export async function listTaxCodes() {
+  return [];
+}
+
+async function isolatedChartMutation() {
+  throw new Error("The chart fixture does not write to a ledger.");
+}
+
+export {
+  isolatedChartMutation as ensureLedgerMasters,
+  isolatedChartMutation as archiveChartAccount,
+  isolatedChartMutation as copyChartAccounts,
+  isolatedChartMutation as importChartAccounts,
+  isolatedChartMutation as mergeChartAccounts,
+  isolatedChartMutation as previewMergeChartAccounts,
+  isolatedChartMutation as saveChartAccount,
+  isolatedChartMutation as suggestChartAccount,
+};

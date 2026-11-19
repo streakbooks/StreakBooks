@@ -47,12 +47,8 @@ function mapTenant(raw: unknown): PmTenant {
     contactName: strOrNull(pick(row, "contactName", "contact_name")),
     displayName: str(pick(row, "displayName", "display_name")),
     status: (pick(row, "status") ?? "active") as PmTenant["status"],
-    emergencyContactName: strOrNull(
-      pick(row, "emergencyContactName", "emergency_contact_name"),
-    ),
-    emergencyContactPhone: strOrNull(
-      pick(row, "emergencyContactPhone", "emergency_contact_phone"),
-    ),
+    emergencyContactName: strOrNull(pick(row, "emergencyContactName", "emergency_contact_name")),
+    emergencyContactPhone: strOrNull(pick(row, "emergencyContactPhone", "emergency_contact_phone")),
     notes: strOrNull(pick(row, "notes")),
     createdAt: str(pick(row, "createdAt", "created_at")),
     updatedAt: str(pick(row, "updatedAt", "updated_at")),
@@ -117,9 +113,7 @@ function mapReservation(raw: unknown): PmReservation {
     guestContactId: strOrNull(pick(row, "guestContactId", "guest_contact_id")),
     guestName: str(pick(row, "guestName", "guest_name")),
     source: str(pick(row, "source")),
-    externalReservationId: strOrNull(
-      pick(row, "externalReservationId", "external_reservation_id"),
-    ),
+    externalReservationId: strOrNull(pick(row, "externalReservationId", "external_reservation_id")),
     status: str(pick(row, "status")),
     checkIn: str(pick(row, "checkIn", "check_in")),
     checkOut: str(pick(row, "checkOut", "check_out")),

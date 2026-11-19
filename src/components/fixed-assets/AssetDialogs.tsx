@@ -620,284 +620,284 @@ export function AssetDialog({
   );
   const assetBody = (
     <>
-        {frozen ? (
-          <Alert>
-            <AlertDescription>
-              Depreciation has been posted for this asset, so only the name, description, notes and
-              type can change.
-            </AlertDescription>
-          </Alert>
-        ) : null}
-        {fromBillLine ? (
-          <Alert>
-            <AlertDescription>
-              Review bill {fromBillLine.billNumber ?? ""} ({fromBillLine.supplier ?? "supplier"}):{" "}
-              {fromBillLine.description}.{" "}
-              {fromBillLine.currency === currency
-                ? "The cost starts at the bill line's net less the linked register cost. Check recoverable tax, partial purchases, and existing entries before saving."
-                : `The bill is in ${fromBillLine.currency}. The cost is intentionally blank: enter the verified acquisition amount in the organisation base currency (${currency}) using the transaction's applicable FX rate. Do not compare nominal foreign-currency and base-currency amounts.`}{" "}
-              Saving only registers the asset; it does not post the bill again.
-            </AlertDescription>
-          </Alert>
-        ) : null}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">Asset identity</h3>
-          <div className="space-y-1 sm:col-span-2">
-            <Label htmlFor="asset-name">Name</Label>
-            <Input
-              id="asset-name"
-              value={name}
-              maxLength={160}
-              aria-invalid={Boolean(feedback.fields.name)}
-              aria-describedby={feedback.fields.name ? "asset-name-error" : undefined}
-              onChange={(e) => setName(e.target.value)}
-            />
-            {feedback.fields.name ? (
-              <p id="asset-name-error" className="text-xs text-destructive">
-                {feedback.fields.name}
-              </p>
-            ) : null}
-          </div>
-          <div className="space-y-1 sm:col-span-2">
-            <Label htmlFor="asset-desc">Description</Label>
-            <Input
-              id="asset-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1 sm:col-span-2">
-            <Label htmlFor="asset-notes">Notes</Label>
-            <Textarea
-              id="asset-notes"
-              rows={3}
-              maxLength={4000}
-              placeholder="Serial number, custodian, location or maintenance notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              {notes.length} of 4,000 characters · Use notes for serial numbers, location and other
-              non-financial details.
+      {frozen ? (
+        <Alert>
+          <AlertDescription>
+            Depreciation has been posted for this asset, so only the name, description, notes and
+            type can change.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {fromBillLine ? (
+        <Alert>
+          <AlertDescription>
+            Review bill {fromBillLine.billNumber ?? ""} ({fromBillLine.supplier ?? "supplier"}):{" "}
+            {fromBillLine.description}.{" "}
+            {fromBillLine.currency === currency
+              ? "The cost starts at the bill line's net less the linked register cost. Check recoverable tax, partial purchases, and existing entries before saving."
+              : `The bill is in ${fromBillLine.currency}. The cost is intentionally blank: enter the verified acquisition amount in the organisation base currency (${currency}) using the transaction's applicable FX rate. Do not compare nominal foreign-currency and base-currency amounts.`}{" "}
+            Saving only registers the asset; it does not post the bill again.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">Asset identity</h3>
+        <div className="space-y-1 sm:col-span-2">
+          <Label htmlFor="asset-name">Name</Label>
+          <Input
+            id="asset-name"
+            value={name}
+            maxLength={160}
+            aria-invalid={Boolean(feedback.fields.name)}
+            aria-describedby={feedback.fields.name ? "asset-name-error" : undefined}
+            onChange={(e) => setName(e.target.value)}
+          />
+          {feedback.fields.name ? (
+            <p id="asset-name-error" className="text-xs text-destructive">
+              {feedback.fields.name}
             </p>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="asset-type">Asset type (fills defaults)</Label>
-            <LookupSelect
-              id="asset-type"
-              ariaLabel="Asset type"
-              allowClear
-              value={typeId}
-              onChange={applyType}
-              placeholder="No type"
-              searchPlaceholder="Search asset type"
-              options={types
-                .filter((x) => x.is_active)
-                .map((x) => ({
-                  id: x.id,
-                  name: x.name,
-                  label: x.name,
-                  keywords: x.name,
-                }))}
-              companyId={companyId}
-              canCreate={canAccounts && !lock}
-              createTitle="New asset type"
-              renderCreate={
-                canAccounts && !lock
-                  ? (ctx) => (
-                      <AssetTypeCreateForm companyId={companyId} accounts={accounts} ctx={ctx} />
-                    )
-                  : undefined
-              }
-              onCreated={(option) => {
-                if (!option.meta) return;
-                try {
-                  const saved = JSON.parse(option.meta) as {
-                    method: DepreciationMethod;
-                    life: string;
-                    rate: string;
-                    asset: string;
-                    acc: string;
-                    exp: string;
-                  };
-                  setMethod(saved.method);
-                  setLife(saved.life);
-                  setRate(saved.rate);
-                  if (!fromBillLine) setAsset(saved.asset);
-                  setAcc(saved.acc);
-                  setExp(saved.exp);
-                } catch {
-                  /* The new type stays selected even if its defaults cannot be read. */
-                }
-              }}
-            />
-          </div>
-          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">Depreciation policy</h3>
-          <MethodFields
-            method={method}
-            setMethod={setMethod}
-            life={life}
-            setLife={setLife}
-            rate={rate}
-            setRate={setRate}
-            disabled={lock}
-            lifeError={feedback.fields.life}
-            rateError={feedback.fields.rate}
-          />
-          <div className="space-y-1">
-            <Label htmlFor="asset-purchase">Purchase date</Label>
-            <Input
-              id="asset-purchase"
-              type="date"
-              value={purchase}
-              disabled={lock}
-              aria-invalid={Boolean(feedback.fields.purchase)}
-              aria-describedby={feedback.fields.purchase ? "asset-purchase-error" : undefined}
-              onChange={(e) => {
-                if (start === purchase) setStart(e.target.value);
-                setPurchase(e.target.value);
-              }}
-            />
-            {feedback.fields.purchase ? (
-              <p id="asset-purchase-error" className="text-xs text-destructive">
-                {feedback.fields.purchase}
-              </p>
-            ) : null}
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="asset-start">Depreciation starts</Label>
-            <Input
-              id="asset-start"
-              type="date"
-              value={start}
-              disabled={lock}
-              aria-invalid={Boolean(feedback.fields.start)}
-              aria-describedby={feedback.fields.start ? "asset-start-error" : undefined}
-              onChange={(e) => setStart(e.target.value)}
-            />
-            {feedback.fields.start ? (
-              <p id="asset-start-error" className="text-xs text-destructive">
-                {feedback.fields.start}
-              </p>
-            ) : null}
-            <p className="text-xs text-muted-foreground">
-              A full month is charged for the month this date falls in.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="asset-cost">Cost ({currency})</Label>
-            <Input
-              id="asset-cost"
-              inputMode="decimal"
-              value={cost}
-              disabled={lock}
-              aria-invalid={Boolean(feedback.fields.cost)}
-              aria-describedby={feedback.fields.cost ? "asset-cost-error" : undefined}
-              onChange={(e) => setCost(e.target.value)}
-            />
-            {feedback.fields.cost ? (
-              <p id="asset-cost-error" className="text-xs text-destructive">
-                {feedback.fields.cost}
-              </p>
-            ) : null}
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="asset-residual">Residual value</Label>
-            <Input
-              id="asset-residual"
-              inputMode="decimal"
-              value={residual}
-              disabled={lock}
-              aria-invalid={Boolean(feedback.fields.residual)}
-              aria-describedby={feedback.fields.residual ? "asset-residual-error" : undefined}
-              onChange={(e) => setResidual(e.target.value)}
-            />
-            {feedback.fields.residual ? (
-              <p id="asset-residual-error" className="text-xs text-destructive">
-                {feedback.fields.residual}
-              </p>
-            ) : null}
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="asset-opening">Depreciation already taken (brought forward)</Label>
-            <Input
-              id="asset-opening"
-              inputMode="decimal"
-              value={opening}
-              disabled={lock}
-              aria-invalid={Boolean(feedback.fields.opening)}
-              aria-describedby={feedback.fields.opening ? "asset-opening-error" : undefined}
-              onChange={(e) => setOpening(e.target.value)}
-            />
-            {feedback.fields.opening ? (
-              <p id="asset-opening-error" className="text-xs text-destructive">
-                {feedback.fields.opening}
-              </p>
-            ) : null}
-          </div>
-          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">Account mapping</h3>
-          <AccountSelect
-            id="asset-asset"
-            label="Asset account (cost)"
-            value={asset}
-            onChange={setAsset}
-            accounts={accounts}
-            companyId={companyId}
-            types={["asset"]}
-            disabled={lock}
-            error={feedback.fields.asset}
-          />
-          <AccountSelect
-            id="asset-acc"
-            label="Accumulated depreciation account"
-            value={acc}
-            onChange={setAcc}
-            accounts={accounts}
-            companyId={companyId}
-            types={["asset"]}
-            disabled={lock}
-            error={feedback.fields.acc}
-          />
-          <AccountSelect
-            id="asset-exp"
-            label="Depreciation expense account"
-            value={exp}
-            onChange={setExp}
-            accounts={accounts}
-            companyId={companyId}
-            types={["expense"]}
-            disabled={lock}
-            error={feedback.fields.exp}
+          ) : null}
+        </div>
+        <div className="space-y-1 sm:col-span-2">
+          <Label htmlFor="asset-desc">Description</Label>
+          <Input
+            id="asset-desc"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
         </div>
-        {!feedback.valid ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              <p className="font-medium">
-                {feedback.messages.length === 1
-                  ? "1 item needs attention before saving."
-                  : feedback.messages.length + " items need attention before saving."}
+        <div className="space-y-1 sm:col-span-2">
+          <Label htmlFor="asset-notes">Notes</Label>
+          <Textarea
+            id="asset-notes"
+            rows={3}
+            maxLength={4000}
+            placeholder="Serial number, custodian, location or maintenance notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            {notes.length} of 4,000 characters · Use notes for serial numbers, location and other
+            non-financial details.
+          </p>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="asset-type">Asset type (fills defaults)</Label>
+          <LookupSelect
+            id="asset-type"
+            ariaLabel="Asset type"
+            allowClear
+            value={typeId}
+            onChange={applyType}
+            placeholder="No type"
+            searchPlaceholder="Search asset type"
+            options={types
+              .filter((x) => x.is_active)
+              .map((x) => ({
+                id: x.id,
+                name: x.name,
+                label: x.name,
+                keywords: x.name,
+              }))}
+            companyId={companyId}
+            canCreate={canAccounts && !lock}
+            createTitle="New asset type"
+            renderCreate={
+              canAccounts && !lock
+                ? (ctx) => (
+                    <AssetTypeCreateForm companyId={companyId} accounts={accounts} ctx={ctx} />
+                  )
+                : undefined
+            }
+            onCreated={(option) => {
+              if (!option.meta) return;
+              try {
+                const saved = JSON.parse(option.meta) as {
+                  method: DepreciationMethod;
+                  life: string;
+                  rate: string;
+                  asset: string;
+                  acc: string;
+                  exp: string;
+                };
+                setMethod(saved.method);
+                setLife(saved.life);
+                setRate(saved.rate);
+                if (!fromBillLine) setAsset(saved.asset);
+                setAcc(saved.acc);
+                setExp(saved.exp);
+              } catch {
+                /* The new type stays selected even if its defaults cannot be read. */
+              }
+            }}
+          />
+        </div>
+        <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">Depreciation policy</h3>
+        <MethodFields
+          method={method}
+          setMethod={setMethod}
+          life={life}
+          setLife={setLife}
+          rate={rate}
+          setRate={setRate}
+          disabled={lock}
+          lifeError={feedback.fields.life}
+          rateError={feedback.fields.rate}
+        />
+        <div className="space-y-1">
+          <Label htmlFor="asset-purchase">Purchase date</Label>
+          <Input
+            id="asset-purchase"
+            type="date"
+            value={purchase}
+            disabled={lock}
+            aria-invalid={Boolean(feedback.fields.purchase)}
+            aria-describedby={feedback.fields.purchase ? "asset-purchase-error" : undefined}
+            onChange={(e) => {
+              if (start === purchase) setStart(e.target.value);
+              setPurchase(e.target.value);
+            }}
+          />
+          {feedback.fields.purchase ? (
+            <p id="asset-purchase-error" className="text-xs text-destructive">
+              {feedback.fields.purchase}
+            </p>
+          ) : null}
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="asset-start">Depreciation starts</Label>
+          <Input
+            id="asset-start"
+            type="date"
+            value={start}
+            disabled={lock}
+            aria-invalid={Boolean(feedback.fields.start)}
+            aria-describedby={feedback.fields.start ? "asset-start-error" : undefined}
+            onChange={(e) => setStart(e.target.value)}
+          />
+          {feedback.fields.start ? (
+            <p id="asset-start-error" className="text-xs text-destructive">
+              {feedback.fields.start}
+            </p>
+          ) : null}
+          <p className="text-xs text-muted-foreground">
+            A full month is charged for the month this date falls in.
+          </p>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="asset-cost">Cost ({currency})</Label>
+          <Input
+            id="asset-cost"
+            inputMode="decimal"
+            value={cost}
+            disabled={lock}
+            aria-invalid={Boolean(feedback.fields.cost)}
+            aria-describedby={feedback.fields.cost ? "asset-cost-error" : undefined}
+            onChange={(e) => setCost(e.target.value)}
+          />
+          {feedback.fields.cost ? (
+            <p id="asset-cost-error" className="text-xs text-destructive">
+              {feedback.fields.cost}
+            </p>
+          ) : null}
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="asset-residual">Residual value</Label>
+          <Input
+            id="asset-residual"
+            inputMode="decimal"
+            value={residual}
+            disabled={lock}
+            aria-invalid={Boolean(feedback.fields.residual)}
+            aria-describedby={feedback.fields.residual ? "asset-residual-error" : undefined}
+            onChange={(e) => setResidual(e.target.value)}
+          />
+          {feedback.fields.residual ? (
+            <p id="asset-residual-error" className="text-xs text-destructive">
+              {feedback.fields.residual}
+            </p>
+          ) : null}
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="asset-opening">Depreciation already taken (brought forward)</Label>
+          <Input
+            id="asset-opening"
+            inputMode="decimal"
+            value={opening}
+            disabled={lock}
+            aria-invalid={Boolean(feedback.fields.opening)}
+            aria-describedby={feedback.fields.opening ? "asset-opening-error" : undefined}
+            onChange={(e) => setOpening(e.target.value)}
+          />
+          {feedback.fields.opening ? (
+            <p id="asset-opening-error" className="text-xs text-destructive">
+              {feedback.fields.opening}
+            </p>
+          ) : null}
+        </div>
+        <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">Account mapping</h3>
+        <AccountSelect
+          id="asset-asset"
+          label="Asset account (cost)"
+          value={asset}
+          onChange={setAsset}
+          accounts={accounts}
+          companyId={companyId}
+          types={["asset"]}
+          disabled={lock}
+          error={feedback.fields.asset}
+        />
+        <AccountSelect
+          id="asset-acc"
+          label="Accumulated depreciation account"
+          value={acc}
+          onChange={setAcc}
+          accounts={accounts}
+          companyId={companyId}
+          types={["asset"]}
+          disabled={lock}
+          error={feedback.fields.acc}
+        />
+        <AccountSelect
+          id="asset-exp"
+          label="Depreciation expense account"
+          value={exp}
+          onChange={setExp}
+          accounts={accounts}
+          companyId={companyId}
+          types={["expense"]}
+          disabled={lock}
+          error={feedback.fields.exp}
+        />
+      </div>
+      {!feedback.valid ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            <p className="font-medium">
+              {feedback.messages.length === 1
+                ? "1 item needs attention before saving."
+                : feedback.messages.length + " items need attention before saving."}
+            </p>
+            <ul className="mt-1 list-disc space-y-1 pl-4">
+              {feedback.messages.slice(0, 4).map((problem, index) => (
+                <li key={index}>{problem}</li>
+              ))}
+            </ul>
+            {feedback.messages.length > 4 ? (
+              <p className="mt-1 text-xs">
+                {feedback.messages.length - 4} more issue(s) — review the highlighted fields.
               </p>
-              <ul className="mt-1 list-disc space-y-1 pl-4">
-                {feedback.messages.slice(0, 4).map((problem, index) => (
-                  <li key={index}>{problem}</li>
-                ))}
-              </ul>
-              {feedback.messages.length > 4 ? (
-                <p className="mt-1 text-xs">
-                  {feedback.messages.length - 4} more issue(s) — review the highlighted fields.
-                </p>
-              ) : null}
-            </AlertDescription>
-          </Alert>
-        ) : null}
-        {m.isError ? (
-          <Alert variant="destructive">
-            <AlertDescription role="alert">
-              The asset could not be saved: {friendlyAuthError(m.error)}
-            </AlertDescription>
-          </Alert>
-        ) : null}
+            ) : null}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {m.isError ? (
+        <Alert variant="destructive">
+          <AlertDescription role="alert">
+            The asset could not be saved: {friendlyAuthError(m.error)}
+          </AlertDescription>
+        </Alert>
+      ) : null}
     </>
   );
 

@@ -14,14 +14,7 @@
  * - danger: overdue / rejected / failed (red)
  * - ai: AI suggestions only — never document money lifecycle
  */
-export type StatusTone =
-  | "neutral"
-  | "warning"
-  | "info"
-  | "success"
-  | "complete"
-  | "danger"
-  | "ai";
+export type StatusTone = "neutral" | "warning" | "info" | "success" | "complete" | "danger" | "ai";
 
 export type StatusDisplay = {
   label: string;

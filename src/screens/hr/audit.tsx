@@ -53,7 +53,6 @@ export function HrAuditPage() {
       breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Audit" }]}
       subnav={<HrSubnav current="audit" />}
     >
-
       {auditQ.isPending ? (
         <LoadingState />
       ) : auditQ.isError ? (

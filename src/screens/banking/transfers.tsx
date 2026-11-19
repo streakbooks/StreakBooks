@@ -283,12 +283,7 @@ export function Transfers({
 
   // Prefill from reconcile "Create transfer" → dedicated create workspace.
   useEffect(() => {
-    if (
-      search.bankAccountId ||
-      search.amount ||
-      search.direction ||
-      search.bankTransactionId
-    ) {
+    if (search.bankAccountId || search.amount || search.direction || search.bankTransactionId) {
       void navigate({
         to: "/banking/transfers/new",
         search: {

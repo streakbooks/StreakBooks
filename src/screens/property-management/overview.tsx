@@ -76,10 +76,7 @@ export function PmOverviewPage() {
   }
   if (!canOpen) {
     return (
-      <ListWorkspace
-        title="Property Management"
-        description="Portfolios, owners and settlement."
-      >
+      <ListWorkspace title="Property Management" description="Portfolios, owners and settlement.">
         <EmptyState
           title="No Property Management access"
           description="Ask an administrator for property.view permission."
@@ -104,12 +101,11 @@ export function PmOverviewPage() {
       }
       subnav={<PmSubnav current="overview" />}
     >
-
       {settings.isError ? (
         <ErrorState
           title="Could not load Property Management settings"
           description={friendlyAuthError(settings.error)}
-        onRetry={() => settings.refetch()}
+          onRetry={() => settings.refetch()}
         />
       ) : settings.isLoading ? (
         <LoadingState />
@@ -134,7 +130,7 @@ export function PmOverviewPage() {
         <ErrorState
           title="Could not load portfolio counts"
           description={friendlyAuthError(kpis.error)}
-        onRetry={() => kpis.refetch()}
+          onRetry={() => kpis.refetch()}
         />
       ) : kpis.isLoading ? (
         <LoadingState />

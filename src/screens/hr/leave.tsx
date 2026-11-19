@@ -213,8 +213,8 @@ export function HrLeavePage() {
       <ListWorkspace
         title="Leave Management"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Leave Management" }]}
-      subnav={<HrSubnav current="leave" />}
-    >
+        subnav={<HrSubnav current="leave" />}
+      >
         <EmptyState title="No access" description="You need hr.view to open leave." />
       </ListWorkspace>
     );
@@ -270,7 +270,6 @@ export function HrLeavePage() {
       }
       subnav={<HrSubnav current="leave" />}
     >
-
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Leave types

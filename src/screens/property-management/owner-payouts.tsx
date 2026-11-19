@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -9,13 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -126,9 +121,7 @@ export function PmOwnerPayoutsPage() {
     },
     onSuccess: async (row) => {
       toast.success(
-        row.journalId
-          ? `Payout posted to ledger (${row.journalId.slice(0, 8)}…)`
-          : "Payout posted",
+        row.journalId ? `Payout posted to ledger (${row.journalId.slice(0, 8)}…)` : "Payout posted",
       );
       await invalidate();
     },
@@ -141,9 +134,11 @@ export function PmOwnerPayoutsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Owner Payouts" description="Owner distributions and ledger payouts."
-      subnav={<PmSubnav current="owner-payouts" />}
-    >
+      <ListWorkspace
+        title="Owner Payouts"
+        description="Owner distributions and ledger payouts."
+        subnav={<PmSubnav current="owner-payouts" />}
+      >
         <EmptyState title="No access" description="Ask an administrator for payout permissions." />
       </ListWorkspace>
     );
@@ -181,7 +176,7 @@ export function PmOwnerPayoutsPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Owner</Label>
-                  <Select value={ownerId || undefined} onValueChange={setOwnerId}>
+                  <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select owner" />
                     </SelectTrigger>
@@ -192,7 +187,7 @@ export function PmOwnerPayoutsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pm-payout-amount">Amount</Label>

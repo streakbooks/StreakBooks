@@ -100,8 +100,8 @@ export function HrApprovalsPage() {
       <ListWorkspace
         title="HR Approvals"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Approvals" }]}
-      subnav={<HrSubnav current="approvals" />}
-    >
+        subnav={<HrSubnav current="approvals" />}
+      >
         <EmptyState title="No access" description="You need approval or manager permission." />
       </ListWorkspace>
     );
@@ -117,7 +117,6 @@ export function HrApprovalsPage() {
       breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Approvals" }]}
       subnav={<HrSubnav current="approvals" />}
     >
-
       {inboxQ.isPending ? (
         <LoadingState />
       ) : inboxQ.isError ? (

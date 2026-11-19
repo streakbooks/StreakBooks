@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -9,13 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -118,9 +113,11 @@ export function PmRentChargesPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Rent & Charges" description="Scheduled rent charges."
-      subnav={<PmSubnav current="rent-charges" />}
-    >
+      <ListWorkspace
+        title="Rent & Charges"
+        description="Scheduled rent charges."
+        subnav={<PmSubnav current="rent-charges" />}
+      >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -158,7 +155,7 @@ export function PmRentChargesPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Lease</Label>
-                  <Select value={leaseId || undefined} onValueChange={setLeaseId}>
+                  <RecordLookupSelect value={leaseId} onValueChange={setLeaseId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select lease" />
                     </SelectTrigger>
@@ -171,7 +168,7 @@ export function PmRentChargesPage() {
                           </SelectItem>
                         ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pm-rent-month">Period month</Label>

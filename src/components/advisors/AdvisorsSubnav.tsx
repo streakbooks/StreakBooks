@@ -1,8 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import {
-  GroupedModuleSubnav,
-  groupedModuleSectionClassName,
-} from "@/components/common/GroupedModuleSubnav";
+import { GroupedModuleSubnav } from "@/components/common/GroupedModuleSubnav";
+import { groupedModuleSectionClassName } from "@/lib/navigation/grouped-module-nav";
 
 const LINKS = [
   { to: "/advisors-admin", label: "Overview", exact: true, group: "workspace" },
@@ -30,14 +28,12 @@ const ADVISOR_GROUPS = [
 export function AdvisorsSubnav() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const current =
-    [...LINKS]
-      .reverse()
-      .find((link) => {
-        const exact = "exact" in link && link.exact;
-        return exact
-          ? pathname === link.to || pathname === `${link.to}/`
-          : pathname.startsWith(link.to);
-      })?.to ?? "/advisors-admin";
+    [...LINKS].reverse().find((link) => {
+      const exact = "exact" in link && link.exact;
+      return exact
+        ? pathname === link.to || pathname === `${link.to}/`
+        : pathname.startsWith(link.to);
+    })?.to ?? "/advisors-admin";
 
   const sections = LINKS.map((link) => ({
     key: link.to,

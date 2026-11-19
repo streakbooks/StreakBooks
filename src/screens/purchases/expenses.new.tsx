@@ -126,7 +126,10 @@ export function NewExpense({
   const mutation = useMutation({
     mutationFn: (post: boolean) => {
       if (netMinor === null) throw new Error("Enter valid line quantities and prices");
-      const composedMemo = [memo.trim(), rolled.memoFromLines].filter(Boolean).join(" — ").slice(0, 500);
+      const composedMemo = [memo.trim(), rolled.memoFromLines]
+        .filter(Boolean)
+        .join(" — ")
+        .slice(0, 500);
       return saveExpense({
         data: {
           companyId: companyId!,
@@ -180,7 +183,8 @@ export function NewExpense({
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (accountsQ.isPending || paymentAccountsQ.isPending) return <LoadingState />;
 
-  const blocked = mutation.isPending || amountInvalid || taxInvalid || !expenseAccountId || !paymentAccountId;
+  const blocked =
+    mutation.isPending || amountInvalid || taxInvalid || !expenseAccountId || !paymentAccountId;
 
   return (
     <TransactionWorkspace
@@ -388,7 +392,9 @@ export function NewExpense({
                     size="icon"
                     aria-label={`Remove line ${index + 1}`}
                     disabled={lines.length <= 1}
-                    onClick={() => setLines((previous) => previous.filter((row) => row.id !== line.id))}
+                    onClick={() =>
+                      setLines((previous) => previous.filter((row) => row.id !== line.id))
+                    }
                   >
                     <Trash2 className="size-4" aria-hidden />
                   </Button>

@@ -105,8 +105,8 @@ export function EmployeeExpensesPage() {
       <Alert className="mb-6">
         <AlertTitle>Create claims in Expense Management</AlertTitle>
         <AlertDescription>
-          This Purchases page keeps the legacy approve-and-pay list. New multi-line drafts open under
-          Expenses → My Expenses.
+          This Purchases page keeps the legacy approve-and-pay list. New multi-line drafts open
+          under Expenses → My Expenses.
         </AlertDescription>
       </Alert>
 

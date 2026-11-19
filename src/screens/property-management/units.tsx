@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -9,13 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -103,9 +98,11 @@ export function PmUnitsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Units" description="Unit register."
-      subnav={<PmSubnav current="units" />}
-    >
+      <ListWorkspace
+        title="Units"
+        description="Unit register."
+        subnav={<PmSubnav current="units" />}
+      >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -140,7 +137,10 @@ export function PmUnitsPage() {
         <>
           <div className="mb-4 max-w-sm">
             <Label className="mb-2 block">Filter by property</Label>
-            <Select value={propertyId || "all"} onValueChange={(value) => setPropertyId(value === "all" ? "" : value)}>
+            <RecordLookupSelect
+              value={propertyId || "all"}
+              onValueChange={(value) => setPropertyId(value === "all" ? "" : value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="All properties" />
               </SelectTrigger>
@@ -152,7 +152,7 @@ export function PmUnitsPage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
           </div>
           {showForm && canManage ? (
             <Card className="mb-4">
@@ -163,7 +163,7 @@ export function PmUnitsPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2 sm:col-span-2">
                   <Label>Property</Label>
-                  <Select value={propertyId || undefined} onValueChange={setPropertyId}>
+                  <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select property" />
                     </SelectTrigger>
@@ -174,7 +174,7 @@ export function PmUnitsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pm-unit-code">Code</Label>
@@ -198,8 +198,11 @@ export function PmUnitsPage() {
           ) : null}
           {units.isLoading ? <LoadingState /> : null}
           {units.isError ? (
-            <ErrorState title="Could not load units" description={friendlyAuthError(units.error)} onRetry={() => units.refetch()}
-        />
+            <ErrorState
+              title="Could not load units"
+              description={friendlyAuthError(units.error)}
+              onRetry={() => units.refetch()}
+            />
           ) : null}
           {units.data?.length === 0 ? (
             <EmptyState

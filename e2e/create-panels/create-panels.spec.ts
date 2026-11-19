@@ -30,7 +30,12 @@ const stray =
 for (const [action, heading] of [
   ["Purchase order", "New purchase order"],
   ["Supplier credit", "New credit note"],
-  ["Transfer money", "Transfers"],
+  ["Transfer money", "Transfer money"],
+  ["Spend money", "Spend money"],
+  ["Receive money", "Receive money"],
+  ["Bank deposit", "Bank deposit"],
+  ["Manual Journal", "Manual journal"],
+  ["Recurring journal", "Recurring journal template"],
 ]) {
   test(`Create ${action} opens from another page without inheriting its search context`, async ({
     page,
@@ -39,10 +44,10 @@ for (const [action, heading] of [
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(stray);
     await page.getByRole("button", { name: "Create", exact: true }).click();
-    await page.getByRole("button", { name: action!, exact: true }).click();
-    const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("heading", { name: heading!, exact: true })).toBeVisible();
+    await page.getByRole("link", { name: action!, exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Create new" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: heading!, exact: true })).toBeVisible();
+    await expect(page).not.toHaveURL(/unrelated/);
     expect(errors).toEqual([]);
     const requests = await page.evaluate(() =>
       window.voiceServer.calls.filter((call) =>
@@ -51,9 +56,9 @@ for (const [action, heading] of [
     );
     expect(requests).toEqual([]);
     if (action === "Transfer money")
-      await expect(
-        dialog.getByRole("textbox", { name: "Transfer amount", exact: true }),
-      ).toHaveValue("");
+      await expect(page.getByRole("textbox", { name: "Transfer amount", exact: true })).toHaveValue(
+        "",
+      );
   });
 }
 test("native order edit route retains its scoped document context", async ({ page }) => {
@@ -75,7 +80,7 @@ test("native supplier-credit route retains its bill prefill", async ({ page }) =
     .toMatchObject({ companyId: "company-a", billId: "route-bill" });
 });
 test("native transfer route retains statement amount and destination prefill", async ({ page }) => {
-  await page.goto("/banking/transfers?bankAccountId=bank-a&amount=%22123.45%22&direction=in");
+  await page.goto("/banking/transfers/new?bankAccountId=bank-a&amount=%22123.45%22&direction=in");
   await expect(page.getByRole("textbox", { name: "Transfer amount", exact: true })).toHaveValue(
     "123.45",
   );
@@ -90,26 +95,26 @@ test("view-only permissions keep the three create actions disabled", async ({ pa
   for (const name of ["Purchase order", "Supplier credit", "Transfer money"])
     await expect(page.getByRole("button", { name: new RegExp("^" + name) })).toBeDisabled();
 });
-test("mobile transfer draft survives resizing while the unrelated page remains mounted", async ({
+test("mobile transfer draft survives resizing and Back restores the previous URL", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto(stray);
   await page.getByRole("button", { name: "Create", exact: true }).click();
-  await page.getByRole("button", { name: "Transfer money", exact: true }).click();
-  const amount = page
-    .getByRole("dialog")
-    .getByRole("textbox", { name: "Transfer amount", exact: true });
+  await page.getByRole("link", { name: "Transfer money", exact: true }).click();
+  const amount = page.getByRole("textbox", { name: "Transfer amount", exact: true });
   await amount.fill("42.50");
   await page.setViewportSize({ width: 1024, height: 900 });
   await expect(amount).toHaveValue("42.50");
+  await expect(page).toHaveURL(/banking\/transfers\/new$/);
+  await page.goBack();
   await expect(page).toHaveURL(/edit=unrelated-order/);
 });
 
 for (const [url, heading] of [
   ["/purchases/orders/new?edit=42", "New purchase order"],
   ["/purchases/credit-notes/new?billId=42", "New credit note"],
-  ["/banking/transfers?amount=123.45", "Transfers"],
+  ["/banking/transfers/new?amount=123.45", "Transfer money"],
 ]) {
   test(`raw numeric prefill is rejected safely: ${url}`, async ({ page }) => {
     const errors: string[] = [];
@@ -130,3 +135,25 @@ for (const [url, heading] of [
     expect(errors).toEqual([]);
   });
 }
+
+test("modified Create clicks open the canonical form independently", async ({ page, context }) => {
+  await page.goto(stray);
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  const transfer = page.getByRole("link", { name: "Transfer money", exact: true });
+  await expect(transfer).toHaveAttribute("href", "/banking/transfers/new");
+  const opened = context.waitForEvent("page");
+  await transfer.click({ modifiers: ["Control"] });
+  const tab = await opened;
+  await expect(tab).toHaveURL(/banking\/transfers\/new$/);
+  await tab.close();
+  await expect(page.getByRole("dialog", { name: "Create new" })).toBeVisible();
+  await expect(page).toHaveURL(/edit=unrelated-order/);
+});
+
+test("legacy Accounting journal bookmarks open the canonical full-page editor", async ({
+  page,
+}) => {
+  await page.goto("/accounting?tab=post");
+  await expect(page).toHaveURL(/accounting\/journals\/new\?mode=post$/);
+  await expect(page.getByRole("heading", { name: "Manual journal", exact: true })).toBeVisible();
+});

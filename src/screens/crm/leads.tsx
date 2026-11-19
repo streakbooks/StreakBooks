@@ -229,7 +229,6 @@ export function CrmLeadsPage() {
       }
       subnav={<CrmSubnav current="leads" />}
     >
-
       {settings.isLoading ? <LoadingState /> : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState

@@ -48,7 +48,9 @@ export function mapPmSettings(raw: unknown): PmSettings {
       "hybrid") as PmSettings["defaultRentalMode"],
     defaultBusinessModel: (pick(row, "defaultBusinessModel", "default_business_model") ??
       "agency") as PmSettings["defaultBusinessModel"],
-    propertyNumberPrefix: str(pick(row, "propertyNumberPrefix", "property_number_prefix") ?? "PROP-"),
+    propertyNumberPrefix: str(
+      pick(row, "propertyNumberPrefix", "property_number_prefix") ?? "PROP-",
+    ),
     requireOwnershipHundredPct: Boolean(
       pick(row, "requireOwnershipHundredPct", "require_ownership_hundred_pct") ?? true,
     ),
@@ -56,7 +58,9 @@ export function mapPmSettings(raw: unknown): PmSettings {
     rentReceivableAccountId: strOrNull(
       pick(row, "rentReceivableAccountId", "rent_receivable_account_id"),
     ),
-    ownerPayableAccountId: strOrNull(pick(row, "ownerPayableAccountId", "owner_payable_account_id")),
+    ownerPayableAccountId: strOrNull(
+      pick(row, "ownerPayableAccountId", "owner_payable_account_id"),
+    ),
     commissionIncomeAccountId: strOrNull(
       pick(row, "commissionIncomeAccountId", "commission_income_account_id"),
     ),
@@ -78,9 +82,7 @@ export function mapPmDashboardKpis(raw: unknown): PmDashboardKpis {
     propertyCount: Number(pick(row, "propertyCount", "property_count") ?? 0),
     unitCount: Number(pick(row, "unitCount", "unit_count") ?? 0),
     ownerCount: Number(pick(row, "ownerCount", "owner_count") ?? 0),
-    activeAgreementCount: Number(
-      pick(row, "activeAgreementCount", "active_agreement_count") ?? 0,
-    ),
+    activeAgreementCount: Number(pick(row, "activeAgreementCount", "active_agreement_count") ?? 0),
     enabled: Boolean(pick(row, "enabled") ?? false),
     currencyNote: str(
       pick(row, "currencyNote", "currency_note") ??

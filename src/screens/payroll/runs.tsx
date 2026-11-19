@@ -471,7 +471,6 @@ export function PayrollRunsPage({
           </TableCard>
         </>
       )}
-
     </ListWorkspace>
   );
 }

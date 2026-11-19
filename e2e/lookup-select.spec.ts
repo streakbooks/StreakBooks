@@ -62,7 +62,7 @@ test.describe("authenticated LookupSelect", () => {
     await page.keyboard.press("Escape");
 
     await page.goto("/accounting");
-    await page.getByRole("tab", { name: "Post manual journal" }).click();
+    await page.getByRole("link", { name: "New manual journal" }).click();
     const lineAccount = page.getByRole("combobox", { name: "Line 1 account" });
     await expect(lineAccount).toBeVisible();
     await lineAccount.click();

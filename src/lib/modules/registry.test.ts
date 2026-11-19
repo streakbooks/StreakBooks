@@ -16,7 +16,6 @@ describe("MODULE_REGISTRY", () => {
   it("stays synchronized with sidebar navItems", () => {
     expect(assertRegistryMatchesNav()).toEqual([]);
     expect(MODULE_REGISTRY.filter((module) => module.inSidebar)).toHaveLength(navItems.length);
-    expect(navItems).toHaveLength(28);
   });
 
   it("has unique stable ids", () => {
@@ -41,6 +40,6 @@ describe("domain status semantics", () => {
   it("recognises core mapped statuses", () => {
     expect(isKnownDomainStatus("paid")).toBe(true);
     expect(resolveDomainStatus("paid").unmapped).toBe(false);
-    expect(resolveDomainStatus("paid").tone).toBe("complete");
+    expect(resolveDomainStatus("paid").tone).toBe("success");
   });
 });

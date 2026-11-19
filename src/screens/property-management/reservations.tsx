@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -114,9 +115,11 @@ export function PmReservationsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Reservations" description="Short-term bookings."
-      subnav={<PmSubnav current="reservations" />}
-    >
+      <ListWorkspace
+        title="Reservations"
+        description="Short-term bookings."
+        subnav={<PmSubnav current="reservations" />}
+      >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -152,7 +155,7 @@ export function PmReservationsPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Property</Label>
-                  <Select value={propertyId || undefined} onValueChange={setPropertyId}>
+                  <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select property" />
                     </SelectTrigger>
@@ -163,7 +166,7 @@ export function PmReservationsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="grid gap-2">
                   <Label>Source</Label>
@@ -172,6 +175,7 @@ export function PmReservationsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      {/* lookup-fixed-enum: Reservation source codes. */}
                       {[
                         "manual",
                         "direct",
@@ -253,7 +257,9 @@ export function PmReservationsPage() {
                 <div className="flex items-end">
                   <Button
                     type="button"
-                    disabled={!propertyId || !guestName || !checkIn || !checkOut || mutation.isPending}
+                    disabled={
+                      !propertyId || !guestName || !checkIn || !checkOut || mutation.isPending
+                    }
                     onClick={() => mutation.mutate()}
                   >
                     {mutation.isPending ? "Saving…" : "Save reservation"}

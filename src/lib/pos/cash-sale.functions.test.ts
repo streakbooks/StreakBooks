@@ -21,7 +21,11 @@ vi.mock("@tanstack/react-start", () => ({
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn() }));
 import { assertCompanyPermission } from "@/lib/assert-company-access";
-import { completePosCashSale, recordPosCashMovement, refundPosCashSale } from "./cash-sale.functions";
+import {
+  completePosCashSale,
+  recordPosCashMovement,
+  refundPosCashSale,
+} from "./cash-sale.functions";
 
 const id = "11111111-1111-4111-8111-111111111111";
 const productId = "22222222-2222-4222-8222-222222222222";
@@ -91,7 +95,11 @@ describe("POS cash sale server boundary (mocked database)", () => {
       error: null,
     });
     await run(refundPosCashSale, { companyId: id, saleId: productId, operationId: id });
-    expect(assertCompanyPermission).toHaveBeenCalledWith(expect.anything(), id, "pos.refund.create");
+    expect(assertCompanyPermission).toHaveBeenCalledWith(
+      expect.anything(),
+      id,
+      "pos.refund.create",
+    );
   });
   it("denies RPC when permission check fails", async () => {
     vi.mocked(assertCompanyPermission).mockRejectedValueOnce(new Error("Denied"));

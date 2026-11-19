@@ -4,17 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, MoreHorizontal } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
-import { nextSort } from "@/lib/sort";
-import {
-  canSelectForArchive,
-  chartViewRows,
-  type ChartSort,
-  type ChartSortKey,
-} from "@/lib/accounting/chart-view";
+import type { ChartBrowseSearch } from "@/lib/accounting/chart-browsing";
+import { ariaSortValue, nextSort } from "@/lib/sort";
+import { canSelectForArchive, chartViewRows, type ChartSortKey } from "@/lib/accounting/chart-view";
 import {
   archiveChartAccount,
   copyChartAccounts,
@@ -52,6 +48,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -69,14 +66,16 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/common/states
 
 const ROW_HEIGHT = 44;
 
-type ClassFilter = "all" | "asset" | "liability" | "equity" | "income" | "expense";
-
 export function ChartAccountsPanel({
   companyId,
   currency,
+  browsing,
+  onBrowse,
 }: {
   companyId: string;
   currency: string;
+  browsing: ChartBrowseSearch;
+  onBrowse: (patch: ChartBrowseSearch) => void;
 }) {
   const queryClient = useQueryClient();
   const canManageAccounts = useCanDo("accounts.manage");
@@ -95,11 +94,14 @@ export function ChartAccountsPanel({
     queryFn: () => fetchChart({ data: { companyId } }),
   });
 
-  const [search, setSearch] = useState("");
-  const [classFilter, setClassFilter] = useState<ClassFilter>("all");
-  const [activeFilter, setActiveFilter] = useState<"active" | "archived" | "all">("active");
-  const [balanceFilter, setBalanceFilter] = useState<"all" | "nonzero" | "zero">("all");
-  const [mode, setMode] = useState<"tree" | "flat">("tree");
+  const search = browsing.chartQ ?? "";
+  const classFilter = browsing.chartClass ?? "all";
+  const activeFilter = browsing.chartStatus ?? "active";
+  const balanceFilter = browsing.chartBalance ?? "all";
+  const mode = browsing.chartLayout ?? "tree";
+  const showYtd = browsing.chartActivity !== "transactions";
+  const sortKey = browsing.chartSort ?? "code";
+  const sortDir = browsing.chartDir ?? "asc";
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [scrollTop, setScrollTop] = useState(0);
@@ -119,13 +121,21 @@ export function ChartAccountsPanel({
   const [suggestions, setSuggestions] = useState<
     { kind: AccountKind; label: string; reason: string }[]
   >([]);
-  const [showYtd, setShowYtd] = useState(true);
-  const [sort, setSort] = useState<ChartSort>({ key: "code", dir: "asc" });
 
   useEffect(() => {
     setScrollTop(0);
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [search, classFilter, activeFilter, balanceFilter, mode, collapsed, sort, showYtd, companyId]);
+  }, [
+    search,
+    classFilter,
+    activeFilter,
+    balanceFilter,
+    mode,
+    sortKey,
+    sortDir,
+    showYtd,
+    companyId,
+  ]);
 
   const rows = useMemo(() => {
     const accounts = (chartQuery.data?.accounts ?? []).filter((account) => {
@@ -139,7 +149,7 @@ export function ChartAccountsPanel({
       if (balanceFilter === "zero" && net !== 0) return false;
       return true;
     });
-    return chartViewRows(accounts, collapsed, mode, sort, showYtd);
+    return chartViewRows(accounts, collapsed, mode, { key: sortKey, dir: sortDir }, showYtd);
   }, [
     activeFilter,
     balanceFilter,
@@ -148,11 +158,15 @@ export function ChartAccountsPanel({
     collapsed,
     mode,
     search,
-    sort,
+    sortKey,
+    sortDir,
     showYtd,
   ]);
 
-  const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - 4);
+  const start = Math.min(
+    Math.max(0, rows.length - 24),
+    Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - 4),
+  );
   const visible = rows.slice(start, start + 24);
   const otherCompanies = (companies?.companies ?? []).filter((company) => company.id !== companyId);
   const selectedAccounts = (chartQuery.data?.accounts ?? []).filter(
@@ -165,16 +179,24 @@ export function ChartAccountsPanel({
     eligibleDisplayedIds.length > 0 && eligibleDisplayedIds.every((id) => selected.has(id));
   const someDisplayedSelected = eligibleDisplayedIds.some((id) => selected.has(id));
 
-  const sortButton = (key: ChartSortKey, label: string) => (
-    <button
-      type="button"
-      className="inline-flex items-center gap-1 text-left hover:text-foreground focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-      onClick={() => setSort((current) => nextSort(current, key))}
-      aria-label={`${label}: ${sort.key === key ? sort.dir : "not sorted"}. Sort column`}
-    >
-      {label}
-      <span aria-hidden="true">{sort.key === key ? (sort.dir === "asc" ? "↑" : "↓") : "↕"}</span>
-    </button>
+  const sortHeader = (key: ChartSortKey, label: string, title?: string) => (
+    <div role="columnheader" aria-sort={ariaSortValue(sortKey === key, sortDir)} title={title}>
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 text-left hover:text-foreground focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+        onClick={() => {
+          const next = nextSort({ key: sortKey, dir: sortDir }, key);
+          onBrowse({
+            chartSort: next.key === "code" ? undefined : next.key,
+            chartDir: next.dir === "desc" ? "desc" : undefined,
+          });
+        }}
+        aria-label={`${label}: ${sortKey === key ? sortDir : "not sorted"}. Sort column`}
+      >
+        {label}
+        <span aria-hidden="true">{sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : "↕"}</span>
+      </button>
+    </div>
   );
 
   const refresh = async () => {
@@ -293,7 +315,7 @@ export function ChartAccountsPanel({
   });
 
   const rename = async (account: ChartAccount, name: string) => {
-    if (!account.accountKind || name.trim() === account.name) {
+    if (!canManageAccounts || !account.accountKind || name.trim() === account.name) {
       setInline(null);
       return;
     }
@@ -314,7 +336,7 @@ export function ChartAccountsPanel({
   };
 
   const reparent = async (account: ChartAccount, parentId: string) => {
-    if (!account.accountKind || account.id === parentId) return;
+    if (!canManageAccounts || !account.accountKind || account.id === parentId) return;
     const parsed = saveAccountSchema.safeParse(draftFrom(account, companyId, { parentId }));
     if (!parsed.success) return;
     try {
@@ -340,127 +362,151 @@ export function ChartAccountsPanel({
   const balanceLabel = chartQuery.data.balanceLabel;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="flex flex-wrap items-end gap-2">
-        <div className="min-w-56 flex-1 space-y-1">
+        <div className="min-w-[min(14rem,100%)] flex-1 space-y-1">
           <Label htmlFor="chart-account-search">Search</Label>
           <Input
             id="chart-account-search"
             value={search}
             placeholder="Code, name, or description"
-            onChange={(event) => setSearch(event.target.value)}
+            maxLength={120}
+            onChange={(event) => onBrowse({ chartQ: event.target.value })}
           />
         </div>
         <Filter
           label="Class"
           value={classFilter}
-          onChange={(value) => setClassFilter(value as ClassFilter)}
+          onChange={(chartClass) => onBrowse({ chartClass })}
           options={["all", "asset", "liability", "equity", "income", "expense"]}
         />
         <Filter
           label="Status"
           value={activeFilter}
-          onChange={(value) => setActiveFilter(value as "active" | "archived" | "all")}
+          onChange={(chartStatus) => onBrowse({ chartStatus })}
           options={["active", "archived", "all"]}
         />
-        <Filter
-          label="Balance"
-          value={balanceFilter}
-          onChange={(value) => setBalanceFilter(value as "all" | "nonzero" | "zero")}
-          options={["all", "nonzero", "zero"]}
-        />
-        <Filter
-          label="Layout"
-          value={mode}
-          onChange={(value) => setMode(value as "tree" | "flat")}
-          options={["tree", "flat"]}
-        />
-        <Button type="button" variant="outline" onClick={() => setShowYtd((current) => !current)}>
-          {showYtd ? "Hide year to date" : "Show year to date"}
-        </Button>
-        <Button type="button" onClick={() => setCreating({})}>
-          New account
-        </Button>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" onClick={() => setImportOpen(true)}>
-          Import CSV
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => downloadCsv(chartQuery.data.accounts)}
-        >
-          Export all CSV
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={rows.length === 0}
-          onClick={() => downloadCsv(rows.map((row) => row.account))}
-        >
-          Export displayed CSV
-        </Button>
-        <Button type="button" variant="outline" onClick={() => setTemplateOpen(true)}>
-          Starter charts
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setCopyOpen(true)}
-          disabled={otherCompanies.length === 0}
-        >
-          Copy from organisation
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={
-            !canManageAccounts || selectedAccounts.length === 0 || bulkArchiveMutation.isPending
-          }
-          onClick={() => {
-            const accepted = window.confirm(
-              `Archive ${selectedAccounts.length} selected active accounts? Accounts with balances, activity or dependencies may be blocked.`,
-            );
-            if (!accepted) return;
-            bulkArchiveMutation.mutate(selectedAccounts.map((account) => account.id));
-          }}
-        >
-          {bulkArchiveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-          Archive selected ({selectedAccounts.length})
-        </Button>
-        {selectedAccounts.length > 0 ? (
-          <Button type="button" variant="ghost" onClick={() => setSelected(new Set())}>
-            Clear selection
+        {canManageAccounts ? (
+          <Button type="button" onClick={() => setCreating({})}>
+            New account
           </Button>
         ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline">
+              Chart actions <ChevronDown className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => downloadCsv(chartQuery.data.accounts)}>
+              Export all CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={rows.length === 0}
+              onSelect={() => downloadCsv(rows.map((row) => row.account))}
+            >
+              Export displayed CSV
+            </DropdownMenuItem>
+            {canManageAccounts ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => setImportOpen(true)}>Import CSV</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setTemplateOpen(true)}>
+                  Starter charts
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setCopyOpen(true)}
+                  disabled={otherCompanies.length === 0}
+                >
+                  Copy from organisation
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Input
-          className="max-w-md"
-          value={suggestText}
-          placeholder="Describe an account. A suggestion fills the form; it does not save."
-          onChange={(event) => setSuggestText(event.target.value)}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          disabled={suggestMutation.isPending}
-          onClick={() => suggestMutation.mutate()}
-        >
-          Suggest type
-        </Button>
-        {suggestions.map((item) => (
+      <details className="group rounded-md border border-border">
+        <summary className="flex min-h-8 cursor-pointer list-none items-center gap-1.5 px-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
+          <ChevronRight aria-hidden="true" className="size-4 group-open:rotate-90" />
+          Advanced chart options
+        </summary>
+        <div className="space-y-2 border-t border-border px-3 py-2">
+          <div className="flex flex-wrap items-end gap-2">
+            <Filter
+              label="Balance"
+              value={balanceFilter}
+              onChange={(chartBalance) => onBrowse({ chartBalance })}
+              options={["all", "nonzero", "zero"]}
+            />
+            <Filter
+              label="Layout"
+              value={mode}
+              onChange={(chartLayout) => onBrowse({ chartLayout })}
+              options={["tree", "flat"]}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onBrowse({ chartActivity: showYtd ? "transactions" : undefined })}
+            >
+              {showYtd ? "Hide year to date" : "Show year to date"}
+            </Button>
+          </div>
+          {canManageAccounts ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                className="max-w-md"
+                value={suggestText}
+                aria-label="Account description for suggestion"
+                placeholder="Describe the account"
+                onChange={(event) => setSuggestText(event.target.value)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={suggestMutation.isPending || !suggestText.trim()}
+                onClick={() => suggestMutation.mutate()}
+              >
+                Suggest type
+              </Button>
+              {suggestions.map((item) => (
+                <Button
+                  key={item.kind}
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setCreating({ kind: item.kind, name: suggestText })}
+                >
+                  Use {item.label}
+                </Button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </details>
+      {selectedAccounts.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
           <Button
-            key={item.kind}
             type="button"
-            variant="secondary"
-            onClick={() => setCreating({ kind: item.kind, name: suggestText })}
+            variant="outline"
+            disabled={
+              !canManageAccounts || selectedAccounts.length === 0 || bulkArchiveMutation.isPending
+            }
+            onClick={() => {
+              const accepted = window.confirm(
+                `Archive ${selectedAccounts.length} selected active accounts? Accounts with balances, activity or dependencies may be blocked.`,
+              );
+              if (!accepted) return;
+              bulkArchiveMutation.mutate(selectedAccounts.map((account) => account.id));
+            }}
           >
-            Use {item.label}
+            {bulkArchiveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            Archive selected ({selectedAccounts.length})
           </Button>
-        ))}
-      </div>
+          <Button size="sm" type="button" variant="ghost" onClick={() => setSelected(new Set())}>
+            Clear selection
+          </Button>
+        </div>
+      ) : null}
       <p className="text-xs text-muted-foreground" role="status">
         Showing {rows.length} of {chartQuery.data.accounts.length} accounts.
         {selectedAccounts.length ? " " + selectedAccounts.length + " eligible selected." : ""}
@@ -482,48 +528,63 @@ export function ChartAccountsPanel({
           description="Change the filters or create an account."
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <div className="grid min-w-[840px] grid-cols-[2rem_7rem_1fr_10rem_8rem_8rem_2rem] gap-2 border-b border-border bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
-            <input
-              type="checkbox"
-              aria-label="Select all eligible displayed accounts"
-              title="Select all eligible displayed accounts"
-              disabled={
-                !canManageAccounts ||
-                eligibleDisplayedIds.length === 0 ||
-                bulkArchiveMutation.isPending
-              }
-              checked={allDisplayedSelected}
-              ref={(node) => {
-                if (node) node.indeterminate = someDisplayedSelected && !allDisplayedSelected;
-              }}
-              onChange={(event) => {
-                const checked = event.target.checked;
-                setSelected((current) => {
-                  const next = new Set(current);
-                  for (const id of eligibleDisplayedIds) {
-                    if (checked) next.add(id);
-                    else next.delete(id);
+        <div
+          ref={scrollRef}
+          role="region"
+          aria-label="Chart of accounts"
+          tabIndex={0}
+          className="max-h-[32rem] overflow-auto rounded-lg border border-border"
+          onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+        >
+          <div role="table" aria-label="Ledger accounts" aria-rowcount={rows.length + 1}>
+            <div
+              role="row"
+              aria-rowindex={1}
+              className="sticky top-0 z-10 grid min-w-[840px] grid-cols-[2rem_7rem_1fr_10rem_8rem_8rem_2rem] gap-2 border-b border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground"
+            >
+              <div role="columnheader" aria-label="Selection">
+                <input
+                  type="checkbox"
+                  aria-label="Select all eligible displayed accounts"
+                  title="Select all eligible displayed accounts"
+                  disabled={
+                    !canManageAccounts ||
+                    eligibleDisplayedIds.length === 0 ||
+                    bulkArchiveMutation.isPending
                   }
-                  return next;
-                });
-              }}
-            />
-            {sortButton("code", "Code")}
-            {sortButton("name", "Name")}
-            {sortButton("type", "Type")}
-            {sortButton("balance", "Balance")}
-            <span title={showYtd ? balanceLabel : "Transactions"}>
-              {sortButton("activity", showYtd ? "Year to date" : "Transactions")}
-            </span>
-            <span />
-          </div>
-          <div
-            ref={scrollRef}
-            className="max-h-[32rem] min-w-[840px] overflow-y-auto"
-            onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
-          >
-            <div style={{ height: rows.length * ROW_HEIGHT, position: "relative" }}>
+                  checked={allDisplayedSelected}
+                  ref={(node) => {
+                    if (node) node.indeterminate = someDisplayedSelected && !allDisplayedSelected;
+                  }}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setSelected((current) => {
+                      const next = new Set(current);
+                      for (const id of eligibleDisplayedIds) {
+                        if (checked) next.add(id);
+                        else next.delete(id);
+                      }
+                      return next;
+                    });
+                  }}
+                />
+              </div>
+              {sortHeader("code", "Code")}
+              {sortHeader("name", "Name")}
+              {sortHeader("type", "Type")}
+              {sortHeader("balance", "Balance")}
+              {sortHeader(
+                "activity",
+                showYtd ? "Year to date" : "Transactions",
+                showYtd ? balanceLabel : undefined,
+              )}
+              <span role="columnheader" aria-label="Actions" />
+            </div>
+            <div
+              role="rowgroup"
+              className="relative min-w-[840px]"
+              style={{ height: rows.length * ROW_HEIGHT }}
+            >
               {visible.map((row, index) => {
                 const account = row.account;
                 const kind = account.accountKind
@@ -532,7 +593,9 @@ export function ChartAccountsPanel({
                 return (
                   <div
                     key={account.id}
-                    draggable={!!account.accountKind}
+                    role="row"
+                    aria-rowindex={start + index + 2}
+                    draggable={canManageAccounts && !!account.accountKind}
                     onDragStart={(event) => event.dataTransfer.setData("text/plain", account.id)}
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => {
@@ -541,41 +604,62 @@ export function ChartAccountsPanel({
                       const source = chartQuery.data.accounts.find((item) => item.id === sourceId);
                       if (source) void reparent(source, account.id);
                     }}
-                    className="absolute grid w-full grid-cols-[2rem_7rem_1fr_10rem_8rem_8rem_2rem] items-center gap-2 px-3 text-sm"
+                    className="absolute grid w-full grid-cols-[2rem_7rem_1fr_10rem_8rem_8rem_2rem] items-center gap-2 border-b border-border/50 px-3 text-sm hover:bg-muted/40 focus-within:bg-muted/40"
                     style={{ top: (start + index) * ROW_HEIGHT, height: ROW_HEIGHT }}
                   >
-                    <input
-                      type="checkbox"
-                      aria-label={"Select " + account.code + " " + account.name}
-                      checked={selected.has(account.id) && canSelectForArchive(account)}
-                      disabled={
-                        !canManageAccounts ||
-                        !canSelectForArchive(account) ||
-                        bulkArchiveMutation.isPending
-                      }
-                      onChange={(event) => {
-                        const checked = event.target.checked;
-                        setSelected((current) => {
-                          const next = new Set(current);
-                          if (checked) next.add(account.id);
-                          else next.delete(account.id);
-                          return next;
-                        });
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="truncate text-left font-mono text-xs"
-                      onClick={() => {
-                        const next = new Set(collapsed);
-                        if (next.has(account.id)) next.delete(account.id);
-                        else next.add(account.id);
-                        setCollapsed(next);
-                      }}
+                    <div role="cell">
+                      <input
+                        type="checkbox"
+                        aria-label={"Select " + account.code + " " + account.name}
+                        checked={selected.has(account.id) && canSelectForArchive(account)}
+                        disabled={
+                          !canManageAccounts ||
+                          !canSelectForArchive(account) ||
+                          bulkArchiveMutation.isPending
+                        }
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setSelected((current) => {
+                            const next = new Set(current);
+                            if (checked) next.add(account.id);
+                            else next.delete(account.id);
+                            return next;
+                          });
+                        }}
+                      />
+                    </div>
+                    <div role="cell">
+                      {row.hasChildren ? (
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 text-left font-mono text-xs"
+                          aria-label={`${account.code} ${account.name} subaccounts`}
+                          aria-expanded={!collapsed.has(account.id)}
+                          onClick={() => {
+                            setCollapsed((current) => {
+                              const next = new Set(current);
+                              if (next.has(account.id)) next.delete(account.id);
+                              else next.add(account.id);
+                              return next;
+                            });
+                          }}
+                        >
+                          {collapsed.has(account.id) ? (
+                            <ChevronRight aria-hidden="true" className="size-4" />
+                          ) : (
+                            <ChevronDown aria-hidden="true" className="size-4" />
+                          )}
+                          {account.code}
+                        </button>
+                      ) : (
+                        <span className="truncate pl-5 font-mono text-xs">{account.code}</span>
+                      )}
+                    </div>
+                    <div
+                      role="cell"
+                      className="flex min-w-0 items-center gap-1"
+                      style={{ paddingLeft: row.depth * 16 }}
                     >
-                      {account.code}
-                    </button>
-                    <div className="min-w-0" style={{ paddingLeft: row.depth * 16 }}>
                       {inline?.id === account.id ? (
                         <Input
                           autoFocus
@@ -583,82 +667,102 @@ export function ChartAccountsPanel({
                           onChange={(event) =>
                             setInline({ id: account.id, name: event.target.value })
                           }
+                          aria-label={`Rename ${account.name}`}
                           onBlur={() => void rename(account, inline.name)}
                           onKeyDown={(event) => {
-                            if (event.key === "Enter") void rename(account, inline.name);
+                            if (event.key === "Enter") event.currentTarget.blur();
+                            if (event.key === "Escape") setInline(null);
                           }}
                         />
                       ) : (
-                        <button
-                          type="button"
-                          className="truncate text-left"
-                          onDoubleClick={() => setInline({ id: account.id, name: account.name })}
+                        <span
+                          className="truncate"
+                          title={account.name}
+                          onDoubleClick={() => {
+                            if (canManageAccounts && account.accountKind && !account.isLocked) {
+                              setInline({ id: account.id, name: account.name });
+                            }
+                          }}
                         >
                           {account.name}
-                        </button>
+                        </span>
                       )}
                       {!account.isActive ? <Badge variant="secondary">Archived</Badge> : null}
                       {account.isSystem ? <Badge variant="outline">System</Badge> : null}
                     </div>
-                    <span className="truncate text-muted-foreground">{kind}</span>
-                    <Link
-                      to="/reports/$reportId"
-                      params={{ reportId: "general-ledger" }}
-                      search={{ account: account.id } as never}
-                      className="font-mono text-xs hover:underline"
-                      title="Open account transactions"
-                    >
-                      {money(account, currency, "balance")}
-                    </Link>
-                    <span className="font-mono text-xs">
+                    <span role="cell" className="truncate text-muted-foreground">
+                      {kind}
+                    </span>
+                    <div role="cell">
+                      <Link
+                        to="/reports/$reportId"
+                        params={{ reportId: "general-ledger" }}
+                        search={{ account: account.id }}
+                        className="font-mono text-xs hover:underline"
+                        title="Open account transactions"
+                      >
+                        {money(account, currency, "balance")}
+                      </Link>
+                    </div>
+                    <span role="cell" className="font-mono text-xs">
                       {showYtd ? money(account, currency, "ytd") : account.transactionCount}
                     </span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          aria-label={`Actions for ${account.name}`}
-                        >
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditing(account)}>
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            setCreating({
-                              kind: account.accountKind ?? "expense",
-                              name: `Copy of ${account.name}`,
-                            })
-                          }
-                        >
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          disabled={
-                            !canManageAccounts ||
-                            !canSelectForArchive(account) ||
-                            archiveMutation.isPending
-                          }
-                          onClick={() => archiveMutation.mutate(account.id)}
-                        >
-                          Archive
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          disabled={account.isSystem || account.isLocked}
-                          onClick={() => {
-                            setMergeSource(account);
-                            setMergeTarget("");
-                          }}
-                        >
-                          Merge
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div role="cell">
+                      {canManageAccounts ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              aria-label={`Actions for ${account.name}`}
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditing(account)}>
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!account.accountKind || account.isLocked}
+                              onSelect={() => setInline({ id: account.id, name: account.name })}
+                            >
+                              Rename inline
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setCreating({
+                                  kind: account.accountKind ?? "expense",
+                                  name: `Copy of ${account.name}`,
+                                })
+                              }
+                            >
+                              Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={
+                                !canManageAccounts ||
+                                !canSelectForArchive(account) ||
+                                archiveMutation.isPending
+                              }
+                              onClick={() => archiveMutation.mutate(account.id)}
+                            >
+                              Archive
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={account.isSystem || account.isLocked}
+                              onClick={() => {
+                                setMergeSource(account);
+                                setMergeTarget("");
+                              }}
+                            >
+                              Merge
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : null}
+                    </div>
                   </div>
                 );
               })}
@@ -944,24 +1048,30 @@ export function ChartAccountsPanel({
   );
 }
 
-function Filter({
+function Filter<const Option extends string>({
   label,
   value,
   onChange,
   options,
 }: {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: string[];
+  value: Option;
+  onChange: (value: Option) => void;
+  options: readonly Option[];
 }) {
   return (
     <div className="space-y-1">
-      <Label>{label}</Label>
-      <Select value={value} onValueChange={onChange}>
+      <Label htmlFor={`chart-filter-${label.toLowerCase()}`}>{label}</Label>
+      <Select
+        value={value}
+        onValueChange={(value) => {
+          const option = options.find((item) => item === value);
+          if (option !== undefined) onChange(option);
+        }}
+      >
         {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
-        <SelectTrigger className="w-36">
+        <SelectTrigger id={`chart-filter-${label.toLowerCase()}`} className="w-32">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

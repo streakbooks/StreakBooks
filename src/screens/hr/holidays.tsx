@@ -130,8 +130,8 @@ export function HrHolidaysPage() {
       <ListWorkspace
         title="Holidays & Calendar"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Holidays & Calendar" }]}
-      subnav={<HrSubnav current="holidays" />}
-    >
+        subnav={<HrSubnav current="holidays" />}
+      >
         <EmptyState title="No access" description="You need hr.view to open holidays." />
       </ListWorkspace>
     );
@@ -178,7 +178,6 @@ export function HrHolidaysPage() {
       }
       subnav={<HrSubnav current="holidays" />}
     >
-
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Calendars

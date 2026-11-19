@@ -7,7 +7,9 @@ import { NewExpense } from "@/screens/purchases/expenses.new";
  * so GL posting stays single-sourced (no duplicate spend engine).
  */
 export const Route = createFileRoute("/_authenticated/banking/spend-money")({
-  validateSearch: (search: Record<string, unknown>): { bankAccountId?: string; returnTo?: string } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { bankAccountId?: string; returnTo?: string } => {
     const out: { bankAccountId?: string; returnTo?: string } = {};
     const bank = search["bankAccountId"];
     if (typeof bank === "string" && /^[0-9a-f-]{36}$/i.test(bank)) out.bankAccountId = bank;

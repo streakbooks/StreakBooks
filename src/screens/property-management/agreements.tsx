@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -68,8 +69,7 @@ export function PmAgreementsPage() {
 
   const agreements = useQuery({
     queryKey: ["pm-agreements", company?.id],
-    queryFn: () =>
-      fetchAgreements({ data: { companyId: company!.id, propertyId: null } }),
+    queryFn: () => fetchAgreements({ data: { companyId: company!.id, propertyId: null } }),
     enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
     retry: false,
   });
@@ -106,15 +106,19 @@ export function PmAgreementsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Agreements" description="Management agreements."
-      subnav={<PmSubnav current="agreements" />}
-    >
+      <ListWorkspace
+        title="Agreements"
+        description="Management agreements."
+        subnav={<PmSubnav current="agreements" />}
+      >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
   }
 
-  const propertyNameById = new Map((properties.data ?? []).map((p) => [p.id, `${p.code} — ${p.name}`]));
+  const propertyNameById = new Map(
+    (properties.data ?? []).map((p) => [p.id, `${p.code} — ${p.name}`]),
+  );
 
   return (
     <ListWorkspace
@@ -153,7 +157,7 @@ export function PmAgreementsPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2 sm:col-span-2">
                   <Label>Property</Label>
-                  <Select value={propertyId || undefined} onValueChange={setPropertyId}>
+                  <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select property" />
                     </SelectTrigger>
@@ -164,7 +168,7 @@ export function PmAgreementsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="grid gap-2">
                   <Label>Business model</Label>
@@ -191,7 +195,9 @@ export function PmAgreementsPage() {
                     <SelectContent>
                       <SelectItem value="percent_gross">Percent of gross</SelectItem>
                       <SelectItem value="percent_net">Percent of net</SelectItem>
-                      <SelectItem value="percent_accommodation">Percent of accommodation</SelectItem>
+                      <SelectItem value="percent_accommodation">
+                        Percent of accommodation
+                      </SelectItem>
                       <SelectItem value="percent_collected">Percent of collected</SelectItem>
                       <SelectItem value="fixed_monthly">Fixed monthly</SelectItem>
                       <SelectItem value="fixed_per_booking">Fixed per booking</SelectItem>
@@ -227,7 +233,9 @@ export function PmAgreementsPage() {
                     onChange={(event) => setActivate(event.target.checked)}
                     className="size-4"
                   />
-                  <Label htmlFor="pm-activate">Activate now (supersedes prior active agreement)</Label>
+                  <Label htmlFor="pm-activate">
+                    Activate now (supersedes prior active agreement)
+                  </Label>
                 </div>
                 <div className="flex items-end">
                   <Button
@@ -246,8 +254,8 @@ export function PmAgreementsPage() {
             <ErrorState
               title="Could not load agreements"
               description={friendlyAuthError(agreements.error)}
-            onRetry={() => agreements.refetch()}
-        />
+              onRetry={() => agreements.refetch()}
+            />
           ) : null}
           {agreements.data?.length === 0 ? (
             <EmptyState

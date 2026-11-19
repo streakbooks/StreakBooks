@@ -320,6 +320,8 @@ export function HrSelfServicePage() {
             </h2>
             {leaveQ.isPending ? (
               <LoadingState />
+            ) : leaveQ.isError ? (
+              <QueryErrorState queries={[leaveQ]} title="Could not load leave requests" />
             ) : (leaveQ.data?.items.length ?? 0) === 0 ? (
               <EmptyState
                 title="No leave requests"
@@ -378,6 +380,8 @@ export function HrSelfServicePage() {
             </h2>
             {attendanceQ.isPending ? (
               <LoadingState />
+            ) : attendanceQ.isError ? (
+              <QueryErrorState queries={[attendanceQ]} title="Could not load attendance" />
             ) : (attendanceQ.data?.items.length ?? 0) === 0 ? (
               <EmptyState
                 title="No attendance yet"

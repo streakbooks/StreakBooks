@@ -326,7 +326,7 @@ export function ExpenseManagementCashAdvancesPage() {
 
       {advancesQ.isLoading ? (
         <LoadingState />
-      ) : (advancesQ.data ?? []).length === 0 ? (
+      ) : advancesQ.isError ? null : (advancesQ.data ?? []).length === 0 ? (
         <EmptyState
           title="No cash advances yet"
           description="Save a draft request above, then an advance manager issues it from bank."

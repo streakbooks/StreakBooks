@@ -304,6 +304,8 @@ export function HrAttendancePage() {
       </h2>
       {correctionsQ.isLoading ? (
         <LoadingState />
+      ) : correctionsQ.isError ? (
+        <QueryErrorState queries={[correctionsQ]} title="Could not load corrections" />
       ) : corrections.length === 0 ? (
         <p className="text-muted-foreground text-sm">No correction requests.</p>
       ) : (

@@ -340,6 +340,8 @@ export function HrLeavePage() {
         </h2>
         {balancesQ.isPending ? (
           <LoadingState />
+        ) : balancesQ.isError ? (
+          <QueryErrorState queries={[balancesQ]} title="Could not load leave balances" />
         ) : balances.length === 0 ? (
           <EmptyState
             title="No balances yet"
@@ -393,6 +395,8 @@ export function HrLeavePage() {
         </h2>
         {requestsQ.isPending ? (
           <LoadingState />
+        ) : requestsQ.isError ? (
+          <QueryErrorState queries={[requestsQ]} title="Could not load leave requests" />
         ) : requests.length === 0 ? (
           <EmptyState
             title="No leave requests"

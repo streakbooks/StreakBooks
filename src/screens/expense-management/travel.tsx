@@ -402,7 +402,7 @@ export function ExpenseManagementTravelPage() {
         <h2 className="text-lg font-medium">Configured rates</h2>
         {ratesQ.isLoading ? (
           <LoadingState />
-        ) : (ratesQ.data ?? []).length === 0 ? (
+        ) : ratesQ.isError ? null : (ratesQ.data ?? []).length === 0 ? (
           <EmptyState
             title="No per diem rates yet"
             description="Expense admins can add rates by location and effective period."

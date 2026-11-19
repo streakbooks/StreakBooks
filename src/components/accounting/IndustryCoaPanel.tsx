@@ -15,6 +15,7 @@ import {
 } from "@/lib/accounting/coa.functions";
 import type { DetailLevel } from "@/lib/accounting/coa-library/types";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -153,6 +154,16 @@ export function IndustryCoaPanel({ companyId }: Props) {
 
   function toggleIndustry(code: string) {
     setSelected((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
+  }
+
+  const requiredQueries = [industriesQ, settingsQ, trackingQ, libraryQry];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined)) {
+    return (
+      <QueryErrorState
+        queries={requiredQueries}
+        title="Could not load chart of accounts options"
+      />
+    );
   }
 
   return (

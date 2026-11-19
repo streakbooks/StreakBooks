@@ -28,6 +28,7 @@ import {
   type NotificationView,
 } from "@/lib/notifications/notification-utils";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Input } from "@/components/ui/input";
@@ -521,15 +522,7 @@ function ActionCenterPage() {
             Loading your actions…
           </p>
         ) : inbox.isError && !inbox.data ? (
-          <div role="alert" className="rounded-lg border p-4">
-            <p>
-              Could not load Action Center:{" "}
-              {inbox.error instanceof Error ? inbox.error.message : "Unknown error"}
-            </p>
-            <Button variant="outline" className="mt-2" onClick={() => void inbox.refetch()}>
-              Retry
-            </Button>
-          </div>
+          <QueryErrorState queries={[inbox]} title="Could not load Action Center" />
         ) : rows.length === 0 ? (
           <div className="rounded-lg border px-6 py-12 text-center text-muted-foreground">
             No matching notifications across your accessible history.

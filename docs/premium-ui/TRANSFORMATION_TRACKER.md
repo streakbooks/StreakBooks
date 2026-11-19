@@ -56,7 +56,7 @@
 | Empty CTA wave 6 Batch 63 | Done | [PR #324](https://github.com/linkbusinessadvisory/LinkBooks/pull/324) → `41468621` |
 | Empty CTA wave 7 Batch 64 | Done | [PR #328](https://github.com/linkbusinessadvisory/LinkBooks/pull/328) → `10876d52` |
 | Claims spreadsheet Batch 65 | Done | [PR #332](https://github.com/linkbusinessadvisory/LinkBooks/pull/332) → `e3a691de` |
-| Claims totals + workspace Batch 66 | In progress | TotalsSummary on claim create; check:workspace spend/claims |
+| Claims totals + workspace Batch 66 | Done (via #338+) | TotalsSummary on claim create; check:workspace spend/claims |
 | Claim keyboard + receive-money Batch 67 | Superseded by Batch 68 | Keyboard/paste on claims; receive-money check:workspace |
 | Spend/PO/CN keyboard Batch 68 | Superseded by Batch 69 | Keyboard/paste on spend money, PO, purchase CN; workspace gates |
 | Allocate/transfer TotalsSummary Batch 69 | Superseded by Batch 70 | Receipt/payment totals; payment allocate table; transfer totals |
@@ -68,9 +68,9 @@
 | Bank coding ELG Batch 75 | Done (merged #352) | BankCodingPanel ELG + record TotalsSummary + money QueryErrorState |
 | Conversion balances ELG Batch 76 | Done (merged #353) | ConversionBalancesPanel ELG + TotalsSummary |
 | Record TotalsSummary Batch 77 | Done (merged #354) | Quote/CN TotalsSummary + create QueryErrorState |
-| Receipt/payment record TotalsSummary Batch 78 | PR open (#356) | Receipt + payment record allocation TotalsSummary |
-| Create QueryErrorState Batch 79 | PR open (#356) | Orders/requisitions/batch-pay QueryErrorState |
-| Claim detail TotalsSummary Batch 80 | PR open (#356) | Expense claim detail TotalsSummary |
+| Receipt/payment record TotalsSummary Batch 78 | Done (merged #356) | Receipt + payment record allocation TotalsSummary |
+| Create QueryErrorState Batch 79 | Done (merged #356) | Orders/requisitions/batch-pay QueryErrorState |
+| Claim detail TotalsSummary Batch 80 | Done (merged #356) | Expense claim detail TotalsSummary |
 | QueryErrorState sweep Batches 88–99 | Done | PRs #361–#372 — query load failures use shared QueryErrorState (384 workspace locks); intentional deny-path ErrorState only in StatementViews customization gate |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |

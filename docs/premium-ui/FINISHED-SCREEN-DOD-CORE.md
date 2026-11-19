@@ -86,13 +86,15 @@ Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails
 
 **QueryErrorState sweep (Batches 88–99):** High-traffic and module-shell query load failures use shared `QueryErrorState` (optional description override for migration hints). Intentional deny-path `ErrorState` remains only where access succeeded but customization is disallowed (`StatementViews`). Staging/RBAC still **NOT VERIFIED** — modules remain **IN PROGRESS**, not COMPLETE.
 
+**Production honesty Batch 101:** `PurchasesDocumentLines` ELG locked in `check:workspace`; Industry CoA panel, POS recent sales, and Action Center hard-fail inbox use `QueryErrorState`; sales order detail shows line table + `TotalsSummary`. Staging/RBAC still **NOT VERIFIED**.
+
 **Bank coding + record totals (Batch 75):** `BankCodingPanel` uses shared `EditableLineItemGrid` + `TotalsSummary`. Bill and invoice read-only records use `TotalsSummary`. `MoneyDocumentPanel` fails closed with `QueryErrorState` when options queries fail. Staging/RBAC still **NOT VERIFIED**.
 
 **Bills line grid ELG (Batch 74):** `PurchasesDocumentLines` composes shared `EditableLineItemGrid` (Sales parity). Drag reorder, tracking columns, tax modes, keyboard/paste, Add-lines Select, and TotalsSummary preserved. Staging/RBAC still **NOT VERIFIED**.
 
 **Chrome honesty (Batch 73):** High-traffic creates expose StatusBadge meta (credit notes, claims, transfers, bills). SalesDocumentEditor and JournalPanels fail closed with ErrorState + retry when options queries fail. FormGrid/StatusBadge tokens locked in `check:workspace`. Modules remain **IN PROGRESS** — staging/RBAC still **NOT VERIFIED**.
 
-**Order entry spreadsheet (Batch 72):** Shared `OrderEntryLines` uses EditableLineItemGrid with journal-parity keyboard/paste for sales orders and requisitions; new docs start with two empty rows. SalesDocumentLines + PurchasesDocumentLines TotalsSummary/keyboard helpers locked in `check:workspace` (PurchasesDocumentLines is not yet on shared EditableLineItemGrid).
+**Order entry spreadsheet (Batch 72):** Shared `OrderEntryLines` uses EditableLineItemGrid with journal-parity keyboard/paste for sales orders and requisitions; new docs start with two empty rows. SalesDocumentLines + PurchasesDocumentLines TotalsSummary/keyboard helpers locked in `check:workspace`. PurchasesDocumentLines ELG composition is locked (Batch 74 + Batch 101).
 
 **Purchases requisitions + claims FormGrid (Batch 71):** Requisition create/edit exposes FormGrid + TotalsSummary with sticky save; claim create header uses FormGrid; journal and sales document editors locked in `check:workspace`.
 

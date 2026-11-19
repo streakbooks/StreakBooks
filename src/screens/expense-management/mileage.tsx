@@ -241,7 +241,7 @@ export function ExpenseManagementMileagePage() {
             Creates a draft employee-paid claim with one mileage line. Submit and approve it through
             the normal claim workflow.
           </p>
-          {activeRatesForTrip.length === 0 ? (
+          {ratesQ.isError ? null : activeRatesForTrip.length === 0 ? (
             <EmptyState
               title="No effective mileage rates"
               description={

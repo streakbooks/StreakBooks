@@ -183,7 +183,7 @@ export function HrAutomationsPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Recent runs
         </h2>
-        {runs.length === 0 ? (
+        {dataQ.isError ? null : runs.length === 0 ? (
           <EmptyState
             title="No runs yet"
             description="Run an automation to create a retry log entry."

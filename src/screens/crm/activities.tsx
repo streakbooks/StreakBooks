@@ -264,6 +264,9 @@ export function CrmActivitiesPage({
       }
       subnav={<CrmSubnav current={sectionKey} />}
     >
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
+      ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM to track activities." />
       ) : null}

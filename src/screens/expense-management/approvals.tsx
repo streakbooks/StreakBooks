@@ -779,7 +779,9 @@ export function ExpenseManagementApprovalsPage() {
       {canPost ? (
         <div className="mt-10">
           <h2 className="mb-3 text-base font-semibold">Ready to post</h2>
-          {readyToPost.length === 0 ? (
+          {readyToPostQ.isError ? (
+            <QueryErrorState queries={[readyToPostQ]} title="Could not load claims ready to post" />
+          ) : readyToPost.length === 0 ? (
             <EmptyState
               title="No approved claims ready"
               description="Approved employee-paid claims awaiting ledger accrual appear here."

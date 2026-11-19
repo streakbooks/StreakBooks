@@ -17,6 +17,7 @@ import {
   saveManagedDiscountRule,
   type ManagedDiscountRule,
 } from "@/lib/products/price-list-discounts.functions";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -170,9 +171,7 @@ export function PriceListDiscountRules({
               </SelectContent>
             </RecordLookupSelect>
             {productsQ.isError ? (
-              <p role="alert" className="text-sm text-destructive">
-                {friendlyAuthError(productsQ.error)}
-              </p>
+              <QueryErrorState queries={[productsQ]} title="Could not load products" />
             ) : null}
           </div>
           <div className="space-y-2">
@@ -236,12 +235,7 @@ export function PriceListDiscountRules({
         </div>
         {rulesQ.isPending ? <p className="text-sm">Loading discount rules…</p> : null}
         {rulesQ.isError ? (
-          <div role="alert" className="flex flex-wrap items-center gap-2">
-            <p className="text-sm text-destructive">{friendlyAuthError(rulesQ.error)}</p>
-            <Button variant="outline" size="sm" onClick={() => rulesQ.refetch()}>
-              Retry
-            </Button>
-          </div>
+          <QueryErrorState queries={[rulesQ]} title="Could not load discount rules" />
         ) : null}
         {rulesQ.data?.length === 0 ? (
           <p className="rounded-md border p-3 text-sm">

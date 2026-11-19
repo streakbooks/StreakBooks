@@ -17,6 +17,7 @@ import {
 } from "@/lib/settings/accounting-preferences";
 import type { SettingsDocument } from "@/lib/settings/settings-centre.functions";
 import { LedgerHealthPanel } from "@/components/accounting/LedgerHealthPanel";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -457,10 +458,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
             </p>
           ) : null}
           {cfgQ.isError ? (
-            <Alert variant="destructive">
-              <AlertTitle>Accounting preferences unavailable</AlertTitle>
-              <AlertDescription>{friendlyAuthError(cfgQ.error)}</AlertDescription>
-            </Alert>
+            <QueryErrorState queries={[cfgQ]} title="Accounting preferences unavailable" />
           ) : null}
           {cfgMut.isError ? (
             <p role="alert" className="text-sm text-destructive">

@@ -11,6 +11,7 @@ import {
   searchPriceListCustomers,
 } from "@/lib/products/customer-price-list.functions";
 import type { ProductPriceList } from "@/lib/products/catalogue-masterdata.functions";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -123,9 +124,7 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
               </p>
             ) : null}
             {customersQ.isError ? (
-              <p role="alert" className="text-sm text-destructive">
-                {friendlyAuthError(customersQ.error)}
-              </p>
+              <QueryErrorState queries={[customersQ]} title="Could not load customers" />
             ) : null}
           </div>
           <div className="space-y-2">
@@ -168,12 +167,7 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
         </div>
         {defaultsQ.isPending ? <p className="text-sm">Loading customer defaults…</p> : null}
         {defaultsQ.isError ? (
-          <div role="alert" className="flex flex-wrap items-center gap-2">
-            <p className="text-sm text-destructive">{friendlyAuthError(defaultsQ.error)}</p>
-            <Button variant="outline" size="sm" onClick={() => defaultsQ.refetch()}>
-              Retry
-            </Button>
-          </div>
+          <QueryErrorState queries={[defaultsQ]} title="Could not load customer price defaults" />
         ) : null}
         {defaults.length === 0 && !defaultsQ.isPending ? (
           <p className="rounded-md border p-3 text-sm text-muted-foreground">

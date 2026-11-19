@@ -28,6 +28,7 @@ import {
   type ReviewType,
 } from "@/lib/documents/review-model";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -202,9 +203,7 @@ export function DocumentReviewQueue({
         </span>
       </div>
       {queue.isError ? (
-        <p role="alert" className="rounded border p-4 text-sm text-destructive">
-          {friendlyAuthError(queue.error)}
-        </p>
+        <QueryErrorState queries={[queue]} title="Could not load document review queue" />
       ) : queue.isPending ? (
         <p className="text-sm text-muted-foreground">Loading review queue…</p>
       ) : queue.data.rows.length === 0 ? (
@@ -294,9 +293,7 @@ export function DocumentReviewQueue({
             {preview.isPending ? (
               <p className="text-sm">Loading private preview…</p>
             ) : preview.isError ? (
-              <p role="alert" className="text-sm text-destructive">
-                {friendlyAuthError(preview.error)}
-              </p>
+              <QueryErrorState queries={[preview]} title="Could not load document preview" />
             ) : preview.data?.kind === "unsupported" ? (
               <p className="text-sm text-muted-foreground">
                 This file format cannot be previewed. Download the original file.
@@ -322,9 +319,7 @@ export function DocumentReviewQueue({
             ) : null}
             <h4 className="font-semibold">Review history</h4>
             {history.isError ? (
-              <p role="alert" className="text-xs text-destructive">
-                {friendlyAuthError(history.error)}
-              </p>
+              <QueryErrorState queries={[history]} title="Could not load review history" />
             ) : history.data?.length ? (
               <ol className="space-y-2 border-l border-border/70 pl-4 text-xs">
                 {history.data.map((event) => (

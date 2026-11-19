@@ -90,6 +90,8 @@ Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails
 
 **Production honesty Batch 104:** Cash classification journal/document lookups, correction approval queue/events, workpaper reconciling items/history, AI workpaper evidence, journal exception history, reporting favourites + access dialog, and AI assistant status/history/accounts use `QueryErrorState` (mutation/validation alerts unchanged). Staging/RBAC still **NOT VERIFIED**.
 
+**Production honesty Batch 105:** Document email/OCR/recycle/review/preview extras, products price-list master data, sales document price-list lookups, contact follow-ups, and settings integration health / accounting preferences use `QueryErrorState`. Staging/RBAC still **NOT VERIFIED**.
+
 **Bank coding + record totals (Batch 75):** `BankCodingPanel` uses shared `EditableLineItemGrid` + `TotalsSummary`. Bill and invoice read-only records use `TotalsSummary`. `MoneyDocumentPanel` fails closed with `QueryErrorState` when options queries fail. Staging/RBAC still **NOT VERIFIED**.
 
 **Bills line grid ELG (Batch 74):** `PurchasesDocumentLines` composes shared `EditableLineItemGrid` (Sales parity). Drag reorder, tracking columns, tax modes, keyboard/paste, Add-lines Select, and TotalsSummary preserved. Staging/RBAC still **NOT VERIFIED**.

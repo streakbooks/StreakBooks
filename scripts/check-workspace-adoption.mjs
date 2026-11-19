@@ -46,6 +46,7 @@ const required = [
   ["src/screens/purchases/requisitions.tsx", "OrderEntryLines"],
   ["src/components/purchases/PurchasesDocumentLines.tsx", "TotalsSummary"],
   ["src/components/purchases/PurchasesDocumentLines.tsx", "interpretLineGridKey"],
+  ["src/components/purchases/PurchasesDocumentLines.tsx", "EditableLineItemGrid"],
   ["src/components/sales/SalesDocumentLines.tsx", "EditableLineItemGrid"],
   ["src/components/sales/SalesDocumentLines.tsx", "interpretLineGridKey"],
   ["src/screens/purchases/bills.new.tsx", "FormGrid"],

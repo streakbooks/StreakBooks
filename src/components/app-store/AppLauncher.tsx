@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { LayoutGrid } from "lucide-react";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,6 +82,10 @@ export function AppLauncher() {
         {!company ? (
           <div className="px-2 py-3 text-sm text-muted-foreground">
             Select an organisation to see installed apps.
+          </div>
+        ) : catalogue.isError ? (
+          <div className="px-2 py-3">
+            <QueryErrorState queries={[catalogue]} title="Could not load installed apps" />
           </div>
         ) : catalogue.isLoading ? (
           <div className="px-2 py-3 text-sm text-muted-foreground">Loading apps…</div>

@@ -15,6 +15,7 @@ import {
   getSalesByItem,
 } from "@/lib/reports/analysis.functions";
 import type { SummaryRow } from "@/lib/reports/executive-summary";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -428,14 +429,19 @@ export function GlSummaryView({ ctx }: { ctx: ReportCtx }) {
       mode="range"
       basis={`${ctx.search.basis === "cash" ? "Cash" : "Accrual"} basis · Opening and closing are signed debit minus credit.`}
       extraControls={
-        <ReportAccountMultiSelect
-          accounts={accountsQ.data ?? []}
-          selected={selectedIds ?? undefined}
-          onChange={(ids) =>
-            ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
-          }
-          disabled={accountsQ.isPending}
-        />
+        <>
+          {accountsQ.isError ? (
+            <QueryErrorState queries={[accountsQ]} title="Could not load report accounts" />
+          ) : null}
+          <ReportAccountMultiSelect
+            accounts={accountsQ.data ?? []}
+            selected={selectedIds ?? undefined}
+            onChange={(ids) =>
+              ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+            }
+            disabled={accountsQ.isPending || accountsQ.isError}
+          />
+        </>
       }
       getCsv={() => (d ? csvFor(selectedRows, cols) : null)}
     >

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { getAnnouncements } from "@/lib/platform/platform.functions";
 export function PlatformAnnouncements({ companyId }: { companyId: string | null }) {
   const load = useServerFn(getAnnouncements);
@@ -9,6 +10,13 @@ export function PlatformAnnouncements({ companyId }: { companyId: string | null 
     retry: false,
     refetchInterval: 60000,
   });
+  if (query.isError) {
+    return (
+      <aside aria-label="Platform announcements" className="border-b px-6 py-3">
+        <QueryErrorState queries={[query]} title="Could not load platform announcements" />
+      </aside>
+    );
+  }
   return query.data?.length ? (
     <aside
       aria-label="Platform announcements"

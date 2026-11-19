@@ -26,6 +26,7 @@ import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
 import { bpsToPercentString, money } from "@/components/sales/sales-form-utils";
 import { StatusBadge } from "@/components/common/stat-card";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
@@ -486,19 +487,55 @@ function InvoiceDetail() {
             </TableBody>
           </Table>
 
-          <div className="ml-auto w-full max-w-xs space-y-1 text-sm">
-            <Row label="Subtotal" value={money(inv.subtotal_minor, cur)} />
-            <Row label="Tax" value={money(inv.tax_minor, cur)} />
-            <Row label="Total" value={money(inv.total_minor, cur)} bold />
-            {inv.amount_paid_minor > 0 ? (
-              <Row label="Paid" value={`− ${money(inv.amount_paid_minor, cur)}`} />
-            ) : null}
-            {inv.amount_credited_minor > 0 ? (
-              <Row label="Credited" value={`− ${money(inv.amount_credited_minor, cur)}`} />
-            ) : null}
-            {inv.status !== "draft" && inv.status !== "void" ? (
-              <Row label="Amount due" value={money(outstanding, cur)} bold />
-            ) : null}
+          <div className="ml-auto w-full max-w-xs">
+            <TotalsSummary
+              aria-label="Invoice totals"
+              lines={[
+                { id: "subtotal", label: "Subtotal", value: money(inv.subtotal_minor, cur) },
+                {
+                  id: "tax",
+                  label: "Tax",
+                  value: money(inv.tax_minor, cur),
+                  emphasis: "muted",
+                },
+                {
+                  id: "total",
+                  label: "Total",
+                  value: money(inv.total_minor, cur),
+                  emphasis: "total",
+                },
+                ...(inv.amount_paid_minor > 0
+                  ? [
+                      {
+                        id: "paid",
+                        label: "Paid",
+                        value: `− ${money(inv.amount_paid_minor, cur)}`,
+                        emphasis: "muted" as const,
+                      },
+                    ]
+                  : []),
+                ...(inv.amount_credited_minor > 0
+                  ? [
+                      {
+                        id: "credited",
+                        label: "Credited",
+                        value: `− ${money(inv.amount_credited_minor, cur)}`,
+                        emphasis: "muted" as const,
+                      },
+                    ]
+                  : []),
+                ...(inv.status !== "draft" && inv.status !== "void"
+                  ? [
+                      {
+                        id: "due",
+                        label: "Amount due",
+                        value: money(outstanding, cur),
+                        emphasis: "total" as const,
+                      },
+                    ]
+                  : []),
+              ]}
+            />
           </div>
 
           {inv.memo ? <p className="whitespace-pre-line text-sm">{inv.memo}</p> : null}
@@ -630,14 +667,5 @@ function InvoiceDetail() {
         </AlertDialogContent>
       </AlertDialog>
     </>
-  );
-}
-
-function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
-  return (
-    <div className={`flex justify-between ${bold ? "font-semibold" : ""}`}>
-      <span>{label}</span>
-      <span>{value}</span>
-    </div>
   );
 }

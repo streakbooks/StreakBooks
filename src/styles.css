@@ -19,7 +19,7 @@
 /*
  * LinkBooks design system.
  * Restrained, professional finance UI: cool neutral surfaces, a deep navy sidebar and ONE brand
- * accent (blue) for actions, focus and selection. Money direction and document status use
+ * accent (royal plum) for actions, focus and selection. Money direction and document status use
  * dedicated semantic tokens (see "Semantic" below) so colour always carries the same meaning.
  * Numbers use tabular figures (`.numeric`, `.money`) so columns of money line up.
  */
@@ -146,26 +146,26 @@
   --lb-radius-surface: var(--radius);
 
   /* Batch 33 — light, soft, eye-friendly premium palette (long accounting sessions). */
-  --background: #f7fafc;
-  --foreground: #1f2a37;
+  --background: #faf8f5;
+  --foreground: #292631;
 
   --card: #ffffff;
   --card-foreground: #1f2a37;
   --popover: #ffffff;
   --popover-foreground: #1f2a37;
 
-  /* Soft pastel primary blue — saturated only on actions/selection. */
-  --primary: #3866db;
+  /* Royal Signature: restrained plum actions, ivory surfaces and accessible focus. */
+  --primary: #563d57;
   --primary-foreground: #ffffff;
 
-  --secondary: #fbfdff;
+  --secondary: #faf8f5;
   --secondary-foreground: #1f2a37;
 
-  --muted: #f3f6fa;
+  --muted: #f4f0ec;
   --muted-foreground: #5b6b7f;
 
   /* Accent = subtle hover/selected surface (shadcn convention), not a second brand colour. */
-  --accent: #eef4ff;
+  --accent: #f1e9ee;
   --accent-foreground: #1f2a37;
 
   --destructive: #c94a4a;
@@ -207,9 +207,9 @@
   --nav-group-overview: #4f7df3;
   --nav-group-footer: #6b7a8c;
 
-  --border: #e6edf5;
-  --input: #e6edf5;
-  --ring: #4f7df3;
+  --border: #e6dfd8;
+  --input: #e6dfd8;
+  --ring: #563d57;
 
   --chart-1: #4f7df3;
   --chart-2: #2aa5a0;
@@ -217,22 +217,22 @@
   --chart-4: #c94a4a;
   --chart-5: #9b6bc7;
 
-  /* Light premium navigator — white/soft surfaces, soft blue selection. */
+  /* Light premium navigator with subtle plum selection. */
   --sidebar: #ffffff;
-  --sidebar-top: #fbfdff;
-  --sidebar-bottom: #f7fafc;
+  --sidebar-top: #ffffff;
+  --sidebar-bottom: #faf8f5;
   --sidebar-foreground: #5b6b7f;
-  --sidebar-primary: #4f7df3;
+  --sidebar-primary: #563d57;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef4ff;
+  --sidebar-accent: #f1e9ee;
   --sidebar-accent-foreground: #1f2a37;
-  --sidebar-border: #e6edf5;
-  --sidebar-ring: #4f7df3;
-  --sidebar-active: #eef4ff;
-  --sidebar-active-strong: #4f7df3;
+  --sidebar-border: #e6dfd8;
+  --sidebar-ring: #563d57;
+  --sidebar-active: #f1e9ee;
+  --sidebar-active-strong: #563d57;
   --sidebar-active-foreground: #1f2a37;
-  --sidebar-active-border: #d6e4ff;
-  --sidebar-active-indicator: #4f7df3;
+  --sidebar-active-border: #ddcbd5;
+  --sidebar-active-indicator: #563d57;
 }
 
 .dark {

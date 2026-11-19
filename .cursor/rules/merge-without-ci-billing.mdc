@@ -1,14 +1,14 @@
 ---
-description: Merge LinkBooks PRs without waiting when GitHub Actions fail solely due to org billing
+description: How to treat GitHub Actions failures caused solely by org billing (no unauthorised merges)
 alwaysApply: true
 ---
 
-# Merge without waiting for CI billing
+# CI billing failures vs real test failures
 
-Gulshan (Operations) authorised this standing instruction for LinkBooks (`linkbusinessadvisory/LinkBooks`):
+Gulshan (Operations) standing guidance for LinkBooks (`linkbusinessadvisory/LinkBooks`):
 
-1. When GitHub Actions jobs fail because **org billing / spending limit** prevented jobs from starting (not because of real test failures), **do not wait** for billing to be restored before merging.
-2. Merge with `--admin` (or equivalent) after **local quality gates** pass for the batch (relevant Vitest, `check:navigation`, `check:browsing-coverage`, and other batch-specific checks).
-3. Document honestly in the final report: CI blocked by billing; local gates PASS; merge authorised.
-4. Never treat a real failing test/lint/typecheck as a billing skip. Only skip waiting when the failure is billing/spending-limit and jobs never ran.
-5. Continue production-ready batches after merge without re-asking for this permission.
+1. When GitHub Actions jobs fail because **org billing / spending limit** prevented jobs from starting (not because of real test failures), document that honestly — do **not** treat 0-step / ~1–2s empty jobs as real test failures.
+2. After **local quality gates** pass for the batch (relevant Vitest, `check:navigation`, `check:browsing-coverage`, and other batch-specific checks), the PR may be considered locally verified for review.
+3. **Do not merge** into `main` unless Gulshan explicitly authorises the merge in the current conversation. Do **not** use `--admin` or other overrides to bypass branch protection or required reviews unless that same message explicitly authorises it.
+4. Never treat a real failing test/lint/typecheck as a billing skip. Only classify a failure as billing when jobs never ran (0 steps / spending-limit evidence).
+5. Continue feature-branch / PR work after documenting billing-blocked CI without re-asking for routine development permission.

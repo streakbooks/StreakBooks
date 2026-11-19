@@ -21,7 +21,12 @@ export function parseFilesListSearch(raw: Record<string, unknown>): FilesListSea
   // Route search may originate from malformed runtime input, not only typed router state.
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return result;
   // URL state must contain only explicit query entries, never prototype-inherited fields.
-  const own = (key: string): unknown => Object.prototype.hasOwnProperty.call(raw, key) ? raw[key] : undefined;
+  const own = (key: string): unknown => {
+    // Never execute user-defined accessors while decoding an untrusted route search.
+    // TanStack search state and URLSearchParams-derived objects use data properties.
+    const descriptor = Object.getOwnPropertyDescriptor(raw, key);
+    return descriptor && "value" in descriptor ? descriptor.value : undefined;
+  };
   for (const key of ["folder", "file"] as const) {
     const id = own(key);
     if (typeof id === "string" && UUID.test(id)) result[key] = id;

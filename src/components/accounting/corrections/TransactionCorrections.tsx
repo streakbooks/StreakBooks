@@ -115,7 +115,7 @@ export function TransactionCorrections({ companyId }: { companyId: string }) {
         onUndo={undoM.mutateAsync}
         history={history.data ?? { rows: [], has_more: false, page }}
         historyLoading={history.isPending}
-        historyError={history.isError ? friendlyAuthError(history.error) : ""}
+        historyLoad={history}
         onHistoryPage={setPage}
         onHistoryRefresh={() => {
           void history.refetch();

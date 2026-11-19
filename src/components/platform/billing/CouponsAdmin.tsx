@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LookupSelect } from "@/components/lookup";
 import { MultiLookupSelect } from "@/components/lookup/MultiLookupSelect";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,9 +68,7 @@ export function CouponsAdmin({ canEdit }: { canEdit: boolean }) {
         </p>
       </header>
       {query.isError ? (
-        <p className="text-sm text-destructive">
-          {errorText(query.error, "Codes could not be loaded.")}
-        </p>
+        <QueryErrorState queries={[query]} title="Could not load promo codes" />
       ) : null}
       <ul className="space-y-2 text-sm">
         {(query.data ?? []).map((coupon) => (

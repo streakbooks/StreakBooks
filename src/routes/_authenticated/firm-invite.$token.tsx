@@ -8,6 +8,7 @@ import {
   acceptFirmStaffInvitation,
   previewFirmStaffInvitation,
 } from "@/lib/firm/firm-invites.functions";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -48,10 +49,7 @@ function FirmInvitePage() {
       <CardContent className="space-y-3">
         {query.isPending ? <p>Checking invitation…</p> : null}
         {query.isError ? (
-          <Alert variant="destructive">
-            <AlertTitle>Cannot open invitation</AlertTitle>
-            <AlertDescription>{friendlyAuthError(query.error)}</AlertDescription>
-          </Alert>
+          <QueryErrorState queries={[query]} title="Cannot open invitation" />
         ) : null}
         {!query.isPending && !query.isError && !query.data ? (
           <p>This invitation is invalid. Ask the firm administrator to send a new invitation.</p>

@@ -15,6 +15,7 @@ import {
   filterPaletteActions,
   type PaletteAction,
 } from "@/lib/search/palette-items";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -270,8 +271,8 @@ export function GlobalSearch({ className }: { className?: string }) {
                 </div>
               ) : null}
               {searchQ.isError ? (
-                <div role="alert" className="px-3 py-2 text-sm text-destructive">
-                  {searchQ.error instanceof Error ? searchQ.error.message : "Search failed"}
+                <div className="px-3 py-2">
+                  <QueryErrorState queries={[searchQ]} title="Could not run search" />
                 </div>
               ) : null}
               {nothing ? <CommandEmpty>No matches in this organisation.</CommandEmpty> : null}

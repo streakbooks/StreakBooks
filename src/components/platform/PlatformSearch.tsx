@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Search } from "lucide-react";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -109,12 +110,7 @@ export function PlatformSearch({ context }: { context: PlatformContext }) {
           ) : result.isFetching ? (
             <p role="status">Searching platform records…</p>
           ) : result.isError ? (
-            <div role="alert">
-              <p className="text-destructive">{result.error.message}</p>
-              <Button className="mt-2" variant="outline" onClick={() => void result.refetch()}>
-                Retry search
-              </Button>
-            </div>
+            <QueryErrorState queries={[result]} title="Could not search platform records" />
           ) : result.data?.length === 0 ? (
             <p>No matching platform records.</p>
           ) : null}

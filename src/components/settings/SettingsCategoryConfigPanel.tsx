@@ -23,6 +23,7 @@ import {
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { settingsFieldPresentation } from "@/lib/settings/field-presentation";
 import { CheckCircle2, CircleAlert, Loader2 } from "lucide-react";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -257,15 +258,7 @@ export function SettingsCategoryConfigPanel({
                 <Skeleton className="h-12 w-full" />
               </div>
             ) : q.isError ? (
-              <Alert variant="destructive">
-                <AlertTitle>Settings could not be loaded</AlertTitle>
-                <AlertDescription className="space-y-2">
-                  <p>{friendlyAuthError(q.error)}</p>
-                  <Button size="sm" variant="outline" onClick={() => void q.refetch()}>
-                    Retry
-                  </Button>
-                </AlertDescription>
-              </Alert>
+              <QueryErrorState queries={[q]} title="Settings could not be loaded" />
             ) : (
               <>
                 {serverChanged ? (

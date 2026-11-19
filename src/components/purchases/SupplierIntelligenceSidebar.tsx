@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { getSupplierIntelligence } from "@/lib/purchases/purchases.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -203,7 +203,9 @@ export function SupplierIntelligenceSidebar({
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
         </div>
       ) : intelQ.isError ? (
-        <p className="p-4 text-sm text-destructive">{friendlyAuthError(intelQ.error)}</p>
+        <div className="p-4">
+          <QueryErrorState queries={[intelQ]} title="Could not load supplier intelligence" />
+        </div>
       ) : (
         <Tabs value={tab} onValueChange={onTabChange} className="flex min-h-0 flex-1 flex-col">
           <TabsList className="mx-2 mt-2 h-auto flex-wrap justify-start gap-0.5 bg-transparent p-0">

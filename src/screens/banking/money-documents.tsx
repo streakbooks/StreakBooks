@@ -7,7 +7,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { listMoneyDocuments, voidMoneyDocument } from "@/lib/create-new/money-documents.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -130,8 +131,8 @@ function MoneyDocumentsInner() {
     >
       {docsQ.isPending ? (
         <LoadingState />
-      ) : docsQ.isError ? (
-        <ErrorState onRetry={() => void docsQ.refetch()} />
+      ) : docsQ.isError && docsQ.data === undefined ? (
+        <QueryErrorState queries={[docsQ]} title="Could not load bank documents" />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No bank documents yet"

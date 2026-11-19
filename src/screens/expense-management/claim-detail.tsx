@@ -14,6 +14,7 @@ import { ContactLookup } from "@/components/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -410,9 +411,6 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
             Risk {riskQ.data.score}
           </Badge>
         ) : null}
-        <Badge variant="outline">
-          Total {fromMinorUnits(claim.totalMinor, claim.claimCurrency)}
-        </Badge>
       </div>
 
       {claim.postedJournalId ? (
@@ -485,8 +483,8 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
         <p className="mb-6 text-sm text-muted-foreground">{claim.description}</p>
       ) : null}
 
-      <div className="mb-8">
-        <h2 className="mb-3 text-base font-semibold">Lines</h2>
+      <div className="mb-8 space-y-4">
+        <h2 className="text-base font-semibold">Lines</h2>
         <Table>
           <TableHeader>
             <TableRow>
@@ -513,6 +511,25 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
             ))}
           </TableBody>
         </Table>
+        <div className="flex justify-end">
+          <TotalsSummary
+            aria-label="Claim totals"
+            lines={[
+              {
+                id: "lines",
+                label: "Lines",
+                value: String(claim.lines.length),
+                emphasis: "muted",
+              },
+              {
+                id: "total",
+                label: "Total",
+                value: fromMinorUnits(claim.totalMinor, claim.claimCurrency),
+                emphasis: "total",
+              },
+            ]}
+          />
+        </div>
       </div>
 
       {canRebill ? (

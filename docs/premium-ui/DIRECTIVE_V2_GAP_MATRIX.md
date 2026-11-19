@@ -231,3 +231,19 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Bills create / SalesDocumentEditor / JournalPanels load failure | QueryErrorState fail-closed |
 | Workspace locks | check:workspace rows for TotalsSummary + QueryErrorState |
 
+## Batch 78 (Receipt / payment record allocation TotalsSummary)
+
+| Gap | Action |
+| --- | --- |
+| Receipt record allocation chrome | TotalsSummary Amount/Allocated/Unallocated + QueryErrorState |
+| Supplier payment record allocation chrome | TotalsSummary Amount/Allocated/Unallocated + QueryErrorState |
+| Workspace locks | check:workspace TotalsSummary + QueryErrorState on both records |
+
+## Batch 79 (Create-flow QueryErrorState parity)
+
+| Gap | Action |
+| --- | --- |
+| Sales/PO order create options failure | QueryErrorState |
+| Requisitions editor options failure | QueryErrorState |
+| Batch payment bills/accounts failure | QueryErrorState |
+| Workspace locks | check:workspace QueryErrorState on those creates |

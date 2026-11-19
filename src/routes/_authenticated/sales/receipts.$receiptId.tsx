@@ -7,7 +7,9 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { getReceipt, unallocateReceipt, voidReceipt } from "@/lib/sales/sales-receipts.functions";
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
@@ -95,19 +97,17 @@ function ReceiptDetail() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
-  if (query.isError) {
-    return (
-      <ErrorState
-        title="Could not load receipt"
-        description={friendlyAuthError(query.error)}
-        onRetry={() => query.refetch()}
-      />
-    );
+  if (query.isError && query.data === undefined) {
+    return <QueryErrorState queries={[query]} title="Could not load receipt" />;
+  }
+  if (!query.data) {
+    return <EmptyState title="Receipt not found" description="This receipt is unavailable." />;
   }
   const { receipt, allocations, reversedAllocations } = query.data;
   const cur = receipt.currency_code;
   const today = configQ.data?.today ?? receipt.receipt_date;
   const isPosted = receipt.status === "posted";
+  const allocatedMinor = allocations.reduce((sum, a) => sum + a.amount_minor, 0);
   const latestAllocation = allocations.reduce(
     (m, a) => ((a.allocated_on ?? "") > m ? (a.allocated_on ?? "") : m),
     receipt.receipt_date,
@@ -204,7 +204,6 @@ function ReceiptDetail() {
               </div>
               <div>Reference: {receipt.reference ?? "—"}</div>
               <div>Memo: {receipt.memo ?? "—"}</div>
-              <div>Unallocated: {isPosted ? money(receipt.unallocated_minor, cur) : "—"}</div>
               {receipt.status === "void" ? (
                 <div className="sm:col-span-2 text-destructive">
                   Voided {receipt.void_date ?? ""}
@@ -213,6 +212,31 @@ function ReceiptDetail() {
               ) : null}
             </CardContent>
           </Card>
+
+          <div className="flex justify-end">
+            <TotalsSummary
+              aria-label="Receipt allocation totals"
+              lines={[
+                {
+                  id: "amount",
+                  label: "Amount",
+                  value: money(receipt.amount_minor, cur),
+                },
+                {
+                  id: "allocated",
+                  label: "Allocated",
+                  value: money(allocatedMinor, cur),
+                  emphasis: "muted",
+                },
+                {
+                  id: "unallocated",
+                  label: "Unallocated",
+                  value: isPosted ? money(receipt.unallocated_minor, cur) : "—",
+                  emphasis: "total",
+                },
+              ]}
+            />
+          </div>
 
           <Card>
             <CardHeader>

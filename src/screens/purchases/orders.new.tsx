@@ -22,7 +22,8 @@ import {
 import { sumLines } from "@/lib/purchases/line-math";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
@@ -75,14 +76,8 @@ function OrderLoader({
     queryFn: () => fetch({ data: { companyId, orderId: edit! } }),
   });
   if (edit && q.isPending) return <LoadingState />;
-  if (edit && q.isError)
-    return (
-      <ErrorState
-        onRetry={() => void q.refetch()}
-        title="Could not load order"
-        description={friendlyAuthError(q.error)}
-      />
-    );
+  if (edit && q.isError && q.data === undefined)
+    return <QueryErrorState queries={[q]} title="Could not load order" />;
   if (
     q.data &&
     (q.data.status !== "draft" ||
@@ -308,19 +303,10 @@ function OrderForm({
       return next;
     });
   };
+  const requiredQueries = [suppliersQ, accountsQ, orgQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load order options" />;
   if (suppliersQ.isPending || accountsQ.isPending || orgQ.isPending) return <LoadingState />;
-  if (suppliersQ.isError || accountsQ.isError || orgQ.isError)
-    return (
-      <ErrorState
-        title="Could not load order options"
-        description={friendlyAuthError(suppliersQ.error ?? accountsQ.error ?? orgQ.error)}
-        onRetry={() => {
-          void suppliersQ.refetch();
-          void accountsQ.refetch();
-          void orgQ.refetch();
-        }}
-      />
-    );
   const title = initial ? `Edit ${initial.order_number ?? "purchase order"}` : "New purchase order";
   return (
     <TransactionWorkspace

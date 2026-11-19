@@ -80,6 +80,9 @@ try {
   }
   if (!ready) throw Error("Isolated POS database did not start");
   sql(read("tests/fixtures/pos/baseline.sql"));
+  const mfa = read("supabase/migrations/20261029101434_mfa_aal2_rls_enforcement.sql");
+  sql(mfa.slice(0, mfa.indexOf("CREATE OR REPLACE FUNCTION private.apply_mfa_policies()")));
+
   const audit = read("supabase/migrations/20261019200000_cross_cutting_settings_fx_demo.sql");
   const start = audit.indexOf("CREATE OR REPLACE FUNCTION public.record_audit_event(");
   sql(audit.slice(start, audit.indexOf("$$;", start) + 3));
@@ -88,6 +91,7 @@ try {
   }
   sql(read("tests/integration/pos-register-sessions.sql"));
   sql(read("tests/integration/pos-cash-sale.sql"));
+  sql(read("tests/integration/pos-mfa.sql"));
   const identical = await race([
     "80000000-0000-4000-8000-000000000001",
     "80000000-0000-4000-8000-000000000001",

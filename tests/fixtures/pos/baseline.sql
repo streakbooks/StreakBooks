@@ -4,6 +4,10 @@ CREATE SCHEMA auth; CREATE SCHEMA private;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
  SELECT (nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'sub')::uuid $$;
 CREATE TABLE auth.users(id uuid PRIMARY KEY);
+CREATE TABLE auth.mfa_factors(user_id uuid NOT NULL REFERENCES auth.users(id),status text NOT NULL);
+CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$
+ SELECT coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb,'{}'::jsonb) $$;
+
 CREATE TABLE public.profiles(id uuid PRIMARY KEY, full_name text, email text);
 CREATE TYPE public.company_role AS ENUM('owner','admin','accountant','bookkeeper','staff','read_only');
 CREATE TABLE public.role_permissions(role public.company_role,permission text,PRIMARY KEY(role,permission));

@@ -4,8 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { listCreditNotes } from "@/lib/purchases/purchases.functions";
-import { friendlyAuthError } from "@/lib/auth-helpers";
-import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ListToolbar } from "@/components/common/ListTools";
 import { useListSearch } from "@/hooks/use-list-search";
@@ -62,11 +62,7 @@ function CreditNotesList() {
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
-        <ErrorState
-          onRetry={() => void query.refetch()}
-          title="Could not load credit notes"
-          description={friendlyAuthError(query.error)}
-        />
+        <QueryErrorState queries={[query]} title="Could not load credit notes" />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState
           title="No credit notes"

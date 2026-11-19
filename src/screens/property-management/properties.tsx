@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PmSubnav } from "@/components/property-management/PmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -129,10 +129,10 @@ export function PmPropertiesPage() {
     >
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
-        <ErrorState
+        <QueryErrorState
+          queries={[settings]}
           title="Property Management backend unavailable"
           description={`${friendlyAuthError(settings.error)} If this module was just deployed, apply migration 20261118150000 (and 20261118160000), then hard-refresh or sign out/in so permissions reload.`}
-          onRetry={() => settings.refetch()}
         />
       ) : null}
       {settings.data && !settings.data.enabled ? (

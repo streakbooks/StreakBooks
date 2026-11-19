@@ -6,6 +6,7 @@ import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getCompanyBillingAccount } from "@/lib/billing/billing-accounts.functions";
 import {
   downloadBillingDocument,
@@ -43,8 +44,7 @@ export function BillingDocuments({ companyId }: { companyId: string }) {
     mutationFn: (input: { kind: "invoice" | "credit_note"; id: string }) =>
       download({ data: input }),
     onSuccess: (result) => window.open(result.url, "_blank", "noopener"),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "The document could not be opened."),
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const invoices = query.data?.invoices ?? [];
   const creditNotes = query.data?.creditNotes ?? [];
@@ -168,8 +168,7 @@ function TaxIdForm({ companyId }: { companyId: string }) {
       );
       void queryClient.invalidateQueries({ queryKey: ["billing-account", companyId] });
     },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "The tax ID could not be saved."),
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
   if (!account.data?.permissions.manage) return null;
   return (

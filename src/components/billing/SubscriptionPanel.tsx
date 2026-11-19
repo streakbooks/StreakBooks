@@ -43,6 +43,7 @@ import {
   type PriceQuote,
 } from "@/lib/billing/pricing";
 import { formatMinorAmount } from "@/lib/billing/domain/money";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { cn } from "@/lib/utils";
 
 const billingKey = (companyId: string) => ["billing-overview", companyId] as const;
@@ -177,7 +178,7 @@ export function SubscriptionPanel({
       setAppliedCode(code);
       toast.success("Promo code applied to the prices below.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "That promo code could not be applied.");
+      toast.error(friendlyAuthError(error));
     }
   }
 
@@ -214,7 +215,7 @@ export function SubscriptionPanel({
       window.location.assign(result.url);
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Checkout could not be started.");
+      toast.error(friendlyAuthError(error));
     },
   });
   const planChange = useMutation({
@@ -231,7 +232,7 @@ export function SubscriptionPanel({
       void overview.refetch();
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "The plan could not be changed.");
+      toast.error(friendlyAuthError(error));
     },
   });
   const portal = useMutation({
@@ -240,9 +241,7 @@ export function SubscriptionPanel({
       window.location.assign(result.url);
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "The payment portal could not be opened.",
-      );
+      toast.error(friendlyAuthError(error));
     },
   });
 
@@ -292,11 +291,11 @@ export function SubscriptionPanel({
           companyName={data.companyName}
           defaultCountry={data.countryCode}
           busy={checkout.isPending}
-          serverError={checkout.error instanceof Error ? checkout.error.message : null}
+          serverError={checkout.isError ? friendlyAuthError(checkout.error) : null}
           providers={data.providers}
           quote={checkoutQuote.data ?? null}
           quoteLoading={checkoutQuote.isFetching}
-          quoteError={checkoutQuote.error instanceof Error ? checkoutQuote.error.message : null}
+          quoteError={checkoutQuote.isError ? friendlyAuthError(checkoutQuote.error) : null}
           priceCurrency={
             target.listPrice && isBillingCurrency(target.listPrice.currency)
               ? target.listPrice.currency

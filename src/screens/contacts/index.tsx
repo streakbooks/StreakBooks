@@ -767,8 +767,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         });
         return { id: created.id, assignment };
       } catch (error) {
-        const detail = error instanceof Error ? error.message : "Unknown error";
-        throw new Error(`The ${labelKind} was created, but assigning contacts failed: ${detail}`);
+        throw new Error(
+          `The ${labelKind} was created, but assigning contacts failed: ${friendlyAuthError(error)}`,
+        );
       }
     },
     onSuccess: async ({ id, assignment }, input) => {

@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiKeysAdmin } from "@/components/platform/billing/ApiKeysAdmin";
@@ -118,11 +119,7 @@ function PlatformBillingPage() {
                 );
                 void query.refetch();
               })
-              .catch((error: unknown) =>
-                toast.error(
-                  error instanceof Error ? error.message : "The draft could not be saved.",
-                ),
-              );
+              .catch((error: unknown) => toast.error(friendlyAuthError(error)));
           }}
         >
           <label className="text-sm">
@@ -226,7 +223,7 @@ function PlatformBillingPage() {
                         void query.refetch();
                       })
                       .catch((error: unknown) =>
-                        toast.error(error instanceof Error ? error.message : "Publish failed."),
+                        toast.error(friendlyAuthError(error)),
                       )
                   }
                 >
@@ -245,7 +242,7 @@ function PlatformBillingPage() {
                         void query.refetch();
                       })
                       .catch((error: unknown) =>
-                        toast.error(error instanceof Error ? error.message : "Rollback failed."),
+                        toast.error(friendlyAuthError(error)),
                       )
                   }
                 >

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { normaliseReferralCode, REFERRAL_STORAGE_KEY } from "@/lib/billing/domain/partners";
 import { getReferralStatus, recordReferral } from "@/lib/billing/partner-program.functions";
 
@@ -54,8 +55,7 @@ export function ReferralPanel({ companyId }: { companyId: string }) {
       setAccepted(false);
       void queryClient.invalidateQueries({ queryKey });
     },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "The referral could not be saved."),
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
   if (query.isError) {

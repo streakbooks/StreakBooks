@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { getFirmClientName, type FirmClientRow } from "@/lib/firm/client-portfolio";
 import {
   listFirmOnboardingEscalationHistory,
@@ -118,11 +119,8 @@ export function FirmOnboardingEscalationsPanel({
       {policyQ.isPending ? (
         <p className="mt-3 text-sm text-muted-foreground">Loading escalation policy…</p>
       ) : policyQ.isError ? (
-        <div className="mt-3 flex items-center gap-2">
-          <p className="text-sm text-destructive">{friendlyAuthError(policyQ.error)}</p>
-          <Button variant="outline" size="sm" onClick={() => void policyQ.refetch()}>
-            Retry
-          </Button>
+        <div className="mt-3">
+          <QueryErrorState queries={[policyQ]} title="Could not load escalation policy" />
         </div>
       ) : (
         <div className="mt-3 space-y-3">
@@ -196,7 +194,7 @@ export function FirmOnboardingEscalationsPanel({
         {historyQ.isPending ? (
           <p className="text-sm text-muted-foreground">Loading history…</p>
         ) : historyQ.isError ? (
-          <p className="text-sm text-destructive">{friendlyAuthError(historyQ.error)}</p>
+          <QueryErrorState queries={[historyQ]} title="Could not load escalation history" />
         ) : (historyQ.data ?? []).length ? (
           <div className="max-h-64 space-y-2 overflow-y-auto">
             {(historyQ.data ?? []).map((event) => (

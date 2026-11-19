@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { listFirmServiceCategories } from "@/lib/firm/firm-catalogue.functions";
 import {
   CLIENT_STATUSES,
@@ -342,13 +343,8 @@ export function FirmBulkClientActions({
             {auditQ.isPending ? (
               <p className="p-4 text-sm text-muted-foreground">Loading recent changes…</p>
             ) : auditQ.isError ? (
-              <div className="flex flex-wrap items-center gap-3 p-4">
-                <p className="text-sm">
-                  Profile history is unavailable: {friendlyAuthError(auditQ.error)}
-                </p>
-                <Button size="sm" variant="outline" onClick={() => void auditQ.refetch()}>
-                  Retry
-                </Button>
+              <div className="p-4">
+                <QueryErrorState queries={[auditQ]} title="Could not load profile history" />
               </div>
             ) : !auditQ.data?.length ? (
               <p className="p-4 text-sm text-muted-foreground">No profile changes recorded yet.</p>

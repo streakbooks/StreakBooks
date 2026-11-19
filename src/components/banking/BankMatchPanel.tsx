@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { LoadingState } from "@/components/common/states";
 
 /**
@@ -137,7 +138,7 @@ export function BankMatchPanel({
       {q.isPending ? (
         <LoadingState rows={2} />
       ) : q.isError ? (
-        <p className="text-destructive">{friendlyAuthError(q.error)}</p>
+        <QueryErrorState queries={[q]} title="Could not load match candidates" />
       ) : candidates.length === 0 ? (
         <p className="text-muted-foreground">
           No unreconciled ledger lines on this bank account within ±{windowDays} days. Code the line

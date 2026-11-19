@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Clock } from "lucide-react";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { LookupSelect } from "@/components/lookup";
@@ -198,7 +199,7 @@ function PricingPage() {
       </div>
       {query.isLoading ? <p>Loading plans…</p> : null}
       {query.isError ? (
-        <p>{query.error instanceof Error ? query.error.message : "Plans could not be loaded."}</p>
+        <QueryErrorState queries={[query]} title="Could not load published plans" />
       ) : null}
       {query.data?.ready === false ? (
         <p>Published prices appear here after the billing migration is applied.</p>

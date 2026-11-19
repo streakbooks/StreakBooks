@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,9 +46,7 @@ export function LegalDocumentsAdmin({ canEdit, isOwner }: { canEdit: boolean; is
       </header>
       {query.isLoading ? <p className="text-sm">Loading documents…</p> : null}
       {query.isError ? (
-        <p className="text-sm text-destructive">
-          {errorText(query.error, "Documents could not be loaded.")}
-        </p>
+        <QueryErrorState queries={[query]} title="Could not load legal documents" />
       ) : null}
       {query.data ? (
         <DocumentList documents={query.data} canEdit={canEdit} isOwner={isOwner} />

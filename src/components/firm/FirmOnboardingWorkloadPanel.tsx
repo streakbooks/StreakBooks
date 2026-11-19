@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { getFirmClientName, type FirmClientRow } from "@/lib/firm/client-portfolio";
 import { listFirmOnboardingOverview } from "@/lib/firm/firm-workflows.functions";
 import {
@@ -114,21 +115,10 @@ export function FirmOnboardingWorkloadPanel({
         </p>
       </div>
       {contextQ.isError || overviewQ.isError ? (
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-destructive">
-            Could not load workload: {friendlyAuthError(contextQ.error ?? overviewQ.error)}
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              void contextQ.refetch();
-              void overviewQ.refetch();
-            }}
-          >
-            Retry
-          </Button>
-        </div>
+        <QueryErrorState
+          queries={[contextQ, overviewQ]}
+          title="Could not load staff onboarding workload"
+        />
       ) : contextQ.isPending || overviewQ.isPending ? (
         <p className="text-sm text-muted-foreground">Loading staff workload…</p>
       ) : (

@@ -43,7 +43,7 @@ import {
   type FirmDirectoryPreferenceKind,
   type FirmDirectoryPreferences,
 } from "@/lib/firm/firm-directory-preferences";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -403,13 +403,11 @@ export function FirmClientPortfolio({
       </div>
 
       {profilesQ.isError ? (
-        <Alert>
-          <AlertDescription>
-            Client profile details are unavailable. Apply the firm-client-profiles database
-            migration, or refresh to retry. Existing linked clients and book access remain
-            available. {friendlyAuthError(profilesQ.error)}
-          </AlertDescription>
-        </Alert>
+        <QueryErrorState
+          queries={[profilesQ]}
+          title="Client profile details unavailable"
+          description="Apply the firm-client-profiles database migration, or refresh to retry. Existing linked clients and book access remain available."
+        />
       ) : null}
 
       <div className="flex flex-wrap items-end justify-between gap-3">

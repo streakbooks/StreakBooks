@@ -63,7 +63,8 @@
 | Recurring/SO/batch-pay Batch 70 | Superseded by Batch 71 | Recurring + sales order totals; batch payment TransactionWorkspace |
 | Requisitions chrome Batch 71 | Superseded by Batch 72 | Requisitions FormGrid/TotalsSummary; claims FormGrid; journal/sales locks |
 | OrderEntryLines ELG Batch 72 | Superseded by Batch 73 | OrderEntryLines spreadsheet grid + keyboard; default row honesty |
-| Chrome honesty Batch 73 | In progress | StatusBadge meta; Sales/journal ErrorState; FormGrid locks |
+| Chrome honesty Batch 73 | Done (merged #347) | StatusBadge meta; Sales/journal ErrorState; FormGrid locks |
+| PurchasesDocumentLines ELG Batch 74 | PR open (#351) | Bills line grid on shared EditableLineItemGrid |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

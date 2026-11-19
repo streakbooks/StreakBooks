@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useRef,
-  useState,
-  type ClipboardEvent,
-  type KeyboardEvent,
-  type PointerEvent as ReactPointerEvent,
-  type ReactNode,
-} from "react";
+import { useCallback, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { type PurchaseLineFormState, emptyPurchaseLine } from "@/lib/purchases/line-form-state";
 
 import { useVoiceSession } from "@/components/ai-voice/voice-context";
@@ -19,11 +11,15 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { computeBillTotals, type TaxCalculationMode } from "@/lib/purchases/bill-form-helpers";
 import { Button } from "@/components/ui/button";
 import { VoiceInput as Input, VoiceTextarea } from "@/components/ai-voice/voice-fields";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EntityCombobox, type EntityOption } from "@/components/common/EntityCombobox";
+import {
+  EditableLineItemGrid,
+  type EditableLineItemColumn,
+} from "@/components/common/EditableLineItemGrid";
 import { LineGridColumnMenu } from "@/components/common/LineGridColumnMenu";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { TableCell, TableRow } from "@/components/ui/table";
 import {
   AccountCreateForm,
   ContactCreateForm,
@@ -39,7 +35,6 @@ import {
   PURCHASE_LINE_COLUMN_OPTIONS,
   type PurchaseLineColumnKey,
 } from "@/lib/ui/document-line-column-widths";
-import { lineGridTableMinWidth } from "@/lib/ui/line-grid-layout";
 import {
   Select,
   SelectContent,
@@ -192,8 +187,6 @@ export function PurchasesDocumentLines({
     },
     [onVisibleColumnsChange],
   );
-  const widthDrag = useRef<{ id: string; startX: number; startW: number } | null>(null);
-
   const col = (key: LineColumnKey) => {
     if (effectiveVisible) return effectiveVisible.includes(key);
     if (key === "class") return showClass;
@@ -207,61 +200,6 @@ export function PurchasesDocumentLines({
 
   const w = (key: string) =>
     widths[key] ?? (DEFAULT_PURCHASE_LINE_COLUMN_WIDTHS as Record<string, number>)[key] ?? 100;
-
-  const onResizePointerDown = (event: ReactPointerEvent<HTMLSpanElement>, id: string) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const startW = w(id);
-    widthDrag.current = { id, startX: event.clientX, startW };
-    const target = event.currentTarget;
-    target.setPointerCapture(event.pointerId);
-    const onMove = (moveEvent: PointerEvent) => {
-      const drag = widthDrag.current;
-      if (!drag) return;
-      const nextW = clampColumnWidth(drag.startW + (moveEvent.clientX - drag.startX));
-      setWidths({ ...widths, [drag.id]: nextW });
-    };
-    const onUp = (upEvent: PointerEvent) => {
-      widthDrag.current = null;
-      target.releasePointerCapture(upEvent.pointerId);
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-  };
-
-  const Th = ({
-    id,
-    children,
-    align,
-    fluid,
-  }: {
-    id: string;
-    children: ReactNode;
-    align?: "right" | "center";
-    fluid?: boolean;
-  }) => (
-    <th
-      className={cn(
-        "relative",
-        align === "right" && "text-right",
-        align === "center" && "text-center",
-      )}
-      scope="col"
-      data-fluid={fluid ? "true" : undefined}
-      style={fluid ? { minWidth: w(id), width: "auto" } : { width: w(id), minWidth: w(id) }}
-    >
-      {children}
-      <span
-        role="separator"
-        aria-orientation="vertical"
-        aria-label={`Resize ${id} column`}
-        className="lb-spreadsheet-resize"
-        onPointerDown={(event) => onResizePointerDown(event, id)}
-      />
-    </th>
-  );
 
   const productOptions: EntityOption[] = products.map((p) => ({
     value: p.id,
@@ -451,100 +389,188 @@ export function PurchasesDocumentLines({
     return true;
   });
 
+  const gridColumns = [
+    {
+      id: "reorder",
+      header: <span className="sr-only">Reorder</span>,
+      widthPx: w("reorder"),
+      minWidthPx: w("reorder"),
+      resizable: false as const,
+    },
+    col("item")
+      ? { id: "item", header: "Item / service", widthPx: w("item"), minWidthPx: w("item") }
+      : null,
+    col("description")
+      ? {
+          id: "description",
+          header: "Description",
+          widthPx: w("description"),
+          minWidthPx: w("description"),
+          fluid: true,
+        }
+      : null,
+    col("quantity")
+      ? {
+          id: "quantity",
+          header: "Qty",
+          align: "right" as const,
+          widthPx: w("quantity"),
+          minWidthPx: w("quantity"),
+        }
+      : null,
+    col("unitPrice")
+      ? {
+          id: "unitPrice",
+          header: "Unit price",
+          align: "right" as const,
+          widthPx: w("unitPrice"),
+          minWidthPx: w("unitPrice"),
+        }
+      : null,
+    col("discount")
+      ? {
+          id: "discount",
+          header: "Discount",
+          align: "right" as const,
+          widthPx: w("discount"),
+          minWidthPx: w("discount"),
+        }
+      : null,
+    col("account")
+      ? {
+          id: "account",
+          header: "Expense / asset account",
+          widthPx: w("account"),
+          minWidthPx: w("account"),
+        }
+      : null,
+    col("tax")
+      ? { id: "tax", header: "Tax rate", widthPx: w("tax"), minWidthPx: w("tax") }
+      : null,
+    col("class")
+      ? { id: "class", header: "Class", widthPx: w("class"), minWidthPx: w("class") }
+      : null,
+    col("location")
+      ? { id: "location", header: "Location", widthPx: w("location"), minWidthPx: w("location") }
+      : null,
+    col("customer") || col("project")
+      ? {
+          id: "customer",
+          header: "Customer / project",
+          widthPx: w("customer"),
+          minWidthPx: w("customer"),
+        }
+      : null,
+    col("billable")
+      ? {
+          id: "billable",
+          header: "Billable",
+          align: "center" as const,
+          widthPx: w("billable"),
+          minWidthPx: w("billable"),
+        }
+      : null,
+    col("amount")
+      ? {
+          id: "amount",
+          header: "Amount",
+          align: "right" as const,
+          widthPx: w("amount"),
+          minWidthPx: w("amount"),
+          resizable: false as const,
+        }
+      : null,
+    {
+      id: "actions",
+      header: <span className="sr-only">Actions</span>,
+      widthPx: w("actions"),
+      minWidthPx: w("actions"),
+      resizable: false as const,
+    },
+  ].flatMap((column) => (column ? [column] : [])) as EditableLineItemColumn[];
+
   return (
     <div className="space-y-3" data-slot="purchases-document-lines">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <Label>Line items</Label>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <LineGridColumnMenu
-            columns={menuColumns}
-            visibleIds={columnMenuIds}
-            onChange={(next) =>
-              setVisible(
-                next.filter((id): id is LineColumnKey =>
-                  PURCHASE_LINE_COLUMN_OPTIONS.some((option) => option.id === id),
-                ),
-              )
-            }
-          />
-          <Select
-            onValueChange={(v) => {
-              voice?.clearField();
-              if (v === "1") onChange([...lines, emptyPurchaseLine()]);
-              else if (v === "dup") {
-                const last = lines[lines.length - 1] ?? emptyPurchaseLine();
-                onChange([...lines, { ...last }]);
-              } else addMultiple(Number(v));
-            }}
-          >
-            <SelectTrigger className="h-8 w-[140px]" aria-label="Add lines">
-              <SelectValue placeholder="Add lines" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">Add 1</SelectItem>
-              <SelectItem value="5">Add 5</SelectItem>
-              <SelectItem value="10">Add 10</SelectItem>
-              <SelectItem value="15">Add 15</SelectItem>
-              <SelectItem value="20">Add 20</SelectItem>
-              <SelectItem value="dup">Duplicate selected line</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="lb-editable-line-item-grid w-full min-w-0 overflow-hidden rounded-xl border border-border bg-card">
-        <div className="w-full min-w-0 overflow-x-auto" data-slot="line-grid-scroll">
-          <table
-            className="lb-spreadsheet-table text-sm"
-            style={{
-              width: "100%",
-              minWidth: lineGridTableMinWidth(
-                Object.entries(widths).map(([id, widthPx]) => ({
-                  widthPx,
-                  minWidthPx: widthPx,
-                  ...(id === "description" ? { fluid: true as const } : {}),
-                })),
-              ),
-            }}
-          >
-            <thead className="sticky top-0 z-10">
-              <tr>
-                <Th id="reorder">
-                  <span className="sr-only">Reorder</span>
-                </Th>
-                {col("item") ? <Th id="item">Item / service</Th> : null}
-                {col("description") ? (
-                  <Th id="description" fluid>
-                    Description
-                  </Th>
-                ) : null}
-                {col("quantity") ? <Th id="quantity">Qty</Th> : null}
-                {col("unitPrice") ? <Th id="unitPrice">Unit price</Th> : null}
-                {col("discount") ? <Th id="discount">Discount</Th> : null}
-                {col("account") ? <Th id="account">Expense / asset account</Th> : null}
-                {col("tax") ? <Th id="tax">Tax rate</Th> : null}
-                {col("class") ? <Th id="class">Class</Th> : null}
-                {col("location") ? <Th id="location">Location</Th> : null}
-                {col("customer") || col("project") ? (
-                  <Th id="customer">Customer / project</Th>
-                ) : null}
-                {col("billable") ? (
-                  <Th id="billable" align="center">
-                    Billable
-                  </Th>
-                ) : null}
-                {col("amount") ? (
-                  <Th id="amount" align="right">
-                    Amount
-                  </Th>
-                ) : null}
-                <Th id="actions">
-                  <span className="sr-only">Actions</span>
-                </Th>
-              </tr>
-            </thead>
-            <tbody>
-              {lines.map((line, idx) => {
+      <EditableLineItemGrid
+        aria-label="Purchase document lines"
+        columns={gridColumns}
+        onColumnWidthChange={(id, widthPx) =>
+          setWidths({ ...widths, [id]: clampColumnWidth(widthPx) })
+        }
+        footerStart={
+          <>
+            <LineGridColumnMenu
+              columns={menuColumns}
+              visibleIds={columnMenuIds}
+              onChange={(next) =>
+                setVisible(
+                  next.filter((id): id is LineColumnKey =>
+                    PURCHASE_LINE_COLUMN_OPTIONS.some((option) => option.id === id),
+                  ),
+                )
+              }
+            />
+            <Select
+              onValueChange={(v) => {
+                voice?.clearField();
+                if (v === "1") onChange([...lines, emptyPurchaseLine()]);
+                else if (v === "dup") {
+                  const last = lines[lines.length - 1] ?? emptyPurchaseLine();
+                  onChange([...lines, { ...last }]);
+                } else addMultiple(Number(v));
+              }}
+            >
+              <SelectTrigger className="h-8 w-[140px]" aria-label="Add lines">
+                <SelectValue placeholder="Add lines" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Add 1</SelectItem>
+                <SelectItem value="5">Add 5</SelectItem>
+                <SelectItem value="10">Add 10</SelectItem>
+                <SelectItem value="15">Add 15</SelectItem>
+                <SelectItem value="20">Add 20</SelectItem>
+                <SelectItem value="dup">Duplicate selected line</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        }
+        footer={
+          preview ? (
+            <TotalsSummary
+              lines={[
+                {
+                  id: "subtotal",
+                  label: "Subtotal",
+                  value: fromMinorUnits(preview.subtotal_minor, currency),
+                },
+                {
+                  id: "tax",
+                  label: "Total tax",
+                  value: fromMinorUnits(preview.tax_minor, currency),
+                  emphasis: "muted",
+                },
+                {
+                  id: "total",
+                  label: "Total",
+                  value: fromMinorUnits(preview.total_minor, currency),
+                  emphasis: "total",
+                },
+                ...(baseCurrencyEquivalent
+                  ? [
+                      {
+                        id: "base",
+                        label: "Base-currency equivalent",
+                        value: baseCurrencyEquivalent,
+                        emphasis: "muted" as const,
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          ) : undefined
+        }
+      >
+        {lines.map((line, idx) => {
                 let lineAmount = "—";
                 try {
                   const c = computeBillTotals(
@@ -563,13 +589,12 @@ export function PurchasesDocumentLines({
                   /* invalid row */
                 }
                 return (
-                  <tr
+                  <TableRow
                     key={idx}
-                    className="border-b align-top"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => onDrop(e, idx)}
                   >
-                    <td className="p-0">
+                    <TableCell className="p-0 align-middle">
                       <button
                         type="button"
                         className="cursor-grab p-1 text-muted-foreground"
@@ -579,9 +604,9 @@ export function PurchasesDocumentLines({
                       >
                         <GripVertical className="size-4" />
                       </button>
-                    </td>
+                    </TableCell>
                     {col("item") ? (
-                      <td className="p-0">
+                      <TableCell className="p-0 align-middle">
                         <EntityCombobox
                           aria-label={`Line ${idx + 1} product`}
                           options={productOptions}
@@ -620,10 +645,10 @@ export function PurchasesDocumentLines({
                                   })
                           }
                         />
-                      </td>
+                      </TableCell>
                     ) : null}
                     {col("description") ? (
-                      <td className="p-0 align-top">
+                      <TableCell className="p-0 align-top">
                         <VoiceTextarea
                           aria-label={`Line ${idx + 1} description`}
                           voiceField={{
@@ -639,10 +664,10 @@ export function PurchasesDocumentLines({
                           rows={1}
                           className="lb-spreadsheet-wrap min-h-8"
                         />
-                      </td>
+                      </TableCell>
                     ) : null}
                     {col("quantity") ? (
-                      <td className="p-0">
+                      <TableCell className="p-0">
                         <Input
                           aria-label={`Line ${idx + 1} quantity`}
                           data-purchase-cell={`${idx}-quantity`}
@@ -660,10 +685,10 @@ export function PurchasesDocumentLines({
                           inputMode="decimal"
                           className={cn(CELL_INPUT, "text-right tabular-nums")}
                         />
-                      </td>
+                      </TableCell>
                     ) : null}
                     {col("unitPrice") ? (
-                      <td className="p-0">
+                      <TableCell className="p-0">
                         <Input
                           aria-label={`Line ${idx + 1} unit price`}
                           data-purchase-cell={`${idx}-unitPrice`}
@@ -681,10 +706,10 @@ export function PurchasesDocumentLines({
                           inputMode="decimal"
                           className={cn(CELL_INPUT, "text-right tabular-nums")}
                         />
-                      </td>
+                      </TableCell>
                     ) : null}
                     {col("discount") ? (
-                      <td className="p-0">
+                      <TableCell className="p-0">
                         <Input
                           aria-label={`Line ${idx + 1} discount`}
                           data-purchase-cell={`${idx}-discount`}
@@ -702,10 +727,10 @@ export function PurchasesDocumentLines({
                           inputMode="decimal"
                           className={cn(CELL_INPUT, "text-right tabular-nums")}
                         />
-                      </td>
+                      </TableCell>
                     ) : null}
                     {col("account") ? (
-                      <td className="p-0">
+                      <TableCell className="p-0">
                         <EntityCombobox
                           aria-label={`Line ${idx + 1} account`}
                           options={accountOptions}
@@ -740,10 +765,10 @@ export function PurchasesDocumentLines({
                               : undefined
                           }
                         />
-                      </td>
+                      </TableCell>
                     ) : null}
                     {col("tax") ? (
-                      <td className="p-0">
+                      <TableCell className="p-0">
                         <EntityCombobox
                           aria-label={`Line ${idx + 1} tax rate`}
                           options={
@@ -808,10 +833,10 @@ export function PurchasesDocumentLines({
                                   })
                           }
                         />
-                      </td>
+                      </TableCell>
                     ) : null}
                     {col("class") ? (
-                      <td className="p-0">
+                      <TableCell className="p-0">
                         <EntityCombobox
                           aria-label={`Line ${idx + 1} class`}
                           options={classOptions.map((o) => ({ value: o.id, label: o.name }))}
@@ -821,10 +846,10 @@ export function PurchasesDocumentLines({
                           onAddNew={onAddNewClass}
                           addNewLabel="+ Add new class…"
                         />
-                      </td>
+                      </TableCell>
                     ) : null}
                     {col("location") ? (
-                      <td className="p-0">
+                      <TableCell className="p-0">
                         <EntityCombobox
                           aria-label={`Line ${idx + 1} location`}
                           options={locationOptions.map((o) => ({ value: o.id, label: o.name }))}
@@ -834,10 +859,10 @@ export function PurchasesDocumentLines({
                           onAddNew={onAddNewLocation}
                           addNewLabel="+ Add new location…"
                         />
-                      </td>
+                      </TableCell>
                     ) : null}
                     {col("customer") || col("project") ? (
-                      <td className="space-y-1 p-0">
+                      <TableCell className="space-y-1 p-0">
                         {col("customer") ? (
                           <EntityCombobox
                             aria-label={`Line ${idx + 1} customer`}
@@ -872,23 +897,23 @@ export function PurchasesDocumentLines({
                             addNewLabel="+ Add new project…"
                           />
                         ) : null}
-                      </td>
+                      </TableCell>
                     ) : null}
                     {col("billable") ? (
-                      <td className="p-2 text-center">
+                      <TableCell className="p-2 text-center">
                         <Checkbox
                           checked={line.isBillable}
                           onCheckedChange={(c) => update(idx, { isBillable: Boolean(c) })}
                           aria-label={`Line ${idx + 1} billable`}
                         />
-                      </td>
+                      </TableCell>
                     ) : null}
                     {col("amount") ? (
-                      <td className="px-2 py-1 text-right tabular-nums whitespace-nowrap">
+                      <TableCell className="px-2 py-1 text-right tabular-nums whitespace-nowrap">
                         {lineAmount}
-                      </td>
+                      </TableCell>
                     ) : null}
-                    <td className="p-0">
+                    <TableCell className="p-0">
                       <Button
                         type="button"
                         variant="ghost"
@@ -903,49 +928,11 @@ export function PurchasesDocumentLines({
                       >
                         <Trash2 className="size-3.5" />
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-        {preview ? (
-          <div className="flex justify-end border-t border-border px-3 py-3">
-            <TotalsSummary
-              lines={[
-                {
-                  id: "subtotal",
-                  label: "Subtotal",
-                  value: fromMinorUnits(preview.subtotal_minor, currency),
-                },
-                {
-                  id: "tax",
-                  label: "Total tax",
-                  value: fromMinorUnits(preview.tax_minor, currency),
-                  emphasis: "muted",
-                },
-                {
-                  id: "total",
-                  label: "Total",
-                  value: fromMinorUnits(preview.total_minor, currency),
-                  emphasis: "total",
-                },
-                ...(baseCurrencyEquivalent
-                  ? [
-                      {
-                        id: "base",
-                        label: "Base-currency equivalent",
-                        value: baseCurrencyEquivalent,
-                        emphasis: "muted" as const,
-                      },
-                    ]
-                  : []),
-              ]}
-            />
-          </div>
-        ) : null}
-      </div>
+      </EditableLineItemGrid>
     </div>
   );
 }

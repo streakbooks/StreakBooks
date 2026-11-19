@@ -76,7 +76,9 @@ Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails
 
 **Expense Management local evidence (Batches 65–67):** New claim create uses `TransactionWorkspace` + `EditableLineItemGrid` + `TotalsSummary` (parity with Banking Spend Money), plus spreadsheet Enter/Arrow keyboard and net/tax paste. `check:workspace` enforces claim create + spend/receive-money composition. Staging/RBAC/manual a11y still **NOT VERIFIED** — module remains **IN PROGRESS**, not COMPLETE.
 
-**Chrome honesty (Batch 73):** High-traffic creates expose StatusBadge meta (credit notes, claims, transfers, bills). SalesDocumentEditor and JournalPanels fail closed with ErrorState + retry when options queries fail. FormGrid/StatusBadge tokens locked in `check:workspace`. Modules remain **IN PROGRESS** — staging/RBAC still **NOT VERIFIED**. `PurchasesDocumentLines` remains a bespoke spreadsheet table (TotalsSummary + keyboard locked; ELG migration deferred).
+**Bills line grid ELG (Batch 74):** `PurchasesDocumentLines` composes shared `EditableLineItemGrid` (Sales parity). Drag reorder, tracking columns, tax modes, keyboard/paste, Add-lines Select, and TotalsSummary preserved. Staging/RBAC still **NOT VERIFIED**.
+
+**Chrome honesty (Batch 73):** High-traffic creates expose StatusBadge meta (credit notes, claims, transfers, bills). SalesDocumentEditor and JournalPanels fail closed with ErrorState + retry when options queries fail. FormGrid/StatusBadge tokens locked in `check:workspace`. Modules remain **IN PROGRESS** — staging/RBAC still **NOT VERIFIED**.
 
 **Order entry spreadsheet (Batch 72):** Shared `OrderEntryLines` uses EditableLineItemGrid with journal-parity keyboard/paste for sales orders and requisitions; new docs start with two empty rows. SalesDocumentLines + PurchasesDocumentLines TotalsSummary/keyboard helpers locked in `check:workspace` (PurchasesDocumentLines is not yet on shared EditableLineItemGrid).
 

@@ -475,7 +475,9 @@ export function SettingsCommunicationsPanel({
                 <p className="text-xs text-muted-foreground">
                   {new Date(entry.created_at).toLocaleString()} · {entry.to_addresses.join(", ")}
                 </p>
-                {entry.error && <p className="mt-1 text-xs text-destructive">{entry.error}</p>}
+                {entry.error ? (
+                  <p className="mt-1 text-xs text-destructive">{friendlyAuthError(entry.error)}</p>
+                ) : null}
                 {entry.provider_message_id && (
                   <p className="mt-1 text-xs text-muted-foreground">
                     Provider ID: {entry.provider_message_id}

@@ -173,7 +173,7 @@ export function PortalBills() {
               {row["rejection_reason"] ? <p>{String(row["rejection_reason"])}</p> : null}
             </li>
           ))}
-          {submissions.length === 0 ? (
+          {!query.isError && submissions.length === 0 ? (
             <li className="px-3 py-6 text-muted-foreground">No submissions yet.</li>
           ) : null}
         </ul>
@@ -261,7 +261,12 @@ export function PortalOrders() {
           </Button>
         </li>
       ))}
-      {orders.length === 0 && !query.isPending ? (
+      {query.isError ? (
+        <li>
+          <QueryErrorState queries={[query]} title="Could not load purchase orders" />
+        </li>
+      ) : null}
+      {orders.length === 0 && !query.isPending && !query.isError ? (
         <li className="text-sm text-muted-foreground">No purchase orders have been sent.</li>
       ) : null}
     </ul>
@@ -279,6 +284,9 @@ export function PortalRemittances() {
       fetchWorkspace({ data: { membershipId: current!.membership_id } }) as Promise<Row>,
   });
   if (!current) return <LoadingState />;
+  if (query.isError) {
+    return <QueryErrorState queries={[query]} title="Could not load remittances" />;
+  }
   const rows = (query.data?.["remittances"] as Row[] | undefined) ?? [];
   const bills = (query.data?.["bills"] as Row[] | undefined) ?? [];
   return (
@@ -366,6 +374,9 @@ export function PortalBank() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
   if (!current) return <LoadingState />;
+  if (query.isError) {
+    return <QueryErrorState queries={[query]} title="Could not load bank details" />;
+  }
   const bank = (query.data?.["bank"] as Row | undefined) ?? {};
   const verified = bank["verified"] as Row | null;
   return (

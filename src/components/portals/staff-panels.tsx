@@ -233,7 +233,7 @@ export function PortalSettingsPanel({
               </span>
             </li>
           ))}
-          {(alerts.data ?? []).length === 0 ? (
+          {(alerts.data ?? []).length === 0 && !alerts.isPending && !alerts.isError ? (
             <li className="px-3 py-6 text-muted-foreground">No open payment alerts.</li>
           ) : null}
         </ul>
@@ -502,7 +502,8 @@ export function PortalInbox({ companyId }: { companyId: string }) {
               </li>
             ))}
           {(submissions.data ?? []).filter((row) => row["status"] === "submitted").length === 0 &&
-          !submissions.isPending ? (
+          !submissions.isPending &&
+          !submissions.isError ? (
             <li className="text-sm text-muted-foreground">No submissions are waiting.</li>
           ) : null}
         </ul>

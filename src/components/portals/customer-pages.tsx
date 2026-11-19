@@ -174,7 +174,7 @@ export function PortalInvoices() {
             </div>
           </li>
         ))}
-        {!query.isPending && rows.length === 0 ? (
+        {!query.isPending && !query.isError && rows.length === 0 ? (
           <li className="px-3 py-6 text-sm text-muted-foreground">No invoices match.</li>
         ) : null}
       </ul>
@@ -523,10 +523,13 @@ export function PortalPayments() {
             </div>
           </li>
         ))}
-        {(query.data ?? []).length === 0 && !query.isPending ? (
+        {(query.data ?? []).length === 0 && !query.isPending && !query.isError ? (
           <li className="px-3 py-6 text-sm text-muted-foreground">No receipts yet.</li>
         ) : null}
       </ul>
+      {notices.isError ? (
+        <QueryErrorState queries={[notices]} title="Could not load notices" />
+      ) : null}
       <ul className="space-y-2">
         {(notices.data ?? []).map((notice) => (
           <li

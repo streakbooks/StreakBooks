@@ -4,12 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   postingJournalSourceTypes,
   type PostingJournalEntityType,
 } from "@/lib/documents/posting-journal-sources";
 import { listDocumentPostingJournals } from "@/lib/documents/posting-journals.functions";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import {
@@ -53,11 +53,7 @@ export function DocumentPostingJournals({
   if (q.isPending)
     return <p className="text-sm text-muted-foreground">Loading posted journal entries…</p>;
   if (q.isError)
-    return (
-      <p role="alert" className="text-sm text-destructive">
-        {friendlyAuthError(q.error)}
-      </p>
-    );
+    return <QueryErrorState queries={[q]} title="Could not load posted journal entries" />;
   if (!q.data?.length)
     return (
       <p className="text-sm text-muted-foreground">

@@ -41,6 +41,7 @@ import {
   type ImportModule,
 } from "@/lib/imports/import-definitions";
 import { previewImportCsv } from "@/lib/imports/import-preflight";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 
@@ -794,11 +795,9 @@ function ImportCentre() {
                 </option>
               ))}
             </RecordLookupSelect>
-            {budgetsQ.isError && (
-              <p className="text-sm text-destructive">
-                Could not load budgets. Check access and try again.
-              </p>
-            )}
+            {budgetsQ.isError ? (
+              <QueryErrorState queries={[budgetsQ]} title="Could not load budgets" />
+            ) : null}
             {!budgetsQ.data?.budgets.length && !budgetsQ.isPending && (
               <p className="text-sm">
                 No budgets found.{" "}
@@ -879,12 +878,12 @@ function ImportCentre() {
                 {assetReadyQ.data.reason} Your accounting data has not been modified.
               </p>
             )}
-            {assetReadyQ.isError && (
-              <p role="alert" className="text-sm text-destructive">
-                Cannot verify fixed-asset import availability. Check your organisation permissions
-                and connection.
-              </p>
-            )}
+            {assetReadyQ.isError ? (
+              <QueryErrorState
+                queries={[assetReadyQ]}
+                title="Cannot verify fixed-asset import availability"
+              />
+            ) : null}
             <p className="text-sm">
               1. Download the sample CSV and field guide above. 2. Upload an asset register. 3.
               Match your columns and review every financial field. 4. Confirm to create register

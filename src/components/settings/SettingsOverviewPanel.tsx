@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, ArrowUpRight, CheckCircle2, CircleDashed, RefreshCcw } from "lucide-react";
 import { IntegrationHealthBadge } from "@/components/settings/IntegrationHealthBadge";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { getSettingsOverview } from "@/lib/settings/settings-centre.functions";
 import { resolveSettingsCategory } from "@/lib/settings/registry";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -42,19 +43,10 @@ export function SettingsOverviewPanel({ companyId }: Props) {
     );
   }
 
-  if (q.isError || !q.data) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Could not load overview</AlertTitle>
-        <AlertDescription className="space-y-3">
-          <p>{(q.error as Error)?.message ?? "Unknown error"}</p>
-          <Button size="sm" variant="outline" onClick={() => void q.refetch()}>
-            Retry
-          </Button>
-        </AlertDescription>
-      </Alert>
-    );
+  if (q.isError) {
+    return <QueryErrorState queries={[q]} title="Could not load overview" />;
   }
+  if (!q.data) return null;
 
   const d = q.data;
   const counts = [

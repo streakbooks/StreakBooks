@@ -10,6 +10,7 @@ import {
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { filterFeatureSettings } from "@/lib/settings/feature-search";
 import type { FeatureStateCode } from "@/lib/settings/feature-catalog";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -82,17 +83,7 @@ export function SettingsFeatureManager({ companyId, canEdit }: Props) {
 
   if (q.isPending) return <Skeleton className="h-40 w-full" />;
   if (q.isError) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Could not load features</AlertTitle>
-        <AlertDescription className="space-y-3">
-          <p>{friendlyAuthError(q.error)}</p>
-          <Button size="sm" variant="outline" onClick={() => void q.refetch()}>
-            Retry
-          </Button>
-        </AlertDescription>
-      </Alert>
-    );
+    return <QueryErrorState queries={[q]} title="Could not load features" />;
   }
 
   return (

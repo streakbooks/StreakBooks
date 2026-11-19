@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiKeysAdmin } from "@/components/platform/billing/ApiKeysAdmin";
@@ -52,15 +53,7 @@ function PlatformBillingPage() {
     return (
       <main className="mx-auto max-w-xl space-y-3 p-6">
         <h1 className="text-2xl font-semibold">Platform billing</h1>
-        <p role="alert">{query.error instanceof Error ? query.error.message : "Access denied."}</p>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={query.isFetching}
-          onClick={() => void query.refetch()}
-        >
-          {query.isFetching ? "Retrying billing…" : "Retry loading billing"}
-        </Button>
+        <QueryErrorState queries={[query]} title="Could not load platform billing" />
       </main>
     );
   }

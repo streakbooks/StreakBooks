@@ -3,7 +3,13 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ClipboardEvent,
+  type KeyboardEvent,
+} from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -40,6 +46,8 @@ import {
   type ExpenseDraftLineForm,
 } from "@/lib/expenses/draft-lines";
 import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
+import { interpretLineGridKey } from "@/lib/ui/line-grid-keyboard";
+import { parseLineGridClipboard } from "@/lib/ui/line-grid-paste";
 import { minorOrZero } from "@/lib/purchases/money-input";
 import {
   deleteExpenseClaimDraft,
@@ -250,6 +258,71 @@ export function ExpenseManagementClaimsPage({
 
   const updateLine = (key: string, patch: Partial<ExpenseDraftLineForm>) => {
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
+  };
+
+  const CLAIM_GRID_COLS = 5; // date, merchant, description, net, tax
+
+  const onClaimLineKeyDown = (
+    event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+    rowIndex: number,
+    colIndex: number,
+  ) => {
+    const action = interpretLineGridKey(event.key, {
+      shiftKey: event.shiftKey,
+      atLastRow: rowIndex === lines.length - 1,
+      atLastCol: colIndex === CLAIM_GRID_COLS - 1,
+    });
+    if (action.type === "none") return;
+    if (action.type === "add-row") {
+      event.preventDefault();
+      setLines((current) => [...current, emptyDraftLine(today)]);
+      queueMicrotask(() => {
+        document
+          .querySelector<HTMLElement>(`[data-claim-cell="${rowIndex + 1}-${colIndex}"]`)
+          ?.focus();
+      });
+      return;
+    }
+    if (
+      action.type === "move" &&
+      (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp")
+    ) {
+      event.preventDefault();
+      const nextRow = Math.max(0, Math.min(lines.length - 1, rowIndex + action.rowDelta));
+      document.querySelector<HTMLElement>(`[data-claim-cell="${nextRow}-${colIndex}"]`)?.focus();
+    }
+  };
+
+  const onClaimMoneyPaste = (
+    event: ClipboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    field: "netInput" | "taxInput",
+  ) => {
+    const grid = parseLineGridClipboard(event.clipboardData.getData("text"));
+    if (grid.length <= 1 && (grid[0]?.length ?? 0) <= 1) return;
+    event.preventDefault();
+    setLines((current) => {
+      const next = current.map((line) => ({ ...line }));
+      for (let r = 0; r < grid.length; r++) {
+        const targetRow = rowIndex + r;
+        while (next.length <= targetRow) next.push(emptyDraftLine(today));
+        const cells = grid[r] ?? [];
+        const row = next[targetRow]!;
+        if (field === "netInput") {
+          next[targetRow] = {
+            ...row,
+            netInput: cells[0] ?? row.netInput,
+            taxInput: cells[1] ?? row.taxInput,
+          };
+        } else {
+          next[targetRow] = {
+            ...row,
+            taxInput: cells[0] ?? row.taxInput,
+          };
+        }
+      }
+      return next;
+    });
   };
 
   const draftTotals = useMemo(() => {
@@ -776,26 +849,32 @@ export function ExpenseManagementClaimsPage({
               <TableCell className="align-top p-0">
                 <Input
                   type="date"
+                  data-claim-cell={`${index}-0`}
                   aria-label={`Line ${index + 1} date`}
                   value={line.expenseDate}
                   onChange={(event) => updateLine(line.key, { expenseDate: event.target.value })}
+                  onKeyDown={(event) => onClaimLineKeyDown(event, index, 0)}
                 />
               </TableCell>
               <TableCell className="align-top p-0">
                 <Input
+                  data-claim-cell={`${index}-1`}
                   aria-label={`Line ${index + 1} merchant`}
                   value={line.merchantName}
                   onChange={(event) => updateLine(line.key, { merchantName: event.target.value })}
+                  onKeyDown={(event) => onClaimLineKeyDown(event, index, 1)}
                   placeholder="Merchant"
                 />
               </TableCell>
               <TableCell className="align-top p-0">
                 <Textarea
+                  data-claim-cell={`${index}-2`}
                   aria-label={`Line ${index + 1} description`}
                   value={line.description}
                   rows={1}
                   className="lb-spreadsheet-wrap min-h-8"
                   onChange={(event) => updateLine(line.key, { description: event.target.value })}
+                  onKeyDown={(event) => onClaimLineKeyDown(event, index, 2)}
                   required
                 />
               </TableCell>
@@ -813,21 +892,27 @@ export function ExpenseManagementClaimsPage({
               </TableCell>
               <TableCell className="align-top p-0">
                 <Input
+                  data-claim-cell={`${index}-3`}
                   aria-label={`Line ${index + 1} net`}
                   className="text-right"
                   inputMode="decimal"
                   value={line.netInput}
                   onChange={(event) => updateLine(line.key, { netInput: event.target.value })}
+                  onKeyDown={(event) => onClaimLineKeyDown(event, index, 3)}
+                  onPaste={(event) => onClaimMoneyPaste(event, index, "netInput")}
                   required
                 />
               </TableCell>
               <TableCell className="align-top p-0">
                 <Input
+                  data-claim-cell={`${index}-4`}
                   aria-label={`Line ${index + 1} tax`}
                   className="text-right"
                   inputMode="decimal"
                   value={line.taxInput}
                   onChange={(event) => updateLine(line.key, { taxInput: event.target.value })}
+                  onKeyDown={(event) => onClaimLineKeyDown(event, index, 4)}
+                  onPaste={(event) => onClaimMoneyPaste(event, index, "taxInput")}
                 />
               </TableCell>
               <TableCell className="align-top">

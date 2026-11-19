@@ -62,7 +62,8 @@ import {
   selectCapitalisationReviewRows,
 } from "@/lib/fixed-assets/capitalisation-review";
 import { buildFixedAssetRegisterCsv } from "@/lib/fixed-assets/register-export";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -209,13 +210,7 @@ function FixedAssetsPage() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (page.isPending) return <LoadingState />;
   if (page.isError) {
-    return (
-      <ErrorState
-        title="Could not load fixed assets"
-        description={friendlyAuthError(page.error)}
-        onRetry={() => void page.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[page]} title="Could not load fixed assets" />;
   }
   const d = page.data;
   if (!d.available) {
@@ -1317,11 +1312,7 @@ function DepreciationPanel({
       ) : preview.isPending ? (
         <LoadingState />
       ) : preview.isError ? (
-        <ErrorState
-          title="Could not preview depreciation"
-          description={friendlyAuthError(preview.error)}
-          onRetry={() => void preview.refetch()}
-        />
+        <QueryErrorState queries={[preview]} title="Could not preview depreciation" />
       ) : reviewed.issue ? (
         <Alert variant="destructive">
           <AlertDescription>
@@ -1673,11 +1664,7 @@ function BillLinesDialog({
         {q.isPending ? (
           <LoadingState />
         ) : q.isError ? (
-          <ErrorState
-            title="Could not load bill lines"
-            description={friendlyAuthError(q.error)}
-            onRetry={() => void q.refetch()}
-          />
+          <QueryErrorState queries={[q]} title="Could not load bill lines" />
         ) : q.data.lines.length === 0 ? (
           <EmptyState
             title="No asset-coded posted bill lines"

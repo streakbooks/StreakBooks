@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
@@ -265,11 +266,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
             <AlertDescription>{EXPENSE_DISPUTES_REBILLING_MIGRATION}</AlertDescription>
           </Alert>
         ) : (
-          <ErrorState
-            title="Could not load claim"
-            description={message}
-            onRetry={() => claimQ.refetch()}
-          />
+          <QueryErrorState queries={[claimQ]} title="Could not load claim" />
         )}
       </RecordWorkspace>
     );

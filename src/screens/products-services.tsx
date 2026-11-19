@@ -34,7 +34,7 @@ import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
@@ -1029,11 +1029,7 @@ function ProductsWorkspace({
       {productsQ.isPending ? (
         <LoadingState />
       ) : productsQ.isError ? (
-        <ErrorState
-          title="Could not load products"
-          description={friendlyAuthError(productsQ.error)}
-          onRetry={() => productsQ.refetch()}
-        />
+        <QueryErrorState queries={[productsQ]} title="Could not load products" />
       ) : rows.length === 0 ? (
         <EmptyState
           icon={Package}

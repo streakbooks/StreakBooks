@@ -20,7 +20,8 @@ import {
 } from "@/lib/contacts/contacts.functions";
 import { fromMinorUnits, toMinorUnits, toSafeMinorNumber } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Button } from "@/components/ui/button";
@@ -385,12 +386,14 @@ function ContactDetail() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (contactQ.isPending) return <LoadingState />;
-  if (contactQ.isError || !c) {
+  if (contactQ.isError) {
+    return <QueryErrorState queries={[contactQ]} title="Could not load contact" />;
+  }
+  if (!c) {
     return (
-      <ErrorState
-        onRetry={() => void contactQ.refetch()}
+      <EmptyState
         title="Contact not found"
-        description={friendlyAuthError(contactQ.error)}
+        description="This contact may have been deleted or you may not have access."
       />
     );
   }
@@ -960,11 +963,7 @@ function ContactDetail() {
           {balQ.isPending ? (
             <LoadingState />
           ) : balQ.isError ? (
-            <ErrorState
-              onRetry={() => void balQ.refetch()}
-              title="Could not load balances"
-              description={friendlyAuthError(balQ.error)}
-            />
+            <QueryErrorState queries={[balQ]} title="Could not load balances" />
           ) : (
             <>
               <div className="mb-4 flex flex-wrap items-end gap-3" aria-label="Transaction filters">

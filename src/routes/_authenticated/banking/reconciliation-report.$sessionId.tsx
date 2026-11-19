@@ -4,9 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { Printer } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getBankReconciliationReport } from "@/lib/banking/reconcile.functions";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,14 +45,7 @@ function ReconciliationReport() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (q.isPending) return <LoadingState />;
-  if (q.isError)
-    return (
-      <ErrorState
-        onRetry={() => void q.refetch()}
-        title="Could not load report"
-        description={friendlyAuthError(q.error)}
-      />
-    );
+  if (q.isError) return <QueryErrorState queries={[q]} title="Could not load report" />;
 
   const r = q.data;
   const ccy = r.bankAccount.currencyCode;

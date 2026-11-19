@@ -8,7 +8,8 @@ import { useFormat } from "@/hooks/use-format";
 import { exportCreditNotesCsv, listCreditNotes } from "@/lib/sales/sales-credits.functions";
 import { creditNoteStatusLabel } from "@/lib/sales/allocation-rules";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { ListSkeleton, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { ListToolbar, Pager, TableCard, SortHead } from "@/components/sales/ListKit";
@@ -95,12 +96,8 @@ function CreditNotesList() {
       />
       {query.isPending ? (
         <ListSkeleton />
-      ) : query.isError ? (
-        <ErrorState
-          title="Could not load credit notes"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => query.refetch()}
-        />
+      ) : query.isError && query.data === undefined ? (
+        <QueryErrorState queries={[query]} title="Could not load credit notes" />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No credit notes"

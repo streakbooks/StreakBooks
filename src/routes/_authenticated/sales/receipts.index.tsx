@@ -7,7 +7,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { exportReceiptsCsv, listReceipts } from "@/lib/sales/sales-receipts.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { ListSkeleton, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { ListToolbar, Pager, TableCard, SortHead } from "@/components/sales/ListKit";
@@ -106,12 +107,8 @@ function ReceiptsList() {
       />
       {query.isPending ? (
         <ListSkeleton />
-      ) : query.isError ? (
-        <ErrorState
-          title="Could not load receipts"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => query.refetch()}
-        />
+      ) : query.isError && query.data === undefined ? (
+        <QueryErrorState queries={[query]} title="Could not load receipts" />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No receipts"

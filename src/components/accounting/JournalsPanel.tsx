@@ -37,7 +37,8 @@ import {
 } from "@/lib/accounting/journal-display";
 import { Link } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -358,12 +359,8 @@ export function JournalsPanel({
         </p>
       ) : query.isPending ? (
         <LoadingState />
-      ) : query.isError ? (
-        <ErrorState
-          title="Could not load journals"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
+      ) : query.isError && query.data === undefined ? (
+        <QueryErrorState queries={[query]} title="Could not load journals" />
       ) : rows.length === 0 ? (
         <div className="space-y-3">
           <EmptyState

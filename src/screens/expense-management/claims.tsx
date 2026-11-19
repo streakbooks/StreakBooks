@@ -18,6 +18,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/common/states
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -693,8 +694,8 @@ export function ExpenseManagementClaimsPage({
           ) : null}
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="grid gap-2">
+        <FormGrid columns={4}>
+          <FormControlShell className="sm:col-span-2">
             <Label htmlFor="em-claim-title">Title</Label>
             <Input
               id="em-claim-title"
@@ -702,16 +703,16 @@ export function ExpenseManagementClaimsPage({
               onChange={(event) => setTitle(event.target.value)}
               required
             />
-          </div>
-          <div className="grid gap-2">
+          </FormControlShell>
+          <FormControlShell className="sm:col-span-2">
             <Label htmlFor="em-claim-desc">Description</Label>
             <Input
               id="em-claim-desc"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
             />
-          </div>
-          <div className="grid gap-2">
+          </FormControlShell>
+          <FormControlShell width="contact">
             <Label htmlFor="em-claim-source">Payment source</Label>
             <select
               id="em-claim-source"
@@ -730,9 +731,9 @@ export function ExpenseManagementClaimsPage({
               <option value="company_paid">Petty cash (company paid)</option>
               <option value="corporate_card">Corporate card</option>
             </select>
-          </div>
+          </FormControlShell>
           {paymentSource === "cash_advance" ? (
-            <div className="grid gap-2">
+            <FormControlShell width="contact">
               <Label htmlFor="em-claim-advance">Cash advance</Label>
               <RecordLookupSelect
                 id="em-claim-advance"
@@ -748,10 +749,10 @@ export function ExpenseManagementClaimsPage({
                   </option>
                 ))}
               </RecordLookupSelect>
-            </div>
+            </FormControlShell>
           ) : null}
           {paymentSource === "company_paid" ? (
-            <div className="grid gap-2">
+            <FormControlShell width="contact">
               <Label htmlFor="em-claim-petty">Petty cash float</Label>
               <RecordLookupSelect
                 id="em-claim-petty"
@@ -767,10 +768,10 @@ export function ExpenseManagementClaimsPage({
                   </option>
                 ))}
               </RecordLookupSelect>
-            </div>
+            </FormControlShell>
           ) : null}
           {paymentSource === "corporate_card" ? (
-            <div className="grid gap-2">
+            <FormControlShell width="contact">
               <Label htmlFor="em-claim-card">Corporate card</Label>
               <RecordLookupSelect
                 id="em-claim-card"
@@ -785,9 +786,9 @@ export function ExpenseManagementClaimsPage({
                   </option>
                 ))}
               </RecordLookupSelect>
-            </div>
+            </FormControlShell>
           ) : null}
-        </div>
+        </FormGrid>
 
         <EditableLineItemGrid
           aria-label="Expense claim lines"

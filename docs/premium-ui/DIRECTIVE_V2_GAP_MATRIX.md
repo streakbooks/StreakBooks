@@ -195,3 +195,12 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Workspace adoption | check:workspace gates recurring/orders.new/payments.batch |
 | Includes Batches 66–69 | Rebased onto current main (supersedes PR #341) |
 
+## Batch 71 (requisitions chrome + adoption locks)
+
+| Gap | Action |
+| --- | --- |
+| Requisition create/edit chrome | FormGrid + TotalsSummary + sticky Save/Cancel; editor owns TransactionWorkspace |
+| Claims header FormGrid | Create header fields use FormGrid (no redo of totals/keyboard) |
+| Journal / sales-doc adoption | check:workspace locks JournalPanels + SalesDocumentEditor chrome |
+| Includes Batches 66–70 | Rebased onto current main (supersedes PR #343) |
+

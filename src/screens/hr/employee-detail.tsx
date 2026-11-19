@@ -210,7 +210,11 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
             </Link>
           </Button>
           {canManage ? (
-            <Button type="button" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+            <Button
+              type="button"
+              onClick={() => saveMut.mutate()}
+              disabled={saveMut.isPending || !orgQ.isSuccess}
+            >
               {saveMut.isPending ? "Saving…" : "Save HR profile"}
             </Button>
           ) : null}

@@ -163,26 +163,29 @@ export function AdvisorsBookingPage({
           ) : null}
           {slotsQ.isError ? (
             <QueryErrorState queries={[slotsQ]} title="Could not load available slots" />
-          ) : null}
-          {slotsQ.data && !slotsQ.data.ready ? (
-            <p className="text-sm text-muted-foreground">{slotsQ.data.reason}</p>
-          ) : null}
-          <div className="flex flex-wrap gap-2">
-            {(slotsQ.data?.slots ?? []).map((slot) => (
-              <Button
-                key={slot.startsAt}
-                type="button"
-                size="sm"
-                variant={selectedSlot === slot.startsAt ? "default" : "outline"}
-                onClick={() => setSelectedSlot(slot.startsAt)}
-              >
-                {formatSlotLabel(new Date(slot.startsAt), timezone)}
-              </Button>
-            ))}
-          </div>
-          {slotsQ.data?.ready && (slotsQ.data.slots ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No open slots on this day.</p>
-          ) : null}
+          ) : (
+            <>
+              {slotsQ.data && !slotsQ.data.ready ? (
+                <p className="text-sm text-muted-foreground">{slotsQ.data.reason}</p>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                {(slotsQ.data?.slots ?? []).map((slot) => (
+                  <Button
+                    key={slot.startsAt}
+                    type="button"
+                    size="sm"
+                    variant={selectedSlot === slot.startsAt ? "default" : "outline"}
+                    onClick={() => setSelectedSlot(slot.startsAt)}
+                  >
+                    {formatSlotLabel(new Date(slot.startsAt), timezone)}
+                  </Button>
+                ))}
+              </div>
+              {slotsQ.data?.ready && (slotsQ.data.slots ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">No open slots on this day.</p>
+              ) : null}
+            </>
+          )}
 
           <form
             className="grid gap-3 sm:grid-cols-2"
@@ -235,7 +238,10 @@ export function AdvisorsBookingPage({
               />
             </div>
             <div className="sm:col-span-2">
-              <Button type="submit" disabled={bookM.isPending}>
+              <Button
+                type="submit"
+                disabled={bookM.isPending || slotsQ.isError || !selectedSlot}
+              >
                 Confirm free consultation
               </Button>
             </div>

@@ -282,7 +282,9 @@ export function HrRelationsPage() {
             </Button>
             <Button
               type="button"
-              disabled={!employeeId || !title.trim() || saveM.isPending}
+              disabled={
+                !employeeId || !title.trim() || saveM.isPending || !employeesQ.isSuccess
+              }
               onClick={() => saveM.mutate()}
             >
               Save

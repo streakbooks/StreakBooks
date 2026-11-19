@@ -500,21 +500,23 @@ for (const noun of ["invoice", "quote", "credit note"])
     await say(page, "15th October 2026");
     await expect(page.locator('input[type="date"]').first()).toHaveValue("2026-10-15");
     // Normal mouse and keyboard focus change the registered target without overwriting another field.
-    const desc = page.getByPlaceholder("Description", { exact: true });
+    const descriptions = page.getByPlaceholder("Description", { exact: true });
+    await expect(descriptions).toHaveCount(2);
+    const desc = descriptions.first();
     await desc.click();
     await say(page, "Updated by deliberate focus");
     await expect(desc).toHaveValue("Updated by deliberate focus");
     await page.getByRole("button", { name: "Add line", exact: true }).click();
-    await expect(page.getByPlaceholder("Description", { exact: true })).toHaveCount(2);
+    await expect(descriptions).toHaveCount(3);
     await expect(page.getByTestId("voice-field-status")).toHaveCount(0);
+    await say(page, "go to line 2 description");
+    await say(page, "Second line");
     await say(page, "go to description");
     await expect(page.getByRole("list", { name: "Matching records" })).toBeVisible();
     await say(page, "2");
     await say(page, "Second line only");
-    await expect(page.getByPlaceholder("Description", { exact: true }).nth(1)).toHaveValue(
-      "Second line only",
-    );
-    await expect(desc.first()).toHaveValue("Updated by deliberate focus");
+    await expect(descriptions.nth(1)).toHaveValue("Second line only");
+    await expect(desc).toHaveValue("Updated by deliberate focus");
   });
 
 for (const item of PURCHASES_SECTIONS)

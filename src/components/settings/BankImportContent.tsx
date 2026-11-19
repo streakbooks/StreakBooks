@@ -362,6 +362,9 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   });
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
+  if (accountsQ.isError && accountsQ.data === undefined) {
+    return <QueryErrorState queries={[accountsQ]} title="Could not load bank accounts" />;
+  }
 
   const patch = (p: Partial<ImportMapping>) => setMapping((m) => (m ? { ...m, ...p } : m));
   const rowsToImport = mapped ? mapped.rows.length - (includeDuplicates ? 0 : dupRows.size) : 0;

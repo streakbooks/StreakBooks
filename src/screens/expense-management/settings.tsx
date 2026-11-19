@@ -256,6 +256,17 @@ export function ExpenseManagementSettingsPage() {
       </ListWorkspace>
     );
   }
+  if (accountsQ.isError && accountsQ.data === undefined) {
+    return (
+      <ListWorkspace
+        title="Expense settings"
+        description="Policies, numbering and account defaults."
+        subnav={<ExpenseManagementSubnav current="settings" />}
+      >
+        <QueryErrorState queries={[accountsQ]} title="Could not load chart accounts" />
+      </ListWorkspace>
+    );
+  }
 
   return (
     <ListWorkspace

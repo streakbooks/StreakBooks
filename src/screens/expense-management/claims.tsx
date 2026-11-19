@@ -627,9 +627,27 @@ export function ExpenseManagementClaimsPage({
 
   const claims = claimsQ.data ?? [];
 
+  const createLookupQueries = [
+    accountsQ,
+    templatesQ,
+    ...(paymentSource === "cash_advance" ? [advancesQ] : []),
+    ...(paymentSource === "company_paid" ? [pettyFloatsQ] : []),
+    ...(paymentSource === "corporate_card" ? [cardsQ] : []),
+  ];
+  const createLookupsFailed =
+    mode === "my-expenses" &&
+    canSubmit &&
+    forceCreate &&
+    createLookupQueries.some((query) => query.isError && query.data === undefined);
+
   // List is list-only. Create opens only via ?create=true → TransactionWorkspace.
   const createForm =
-    mode === "my-expenses" && canSubmit && forceCreate ? (
+    mode === "my-expenses" && canSubmit && forceCreate && createLookupsFailed ? (
+      <QueryErrorState
+        queries={createLookupQueries}
+        title="Could not load claim create options"
+      />
+    ) : mode === "my-expenses" && canSubmit && forceCreate ? (
       <form
         id="expense-claim-create"
         className="grid gap-4"

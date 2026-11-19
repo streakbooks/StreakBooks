@@ -9,6 +9,7 @@ import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagement
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -39,6 +40,7 @@ import {
   type ExpenseDraftLineForm,
 } from "@/lib/expenses/draft-lines";
 import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
+import { minorOrZero } from "@/lib/purchases/money-input";
 import {
   deleteExpenseClaimDraft,
   duplicateExpenseClaim,
@@ -249,6 +251,16 @@ export function ExpenseManagementClaimsPage({
   const updateLine = (key: string, patch: Partial<ExpenseDraftLineForm>) => {
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
   };
+
+  const draftTotals = useMemo(() => {
+    let net = 0n;
+    let tax = 0n;
+    for (const line of lines) {
+      net += minorOrZero(line.netInput, currency);
+      tax += minorOrZero(line.taxInput, currency);
+    }
+    return { net, tax, total: net + tax };
+  }, [lines, currency]);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -733,6 +745,30 @@ export function ExpenseManagementClaimsPage({
             <Button type="submit" size="sm" disabled={create.isPending}>
               {create.isPending ? "Saving…" : "Save draft"}
             </Button>
+          }
+          footer={
+            <TotalsSummary
+              aria-label="Expense claim draft totals"
+              lines={[
+                {
+                  id: "net",
+                  label: "Net",
+                  value: fromMinorUnits(Number(draftTotals.net), currency),
+                },
+                {
+                  id: "tax",
+                  label: "Tax",
+                  value: fromMinorUnits(Number(draftTotals.tax), currency),
+                  emphasis: "muted",
+                },
+                {
+                  id: "total",
+                  label: "Total",
+                  value: fromMinorUnits(Number(draftTotals.total), currency),
+                  emphasis: "total",
+                },
+              ]}
+            />
           }
         >
           {lines.map((line, index) => (

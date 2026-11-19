@@ -107,6 +107,8 @@ export function HrOverviewPage() {
     >
       {settings.isError ? (
         <QueryErrorState queries={[settings]} title="Could not load HR settings" />
+      ) : settings.isLoading ? (
+        <LoadingState />
       ) : null}
 
       {settings.data && !settings.data.enabled ? (

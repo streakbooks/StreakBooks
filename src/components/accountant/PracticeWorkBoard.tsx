@@ -85,8 +85,12 @@ function AssigneeOptions({ companyId }: { companyId: string }) {
   });
   return (
     <>
-      {members.isError ? (
-        <option disabled>Team could not be loaded</option>
+      {members.isPending ? (
+        <option disabled>Loading team…</option>
+      ) : members.isError ? (
+        <option disabled value="">
+          Team could not be loaded — refresh the board
+        </option>
       ) : (
         (members.data ?? []).map((m) => (
           <option key={m.user_id} value={m.user_id}>

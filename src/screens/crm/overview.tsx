@@ -106,7 +106,6 @@ export function CrmOverviewPage() {
       }
       subnav={<CrmSubnav current="overview" />}
     >
-
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
         <ErrorState

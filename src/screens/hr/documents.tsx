@@ -122,8 +122,8 @@ export function HrDocumentsPage() {
       <ListWorkspace
         title="Employee Documents"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Documents" }]}
-      subnav={<HrSubnav current="documents" />}
-    >
+        subnav={<HrSubnav current="documents" />}
+      >
         <EmptyState title="No access" description="You need hr.view to open documents." />
       </ListWorkspace>
     );
@@ -177,6 +177,28 @@ export function HrDocumentsPage() {
         <EmptyState
           title="No documents yet"
           description="Register contracts and IDs against the shared employee identity."
+          action={
+            canManage ? (
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => {
+                  setEmployeeId("");
+                  setDocumentType("contract");
+                  setTitle("");
+                  setDocumentNumber("");
+                  setIssuedOn("");
+                  setExpiresOn("");
+                  setStatus("active");
+                  setNotes("");
+                  setFile(null);
+                  setOpen(true);
+                }}
+              >
+                Add document
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <TableCard>

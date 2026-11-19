@@ -514,6 +514,21 @@ export function MessagesScreen({
               <EmptyState
                 title="No conversations"
                 description="Start a direct message or create a group with eligible organisation members."
+                action={
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" type="button" onClick={() => setShowNew("dm")}>
+                      New message
+                    </Button>
+                    <Button
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowNew("group")}
+                    >
+                      New group
+                    </Button>
+                  </div>
+                }
               />
             )}
           <ul className="divide-y">
@@ -576,6 +591,11 @@ export function MessagesScreen({
             <EmptyState
               title="Select a conversation"
               description="Choose a thread from the list, or start a new message."
+              action={
+                <Button size="sm" type="button" onClick={() => setShowNew("dm")}>
+                  New message
+                </Button>
+              }
             />
           )}
           {conversationId && (

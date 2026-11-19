@@ -144,7 +144,6 @@ export function CrmCampaignsPage() {
       }
       subnav={<CrmSubnav current="campaigns" />}
     >
-
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"
@@ -283,6 +282,13 @@ export function CrmCampaignsPage() {
             <EmptyState
               title="No campaigns yet"
               description="Create a campaign to track outreach separately from lead sources."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    New campaign
+                  </Button>
+                ) : undefined
+              }
             />
           ) : null}
           {campaignRows.length > 0 ? (

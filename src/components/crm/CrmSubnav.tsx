@@ -1,8 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import {
-  GroupedModuleSubnav,
-  groupedModuleSectionClassName,
-} from "@/components/common/GroupedModuleSubnav";
+import { GroupedModuleSubnav } from "@/components/common/GroupedModuleSubnav";
+import { groupedModuleSectionClassName } from "@/lib/navigation/grouped-module-nav";
 import { useCan } from "@/hooks/use-can";
 import { CRM_SECTIONS, type CrmSectionKey } from "@/lib/crm/sections";
 import type { Permission } from "@/lib/permissions";

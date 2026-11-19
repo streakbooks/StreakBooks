@@ -51,7 +51,11 @@ import { SplitButton } from "@/components/ui/split-button";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
 import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
-import { emptySalesLine, type SalesLineFormState } from "@/lib/sales/line-form-state";
+import {
+  emptySalesLine,
+  isBlankSalesLine,
+  type SalesLineFormState,
+} from "@/lib/sales/line-form-state";
 import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
 import { computeTaxLineRounded } from "@/lib/sales/line-math-rounded";
 import {
@@ -501,7 +505,8 @@ export function SalesDocumentEditor({
         if (!docDate) throw new Error(`${copy.dateLabel} is required`);
         const fx = isForeign ? Number(fxRate) : 1;
         if (isForeign && !(fx > 0)) throw new Error(`Enter the exchange rate to ${base}`);
-        const payloadLines = lines.map((l) => lineFormToInput(l, currency));
+        const enteredLines = lines.filter((line) => !isBlankSalesLine(line));
+        const payloadLines = enteredLines.map((line) => lineFormToInput(line, currency));
         const common = {
           companyId,
           contactId,
@@ -513,7 +518,7 @@ export function SalesDocumentEditor({
             ? {
                 pricing: {
                   priceListId: selectedPriceListId || null,
-                  lines: lines.map((line) =>
+                  lines: enteredLines.map((line) =>
                     verifiedLinePricing({
                       trace: line.pricingTrace,
                       selectedPriceListId: selectedPriceListId || null,
@@ -676,6 +681,7 @@ export function SalesDocumentEditor({
     number,
     lines,
   };
+  const isBlankLine = (index: number) => isBlankSalesLine(lines[index]!);
   const voiceToken = useVoiceForm(
     companyId
       ? {
@@ -723,8 +729,9 @@ export function SalesDocumentEditor({
             if (patch.number !== undefined) setNumber(patch.number);
           },
           updateLines: (next) => setLines(next.map((line) => ({ ...emptySalesLine(), ...line }))),
+          isBlankLine,
           validate: () => [
-            ...validateVoiceDraft(voiceDraft, kind === "invoice"),
+            ...validateVoiceDraft(voiceDraft, kind === "invoice", isBlankLine),
             ...(isForeign && !(Number(fxRate) > 0) ? ["Enter the exchange rate in the form."] : []),
           ],
           saveDraft: async () => {
@@ -1000,133 +1007,136 @@ export function SalesDocumentEditor({
                 </FormControlShell>
               ) : null}
             </FormGrid>
-          {isSalesDraft ? (
-            <div className="space-y-1.5">
-              <div className="flex flex-wrap items-end gap-2">
-                <FormControlShell width="contact">
-                  <Label htmlFor="sales-price-list">Sales price list</Label>
-                  <RecordLookupSelect
-                    value={selectedPriceListId || "none"}
-                    onValueChange={(value) => {
-                      setManualPriceListId(value === "none" ? "" : value);
-                      setApplyPriceListOpen(false);
-                      setLines((previous) =>
-                        previous.map((line) => ({
-                          ...line,
-                          pricingTrace:
-                            line.pricingTrace?.price_list_id === value ? line.pricingTrace : null,
-                        })),
-                      );
-                    }}
+            {isSalesDraft ? (
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-end gap-2">
+                  <FormControlShell width="contact">
+                    <Label htmlFor="sales-price-list">Sales price list</Label>
+                    <RecordLookupSelect
+                      value={selectedPriceListId || "none"}
+                      onValueChange={(value) => {
+                        setManualPriceListId(value === "none" ? "" : value);
+                        setApplyPriceListOpen(false);
+                        setLines((previous) =>
+                          previous.map((line) => ({
+                            ...line,
+                            pricingTrace:
+                              line.pricingTrace?.price_list_id === value ? line.pricingTrace : null,
+                          })),
+                        );
+                      }}
+                    >
+                      <SelectTrigger id="sales-price-list" aria-label="Sales price list">
+                        <SelectValue placeholder="Catalogue prices" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Catalogue prices (default)</SelectItem>
+                        {(priceListsQ.data ?? [])
+                          .filter((list) => list.is_active && list.currency_code === currency)
+                          .map((list) => (
+                            <SelectItem key={list.id} value={list.id}>
+                              {list.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  </FormControlShell>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!draftPricesReady || !pricePreview?.changed || mutation.isPending}
+                    onClick={() => setApplyPriceListOpen(true)}
                   >
-                    <SelectTrigger id="sales-price-list" aria-label="Sales price list">
-                      <SelectValue placeholder="Catalogue prices" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Catalogue prices (default)</SelectItem>
-                      {(priceListsQ.data ?? [])
-                        .filter((list) => list.is_active && list.currency_code === currency)
-                        .map((list) => (
-                          <SelectItem key={list.id} value={list.id}>
-                            {list.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
-                </FormControlShell>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!draftPricesReady || !pricePreview?.changed || mutation.isPending}
-                  onClick={() => setApplyPriceListOpen(true)}
-                >
-                  Preview line prices
-                </Button>
-                <details className="min-w-0 max-w-xl text-xs text-muted-foreground">
-                  <summary className="cursor-pointer select-none text-foreground/80 hover:text-foreground">
-                    How price lists apply
-                  </summary>
-                  <p className="mt-1.5 leading-relaxed">
-                    Price lists match the document currency. New catalogue picks use quantity tiers
-                    and date rules; existing lines never reprice silently — preview and confirm
-                    changes. The list selection itself is not stored on the saved document.
+                    Preview line prices
+                  </Button>
+                  <details className="min-w-0 max-w-xl text-xs text-muted-foreground">
+                    <summary className="cursor-pointer select-none text-foreground/80 hover:text-foreground">
+                      How price lists apply
+                    </summary>
+                    <p className="mt-1.5 leading-relaxed">
+                      Price lists match the document currency. New catalogue picks use quantity
+                      tiers and date rules; existing lines never reprice silently — preview and
+                      confirm changes. The list selection itself is not stored on the saved
+                      document.
+                    </p>
+                  </details>
+                </div>
+                {customerDefaultPending ? (
+                  <p className="text-xs text-muted-foreground">
+                    Checking customer default price list…
                   </p>
-                </details>
+                ) : null}
+                {manualPriceListId === null && customerDefaultQ.data?.reason === "available" ? (
+                  <p className="text-xs text-muted-foreground">
+                    Customer default selected for this draft.
+                  </p>
+                ) : null}
+                {manualPriceListId === null &&
+                customerDefaultQ.data?.reason === "unavailable_or_currency_mismatch" ? (
+                  <p className="text-xs text-muted-foreground">
+                    Customer default list is archived or in another currency — catalogue pricing
+                    applies unless you choose another list.
+                  </p>
+                ) : null}
+                {manualPriceListId === null && customerDefaultQ.isError ? (
+                  <div role="alert" className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm text-destructive">
+                      Customer default lookup failed: {friendlyAuthError(customerDefaultQ.error)}
+                    </p>
+                    <Button size="sm" variant="outline" onClick={() => customerDefaultQ.refetch()}>
+                      Retry
+                    </Button>
+                  </div>
+                ) : null}
+                {priceListsQ.isError ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    Could not load price lists: {friendlyAuthError(priceListsQ.error)}
+                  </p>
+                ) : null}
+                {priceListTooLarge && selectedPriceListId ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    Too many different products to resolve this list (maximum 250).
+                  </p>
+                ) : null}
+                {selectedPriceListId && draftPricesQ.isPending && !priceListTooLarge ? (
+                  <p className="text-xs text-muted-foreground">Loading price-list amounts…</p>
+                ) : null}
+                {selectedPriceListId && draftPricesQ.isError ? (
+                  <div role="alert" className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm text-destructive">
+                      Price-list amounts unavailable: {friendlyAuthError(draftPricesQ.error)}
+                    </p>
+                    <Button variant="outline" size="sm" onClick={() => draftPricesQ.refetch()}>
+                      Retry
+                    </Button>
+                  </div>
+                ) : null}
+                {selectedPriceListId && !selectedPriceList && !priceListsQ.isPending ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    This price list is archived or does not match the document currency.
+                  </p>
+                ) : null}
+                {pricePreview ? (
+                  <p className="text-xs text-muted-foreground" aria-live="polite">
+                    {pricePreview.matched} line(s) eligible; {pricePreview.changed} differ — none
+                    change until you confirm.
+                  </p>
+                ) : null}
               </div>
-              {customerDefaultPending ? (
-                <p className="text-xs text-muted-foreground">Checking customer default price list…</p>
-              ) : null}
-              {manualPriceListId === null && customerDefaultQ.data?.reason === "available" ? (
-                <p className="text-xs text-muted-foreground">
-                  Customer default selected for this draft.
-                </p>
-              ) : null}
-              {manualPriceListId === null &&
-              customerDefaultQ.data?.reason === "unavailable_or_currency_mismatch" ? (
-                <p className="text-xs text-muted-foreground">
-                  Customer default list is archived or in another currency — catalogue pricing
-                  applies unless you choose another list.
-                </p>
-              ) : null}
-              {manualPriceListId === null && customerDefaultQ.isError ? (
-                <div role="alert" className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm text-destructive">
-                    Customer default lookup failed: {friendlyAuthError(customerDefaultQ.error)}
-                  </p>
-                  <Button size="sm" variant="outline" onClick={() => customerDefaultQ.refetch()}>
-                    Retry
-                  </Button>
-                </div>
-              ) : null}
-              {priceListsQ.isError ? (
-                <p role="alert" className="text-sm text-destructive">
-                  Could not load price lists: {friendlyAuthError(priceListsQ.error)}
-                </p>
-              ) : null}
-              {priceListTooLarge && selectedPriceListId ? (
-                <p role="alert" className="text-sm text-destructive">
-                  Too many different products to resolve this list (maximum 250).
-                </p>
-              ) : null}
-              {selectedPriceListId && draftPricesQ.isPending && !priceListTooLarge ? (
-                <p className="text-xs text-muted-foreground">Loading price-list amounts…</p>
-              ) : null}
-              {selectedPriceListId && draftPricesQ.isError ? (
-                <div role="alert" className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm text-destructive">
-                    Price-list amounts unavailable: {friendlyAuthError(draftPricesQ.error)}
-                  </p>
-                  <Button variant="outline" size="sm" onClick={() => draftPricesQ.refetch()}>
-                    Retry
-                  </Button>
-                </div>
-              ) : null}
-              {selectedPriceListId && !selectedPriceList && !priceListsQ.isPending ? (
-                <p role="alert" className="text-sm text-destructive">
-                  This price list is archived or does not match the document currency.
-                </p>
-              ) : null}
-              {pricePreview ? (
-                <p className="text-xs text-muted-foreground" aria-live="polite">
-                  {pricePreview.matched} line(s) eligible; {pricePreview.changed} differ — none
-                  change until you confirm.
-                </p>
-              ) : null}
+            ) : null}
+            <div className="space-y-1">
+              <Label>Memo / customer message</Label>
+              <Input
+                voiceField={{
+                  key: "memo",
+                  label: "Memo",
+                  aliases: ["internal reference", "customer message"],
+                  order: 60,
+                }}
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+              />
             </div>
-          ) : null}
-          <div className="space-y-1">
-            <Label>Memo / customer message</Label>
-            <Input
-              voiceField={{
-                key: "memo",
-                label: "Memo",
-                aliases: ["internal reference", "customer message"],
-                order: 60,
-              }}
-              value={memo}
-              onChange={(e) => setMemo(e.target.value)}
-            />
-          </div>
           </div>
         }
         lines={

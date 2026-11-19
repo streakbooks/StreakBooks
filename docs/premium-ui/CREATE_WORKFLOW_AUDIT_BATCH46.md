@@ -22,10 +22,11 @@ Automated guard: `src/lib/create-new/create-workflow-routes.test.ts` + `menu.tes
 Remaining non-`/new` destinations that are intentional (list/tooling, not complex accounting create):
 
 - `customer_statement` → `/sales/statements`
-- `reimbursement` → `/expense-management/my-expenses`
-- `bank_transfer` → `/banking/transfers`
-- `product` → `/products-services`
-- `account` → `/accounting` (flyover CoA still primary)
+- `reimbursement` → `/expense-management/my-expenses` (`?create=true`)
+- `bank_transfer` → `/banking/transfers/new` (dedicated create; list is history)
+- `product` → `/products-services/new` (Batch 55)
+- `fixed_asset` → `/fixed-assets?create=true` (sticky until workspace closes; Batch 55)
+- `account` → `/accounting` flyover; label **New Account** (Batch 55)
 - `project` → `/projects` (flyover)
 - `document_upload` → flyover only
 
@@ -46,8 +47,49 @@ Remaining non-`/new` destinations that are intentional (list/tooling, not comple
 | Expenses | Expense claim | Create menu → `/expense-management/my-expenses?create=true` focuses full-width draft |
 | Tooling | `check:navigation` / browsing manifest | Recurring + transfers + money/journal routes synced (163 routes) |
 
+## Superseded by later batches
+
+- Recurring bill/invoice **edit** → full-page `/$id/edit` (Batch 47).
+- Transfer create → `/banking/transfers/new`; Banking hub New CTAs (Batches 46–49).
+- Recurring Sheets deleted (Batch 48).
+- Create nav intent helper `createNavTarget` (Batch 49).
+
+## Batch 50 follow-ups (this programme)
+
+- My Expenses list no longer dual-renders half-width create (list-only; `?create=true` → workspace).
+- Command palette Create intents aligned (claim `create=true`, sales receipt vs receive payment).
+- Empty CTAs: PO / supplier CN / bills recurring / fixed assets / sales orders / projects.
+- Sales order create/edit uses TransactionWorkspace (route still `/sales/orders` until dedicated `/new`).
+
+## Batch 53 follow-ups
+
+- Dedicated `/sales/orders/new` TransactionWorkspace; legacy `?create=true` redirects.
+- `purchase_requisition` CREATE_ACTIONS + palette + `?create=true`.
+- Customers/suppliers lists route to Contacts create (no half-width inline forms).
+- Budgets/CRM lead empty CTAs; budgets create on demand.
+
+## Batch 54 follow-ups
+
+- Product create → RecordWorkspace (edit remains Dialog).
+- Fixed asset create → RecordWorkspace via `layout="workspace"` + CREATE `fixed_asset`.
+- Payroll employee/run create → RecordWorkspace.
+- CRM opportunities/activities empty New CTAs.
+
+## Batch 55 follow-ups (directive gap consolidation)
+
+- Account CREATE label → **New Account**.
+- Dedicated `/products-services/new`; list `?create=true` stays until Cancel/Save.
+- Fixed asset `?create=true` sticky until New asset workspace closes.
+- Consolidated tracker: `docs/premium-ui/DIRECTIVE_V2_GAP_MATRIX.md`.
+
+## Batch 56 follow-ups
+
+- Typecheck green (firm onboarding fixtures, HR automation config, PersistedSwitch, projects sticky create).
+- `/fixed-assets/new` redirect; project create sticky until close/save.
+
 ## Still deferred
 
 - Authenticated Playwright create-flow smoke (blocked without staging E2E credentials).
 - Multi-account Spend/Receive allocation lines (posting engine constraint).
-- Recurring bill/invoice **edit** still uses overlay / in-place workspace (create is full-page).
+- Dedicated `/fixed-assets/new` redirect (Batch 56).
+- Module finished-screen DoD (0/34 COMPLETE).

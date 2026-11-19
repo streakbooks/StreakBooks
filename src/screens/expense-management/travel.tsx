@@ -252,6 +252,21 @@ export function ExpenseManagementTravelPage() {
                   ? "Add an active rate below for this currency and trip start date."
                   : "Ask an expense admin to configure per diem rates."
               }
+              action={
+                canAdmin ? (
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={() =>
+                      document
+                        .getElementById("em-perdiem-rate")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                    }
+                  >
+                    Add per diem rate
+                  </Button>
+                ) : undefined
+              }
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
@@ -323,7 +338,7 @@ export function ExpenseManagementTravelPage() {
       ) : null}
 
       {canAdmin ? (
-        <section className="mb-10 space-y-4 rounded-lg border p-4">
+        <section id="em-perdiem-rate" className="mb-10 space-y-4 rounded-lg border p-4">
           <h2 className="text-lg font-medium">Add per diem rate</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
@@ -390,6 +405,22 @@ export function ExpenseManagementTravelPage() {
           <EmptyState
             title="No per diem rates yet"
             description="Expense admins can add rates by location and effective period."
+            action={
+              canAdmin ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    document
+                      .getElementById("em-perdiem-rate")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    document.getElementById("pd-name")?.focus();
+                  }}
+                >
+                  Add per diem rate
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <Table>

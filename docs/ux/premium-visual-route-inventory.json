@@ -46,12 +46,17 @@
       "changedScreens": [],
       "label": "Point of Sale",
       "href": "/pos",
-      "routeFiles": ["_authenticated/pos/index.tsx", "_authenticated/pos/registers.tsx"]
+      "routeFiles": [
+        "_authenticated/pos/index.tsx",
+        "_authenticated/pos/registers.tsx"
+      ]
     },
     {
       "label": "Dashboard",
       "href": "/",
-      "routeFiles": ["_authenticated/index.tsx"],
+      "routeFiles": [
+        "_authenticated/index.tsx"
+      ],
       "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -83,13 +88,17 @@
         "_authenticated/banking/import.tsx",
         "_authenticated/banking/index.tsx",
         "_authenticated/banking/journal.$journalId.tsx",
+        "_authenticated/banking/money-documents.new.tsx",
         "_authenticated/banking/money-documents.tsx",
+        "_authenticated/banking/receive-money.tsx",
         "_authenticated/banking/reconcile.tsx",
         "_authenticated/banking/reconciliation-report.$sessionId.tsx",
         "_authenticated/banking/route.tsx",
         "_authenticated/banking/rules.tsx",
+        "_authenticated/banking/spend-money.tsx",
         "_authenticated/banking/transactions.tsx",
-        "_authenticated/banking/transfers.tsx"
+        "_authenticated/banking/transfers.index.tsx",
+        "_authenticated/banking/transfers.new.tsx"
       ],
       "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
@@ -131,7 +140,8 @@
         "_authenticated/sales/invoices.$invoiceId.tsx",
         "_authenticated/sales/invoices.index.tsx",
         "_authenticated/sales/invoices.new.tsx",
-        "_authenticated/sales/orders.tsx",
+        "_authenticated/sales/orders.index.tsx",
+        "_authenticated/sales/orders.new.tsx",
         "_authenticated/sales/quotes.$quoteId.edit.tsx",
         "_authenticated/sales/quotes.$quoteId.index.tsx",
         "_authenticated/sales/quotes.$quoteId.tsx",
@@ -140,7 +150,9 @@
         "_authenticated/sales/receipts.$receiptId.tsx",
         "_authenticated/sales/receipts.index.tsx",
         "_authenticated/sales/receipts.new.tsx",
-        "_authenticated/sales/recurring.tsx",
+        "_authenticated/sales/recurring.$id.edit.tsx",
+        "_authenticated/sales/recurring.index.tsx",
+        "_authenticated/sales/recurring.new.tsx",
         "_authenticated/sales/reminders.tsx",
         "_authenticated/sales/route.tsx",
         "_authenticated/sales/settings.tsx",
@@ -198,7 +210,9 @@
         "_authenticated/purchases/payments.index.tsx",
         "_authenticated/purchases/payments.new.tsx",
         "_authenticated/purchases/portal-inbox.tsx",
-        "_authenticated/purchases/recurring.tsx",
+        "_authenticated/purchases/recurring.$id.edit.tsx",
+        "_authenticated/purchases/recurring.index.tsx",
+        "_authenticated/purchases/recurring.new.tsx",
         "_authenticated/purchases/requisitions.tsx",
         "_authenticated/purchases/route.tsx",
         "_authenticated/purchases/settings.tsx",
@@ -291,6 +305,16 @@
       ]
     },
     {
+      "visualReview": "not_runtime_verified",
+      "label": "Property Management",
+      "href": "/property-management",
+      "routeFiles": [
+        "_authenticated/property-management/$section.tsx",
+        "_authenticated/property-management/index.tsx"
+      ],
+      "verified": false
+    },
+    {
       "label": "Contacts",
       "href": "/contacts",
       "routeFiles": [
@@ -325,7 +349,10 @@
     {
       "label": "Products & Services",
       "href": "/products-services",
-      "routeFiles": ["_authenticated/products-services.tsx"],
+      "routeFiles": [
+        "_authenticated/products-services.index.tsx",
+        "_authenticated/products-services.new.tsx"
+      ],
       "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -350,7 +377,10 @@
     {
       "label": "Accounting",
       "href": "/accounting",
-      "routeFiles": ["_authenticated/accounting.tsx"],
+      "routeFiles": [
+        "_authenticated/accounting.tsx",
+        "_authenticated/accounting/journals.new.tsx"
+      ],
       "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -394,12 +424,17 @@
       "changedScreens": [],
       "label": "Messages",
       "href": "/messages",
-      "routeFiles": ["_authenticated/messages/index.tsx", "_authenticated/messages/settings.tsx"]
+      "routeFiles": [
+        "_authenticated/messages/index.tsx",
+        "_authenticated/messages/settings.tsx"
+      ]
     },
     {
       "label": "Action Center",
       "href": "/notifications",
-      "routeFiles": ["_authenticated/notifications.tsx"],
+      "routeFiles": [
+        "_authenticated/notifications.tsx"
+      ],
       "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -426,7 +461,9 @@
     {
       "label": "Files",
       "href": "/files",
-      "routeFiles": ["_authenticated/files.tsx"],
+      "routeFiles": [
+        "_authenticated/files.tsx"
+      ],
       "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -451,7 +488,10 @@
     {
       "label": "Budgets",
       "href": "/budgets",
-      "routeFiles": ["_authenticated/budgets/$budgetId.tsx", "_authenticated/budgets/index.tsx"],
+      "routeFiles": [
+        "_authenticated/budgets/$budgetId.tsx",
+        "_authenticated/budgets/index.tsx"
+      ],
       "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -476,7 +516,10 @@
     {
       "label": "Fixed assets",
       "href": "/fixed-assets",
-      "routeFiles": ["_authenticated/fixed-assets.tsx"],
+      "routeFiles": [
+        "_authenticated/fixed-assets.index.tsx",
+        "_authenticated/fixed-assets.new.tsx"
+      ],
       "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -601,7 +644,9 @@
     {
       "label": "Accountant",
       "href": "/accountant",
-      "routeFiles": ["_authenticated/accountant.tsx"],
+      "routeFiles": [
+        "_authenticated/accountant.tsx"
+      ],
       "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -626,7 +671,9 @@
     {
       "label": "Firm",
       "href": "/firm",
-      "routeFiles": ["_authenticated/firm.tsx"],
+      "routeFiles": [
+        "_authenticated/firm.tsx"
+      ],
       "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -719,7 +766,9 @@
         "permissions": false,
         "browser": false
       },
-      "changedScreens": ["src/screens/advisors/portal-tasks.tsx \u2014 live delivery task status"]
+      "changedScreens": [
+        "src/screens/advisors/portal-tasks.tsx \u2014 live delivery task status"
+      ]
     },
     {
       "visualReview": "merged_code_not_runtime_verified",
@@ -769,12 +818,17 @@
       "changedScreens": [],
       "label": "Developer",
       "href": "/developer",
-      "routeFiles": ["_authenticated/developer/$section.tsx", "_authenticated/developer/index.tsx"]
+      "routeFiles": [
+        "_authenticated/developer/$section.tsx",
+        "_authenticated/developer/index.tsx"
+      ]
     },
     {
       "label": "AI Assistant",
       "href": "/ai-assistant",
-      "routeFiles": ["_authenticated/ai-assistant.tsx"],
+      "routeFiles": [
+        "_authenticated/ai-assistant.tsx"
+      ],
       "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -799,7 +853,9 @@
     {
       "label": "Tax",
       "href": "/tax",
-      "routeFiles": ["_authenticated/tax.tsx"],
+      "routeFiles": [
+        "_authenticated/tax.tsx"
+      ],
       "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -824,7 +880,9 @@
     {
       "label": "Settings",
       "href": "/settings",
-      "routeFiles": ["_authenticated/settings.tsx"],
+      "routeFiles": [
+        "_authenticated/settings.tsx"
+      ],
       "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -853,7 +911,9 @@
     {
       "label": "Help",
       "href": "/help",
-      "routeFiles": ["_authenticated/help.tsx"],
+      "routeFiles": [
+        "_authenticated/help.tsx"
+      ],
       "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
@@ -992,7 +1052,10 @@
   "parallelDevelopmentSnapshot": {
     "sourceBranch": "main",
     "inspectedHead": "f1d538129adf9bbc70093083f39e422050af0c4f",
-    "newSidebarModules": ["App Store", "Developer"],
+    "newSidebarModules": [
+      "App Store",
+      "Developer"
+    ],
     "mainSidebarModules": 24,
     "mainAllRouteFiles": 179,
     "visualBranchSidebarModules": 22,

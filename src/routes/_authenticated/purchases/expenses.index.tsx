@@ -72,7 +72,15 @@ function ExpensesList() {
           onRetry={() => query.refetch()}
         />
       ) : (query.data ?? []).length === 0 ? (
-        <EmptyState title="No expenses" description="Record a direct expense paid from bank." />
+        <EmptyState
+          title="No expenses"
+          description="Spend money is created in Banking. Posted spend-money expenses appear here for reference."
+          action={
+            <Button size="sm" asChild>
+              <Link to="/banking/spend-money">Spend money</Link>
+            </Button>
+          }
+        />
       ) : (
         <>
           <ListToolbar

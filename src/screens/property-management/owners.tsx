@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -10,22 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { listContacts } from "@/lib/contacts/contacts.functions";
-import {
-  getPmSettings,
-  listPmOwners,
-  upsertPmOwner,
-} from "@/lib/property-management/pm.functions";
+import { getPmSettings, listPmOwners, upsertPmOwner } from "@/lib/property-management/pm.functions";
 import type { Permission } from "@/lib/permissions";
 import { toast } from "sonner";
 
@@ -55,8 +46,7 @@ export function PmOwnersPage() {
 
   const owners = useQuery({
     queryKey: ["pm-owners", company?.id, search],
-    queryFn: () =>
-      fetchOwners({ data: { companyId: company!.id, search: search || null } }),
+    queryFn: () => fetchOwners({ data: { companyId: company!.id, search: search || null } }),
     enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
     retry: false,
   });
@@ -109,13 +99,12 @@ export function PmOwnersPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Owners" description="Beneficial owners."
-      subnav={<PmSubnav current="owners" />}
-    >
-        <EmptyState
-          title="No access"
-          description="Ask an administrator for property.owner.view."
-        />
+      <ListWorkspace
+        title="Owners"
+        description="Beneficial owners."
+        subnav={<PmSubnav current="owners" />}
+      >
+        <EmptyState title="No access" description="Ask an administrator for property.owner.view." />
       </ListWorkspace>
     );
   }
@@ -168,8 +157,8 @@ export function PmOwnersPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2 sm:col-span-2">
                   <Label>Contact</Label>
-                  <Select
-                    value={contactId || undefined}
+                  <RecordLookupSelect
+                    value={contactId}
                     onValueChange={(value) => {
                       setContactId(value);
                       const match = contactOptions.find((row) => row.id === value);
@@ -189,7 +178,7 @@ export function PmOwnersPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pm-owner-name">Display name</Label>
@@ -225,13 +214,20 @@ export function PmOwnersPage() {
             <ErrorState
               title="Could not load owners"
               description={friendlyAuthError(owners.error)}
-            onRetry={() => owners.refetch()}
-        />
+              onRetry={() => owners.refetch()}
+            />
           ) : null}
           {owners.data?.length === 0 ? (
             <EmptyState
               title="No owners linked"
               description="Link a contact as an owner to assign ownership shares."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    Link owner
+                  </Button>
+                ) : undefined
+              }
             />
           ) : null}
           {owners.data && owners.data.length > 0 ? (

@@ -157,6 +157,11 @@ export function AdvisorsAdminOverviewPage() {
               <EmptyState
                 title="No inquiries yet"
                 description="Chat lead captures and handoffs appear here."
+                action={
+                  <Button asChild size="sm">
+                    <Link to="/advisors-admin/inquiries">Open inquiries</Link>
+                  </Button>
+                }
               />
             ) : (
               <ul className="space-y-2">
@@ -194,6 +199,11 @@ export function AdvisorsAdminOverviewPage() {
               <EmptyState
                 title="No upcoming bookings"
                 description="Confirmed consultations scheduled from now onward appear here."
+                action={
+                  <Button asChild size="sm">
+                    <Link to="/advisors-admin/appointments">Manage appointments</Link>
+                  </Button>
+                }
               />
             ) : (
               <ul className="space-y-2">

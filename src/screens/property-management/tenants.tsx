@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -10,13 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -96,9 +91,11 @@ export function PmTenantsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Tenants & Guests" description="Tenant overlays on Contacts."
-      subnav={<PmSubnav current="tenants-guests" />}
-    >
+      <ListWorkspace
+        title="Tenants & Guests"
+        description="Tenant overlays on Contacts."
+        subnav={<PmSubnav current="tenants-guests" />}
+      >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -146,8 +143,8 @@ export function PmTenantsPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2 sm:col-span-2">
                   <Label>Contact</Label>
-                  <Select
-                    value={contactId || undefined}
+                  <RecordLookupSelect
+                    value={contactId}
                     onValueChange={(value) => {
                       setContactId(value);
                       const match = contactOptions.find((row) => row.id === value);
@@ -164,7 +161,7 @@ export function PmTenantsPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pm-tenant-name">Display name</Label>
@@ -195,7 +192,17 @@ export function PmTenantsPage() {
             />
           ) : null}
           {tenants.data?.length === 0 ? (
-            <EmptyState title="No tenants linked" description="Link a contact as a tenant." />
+            <EmptyState
+              title="No tenants linked"
+              description="Link a contact as a tenant."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    Link tenant
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : null}
           {tenants.data && tenants.data.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-border">

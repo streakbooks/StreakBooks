@@ -213,8 +213,8 @@ export function HrLeavePage() {
       <ListWorkspace
         title="Leave Management"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Leave Management" }]}
-      subnav={<HrSubnav current="leave" />}
-    >
+        subnav={<HrSubnav current="leave" />}
+      >
         <EmptyState title="No access" description="You need hr.view to open leave." />
       </ListWorkspace>
     );
@@ -270,7 +270,6 @@ export function HrLeavePage() {
       }
       subnav={<HrSubnav current="leave" />}
     >
-
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Leave types
@@ -287,6 +286,24 @@ export function HrLeavePage() {
           <EmptyState
             title="No leave types"
             description="Create annual, sick, or unpaid leave policies before recording balances."
+            action={
+              canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setCode("");
+                    setName("");
+                    setAllowance(20);
+                    setAccrual("annual");
+                    setRequiresApproval("yes");
+                    setTypeOpen(true);
+                  }}
+                >
+                  New leave type
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>
@@ -330,6 +347,13 @@ export function HrLeavePage() {
           <EmptyState
             title="No balances yet"
             description="Ensure a balance for an employee and leave type to seed entitlement."
+            action={
+              canManage ? (
+                <Button size="sm" type="button" onClick={() => setBalOpen(true)}>
+                  Ensure balance
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>
@@ -376,6 +400,41 @@ export function HrLeavePage() {
           <EmptyState
             title="No leave requests"
             description="Submitted requests reserve pending balance until approved or rejected."
+            action={
+              canManage && activeTypes.length > 0 ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setEmployeeId("");
+                    setLeaveTypeId(activeTypes[0]?.id ?? "");
+                    setStartDate("");
+                    setEndDate("");
+                    setStatus("submitted");
+                    setReason("");
+                    setReqOpen(true);
+                  }}
+                >
+                  New request
+                </Button>
+              ) : canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setCode("");
+                    setName("");
+                    setAllowance(20);
+                    setAccrual("annual");
+                    setRequiresApproval("yes");
+                    setTypeOpen(true);
+                  }}
+                >
+                  New leave type first
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>

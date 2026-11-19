@@ -4,8 +4,10 @@ import { Route } from "@/routes/_authenticated/advisors-portal.tasks";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
+import { Link } from "@tanstack/react-router";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { listAdvisorsPortalTasks } from "@/lib/advisors/portal.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 
@@ -62,6 +64,11 @@ export function AdvisorsPortalTasksPage() {
           <EmptyState
             title="No tasks"
             description="Tasks appear once your advisor opens a delivery period."
+            action={
+              <Button asChild size="sm" variant="outline">
+                <Link to="/advisors-portal">Portal home</Link>
+              </Button>
+            }
           />
         ) : visibleTasks.length === 0 ? (
           <div className="space-y-3">

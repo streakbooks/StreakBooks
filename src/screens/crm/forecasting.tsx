@@ -79,7 +79,6 @@ export function CrmForecastingPage() {
       }
       subnav={<CrmSubnav current="forecasting" />}
     >
-
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before reviewing forecasts." />
       ) : null}
@@ -131,7 +130,17 @@ export function CrmForecastingPage() {
               </div>
 
               {report.stages.length === 0 ? (
-                <EmptyState title="No stages" description="Create a pipeline with stages first." />
+                <EmptyState
+                  title="No stages"
+                  description="Create a pipeline with stages first."
+                  action={
+                    <Button asChild size="sm">
+                      <Link to="/crm/$section" params={{ section: "pipelines" }}>
+                        Open pipelines
+                      </Link>
+                    </Button>
+                  }
+                />
               ) : (
                 <div className="overflow-x-auto rounded-lg border">
                   <Table>

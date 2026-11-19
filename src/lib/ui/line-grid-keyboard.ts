@@ -4,9 +4,7 @@
  */
 
 export type LineGridKeyAction =
-  | { type: "move"; rowDelta: number; colDelta: number }
-  | { type: "add-row" }
-  | { type: "none" };
+  { type: "move"; rowDelta: number; colDelta: number } | { type: "add-row" } | { type: "none" };
 
 /** Interpret common spreadsheet keys for a focused cell. */
 export function interpretLineGridKey(

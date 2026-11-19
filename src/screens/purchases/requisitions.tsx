@@ -1,5 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +26,7 @@ import {
   type RequisitionStatus,
 } from "@/lib/purchases/requisitions.functions";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { ContactLookup } from "@/components/lookup";
 import { OrderEntryLines } from "@/components/orders/OrderEntryLines";
@@ -57,13 +58,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export function PurchasesRequisitionsScreen() {
+export function PurchasesRequisitionsScreen({
+  forceCreate = false,
+  onCreateClosed,
+}: {
+  forceCreate?: boolean;
+  onCreateClosed?: () => void;
+} = {}) {
   const { company } = useActiveCompany();
   return company ? (
     <RequisitionsWorkspace
       key={company.id}
       companyId={company.id}
       baseCurrency={company.base_currency}
+      forceCreate={forceCreate}
+      {...(onCreateClosed ? { onCreateClosed } : {})}
     />
   ) : (
     <EmptyState
@@ -75,9 +84,13 @@ export function PurchasesRequisitionsScreen() {
 function RequisitionsWorkspace({
   companyId,
   baseCurrency,
+  forceCreate = false,
+  onCreateClosed,
 }: {
   companyId: string;
   baseCurrency: string;
+  forceCreate?: boolean;
+  onCreateClosed?: () => void;
 }) {
   const { can } = useCan();
   const fmt = useFormat();
@@ -90,6 +103,17 @@ function RequisitionsWorkspace({
   const [selected, setSelected] = useState<Requisition | null>(null);
   const [editor, setEditor] = useState<Requisition | "new" | null>(null);
   const [comment, setComment] = useState("");
+  const canDraft = can("purchases.draft");
+  useEffect(() => {
+    if (!forceCreate || !canDraft) return;
+    setEditor("new");
+  }, [forceCreate, canDraft]);
+
+  function closeEditor() {
+    const wasCreate = editor === "new" && forceCreate;
+    setEditor(null);
+    if (wasCreate) onCreateClosed?.();
+  }
   const query = useQuery({
     queryKey: ["purchase-requisitions", companyId, status, search, page],
     enabled: can("purchases.view"),
@@ -116,6 +140,37 @@ function RequisitionsWorkspace({
         description="Purchase viewing permission is required."
       />
     );
+  if (editor) {
+    return (
+      <TransactionWorkspace
+        title={editor === "new" ? "New purchase requisition" : "Edit requisition"}
+        description="Amounts and supplier details become fixed when submitted. Changes require a new approval."
+        breadcrumbs={[
+          { label: "Purchases", to: "/purchases" },
+          { label: "Requisitions", to: "/purchases/requisitions" },
+          { label: editor === "new" ? "New" : "Edit" },
+        ]}
+        stickyActions={
+          <Button size="sm" variant="outline" onClick={closeEditor}>
+            Cancel
+          </Button>
+        }
+      >
+        <RequisitionEditor
+          key={editor === "new" ? "new" : editor.id}
+          companyId={companyId}
+          baseCurrency={baseCurrency}
+          initial={editor === "new" ? undefined : editor}
+          onSaved={async (row) => {
+            closeEditor();
+            setSelected(row);
+            await client.invalidateQueries({ queryKey: ["purchase-requisitions", companyId] });
+          }}
+          onCancel={closeEditor}
+        />
+      </TransactionWorkspace>
+    );
+  }
   const actionButton = (action: RequisitionAction, label: string) => (
     <Button
       key={action}
@@ -162,6 +217,7 @@ function RequisitionsWorkspace({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            {/* lookup-fixed-enum: Requisition lifecycle statuses. */}
             <SelectItem value="all">All statuses</SelectItem>
             {requisitionStatuses.map((value) => (
               <SelectItem key={value} value={value}>
@@ -188,6 +244,13 @@ function RequisitionsWorkspace({
             search || status !== "all"
               ? "Change the search or status filter."
               : "Create a requisition when a purchase needs independent approval."
+          }
+          action={
+            !search && status === "all" && can("purchases.draft") ? (
+              <Button size="sm" onClick={() => setEditor("new")}>
+                New requisition
+              </Button>
+            ) : undefined
           }
         />
       ) : (
@@ -372,37 +435,6 @@ function RequisitionsWorkspace({
           ) : null}
         </DialogContent>
       </Dialog>
-      <Dialog
-        open={Boolean(editor)}
-        onOpenChange={(open) => {
-          if (!open) setEditor(null);
-        }}
-      >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editor === "new" ? "New purchase requisition" : "Edit requisition"}
-            </DialogTitle>
-            <DialogDescription>
-              Amounts and supplier details become fixed when submitted. Changes require a new
-              approval.
-            </DialogDescription>
-          </DialogHeader>
-          {editor ? (
-            <RequisitionEditor
-              key={editor === "new" ? "new" : editor.id}
-              companyId={companyId}
-              baseCurrency={baseCurrency}
-              initial={editor === "new" ? undefined : editor}
-              onSaved={async (row) => {
-                setEditor(null);
-                setSelected(row);
-                await client.invalidateQueries({ queryKey: ["purchase-requisitions", companyId] });
-              }}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
     </ListWorkspace>
   );
 }
@@ -411,11 +443,13 @@ function RequisitionEditor({
   baseCurrency,
   initial,
   onSaved,
+  onCancel,
 }: {
   companyId: string;
   baseCurrency: string;
   initial: Requisition | undefined;
   onSaved: (row: Requisition) => Promise<void>;
+  onCancel?: () => void;
 }) {
   const { can } = useCan();
   const save = useServerFn(savePurchaseRequisition);
@@ -574,9 +608,16 @@ function RequisitionEditor({
           ).filter((account) => account.is_active && account.is_postable)}
         />
       </fieldset>
-      <Button disabled={mutation.isPending || !can("purchases.draft")} type="submit">
-        {mutation.isPending ? "Saving…" : "Save draft"}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        {onCancel ? (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        ) : null}
+        <Button disabled={mutation.isPending || !can("purchases.draft")} type="submit">
+          {mutation.isPending ? "Saving…" : "Save draft"}
+        </Button>
+      </div>
     </form>
   );
 }

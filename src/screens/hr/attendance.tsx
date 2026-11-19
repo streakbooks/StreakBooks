@@ -177,8 +177,8 @@ export function HrAttendancePage() {
       <ListWorkspace
         title="Attendance"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Attendance" }]}
-      subnav={<HrSubnav current="attendance" />}
-    >
+        subnav={<HrSubnav current="attendance" />}
+      >
         <EmptyState title="No access" description="You need hr.view to open attendance." />
       </ListWorkspace>
     );
@@ -231,7 +231,6 @@ export function HrAttendancePage() {
       }
       subnav={<HrSubnav current="attendance" />}
     >
-
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         Attendance logs
       </h2>
@@ -247,6 +246,25 @@ export function HrAttendancePage() {
         <EmptyState
           title="No attendance logs yet"
           description="Record check-in/out entries or wait for self-service punches (HR-07)."
+          action={
+            canManage ? (
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => {
+                  setEmployeeId("");
+                  setWorkDate(new Date().toISOString().slice(0, 10));
+                  setCheckInAt(toLocalInput(new Date().toISOString()));
+                  setCheckOutAt("");
+                  setStatus("open");
+                  setNotes("");
+                  setLogOpen(true);
+                }}
+              >
+                Record attendance
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <TableCard>

@@ -173,8 +173,21 @@ export class AssistantController {
         message: `${this.snapshot.field?.label} selected. Say its value, or say “dictate” followed by literal text. Values replace the field; nothing is saved.`,
       });
     };
-    if (matches.length === 1) focus(matches[0]!.id);
-    else {
+    const first = matches[0]!;
+    const equivalentLineFields =
+      first.line !== undefined &&
+      matches.every((field) => field.line !== undefined && field.key === first.key);
+    const populatedMatches = equivalentLineFields
+      ? matches.filter((field) => form.isBlankLine?.(field.line!) === false)
+      : [];
+    if (matches.length === 1) focus(first.id);
+    else if (populatedMatches.length === 1) focus(populatedMatches[0]!.id);
+    else if (
+      equivalentLineFields &&
+      matches.every((field) => form.isBlankLine?.(field.line!) === true)
+    ) {
+      focus(first.id);
+    } else {
       this.clarification = {
         token: form.token,
         revision: form.revision,
@@ -1007,7 +1020,9 @@ export class AssistantController {
           taxRateBps: "0",
         };
         const empty = draft.lines.findIndex(
-          (l) => !l.description && !l.accountId && Number(l.unitPrice) === 0,
+          (l, index) =>
+            form.isBlankLine?.(index) ??
+            (!l.description && !l.accountId && Number(l.unitPrice) === 0),
         );
         const index = empty < 0 ? draft.lines.length : empty;
         form.updateLines(

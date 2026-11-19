@@ -7,7 +7,7 @@ import {
   type ComponentType,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { useNavigate, useRouteContext } from "@tanstack/react-router";
+import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
 import {
   Calculator,
   ChevronRight,
@@ -31,11 +31,7 @@ import {
   type CreateAction,
   type CreateGroup,
 } from "@/lib/create-new/registry";
-import {
-  actionIsRunnable,
-  opensCreateAsFullPage,
-  searchCreateActions,
-} from "@/lib/create-new/menu";
+import { actionIsRunnable, createNavTarget, searchCreateActions } from "@/lib/create-new/menu";
 import { permissionsForRole } from "@/lib/permissions";
 import {
   readCreatePrefs,
@@ -63,6 +59,7 @@ const MENU_ORDER = [
   "invoice",
   "recurring_invoice",
   "quote",
+  "sales_order",
   "sales_receipt",
   "customer_credit",
   "receive_payment",
@@ -72,6 +69,7 @@ const MENU_ORDER = [
   "bill",
   "recurring_bill",
   "purchase_order",
+  "purchase_requisition",
   "supplier_credit",
   "pay_bill",
   "reimbursement",
@@ -85,6 +83,7 @@ const MENU_ORDER = [
   "card_payment",
   "manual_journal",
   "recurring_journal",
+  "fixed_asset",
   "account",
   "product",
   "project",
@@ -140,83 +139,28 @@ export function CreateNewMenu() {
     writeCreatePrefs(window.localStorage, user.id, next);
   }
 
-  function openAction(action: CreateAction) {
-    if (!actionIsRunnable(action, role, company?.permissions)) return;
+  function rememberSelection(action: CreateAction) {
     persist(rememberAction(prefs, action.id));
     setMenuOpen(false);
     setQuery("");
+  }
+
+  function openAction(action: CreateAction) {
+    if (!actionIsRunnable(action, role, company?.permissions)) return;
+    rememberSelection(action);
 
     // Document editors open as full-page workspaces with real browser history (Back works).
-    if (opensCreateAsFullPage(action) && action.route) {
+    const target = createNavTarget(action);
+    if (target.kind === "route") {
       flyoverDirty.current = false;
       setFlyoverId(null);
       setPanel(null);
       setPanelError(null);
-      if (action.id === "customer") {
-        void navigate({ to: "/contacts/new", search: { kind: "customer" } });
-        return;
-      }
-      if (action.id === "supplier") {
-        void navigate({ to: "/contacts/new", search: { kind: "supplier" } });
-        return;
-      }
-      if (action.id === "manual_journal") {
-        void navigate({ to: "/accounting/journals/new", search: { mode: "post" } });
-        return;
-      }
-      if (action.id === "recurring_journal") {
-        void navigate({ to: "/accounting/journals/new", search: { mode: "template" } });
-        return;
-      }
-      if (action.id === "recurring_bill") {
-        void navigate({ to: "/purchases/recurring/new" });
-        return;
-      }
-      if (action.id === "recurring_invoice") {
-        void navigate({ to: "/sales/recurring/new" });
-        return;
-      }
-      if (action.id === "receive_money") {
-        void navigate({ to: "/banking/receive-money" });
-        return;
-      }
-      if (action.id === "expense") {
-        void navigate({ to: "/banking/spend-money" });
-        return;
-      }
-      if (action.id === "bank_transfer") {
-        void navigate({ to: "/banking/transfers/new" });
-        return;
-      }
-      if (action.id === "product") {
-        void navigate({ to: "/products-services", search: { create: true } });
-        return;
-      }
-      if (action.id === "reimbursement") {
-        void navigate({
-          to: "/expense-management/$section",
-          params: { section: "my-expenses" },
-          search: { create: true },
-        });
-        return;
-      }
-      const moneyKinds = [
-        "sales_receipt",
-        "customer_refund",
-        "supplier_refund",
-        "bank_deposit",
-        "card_payment",
-        "bank_adjustment",
-      ] as const;
-      const moneyKind = moneyKinds.find((id) => id === action.id);
-      if (moneyKind) {
-        void navigate({
-          to: "/banking/money-documents/new",
-          search: { kind: moneyKind },
-        });
-        return;
-      }
-      void navigate({ to: action.route as never });
+      void navigate({
+        to: target.to as never,
+        ...(target.params ? { params: target.params as never } : {}),
+        ...(target.search ? { search: target.search as never } : {}),
+      });
       return;
     }
 
@@ -340,6 +284,7 @@ export function CreateNewMenu() {
                     permissions={company?.permissions}
                     prefs={prefs}
                     onOpen={openAction}
+                    onFollow={rememberSelection}
                     onToggle={(id) => persist(toggleFavourite(prefs, id))}
                   />
                   <ActionCard
@@ -350,6 +295,7 @@ export function CreateNewMenu() {
                     permissions={company?.permissions}
                     prefs={prefs}
                     onOpen={openAction}
+                    onFollow={rememberSelection}
                     onToggle={(id) => persist(toggleFavourite(prefs, id))}
                   />
                 </div>
@@ -367,6 +313,7 @@ export function CreateNewMenu() {
                     activeId={results[activeIndex]?.id}
                     menuId={menuId}
                     onOpen={openAction}
+                    onFollow={rememberSelection}
                     onToggle={(id) => persist(toggleFavourite(prefs, id))}
                   />
                 ))}
@@ -433,6 +380,7 @@ function ActionCard({
   activeId,
   menuId,
   onOpen,
+  onFollow,
   onToggle,
 }: {
   title: string;
@@ -444,6 +392,7 @@ function ActionCard({
   activeId?: string | undefined;
   menuId?: string;
   onOpen: (action: CreateAction) => void;
+  onFollow: (action: CreateAction) => void;
   onToggle: (id: string) => void;
 }) {
   if (actions.length === 0) return null;
@@ -456,6 +405,15 @@ function ActionCard({
       <ul>
         {actions.map((action) => {
           const runnable = actionIsRunnable(action, role, permissions);
+          const target = createNavTarget(action);
+          const actionClass =
+            "flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted";
+          const actionLabel = (
+            <>
+              <span className="truncate">{action.label}</span>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            </>
+          );
           const allowed = (permissions ?? permissionsForRole(role)).includes(action.permission);
           const reason = allowed
             ? (action.blocker ?? "This action is unavailable.")
@@ -466,17 +424,42 @@ function ActionCard({
                 id={menuId ? `${menuId}-${action.id}` : undefined}
                 className={cn("flex items-center rounded-lg", activeId === action.id && "bg-muted")}
               >
-                <button
-                  type="button"
-                  disabled={!runnable}
-                  title={runnable ? action.label : reason}
-                  className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:text-muted-foreground"
-                  onClick={() => onOpen(action)}
-                >
-                  <span className="truncate">{action.label}</span>
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-                  {!runnable ? <span className="sr-only">{reason}</span> : null}
-                </button>
+                {runnable && target.kind === "route" ? (
+                  <Link
+                    to={target.to as never}
+                    {...(target.params ? { params: target.params as never } : {})}
+                    search={(target.search ?? {}) as never}
+                    className={actionClass}
+                    onClick={(event) => {
+                      if (
+                        !event.defaultPrevented &&
+                        event.button === 0 &&
+                        !event.ctrlKey &&
+                        !event.metaKey &&
+                        !event.altKey &&
+                        !event.shiftKey
+                      ) {
+                        onFollow(action);
+                      }
+                    }}
+                  >
+                    {actionLabel}
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={!runnable}
+                    title={runnable ? action.label : reason}
+                    className={cn(
+                      actionClass,
+                      "disabled:cursor-not-allowed disabled:text-muted-foreground",
+                    )}
+                    onClick={() => onOpen(action)}
+                  >
+                    {actionLabel}
+                    {!runnable ? <span className="sr-only">{reason}</span> : null}
+                  </button>
+                )}
                 <button
                   type="button"
                   aria-label={

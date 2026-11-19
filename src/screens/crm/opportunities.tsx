@@ -286,7 +286,6 @@ export function CrmOpportunitiesPage() {
       }
       subnav={<CrmSubnav current="opportunities" />}
     >
-
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
         <ErrorState
@@ -482,6 +481,13 @@ export function CrmOpportunitiesPage() {
               title={searchTerm ? "No matching loaded opportunities" : "No open opportunities"}
               description={
                 searchTerm ? "Try another search term." : "Create a deal or convert a lead."
+              }
+              action={
+                !searchTerm && canManage && settings.data?.enabled ? (
+                  <Button type="button" size="sm" onClick={() => setShowForm(true)}>
+                    New opportunity
+                  </Button>
+                ) : undefined
               }
             />
           ) : null}

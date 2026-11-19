@@ -229,7 +229,6 @@ export function CrmLeadsPage() {
       }
       subnav={<CrmSubnav current="leads" />}
     >
-
       {settings.isLoading ? <LoadingState /> : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState
@@ -472,6 +471,20 @@ export function CrmLeadsPage() {
                 appliedSearch
                   ? "Try a different search or status filter."
                   : "Create a lead to start the CRM lifecycle."
+              }
+              action={
+                !appliedSearch && canManage && settings.data?.enabled ? (
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      setShowForm(true);
+                      setAckDuplicates(false);
+                    }}
+                  >
+                    New lead
+                  </Button>
+                ) : undefined
               }
             />
           ) : null}

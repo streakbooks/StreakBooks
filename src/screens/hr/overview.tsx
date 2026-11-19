@@ -104,7 +104,6 @@ export function HrOverviewPage() {
         ) : undefined
       }
     >
-
       {settings.isError ? (
         <ErrorState
           title="Could not load HR settings"

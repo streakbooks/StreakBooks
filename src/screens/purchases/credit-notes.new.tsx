@@ -328,8 +328,8 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
             />
             {chosenBill ? (
               <p className="text-xs text-muted-foreground">
-                On authorise, {fromMinorUnits(allocateMinor, currency)} {currency} is applied to this
-                bill (it still owes{" "}
+                On authorise, {fromMinorUnits(allocateMinor, currency)} {currency} is applied to
+                this bill (it still owes{" "}
                 {fromMinorUnits(
                   billOutstandingMinor({
                     total_minor: chosenBill.total_minor,

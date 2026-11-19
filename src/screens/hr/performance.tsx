@@ -139,8 +139,8 @@ export function HrPerformancePage() {
       <ListWorkspace
         title="Performance"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Performance" }]}
-      subnav={<HrSubnav current="performance" />}
-    >
+        subnav={<HrSubnav current="performance" />}
+      >
         <EmptyState title="No access" description="You need hr.view." />
       </ListWorkspace>
     );
@@ -199,7 +199,27 @@ export function HrPerformancePage() {
             onRetry={() => void cyclesQ.refetch()}
           />
         ) : cycles.length === 0 ? (
-          <EmptyState title="No cycles" description="Create an open review cycle first." />
+          <EmptyState
+            title="No cycles"
+            description="Create an open review cycle first."
+            action={
+              canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setCode("");
+                    setName("");
+                    setStartsOn("");
+                    setEndsOn("");
+                    setCycleOpen(true);
+                  }}
+                >
+                  New cycle
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <TableCard>
             <Table>
@@ -236,7 +256,41 @@ export function HrPerformancePage() {
         {goalsQ.isPending ? (
           <LoadingState />
         ) : goals.length === 0 ? (
-          <EmptyState title="No goals" description="Add goals against an open cycle." />
+          <EmptyState
+            title="No goals"
+            description="Add goals against an open cycle."
+            action={
+              canManage && cycles.length > 0 ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setCycleId(cycles[0]?.id ?? "");
+                    setEmployeeId("");
+                    setTitle("");
+                    setGoalOpen(true);
+                  }}
+                >
+                  Add goal
+                </Button>
+              ) : canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setCode("");
+                    setName("");
+                    setStartsOn("");
+                    setEndsOn("");
+                    setCycleOpen(true);
+                  }}
+                >
+                  New cycle first
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <TableCard>
             <Table>

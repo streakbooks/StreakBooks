@@ -26,7 +26,9 @@ for (const viewport of [
     await page.getByLabel("Cash tendered (USD)").fill("250.00");
     await expect(page.getByText("Change due: 30.00")).toBeVisible();
     await page.getByRole("button", { name: "Complete cash sale" }).click();
-    await expect(page.getByRole("region", { name: "Last receipt" })).toContainText("Change due: 30.00");
+    await expect(page.getByRole("region", { name: "Last receipt" })).toContainText(
+      "Change due: 30.00",
+    );
     await expect(page.getByRole("heading", { name: "Your cart is empty" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Recent sales" })).toBeVisible();
     await page.getByRole("button", { name: /Refund sale/ }).click();
@@ -59,4 +61,18 @@ test("quote failure shows retry without a total", async ({ page }) => {
   await expect(page.getByText("Total preview", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByText("110.00", { exact: true })).toBeVisible();
+});
+
+test("cashier can choose a register when two sessions are open", async ({ page }) => {
+  await page.goto("/?multipleSessions=true");
+  await page.getByRole("button", { name: "Add Consultation" }).click();
+  await expect(page.getByRole("button", { name: "Complete cash sale" })).toHaveCount(0);
+
+  const session = page.getByRole("combobox", { name: "Open session" });
+  await session.click();
+  await page.getByRole("searchbox").fill("Back Counter");
+  await page.getByRole("option", { name: /Back Counter/ }).click();
+
+  await expect(session).toContainText("Back Counter");
+  await expect(page.getByRole("button", { name: "Complete cash sale" })).toBeVisible();
 });

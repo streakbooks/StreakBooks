@@ -127,7 +127,6 @@ export function HrOrganizationPage() {
       }
       subnav={<HrSubnav current="organization" />}
     >
-
       <div className="mb-4">
         <Select value={kind} onValueChange={(value) => setKind(value as OrgKind)}>
           <SelectTrigger className="w-[220px]" aria-label="Organisation unit type">

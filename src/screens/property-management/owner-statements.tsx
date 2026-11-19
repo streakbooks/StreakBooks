@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -10,17 +11,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { getPmSettings, listPmOwners, listPmProperties } from "@/lib/property-management/pm.functions";
+import {
+  getPmSettings,
+  listPmOwners,
+  listPmProperties,
+} from "@/lib/property-management/pm.functions";
 import {
   approvePmOwnerStatement,
   generatePmOwnerStatement,
@@ -95,8 +94,7 @@ export function PmOwnerStatementsPage() {
   });
   const detail = useQuery({
     queryKey: ["pm-owner-statement", company?.id, selectedId],
-    queryFn: () =>
-      fetchStatement({ data: { companyId: company!.id, statementId: selectedId } }),
+    queryFn: () => fetchStatement({ data: { companyId: company!.id, statementId: selectedId } }),
     enabled: Boolean(company?.id) && Boolean(selectedId),
     retry: false,
   });
@@ -161,9 +159,11 @@ export function PmOwnerStatementsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Owner Statements" description="Owner settlement statements."
-      subnav={<PmSubnav current="owner-statements" />}
-    >
+      <ListWorkspace
+        title="Owner Statements"
+        description="Owner settlement statements."
+        subnav={<PmSubnav current="owner-statements" />}
+      >
         <EmptyState
           title="No access"
           description="Ask an administrator for property.statements.view."
@@ -216,7 +216,7 @@ export function PmOwnerStatementsPage() {
                 <CardContent className="grid gap-4">
                   <div className="grid gap-2">
                     <Label>Owner</Label>
-                    <Select value={ownerId || undefined} onValueChange={setOwnerId}>
+                    <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select owner" />
                       </SelectTrigger>
@@ -227,11 +227,11 @@ export function PmOwnerStatementsPage() {
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                   </div>
                   <div className="grid gap-2">
                     <Label>Property scope</Label>
-                    <Select value={propertyId} onValueChange={setPropertyId}>
+                    <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -243,7 +243,7 @@ export function PmOwnerStatementsPage() {
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="pm-stmt-month">Period</Label>
@@ -277,6 +277,13 @@ export function PmOwnerStatementsPage() {
               <EmptyState
                 title="No statements yet"
                 description="Generate a statement for an owner and period."
+                action={
+                  canGenerate ? (
+                    <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                      Generate statement
+                    </Button>
+                  ) : undefined
+                }
               />
             ) : null}
             {statements.data && statements.data.length > 0 ? (
@@ -329,6 +336,13 @@ export function PmOwnerStatementsPage() {
               <EmptyState
                 title="Select a statement"
                 description="Choose a statement on the left to inspect lines, totals and approvals."
+                action={
+                  canGenerate ? (
+                    <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                      Generate statement
+                    </Button>
+                  ) : undefined
+                }
               />
             ) : detail.isLoading ? (
               <LoadingState />
@@ -410,9 +424,7 @@ export function PmOwnerStatementsPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        disabled={
-                          statement.status !== "approved" || publishMutation.isPending
-                        }
+                        disabled={statement.status !== "approved" || publishMutation.isPending}
                         onClick={() => publishMutation.mutate()}
                       >
                         {publishMutation.isPending ? "Publishing…" : "Publish"}

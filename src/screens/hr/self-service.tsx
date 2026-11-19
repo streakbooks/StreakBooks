@@ -175,8 +175,8 @@ export function HrSelfServicePage() {
       <ListWorkspace
         title="Employee Self-Service"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Self-Service" }]}
-      subnav={<HrSubnav current="self-service" />}
-    >
+        subnav={<HrSubnav current="self-service" />}
+      >
         <EmptyState title="No access" description="You need hr.self_service permission." />
       </ListWorkspace>
     );
@@ -188,8 +188,8 @@ export function HrSelfServicePage() {
       <ListWorkspace
         title="Employee Self-Service"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Self-Service" }]}
-      subnav={<HrSubnav current="self-service" />}
-    >
+        subnav={<HrSubnav current="self-service" />}
+      >
         <ErrorState
           title="Could not load self-service"
           description={friendlyAuthError(contextQ.error)}
@@ -243,7 +243,6 @@ export function HrSelfServicePage() {
       }
       subnav={<HrSubnav current="self-service" />}
     >
-
       {!ctx.linked ? (
         <EmptyState
           title="Account not linked"
@@ -328,6 +327,21 @@ export function HrSelfServicePage() {
               <EmptyState
                 title="No leave requests"
                 description="Submit a leave request when needed."
+                action={
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      setLeaveTypeId(types[0]?.id ?? "");
+                      setStartDate("");
+                      setEndDate("");
+                      setReason("");
+                      setLeaveOpen(true);
+                    }}
+                  >
+                    Request leave
+                  </Button>
+                }
               />
             ) : (
               <TableCard>
@@ -368,7 +382,20 @@ export function HrSelfServicePage() {
             {attendanceQ.isPending ? (
               <LoadingState />
             ) : (attendanceQ.data?.items.length ?? 0) === 0 ? (
-              <EmptyState title="No attendance yet" description="Use Check in / Check out above." />
+              <EmptyState
+                title="No attendance yet"
+                description="Use Check in / Check out above."
+                action={
+                  <Button
+                    size="sm"
+                    type="button"
+                    disabled={clockM.isPending}
+                    onClick={() => clockM.mutate("check_in")}
+                  >
+                    Check in
+                  </Button>
+                }
+              />
             ) : (
               <TableCard>
                 <Table>

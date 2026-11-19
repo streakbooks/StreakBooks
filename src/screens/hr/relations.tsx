@@ -100,8 +100,8 @@ export function HrRelationsPage() {
       <ListWorkspace
         title="Employee Relations"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Relations" }]}
-      subnav={<HrSubnav current="relations" />}
-    >
+        subnav={<HrSubnav current="relations" />}
+      >
         <EmptyState title="No access" description="You need hr.view to open employee relations." />
       </ListWorkspace>
     );
@@ -147,6 +147,25 @@ export function HrRelationsPage() {
         <EmptyState
           title="No cases"
           description="Open a grievance or disciplinary case when needed."
+          action={
+            canManage ? (
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => {
+                  setEmployeeId("");
+                  setCaseType("grievance");
+                  setTitle("");
+                  setSeverity("medium");
+                  setStatus("open");
+                  setSummary("");
+                  setOpen(true);
+                }}
+              >
+                Open case
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <TableCard>

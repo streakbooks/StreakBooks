@@ -1,8 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  ManualJournalPanel,
-  RecurringJournalPanel,
-} from "@/components/create-new/JournalPanels";
+import { ManualJournalPanel, RecurringJournalPanel } from "@/components/create-new/JournalPanels";
 
 export const Route = createFileRoute("/_authenticated/accounting/journals/new")({
   validateSearch: (search: Record<string, unknown>): { mode?: "post" | "template" } => ({

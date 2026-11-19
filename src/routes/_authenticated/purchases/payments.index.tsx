@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
+import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { listPayments } from "@/lib/purchases/purchases.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -39,6 +40,7 @@ export const Route = createFileRoute("/_authenticated/purchases/payments/")({
 function PaymentsList() {
   const { company } = useActiveCompany();
   const fmt = useFormat();
+  const canPay = useCanDo("purchases.payment");
   const fetchPayments = useServerFn(listPayments);
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
@@ -56,19 +58,25 @@ function PaymentsList() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
+  const newPayment = canPay ? (
+    <Button size="sm" asChild>
+      <Link to="/purchases/payments/new">New payment</Link>
+    </Button>
+  ) : undefined;
+
   return (
     <ListWorkspace
       title="Supplier payments"
       description="Full or partial payments allocated to authorised bills. Overpayments remain unallocated on the payment."
       actions={
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/purchases/payments/batch">Batch payment</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link to="/purchases/payments/new">New payment</Link>
-          </Button>
-        </div>
+        canPay ? (
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/purchases/payments/batch">Batch payment</Link>
+            </Button>
+            {newPayment}
+          </div>
+        ) : undefined
       }
     >
       {query.isPending ? (
@@ -80,7 +88,13 @@ function PaymentsList() {
           description={friendlyAuthError(query.error)}
         />
       ) : (query.data ?? []).length === 0 ? (
-        <EmptyState title="No payments" description="Record a payment against open bills." />
+        <EmptyState
+          title="No payments"
+          description={
+            canPay ? "Record a payment against open bills." : "Supplier payments will appear here."
+          }
+          action={newPayment}
+        />
       ) : (
         <>
           <ListToolbar

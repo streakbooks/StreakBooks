@@ -1,7 +1,7 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, getRouteApi, useNavigate } from "@tanstack/react-router";
+import { Link, useSearch, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Package, Plus, Archive, Copy, Download, Columns3 } from "lucide-react";
@@ -36,6 +36,7 @@ import {
 } from "@/components/documents/DocumentRecordPanel";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -77,10 +78,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const productsRoute = getRouteApi("/_authenticated/products-services");
-
-export function ProductsPage({ forceCreate = false }: { forceCreate?: boolean } = {}) {
-  const section = productsRoute.useSearch().section ?? "catalogue";
+export function ProductsPage({
+  forceCreate = false,
+  onCreateClosed,
+}: {
+  forceCreate?: boolean;
+  /** Cleared after create workspace closes (Cancel / successful Save). Keeps URL sticky while open. */
+  onCreateClosed?: () => void;
+} = {}) {
+  const section = parseCatalogueSearch(useSearch({ strict: false })).section ?? "catalogue";
   const { company, isPending } = useActiveCompany();
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -123,6 +129,7 @@ export function ProductsPage({ forceCreate = false }: { forceCreate?: boolean } 
           companyId={company.id}
           currency={company.base_currency}
           forceCreate={forceCreate}
+          {...(onCreateClosed ? { onCreateClosed } : {})}
         />
       </TabsContent>
       <TabsContent value="categories">
@@ -139,10 +146,12 @@ function ProductsWorkspace({
   companyId,
   currency,
   forceCreate = false,
+  onCreateClosed,
 }: {
   companyId: string;
   currency: string;
   forceCreate?: boolean;
+  onCreateClosed?: () => void;
 }) {
   const queryClient = useQueryClient();
   const fmt = useFormat();
@@ -157,7 +166,7 @@ function ProductsWorkspace({
   const fetchCategories = useServerFn(listProductCategories);
   const canManage = useCanDo("products.manage");
   const canTax = useCanDo("tax.settings");
-  const search = productsRoute.useSearch();
+  const search = parseCatalogueSearch(useSearch({ strict: false }));
   const navigate = useNavigate();
   const page = search.page ?? 1;
   const pageSize = search.pageSize ?? 50;
@@ -395,7 +404,7 @@ function ProductsWorkspace({
         );
       }
       toast.success(editing ? "Product updated" : "Product created");
-      setOpen(false);
+      closeWorkspace();
       setEditing(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["products", companyId] }),
@@ -507,10 +516,20 @@ function ProductsWorkspace({
     setOpen(true);
   }
 
+  function closeWorkspace() {
+    setOpen(false);
+    if (!editing) onCreateClosed?.();
+  }
+
   useEffect(() => {
-    if (!forceCreate || !canManage || forceCreateOpened.current) return;
+    if (!forceCreate) {
+      forceCreateOpened.current = false;
+      return;
+    }
+    if (!canManage || forceCreateOpened.current) return;
     forceCreateOpened.current = true;
     openCreate();
+    // Keep create URL sticky until Cancel / successful Save (onCreateClosed).
   }, [forceCreate, canManage]);
 
   function openEdit(p: ProductRow) {
@@ -549,6 +568,219 @@ function ProductsWorkspace({
     return (
       <QueryErrorState queries={requiredQueries} title="Could not load item accounting options" />
     );
+
+  const productFormFields = (
+    <div className="grid max-w-3xl gap-3 py-2">
+      <div className="grid gap-1">
+        <Label>Kind</Label>
+        <Select value={form.kind} onValueChange={(v) => setForm((f) => ({ ...f, kind: v }))}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="service">Service</SelectItem>
+            <SelectItem value="product">Product (non-stock)</SelectItem>
+            <SelectItem value="non_inventory">Non-inventory</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid gap-1">
+        <Label>Category</Label>
+        <RecordLookupSelect
+          value={form.categoryId || "none"}
+          onValueChange={(categoryId) =>
+            setForm((current) => ({
+              ...current,
+              categoryId: categoryId === "none" ? "" : categoryId,
+            }))
+          }
+        >
+          <SelectTrigger aria-label="Product category">
+            <SelectValue placeholder="No category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No category</SelectItem>
+            {(categoriesQ.data ?? [])
+              .filter((category) => category.is_active || category.id === form.categoryId)
+              .map((category) => (
+                <SelectItem value={category.id} key={category.id}>
+                  {category.name}
+                  {category.is_active ? "" : " (archived)"}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </RecordLookupSelect>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-1">
+          <Label>Code / SKU</Label>
+          <Input
+            value={form.code}
+            maxLength={40}
+            aria-invalid={Boolean(codeProblem)}
+            onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
+          />
+          {codeProblem ? <p className="text-xs text-destructive">{codeProblem}</p> : null}
+        </div>
+        <div className="grid gap-1">
+          <Label>Unit</Label>
+          <Input
+            value={form.unit}
+            onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
+          />
+        </div>
+      </div>
+      <div className="grid gap-1">
+        <Label>
+          Name
+          <span aria-hidden className="ml-0.5 text-destructive">
+            *
+          </span>
+          <span className="sr-only"> (required)</span>
+        </Label>
+        <Input
+          value={form.name}
+          maxLength={200}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+        />
+      </div>
+      <div className="grid gap-1">
+        <Label>Description</Label>
+        <Textarea
+          rows={3}
+          maxLength={2000}
+          value={form.description}
+          onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-1">
+          <Label>Sales price ({currency})</Label>
+          <Input
+            inputMode="decimal"
+            aria-invalid={salesPriceInvalid}
+            value={form.salesPrice}
+            onChange={(e) => setForm((f) => ({ ...f, salesPrice: e.target.value }))}
+          />
+        </div>
+        <div className="grid gap-1">
+          <Label>Purchase cost ({currency})</Label>
+          <Input
+            inputMode="decimal"
+            aria-invalid={purchaseCostInvalid}
+            value={form.purchaseCost}
+            onChange={(e) => setForm((f) => ({ ...f, purchaseCost: e.target.value }))}
+          />
+        </div>
+      </div>
+      <div className="grid gap-1">
+        <Label>Income account</Label>
+        <AccountLookup
+          ariaLabel="Income account"
+          accounts={incomeAccounts}
+          value={form.incomeAccountId}
+          onChange={(v) => setForm((f) => ({ ...f, incomeAccountId: v }))}
+          companyId={companyId}
+          purpose="income"
+          productKind={form.kind}
+          placeholder="None"
+          allowClear
+        />
+      </div>
+      <div className="grid gap-1">
+        <Label>Purchase / expense account</Label>
+        <AccountLookup
+          ariaLabel="Purchase / expense account"
+          accounts={expenseAccounts}
+          value={form.expenseAccountId}
+          onChange={(v) => setForm((f) => ({ ...f, expenseAccountId: v }))}
+          companyId={companyId}
+          purpose="expense"
+          productKind={form.kind}
+          placeholder="None"
+          allowClear
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-1">
+          <Label>Sales tax</Label>
+          <TaxSelect
+            companyId={companyId}
+            canCreate={canTax}
+            value={form.salesTaxBps}
+            choices={taxChoices}
+            onChange={(v) => setForm((f) => ({ ...f, salesTaxBps: v }))}
+          />
+        </div>
+        <div className="grid gap-1">
+          <Label>Purchase tax</Label>
+          <TaxSelect
+            companyId={companyId}
+            canCreate={canTax}
+            value={form.purchaseTaxBps}
+            choices={taxChoices}
+            onChange={(v) => setForm((f) => ({ ...f, purchaseTaxBps: v }))}
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-3 rounded-md border p-3">
+        <Checkbox
+          id="product-active"
+          checked={form.isActive}
+          onCheckedChange={(checked) =>
+            setForm((current) => ({ ...current, isActive: checked === true }))
+          }
+        />
+        <Label htmlFor="product-active">Active — available for new sales and purchases</Label>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        New items default to no tax; choose the correct sales and purchase rates. This catalogue
+        does not value inventory or post COGS.
+      </p>
+      <DocumentRecordPanel
+        key={`${open ? "open" : "closed"}-${editing?.id ?? "new"}`}
+        ref={productRecordRef}
+        entityType="product"
+        entityId={editing?.id ?? null}
+        audience="internal"
+      />
+    </div>
+  );
+
+  const productSaveDisabled =
+    saveMut.isPending ||
+    salesPriceInvalid ||
+    purchaseCostInvalid ||
+    Boolean(codeProblem) ||
+    !form.name.trim() ||
+    !canManage;
+
+  if (open && !editing) {
+    return (
+      <RecordWorkspace
+        title="New product / service"
+        description="Catalogue defaults for sales and purchase lines. Stock valuation is not enabled."
+        breadcrumbs={[{ label: "Products & Services", to: "/products-services" }, { label: "New" }]}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={saveMut.isPending}
+              onClick={closeWorkspace}
+            >
+              Cancel
+            </Button>
+            <Button size="sm" onClick={() => saveMut.mutate()} disabled={productSaveDisabled}>
+              {saveMut.isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        }
+      >
+        {productFormFields}
+      </RecordWorkspace>
+    );
+  }
 
   return (
     <ListWorkspace
@@ -803,18 +1035,16 @@ function ProductsWorkspace({
           onRetry={() => productsQ.refetch()}
         />
       ) : rows.length === 0 ? (
-        <div className="space-y-3">
-          <EmptyState
-            icon={Package}
-            title={hasFilters ? "No matching items" : "No products yet"}
-            description={
-              hasFilters
-                ? "Try another search, kind or status filter."
-                : "Create services and non-inventory items with default accounts and tax rates."
-            }
-          />
-          <div className="flex justify-center">
-            {hasFilters ? (
+        <EmptyState
+          icon={Package}
+          title={hasFilters ? "No matching items" : "No products yet"}
+          description={
+            hasFilters
+              ? "Try another search, kind or status filter."
+              : "Create services and non-inventory items with default accounts and tax rates."
+          }
+          action={
+            hasFilters ? (
               <Button size="sm" variant="outline" onClick={resetFilters}>
                 Reset filters
               </Button>
@@ -822,9 +1052,9 @@ function ProductsWorkspace({
               <Button size="sm" onClick={openCreate} disabled={!canManage}>
                 <Plus className="size-4" /> New item
               </Button>
-            )}
-          </div>
-        </div>
+            )
+          }
+        />
       ) : (
         <Card>
           <CardContent className="pt-6">
@@ -1166,205 +1396,21 @@ function ProductsWorkspace({
       </Dialog>
 
       <Dialog
-        open={open}
+        open={open && Boolean(editing)}
         onOpenChange={(next) => {
           if (!saveMut.isPending) setOpen(next);
         }}
       >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit item" : "New product / service"}</DialogTitle>
+            <DialogTitle>Edit item</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3 py-2">
-            <div className="grid gap-1">
-              <Label>Kind</Label>
-              <Select value={form.kind} onValueChange={(v) => setForm((f) => ({ ...f, kind: v }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="service">Service</SelectItem>
-                  <SelectItem value="product">Product (non-stock)</SelectItem>
-                  <SelectItem value="non_inventory">Non-inventory</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1">
-              <Label>Category</Label>
-              <RecordLookupSelect
-                value={form.categoryId || "none"}
-                onValueChange={(categoryId) =>
-                  setForm((current) => ({
-                    ...current,
-                    categoryId: categoryId === "none" ? "" : categoryId,
-                  }))
-                }
-              >
-                <SelectTrigger aria-label="Product category">
-                  <SelectValue placeholder="No category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No category</SelectItem>
-                  {(categoriesQ.data ?? [])
-                    .filter((category) => category.is_active || category.id === form.categoryId)
-                    .map((category) => (
-                      <SelectItem value={category.id} key={category.id}>
-                        {category.name}
-                        {category.is_active ? "" : " (archived)"}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </RecordLookupSelect>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1">
-                <Label>Code / SKU</Label>
-                <Input
-                  value={form.code}
-                  maxLength={40}
-                  aria-invalid={Boolean(codeProblem)}
-                  onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-                />
-                {codeProblem ? <p className="text-xs text-destructive">{codeProblem}</p> : null}
-              </div>
-              <div className="grid gap-1">
-                <Label>Unit</Label>
-                <Input
-                  value={form.unit}
-                  onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="grid gap-1">
-              <Label>
-                Name
-                <span aria-hidden className="ml-0.5 text-destructive">
-                  *
-                </span>
-                <span className="sr-only"> (required)</span>
-              </Label>
-              <Input
-                value={form.name}
-                maxLength={200}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              />
-            </div>
-            <div className="grid gap-1">
-              <Label>Description</Label>
-              <Textarea
-                rows={3}
-                maxLength={2000}
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1">
-                <Label>Sales price ({currency})</Label>
-                <Input
-                  inputMode="decimal"
-                  aria-invalid={salesPriceInvalid}
-                  value={form.salesPrice}
-                  onChange={(e) => setForm((f) => ({ ...f, salesPrice: e.target.value }))}
-                />
-              </div>
-              <div className="grid gap-1">
-                <Label>Purchase cost ({currency})</Label>
-                <Input
-                  inputMode="decimal"
-                  aria-invalid={purchaseCostInvalid}
-                  value={form.purchaseCost}
-                  onChange={(e) => setForm((f) => ({ ...f, purchaseCost: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="grid gap-1">
-              <Label>Income account</Label>
-              <AccountLookup
-                ariaLabel="Income account"
-                accounts={incomeAccounts}
-                value={form.incomeAccountId}
-                onChange={(v) => setForm((f) => ({ ...f, incomeAccountId: v }))}
-                companyId={companyId}
-                purpose="income"
-                productKind={form.kind}
-                placeholder="None"
-                allowClear
-              />
-            </div>
-            <div className="grid gap-1">
-              <Label>Purchase / expense account</Label>
-              <AccountLookup
-                ariaLabel="Purchase / expense account"
-                accounts={expenseAccounts}
-                value={form.expenseAccountId}
-                onChange={(v) => setForm((f) => ({ ...f, expenseAccountId: v }))}
-                companyId={companyId}
-                purpose="expense"
-                productKind={form.kind}
-                placeholder="None"
-                allowClear
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1">
-                <Label>Sales tax</Label>
-                <TaxSelect
-                  companyId={companyId}
-                  canCreate={canTax}
-                  value={form.salesTaxBps}
-                  choices={taxChoices}
-                  onChange={(v) => setForm((f) => ({ ...f, salesTaxBps: v }))}
-                />
-              </div>
-              <div className="grid gap-1">
-                <Label>Purchase tax</Label>
-                <TaxSelect
-                  companyId={companyId}
-                  canCreate={canTax}
-                  value={form.purchaseTaxBps}
-                  choices={taxChoices}
-                  onChange={(v) => setForm((f) => ({ ...f, purchaseTaxBps: v }))}
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-md border p-3">
-              <Checkbox
-                id="product-active"
-                checked={form.isActive}
-                onCheckedChange={(checked) =>
-                  setForm((current) => ({ ...current, isActive: checked === true }))
-                }
-              />
-              <Label htmlFor="product-active">Active — available for new sales and purchases</Label>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              New items default to no tax; choose the correct sales and purchase rates. This
-              catalogue does not value inventory or post COGS.
-            </p>
-            <DocumentRecordPanel
-              key={`${open ? "open" : "closed"}-${editing?.id ?? "new"}`}
-              ref={productRecordRef}
-              entityType="product"
-              entityId={editing?.id ?? null}
-              audience="internal"
-            />
-          </div>
+          {productFormFields}
           <DialogFooter>
             <Button variant="outline" disabled={saveMut.isPending} onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={() => saveMut.mutate()}
-              disabled={
-                saveMut.isPending ||
-                salesPriceInvalid ||
-                purchaseCostInvalid ||
-                Boolean(codeProblem) ||
-                !form.name.trim() ||
-                !canManage
-              }
-            >
+            <Button onClick={() => saveMut.mutate()} disabled={productSaveDisabled}>
               {saveMut.isPending ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>

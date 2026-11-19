@@ -41,9 +41,11 @@ export function PmTrustAccountingPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Trust Accounting" description="Client-money readiness summary."
-      subnav={<PmSubnav current="trust-accounting" />}
-    >
+      <ListWorkspace
+        title="Trust Accounting"
+        description="Client-money readiness summary."
+        subnav={<PmSubnav current="trust-accounting" />}
+      >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
@@ -86,7 +88,8 @@ export function PmTrustAccountingPage() {
                 <CardHeader>
                   <CardTitle>COA readiness</CardTitle>
                   <CardDescription>
-                    Posting requires rent, receivable, payable, commission and operating bank mappings.
+                    Posting requires rent, receivable, payable, commission and operating bank
+                    mappings.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
@@ -105,8 +108,7 @@ export function PmTrustAccountingPage() {
                 <CardContent className="space-y-2 text-sm">
                   <p>Open draft payouts: {summary.openDistributionDraftCount}</p>
                   <p>
-                    Posted payout total:{" "}
-                    {(summary.postedDistributionTotalMinor / 100).toFixed(2)}
+                    Posted payout total: {(summary.postedDistributionTotalMinor / 100).toFixed(2)}
                   </p>
                   <p>Active portal grants: {summary.activePortalCount}</p>
                   <p>Active reserves total: {(summary.reserveTotalMinor / 100).toFixed(2)}</p>

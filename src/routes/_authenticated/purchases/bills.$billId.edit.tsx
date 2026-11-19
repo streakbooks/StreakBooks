@@ -1,6 +1,4 @@
-import { useEffect } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { LoadingState } from "@/components/common/states";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 type EditSearch = { files?: boolean };
 
@@ -14,23 +12,12 @@ export const Route = createFileRoute("/_authenticated/purchases/bills/$billId/ed
     if (s["files"] === true || s["files"] === "1" || s["files"] === "true") out.files = true;
     return out;
   },
-  head: () => ({ meta: [{ title: "Edit bill — LinkBooks" }] }),
-  component: EditBillRedirect,
-});
-
-function EditBillRedirect() {
-  const { billId } = Route.useParams();
-  const search = Route.useSearch();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    void navigate({
+  beforeLoad: ({ params, search }) => {
+    throw redirect({
       to: "/purchases/bills/$billId",
-      params: { billId },
-      search: search.files ? { files: true } : {},
+      params: { billId: params.billId },
+      search,
       replace: true,
     });
-  }, [billId, navigate, search.files]);
-
-  return <LoadingState />;
-}
+  },
+});

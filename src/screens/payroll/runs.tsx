@@ -18,17 +18,12 @@ import { PAYROLL_RUN_STATUSES, type PayrollRunStatus } from "@/lib/payroll/types
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -67,7 +62,13 @@ function statusVariant(
   return "secondary";
 }
 
-export function PayrollRunsPage() {
+export function PayrollRunsPage({
+  forceCreate = false,
+  onCreateClosed,
+}: {
+  forceCreate?: boolean;
+  onCreateClosed?: () => void;
+} = {}) {
   const { company, isPending } = useActiveCompany();
   const canView = useCanDo("payroll.view");
   const canPrepare = useCanDo("payroll.run.prepare");
@@ -144,6 +145,17 @@ export function PayrollRunsPage() {
     },
     onError: (err) => toast.error(friendlyAuthError(err)),
   });
+
+  function closeCreate() {
+    setCreateOpen(false);
+    if (forceCreate) onCreateClosed?.();
+  }
+
+  useEffect(() => {
+    if (!forceCreate || !canPrepare || createOpen) return;
+    setUserEditedDates(false);
+    setCreateOpen(true);
+  }, [forceCreate, canPrepare, createOpen]);
 
   useEffect(() => {
     if (!createOpen || !scheduleId || userEditedDates) return;
@@ -241,6 +253,117 @@ export function PayrollRunsPage() {
             run.period_end >= periodStart,
         )
       : null;
+
+  if (createOpen) {
+    return (
+      <RecordWorkspace
+        title="New payroll run"
+        description="Create a pay run for a schedule and period, then calculate and approve."
+        breadcrumbs={[
+          { label: "Payroll", to: "/payroll" },
+          { label: "Runs", to: "/payroll/runs" },
+          { label: "New" },
+        ]}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={closeCreate}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={
+                !scheduleId ||
+                !periodStart ||
+                !periodEnd ||
+                !paymentDate ||
+                invalidPeriod ||
+                createMut.isPending
+              }
+              onClick={() => createMut.mutate()}
+            >
+              {createMut.isPending ? "Creating…" : "Create run"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="grid max-w-xl gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="run-schedule">Pay schedule</Label>
+            <RecordLookupSelect
+              value={scheduleId}
+              onValueChange={(value) => {
+                setScheduleId(value);
+                setUserEditedDates(false);
+              }}
+            >
+              <SelectTrigger id="run-schedule">
+                <SelectValue placeholder="Select schedule" />
+              </SelectTrigger>
+              <SelectContent>
+                {schedules.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </RecordLookupSelect>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="period-start">Period start</Label>
+              <Input
+                id="period-start"
+                type="date"
+                value={periodStart}
+                onChange={(e) => {
+                  setUserEditedDates(true);
+                  setPeriodStart(e.target.value);
+                }}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="period-end">Period end</Label>
+              <Input
+                id="period-end"
+                type="date"
+                value={periodEnd}
+                onChange={(e) => {
+                  setUserEditedDates(true);
+                  setPeriodEnd(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="payment-date">Payment date</Label>
+            <Input
+              id="payment-date"
+              type="date"
+              value={paymentDate}
+              onChange={(e) => {
+                setUserEditedDates(true);
+                setPaymentDate(e.target.value);
+              }}
+            />
+          </div>
+          {invalidPeriod ? (
+            <p className="text-sm text-destructive" role="alert">
+              Period end must be on or after period start.
+            </p>
+          ) : null}
+          {overlappingRun ? (
+            <Alert>
+              <AlertTitle>Overlapping pay period</AlertTitle>
+              <AlertDescription>
+                This period overlaps {overlappingRun.run_number}. Verify the dates to avoid
+                duplicate payroll; supplementary runs may intentionally overlap.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
+      </RecordWorkspace>
+    );
+  }
 
   return (
     <ListWorkspace
@@ -473,107 +596,6 @@ export function PayrollRunsPage() {
           </TableCard>
         </>
       )}
-
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New payroll run</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="run-schedule">Pay schedule</Label>
-              <RecordLookupSelect
-                value={scheduleId}
-                onValueChange={(value) => {
-                  setScheduleId(value);
-                  setUserEditedDates(false);
-                }}
-              >
-                <SelectTrigger id="run-schedule">
-                  <SelectValue placeholder="Select schedule" />
-                </SelectTrigger>
-                <SelectContent>
-                  {schedules.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="period-start">Period start</Label>
-                <Input
-                  id="period-start"
-                  type="date"
-                  value={periodStart}
-                  onChange={(e) => {
-                    setUserEditedDates(true);
-                    setPeriodStart(e.target.value);
-                  }}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="period-end">Period end</Label>
-                <Input
-                  id="period-end"
-                  type="date"
-                  value={periodEnd}
-                  onChange={(e) => {
-                    setUserEditedDates(true);
-                    setPeriodEnd(e.target.value);
-                  }}
-                />
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="payment-date">Payment date</Label>
-              <Input
-                id="payment-date"
-                type="date"
-                value={paymentDate}
-                onChange={(e) => {
-                  setUserEditedDates(true);
-                  setPaymentDate(e.target.value);
-                }}
-              />
-            </div>
-            {invalidPeriod ? (
-              <p className="text-sm text-destructive" role="alert">
-                Period end must be on or after period start.
-              </p>
-            ) : null}
-            {overlappingRun ? (
-              <Alert>
-                <AlertTitle>Overlapping pay period</AlertTitle>
-                <AlertDescription>
-                  This period overlaps {overlappingRun.run_number}. Verify the dates to avoid
-                  duplicate payroll; supplementary runs may intentionally overlap.
-                </AlertDescription>
-              </Alert>
-            ) : null}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              disabled={
-                !scheduleId ||
-                !periodStart ||
-                !periodEnd ||
-                !paymentDate ||
-                invalidPeriod ||
-                createMut.isPending
-              }
-              onClick={() => createMut.mutate()}
-            >
-              Create run
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </ListWorkspace>
   );
 }

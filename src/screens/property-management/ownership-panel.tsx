@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -6,13 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   listPmOwnership,
@@ -113,7 +108,7 @@ export function PmOwnershipPanel({
           <div className="grid gap-4 rounded-xl border border-border/70 p-4 sm:grid-cols-2">
             <div className="grid gap-2 sm:col-span-2">
               <Label>Owner</Label>
-              <Select value={ownerId || undefined} onValueChange={setOwnerId}>
+              <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select owner" />
                 </SelectTrigger>
@@ -124,7 +119,7 @@ export function PmOwnershipPanel({
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="pm-own-pct">Ownership %</Label>
@@ -182,6 +177,13 @@ export function PmOwnershipPanel({
           <EmptyState
             title="No ownership rows"
             description="Add at least one owner share before generating owner statements."
+            action={
+              canManage ? (
+                <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                  Add share
+                </Button>
+              ) : undefined
+            }
           />
         ) : null}
         {ownership.data && ownership.data.length > 0 ? (

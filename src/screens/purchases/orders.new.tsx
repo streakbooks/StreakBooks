@@ -279,7 +279,10 @@ function OrderForm({
       details={
         <fieldset disabled={locked} className="space-y-4 disabled:opacity-70">
           {savedId ? (
-            <div role="status" className="rounded-lg border border-border/70 bg-muted/30 p-4 text-sm">
+            <div
+              role="status"
+              className="rounded-lg border border-border/70 bg-muted/30 p-4 text-sm"
+            >
               <p>Purchase order saved.</p>
               <Link
                 className="font-medium text-primary underline-offset-4 hover:underline"

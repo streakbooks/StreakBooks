@@ -1,4 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -144,7 +145,6 @@ export function CrmTeamPage() {
       }
       subnav={<CrmSubnav current="team" />}
     >
-
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"
@@ -240,6 +240,13 @@ export function CrmTeamPage() {
                 <EmptyState
                   title="No territories yet"
                   description="Create a territory to track regional ownership. Auto-assignment rules arrive later."
+                  action={
+                    policy?.canManageTerritories ? (
+                      <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                        New territory
+                      </Button>
+                    ) : undefined
+                  }
                 />
               ) : null}
               {territoryRows.length > 0 ? (
@@ -288,7 +295,17 @@ export function CrmTeamPage() {
             />
           ) : null}
           {team.isSuccess && rows.length === 0 ? (
-            <EmptyState title="No members" description="Invite organisation members first." />
+            <EmptyState
+              title="No members"
+              description="Invite organisation members first."
+              action={
+                <Button asChild size="sm">
+                  <Link to="/settings" search={{ section: "users" }}>
+                    Open users & security
+                  </Link>
+                </Button>
+              }
+            />
           ) : null}
           {rows.length > 0 ? (
             <Card>

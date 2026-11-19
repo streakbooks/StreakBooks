@@ -1,5 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -25,6 +25,7 @@ import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -61,7 +62,13 @@ const STATUS_LABEL: Record<(typeof EMPLOYEE_STATUSES)[number], string> = {
   terminated: "Terminated",
 };
 
-export function PayrollEmployeesPage() {
+export function PayrollEmployeesPage({
+  forceCreate = false,
+  onCreateClosed,
+}: {
+  forceCreate?: boolean;
+  onCreateClosed?: () => void;
+} = {}) {
   const { company, isPending } = useActiveCompany();
   const canView = useCanDo("payroll.view");
   const canManage = useCanDo("payroll.employees.manage");
@@ -115,11 +122,32 @@ export function PayrollEmployeesPage() {
     onSuccess: async (row) => {
       await queryClient.invalidateQueries({ queryKey: ["payroll-employees", company?.id] });
       setAddOpen(false);
+      setNewDraft(null);
       toast.success("Employee added");
       void navigate({ to: "/payroll/employees/$employeeId", params: { employeeId: row.id } });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+
+  function closeAdd() {
+    setAddOpen(false);
+    setNewDraft(null);
+    if (forceCreate) onCreateClosed?.();
+  }
+
+  useEffect(() => {
+    if (!forceCreate || !canManage || !company || addOpen || newDraft) return;
+    const countryCode =
+      settingsQ.data?.settings?.operating_country_code ??
+      settingsQ.data?.company.country_code ??
+      company.country_code;
+    const currencyCode =
+      settingsQ.data?.settings?.payroll_currency ??
+      settingsQ.data?.company.base_currency ??
+      company.base_currency;
+    setNewDraft(emptyEmployeeDraft(countryCode, currencyCode));
+    setAddOpen(true);
+  }, [forceCreate, canManage, company, addOpen, newDraft, settingsQ.data]);
 
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -267,6 +295,47 @@ export function PayrollEmployeesPage() {
       void queryClient.invalidateQueries({ queryKey: ["payroll-employees", company.id] });
     }
   };
+
+  if (addOpen && newDraft) {
+    return (
+      <RecordWorkspace
+        title="Add payroll employee"
+        description="Create an employee profile with payment details for payroll runs."
+        breadcrumbs={[
+          { label: "Payroll", to: "/payroll" },
+          { label: "Employees", to: "/payroll/employees" },
+          { label: "New" },
+        ]}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={closeAdd}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={createM.isPending}
+              onClick={() => {
+                const parsed = parsePayrollEmployeeDraft(newDraft);
+                if (!parsed.ok) {
+                  toast.error(parsed.error);
+                  return;
+                }
+                createM.mutate(newDraft);
+              }}
+            >
+              {createM.isPending ? "Saving…" : "Save employee"}
+            </Button>
+          </div>
+        }
+      >
+        <EmployeeForm
+          draft={newDraft}
+          onChange={setNewDraft}
+          schedules={settings?.schedules ?? []}
+        />
+      </RecordWorkspace>
+    );
+  }
 
   return (
     <ListWorkspace
@@ -477,40 +546,6 @@ export function PayrollEmployeesPage() {
               {importing
                 ? "Importing…"
                 : `Import ${importPreview?.drafts.length ?? 0} new employees`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Add payroll employee</DialogTitle>
-          </DialogHeader>
-          {newDraft ? (
-            <EmployeeForm
-              draft={newDraft}
-              onChange={setNewDraft}
-              schedules={settings?.schedules ?? []}
-            />
-          ) : null}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              disabled={createM.isPending || !newDraft}
-              onClick={() => {
-                if (!newDraft) return;
-                const parsed = parsePayrollEmployeeDraft(newDraft);
-                if (!parsed.ok) {
-                  toast.error(parsed.error);
-                  return;
-                }
-                createM.mutate(newDraft);
-              }}
-            >
-              Save employee
             </Button>
           </DialogFooter>
         </DialogContent>

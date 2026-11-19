@@ -225,7 +225,9 @@ function RecurringInvoiceWorkspace({
   }
   if (editingId && !hydratedId && !loadError) return <LoadingState />;
   if (loadError) {
-    return <ErrorState title="Could not load schedule" description={loadError} onRetry={onCancel} />;
+    return (
+      <ErrorState title="Could not load schedule" description={loadError} onRetry={onCancel} />
+    );
   }
 
   return (

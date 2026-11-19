@@ -68,6 +68,7 @@ export function AdvisorsPortalMessagesPage() {
       <ListWorkspace title="Messages" description="Secure thread with your assigned Advisors team.">
         <AdvisorsPortalSubnav />
         <form
+          id="advisors-portal-compose"
           className="space-y-3"
           onSubmit={(event) => {
             event.preventDefault();
@@ -75,6 +76,7 @@ export function AdvisorsPortalMessagesPage() {
           }}
         >
           <Textarea
+            id="advisors-portal-message"
             value={body}
             onChange={(event) => setBody(event.target.value)}
             placeholder="Write a message to your advisor"
@@ -94,7 +96,24 @@ export function AdvisorsPortalMessagesPage() {
           {query.data.length} messages
         </p>
         {query.data.length === 0 ? (
-          <EmptyState title="No messages yet" description="Start the conversation above." />
+          <EmptyState
+            title="No messages yet"
+            description="Start the conversation above."
+            action={
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => {
+                  document
+                    .getElementById("advisors-portal-compose")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  document.getElementById("advisors-portal-message")?.focus();
+                }}
+              >
+                Write a message
+              </Button>
+            }
+          />
         ) : (
           <ul className="space-y-3">
             {query.data.map((item) => (

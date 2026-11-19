@@ -96,8 +96,8 @@ export function HrCompensationPage() {
       <ListWorkspace
         title="Compensation & Benefits"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Compensation & Benefits" }]}
-      subnav={<HrSubnav current="compensation" />}
-    >
+        subnav={<HrSubnav current="compensation" />}
+      >
         <EmptyState title="No access" description="Missing permission: hr.employees.sensitive." />
       </ListWorkspace>
     );
@@ -139,6 +139,22 @@ export function HrCompensationPage() {
         <EmptyState
           title="No compensation proposals"
           description="Propose adjustments for Payroll to apply through approved handoff."
+          action={
+            <Button
+              size="sm"
+              type="button"
+              onClick={() => {
+                setEmployeeId("");
+                setEffectiveOn(new Date().toISOString().slice(0, 10));
+                setAmount("0");
+                setStatus("proposed");
+                setNotes("");
+                setOpen(true);
+              }}
+            >
+              Propose change
+            </Button>
+          }
         />
       ) : (
         <TableCard>

@@ -136,19 +136,22 @@ export function ExpenseManagementOverviewPage() {
       description="Top-level module for employee and contractor expenses."
       actions={
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link to="/purchases/employee-expenses">Legacy claims</Link>
+          <Button asChild size="sm">
+            <Link
+              to="/expense-management/$section"
+              params={{ section: "my-expenses" }}
+              search={{ create: true }}
+            >
+              New expense claim
+            </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link
-              to="/banking/spend-money"
-              search={{ returnTo: "/expense-management" }}
-            >
+            <Link to="/banking/spend-money" search={{ returnTo: "/expense-management" }}>
               Spend money
             </Link>
           </Button>
           {canManagePolicies ? (
-            <Button asChild size="sm">
+            <Button asChild variant="outline" size="sm">
               <Link to="/expense-management/$section" params={{ section: "settings" }}>
                 Settings
               </Link>
@@ -169,7 +172,7 @@ export function ExpenseManagementOverviewPage() {
         <KpiCard
           label="Pending legacy claims"
           value={kpis.legacySubmittedClaims}
-          hint="Submitted on the current employee-expenses path"
+          hint="Legacy Purchases list — submit new claims from My Expenses"
           href={{ kind: "absolute", to: "/purchases/employee-expenses" }}
         />
         <KpiCard
@@ -233,18 +236,21 @@ export function ExpenseManagementOverviewPage() {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button asChild variant="secondary" size="sm">
+            <Link
+              to="/expense-management/$section"
+              params={{ section: "my-expenses" }}
+              search={{ create: true }}
+            >
+              New expense claim
+            </Link>
+          </Button>
+          <Button asChild variant="secondary" size="sm">
             <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
               Open My Expenses
             </Link>
           </Button>
           <Button asChild variant="secondary" size="sm">
-            <Link to="/purchases/employee-expenses">Submit legacy claim</Link>
-          </Button>
-          <Button asChild variant="secondary" size="sm">
-            <Link
-              to="/banking/spend-money"
-              search={{ returnTo: "/expense-management" }}
-            >
+            <Link to="/banking/spend-money" search={{ returnTo: "/expense-management" }}>
               Record spend money
             </Link>
           </Button>

@@ -2,6 +2,26 @@ import { call as originalCall, defaults } from "../voice/server-fixture";
 export { defaults };
 export async function call(name: string, args: unknown[]) {
   const data = (args[0] as { data?: Record<string, unknown> } | undefined)?.data ?? {};
+  if (name === "listPayments") return [];
+  if (name === "listRecurringJournals") {
+    return [
+      {
+        id: "10000000-0000-4000-8000-000000000001",
+        name: "Monthly rent",
+        start_date: "2026-01-31",
+        end_date: null,
+        next_date: "2026-12-31",
+        interval_months: 1,
+        max_occurrences: 24,
+        is_active: true,
+        last_run_at: null,
+        last_error: null,
+        updated_at: "2026-11-19T12:00:00Z",
+        occurrences: 10,
+        total_debit_minor: 120000,
+      },
+    ];
+  }
   if (["listBankAccounts", "getPurchaseOrder", "getBill"].includes(name)) {
     window.voiceServer.calls.push({ name, data });
     if (name === "listBankAccounts")
@@ -32,6 +52,7 @@ export async function call(name: string, args: unknown[]) {
         order_date: "2026-11-05",
         currency_code: "GBP",
         status: "draft",
+        approval_state: "draft",
         subtotal_minor: 1000,
         tax_minor: 0,
         total_minor: 1000,

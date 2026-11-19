@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -100,8 +101,8 @@ export function HrApprovalsPage() {
       <ListWorkspace
         title="HR Approvals"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Approvals" }]}
-      subnav={<HrSubnav current="approvals" />}
-    >
+        subnav={<HrSubnav current="approvals" />}
+      >
         <EmptyState title="No access" description="You need approval or manager permission." />
       </ListWorkspace>
     );
@@ -117,7 +118,6 @@ export function HrApprovalsPage() {
       breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Approvals" }]}
       subnav={<HrSubnav current="approvals" />}
     >
-
       {inboxQ.isPending ? (
         <LoadingState />
       ) : inboxQ.isError ? (
@@ -136,6 +136,13 @@ export function HrApprovalsPage() {
               <EmptyState
                 title="No leave awaiting decision"
                 description="Submitted leave appears here."
+                action={
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/hr/$section" params={{ section: "leave" }}>
+                      Open leave
+                    </Link>
+                  </Button>
+                }
               />
             ) : (
               <TableCard>
@@ -200,6 +207,13 @@ export function HrApprovalsPage() {
               <EmptyState
                 title="No corrections awaiting decision"
                 description="Submitted attendance corrections appear here."
+                action={
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/hr/$section" params={{ section: "attendance" }}>
+                      Open attendance
+                    </Link>
+                  </Button>
+                }
               />
             ) : (
               <TableCard>

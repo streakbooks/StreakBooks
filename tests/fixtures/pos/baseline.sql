@@ -54,6 +54,11 @@ CREATE TABLE public.currency_decimals(code char(3) PRIMARY KEY,decimals integer 
 INSERT INTO public.currency_decimals VALUES('USD',2),('GBP',2);
 CREATE TABLE public.accounting_periods(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),company_id uuid NOT NULL REFERENCES public.companies(id),start_date date,end_date date,status public.period_status NOT NULL DEFAULT 'open');
 INSERT INTO public.accounting_periods(company_id,start_date,end_date,status) VALUES('20000000-0000-4000-8000-000000000001','2020-01-01','2099-12-31','open');
+-- The shared posting procedure resolves expense-source branches even for POS journals.
+-- These tables stay empty because this suite only creates POS source documents.
+CREATE TABLE public.expense_claims(id uuid PRIMARY KEY, company_id uuid NOT NULL REFERENCES public.companies(id));
+CREATE TABLE public.expense_cash_advances(id uuid PRIMARY KEY, company_id uuid NOT NULL REFERENCES public.companies(id));
+CREATE TABLE public.expense_petty_cash_floats(id uuid PRIMARY KEY, company_id uuid NOT NULL REFERENCES public.companies(id));
 CREATE SEQUENCE public.test_journal_number;
 CREATE FUNCTION public.next_journal_number(_company uuid) RETURNS bigint LANGUAGE sql AS $$ SELECT nextval('public.test_journal_number') $$;
 CREATE FUNCTION public.assert_journal_date_unlocked(_company uuid,_d date) RETURNS void LANGUAGE plpgsql AS $$ BEGIN END; $$;

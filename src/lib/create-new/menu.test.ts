@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CREATE_ACTIONS } from "@/lib/create-new/registry";
 import {
   actionIsRunnable,
+  createNavTarget,
   opensCreateAsFullPage,
   runnableCreateActions,
   searchCreateActions,
@@ -14,9 +15,9 @@ import {
 } from "@/lib/create-new/preferences";
 
 describe("create new registry", () => {
-  it("lists the 29 specified commands once", () => {
-    expect(CREATE_ACTIONS).toHaveLength(29);
-    expect(new Set(CREATE_ACTIONS.map((action) => action.id)).size).toBe(29);
+  it("lists the 32 specified commands once", () => {
+    expect(CREATE_ACTIONS).toHaveLength(32);
+    expect(new Set(CREATE_ACTIONS.map((action) => action.id)).size).toBe(32);
   });
 
   it("keeps verified commands runnable and holds the rest", () => {
@@ -25,7 +26,7 @@ describe("create new registry", () => {
     );
     expect(blocked).toEqual([]);
     expect(CREATE_ACTIONS.every((action) => action.component)).toBe(true);
-    expect(runnableCreateActions("owner")).toHaveLength(29);
+    expect(runnableCreateActions("owner")).toHaveLength(32);
     expect(runnableCreateActions("read_only")).toHaveLength(1);
   });
 
@@ -92,5 +93,48 @@ describe("create full-page destinations", () => {
     expect(recurringInvoice && opensCreateAsFullPage(recurringInvoice)).toBe(true);
     expect(recurringBill && opensCreateAsFullPage(recurringBill)).toBe(true);
     expect(recurringJournal && opensCreateAsFullPage(recurringJournal)).toBe(true);
+  });
+
+  it("preserves create intent for product, sales order and expense claim deep links", () => {
+    const product = CREATE_ACTIONS.find((a) => a.id === "product")!;
+    const claim = CREATE_ACTIONS.find((a) => a.id === "reimbursement")!;
+    const journal = CREATE_ACTIONS.find((a) => a.id === "manual_journal")!;
+    const salesReceipt = CREATE_ACTIONS.find((a) => a.id === "sales_receipt")!;
+    const salesOrder = CREATE_ACTIONS.find((a) => a.id === "sales_order")!;
+    expect(createNavTarget(product)).toEqual({
+      kind: "route",
+      to: "/products-services/new",
+    });
+    expect(createNavTarget(claim)).toEqual({
+      kind: "route",
+      to: "/expense-management/$section",
+      params: { section: "my-expenses" },
+      search: { create: true },
+    });
+    expect(createNavTarget(journal)).toEqual({
+      kind: "route",
+      to: "/accounting/journals/new",
+      search: { mode: "post" },
+    });
+    expect(createNavTarget(salesReceipt)).toEqual({
+      kind: "route",
+      to: "/banking/money-documents/new",
+      search: { kind: "sales_receipt" },
+    });
+    expect(createNavTarget(salesOrder)).toEqual({
+      kind: "route",
+      to: "/sales/orders/new",
+    });
+    const requisition = CREATE_ACTIONS.find((a) => a.id === "purchase_requisition")!;
+    expect(createNavTarget(requisition)).toEqual({
+      kind: "route",
+      to: "/purchases/requisitions",
+      search: { create: true },
+    });
+    const fixedAsset = CREATE_ACTIONS.find((a) => a.id === "fixed_asset")!;
+    expect(createNavTarget(fixedAsset)).toEqual({
+      kind: "route",
+      to: "/fixed-assets/new",
+    });
   });
 });

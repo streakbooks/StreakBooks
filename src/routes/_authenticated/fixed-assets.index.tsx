@@ -1,5 +1,6 @@
+import { parseCreateSearchFlag } from "@/lib/navigation/create-search";
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   parseFixedAssetRegisterSearch,
@@ -87,8 +88,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export const Route = createFileRoute("/_authenticated/fixed-assets")({
-  validateSearch: parseFixedAssetRegisterSearch,
+export const Route = createFileRoute("/_authenticated/fixed-assets/")({
+  validateSearch: (
+    raw: Record<string, unknown>,
+  ): FixedAssetRegisterSearch & { create?: boolean | undefined } => ({
+    ...parseFixedAssetRegisterSearch(raw),
+    ...(parseCreateSearchFlag(raw) ? { create: true } : {}),
+  }),
   head: () => ({ meta: [{ title: "Fixed assets — LinkBooks" }] }),
   component: FixedAssetsPage,
 });
@@ -131,6 +137,7 @@ function FixedAssetsPage() {
   const setAssetSort = (value: AssetRegisterSort) => updateRegister({ sort: value });
   const setSortDescending = (value: boolean | ((previous: boolean) => boolean)) =>
     updateRegister({ desc: typeof value === "function" ? value(sortDescending) : value });
+  const forceCreate = search.create;
   const fmt = useFormat();
   const canManage = useCanDo("accounts.manage");
   const canViewAccounting = useCanDo("accounting.view");
@@ -140,6 +147,25 @@ function FixedAssetsPage() {
   const pageFn = useServerFn(getAssetRegisterPage);
   const registerFn = useServerFn(getFixedAssetRegister);
   const [dialog, setDialog] = useState<Dialogs>(null);
+  useEffect(() => {
+    if (!forceCreate || !canManage) return;
+    setDialog({ kind: "asset", editing: null, fromBillLine: null });
+    // Keep ?create=true sticky until the New asset workspace closes (refresh-safe).
+  }, [forceCreate, canManage]);
+
+  function dismissDialog() {
+    const wasCreateAsset = dialog?.kind === "asset" && !dialog.editing && forceCreate;
+    setDialog(null);
+    if (wasCreateAsset) {
+      void navigate({
+        search: (prev) => {
+          const { create: _create, ...rest } = prev;
+          return rest;
+        },
+        replace: true,
+      });
+    }
+  }
   const tablePrefs = useTablePrefs(
     "fixed-assets:" + (companyId ?? "no-company"),
     FIXED_ASSET_COLUMN_IDS,
@@ -225,6 +251,25 @@ function FixedAssetsPage() {
     Boolean(assetTypeId) ||
     Boolean(assetAccountId);
 
+  // New asset opens as a full-page RecordWorkspace (not a Dialog over the register).
+  if (dialog?.kind === "asset" && !dialog.editing) {
+    return (
+      <AssetDialog
+        key={dialog.fromBillLine?.lineId ?? "new"}
+        open
+        layout="workspace"
+        onOpenChange={(o) => !o && dismissDialog()}
+        companyId={companyId}
+        currency={currency}
+        accounts={d.accounts}
+        types={d.types}
+        editing={null}
+        fromBillLine={dialog.fromBillLine}
+        frozen={false}
+      />
+    );
+  }
+
   return (
     <>
       <ListWorkspace
@@ -232,6 +277,13 @@ function FixedAssetsPage() {
         description="Keep a register of what you own, post monthly depreciation and record disposals. Every posting goes through the same journal engine as the rest of your books."
         actions={
           <>
+            <Button
+              size="sm"
+              disabled={!canManage}
+              onClick={() => setDialog({ kind: "asset", editing: null, fromBillLine: null })}
+            >
+              Add asset
+            </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/reports/$reportId" params={{ reportId: "fixed-asset-register" }}>
                 Register report
@@ -562,6 +614,18 @@ function FixedAssetsPage() {
               <EmptyState
                 title="No fixed assets"
                 description="Add an asset, or capitalise a line from a posted bill."
+                action={
+                  canManage ? (
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        setDialog({ kind: "asset", editing: null, fromBillLine: null })
+                      }
+                    >
+                      Add asset
+                    </Button>
+                  ) : undefined
+                }
               />
             ) : visibleAssets.length === 0 ? (
               <EmptyState
@@ -681,6 +745,7 @@ function FixedAssetsPage() {
         <AssetDialog
           key={dialog.editing?.id ?? dialog.fromBillLine?.lineId ?? "new"}
           open
+          layout={dialog.editing ? "dialog" : "workspace"}
           onOpenChange={(o) => !o && setDialog(null)}
           companyId={companyId}
           currency={currency}

@@ -216,6 +216,13 @@ export function AppStoreSectionPage({ sectionKey }: { sectionKey: AppStoreSectio
       <EmptyState
         title={`${section.label} workspace ready`}
         description="Foundation schema and role checks are in place. Feature implementation continues in the scheduled batch."
+        action={
+          <Button asChild size="sm">
+            <Link to="/app-store/$section" params={{ section: "explore" }}>
+              Explore apps
+            </Link>
+          </Button>
+        }
       />
     </ListWorkspace>
   );

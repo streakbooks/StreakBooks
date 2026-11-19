@@ -141,8 +141,8 @@ export function HrAssetsPage() {
       <ListWorkspace
         title="Employee Assets"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Employee Assets" }]}
-      subnav={<HrSubnav current="assets" />}
-    >
+        subnav={<HrSubnav current="assets" />}
+      >
         <EmptyState title="No access" description="You need hr.view to open assets." />
       </ListWorkspace>
     );
@@ -205,6 +205,21 @@ export function HrAssetsPage() {
           <EmptyState
             title="No asset types"
             description="Create laptop, phone or badge types before assigning custody."
+            action={
+              canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setCode("");
+                    setName("");
+                    setTypeOpen(true);
+                  }}
+                >
+                  New asset type
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>
@@ -241,6 +256,23 @@ export function HrAssetsPage() {
           <EmptyState
             title="No assignments"
             description="Assign an asset tag to an employee to start custody tracking."
+            action={
+              canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setEmployeeId("");
+                    setAssetTypeId(activeTypes[0]?.id ?? "");
+                    setAssetTag("");
+                    setStatus("assigned");
+                    setAssignOpen(true);
+                  }}
+                >
+                  Assign asset
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>

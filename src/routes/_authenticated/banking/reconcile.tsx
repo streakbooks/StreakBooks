@@ -288,7 +288,9 @@ function Reconcile() {
                 <div className="numeric">{openingMinor === null ? "—" : money(openingMinor)}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Ticked ({clearedAmounts.length})</div>
+                <div className="text-xs text-muted-foreground">
+                  Ticked ({clearedAmounts.length})
+                </div>
                 <div className="numeric">{summary ? money(summary.cleared) : "—"}</div>
               </div>
               <div>
@@ -304,7 +306,9 @@ function Reconcile() {
                 </div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Ledger balance at {statementDate}</div>
+                <div className="text-xs text-muted-foreground">
+                  Ledger balance at {statementDate}
+                </div>
                 <div className="numeric">{money(ws.ledgerBalanceMinor)}</div>
               </div>
             </div>

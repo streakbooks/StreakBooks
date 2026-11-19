@@ -241,10 +241,7 @@ export function MoneyDocumentPanel({
         description={help}
         breadcrumbs={
           kind === "receive_money"
-            ? [
-                { label: "Banking", to: "/banking" },
-                { label: "Receive money" },
-              ]
+            ? [{ label: "Banking", to: "/banking" }, { label: "Receive money" }]
             : [
                 { label: "Banking", to: "/banking" },
                 { label: "Bank documents", to: "/banking/money-documents" },
@@ -292,9 +289,21 @@ export function MoneyDocumentPanel({
               lines={[
                 { id: "amount", label: "Amount", value: moneyTotals.amount },
                 ...(needsIncome
-                  ? [{ id: "tax", label: "Tax", value: moneyTotals.tax, emphasis: "muted" as const }]
+                  ? [
+                      {
+                        id: "tax",
+                        label: "Tax",
+                        value: moneyTotals.tax,
+                        emphasis: "muted" as const,
+                      },
+                    ]
                   : []),
-                { id: "total", label: "Total", value: moneyTotals.total, emphasis: "total" as const },
+                {
+                  id: "total",
+                  label: "Total",
+                  value: moneyTotals.total,
+                  emphasis: "total" as const,
+                },
               ]}
             />
           ) : null
@@ -303,153 +312,170 @@ export function MoneyDocumentPanel({
           <div className="space-y-4">
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <FormGrid columns={4}>
-        <Field label="Date" width="date">
-          <Input type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
-        </Field>
-        <Field label="Reference">
-          <Input value={reference} onChange={(e) => setReference(e.target.value)} />
-        </Field>
-        {needsContact ? (
-          <Field
-            width="contact"
-            label={
-              kind === "supplier_refund"
-                ? "Supplier"
-                : kind === "receive_money"
-                  ? "Payer"
-                  : "Customer"
-            }
-          >
-            <ContactLookup
-              ariaLabel={
-                kind === "supplier_refund"
-                  ? "Supplier"
-                  : kind === "receive_money"
-                    ? "Payer"
-                    : "Customer"
-              }
-              contacts={contacts}
-              value={contactId}
-              onChange={setContactId}
-              companyId={companyId}
-              createKind={kind === "supplier_refund" ? "supplier" : "customer"}
-              placeholder="Select"
-              allowClear={false}
-              loading={contactsQ.isPending}
-              error={contactsQ.isError ? friendlyAuthError(contactsQ.error) : null}
-              onRetry={() => void contactsQ.refetch()}
-            />
-          </Field>
-        ) : null}
-        {kind !== "bank_deposit" ? (
-          <Field label="Amount" width="money">
-            <Input
-              required
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </Field>
-        ) : null}
-        {needsIncome ? (
-          <Field label="Tax" width="money">
-            <Input
-              inputMode="decimal"
-              value={taxAmount}
-              onChange={(e) => setTaxAmount(e.target.value)}
-            />
-          </Field>
-        ) : null}
-        <Field
-          width="contact"
-          label={kind === "card_payment" ? "Pay from bank" : "Bank or clearing account"}
-        >
-          <AccountLookup
-            ariaLabel={kind === "card_payment" ? "Pay from bank" : "Bank or clearing account"}
-            accounts={banks}
-            value={bankAccountId}
-            onChange={setBankAccountId}
-            companyId={companyId}
-            purpose="posting"
-            createKind="bank"
-            placeholder="Select"
-            allowClear={false}
-            loading={accountsQ.isPending}
-            error={accountsQ.isError ? friendlyAuthError(accountsQ.error) : null}
-            onRetry={() => void accountsQ.refetch()}
-          />
-        </Field>
-        {needsIncome ? (
-          <Field label="Income account" width="contact">
-            <AccountLookup
-              ariaLabel="Income account"
-              accounts={postable}
-              value={counterAccountId}
-              onChange={setCounterAccountId}
-              companyId={companyId}
-              purpose="posting"
-              createKind="revenue"
-              placeholder="Select"
-              allowClear={false}
-              loading={accountsQ.isPending}
-              error={accountsQ.isError ? friendlyAuthError(accountsQ.error) : null}
-              onRetry={() => void accountsQ.refetch()}
-            />
-          </Field>
-        ) : null}
-        {kind === "card_payment" ? (
-          <Field label="Credit card liability" width="contact">
-            <AccountLookup
-              ariaLabel="Credit card liability"
-              accounts={liabilities}
-              value={counterAccountId}
-              onChange={setCounterAccountId}
-              companyId={companyId}
-              purpose="posting"
-              createKind="credit_card"
-              placeholder="Select"
-              allowClear={false}
-              loading={accountsQ.isPending}
-              error={accountsQ.isError ? friendlyAuthError(accountsQ.error) : null}
-              onRetry={() => void accountsQ.refetch()}
-            />
-          </Field>
-        ) : null}
-        {kind === "bank_adjustment" ? (
-          <>
-            <Field label="Adjustment">
-              <Select
-                value={adjustmentType}
-                onChange={(value) => setAdjustmentType(value as BankAdjustmentType)}
-                options={[
-                  { value: "bank_fee", label: "Bank fee" },
-                  { value: "interest_income", label: "Interest income" },
-                  { value: "interest_expense", label: "Interest expense" },
-                ]}
-              />
-            </Field>
-            <Field label="Offset account" width="contact">
-              <AccountLookup
-                ariaLabel="Offset account"
-                accounts={postable}
-                value={counterAccountId}
-                onChange={setCounterAccountId}
-                companyId={companyId}
-                purpose="posting"
-                placeholder="Select"
-                allowClear={false}
-                loading={accountsQ.isPending}
-                error={accountsQ.isError ? friendlyAuthError(accountsQ.error) : null}
-                onRetry={() => void accountsQ.refetch()}
-              />
-            </Field>
-          </>
-        ) : null}
-        {needsIncome ? (
-          <Field label="Description">
-            <Input required value={description} onChange={(e) => setDescription(e.target.value)} />
-          </Field>
-        ) : null}
+              <Field label="Date" width="date">
+                <Input
+                  aria-label="Date"
+                  type="date"
+                  required
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </Field>
+              <Field label="Reference">
+                <Input
+                  aria-label="Reference"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                />
+              </Field>
+              {needsContact ? (
+                <Field
+                  width="contact"
+                  label={
+                    kind === "supplier_refund"
+                      ? "Supplier"
+                      : kind === "receive_money"
+                        ? "Payer"
+                        : "Customer"
+                  }
+                >
+                  <ContactLookup
+                    ariaLabel={
+                      kind === "supplier_refund"
+                        ? "Supplier"
+                        : kind === "receive_money"
+                          ? "Payer"
+                          : "Customer"
+                    }
+                    contacts={contacts}
+                    value={contactId}
+                    onChange={setContactId}
+                    companyId={companyId}
+                    createKind={kind === "supplier_refund" ? "supplier" : "customer"}
+                    placeholder="Select"
+                    allowClear={false}
+                    loading={contactsQ.isPending}
+                    error={contactsQ.isError ? friendlyAuthError(contactsQ.error) : null}
+                    onRetry={() => void contactsQ.refetch()}
+                  />
+                </Field>
+              ) : null}
+              {kind !== "bank_deposit" ? (
+                <Field label="Amount" width="money">
+                  <Input
+                    aria-label="Amount"
+                    required
+                    inputMode="decimal"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                </Field>
+              ) : null}
+              {needsIncome ? (
+                <Field label="Tax" width="money">
+                  <Input
+                    aria-label="Tax"
+                    inputMode="decimal"
+                    value={taxAmount}
+                    onChange={(e) => setTaxAmount(e.target.value)}
+                  />
+                </Field>
+              ) : null}
+              <Field
+                width="contact"
+                label={kind === "card_payment" ? "Pay from bank" : "Bank or clearing account"}
+              >
+                <AccountLookup
+                  ariaLabel={kind === "card_payment" ? "Pay from bank" : "Bank or clearing account"}
+                  accounts={banks}
+                  value={bankAccountId}
+                  onChange={setBankAccountId}
+                  companyId={companyId}
+                  purpose="posting"
+                  createKind="bank"
+                  placeholder="Select"
+                  allowClear={false}
+                  loading={accountsQ.isPending}
+                  error={accountsQ.isError ? friendlyAuthError(accountsQ.error) : null}
+                  onRetry={() => void accountsQ.refetch()}
+                />
+              </Field>
+              {needsIncome ? (
+                <Field label="Income account" width="contact">
+                  <AccountLookup
+                    ariaLabel="Income account"
+                    accounts={postable}
+                    value={counterAccountId}
+                    onChange={setCounterAccountId}
+                    companyId={companyId}
+                    purpose="posting"
+                    createKind="revenue"
+                    placeholder="Select"
+                    allowClear={false}
+                    loading={accountsQ.isPending}
+                    error={accountsQ.isError ? friendlyAuthError(accountsQ.error) : null}
+                    onRetry={() => void accountsQ.refetch()}
+                  />
+                </Field>
+              ) : null}
+              {kind === "card_payment" ? (
+                <Field label="Credit card liability" width="contact">
+                  <AccountLookup
+                    ariaLabel="Credit card liability"
+                    accounts={liabilities}
+                    value={counterAccountId}
+                    onChange={setCounterAccountId}
+                    companyId={companyId}
+                    purpose="posting"
+                    createKind="credit_card"
+                    placeholder="Select"
+                    allowClear={false}
+                    loading={accountsQ.isPending}
+                    error={accountsQ.isError ? friendlyAuthError(accountsQ.error) : null}
+                    onRetry={() => void accountsQ.refetch()}
+                  />
+                </Field>
+              ) : null}
+              {kind === "bank_adjustment" ? (
+                <>
+                  <Field label="Adjustment">
+                    <Select
+                      value={adjustmentType}
+                      onChange={(value) => setAdjustmentType(value as BankAdjustmentType)}
+                      options={[
+                        { value: "bank_fee", label: "Bank fee" },
+                        { value: "interest_income", label: "Interest income" },
+                        { value: "interest_expense", label: "Interest expense" },
+                      ]}
+                    />
+                  </Field>
+                  <Field label="Offset account" width="contact">
+                    <AccountLookup
+                      ariaLabel="Offset account"
+                      accounts={postable}
+                      value={counterAccountId}
+                      onChange={setCounterAccountId}
+                      companyId={companyId}
+                      purpose="posting"
+                      placeholder="Select"
+                      allowClear={false}
+                      loading={accountsQ.isPending}
+                      error={accountsQ.isError ? friendlyAuthError(accountsQ.error) : null}
+                      onRetry={() => void accountsQ.refetch()}
+                    />
+                  </Field>
+                </>
+              ) : null}
+              {needsIncome ? (
+                <Field label="Description">
+                  <Input
+                    aria-label="Description"
+                    required
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </Field>
+              ) : null}
             </FormGrid>
             {needsIncome ? (
               <label className="flex items-center gap-2 text-sm">
@@ -497,7 +523,7 @@ export function MoneyDocumentPanel({
               </fieldset>
             ) : null}
             <Field label="Memo">
-              <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
+              <Input aria-label="Memo" value={memo} onChange={(e) => setMemo(e.target.value)} />
             </Field>
           </div>
         }

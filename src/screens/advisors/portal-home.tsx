@@ -5,6 +5,7 @@ import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getAdvisorsPortalHome } from "@/lib/advisors/portal.functions";
 import { formatMinorAmount } from "@/lib/advisors/portal";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -85,6 +86,11 @@ export function AdvisorsPortalHomePage() {
             <EmptyState
               title="No active plan"
               description="Your advisor will attach a plan after onboarding."
+              action={
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/advisors-portal/messages">Message your advisor</Link>
+                </Button>
+              }
             />
           )}
           {home.subscription ? (
@@ -109,6 +115,16 @@ export function AdvisorsPortalHomePage() {
             <EmptyState
               title="No upcoming appointments"
               description="Book or manage consultations from Appointments."
+              action={
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild size="sm">
+                    <Link to="/advisors/book">Book consultation</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/advisors-portal/appointments">View appointments</Link>
+                  </Button>
+                </div>
+              }
             />
           ) : (
             <ul className="space-y-2">

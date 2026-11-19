@@ -1,4 +1,5 @@
 import type { JournalBrowseSearch } from "@/lib/accounting/journal-browsing";
+import type { ChartBrowseSearch } from "@/lib/accounting/chart-browsing";
 
 export const ACCOUNTING_TABS = [
   "coa",
@@ -16,7 +17,7 @@ export const ACCOUNTING_TABS = [
   "cash-classification",
 ] as const;
 export type AccountingTab = (typeof ACCOUNTING_TABS)[number];
-export type AccountingSearch = JournalBrowseSearch & {
+export type AccountingSearch = JournalBrowseSearch & ChartBrowseSearch & {
   cashReview?: string | undefined;
   tab?: AccountingTab | undefined;
   journal?: string | undefined;

@@ -1,5 +1,5 @@
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   parseBudgetListSearch,
@@ -15,6 +15,7 @@ import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fiscalYearStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { nextBudgetYearStart } from "@/lib/budgets/budget-math";
+import { parseCreateSearchFlag } from "@/lib/navigation/create-search";
 import { BudgetScenarioComparison } from "@/components/budgets/BudgetScenarioComparison";
 import {
   deleteBudget,
@@ -47,7 +48,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/budgets/")({
-  validateSearch: parseBudgetListSearch,
+  validateSearch: (raw: Record<string, unknown>) => ({ ...parseBudgetListSearch(raw), ...(parseCreateSearchFlag(raw) ? { create: true } : {}) }),
   head: () => ({ meta: [{ title: "Budgets — LinkBooks" }] }),
   component: BudgetsPage,
 });
@@ -57,6 +58,7 @@ function BudgetsPage() {
   const fmt = useFormat();
   const navigate = useNavigate();
   const searchState = Route.useSearch();
+  const forceCreate = searchState.create;
   const search = searchState.q ?? "";
   const returnContext = encodeBudgetListReturnContext(searchState);
   const setSearch = (value: string) => {
@@ -87,6 +89,7 @@ function BudgetsPage() {
     [company],
   );
   const [name, setName] = useState("");
+  const [showCreate, setShowCreate] = useState(Boolean(forceCreate));
   const [showScenarioComparison, setShowScenarioComparison] = useState(false);
   const [copySource, setCopySource] = useState<BudgetSummary | null>(null);
   const [copyName, setCopyName] = useState("");
@@ -101,11 +104,29 @@ function BudgetsPage() {
     queryFn: () => listFn({ data: { companyId: companyId! } }),
   });
 
+  useEffect(() => {
+    if (!forceCreate || !canManage) return;
+    setShowCreate(true);
+  }, [forceCreate, canManage]);
+
+  function closeCreate() {
+    setShowCreate(false);
+    if (!forceCreate) return;
+    void navigate({
+      search: (prev) => {
+        const { create: _create, ...rest } = prev;
+        return rest;
+      },
+      replace: true,
+    });
+  }
+
   const create = useMutation({
     mutationFn: () =>
       saveFn({ data: { companyId: companyId!, name: name.trim(), fiscalYearStart: fyStart } }),
     onSuccess: async ({ id }) => {
       setName("");
+      setShowCreate(false);
       await queryClient.invalidateQueries({ queryKey: ["budgets", companyId] });
       toast.success("Budget created");
       void navigate({
@@ -173,6 +194,13 @@ function BudgetsPage() {
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
+            disabled={!canManage || query.data?.available === false}
+            onClick={() => setShowCreate(true)}
+          >
+            New budget
+          </Button>
+          <Button
+            size="sm"
             variant={showScenarioComparison ? "secondary" : "outline"}
             disabled={!query.data?.available || query.data.budgets.length < 2}
             onClick={() => setShowScenarioComparison((value) => !value)}
@@ -194,47 +222,62 @@ function BudgetsPage() {
         </div>
       }
     >
-      <div className="mb-6 grid max-w-xl gap-3 rounded-md border border-border p-4">
-        <h2 className="text-sm font-semibold">New budget</h2>
-        <div className="space-y-2">
-          <Label htmlFor="budget-name">Name</Label>
-          <Input
-            id="budget-name"
-            value={name}
-            placeholder="e.g. FY budget"
-            maxLength={120}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="budget-start">Financial year starts</Label>
-          <Input
-            id="budget-start"
-            type="date"
-            value={fyStart}
-            onChange={(e) => e.target.value && setStart(e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            The budget covers the twelve months from the month this date falls in. It cannot be
-            changed once amounts are entered.
-          </p>
-        </div>
-        <Button
-          size="sm"
-          disabled={
-            create.isPending ||
-            name.trim().length < 1 ||
-            !canManage ||
-            query.isPending ||
-            query.data?.available === false
-          }
-          title={canManage ? undefined : "You do not have permission to manage budgets"}
-          onClick={() => create.mutate()}
+      {showCreate ? (
+        <section
+          aria-label="Create budget"
+          className="lb-budget-create mb-6 grid max-w-2xl gap-4 rounded-2xl border border-border/85 bg-card p-5 shadow-card sm:p-6"
         >
-          {create.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-          Create budget
-        </Button>
-      </div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="space-y-1">
+              <h2 className="text-base font-bold tracking-[-0.02em]">New budget</h2>
+              <p className="text-xs text-muted-foreground">
+                Create a financial-year plan, then add your accounts and monthly amounts.
+              </p>
+            </div>
+            <Button size="sm" variant="ghost" onClick={closeCreate}>
+              Close
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="budget-name">Name</Label>
+            <Input
+              id="budget-name"
+              value={name}
+              placeholder="e.g. FY budget"
+              maxLength={120}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="budget-start">Financial year starts</Label>
+            <Input
+              id="budget-start"
+              type="date"
+              value={fyStart}
+              onChange={(e) => e.target.value && setStart(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              The budget covers the twelve months from the month this date falls in. It cannot be
+              changed once amounts are entered.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            disabled={
+              create.isPending ||
+              name.trim().length < 1 ||
+              !canManage ||
+              query.isPending ||
+              query.data?.available === false
+            }
+            title={canManage ? undefined : "You do not have permission to manage budgets"}
+            onClick={() => create.mutate()}
+          >
+            {create.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            Create budget
+          </Button>
+        </section>
+      ) : null}
 
       {query.data?.available ? (
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
@@ -277,7 +320,14 @@ function BudgetsPage() {
       ) : query.data.budgets.length === 0 ? (
         <EmptyState
           title="No budgets yet"
-          description="Create your first budget above, then fill in the monthly amounts."
+          description="Create your first budget, then fill in the monthly amounts."
+          action={
+            canManage ? (
+              <Button size="sm" onClick={() => setShowCreate(true)}>
+                New budget
+              </Button>
+            ) : undefined
+          }
         />
       ) : filteredBudgets.length === 0 ? (
         <EmptyState

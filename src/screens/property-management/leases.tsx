@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -115,15 +116,19 @@ export function PmLeasesPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Leases" description="Long-term lease register."
-      subnav={<PmSubnav current="leases" />}
-    >
+      <ListWorkspace
+        title="Leases"
+        description="Long-term lease register."
+        subnav={<PmSubnav current="leases" />}
+      >
         <EmptyState title="No access" description="Ask an administrator for property.view." />
       </ListWorkspace>
     );
   }
 
-  const propertyLabel = new Map((properties.data ?? []).map((p) => [p.id, `${p.code} — ${p.name}`]));
+  const propertyLabel = new Map(
+    (properties.data ?? []).map((p) => [p.id, `${p.code} — ${p.name}`]),
+  );
 
   return (
     <ListWorkspace
@@ -155,7 +160,7 @@ export function PmLeasesPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Property</Label>
-                  <Select value={propertyId || undefined} onValueChange={setPropertyId}>
+                  <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select property" />
                     </SelectTrigger>
@@ -166,11 +171,11 @@ export function PmLeasesPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="grid gap-2">
                   <Label>Tenant</Label>
-                  <Select value={tenantId || undefined} onValueChange={setTenantId}>
+                  <RecordLookupSelect value={tenantId} onValueChange={setTenantId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select tenant" />
                     </SelectTrigger>
@@ -181,7 +186,7 @@ export function PmLeasesPage() {
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pm-rent">Monthly rent</Label>
@@ -236,7 +241,17 @@ export function PmLeasesPage() {
             />
           ) : null}
           {leases.data?.length === 0 ? (
-            <EmptyState title="No leases yet" description="Create a lease for an active tenant." />
+            <EmptyState
+              title="No leases yet"
+              description="Create a lease for an active tenant."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    New lease
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : null}
           {leases.data && leases.data.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-border">

@@ -103,7 +103,9 @@ export type PosCompleteCashSaleInput = {
   lines: { productId: string; quantity: number }[];
 };
 
-export function parseCompletePosCashSale(input: PosCompleteCashSaleInput): PosCompleteCashSaleInput {
+export function parseCompletePosCashSale(
+  input: PosCompleteCashSaleInput,
+): PosCompleteCashSaleInput {
   const quote = parsePosQuote({ companyId: input.companyId, lines: input.lines });
   return {
     companyId: quote.companyId,
@@ -123,7 +125,9 @@ export type PosRecordCashMovementInput = {
   note?: string;
 };
 
-export function parsePosRecordCashMovement(input: PosRecordCashMovementInput): PosRecordCashMovementInput {
+export function parsePosRecordCashMovement(
+  input: PosRecordCashMovementInput,
+): PosRecordCashMovementInput {
   const note =
     typeof input.note === "string" ? input.note.trim().slice(0, 500) || undefined : undefined;
   if (input.kind !== "cash_in" && input.kind !== "cash_out") {

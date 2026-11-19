@@ -10,6 +10,10 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
       const m = await import("@/screens/sales/quotes.new");
       return m.NewQuote;
     }
+    case "sales_order": {
+      const m = await import("@/screens/sales/orders.new");
+      return m.NewSalesOrder;
+    }
     case "receive_payment": {
       const m = await import("@/screens/sales/receipts.new");
       return m.NewReceipt;
@@ -40,13 +44,21 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
       const m = await import("@/screens/purchases/orders.new");
       return m.NewOrder;
     }
+    case "purchase_requisition": {
+      const m = await import("@/screens/purchases/requisitions");
+      return function RequisitionCreatePanel() {
+        return <m.PurchasesRequisitionsScreen forceCreate />;
+      };
+    }
     case "pay_bill": {
       const m = await import("@/screens/purchases/payments.new");
       return m.NewPayment;
     }
     case "expense": {
       const m = await import("@/screens/purchases/expenses.new");
-      return m.NewExpense;
+      return function SpendMoneyPanel() {
+        return <m.NewExpense ownership="banking" />;
+      };
     }
     case "supplier_credit": {
       const m = await import("@/screens/purchases/credit-notes.new");
@@ -55,7 +67,7 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
     case "reimbursement": {
       const m = await import("@/screens/expense-management/claims");
       return function ExpenseClaimPanel() {
-        return <m.ExpenseManagementClaimsPage mode="my-expenses" />;
+        return <m.ExpenseManagementClaimsPage mode="my-expenses" forceCreate />;
       };
     }
     case "bank_transfer": {
@@ -124,8 +136,12 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
     }
     case "product": {
       const m = await import("@/screens/products-services");
-      return m.ProductsPage;
+      return function ProductCreatePanel() {
+        return <m.ProductsPage forceCreate />;
+      };
     }
+    case "fixed_asset":
+      throw new Error("Fixed asset opens at /fixed-assets?create=true");
     case "account": {
       const m = await import("@/components/create-new/NewAccountPanel");
       return m.NewAccountPanel;

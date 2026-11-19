@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -27,6 +27,14 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/projects")({
+  validateSearch: (raw: Record<string, unknown>): { create?: boolean } => {
+    const create =
+      raw["create"] === true ||
+      raw["create"] === "true" ||
+      raw["create"] === "1" ||
+      raw["create"] === 1;
+    return create ? { create: true } : {};
+  },
   head: () => ({ meta: [{ title: "Projects — LinkBooks" }] }),
   component: ProjectsPage,
 });
@@ -34,15 +42,35 @@ export const Route = createFileRoute("/_authenticated/projects")({
 function ProjectsPage() {
   const { company } = useActiveCompany();
   const companyId = company?.id;
+  const { create: forceCreate } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const base = company?.base_currency ?? "GBP";
   const fetchReport = useServerFn(getProjectProfitability);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [showCreate, setShowCreate] = useState(Boolean(forceCreate));
   const [basisChoice, setBasisChoice] = useState<{
     companyId: string;
     basis: "accrual" | "cash";
   } | null>(null);
   const basis = basisChoice && basisChoice.companyId === companyId ? basisChoice.basis : undefined;
+  useEffect(() => {
+    if (!forceCreate) return;
+    setShowCreate(true);
+    // Keep ?create=true sticky until the create panel closes (refresh-safe).
+  }, [forceCreate]);
+
+  function closeCreate() {
+    setShowCreate(false);
+    if (!forceCreate) return;
+    void navigate({
+      search: (prev) => {
+        const { create: _create, ...rest } = prev;
+        return rest;
+      },
+      replace: true,
+    });
+  }
 
   const query = useQuery({
     queryKey: ["project-profitability", companyId, from, to, basis],
@@ -68,11 +96,16 @@ function ProjectsPage() {
       title="Projects"
       description={`Profit by project in ${base}, from posted figures. Tag invoices, bills and bank lines to a project from their own screens. Untagged activity is not included.`}
       actions={
-        <Button asChild variant="outline" size="sm">
-          <Link to="/imports" search={{ module: "projects" }}>
-            Import projects
-          </Link>
-        </Button>
+        <>
+          <Button size="sm" onClick={() => setShowCreate(true)}>
+            New project
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/imports" search={{ module: "projects" }}>
+              Import projects
+            </Link>
+          </Button>
+        </>
       }
     >
       <div className="mb-4 flex flex-wrap items-end gap-3">
@@ -108,7 +141,12 @@ function ProjectsPage() {
       ) : rows.length === 0 ? (
         <EmptyState
           title="No projects yet"
-          description="Create one below, then tag documents to it."
+          description="Create a project, then tag invoices, bills and bank lines to it."
+          action={
+            <Button size="sm" onClick={() => setShowCreate(true)}>
+              New project
+            </Button>
+          }
         />
       ) : (
         <Table>
@@ -173,10 +211,17 @@ function ProjectsPage() {
         </Link>
       </p>
 
-      <div className="mt-8 max-w-md">
-        <h2 className="mb-2 text-lg font-semibold">New project</h2>
-        <ProjectPanel />
-      </div>
+      {showCreate ? (
+        <div id="projects-new-panel" className="mt-8 max-w-md scroll-mt-24">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold">New project</h2>
+            <Button size="sm" variant="ghost" onClick={closeCreate}>
+              Close
+            </Button>
+          </div>
+          <ProjectPanel onSaved={closeCreate} />
+        </div>
+      ) : null}
     </ListWorkspace>
   );
 }

@@ -211,11 +211,26 @@ export function ExpenseManagementCashAdvancesPage() {
       title="Cash Advances"
       description="Issue employee floats, settle via cash-advance claims, and reclaim unused balances."
       actions={
-        <Button asChild variant="outline" size="sm">
-          <Link to="/expense-management/$section" params={{ section: "settings" }}>
-            Settings
-          </Link>
-        </Button>
+        <>
+          {canSubmit || canManage ? (
+            <Button
+              size="sm"
+              onClick={() =>
+                document.getElementById("cash-advance-create")?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                })
+              }
+            >
+              Request advance
+            </Button>
+          ) : null}
+          <Button asChild variant="outline" size="sm">
+            <Link to="/expense-management/$section" params={{ section: "settings" }}>
+              Settings
+            </Link>
+          </Button>
+        </>
       }
       subnav={<ExpenseManagementSubnav current="cash-advances" />}
     >
@@ -245,7 +260,10 @@ export function ExpenseManagementCashAdvancesPage() {
       ) : null}
 
       {(canSubmit || canManage) && (
-        <section className="mb-10 space-y-4 rounded-lg border p-4">
+        <section
+          id="cash-advance-create"
+          className="mb-10 scroll-mt-24 space-y-4 rounded-lg border p-4"
+        >
           <h2 className="text-lg font-medium">Request cash advance</h2>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="grid gap-2 md:col-span-2">
@@ -310,7 +328,22 @@ export function ExpenseManagementCashAdvancesPage() {
       ) : (advancesQ.data ?? []).length === 0 ? (
         <EmptyState
           title="No cash advances yet"
-          description="Save a draft request, then an advance manager issues it from bank."
+          description="Save a draft request above, then an advance manager issues it from bank."
+          action={
+            canSubmit || canManage ? (
+              <Button
+                size="sm"
+                onClick={() =>
+                  document.getElementById("cash-advance-create")?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  })
+                }
+              >
+                Request advance
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <Table>

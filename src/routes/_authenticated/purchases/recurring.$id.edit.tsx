@@ -55,11 +55,5 @@ function EditRecurringBillRoute() {
     );
   }
 
-  return (
-    <NewBill
-      key={id}
-      mode="template"
-      seed={templateQ.data as RecurringBillSeed}
-    />
-  );
+  return <NewBill key={id} mode="template" seed={templateQ.data as RecurringBillSeed} />;
 }

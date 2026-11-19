@@ -74,7 +74,6 @@ export function CrmProductsPage() {
       }
       subnav={<CrmSubnav current="products" />}
     >
-
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"

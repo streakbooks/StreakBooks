@@ -1,8 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import {
-  GroupedModuleSubnav,
-  groupedModuleSectionClassName,
-} from "@/components/common/GroupedModuleSubnav";
+import { GroupedModuleSubnav } from "@/components/common/GroupedModuleSubnav";
+import { groupedModuleSectionClassName } from "@/lib/navigation/grouped-module-nav";
 import { useCan } from "@/hooks/use-can";
 import { HR_GROUPS } from "@/lib/hr/groups";
 import { HR_SECTIONS, type HrSectionKey } from "@/lib/hr/sections";

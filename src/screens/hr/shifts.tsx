@@ -150,8 +150,8 @@ export function HrShiftsPage() {
       <ListWorkspace
         title="Shifts & Rosters"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Shifts & Rosters" }]}
-      subnav={<HrSubnav current="shifts" />}
-    >
+        subnav={<HrSubnav current="shifts" />}
+      >
         <EmptyState title="No access" description="You need hr.view to open shifts." />
       </ListWorkspace>
     );
@@ -202,7 +202,6 @@ export function HrShiftsPage() {
       }
       subnav={<HrSubnav current="shifts" />}
     >
-
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Shift templates
@@ -271,6 +270,28 @@ export function HrShiftsPage() {
           <EmptyState
             title="No roster assignments"
             description="Assign an active shift template to employees with an effective date."
+            action={
+              canManage && shifts.some((s) => s.isActive) ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setAssignOpen(true);
+                  }}
+                >
+                  Assign shift
+                </Button>
+              ) : canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShiftOpen(true)}
+                >
+                  New shift template first
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>

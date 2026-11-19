@@ -1,4 +1,5 @@
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -91,6 +92,11 @@ export function AdvisorsPortalDocumentsPage() {
           <EmptyState
             title="No document requests"
             description="Your advisor will request files here when needed."
+            action={
+              <Button asChild size="sm" variant="outline">
+                <Link to="/advisors-portal/messages">Message your advisor</Link>
+              </Button>
+            }
           />
         ) : (
           <ul className="space-y-3">

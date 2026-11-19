@@ -239,6 +239,21 @@ export function AdvisorsAdminClientsPage() {
               <EmptyState
                 title="No clients yet"
                 description="Promote an inquiry or create a client record to begin service delivery."
+                action={
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      setForm(emptyForm);
+                      document
+                        .getElementById("advisors-client-form")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      document.getElementById("client-email")?.focus();
+                    }}
+                  >
+                    New client
+                  </Button>
+                }
               />
             ) : (
               query.data.map((client) => (
@@ -273,6 +288,7 @@ export function AdvisorsAdminClientsPage() {
           </section>
 
           <form
+            id="advisors-client-form"
             className="space-y-3 rounded-xl border border-border/70 p-4"
             onSubmit={(event) => {
               event.preventDefault();

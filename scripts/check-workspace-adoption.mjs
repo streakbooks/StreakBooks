@@ -50,7 +50,6 @@ const required = [
   ["src/routes/_authenticated/index.tsx", "ListWorkspace"],
   ["src/routes/_authenticated/index.tsx", "WorkspaceInsights"],
   ["src/screens/accounting.tsx", "ListWorkspace"],
-  ["src/screens/accounting.tsx", "WorkspaceInsights"],
   ["src/screens/crm/overview.tsx", "ListWorkspace"],
   ["src/screens/pos/index.tsx", "ListWorkspace"],
   ["src/screens/hr/overview.tsx", "ListWorkspace"],

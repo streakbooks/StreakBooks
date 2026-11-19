@@ -1,7 +1,8 @@
 import { ACCOUNTING_TABS, type AccountingSearch } from "@/lib/navigation/workspace-search";
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useChildMatches } from "@tanstack/react-router";
 
+import { parseChartBrowseSearch } from "@/lib/accounting/chart-browsing";
 import { validPeriodDeepLink } from "@/lib/accounting/financial-years-review";
 import { parseJournalBrowseSearch } from "@/lib/accounting/journal-browsing";
 
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/accounting")({
     const journal = raw["journal"];
     return {
       ...parseJournalBrowseSearch(raw),
+      ...parseChartBrowseSearch(raw),
       tab: ACCOUNTING_TABS.find((t) => t === tab),
       journal: typeof journal === "string" && journal ? journal : undefined,
       period: validPeriodDeepLink(raw["period"]),
@@ -32,5 +34,15 @@ export const Route = createFileRoute("/_authenticated/accounting")({
           : undefined,
     };
   },
-  component: Accounting,
+  beforeLoad: ({ location, search }) => {
+    if (search.tab === "post" && /^\/accounting\/?$/.test(location.pathname)) {
+      throw redirect({ to: "/accounting/journals/new", search: { mode: "post" }, replace: true });
+    }
+  },
+  component: AccountingRoute,
 });
+
+function AccountingRoute() {
+  const hasChild = useChildMatches({ select: (matches) => matches.length > 0 });
+  return hasChild ? <Outlet /> : <Accounting />;
+}

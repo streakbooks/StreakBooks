@@ -102,6 +102,20 @@ export function AdvisorsAdminStaffPage() {
               <EmptyState
                 title="No advisors configured"
                 description="Add an advisor to accept assignments and consultations."
+                action={
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      setForm(emptyForm);
+                      document
+                        .getElementById("advisors-staff-form")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                  >
+                    New advisor
+                  </Button>
+                }
               />
             ) : (
               query.data.map((member) => (
@@ -141,7 +155,10 @@ export function AdvisorsAdminStaffPage() {
             )}
           </section>
 
-          <section className="space-y-3 rounded-xl border border-border/70 p-4">
+          <section
+            id="advisors-staff-form"
+            className="space-y-3 rounded-xl border border-border/70 p-4"
+          >
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-semibold">{form.id ? "Edit advisor" : "New advisor"}</h2>
               <Button

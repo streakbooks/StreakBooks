@@ -1,5 +1,6 @@
+import { LookupSelect } from "@/components/lookup";
 import { PosNavigation } from "@/components/pos/PosNavigation";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -96,21 +97,23 @@ function CatalogueCart({ companyId }: { companyId: string }) {
     enabled: workspace.data?.canSell === true || workspace.data?.canRefund === true,
     gcTime: 0,
   });
-  const openSessions = workspace.data?.openSessions ?? [];
+  const openSessions = useMemo(
+    () => workspace.data?.openSessions ?? [],
+    [workspace.data?.openSessions],
+  );
   const selectedSession: PosSession | undefined = openSessions.find((row) => row.id === sessionId);
-  const canCheckout = workspace.data?.canSell && openSessions.length > 0 && selectedSession;
-  const canRefundRecent =
-    workspace.data?.canRefund === true && openSessions.length > 0;
+  const onlySession = openSessions.length === 1 ? openSessions[0] : undefined;
+  const canSelectSession = Boolean(workspace.data?.canSell && openSessions.length);
+  const canCheckout = canSelectSession && Boolean(selectedSession);
+  const canRefundRecent = workspace.data?.canRefund === true && openSessions.length > 0;
   useEffect(() => {
-    if (openSessions.length === 1) setSessionId(openSessions[0]!.id);
-    if (openSessions.length === 0) setSessionId("");
+    setSessionId((current) => {
+      if (openSessions.length === 1) return openSessions[0]!.id;
+      return openSessions.some((session) => session.id === current) ? current : "";
+    });
   }, [openSessions]);
   const saleMutation = useMutation({
-    mutationFn: (data: {
-      sessionId: string;
-      operationId: string;
-      cashTenderedMinor: string;
-    }) =>
+    mutationFn: (data: { sessionId: string; operationId: string; cashTenderedMinor: string }) =>
       completeSale({
         data: {
           companyId,
@@ -229,34 +232,39 @@ function CatalogueCart({ companyId }: { companyId: string }) {
         Stock and COGS are not adjusted.
       </p>
       <QueryErrorState queries={[workspace]} />
-      {workspace.isSuccess && canCheckout ? (
+      {workspace.isSuccess && canSelectSession ? (
         <section aria-label="Register session" className="mb-4 space-y-2 rounded-lg border p-4">
           <Label htmlFor="pos-session">Open session</Label>
-          {openSessions.length === 1 ? (
+          {onlySession ? (
             <p id="pos-session">
-              {workspace.data.registers.find((row) => row.id === selectedSession.register_id)?.name ??
+              {workspace.data.registers.find((row) => row.id === onlySession.register_id)?.name ??
                 "Register"}{" "}
-              · Expected cash {selectedSession.currency_code}{" "}
-              {fromMinorUnits(BigInt(selectedSession.expected_cash_minor), selectedSession.currency_code)}
+              · Expected cash {onlySession.currency_code}{" "}
+              {fromMinorUnits(BigInt(onlySession.expected_cash_minor), onlySession.currency_code)}
             </p>
           ) : (
-            <select
+            <LookupSelect
               id="pos-session"
-              className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+              ariaLabel="Open session"
+              placeholder="Choose session"
+              disabled={saleMutation.isPending}
               value={sessionId}
-              onChange={(event) => setSessionId(event.target.value)}
-            >
-              <option value="">Choose session</option>
-              {openSessions.map((session) => {
-                const register = workspace.data.registers.find((row) => row.id === session.register_id);
-                return (
-                  <option key={session.id} value={session.id}>
-                    {register?.name ?? "Register"} · expected{" "}
-                    {fromMinorUnits(BigInt(session.expected_cash_minor), session.currency_code)}
-                  </option>
+              onChange={setSessionId}
+              allowClear
+              options={openSessions.map((session) => {
+                const register = workspace.data.registers.find(
+                  (row) => row.id === session.register_id,
                 );
+                const cash = fromMinorUnits(
+                  BigInt(session.expected_cash_minor),
+                  session.currency_code,
+                );
+                return {
+                  id: session.id,
+                  label: `${register?.name ?? "Register"} · expected ${cash}`,
+                };
               })}
-            </select>
+            />
           )}
         </section>
       ) : null}
@@ -419,7 +427,9 @@ function CatalogueCart({ companyId }: { companyId: string }) {
                     {canCheckout ? (
                       <form onSubmit={submitSale} className="mt-4 space-y-3">
                         <div>
-                          <Label htmlFor="cash-tendered">Cash tendered ({quote.data.currency})</Label>
+                          <Label htmlFor="cash-tendered">
+                            Cash tendered ({quote.data.currency})
+                          </Label>
                           <Input
                             id="cash-tendered"
                             value={tendered}
@@ -450,7 +460,7 @@ function CatalogueCart({ companyId }: { companyId: string }) {
                       </form>
                     ) : (
                       <p className="mt-3 text-sm text-muted-foreground">
-                        Checkout stays disabled until an open session is available.
+                        Choose an open register session to check out.
                       </p>
                     )}
                     <Button
@@ -467,14 +477,14 @@ function CatalogueCart({ companyId }: { companyId: string }) {
             </>
           ) : null}
           {lastSale ? (
-            <section aria-label="Last receipt" className="rounded-lg border border-border p-3 text-sm">
+            <section
+              aria-label="Last receipt"
+              className="rounded-lg border border-border p-3 text-sm"
+            >
               <h3 className="font-semibold">Sale recorded</h3>
               <p>Receipt reference: {lastSale.receiptCode}</p>
               <p>Journal: {lastSale.journalId ?? "Pending"}</p>
-              <p>
-                Change due:{" "}
-                {fromMinorUnits(BigInt(lastSale.changeMinor), displayCurrency)}
-              </p>
+              <p>Change due: {fromMinorUnits(BigInt(lastSale.changeMinor), displayCurrency)}</p>
               <p>
                 Expected drawer cash:{" "}
                 {fromMinorUnits(BigInt(lastSale.expectedCashMinor), displayCurrency)}

@@ -89,7 +89,6 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
       }
       subnav={<CrmSubnav current={current} />}
     >
-
       {settings.isLoading ? <LoadingState /> : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState

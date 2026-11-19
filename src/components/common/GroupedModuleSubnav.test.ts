@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGroupedModuleNav } from "@/components/common/GroupedModuleSubnav";
+import { buildGroupedModuleNav } from "@/lib/navigation/grouped-module-nav";
 
 const groups = [
   { key: "people", label: "People" },

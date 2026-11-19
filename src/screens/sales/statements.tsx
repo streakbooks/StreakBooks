@@ -100,7 +100,7 @@ export function Statements() {
         </>
       }
     >
-      <div className="mb-6 flex flex-wrap gap-3">
+      <div id="sales-statement-filters" className="mb-6 flex flex-wrap gap-3">
         <div className="w-64 space-y-1">
           <Label>Customer</Label>
           <ContactLookup
@@ -127,6 +127,19 @@ export function Statements() {
         <EmptyState
           title="Choose a customer"
           description="Select a customer to view their statement."
+          action={
+            <Button
+              size="sm"
+              type="button"
+              onClick={() =>
+                document
+                  .getElementById("sales-statement-filters")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
+            >
+              Choose customer
+            </Button>
+          }
         />
       ) : stmtQ.isPending ? (
         <LoadingState />

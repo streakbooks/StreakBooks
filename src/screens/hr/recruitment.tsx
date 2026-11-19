@@ -222,7 +222,6 @@ export function HrRecruitmentPage() {
       }
       subnav={<HrSubnav current="recruitment" />}
     >
-
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Job requisitions
@@ -315,6 +314,13 @@ export function HrRecruitmentPage() {
           <EmptyState
             title="No applications yet"
             description="Add candidates against an open or draft requisition."
+            action={
+              canManage ? (
+                <Button size="sm" type="button" variant="outline" onClick={() => setAppOpen(true)}>
+                  Add candidate
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>

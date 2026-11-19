@@ -4,7 +4,10 @@
  */
 
 export function parseLineGridClipboard(text: string): string[][] {
-  const raw = text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const raw = text
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
   if (!raw.trim()) return [];
   const lines = raw.split("\n");
   // Drop a trailing empty line commonly added by spreadsheet apps.

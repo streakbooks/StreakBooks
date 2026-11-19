@@ -39,7 +39,7 @@
 | Requirement | Status | Evidence / notes |
 | --- | --- | --- |
 | TransactionWorkspace / RecordWorkspace / ListWorkspace | PARTIAL | Adopted on create/list surfaces in Batches 25–54; module DoD incomplete |
-| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money; Batch 65 expense claims spreadsheet; residual modules TBD |
+| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money/claims; Batch 66 claim TotalsSummary + workspace adoption; residual modules TBD |
 | Consistent +New / empty CTAs | PARTIAL | Batches 49–63 closed create empties; Batch 64 App Store + approval queue bridges; residual queue-only empties intentional |
 | Module finished-screen DoD (34 modules) | PARTIAL | **0/34 COMPLETE** — continue without duplicating create work |
 | Staging / live RBAC / prod migrations | BLOCKED | Batches 23–24; require separate auth |
@@ -148,4 +148,12 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | --- | --- |
 | Expense claim create still card-stack lines (G15 deferred) | Migrate New claim lines to EditableLineItemGrid + DEFAULT_DOCUMENT_LINE_ROWS |
 | EditableLineItemGrid residual | Claims create path closed; module DoD / staging still open |
+
+## Batch 66 (claims totals + workspace adoption)
+
+| Gap | Action |
+| --- | --- |
+| Claim create grid missing TotalsSummary | Live net/tax/total footer via TotalsSummary + minorOrZero |
+| Workspace adoption gaps for spend/claims | Enforce TransactionWorkspace / EditableLineItemGrid / TotalsSummary in check:workspace |
+| Expense DoD honesty | Document local evidence in FINISHED-SCREEN-DOD-CORE (still IN PROGRESS) |
 

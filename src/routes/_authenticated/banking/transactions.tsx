@@ -47,7 +47,7 @@ import {
 import { AccountLookup, LookupSelect, type LookupCreateContext } from "@/components/lookup";
 import { BankAccountCreateForm, TaxCodeCreateForm } from "@/components/lookup/create-forms";
 import { toContactLookupOption } from "@/lib/lookup/eligibility";
-import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -818,12 +818,8 @@ function BankTransactions() {
 
       {txnsQ.isPending ? (
         <ListSkeleton />
-      ) : txnsQ.isError ? (
-        <ErrorState
-          onRetry={() => void txnsQ.refetch()}
-          title="Could not load"
-          description={friendlyAuthError(txnsQ.error)}
-        />
+      ) : txnsQ.isError && txnsQ.data === undefined ? (
+        <QueryErrorState queries={[txnsQ]} title="Could not load transactions" />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No transactions"

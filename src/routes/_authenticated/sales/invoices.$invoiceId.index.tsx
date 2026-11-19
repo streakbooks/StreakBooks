@@ -20,7 +20,8 @@ import { canVoidInvoice } from "@/lib/sales/allocation-rules";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { decodeInvoiceReturnContext } from "@/lib/sales/invoice-list-navigation";
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
@@ -177,14 +178,11 @@ function InvoiceDetail() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
-  if (query.isError) {
-    return (
-      <ErrorState
-        title="Invoice not found"
-        description={friendlyAuthError(query.error)}
-        onRetry={() => query.refetch()}
-      />
-    );
+  if (query.isError && query.data === undefined) {
+    return <QueryErrorState queries={[query]} title="Could not load invoice" />;
+  }
+  if (!query.data) {
+    return <EmptyState title="Invoice not found" description="This invoice is unavailable." />;
   }
 
   const inv = query.data;

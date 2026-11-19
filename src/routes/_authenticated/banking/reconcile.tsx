@@ -19,7 +19,7 @@ import {
 import { ConfirmButton } from "@/components/banking/ConfirmButton";
 import { MoneyField } from "@/components/banking/MoneyField";
 import { moneyFieldMinor } from "@/lib/banking/money-field";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { MeasuredProgress } from "@/components/common/MeasuredProgress";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -266,12 +266,8 @@ function Reconcile() {
         />
       ) : wsQ.isPending ? (
         <LoadingState />
-      ) : wsQ.isError ? (
-        <ErrorState
-          onRetry={() => void wsQ.refetch()}
-          title="Could not load reconciliation"
-          description={friendlyAuthError(wsQ.error)}
-        />
+      ) : wsQ.isError && wsQ.data === undefined ? (
+        <QueryErrorState queries={[wsQ]} title="Could not load reconciliation" />
       ) : ws ? (
         <>
           <div className="sticky top-0 z-10 mb-4 space-y-3 rounded-md border bg-background p-3 text-sm">

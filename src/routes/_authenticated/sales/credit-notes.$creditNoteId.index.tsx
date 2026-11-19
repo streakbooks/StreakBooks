@@ -20,7 +20,8 @@ import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { canVoidCreditNote, creditNoteStatusLabel } from "@/lib/sales/allocation-rules";
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
@@ -211,13 +212,12 @@ function CreditNoteDetail() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
-  if (query.isError || !cn) {
+  if (query.isError && query.data === undefined) {
+    return <QueryErrorState queries={[query]} title="Could not load credit note" />;
+  }
+  if (!cn) {
     return (
-      <ErrorState
-        title="Credit note not found"
-        description={friendlyAuthError(query.error)}
-        onRetry={() => query.refetch()}
-      />
+      <EmptyState title="Credit note not found" description="This credit note is unavailable." />
     );
   }
 

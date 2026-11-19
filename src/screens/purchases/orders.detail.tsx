@@ -26,6 +26,8 @@ import {
   purchaseOrderCopyInput,
 } from "@/lib/purchases/po-presentation";
 import type { PurchaseOrderDetail } from "@/lib/purchases/purchase-order-data";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
@@ -214,14 +216,9 @@ export function PurchaseOrderDetailScreen({
     onError: failure,
   });
   if (query.isPending) return <LoadingState />;
-  if (query.isError)
-    return (
-      <ErrorState
-        title="Could not load purchase order"
-        description={friendlyAuthError(query.error)}
-        onRetry={() => void query.refetch()}
-      />
-    );
+  if (query.isError && query.data === undefined) {
+    return <QueryErrorState queries={[query]} title="Could not load purchase order" />;
+  }
   const order = query.data;
   if (!order)
     return (
@@ -577,14 +574,30 @@ export function PurchaseOrderDetailScreen({
             </TableBody>
           </Table>
         </TableCard>
-        <dl className="my-5 ml-auto grid max-w-sm grid-cols-2 gap-2 text-sm">
-          <dt>Subtotal</dt>
-          <dd className="text-right">{fmt.money(order.subtotal_minor, currency)}</dd>
-          <dt>Tax</dt>
-          <dd className="text-right">{fmt.money(order.tax_minor, currency)}</dd>
-          <dt className="font-semibold">Total ({currency})</dt>
-          <dd className="text-right font-semibold">{fmt.money(order.total_minor, currency)}</dd>
-        </dl>
+        <div className="my-5 flex justify-end">
+          <TotalsSummary
+            aria-label="Purchase order totals"
+            lines={[
+              {
+                id: "subtotal",
+                label: "Subtotal",
+                value: fmt.money(order.subtotal_minor, currency),
+              },
+              {
+                id: "tax",
+                label: "Tax",
+                value: fmt.money(order.tax_minor, currency),
+                emphasis: "muted",
+              },
+              {
+                id: "total",
+                label: `Total (${currency})`,
+                value: fmt.money(order.total_minor, currency),
+                emphasis: "total",
+              },
+            ]}
+          />
+        </div>
         {order.memo ? (
           <section className="my-4 rounded-md border p-4">
             <h2 className="mb-2 font-medium">Supplier instructions</h2>

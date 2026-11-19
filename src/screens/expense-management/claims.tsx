@@ -8,7 +8,8 @@ import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
@@ -618,11 +619,7 @@ export function ExpenseManagementClaimsPage({
             </AlertDescription>
           </Alert>
         ) : (
-          <ErrorState
-            title="Could not load claims"
-            description={message}
-            onRetry={() => claimsQ.refetch()}
-          />
+          <QueryErrorState queries={[claimsQ]} title="Could not load claims" />
         )}
       </ListWorkspace>
     );

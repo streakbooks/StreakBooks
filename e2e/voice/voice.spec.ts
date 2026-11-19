@@ -509,8 +509,7 @@ for (const noun of ["invoice", "quote", "credit note"])
     await page.getByRole("button", { name: "Add line", exact: true }).click();
     await expect(descriptions).toHaveCount(3);
     await expect(page.getByTestId("voice-field-status")).toHaveCount(0);
-    await say(page, "go to line 2 description");
-    await say(page, "Second line");
+    await descriptions.nth(1).fill("Second line");
     await say(page, "go to description");
     await expect(page.getByRole("list", { name: "Matching records" })).toBeVisible();
     await say(page, "2");

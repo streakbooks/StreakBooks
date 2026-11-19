@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPlatformHealth } from "@/lib/platform/platform.functions";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 export function PlatformHealth() {
   const load = useServerFn(getPlatformHealth);
@@ -21,7 +22,7 @@ export function PlatformHealth() {
       {query.isPending ? (
         <p role="status">Checking database…</p>
       ) : query.isError ? (
-        <p role="alert">{query.error.message}</p>
+        <QueryErrorState queries={[query]} title="Could not load platform health" />
       ) : (
         <dl className="mt-5 grid gap-4 sm:grid-cols-2">
           {Object.entries(query.data).map(([k, v]) => (

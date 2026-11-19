@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -123,9 +124,7 @@ export function PlatformSupport({
       </div>
       {query.isPending ? <p role="status">Loading support requests…</p> : null}
       {query.isError ? (
-        <p role="alert" className="text-destructive">
-          {query.error.message}
-        </p>
+        <QueryErrorState queries={[query]} title="Could not load support access requests" />
       ) : null}
       {query.data?.ready === false ? (
         <p role="status">

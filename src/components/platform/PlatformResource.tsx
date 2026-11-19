@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -316,9 +317,7 @@ export function PlatformResource({
           Loading records…
         </p>
       ) : query.isError ? (
-        <p role="alert" className="rounded-lg border border-destructive p-4 text-destructive">
-          {query.error.message}
-        </p>
+        <QueryErrorState queries={[query]} title="Could not load platform records" />
       ) : rows.length === 0 ? (
         <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
           No matching records.

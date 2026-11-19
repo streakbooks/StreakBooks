@@ -8,6 +8,7 @@ import {
   setPlatformEntitlement,
 } from "@/lib/platform/platform.functions";
 import { FEATURE_REGISTRY } from "@/lib/platform/feature-registry";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { platformDate } from "@/lib/platform/support";
@@ -208,9 +209,7 @@ export function PlatformApprovals({
         </p>
         {query.isPending ? <p role="status">Loading approvals…</p> : null}
         {query.isError ? (
-          <p role="alert" className="text-sm text-destructive">
-            {query.error.message}
-          </p>
+          <QueryErrorState queries={[query]} title="Could not load pending approvals" />
         ) : null}
         {query.data && query.data.rows.length === 0 ? (
           <p className="mt-3 text-sm">No pending approvals.</p>

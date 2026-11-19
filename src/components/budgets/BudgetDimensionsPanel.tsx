@@ -18,6 +18,7 @@ import {
 import { validateBudgetAllocations, type AllocationCell } from "@/lib/budgets/budget-dimensions";
 import { csvFilename, csvMoney, downloadCsv, toCsv } from "@/lib/reports/csv";
 import { LookupSelect } from "@/components/lookup";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,19 +82,7 @@ export function BudgetDimensionsPanel({
       {query.isPending ? (
         <p className="text-sm text-muted-foreground">Loading budget dimensions…</p>
       ) : query.isError ? (
-        <Alert variant="destructive">
-          <AlertDescription>
-            Could not load budget dimensions: {friendlyAuthError(query.error)}
-            <Button
-              size="sm"
-              variant="outline"
-              className="ml-2"
-              onClick={() => void query.refetch()}
-            >
-              Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <QueryErrorState queries={[query]} title="Could not load budget dimensions" />
       ) : !data?.available ? (
         <Alert>
           <AlertDescription>

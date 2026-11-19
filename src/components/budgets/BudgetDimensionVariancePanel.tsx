@@ -10,10 +10,10 @@ import type {
   DimensionVarianceCell,
   DimensionVarianceRow,
 } from "@/lib/budgets/budget-dimension-variance";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { csvFilename, csvMoney, downloadCsv, toCsv } from "@/lib/reports/csv";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
@@ -232,11 +232,7 @@ export function BudgetDimensionVariancePanel({
           {query.isPending ? (
             <p className="text-sm text-muted-foreground">Loading posted journal actuals…</p>
           ) : query.isError ? (
-            <Alert variant="destructive">
-              <AlertDescription>
-                Could not load dimension actuals: {friendlyAuthError(query.error)}
-              </AlertDescription>
-            </Alert>
+            <QueryErrorState queries={[query]} title="Could not load dimension actuals" />
           ) : report && data ? (
             <>
               {report.months.length === 0 ? (

@@ -22,7 +22,7 @@ import {
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -125,43 +125,36 @@ function RecurringInvoiceWorkspace({
   const [autoAuth, setAutoAuth] = useState(false);
   const [lines, setLines] = useState<SalesLineFormState[]>(DEFAULT_LINES);
   const [hydratedId, setHydratedId] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const scheduleQ = useQuery({
+    queryKey: ["sales-recurring-one", companyId, editingId],
+    enabled: Boolean(companyId && editingId),
+    queryFn: () => fetchOne({ data: { companyId: companyId!, recurringId: editingId! } }),
+  });
 
   useEffect(() => {
     if (!nextDue && configQ.data) setNextDue(configQ.data.today);
   }, [nextDue, configQ.data]);
 
   useEffect(() => {
-    if (!companyId || !editingId || hydratedId === editingId) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const r = await fetchOne({ data: { companyId, recurringId: editingId } });
-        if (cancelled) return;
-        setName(r.name);
-        setContactId(r.contact_id);
-        setFrequency(r.frequency);
-        setNextDue(r.next_due_date);
-        setEndDate(r.end_date ?? "");
-        setMaxOcc(r.max_occurrences ? String(r.max_occurrences) : "");
-        setTerms(r.payment_terms_days !== null ? String(r.payment_terms_days) : "");
-        setMemo(r.memo ?? "");
-        setAutoAuth(r.auto_authorise);
-        setLines(
-          r.sales_recurring_invoice_lines.length
-            ? r.sales_recurring_invoice_lines.map((l) => lineRowToForm(l, r.currency_code))
-            : DEFAULT_LINES(),
-        );
-        setHydratedId(editingId);
-        setLoadError(null);
-      } catch (e) {
-        if (!cancelled) setLoadError(friendlyAuthError(e));
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [companyId, editingId, fetchOne, hydratedId]);
+    if (!editingId || !scheduleQ.data || hydratedId === editingId) return;
+    const r = scheduleQ.data;
+    setName(r.name);
+    setContactId(r.contact_id);
+    setFrequency(r.frequency);
+    setNextDue(r.next_due_date);
+    setEndDate(r.end_date ?? "");
+    setMaxOcc(r.max_occurrences ? String(r.max_occurrences) : "");
+    setTerms(r.payment_terms_days !== null ? String(r.payment_terms_days) : "");
+    setMemo(r.memo ?? "");
+    setAutoAuth(r.auto_authorise);
+    setLines(
+      r.sales_recurring_invoice_lines.length
+        ? r.sales_recurring_invoice_lines.map((l) => lineRowToForm(l, r.currency_code))
+        : DEFAULT_LINES(),
+    );
+    setHydratedId(editingId);
+  }, [editingId, scheduleQ.data, hydratedId]);
 
   const incomeAccounts = useMemo(
     () =>
@@ -255,12 +248,11 @@ function RecurringInvoiceWorkspace({
   if (customersQ.isPending || accountsQ.isPending || productsQ.isPending || configQ.isPending) {
     return <LoadingState />;
   }
-  if (editingId && !hydratedId && !loadError) return <LoadingState />;
-  if (loadError) {
-    return (
-      <ErrorState title="Could not load schedule" description={loadError} onRetry={onCancel} />
-    );
+  if (editingId && scheduleQ.isPending) return <LoadingState />;
+  if (editingId && scheduleQ.isError && scheduleQ.data === undefined) {
+    return <QueryErrorState queries={[scheduleQ]} title="Could not load schedule" />;
   }
+  if (editingId && !hydratedId) return <LoadingState />;
 
   return (
     <TransactionWorkspace
@@ -529,12 +521,8 @@ export function RecurringInvoices() {
     >
       {listQ.isPending ? (
         <LoadingState />
-      ) : listQ.isError ? (
-        <ErrorState
-          title="Could not load"
-          description={friendlyAuthError(listQ.error)}
-          onRetry={() => listQ.refetch()}
-        />
+      ) : listQ.isError && listQ.data === undefined ? (
+        <QueryErrorState queries={[listQ]} title="Could not load recurring invoices" />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No recurring invoices"

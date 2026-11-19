@@ -39,6 +39,7 @@ const required = [
   ["src/screens/sales/recurring.tsx", "ListWorkspace"],
   ["src/screens/sales/recurring.tsx", "TransactionWorkspace"],
   ["src/screens/sales/recurring.tsx", "TotalsSummary"],
+  ["src/screens/sales/recurring.tsx", "QueryErrorState"],
   ["src/screens/sales/orders.new.tsx", "TransactionWorkspace"],
   ["src/screens/sales/orders.new.tsx", "TotalsSummary"],
   ["src/screens/sales/orders.new.tsx", "FormGrid"],

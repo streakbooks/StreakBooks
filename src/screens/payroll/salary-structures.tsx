@@ -23,7 +23,8 @@ import type { PayrollSalaryStructureRow } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { bpsToPercentString } from "@/components/sales/sales-form-utils";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -153,13 +154,7 @@ export function PayrollSalaryStructuresPage() {
   }
   if (listQ.isPending || settingsQ.isPending) return <LoadingState />;
   if (listQ.isError) {
-    return (
-      <ErrorState
-        title="Could not load salary structures"
-        description={friendlyAuthError(listQ.error)}
-        onRetry={() => listQ.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[listQ]} title="Could not load salary structures" />;
   }
 
   const list = listQ.data;

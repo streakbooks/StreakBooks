@@ -7,14 +7,14 @@ import { Download } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { listPayrollPayslips } from "@/lib/payroll/runs.functions";
 import { payrollPayslipsToCsv, payslipNetBalances } from "@/lib/payroll/payslip-list-export";
 import { downloadCsv } from "@/lib/reports/csv";
 import type { PayrollPayslipsListPage, PayslipPaymentStatus } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -149,13 +149,7 @@ export function PayrollPayslipsPage({
   }
   if (listQ.isPending) return <LoadingState />;
   if (listQ.isError) {
-    return (
-      <ErrorState
-        title="Could not load payslips"
-        description={friendlyAuthError(listQ.error)}
-        onRetry={() => listQ.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[listQ]} title="Could not load payslips" />;
   }
 
   const list = listQ.data as PayrollPayslipsListPage;

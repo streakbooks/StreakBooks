@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { listMessagingAttachments } from "@/lib/messaging/messaging.functions";
 import { createMessagingAttachmentSignedUrl } from "@/lib/messaging/upload-client";
 import { notify } from "@/lib/notify";
@@ -34,11 +35,7 @@ export function ConversationFiles({
   if (query.isPending) return <LoadingState rows={2} />;
   if (query.isError) {
     return (
-      <ErrorState
-        title="Could not load shared files"
-        description="Retry to refresh authorised attachments."
-        onRetry={() => void query.refetch()}
-      />
+      <QueryErrorState queries={[query]} title="Could not load shared files" />
     );
   }
   if (!query.data?.length) {

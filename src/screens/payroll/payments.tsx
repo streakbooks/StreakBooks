@@ -30,7 +30,8 @@ import { listPayrollPayslips } from "@/lib/payroll/runs.functions";
 import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -349,11 +350,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   if (paymentsQ.isPending) return renderPaymentState(<LoadingState />);
   if (paymentsQ.isError) {
     return renderPaymentState(
-      <ErrorState
-        title="Could not load payments"
-        description={friendlyAuthError(paymentsQ.error)}
-        onRetry={() => paymentsQ.refetch()}
-      />,
+      <QueryErrorState queries={[paymentsQ]} title="Could not load payments" />,
     );
   }
   if (page && !page.available) {
@@ -845,11 +842,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           {paymentDetailQ.isPending ? (
             <LoadingState />
           ) : paymentDetailQ.isError ? (
-            <ErrorState
-              title="Could not load payment details"
-              description={friendlyAuthError(paymentDetailQ.error)}
-              onRetry={() => paymentDetailQ.refetch()}
-            />
+            <QueryErrorState queries={[paymentDetailQ]} title="Could not load payment details" />
           ) : paymentDetailQ.data ? (
             (() => {
               const detail = paymentDetailQ.data as PayrollPaymentDetailPage;

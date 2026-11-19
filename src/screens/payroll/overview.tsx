@@ -4,11 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CheckCircle2, Circle, Settings2 } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -46,13 +46,7 @@ export function PayrollOverviewPage() {
   }
   if (page.isPending) return <LoadingState />;
   if (page.isError) {
-    return (
-      <ErrorState
-        title="Could not load payroll"
-        description={friendlyAuthError(page.error)}
-        onRetry={() => page.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[page]} title="Could not load payroll" />;
   }
 
   const data = page.data;

@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMessagingAnalyticsSummary } from "@/lib/messaging/messaging.functions";
-import { LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { useCanDo } from "@/hooks/use-can";
 
 export function MessagingAnalyticsPanel({ companyId }: { companyId: string | null }) {
@@ -23,7 +24,7 @@ export function MessagingAnalyticsPanel({ companyId }: { companyId: string | nul
   if (query.isPending) return <LoadingState rows={3} />;
   if (query.isError) {
     return (
-      <ErrorState title="Could not load messaging analytics" onRetry={() => void query.refetch()} />
+      <QueryErrorState queries={[query]} title="Could not load messaging analytics" />
     );
   }
 

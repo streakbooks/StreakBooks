@@ -28,7 +28,8 @@ import {
   TaxCodeCreateForm,
 } from "@/components/lookup/create-forms";
 import { toContactLookupOption } from "@/lib/lookup/eligibility";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -501,11 +502,7 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
       {rulesQ.isPending ? (
         <LoadingState />
       ) : rulesQ.isError ? (
-        <ErrorState
-          onRetry={() => void rulesQ.refetch()}
-          title="Could not load rules"
-          description={friendlyAuthError(rulesQ.error)}
-        />
+        <QueryErrorState queries={[rulesQ]} title="Could not load rules" />
       ) : (rulesQ.data ?? []).length === 0 ? (
         <EmptyState title="No rules" description="Create a matching rule above." />
       ) : (

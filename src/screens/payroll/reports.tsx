@@ -8,7 +8,6 @@ import { Download, Printer } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PAYROLL_REPORT_STATUS_FOOTNOTE } from "@/lib/payroll/payroll-report-scope";
 import {
   getPayrollReportsCatalog,
@@ -22,7 +21,8 @@ import type {
 import { csvFilename, downloadCsv, toCsv, csvMoney } from "@/lib/reports/csv";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -227,11 +227,7 @@ export function PayrollReportsPage() {
     return (
       <>
         {navigationShell}
-        <ErrorState
-          title="Could not load payroll reports"
-          description={friendlyAuthError(catalogQ.error)}
-          onRetry={() => catalogQ.refetch()}
-        />
+        <QueryErrorState queries={[catalogQ]} title="Could not load payroll reports" />
       </>
     );
   }
@@ -393,11 +389,7 @@ export function PayrollReportsPage() {
           ) : reportQ.isPending || reportQ.isFetching ? (
             <LoadingState />
           ) : reportQ.isError ? (
-            <ErrorState
-              title="Could not run report"
-              description={friendlyAuthError(reportQ.error)}
-              onRetry={() => reportQ.refetch()}
-            />
+            <QueryErrorState queries={[reportQ]} title="Could not run report" />
           ) : result ? (
             <ReportTable
               title={result.title}

@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import {
   blockMessagingUser,
   listMessagingConversationMembers,
@@ -58,7 +59,7 @@ export function ConversationMembers({
   if (query.isPending) return <LoadingState rows={2} />;
   if (query.isError) {
     return (
-      <ErrorState title="Could not load members" onRetry={() => void query.refetch()} compact />
+      <QueryErrorState queries={[query]} title="Could not load members" />
     );
   }
   if (!query.data?.length) {

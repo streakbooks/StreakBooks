@@ -10,7 +10,8 @@ import {
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useCanDo } from "@/hooks/use-can";
 import { parseSalesDefaultsDraft } from "@/lib/settings/workflow-defaults-drafts";
-import { LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -102,11 +103,7 @@ export function SalesDefaultsForm({ companyId }: { companyId: string }) {
   if (q.isPending) return <LoadingState />;
   if (q.isError)
     return (
-      <ErrorState
-        title="Could not load defaults"
-        description={friendlyAuthError(q.error)}
-        onRetry={() => q.refetch()}
-      />
+      <QueryErrorState queries={[q]} title="Could not load defaults" />
     );
 
   return (

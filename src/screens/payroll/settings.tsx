@@ -38,7 +38,8 @@ import {
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { AccountLookup } from "@/components/lookup";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -309,13 +310,7 @@ export function PayrollSettingsPage() {
   }
   if (page.isPending || !draft) return <LoadingState />;
   if (page.isError) {
-    return (
-      <ErrorState
-        title="Could not load payroll settings"
-        description={friendlyAuthError(page.error)}
-        onRetry={() => page.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[page]} title="Could not load payroll settings" />;
   }
 
   const data = page.data;

@@ -37,7 +37,8 @@ import {
   saveBankImportMapping,
 } from "@/lib/banking/import.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -795,11 +796,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
       {importsQ.isPending ? (
         <LoadingState />
       ) : importsQ.isError ? (
-        <ErrorState
-          onRetry={() => void importsQ.refetch()}
-          title="Could not load imports"
-          description={friendlyAuthError(importsQ.error)}
-        />
+        <QueryErrorState queries={[importsQ]} title="Could not load imports" />
       ) : (importsQ.data ?? []).length === 0 ? (
         <EmptyState title="No imports yet" description="Upload a CSV, OFX, QFX or QIF statement." />
       ) : (

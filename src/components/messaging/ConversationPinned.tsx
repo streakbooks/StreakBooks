@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listPinnedMessagingMessages } from "@/lib/messaging/messaging.functions";
-import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 
 export function ConversationPinned({
   companyId,
@@ -19,11 +20,7 @@ export function ConversationPinned({
   if (query.isPending) return <LoadingState rows={2} />;
   if (query.isError) {
     return (
-      <ErrorState
-        title="Could not load pinned messages"
-        onRetry={() => void query.refetch()}
-        compact
-      />
+      <QueryErrorState queries={[query]} title="Could not load pinned messages" />
     );
   }
   if (!query.data?.length) {

@@ -19,7 +19,8 @@ import {
 } from "@/lib/documents/reminders";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EMAIL_NOT_CONFIGURED_TEXT } from "@/lib/documents/ui";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,11 +96,7 @@ export function ReminderSettingsContent({ embedded = false }: { embedded?: boole
   if (q.isPending) return <LoadingState />;
   if (q.isError)
     return (
-      <ErrorState
-        title="Could not load reminders"
-        description={friendlyAuthError(q.error)}
-        onRetry={() => q.refetch()}
-      />
+      <QueryErrorState queries={[q]} title="Could not load reminders" />
     );
 
   const data = q.data;

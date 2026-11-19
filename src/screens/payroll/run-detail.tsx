@@ -35,7 +35,8 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -341,11 +342,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
         {pageQ.isPending ? (
           <LoadingState />
         ) : (
-          <ErrorState
-            title="Could not load run"
-            description={friendlyAuthError(pageQ.error)}
-            onRetry={() => pageQ.refetch()}
-          />
+          <QueryErrorState queries={[pageQ]} title="Could not load run" />
         )}
       </RecordWorkspace>
     );
@@ -670,11 +667,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
           ) : journalsQ.isPending ? (
             <LoadingState />
           ) : journalsQ.isError ? (
-            <ErrorState
-              title="Could not load journals"
-              description={friendlyAuthError(journalsQ.error)}
-              onRetry={() => journalsQ.refetch()}
-            />
+            <QueryErrorState queries={[journalsQ]} title="Could not load journals" />
           ) : !journalsQ.data?.journals.length ? (
             <EmptyState
               title="No journals"

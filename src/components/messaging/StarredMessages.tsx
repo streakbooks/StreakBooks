@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listStarredMessagingMessages } from "@/lib/messaging/messaging.functions";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { SafeMessageBody } from "@/components/messaging/SafeMessageBody";
 import { Button } from "@/components/ui/button";
 
@@ -21,11 +22,7 @@ export function StarredMessages({
   if (query.isPending) return <LoadingState rows={3} />;
   if (query.isError) {
     return (
-      <ErrorState
-        title="Could not load starred messages"
-        onRetry={() => void query.refetch()}
-        compact
-      />
+      <QueryErrorState queries={[query]} title="Could not load starred messages" />
     );
   }
   if (!query.data?.length) {

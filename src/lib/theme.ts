@@ -30,11 +30,11 @@ export const PALETTE_STORAGE_KEY = "linkbooks-theme-palette";
 export const CUSTOM_PALETTE_STORAGE_KEY = "linkbooks-theme-custom";
 
 export const DEFAULT_CUSTOM_PALETTE: CustomPalette = {
-  primary: "#4f7df3",
-  accent: "#2aa5a0",
+  primary: "#563d57",
+  accent: "#c4a77d",
   sidebar: "#ffffff",
-  lightBackground: "#f7fafc",
-  darkBackground: "#152135",
+  lightBackground: "#faf8f5",
+  darkBackground: "#201923",
 };
 
 export const PALETTE_OPTIONS: readonly {
@@ -48,18 +48,18 @@ export const PALETTE_OPTIONS: readonly {
   {
     id: "classic",
     name: "LinkBooks Signature",
-    description: "Soft premium blue",
-    primary: "#3866db",
+    description: "Royal plum and soft ivory",
+    primary: "#563d57",
     sidebar: "#ffffff",
-    surface: "#f7fafc",
+    surface: "#faf8f5",
   },
   {
     id: "sapphire",
-    name: "Sapphire Focus",
-    description: "Soft pastel blues",
-    primary: "#3b6de0",
+    name: "Royal Mulberry",
+    description: "Warm berry and muted mauve",
+    primary: "#6b4669",
     sidebar: "#ffffff",
-    surface: "#f4f8ff",
+    surface: "#fbf8fa",
   },
   {
     id: "rose",
@@ -123,12 +123,26 @@ export function isHexColor(v: unknown): v is string {
   return typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v);
 }
 
+/**
+ * Earlier LinkBooks builds saved these default blue primaries as custom colours.
+ * Upgrade only those exact legacy defaults; preserve all other user-picked colours.
+ */
+export const LEGACY_BLUE_PRIMARIES = ["#4f7df3", "#3866db", "#3b6de0"] as const;
+
+export function migrateLegacyBluePrimary(primary: string): string {
+  return LEGACY_BLUE_PRIMARIES.some((blue) => blue === primary.toLowerCase())
+    ? DEFAULT_CUSTOM_PALETTE.primary
+    : primary;
+}
+
 /** Treat incomplete, corrupted or manually edited storage as the safe default. */
 export function validateCustomPalette(v: unknown): CustomPalette {
   if (typeof v !== "object" || !v || Array.isArray(v)) return { ...DEFAULT_CUSTOM_PALETTE };
   const r = v as Record<string, unknown>;
   return {
-    primary: isHexColor(r["primary"]) ? r["primary"] : DEFAULT_CUSTOM_PALETTE.primary,
+    primary: isHexColor(r["primary"])
+      ? migrateLegacyBluePrimary(r["primary"])
+      : DEFAULT_CUSTOM_PALETTE.primary,
     accent: isHexColor(r["accent"]) ? r["accent"] : DEFAULT_CUSTOM_PALETTE.accent,
     sidebar: isHexColor(r["sidebar"]) ? r["sidebar"] : DEFAULT_CUSTOM_PALETTE.sidebar,
     lightBackground: isHexColor(r["lightBackground"])
@@ -315,6 +329,7 @@ export const THEME_INIT_SCRIPT =
   ";" +
   "var valid=/^#[0-9a-fA-F]{6}$/;var colors={};" +
   "Object.keys(defaults).forEach(function(k){colors[k]=saved&&typeof saved[k]==='string'&&valid.test(saved[k])?saved[k]:defaults[k];});" +
+  "if(" + JSON.stringify(LEGACY_BLUE_PRIMARIES) + ".indexOf(colors.primary.toLowerCase())!==-1)colors.primary=defaults.primary;" +
   "var tokens=(" +
   computeCustomTokens.toString() +
   ")(colors,dark);" +

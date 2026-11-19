@@ -8,6 +8,7 @@ import {
   resolveTheme,
   computeCustomTokens,
   DEFAULT_CUSTOM_PALETTE,
+  LEGACY_BLUE_PRIMARIES,
   PALETTE_OPTIONS,
   THEME_INIT_SCRIPT,
   THEME_STORAGE_KEY,
@@ -117,6 +118,39 @@ describe("appearance modes and palettes", () => {
     expect(validateCustomPalette(null)).toEqual(DEFAULT_CUSTOM_PALETTE);
   });
 
+  it("replaces previously seeded blue custom colours but preserves real user choices", () => {
+    expect(DEFAULT_CUSTOM_PALETTE.primary).toBe("#563d57");
+    expect(PALETTE_OPTIONS.find((p) => p.id === "classic")?.primary).toBe("#563d57");
+    expect(PALETTE_OPTIONS.find((p) => p.id === "sapphire")?.primary).toBe("#6b4669");
+    for (const oldPrimary of LEGACY_BLUE_PRIMARIES) {
+      expect(validateCustomPalette({ primary: oldPrimary }).primary).toBe("#563d57");
+      expect(validateCustomPalette({ primary: oldPrimary.toUpperCase() }).primary).toBe("#563d57");
+    }
+    expect(validateCustomPalette({ primary: "#2258dd" }).primary).toBe("#2258dd");
+  });
+
+  it("prepaint migration replaces the legacy saved blue before rendering", () => {
+    const variables: Record<string, string> = {};
+    runInNewContext(THEME_INIT_SCRIPT, {
+      document: {
+        documentElement: {
+          classList: { toggle: () => {} },
+          setAttribute: () => {},
+          style: { setProperty: (key: string, value: string) => { variables[key] = value; } },
+        },
+      },
+      localStorage: {
+        getItem: (key: string) => key === PALETTE_STORAGE_KEY
+          ? "custom"
+          : key === CUSTOM_PALETTE_STORAGE_KEY
+            ? JSON.stringify({ primary: "#4f7df3" })
+            : "light",
+      },
+      window: { matchMedia: () => ({ matches: false }) },
+    });
+    expect(variables["--primary"]).toBe("#563d57");
+  });
+
   it("derives complete readable tokens for arbitrary custom palettes in both modes", () => {
     const colors = {
       primary: "#ffffff",
@@ -148,6 +182,7 @@ describe("appearance modes and palettes", () => {
   it("exposes the requested professional palette labels without changing persisted IDs", () => {
     for (const name of [
       "LinkBooks Signature",
+      "Royal Mulberry",
       "Executive Slate",
       "Emerald Professional",
       "Royal Indigo",

@@ -70,7 +70,7 @@ eature/premium-ui-batch40-density-acceptance | [PR #286](https://github.com/link
 | 71 | Phase 3–5 | Requisitions FormGrid/TotalsSummary; claims FormGrid; journal/sales-doc workspace locks; includes 66–70 | `feature/premium-ui-batch71-production-gaps` | [PR #345](https://github.com/linkbusinessadvisory/LinkBooks/pull/345) superseded by Batch 72 | purchases + EM + sales | superseded |
 | 72 | Phase 3–5 | OrderEntryLines EditableLineItemGrid+keyboard; default 2 rows; bills/sales/purchases line adoption locks; includes 66–71 | `feature/premium-ui-batch72-production-gaps` | [PR #346](https://github.com/linkbusinessadvisory/LinkBooks/pull/346) superseded by Batch 73 | sales + purchases | superseded |
 | 73 | Phase 3–5 | StatusBadge meta honesty; Sales/journal ErrorState retry; FormGrid locks; includes 66–72 | `feature/premium-ui-batch73-production-gaps` | [PR #347](https://github.com/linkbusinessadvisory/LinkBooks/pull/347) merged | sales + purchases + banking + EM | done |
-| 74 | Phase 3–5 | PurchasesDocumentLines → EditableLineItemGrid (bills create/edit) | `feature/premium-ui-batch74-production-gaps` | pending PR | purchases / bills | in progress |
+| 74 | Phase 3–5 | PurchasesDocumentLines → EditableLineItemGrid (bills create/edit) | `feature/premium-ui-batch74-production-gaps` | [PR #351](https://github.com/linkbusinessadvisory/LinkBooks/pull/351) OPEN | purchases / bills | PR open |
 | 75+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do create/ELG Batches 46–74) | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

@@ -5,8 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { listSuppliers } from "@/lib/purchases/purchases.functions";
 import { useCanDo } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,11 +63,7 @@ function SuppliersPage() {
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
-        <ErrorState
-          title="Could not load suppliers"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => query.refetch()}
-        />
+        <QueryErrorState queries={[query]} title="Could not load suppliers" />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState
           title="No suppliers"

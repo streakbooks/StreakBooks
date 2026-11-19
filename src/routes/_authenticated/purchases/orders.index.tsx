@@ -13,8 +13,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { listPurchaseOrders } from "@/lib/purchases/purchases.functions";
-import { friendlyAuthError } from "@/lib/auth-helpers";
-import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ListToolbar } from "@/components/common/ListTools";
 
@@ -86,11 +86,7 @@ function OrdersList() {
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
-        <ErrorState
-          onRetry={() => void query.refetch()}
-          title="Could not load orders"
-          description={friendlyAuthError(query.error)}
-        />
+        <QueryErrorState queries={[query]} title="Could not load orders" />
       ) : !query.data?.total && !search && status === "all" ? (
         <EmptyState
           title="No purchase orders"

@@ -84,7 +84,8 @@ eature/premium-ui-batch40-density-acceptance | [PR #286](https://github.com/link
 | 85 | Phase 3–5 | PO record QueryErrorState/TotalsSummary; sales/purchase CN record QueryErrorState; claims list QueryErrorState | `feature/premium-ui-batch83-production-gaps` | [PR #359](https://github.com/linkbusinessadvisory/LinkBooks/pull/359) → merged | purchases + sales + expense-management | done |
 | 86 | Phase 3–5 | Sales quotes/receipts/credit-notes lists + supplier payments list QueryErrorState | `feature/premium-ui-batch86-production-gaps` | [PR #360](https://github.com/linkbusinessadvisory/LinkBooks/pull/360) merged | sales + purchases | done |
 | 87 | Phase 3–5 | Journals list + expense record + requisitions list QueryErrorState | `feature/premium-ui-batch86-production-gaps` | [PR #360](https://github.com/linkbusinessadvisory/LinkBooks/pull/360) merged | accounting + purchases | done |
-| 88 | Phase 3–5 | Quote/CN edit + sales orders/customers + purchase CN list QueryErrorState | `feature/premium-ui-batch88-production-gaps` | pending PR | sales + purchases | in progress |
-| 89+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do Batches 46–88) | TBD | — | all modules | planned |
+| 88 | Phase 3–5 | Quote/CN edit + sales orders/customers + purchase CN list QueryErrorState | `feature/premium-ui-batch88-production-gaps` | [PR #361](https://github.com/linkbusinessadvisory/LinkBooks/pull/361) merged | sales + purchases | done |
+| 89 | Phase 3–5 | Sales/purchases/banking overviews + PO/suppliers/expenses lists QueryErrorState | `feature/premium-ui-batch89-production-gaps` | pending PR | sales + purchases + banking | in progress |
+| 90+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do Batches 46–89) | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

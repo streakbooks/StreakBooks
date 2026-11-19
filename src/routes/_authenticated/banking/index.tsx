@@ -19,7 +19,8 @@ import { ConfirmButton } from "@/components/banking/ConfirmButton";
 import { BankIntegrityBanner } from "@/components/banking/BankIntegrityBanner";
 import { BankAccountDetailsDialog } from "@/components/banking/BankAccountDetailsDialog";
 import { listBankAccountDetails } from "@/lib/banking/bank-ops.functions";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -215,11 +216,7 @@ function BankingAccounts() {
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
-        <ErrorState
-          onRetry={() => void query.refetch()}
-          title="Could not load accounts"
-          description={friendlyAuthError(query.error)}
-        />
+        <QueryErrorState queries={[query]} title="Could not load accounts" />
       ) : accounts.length === 0 ? (
         <EmptyState
           icon={Landmark}

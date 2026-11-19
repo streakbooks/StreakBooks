@@ -285,7 +285,9 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
                       {TEMPLATE_LABEL[h.template as EmailTemplate] ?? h.template}
                     </span>{" "}
                     to {h.to_addresses.join(", ")}
-                    {h.error ? <span className="text-destructive"> — {h.error}</span> : null}
+                    {h.error ? (
+                      <span className="text-destructive"> — {friendlyAuthError(h.error)}</span>
+                    ) : null}
                   </span>
                   <span className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Badge variant={h.status === "sent" ? "secondary" : "destructive"}>

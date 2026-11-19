@@ -61,7 +61,7 @@ export function BillingDocuments({ companyId }: { companyId: string }) {
       ) : null}
       <TaxIdForm companyId={companyId} />
       {query.isLoading ? <p className="text-sm text-muted-foreground">Loading invoices…</p> : null}
-      {!query.isLoading && invoices.length === 0 ? (
+      {!query.isLoading && !query.isError && invoices.length === 0 ? (
         <p className="text-sm text-muted-foreground">Invoices appear here after each payment.</p>
       ) : null}
       {invoices.length ? (
@@ -170,6 +170,9 @@ function TaxIdForm({ companyId }: { companyId: string }) {
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
+  if (account.isError) {
+    return <QueryErrorState queries={[account]} title="Could not load billing account" />;
+  }
   if (!account.data?.permissions.manage) return null;
   return (
     <form

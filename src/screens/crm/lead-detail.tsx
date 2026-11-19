@@ -335,11 +335,12 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
               {matchesQuery.isError ? (
                 <QueryErrorState queries={[matchesQuery]} title="Could not check matches" />
               ) : null}
-              {(matchesQuery.data?.matches?.length ?? 0) === 0 ? (
+              {matchesQuery.isSuccess && (matchesQuery.data.matches?.length ?? 0) === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No matching contacts found. Conversion creates a new customer when authorised.
                 </p>
-              ) : (
+              ) : null}
+              {matchesQuery.isSuccess && (matchesQuery.data.matches?.length ?? 0) > 0 ? (
                 <div className="space-y-2">
                   <Label>Use existing contact</Label>
                   <RecordLookupSelect
@@ -351,7 +352,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none">Select contact…</SelectItem>
-                      {(matchesQuery.data?.matches ?? []).map((match) => (
+                      {(matchesQuery.data.matches ?? []).map((match) => (
                         <SelectItem key={match.id} value={match.id}>
                           {match.name}
                           {match.email ? ` · ${match.email}` : ""} (score {match.score})
@@ -368,7 +369,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
                     Create a new contact anyway (explicit override)
                   </label>
                 </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
         ) : null}

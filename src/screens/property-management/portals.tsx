@@ -257,7 +257,7 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
           {access.isError ? (
             <QueryErrorState queries={[access]} title="Could not load portal access" />
           ) : null}
-          {access.data?.length === 0 ? (
+          {!access.isError && access.data?.length === 0 ? (
             <EmptyState
               title={`No ${kind} portal grants`}
               description="Invite a contact linked to an existing record."

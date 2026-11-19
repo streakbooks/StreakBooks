@@ -55,18 +55,20 @@ export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
           : d?.basis
       }
       extraControls={
-        <ReportAccountMultiSelect
-          accounts={(d?.rows ?? []).map((row) => ({
-            id: row.account_id,
-            code: row.code,
-            name: row.name,
-          }))}
-          selected={selectedIds ?? undefined}
-          onChange={(ids) =>
-            ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
-          }
-          disabled={!d}
-        />
+        q.isError ? null : (
+          <ReportAccountMultiSelect
+            accounts={(d?.rows ?? []).map((row) => ({
+              id: row.account_id,
+              code: row.code,
+              name: row.name,
+            }))}
+            selected={selectedIds ?? undefined}
+            onChange={(ids) =>
+              ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+            }
+            disabled={!d}
+          />
+        )
       }
       getCsv={() =>
         d

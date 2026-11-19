@@ -281,7 +281,7 @@ export function PmReservationsPage() {
           {reservations.isError ? (
             <QueryErrorState queries={[reservations]} title="Could not load reservations" />
           ) : null}
-          {reservations.data?.length === 0 ? (
+          {!reservations.isError && reservations.data?.length === 0 ? (
             <EmptyState
               title="No reservations"
               description="Create a booking or import later."

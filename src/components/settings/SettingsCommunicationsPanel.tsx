@@ -23,6 +23,7 @@ import {
 import { notificationsConfigSchema } from "@/lib/settings/registry";
 import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
 import { DigestPreferences } from "@/components/notifications/DigestPreferences";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { notify } from "@/lib/notify";
 import { Button } from "@/components/ui/button";
@@ -177,12 +178,9 @@ export function SettingsCommunicationsPanel({
       {status.isPending && (
         <p className="text-sm text-muted-foreground">Checking email delivery configuration…</p>
       )}
-      {status.isError && (
-        <Alert variant="destructive">
-          <AlertTitle>Status check failed</AlertTitle>
-          <AlertDescription>{friendlyAuthError(status.error)}</AlertDescription>
-        </Alert>
-      )}
+      {status.isError ? (
+        <QueryErrorState queries={[status]} title="Status check failed" />
+      ) : null}
       {status.data && (
         <Alert variant={providerReady ? "default" : "destructive"}>
           {providerReady ? (
@@ -241,17 +239,9 @@ export function SettingsCommunicationsPanel({
           </CardDescription>
         </CardHeader>
         <CardContent className="grid max-w-xl gap-4">
-          {config.isError && (
-            <Alert variant="destructive">
-              <AlertTitle>Could not load communication settings</AlertTitle>
-              <AlertDescription className="space-y-2">
-                <p>{friendlyAuthError(config.error)}</p>
-                <Button size="sm" variant="outline" onClick={() => void config.refetch()}>
-                  Retry
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
+          {config.isError ? (
+            <QueryErrorState queries={[config]} title="Could not load communication settings" />
+          ) : null}
           {serverChanged && (
             <Alert variant="destructive">
               <AlertTitle>These settings changed in another session</AlertTitle>

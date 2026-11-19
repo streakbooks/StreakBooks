@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LookupSelect } from "@/components/lookup";
 import { MultiLookupSelect } from "@/components/lookup/MultiLookupSelect";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,7 +60,6 @@ export function ApiKeysAdmin({ isOwner }: { isOwner: boolean }) {
     },
     onError: (error) => toast.error(errorText(error, "The scopes could not be saved.")),
   });
-  if (query.isError) return null;
   const active = (query.data ?? []).filter((key) => !key.retiredAt);
   return (
     <section className="space-y-3" aria-labelledby="api-keys-heading">
@@ -72,6 +72,9 @@ export function ApiKeysAdmin({ isOwner }: { isOwner: boolean }) {
           granted here. The key is shown once; LinkBooks stores only its hash.
         </p>
       </header>
+      {query.isError ? (
+        <QueryErrorState queries={[query]} title="Could not load billing API keys" />
+      ) : null}
       <ul className="space-y-1 text-sm">
         {(query.data ?? []).map((key) => (
           <li key={key.id} className="flex flex-wrap items-center gap-2">

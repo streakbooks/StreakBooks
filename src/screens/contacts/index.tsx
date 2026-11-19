@@ -1169,11 +1169,12 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                     </SelectContent>
                   </RecordLookupSelect>
                 </div>
-                {(groupsQ.isError || tagsQ.isError) && (
-                  <p role="alert" className="text-xs text-destructive">
-                    Could not load groups or tags. Refresh this page to retry.
-                  </p>
-                )}
+                {groupsQ.isError || tagsQ.isError ? (
+                  <QueryErrorState
+                    queries={[groupsQ, tagsQ]}
+                    title="Could not load groups or tags"
+                  />
+                ) : null}
                 <div className="space-y-1">
                   <Label>Contact currency override</Label>
                   <RecordLookupSelect
@@ -1521,9 +1522,10 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               </p>
             ) : null}
             {someSelected && canManage && (groupsQ.isError || tagsQ.isError) ? (
-              <p role="alert" className="w-full text-xs text-destructive">
-                Could not load groups or tags. Refresh Contacts and try again.
-              </p>
+              <QueryErrorState
+                queries={[groupsQ, tagsQ]}
+                title="Could not load groups or tags"
+              />
             ) : null}
           </div>
           {query.isPending ? (

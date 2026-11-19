@@ -13,6 +13,7 @@ import {
   saveReportView,
 } from "@/lib/reports/report-views.functions";
 import { parseReportSearch } from "@/lib/reports/search";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ReportCtx } from "./ReportShell";
@@ -85,12 +86,9 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
   if (!reportId) return null;
   if (q.isError)
     return (
-      <p role="alert" className="text-sm text-destructive print:hidden">
-        Saved views could not be loaded.{" "}
-        <button className="underline" onClick={() => void q.refetch()}>
-          Retry
-        </button>
-      </p>
+      <div className="print:hidden">
+        <QueryErrorState queries={[q]} title="Could not load saved views" />
+      </div>
     );
   const views = ((q.data ?? []) as unknown as Saved[]).filter(
     (v) => !libraryMetadata(v.config).archived,
@@ -105,11 +103,9 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
           Saved views are read only: {access.data.reason} (source: {access.data.source}).
         </span>
       )}
-      {access.isError && (
-        <span role="alert" className="text-xs text-destructive">
-          Could not verify saved-view editing access. {friendlyAuthError(access.error)}
-        </span>
-      )}
+      {access.isError ? (
+        <QueryErrorState queries={[access]} title="Could not verify saved-view editing access" />
+      ) : null}
       {views.map((v) => (
         <span key={v.id} className="inline-flex items-center rounded-full border pl-3">
           <Link

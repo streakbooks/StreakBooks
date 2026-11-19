@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,6 @@ export function BillingDocuments({ companyId }: { companyId: string }) {
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : "The document could not be opened."),
   });
-  if (query.isError) return null;
   const invoices = query.data?.invoices ?? [];
   const creditNotes = query.data?.creditNotes ?? [];
   return (
@@ -56,6 +56,9 @@ export function BillingDocuments({ companyId }: { companyId: string }) {
       <h2 id="invoices-heading" className="text-base font-semibold">
         Invoices
       </h2>
+      {query.isError ? (
+        <QueryErrorState queries={[query]} title="Could not load billing invoices" />
+      ) : null}
       <TaxIdForm companyId={companyId} />
       {query.isLoading ? <p className="text-sm text-muted-foreground">Loading invoices…</p> : null}
       {!query.isLoading && invoices.length === 0 ? (

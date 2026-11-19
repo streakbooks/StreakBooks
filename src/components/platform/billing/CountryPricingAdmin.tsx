@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LookupSelect } from "@/components/lookup";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -61,13 +62,10 @@ export function CountryPricingAdmin({ canEdit }: { canEdit: boolean }) {
     retry: false,
   });
   if (query.isLoading) return <p className="text-sm">Loading country pricing…</p>;
-  if (query.isError || !query.data) {
-    return (
-      <p className="text-sm text-destructive">
-        {errorText(query.error, "Country pricing could not be loaded.")}
-      </p>
-    );
+  if (query.isError) {
+    return <QueryErrorState queries={[query]} title="Could not load country pricing" />;
   }
+  if (!query.data) return null;
   return <CountryPricingPanels data={query.data} canEdit={canEdit} />;
 }
 

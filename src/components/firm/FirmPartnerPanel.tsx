@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LookupSelect } from "@/components/lookup";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,16 +46,7 @@ export function FirmPartnerPanel({ firmId, canManage }: { firmId: string; canMan
   const query = useQuery({ queryKey, queryFn: () => load(), retry: false });
   if (query.isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (query.isError) {
-    return (
-      <div className="space-y-2 text-sm">
-        <p className="text-destructive">
-          {errorText(query.error, "The partner programme could not be loaded.")}
-        </p>
-        <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
+    return <QueryErrorState queries={[query]} title="Could not load partner programme" />;
   }
   const portal = query.data;
   if (!portal) return null;

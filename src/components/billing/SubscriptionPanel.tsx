@@ -18,6 +18,7 @@ import { CheckoutForm } from "@/components/billing/CheckoutForm";
 import { BillingDocuments } from "@/components/billing/BillingDocuments";
 import { ReferralPanel } from "@/components/billing/ReferralPanel";
 import { SubscriptionLifecycle } from "@/components/billing/SubscriptionLifecycle";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -253,15 +254,10 @@ export function SubscriptionPanel({
       </p>
     );
   }
-  if (overview.isError || !data) {
-    return (
-      <p className="text-sm text-destructive">
-        {overview.error instanceof Error
-          ? overview.error.message
-          : "Subscription details could not be loaded."}
-      </p>
-    );
+  if (overview.isError) {
+    return <QueryErrorState queries={[overview]} title="Could not load subscription details" />;
   }
+  if (!data) return null;
 
   const busy = checkout.isPending || planChange.isPending;
   const quote = target ? (quotes[target.code] ?? null) : null;

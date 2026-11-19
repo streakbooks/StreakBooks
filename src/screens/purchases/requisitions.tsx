@@ -17,6 +17,7 @@ import {
   type PurchaseOrderLineForm,
 } from "@/lib/purchases/purchase-order";
 import { sumLines } from "@/lib/purchases/line-math";
+import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
 import {
   listPurchaseRequisitions,
   savePurchaseRequisition,
@@ -464,7 +465,7 @@ function RequisitionEditor({
           discount: fromMinorUnits(line.discountMinor ?? 0, initial.currency_code),
           taxPercent: String((line.taxRateBps ?? 0) / 100),
         }))
-      : [emptyOrderLine()],
+      : createEmptyDocumentLines(emptyOrderLine),
   );
   const suppliers = useQuery({
     queryKey: ["suppliers", companyId],
@@ -594,23 +595,22 @@ function RequisitionEditor({
         </FormGrid>
       }
       lines={
-        <fieldset disabled={mutation.isPending} className="disabled:opacity-70">
-          <OrderEntryLines
-            companyId={companyId}
-            currency={currencyCode}
-            lines={lines}
-            onChange={setLines}
-            accounts={(
-              (accounts.data ?? []) as Array<{
-                id: string;
-                code: string;
-                name: string;
-                is_active: boolean;
-                is_postable: boolean;
-              }>
-            ).filter((account) => account.is_active && account.is_postable)}
-          />
-        </fieldset>
+        <OrderEntryLines
+          companyId={companyId}
+          currency={currencyCode}
+          lines={lines}
+          onChange={setLines}
+          accounts={(
+            (accounts.data ?? []) as Array<{
+              id: string;
+              code: string;
+              name: string;
+              is_active: boolean;
+              is_postable: boolean;
+            }>
+          ).filter((account) => account.is_active && account.is_postable)}
+          disabled={mutation.isPending}
+        />
       }
       totals={
         <TotalsSummary

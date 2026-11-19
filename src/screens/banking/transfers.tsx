@@ -27,6 +27,7 @@ import {
 } from "@/components/documents/DocumentRecordPanel";
 import { BankLookup } from "@/components/lookup";
 import { LoadingState, EmptyState } from "@/components/common/states";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
@@ -160,6 +161,7 @@ export function NewTransfer({
         { label: "Transfers", to: "/banking/transfers" },
         { label: "New" },
       ]}
+      meta={<StatusBadge status="draft" label="Draft" />}
       stickyActions={
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" size="sm" asChild>

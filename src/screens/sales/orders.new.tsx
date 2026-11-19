@@ -13,6 +13,7 @@ import { listCustomers } from "@/lib/sales/sales.functions";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { emptyOrderLine } from "@/lib/purchases/purchase-order";
+import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
 import { sumLines } from "@/lib/sales/line-helpers";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
@@ -97,7 +98,7 @@ export function SalesOrderForm({
           discount: fromMinorUnits(l.discount_minor, initial.currency_code),
           taxPercent: String(l.tax_rate_bps / 100),
         }))
-      : [emptyOrderLine()],
+      : createEmptyDocumentLines(emptyOrderLine),
   );
   const treatment = config.data?.treatment ?? "exclusive";
   let totals: { subtotal_minor: bigint; tax_minor: bigint; total_minor: bigint } | null = null;
@@ -221,15 +222,14 @@ export function SalesOrderForm({
         </FormGrid>
       }
       lines={
-        <fieldset disabled={mutation.isPending} className="disabled:opacity-70">
-          <OrderEntryLines
-            lines={lines}
-            onChange={setLines}
-            accounts={(accounts.data ?? []).filter((a) => a.is_active && a.is_postable)}
-            companyId={companyId}
-            currency={currency}
-          />
-        </fieldset>
+        <OrderEntryLines
+          lines={lines}
+          onChange={setLines}
+          accounts={(accounts.data ?? []).filter((a) => a.is_active && a.is_postable)}
+          companyId={companyId}
+          currency={currency}
+          disabled={mutation.isPending}
+        />
       }
       totals={
         <TotalsSummary

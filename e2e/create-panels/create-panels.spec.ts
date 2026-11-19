@@ -262,3 +262,25 @@ test("recurring schedule save keeps submitted values locked and restores editing
   await expect(name).toHaveValue("Keep this draft");
   await expect(dialog.getByRole("button", { name: "Close", exact: true })).toBeEnabled();
 });
+
+test("sales order grid pastes numeric rows and supports keyboard movement", async ({ page }) => {
+  await page.goto("/sales/orders/new");
+  const firstQuantity = page.getByRole("textbox", { name: "Line 1 quantity" });
+  const secondQuantity = page.getByRole("textbox", { name: "Line 2 quantity" });
+  await firstQuantity.focus();
+  await firstQuantity.evaluate((input) => {
+    const clipboardData = new DataTransfer();
+    clipboardData.setData("text/plain", "2\t10.50\n3\t20.25");
+    input.dispatchEvent(
+      new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData }),
+    );
+  });
+  await expect(firstQuantity).toHaveValue("2");
+  await expect(secondQuantity).toHaveValue("3");
+  await expect(page.getByRole("textbox", { name: "Line 1 unit price" })).toHaveValue("10.50");
+  await expect(page.getByRole("textbox", { name: "Line 2 unit price" })).toHaveValue("20.25");
+  await page.keyboard.press("ArrowDown");
+  await expect(secondQuantity).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(firstQuantity).toBeFocused();
+});

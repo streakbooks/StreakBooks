@@ -39,7 +39,7 @@
 | Requirement | Status | Evidence / notes |
 | --- | --- | --- |
 | TransactionWorkspace / RecordWorkspace / ListWorkspace | PARTIAL | Adopted on create/list surfaces in Batches 25–54; module DoD incomplete |
-| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money/claims; Batch 68 spend/PO/CN keyboard+paste; residual module DoD / staging TBD |
+| EditableLineItemGrid Excel-style lines | PARTIAL | Sales/purchases/journals/money/claims/requisitions/SO via OrderEntryLines; Batch 72 ELG+keyboard; residual module DoD / staging TBD |
 | Consistent +New / empty CTAs | PARTIAL | Batches 49–63 closed create empties; Batch 64 App Store + approval queue bridges; residual queue-only empties intentional |
 | Module finished-screen DoD (34 modules) | PARTIAL | **0/34 COMPLETE** — continue without duplicating create work |
 | Staging / live RBAC / prod migrations | BLOCKED | Batches 23–24; require separate auth |
@@ -203,4 +203,23 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Claims header FormGrid | Create header fields use FormGrid (no redo of totals/keyboard) |
 | Journal / sales-doc adoption | check:workspace locks JournalPanels + SalesDocumentEditor chrome |
 | Includes Batches 66–70 | Rebased onto current main (supersedes PR #343) |
+
+## Batch 72 (OrderEntryLines ELG + adoption locks)
+
+| Gap | Action |
+| --- | --- |
+| OrderEntryLines card-stack | Migrate to EditableLineItemGrid + qty/price/discount/tax% keyboard/paste |
+| Default empty rows | Sales order / requisition / PO use createEmptyDocumentLines (2 rows) |
+| Bills / sales / purchases line adoption | check:workspace locks PurchasesDocumentLines, SalesDocumentLines, bills.new, MoneyDocumentPanel FormGrid |
+| Includes Batches 66–71 | Rebased onto current main (supersedes PR #345) |
+
+## Batch 73 (chrome honesty + error retry)
+
+| Gap | Action |
+| --- | --- |
+| StatusBadge meta honesty | Credit notes, claims create, transfers, bills header use StatusBadge |
+| Sales/journal error retry | SalesDocumentEditor + JournalPanels ErrorState when options fail |
+| FormGrid / StatusBadge locks | check:workspace expands FormGrid + StatusBadge + ErrorState tokens |
+| DoD honesty | Strengthen local evidence; PurchasesDocumentLines still not ELG (Batch 74+) |
+| Includes Batches 66–72 | Carried on feature branch (supersedes PR #346) |
 

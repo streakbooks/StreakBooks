@@ -1012,6 +1012,7 @@ export function ExpenseManagementClaimsPage({
           { label: "My Expenses" },
           { label: "New" },
         ]}
+        meta={<StatusBadge status="draft" label="Draft" />}
         stickyActions={
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" asChild>

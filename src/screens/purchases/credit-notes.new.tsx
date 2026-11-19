@@ -26,6 +26,7 @@ import { DEFAULT_CURRENCY_DECIMALS, fromMinorUnits } from "@/lib/accounting/mone
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState } from "@/components/common/states";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
@@ -343,6 +344,7 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
         { label: "Credit notes", to: "/purchases/credit-notes" },
         { label: "New" },
       ]}
+      meta={<StatusBadge status="draft" label={savedCreditNoteId ? "Saved draft" : "Draft"} />}
       details={
         <FormGrid columns={4}>
           <FormControlShell width="contact">

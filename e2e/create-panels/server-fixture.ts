@@ -2,6 +2,7 @@ import { call as originalCall, defaults } from "../voice/server-fixture";
 export { defaults };
 export async function call(name: string, args: unknown[]) {
   const data = (args[0] as { data?: Record<string, unknown> } | undefined)?.data ?? {};
+  if (name === "listPayments") return [];
   if (name === "listRecurringJournals") {
     return [
       {

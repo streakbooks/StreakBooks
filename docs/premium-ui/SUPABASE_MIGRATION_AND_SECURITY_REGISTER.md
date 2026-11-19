@@ -78,3 +78,18 @@ The read-only production comparison used checkout `6577c3a4`. Production recorde
 
 The restore rehearsal covered isolated migration history. A hosted backup restore
 and a staged upgrade rehearsal are still pending. No hosted schema or data changed.
+
+### Isolated full PostgreSQL recovery rehearsal
+
+On 19 November 2026, a cleanly stopped isolated Supabase PostgreSQL 17.12
+data volume was archived and restored to a separate Docker volume. The restored
+instance used the same Supabase PostgreSQL image and copied database
+configuration. It started without a Docker network or a published port.
+
+The restored database contained the synthetic recovery marker, the same 375
+migration records and history digest, the recorded POS MFA migration, and its
+five restrictive authenticated policies. The MFA helper was present.
+
+This rehearsal verified the isolated PostgreSQL data directory and configuration.
+Hosted backups, PITR, Supabase Storage objects, application sign-in, and a staged
+upgrade against production-like migration history require separate checks.

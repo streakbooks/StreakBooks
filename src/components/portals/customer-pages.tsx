@@ -728,6 +728,8 @@ export function PortalSecurity() {
   const [code, setCode] = useState("");
   const [factor, setFactor] = useState<{ id: string; qr: string } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const codeReady = /^\d{6}$/.test(code.trim());
   return (
     <Card>
       <CardHeader>
@@ -759,23 +761,32 @@ export function PortalSecurity() {
             className="space-y-2"
             onSubmit={(event) => {
               event.preventDefault();
+              if (!codeReady || verifying) return;
+              setVerifying(true);
+              setMessage(null);
               void supabase.auth.mfa
                 .challenge({ factorId: factor.id })
                 .then(async ({ data, error }) => {
                   if (error || !data) {
                     setMessage(friendlyAuthError(error ?? "The challenge failed."));
+                    setVerifying(false);
                     return;
                   }
                   const verified = await supabase.auth.mfa.verify({
                     factorId: factor.id,
                     challengeId: data.id,
-                    code,
+                    code: code.trim(),
                   });
                   setMessage(
                     verified.error
                       ? friendlyAuthError(verified.error)
                       : "Authenticator is on. Sign in again if a page asks for the second step.",
                   );
+                  setVerifying(false);
+                })
+                .catch((error) => {
+                  setMessage(friendlyAuthError(error));
+                  setVerifying(false);
                 });
             }}
           >
@@ -786,8 +797,12 @@ export function PortalSecurity() {
               value={code}
               onChange={(event) => setCode(event.target.value)}
               inputMode="numeric"
+              maxLength={6}
+              disabled={verifying}
             />
-            <Button type="submit">Confirm</Button>
+            <Button type="submit" disabled={!codeReady || verifying}>
+              {verifying ? "Confirming…" : "Confirm"}
+            </Button>
           </form>
         ) : null}
         {message ? <p>{message}</p> : null}

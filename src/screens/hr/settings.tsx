@@ -132,7 +132,11 @@ export function HrSettingsPage() {
       breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Settings" }]}
       actions={
         canEdit ? (
-          <Button type="button" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+          <Button
+            type="button"
+            onClick={() => saveMut.mutate()}
+            disabled={saveMut.isPending || !settingsQ.isSuccess}
+          >
             {saveMut.isPending ? "Saving…" : "Save settings"}
           </Button>
         ) : undefined

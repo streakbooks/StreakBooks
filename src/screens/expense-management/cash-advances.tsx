@@ -309,18 +309,20 @@ export function ExpenseManagementCashAdvancesPage() {
       {canManage ? (
         <section className="mb-6 grid max-w-md gap-2">
           <Label>Bank account for issuing / reclaim</Label>
-          <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select bank / cash account" />
-            </SelectTrigger>
-            <SelectContent>
-              {bankOptions.map((bank) => (
-                <SelectItem key={bank.id} value={bank.gl_account_id}>
-                  {bank.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </RecordLookupSelect>
+          {banksQ.isError && banksQ.data === undefined ? null : (
+            <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select bank / cash account" />
+              </SelectTrigger>
+              <SelectContent>
+                {bankOptions.map((bank) => (
+                  <SelectItem key={bank.id} value={bank.gl_account_id}>
+                    {bank.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </RecordLookupSelect>
+          )}
         </section>
       ) : null}
 

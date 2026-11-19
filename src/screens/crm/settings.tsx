@@ -207,22 +207,33 @@ export function CrmSettingsPage() {
             <CardHeader>
               <CardTitle>Public lead forms</CardTitle>
               <CardDescription>
-                {publicForms.data?.reason ??
-                  "Anonymous public capture stays blocked until spam-protected intake exists."}
+                {publicForms.isPending
+                  ? "Loading public form policy…"
+                  : publicForms.isError
+                    ? "Could not load public form policy."
+                    : (publicForms.data?.reason ??
+                      "Anonymous public capture stays blocked until spam-protected intake exists.")}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button
-                type="button"
-                disabled={!publicForms.data?.canPublishForms}
-                title={
-                  publicForms.data?.canPublishForms
-                    ? undefined
-                    : "Blocked until public intake backends exist"
-                }
-              >
-                Publish public form
-              </Button>
+              {publicForms.isError ? (
+                <QueryErrorState
+                  queries={[publicForms]}
+                  title="Could not load public form policy"
+                />
+              ) : (
+                <Button
+                  type="button"
+                  disabled={publicForms.isPending || !publicForms.data?.canPublishForms}
+                  title={
+                    publicForms.data?.canPublishForms
+                      ? undefined
+                      : "Blocked until public intake backends exist"
+                  }
+                >
+                  Publish public form
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>

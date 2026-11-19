@@ -383,21 +383,27 @@ export function ExpenseManagementMileagePage() {
             </div>
             <div className="grid gap-2 md:col-span-2">
               <Label>Expense account</Label>
-              <AccountLookup
-                companyId={company.id}
-                accounts={expenseAccounts}
-                value={rateAccountId}
-                onChange={(next) => setRateAccountId(next ?? "")}
-                allowClear
-                disabled={saveRateMut.isPending}
-                ariaLabel="Mileage expense account"
-                purpose="posting"
-              />
+              {accountsQ.isError && accountsQ.data === undefined ? null : (
+                <AccountLookup
+                  companyId={company.id}
+                  accounts={expenseAccounts}
+                  value={rateAccountId}
+                  onChange={(next) => setRateAccountId(next ?? "")}
+                  allowClear
+                  disabled={saveRateMut.isPending}
+                  ariaLabel="Mileage expense account"
+                  purpose="posting"
+                />
+              )}
             </div>
             <div>
               <Button
                 onClick={() => saveRateMut.mutate()}
-                disabled={saveRateMut.isPending || !rateAccountId}
+                disabled={
+                  saveRateMut.isPending ||
+                  !rateAccountId ||
+                  (accountsQ.isError && accountsQ.data === undefined)
+                }
               >
                 {saveRateMut.isPending ? "Saving…" : "Save rate"}
               </Button>

@@ -11,7 +11,6 @@ import type { ReportingPack } from "@/lib/reports/ecosystem-model";
 import { Button } from "@/components/ui/button";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { LoadingState } from "@/components/common/states";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 export function ReportingHome({
   companyId,
   from,
@@ -114,9 +113,7 @@ export function ReportingHome({
         {saved.isPending ? (
           <p className="text-sm text-muted-foreground">Loading favourites…</p>
         ) : saved.isError ? (
-          <p role="alert" className="text-sm text-destructive">
-            {friendlyAuthError(saved.error)}
-          </p>
+          <QueryErrorState queries={[saved]} title="Could not load favourite reports" />
         ) : !saved.data.rows.length ? (
           <p className="text-sm text-muted-foreground">Star a saved report to keep it here.</p>
         ) : (

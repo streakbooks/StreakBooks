@@ -155,9 +155,7 @@ function JournalEvidenceLookup({
         onChange={(e) => setSearch(e.target.value)}
       />
       {q.isError ? (
-        <p role="alert" className="text-sm text-destructive">
-          {friendlyAuthError(q.error)}
-        </p>
+        <QueryErrorState queries={[q]} title="Could not load supporting journals" />
       ) : null}
       {multiple ? (
         <MultiLookupSelect
@@ -166,6 +164,7 @@ function JournalEvidenceLookup({
           onValuesChange={onChange}
           ariaLabel={label}
           loading={q.isPending}
+          disabled={q.isError}
         />
       ) : (
         <LookupSelect
@@ -174,6 +173,7 @@ function JournalEvidenceLookup({
           onChange={(id) => onChange(id ? [id] : [])}
           ariaLabel={label}
           loading={q.isPending}
+          disabled={q.isError}
         />
       )}
       <div className="flex flex-wrap gap-2">
@@ -233,24 +233,23 @@ function DocumentLookup({
           setPage(0);
         }}
       />
-      <LookupSelect
-        options={rows.map((r) => ({
-          id: r.id,
-          label: r.label,
-          description: r.date,
-          meta: money(r.grossMinor, r.currency),
-          companyId,
-        }))}
-        value={value?.id ?? ""}
-        onChange={(id) => onChange(rows.find((r) => r.id === id) ?? null)}
-        ariaLabel="Source document"
-        loading={q.isPending}
-      />
       {q.isError ? (
-        <p role="alert" className="text-sm text-destructive">
-          {friendlyAuthError(q.error)}
-        </p>
-      ) : null}
+        <QueryErrorState queries={[q]} title="Could not load source documents" />
+      ) : (
+        <LookupSelect
+          options={rows.map((r) => ({
+            id: r.id,
+            label: r.label,
+            description: r.date,
+            meta: money(r.grossMinor, r.currency),
+            companyId,
+          }))}
+          value={value?.id ?? ""}
+          onChange={(id) => onChange(rows.find((r) => r.id === id) ?? null)}
+          ariaLabel="Source document"
+          loading={q.isPending}
+        />
+      )}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Button
           type="button"
@@ -571,7 +570,9 @@ function OpeningForm({
             <option value="purchase_bill">Supplier bill</option>
           </select>
         </div>
-        {sourceQuery.isError ? <p role="alert">{friendlyAuthError(sourceQuery.error)}</p> : null}
+        {sourceQuery.isError ? (
+          <QueryErrorState queries={[sourceQuery]} title="Could not load opening document" />
+        ) : null}
         <DocumentLookup
           companyId={companyId}
           sourceKind={kind}

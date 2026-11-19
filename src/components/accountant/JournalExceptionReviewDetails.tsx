@@ -10,6 +10,7 @@ import {
   saveAccountantExceptionReview,
   type AccountantExceptionReview,
 } from "@/lib/accountant/exception-reviews.functions";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -150,9 +151,7 @@ export function JournalExceptionReviewDetails({
             history.isPending ? (
               <p className="text-xs text-muted-foreground">Loading review history…</p>
             ) : history.isError ? (
-              <p role="alert" className="text-xs text-destructive">
-                {friendlyAuthError(history.error)}
-              </p>
+              <QueryErrorState queries={[history]} title="Could not load review history" />
             ) : (
               <ul className="space-y-2 text-xs">
                 {history.data?.map((event) => (

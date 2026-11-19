@@ -4,10 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { ShieldCheck, ClipboardList } from "lucide-react";
 import { useCanDo } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getAiWorkpaperEvidence } from "@/lib/ai/workpaper-handoff.functions";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -57,19 +56,7 @@ export function AiWorkpaperEvidencePanel({
             Finding linked AI reviews…
           </p>
         ) : evidence.isError ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              {friendlyAuthError(evidence.error)}{" "}
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => void evidence.refetch()}
-              >
-                Retry
-              </Button>
-            </AlertDescription>
-          </Alert>
+          <QueryErrorState queries={[evidence]} title="Could not load linked AI reviews" />
         ) : d ? (
           <>
             <div className="flex flex-wrap gap-2">

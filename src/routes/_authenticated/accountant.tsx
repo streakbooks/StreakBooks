@@ -21,7 +21,8 @@ import { postTaxAdjustment } from "@/lib/tax/tax.functions";
 import { toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { AccountLookup } from "@/components/lookup";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -201,11 +202,7 @@ function AccountantTools() {
           {query.isPending ? (
             <LoadingState />
           ) : query.isError ? (
-            <ErrorState
-              onRetry={() => void query.refetch()}
-              title="Could not load checklist"
-              description={friendlyAuthError(query.error)}
-            />
+            <QueryErrorState queries={[query]} title="Could not load checklist" />
           ) : (
             <>
               <div
@@ -367,11 +364,7 @@ function AccountantTools() {
             </Alert>
           )}
           {accountsQ.isError && (
-            <ErrorState
-              onRetry={() => void accountsQ.refetch()}
-              title="Could not load posting accounts"
-              description={friendlyAuthError(accountsQ.error)}
-            />
+            <QueryErrorState queries={[accountsQ]} title="Could not load posting accounts" />
           )}
           <h2 className="mt-8 mb-3 border-b border-border/70 pb-2 text-base font-bold tracking-[-0.02em] text-foreground">
             Tax adjustment (period-end)

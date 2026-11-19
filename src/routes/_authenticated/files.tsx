@@ -81,7 +81,8 @@ import { MAX_FILES_PER_BATCH, runFileBatch } from "@/lib/documents/file-batch";
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import {
@@ -1570,11 +1571,7 @@ function FilesPage() {
       {filesQ.isPending ? (
         <LoadingState />
       ) : filesQ.isError ? (
-        <ErrorState
-          title="Could not load files"
-          description={friendlyAuthError(filesQ.error)}
-          onRetry={() => filesQ.refetch()}
-        />
+        <QueryErrorState queries={[filesQ]} title="Could not load files" />
       ) : filesQ.data.files.length === 0 ? (
         <EmptyState
           title="No files"

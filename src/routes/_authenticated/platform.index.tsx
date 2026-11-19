@@ -8,7 +8,8 @@ import { PlatformResource } from "@/components/platform/PlatformResource";
 import { PlatformHealth } from "@/components/platform/PlatformHealth";
 import { PlatformApprovals } from "@/components/platform/PlatformApprovals";
 import { parsePlatformSearch } from "@/lib/platform/navigation";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 export const Route = createFileRoute("/_authenticated/platform/")({
   validateSearch: parsePlatformSearch,
@@ -26,13 +27,7 @@ function PlatformHome() {
   });
   if (query.isPending) return <LoadingState rows={4} />;
   if (query.isError)
-    return (
-      <ErrorState
-        title="Could not load platform access"
-        description={query.error.message}
-        onRetry={() => void query.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[query]} title="Could not load platform access" />;
   const allowed = visibleSections(query.data.permissions);
   const current = allowed.find(([id]) => id === section) ?? allowed[0];
   if (!current)

@@ -7,7 +7,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { findPotentialDuplicates, mergeContacts } from "@/lib/contacts/contacts.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,11 +76,7 @@ function DuplicatesPage() {
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
-        <ErrorState
-          onRetry={() => void query.refetch()}
-          title="Could not scan"
-          description={friendlyAuthError(query.error)}
-        />
+        <QueryErrorState queries={[query]} title="Could not scan for duplicates" />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState
           title="No likely duplicates"

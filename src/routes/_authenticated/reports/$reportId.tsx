@@ -9,7 +9,6 @@ import { parseReportSearch, type ReportSearch } from "@/lib/reports/search";
 import { reportingCentreBackSearch } from "@/lib/reports/centre-return";
 import { getOrganisationConfig } from "@/lib/settings/settings-centre.functions";
 import { applyOrganisationReportDefaults } from "@/lib/settings/report-defaults";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fiscalYearStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { ReportShellFallbackLink } from "@/components/reports/ReportFallback";
 import type { ReportCtx } from "@/components/reports/ReportShell";
@@ -45,7 +44,8 @@ import {
 } from "@/components/reports/PlanningViews";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 
 export const Route = createFileRoute("/_authenticated/reports/$reportId")({
@@ -114,13 +114,7 @@ function ReportPage() {
 
   if (needsDefault && reportDefaults.isPending) return <LoadingState />;
   if (needsDefault && reportDefaults.isError) {
-    return (
-      <ErrorState
-        title="Could not load report defaults"
-        description={friendlyAuthError(reportDefaults.error)}
-        onRetry={() => void reportDefaults.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[reportDefaults]} title="Could not load report defaults" />;
   }
 
   if (!report) {

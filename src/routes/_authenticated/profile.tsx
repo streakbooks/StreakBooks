@@ -5,7 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getMyProfile, updateMyProfile } from "@/lib/profile.functions";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,11 +78,7 @@ function ProfilePage() {
       {profileQuery.isPending ? (
         <LoadingState />
       ) : profileQuery.isError ? (
-        <ErrorState
-          title="We couldn't load your profile"
-          description={friendlyAuthError(profileQuery.error)}
-          onRetry={() => profileQuery.refetch()}
-        />
+        <QueryErrorState queries={[profileQuery]} title="Could not load your profile" />
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>

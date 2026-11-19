@@ -32,7 +32,8 @@ import { downloadReportFile } from "@/lib/reports/download";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 export const Route = createFileRoute("/_authenticated/reports/builder/$viewId")({
   component: BuilderPage,
@@ -86,17 +87,9 @@ function BuilderPage() {
     );
   if (accounts.isError || filterOptions.isError || saved.isError || companyBasis.isError)
     return (
-      <ErrorState
+      <QueryErrorState
+        queries={[accounts, filterOptions, saved, companyBasis]}
         title="Could not load report builder"
-        description={friendlyAuthError(
-          accounts.error ?? filterOptions.error ?? saved.error ?? companyBasis.error,
-        )}
-        onRetry={() => {
-          void accounts.refetch();
-          void companyBasis.refetch();
-          void filterOptions.refetch();
-          if (viewId !== "new") void saved.refetch();
-        }}
       />
     );
   return (

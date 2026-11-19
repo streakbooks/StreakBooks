@@ -176,21 +176,31 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
               ) : null}
               {can("sales.draft") && detail.data.status === "confirmed" ? (
                 <>
-                  <Label htmlFor="sales-order-invoice-date">Invoice date</Label>
-                  <Input
-                    id="sales-order-invoice-date"
-                    className="w-auto"
-                    type="date"
-                    value={invoiceDate || cfg.data?.today || ""}
-                    onChange={(e) => setInvoiceDate(e.target.value)}
-                  />
-                  <Button
-                    size="sm"
-                    disabled={mutation.isPending}
-                    onClick={() => mutation.mutate("invoice")}
-                  >
-                    Create draft invoice
-                  </Button>
+                  {cfg.isError ? (
+                    <QueryErrorState
+                      queries={[cfg]}
+                      title="Could not load sales document settings"
+                    />
+                  ) : (
+                    <>
+                      <Label htmlFor="sales-order-invoice-date">Invoice date</Label>
+                      <Input
+                        id="sales-order-invoice-date"
+                        className="w-auto"
+                        type="date"
+                        value={invoiceDate || cfg.data?.today || ""}
+                        onChange={(e) => setInvoiceDate(e.target.value)}
+                        disabled={cfg.isPending}
+                      />
+                      <Button
+                        size="sm"
+                        disabled={mutation.isPending || cfg.isPending || !cfg.data}
+                        onClick={() => mutation.mutate("invoice")}
+                      >
+                        Create draft invoice
+                      </Button>
+                    </>
+                  )}
                 </>
               ) : null}
               {can("sales.draft") && ["draft", "confirmed"].includes(detail.data.status) ? (

@@ -1556,7 +1556,9 @@ function BillDocumentWorkspace() {
               {activityQ.isPending ? (
                 <p className="px-4 py-6 text-sm text-muted-foreground">Loading history…</p>
               ) : activityQ.isError ? (
-                <p className="px-4 py-6 text-sm text-destructive">History could not be loaded.</p>
+                <div className="px-4 py-6">
+                  <QueryErrorState queries={[activityQ]} title="Could not load bill history" />
+                </div>
               ) : historyRows.length === 0 ? (
                 <p className="px-4 py-6 text-sm text-muted-foreground">No history yet.</p>
               ) : (

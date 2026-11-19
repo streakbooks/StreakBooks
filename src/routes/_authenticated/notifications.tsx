@@ -336,14 +336,9 @@ function ActionCenterPage() {
           Workload counts cover your full accessible inbox. Filters and priority ordering run on the
           server before alerts are paged.
         </p>
-        {workload.isError && (
-          <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
-            Could not load complete workload counts.
-            <Button size="sm" variant="outline" onClick={() => void workload.refetch()}>
-              Retry counts
-            </Button>
-          </div>
-        )}
+        {workload.isError ? (
+          <QueryErrorState queries={[workload]} title="Could not load workload counts" />
+        ) : null}
         <div className="flex flex-wrap gap-2" role="group" aria-label="Notification views">
           {VIEWS.map((item) => (
             <Button
@@ -505,17 +500,13 @@ function ActionCenterPage() {
             )}
           </div>
         )}
-        {inbox.isError && inbox.data && (
-          <div
-            role="alert"
-            className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm"
-          >
-            Could not refresh the latest notifications. Displayed alerts may be outdated.
-            <Button size="sm" variant="outline" onClick={() => void inbox.refetch()}>
-              Retry refresh
-            </Button>
-          </div>
-        )}
+        {inbox.isError && inbox.data ? (
+          <QueryErrorState
+            queries={[inbox]}
+            title="Could not refresh notifications"
+            description="Displayed alerts may be outdated. Retry to load the latest inbox."
+          />
+        ) : null}
         {inbox.isPending ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />

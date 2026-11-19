@@ -342,18 +342,22 @@ export function HrTrainingPage() {
             </div>
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select employee" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>
-                      {e.employeeNumber} — {e.firstName} {e.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {empQ.isError && empQ.data === undefined ? (
+                <QueryErrorState queries={[empQ]} title="Could not load employees" />
+              ) : (
+                <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.employeeNumber} — {e.firstName} {e.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
           </div>
           <DialogFooter>

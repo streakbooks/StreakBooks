@@ -442,22 +442,26 @@ export function HrOnboardingPage() {
             </div>
             <div className="space-y-1">
               <Label>Employee</Label>
-              <RecordLookupSelect
-                value={employeeId || "__none"}
-                onValueChange={(v) => setEmployeeId(v === "__none" ? "" : v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select employee" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none">None</SelectItem>
-                  {(employeesQ.data?.items ?? []).map((row) => (
-                    <SelectItem key={row.id} value={row.id}>
-                      {row.employeeNumber} — {row.firstName} {row.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {employeesQ.isError && employeesQ.data === undefined ? (
+                <QueryErrorState queries={[employeesQ]} title="Could not load employees" />
+              ) : (
+                <RecordLookupSelect
+                  value={employeeId || "__none"}
+                  onValueChange={(v) => setEmployeeId(v === "__none" ? "" : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">None</SelectItem>
+                    {(employeesQ.data?.items ?? []).map((row) => (
+                      <SelectItem key={row.id} value={row.id}>
+                        {row.employeeNumber} — {row.firstName} {row.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
             <div className="space-y-1">
               <Label htmlFor="join-date">Target join date</Label>

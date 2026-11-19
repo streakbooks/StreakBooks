@@ -59,7 +59,8 @@
 | Claims totals + workspace Batch 66 | In progress | TotalsSummary on claim create; check:workspace spend/claims |
 | Claim keyboard + receive-money Batch 67 | Superseded by Batch 68 | Keyboard/paste on claims; receive-money check:workspace |
 | Spend/PO/CN keyboard Batch 68 | Superseded by Batch 69 | Keyboard/paste on spend money, PO, purchase CN; workspace gates |
-| Allocate/transfer TotalsSummary Batch 69 | In progress | Receipt/payment totals; payment allocate table; transfer totals |
+| Allocate/transfer TotalsSummary Batch 69 | Superseded by Batch 70 | Receipt/payment totals; payment allocate table; transfer totals |
+| Recurring/SO/batch-pay Batch 70 | In progress | Recurring + sales order totals; batch payment TransactionWorkspace |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

@@ -185,3 +185,13 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Workspace adoption | check:workspace gates receipts/payments/transfers TotalsSummary |
 | Includes Batches 66–68 | Carried on feature branch (supersedes PR #340) |
 
+## Batch 70 (recurring / sales order / batch payment chrome)
+
+| Gap | Action |
+| --- | --- |
+| Recurring invoice totals | TotalsSummary Subtotal/Tax/Total on create/edit |
+| Sales order create/edit chrome | FormGrid + TotalsSummary + stickyActions; form owns TransactionWorkspace |
+| Batch payment wrong chrome | ListWorkspace → TransactionWorkspace + FormGrid + TotalsSummary + sticky Pay |
+| Workspace adoption | check:workspace gates recurring/orders.new/payments.batch |
+| Includes Batches 66–69 | Rebased onto current main (supersedes PR #341) |
+

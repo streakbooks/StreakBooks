@@ -21,6 +21,7 @@ import {
   type BillingInterval,
   type PriceQuote,
 } from "@/lib/billing/pricing";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { cn } from "@/lib/utils";
 
 const EMPTY_BILLING: Required<CheckoutBillingInput> = {
@@ -109,7 +110,7 @@ export function CheckoutForm({
     try {
       parseCheckoutBilling(billing);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Check the billing details.");
+      setError(friendlyAuthError(caught));
       return;
     }
     if (quoteLoading || !quote || quote.currency !== currency || quoteError) {

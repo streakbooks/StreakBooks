@@ -87,10 +87,7 @@ export function AiJournalEvidenceExplorer({
       toast.success("Journal added to the persistent AI review queue.");
       await qc.invalidateQueries({ queryKey: ["ai-journal-review-cases", companyId] });
     },
-    onError: (error) =>
-      toast.error(
-        error instanceof Error ? error.message : "Could not create the AI journal review.",
-      ),
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
   const [mode, setMode] = useState<InvestigationMode>("journals");

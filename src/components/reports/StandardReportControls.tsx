@@ -20,6 +20,7 @@ import {
   type StandardSettings,
 } from "@/lib/reports/standard-settings";
 import { ReportFilterEditor } from "./ReportFilterEditor";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import type { ReportAccount } from "@/lib/reports/custom-definition";
 const comparisons = [
   { id: "none", label: "No comparison" },
@@ -92,7 +93,7 @@ export function StandardReportControls({
       return true;
     } catch (error) {
       setDraft(value);
-      setError(error instanceof Error ? error.message : "Could not apply settings");
+      setError(friendlyAuthError(error));
       setOpen(true);
       return false;
     }

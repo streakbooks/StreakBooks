@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -221,7 +222,7 @@ export function PlatformEditor({
       toast.success("Saved and recorded in the audit log.");
       onClose();
     },
-    onError: (e) => setError(e.message),
+    onError: (e) => setError(friendlyAuthError(e)),
   });
   return (
     <Dialog

@@ -74,6 +74,8 @@ Chrome **PASS** (directory + detail RecordWorkspace). Import/duplicates ListWork
 
 Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails on payslip, App Store detail, Accounting, Products & Services, and Dashboard. Per-screen action/permission/staging gates remain **NOT VERIFIED** / **PARTIAL**.
 
+**Expense Management local evidence (Batches 65–66):** New claim create uses `TransactionWorkspace` + `EditableLineItemGrid` + `TotalsSummary` (parity with Banking Spend Money). `check:workspace` enforces claim create + spend-money composition. Staging/RBAC/manual a11y still **NOT VERIFIED** — module remains **IN PROGRESS**, not COMPLETE.
+
 ## How to promote a module to DONE
 
 1. Fill Section 14 checklist with browser evidence (desktop/mobile, keyboard, light/dark).

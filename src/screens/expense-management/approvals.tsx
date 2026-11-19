@@ -650,6 +650,13 @@ export function ExpenseManagementApprovalsPage() {
         <EmptyState
           title="No claims waiting"
           description="Submitted and in-review claims appear here."
+          action={
+            <Button asChild size="sm" variant="outline">
+              <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
+                Open my expenses
+              </Link>
+            </Button>
+          }
         />
       ) : null}
       {canActAsApprover && queue.length > 0 ? (
@@ -780,6 +787,13 @@ export function ExpenseManagementApprovalsPage() {
             <EmptyState
               title="No approved claims ready"
               description="Approved employee-paid claims awaiting ledger accrual appear here."
+              action={
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/expense-management/$section" params={{ section: "claims" }}>
+                    Open all claims
+                  </Link>
+                </Button>
+              }
             />
           ) : (
             <Table>

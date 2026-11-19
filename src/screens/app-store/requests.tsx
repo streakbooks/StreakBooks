@@ -146,6 +146,13 @@ export function AppStoreRequestsPage() {
               <EmptyState
                 title="No formal approval records"
                 description="AS-02 approval transitions will populate this queue."
+                action={
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/app-store/$section" params={{ section: "explore" }}>
+                      Explore apps
+                    </Link>
+                  </Button>
+                }
               />
             ) : (
               <div className="rounded-lg border">

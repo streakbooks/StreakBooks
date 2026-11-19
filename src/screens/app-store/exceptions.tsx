@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
@@ -6,6 +7,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/common/states
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -79,6 +81,13 @@ export function AppStoreExceptionsPage() {
           <EmptyState
             title="No integration exceptions"
             description="When a verified connector fails records, they appear here with correlation IDs for retry."
+            action={
+              <Button asChild size="sm" variant="outline">
+                <Link to="/app-store/$section" params={{ section: "sync-activity" }}>
+                  View sync activity
+                </Link>
+              </Button>
+            }
           />
         ) : (
           <div className="rounded-lg border">

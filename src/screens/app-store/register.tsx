@@ -191,6 +191,19 @@ export function AppStoreRegisterPage() {
         <EmptyState
           title="No matching entries"
           description="Clear filters to see the full register."
+          action={
+            <Button
+              size="sm"
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setStatus("all");
+                setGroup("all");
+              }}
+            >
+              Clear filters
+            </Button>
+          }
         />
       ) : null}
     </ListWorkspace>

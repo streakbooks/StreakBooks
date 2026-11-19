@@ -336,6 +336,13 @@ export function PmOwnerStatementsPage() {
               <EmptyState
                 title="Select a statement"
                 description="Choose a statement on the left to inspect lines, totals and approvals."
+                action={
+                  canGenerate ? (
+                    <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                      Generate statement
+                    </Button>
+                  ) : undefined
+                }
               />
             ) : detail.isLoading ? (
               <LoadingState />

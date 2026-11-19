@@ -15,7 +15,9 @@ import { minorOrZero, parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/m
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { formatHistoryDay } from "@/lib/purchases/bill-history";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
@@ -159,14 +161,11 @@ function PaymentDocument() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
-  if (query.isError || !query.data) {
-    return (
-      <ErrorState
-        title="Payment not found"
-        description={friendlyAuthError(query.error)}
-        onRetry={() => query.refetch()}
-      />
-    );
+  if (query.isError && query.data === undefined) {
+    return <QueryErrorState queries={[query]} title="Could not load payment" />;
+  }
+  if (!query.data) {
+    return <EmptyState title="Payment not found" description="This payment is unavailable." />;
   }
 
   const payment = query.data as typeof query.data & {
@@ -278,18 +277,6 @@ function PaymentDocument() {
               <dd>{payment.bank_label ?? "—"}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Amount</dt>
-              <dd className="tabular-nums">
-                {fromMinorUnits(BigInt(payment.amount_minor), currency)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Unallocated</dt>
-              <dd className="tabular-nums">
-                {fromMinorUnits(BigInt(payment.unallocated_minor), currency)}
-              </dd>
-            </div>
-            <div>
               <dt className="text-muted-foreground">Recorded by</dt>
               <dd>{payment.recorded_by ?? "—"}</dd>
             </div>
@@ -304,6 +291,33 @@ function PaymentDocument() {
               </div>
             ) : null}
           </dl>
+          <div className="mt-4 flex justify-end">
+            <TotalsSummary
+              aria-label="Payment allocation totals"
+              lines={[
+                {
+                  id: "amount",
+                  label: "Amount",
+                  value: fromMinorUnits(BigInt(payment.amount_minor), currency),
+                },
+                {
+                  id: "allocated",
+                  label: "Allocated",
+                  value: fromMinorUnits(
+                    BigInt(payment.amount_minor - payment.unallocated_minor),
+                    currency,
+                  ),
+                  emphasis: "muted",
+                },
+                {
+                  id: "remaining",
+                  label: "Unallocated",
+                  value: fromMinorUnits(BigInt(payment.unallocated_minor), currency),
+                  emphasis: "total",
+                },
+              ]}
+            />
+          </div>
         </section>
 
         {canAllocate && can("purchases.payment") ? (

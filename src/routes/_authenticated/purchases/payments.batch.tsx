@@ -14,7 +14,8 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { buildBatchPayments, type BatchBill } from "@/lib/purchases/batch-payment";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
@@ -113,15 +114,10 @@ function BatchPayment() {
   });
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
-  if (billsQ.isPending) return <LoadingState />;
-  if (billsQ.isError)
-    return (
-      <ErrorState
-        title="Could not load bills to pay"
-        description={friendlyAuthError(billsQ.error)}
-        onRetry={() => void billsQ.refetch()}
-      />
-    );
+  const requiredQueries = [billsQ, accountsQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load batch payment options" />;
+  if (billsQ.isPending || accountsQ.isPending) return <LoadingState />;
 
   return (
     <TransactionWorkspace
@@ -140,14 +136,6 @@ function BatchPayment() {
       }
       details={
         <div className="space-y-3">
-          {accountsQ.isError ? (
-            <ErrorState
-              compact
-              title="Could not load payment accounts"
-              description={friendlyAuthError(accountsQ.error)}
-              onRetry={() => void accountsQ.refetch()}
-            />
-          ) : null}
           <FormGrid columns={4}>
             <FormControlShell width="contact" className="sm:col-span-2">
               <Label htmlFor="batch-bank">Bank / cash account</Label>

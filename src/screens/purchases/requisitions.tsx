@@ -29,6 +29,7 @@ import {
 } from "@/lib/purchases/requisitions.functions";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -503,18 +504,12 @@ function RequisitionEditor({
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
-  if (suppliers.isPending || accounts.isPending) return <LoadingState />;
-  if (suppliers.isError || accounts.isError)
+  const requiredQueries = [suppliers, accounts];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
     return (
-      <ErrorState
-        title="Could not load purchasing options"
-        description={friendlyAuthError(suppliers.error ?? accounts.error)}
-        onRetry={() => {
-          void suppliers.refetch();
-          void accounts.refetch();
-        }}
-      />
+      <QueryErrorState queries={requiredQueries} title="Could not load purchasing options" />
     );
+  if (suppliers.isPending || accounts.isPending) return <LoadingState />;
   return (
     <TransactionWorkspace
       title={initial ? "Edit requisition" : "New purchase requisition"}

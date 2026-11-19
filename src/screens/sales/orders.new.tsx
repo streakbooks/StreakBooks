@@ -16,7 +16,8 @@ import { emptyOrderLine } from "@/lib/purchases/purchase-order";
 import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
 import { sumLines } from "@/lib/sales/line-helpers";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
@@ -137,19 +138,10 @@ export function SalesOrderForm({
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+  const requiredQueries = [customers, accounts, config];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load order options" />;
   if (customers.isPending || accounts.isPending || config.isPending) return <LoadingState />;
-  if (customers.isError || accounts.isError || config.isError)
-    return (
-      <ErrorState
-        title="Could not load order options"
-        description={friendlyAuthError(customers.error ?? accounts.error ?? config.error)}
-        onRetry={() => {
-          void customers.refetch();
-          void accounts.refetch();
-          void config.refetch();
-        }}
-      />
-    );
   return (
     <TransactionWorkspace
       title={title}

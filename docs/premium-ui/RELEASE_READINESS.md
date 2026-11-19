@@ -10,18 +10,19 @@
 | Security / accounting integrity | local unit invariants available (`npm run test:accounting-invariants`); full two-tenant audit **not-yet-verified** |
 | Staging authenticated QA | **not executed** — dedicated `E2E_*` staging credentials are not configured on this workstation |
 | Program authorization | **Granted all** 2026-11-07 by product owner (Gulshan): production deploy, staging QA when credentials exist, migrations with rollback+staging proof, CI observation, evidence batches |
-| Production deployment | **Deployed** 2026-11-07 — `https://linkbooks-puce.vercel.app` Ready (HTTP 200); not Section 18 go-live |
+| Production deployment | The Vercel alias returned HTTP 200 on 2026-11-07. The deployed commit for the current release remains unverified. |
 | Production go-live (Section 18) | **still blocked** — run `npm run check:section18` for the live gate table; `--require-go-live` fails closed while blockers remain |
 
 ## Section 18 remaining blockers before go-live
 
-1. Authenticated staging end-to-end QA — requires `E2E_STAGING_ENABLED=true` + dedicated staging host/credentials
+1. Passing authenticated staging end-to-end QA. The shared preflight checks the dedicated staging host, production separation, and configured test account.
 2. Deny-path RBAC + cross-company isolation re-proof on live/staging tenants (local unit evidence only through Batch 21)
 3. Manual accessibility (SR / zoom / contrast) on core modules beyond fixture axe
 4. Staging empty/error walkthrough (local empty/error gates PASS)
 5. Accounting invariant / two-tenant campaign on staging/prod tenants (local unit suite scripted as `test:accounting-invariants`)
 6. Rollback plan recorded for any production migration apply (see migration register)
 7. External integration sandbox validation where claimed
+8. Provider evidence tying the production deployment to the release commit
 
 Machine-readable honesty: `npm run check:section18` (add `--require-go-live` only when claiming Section 18 DONE).
 

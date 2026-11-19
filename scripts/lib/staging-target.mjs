@@ -24,6 +24,15 @@ function asHttpsUrl(raw, label) {
 export function validateStagingTarget({ stagingUrl, expectedHost, productionUrl }) {
   const stage = asHttpsUrl(stagingUrl, "E2E_BASE_URL");
   const production = asHttpsUrl(productionUrl, "E2E_PRODUCTION_URL");
+  if (
+    stage.hostname === "localhost" ||
+    stage.hostname.endsWith(".localhost") ||
+    stage.hostname.endsWith(".local") ||
+    stage.hostname.endsWith(".internal") ||
+    isIP(stage.hostname.replace(/^\[|\]$/g, "")) !== 0
+  ) {
+    throw new Error("Staging URL must use a dedicated public staging hostname.");
+  }
   if (!expectedHost || typeof expectedHost !== "string") {
     throw new Error("E2E_EXPECTED_STAGING_HOST must be set to the exact staging hostname.");
   }
@@ -37,14 +46,21 @@ export function validateStagingTarget({ stagingUrl, expectedHost, productionUrl 
   if (stage.hostname === production.hostname || stage.origin === production.origin) {
     throw new Error("Refusing to run authenticated staging tests against the production hostname.");
   }
-  if (
-    stage.hostname === "localhost" ||
-    stage.hostname.endsWith(".localhost") ||
-    stage.hostname.endsWith(".local") ||
-    stage.hostname.endsWith(".internal") ||
-    isIP(stage.hostname.replace(/^\[|\]$/g, "")) !== 0
-  ) {
-    throw new Error("Staging URL must use a dedicated public staging hostname.");
-  }
   return { origin: stage.origin, hostname: stage.hostname };
+}
+
+/** Validate the private configuration without connecting to the target. */
+export function validateStagingEnvironment(env) {
+  if (env.E2E_STAGING_ENABLED !== "true") {
+    throw new Error("Set E2E_STAGING_ENABLED=true explicitly to run staging browser tests.");
+  }
+  const target = validateStagingTarget({
+    stagingUrl: env.E2E_BASE_URL,
+    expectedHost: env.E2E_EXPECTED_STAGING_HOST,
+    productionUrl: env.E2E_PRODUCTION_URL,
+  });
+  if (!env.E2E_EMAIL?.trim() || !env.E2E_PASSWORD?.trim()) {
+    throw new Error("Dedicated E2E staging account credentials are required.");
+  }
+  return target;
 }

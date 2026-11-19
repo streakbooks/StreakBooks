@@ -36,6 +36,7 @@ jobs:
       - run: npm run lint -- --max-warnings=0
       - run: npm test -- --maxWorkers=4
       - run: npm run check:modules
+      - run: node --test scripts/check-section18-gates.test.mjs
       - run: npm run check:ui
       - run: node --test scripts/lib/ui-route-source.test.mjs
       - run: npm run check:navigation

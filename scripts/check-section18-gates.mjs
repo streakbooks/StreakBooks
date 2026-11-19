@@ -6,25 +6,27 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { validateStagingEnvironment } from "./lib/staging-target.mjs";
 
 const root = process.cwd();
 const requireGoLive = process.argv.includes("--require-go-live");
-
-function envSet(name) {
-  const value = process.env[name];
-  return Boolean(value && String(value).trim());
-}
 
 function fileExists(rel) {
   return fs.existsSync(path.join(root, rel));
 }
 
-const stagingConfigured =
-  process.env.E2E_STAGING_ENABLED === "true" &&
-  envSet("E2E_EMAIL") &&
-  envSet("E2E_PASSWORD") &&
-  envSet("E2E_BASE_URL") &&
-  envSet("E2E_EXPECTED_STAGING_HOST");
+function stagingGate() {
+  try {
+    validateStagingEnvironment(process.env);
+    return {
+      status: "READY",
+      detail:
+        "Configuration passed preflight. Authenticated staging tests still need passing evidence.",
+    };
+  } catch (error) {
+    return { status: "BLOCKED", detail: error.message };
+  }
+}
 
 const gates = [
   {
@@ -41,17 +43,15 @@ const gates = [
   },
   {
     id: "production-deploy",
-    label: "Production deployment present",
-    status: "PASS",
-    detail: "Vercel alias recorded in RELEASE_READINESS.md",
+    label: "Production deployment of the release revision",
+    status: "UNVERIFIED",
+    detail:
+      "The recorded Vercel alias does not identify the deployed commit. Release deployment evidence is required.",
   },
   {
     id: "staging-e2e",
     label: "Authenticated staging E2E",
-    status: stagingConfigured ? "READY" : "BLOCKED",
-    detail: stagingConfigured
-      ? "E2E_* staging credentials are configured"
-      : "E2E_STAGING_ENABLED + E2E_EMAIL/PASSWORD/BASE_URL/EXPECTED_STAGING_HOST unset",
+    ...stagingGate(),
   },
   {
     id: "live-rbac",
@@ -87,7 +87,7 @@ const gates = [
   },
 ];
 
-const blocked = gates.filter((g) => g.status === "BLOCKED" || g.status === "PARTIAL");
+const blocked = gates.filter((g) => g.status !== "PASS");
 const goLiveReady = blocked.length === 0;
 
 process.stdout.write("Section 18 gate status\n");

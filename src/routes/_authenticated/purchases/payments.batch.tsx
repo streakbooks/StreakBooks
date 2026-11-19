@@ -215,9 +215,7 @@ function BatchPayment() {
                       <Checkbox
                         checked={Boolean(selected[b.id])}
                         aria-label={`Pay ${b.bill_number ?? b.supplier_invoice_number ?? "bill"}`}
-                        onCheckedChange={(v) =>
-                          setSelected((s) => ({ ...s, [b.id]: v === true }))
-                        }
+                        onCheckedChange={(v) => setSelected((s) => ({ ...s, [b.id]: v === true }))}
                       />
                     </TableCell>
                     <TableCell>{b.contacts?.name ?? "—"}</TableCell>
@@ -262,8 +260,7 @@ function BatchPayment() {
                   label: p.currencyCode,
                   value: fromMinorUnits(p.totalMinor, p.currencyCode),
                   emphasis: (index === payments.length - 1 ? "total" : "default") as
-                    | "total"
-                    | "default",
+                    "total" | "default",
                 }))),
           ]}
         />

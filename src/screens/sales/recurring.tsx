@@ -188,9 +188,9 @@ function RecurringInvoiceWorkspace({
   );
 
   const treatment = configQ.data?.treatment ?? "exclusive";
-  const taxCodes = configQ.data?.taxCodes ?? [];
+  const taxCodes = configQ.data?.taxCodes;
   const codeById = useMemo(
-    () => new Map(taxCodes.map((c) => [c.id, c] as const)),
+    () => new Map((taxCodes ?? []).map((c) => [c.id, c] as const)),
     [taxCodes],
   );
   const lineTotals = useMemo(() => {
@@ -372,7 +372,7 @@ function RecurringInvoiceWorkspace({
           accounts={incomeAccounts}
           currency={base}
           treatment={treatment}
-          taxCodes={taxCodes}
+          taxCodes={taxCodes ?? []}
           toMinor={(d) => toMinorUnits(d, base)}
           companyId={companyId}
           baseCurrency={base}

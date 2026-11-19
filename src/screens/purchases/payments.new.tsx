@@ -383,16 +383,11 @@ export function NewPayment() {
                                 }
                                 const already = Object.entries(prev).reduce(
                                   (s, [id, amt]) =>
-                                    id === b.id
-                                      ? s
-                                      : s + Number(minorOrZero(amt || "0", currency)),
+                                    id === b.id ? s : s + Number(minorOrZero(amt || "0", currency)),
                                   0,
                                 );
                                 const room = Math.max(0, amountMinor - already);
-                                next[b.id] = fromMinorUnits(
-                                  Math.min(outstanding, room),
-                                  currency,
-                                );
+                                next[b.id] = fromMinorUnits(Math.min(outstanding, room), currency);
                                 return next;
                               });
                             }}

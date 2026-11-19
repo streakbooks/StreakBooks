@@ -1,0 +1,28 @@
+{
+  // LinkBooks project Auto-review guidance (Cursor Run Mode).
+  // Intentionally omits terminalAllowlist and mcpAllowlist so IDE / user allowlists
+  // are preserved. autoRun only steers the Auto-review classifier — not a security boundary.
+  // Effective when Settings → Agents → Approvals & Execution is Auto-review.
+  "autoRun": {
+    "allow_instructions": [
+      "Allow read-only Git inspection on this repo: git status, git diff, git log, git show, git branch, git rev-parse, git remote -v, git ls-files, and similar non-mutating commands.",
+      "Allow git fetch and git pull --ff-only when they only update local refs and do not force-overwrite or discard work.",
+      "Allow npm / npm.cmd / npx / npx.cmd dependency install and ci (npm install, npm ci) inside this workspace.",
+      "Allow npm / npm.cmd scripts for typecheck, lint, test, vitest, build, check:*, and other local quality gates in this workspace.",
+      "Allow staging and committing verified changes only when HEAD is on a non-protected feature branch (not main or master), after branch, diff, and test/gate results were checked in this turn.",
+      "Allow pushing the current non-protected feature branch to origin with git push / git push -u when the remote ref is not main or master.",
+      "Allow GitHub CLI read and PR workflow commands: gh pr create, gh pr edit, gh pr view, gh pr list, gh pr checks, gh run list, gh run view, and reading Actions logs — without merging.",
+      "Prefer short, focused shell commands. Do not combine routine quality gates with destructive Git, merge-to-main, or production deploy steps in the same command."
+    ],
+    "block_instructions": [
+      "Require approval for any direct write, commit, push, or merge targeting main or master (including pull_request merge, gh pr merge, and updating local main with non-ff-only resets).",
+      "Require approval for administrative merge overrides such as gh pr merge --admin or bypassing branch protection / required reviews.",
+      "Require approval for force pushes (git push --force, --force-with-lease) and other destructive Git operations (hard reset, clean -fd, checkout -- that discards work, branch -D of shared branches).",
+      "Require approval before discarding uncommitted changes (git restore / git checkout of dirty files, git reset --hard, git stash drop) unless the user explicitly asked to discard them in this turn.",
+      "Require approval for production database migrations, Supabase production applies, Vercel production deploys, and any live production mutation.",
+      "Require approval for commands or edits that create, print, commit, or rotate secrets, credentials, API keys, .env files with secrets, or security policy changes.",
+      "Do not use Run Everything mode guidance and do not treat a broad unrestricted git allowlist as approved — keep Git mutations narrowly scoped to feature-branch workflow.",
+      "Never merge a pull request into main without the user's explicit merge authorization in the current conversation."
+    ]
+  }
+}

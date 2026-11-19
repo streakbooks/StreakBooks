@@ -1,0 +1,32 @@
+---
+description: LinkBooks autonomous agent execution — feature-branch workflow without unauthorised merges
+alwaysApply: true
+---
+
+# Autonomous execution (LinkBooks)
+
+Gulshan (Operations) authorised routine autonomous development for `linkbusinessadvisory/LinkBooks`, with hard limits below.
+
+## May run without re-asking
+
+- Read-only Git inspection and `git fetch` / `git pull --ff-only`
+- `npm` / `npm.cmd` install, typecheck, lint, tests, builds, and `check:*` gates
+- Stage and commit on **feature branches only**, after verifying branch + diff + relevant gates
+- Push to non-protected feature remotes; create/update PRs; read Actions / CI logs
+- Prefer short focused commands; do not bundle destructive ops with routine gates
+
+## Always require explicit user authorization
+
+- Merge to `main` / `master` (including `gh pr merge`)
+- Admin merge overrides / bypassing branch protection or required reviews
+- Force push and other destructive Git (`reset --hard`, discarding dirty work, etc.)
+- Production DB migrations, production deploys, secrets or credential changes
+
+## Before each commit
+
+1. Confirm current branch is a feature branch (not `main`/`master`)
+2. Review `git status` and staged/unstaged diff
+3. Confirm relevant local gates for the change set
+4. Commit only requested/verified work; never commit secrets
+
+Project Auto-review steering lives in `.cursor/permissions.json` (`autoRun` only — no broad terminal allowlist).

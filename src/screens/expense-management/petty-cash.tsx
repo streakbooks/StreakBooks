@@ -217,7 +217,7 @@ export function ExpenseManagementPettyCashPage() {
 
       {canManage ? (
         <>
-          <section className="mb-8 space-y-4 rounded-lg border p-4">
+          <section id="em-pc-float" className="mb-8 space-y-4 rounded-lg border p-4">
             <h2 className="text-lg font-medium">New float</h2>
             <div className="grid gap-4 md:grid-cols-3">
               <div className="grid gap-2">
@@ -280,6 +280,22 @@ export function ExpenseManagementPettyCashPage() {
         <EmptyState
           title="No petty cash floats"
           description="Create a float, fund it from bank, then record spends as company-paid claims."
+          action={
+            canManage ? (
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => {
+                  document
+                    .getElementById("em-pc-float")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  document.getElementById("pc-name")?.focus();
+                }}
+              >
+                New float
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <Table>

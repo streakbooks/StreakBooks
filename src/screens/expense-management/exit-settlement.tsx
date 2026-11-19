@@ -207,7 +207,7 @@ export function ExpenseManagementExitSettlementPage() {
       subnav={<ExpenseManagementSubnav current="exit-settlement" />}
     >
       {canManage ? (
-        <section className="mb-8 space-y-4 rounded-lg border p-4">
+        <section id="em-exit-review" className="mb-8 space-y-4 rounded-lg border p-4">
           <h2 className="text-lg font-medium">Review employee</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
@@ -364,6 +364,21 @@ export function ExpenseManagementExitSettlementPage() {
           <EmptyState
             title="No exit settlements"
             description="Create a draft for a leaving employee, clear blockers, then finalize."
+            action={
+              canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById("em-exit-review")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                >
+                  Review employee
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <Table>

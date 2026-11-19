@@ -31,7 +31,8 @@ import { useCan } from "@/hooks/use-can";
 import { AccountLookup, LookupSelect } from "@/components/lookup";
 import { MultiLookupSelect } from "@/components/lookup/MultiLookupSelect";
 import type { LookupOption } from "@/lib/lookup/types";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1092,14 +1093,7 @@ export function CashClassificationPanel({
   if (q.isPending || accounts.isPending) return <LoadingState />;
   if (q.isError || accounts.isError)
     return (
-      <ErrorState
-        title="Could not load cash classification review"
-        description={friendlyAuthError(q.error ?? accounts.error)}
-        onRetry={() => {
-          void q.refetch();
-          void accounts.refetch();
-        }}
-      />
+      <QueryErrorState queries={[q, accounts]} title="Could not load cash classification review" />
     );
   const data = q.data!;
   const activeAccounts = (accounts.data ?? []).filter((a) => a.is_active && a.is_postable);
@@ -1696,11 +1690,7 @@ function InventoryCostTrace({ companyId, currency }: { companyId: string; curren
       {enabled && q.isPending ? (
         <LoadingState />
       ) : q.isError ? (
-        <ErrorState
-          title="Inventory cost tracing needs review"
-          description={friendlyAuthError(q.error)}
-          onRetry={() => void q.refetch()}
-        />
+        <QueryErrorState queries={[q]} title="Inventory cost tracing needs review" />
       ) : q.data ? (
         <div className="overflow-auto">
           <Table>

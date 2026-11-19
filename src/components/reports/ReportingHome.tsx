@@ -9,7 +9,8 @@ import { useReportingCentreOrigin } from "@/hooks/use-reporting-centre-origin";
 import { QUICK_REPORT_IDS, getReportById } from "@/lib/reports/catalog";
 import type { ReportingPack } from "@/lib/reports/ecosystem-model";
 import { Button } from "@/components/ui/button";
-import { LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 export function ReportingHome({
   companyId,
@@ -40,13 +41,7 @@ export function ReportingHome({
   });
   if (q.isPending) return <LoadingState />;
   if (q.isError)
-    return (
-      <ErrorState
-        title="Could not load reporting home"
-        description={friendlyAuthError(q.error)}
-        onRetry={() => void q.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[q]} title="Could not load reporting home" />;
   const counts = q.data.packCounts;
   const count = (...states: string[]) => states.reduce((n, state) => n + (counts[state] ?? 0), 0);
   return (

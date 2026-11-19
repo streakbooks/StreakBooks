@@ -6,7 +6,8 @@ import { listTaxCodes, listTaxRates, saveTaxCode } from "@/lib/tax/tax.functions
 import { filterTaxAccountPicker, type PickerAccount } from "@/lib/tax/account-pickers";
 import { bpsToPercentLabel } from "@/lib/tax/tax-math";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -202,11 +203,7 @@ export function TaxCodesPanel({
       {codesQ.isPending ? (
         <LoadingState />
       ) : codesQ.isError ? (
-        <ErrorState
-          title="Could not load tax codes"
-          description={friendlyAuthError(codesQ.error)}
-          onRetry={() => codesQ.refetch()}
-        />
+        <QueryErrorState queries={[codesQ]} title="Could not load tax codes" />
       ) : rows.length === 0 ? (
         <EmptyState title="No tax codes" description="Add a rate, then a code, or apply a pack." />
       ) : visibleRows.length === 0 ? (

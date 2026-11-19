@@ -62,7 +62,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 
 const ROW_HEIGHT = 44;
 
@@ -349,13 +350,7 @@ export function ChartAccountsPanel({
 
   if (chartQuery.isPending) return <LoadingState />;
   if (chartQuery.isError) {
-    return (
-      <ErrorState
-        title="Could not load the chart"
-        description={friendlyAuthError(chartQuery.error)}
-        onRetry={() => chartQuery.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[chartQuery]} title="Could not load the chart" />;
   }
 
   const review = chartQuery.data.review;

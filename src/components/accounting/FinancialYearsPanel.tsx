@@ -16,7 +16,8 @@ import {
 import { createFinancialYear } from "@/lib/accounting/period-close.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -120,11 +121,7 @@ export function FinancialYearsPanel({ companyId }: { companyId: string }) {
       {periods.isPending ? (
         <LoadingState />
       ) : periods.isError ? (
-        <ErrorState
-          title="Could not load periods"
-          description={friendlyAuthError(periods.error)}
-          onRetry={() => periods.refetch()}
-        />
+        <QueryErrorState queries={[periods]} title="Could not load periods" />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No accounting periods"

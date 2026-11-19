@@ -26,7 +26,8 @@ import {
   type EditableLineItemColumn,
 } from "@/components/common/EditableLineItemGrid";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -246,12 +247,7 @@ export function ConversionBalancesPanel({
 
   if (overview.isPending) return <LoadingState />;
   if (overview.isError)
-    return (
-      <ErrorState
-        description={friendlyAuthError(overview.error)}
-        onRetry={() => void overview.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[overview]} title="Could not load conversion balances" />;
   const ov = overview.data;
 
   if (!ov.available) {

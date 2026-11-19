@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Download, RefreshCw, Search } from "lucide-react";
 import { useFormat } from "@/hooks/use-format";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { todayIso } from "@/lib/accounting/fiscal-year";
 import { isReportDate } from "@/lib/reports/date-validation";
 import { getFixedAssetReconciliation } from "@/lib/fixed-assets/reconciliation.functions";
@@ -14,7 +13,8 @@ import {
   selectReconciliationReviewRows,
   summarizeReconciliationExceptions,
 } from "@/lib/fixed-assets/reconciliation-review";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -186,11 +186,7 @@ export function AssetReconciliationPanel({ companyId }: { companyId: string }) {
       ) : report.isPending ? (
         <LoadingState />
       ) : report.isError ? (
-        <ErrorState
-          title="Could not reconcile fixed assets"
-          description={friendlyAuthError(report.error)}
-          onRetry={() => void report.refetch()}
-        />
+        <QueryErrorState queries={[report]} title="Could not reconcile fixed assets" />
       ) : reviewed.issue ? (
         <Alert variant="destructive">
           <AlertDescription>Reconciliation data requires review: {reviewed.issue}</AlertDescription>

@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { useReportingAccess } from "@/hooks/use-reporting-access";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
-import { LoadingState, ErrorState } from "@/components/common/states";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 export function ReportingFeatureGate({
   companyId,
   children,
@@ -14,13 +14,7 @@ export function ReportingFeatureGate({
   const access = useReportingAccess(companyId);
   if (access.isPending) return <LoadingState />;
   if (access.isError)
-    return (
-      <ErrorState
-        title="Could not verify reporting access"
-        description={friendlyAuthError(access.error)}
-        onRetry={() => void access.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[access]} title="Could not verify reporting access" />;
   if (!access.data.allowed)
     return (
       <section role="status" className="space-y-2 rounded border p-5">

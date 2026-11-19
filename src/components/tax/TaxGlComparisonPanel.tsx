@@ -5,7 +5,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { getTaxGlComparison } from "@/lib/tax/tax-return.functions";
 import { TaxGlReviewPanel } from "@/components/tax/TaxGlReviewPanel";
 import { useCanDo } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 
 type Basis = "cash" | "accrual";
 
@@ -75,11 +75,7 @@ export function TaxGlComparisonPanel({
           ) : query.isPending ? (
             <LoadingState />
           ) : query.isError ? (
-            <ErrorState
-              title="GL comparison could not be loaded"
-              description={friendlyAuthError(query.error)}
-              onRetry={() => void query.refetch()}
-            />
+            <QueryErrorState queries={[query]} title="GL comparison could not be loaded" />
           ) : result?.available === false ? (
             <Alert>
               <AlertTitle>GL account mappings required</AlertTitle>

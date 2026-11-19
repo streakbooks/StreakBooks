@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 
 type Assignment = "keep" | "mine" | "clear";
 
@@ -122,13 +123,7 @@ export function TaxGlReviewPanel({
 
   if (query.isPending) return <LoadingState />;
   if (query.isError)
-    return (
-      <ErrorState
-        title="Could not load tax GL review"
-        description={friendlyAuthError(query.error)}
-        onRetry={() => void query.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[query]} title="Could not load tax GL review" />;
   if (!query.data?.available)
     return (
       <Alert>

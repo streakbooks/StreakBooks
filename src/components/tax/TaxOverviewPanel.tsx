@@ -5,8 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { listTaxCodes, listTaxRates } from "@/lib/tax/tax.functions";
 import { listTaxReturns } from "@/lib/tax/tax-return.functions";
 import { summarizeTaxWorkspace } from "@/lib/tax/tax-workspace";
-import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,14 +55,10 @@ export function TaxOverviewPanel({
 
   if (ratesQ.isPending || codesQ.isPending || returnsQ.isPending) return <LoadingState />;
   if (ratesQ.isError || codesQ.isError || returnsQ.isError) {
-    const error = ratesQ.error ?? codesQ.error ?? returnsQ.error;
     return (
-      <ErrorState
+      <QueryErrorState
+        queries={[ratesQ, codesQ, returnsQ]}
         title="Could not load tax overview"
-        description={friendlyAuthError(error)}
-        onRetry={() => {
-          void Promise.all([ratesQ.refetch(), codesQ.refetch(), returnsQ.refetch()]);
-        }}
       />
     );
   }

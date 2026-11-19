@@ -22,7 +22,8 @@ import { sourceLabel, sourceTarget } from "@/lib/reports/links";
 import type { ReportSearch } from "@/lib/reports/search";
 import { reportingCentreBackSearch } from "@/lib/reports/centre-return";
 import type { ReportPresentation } from "@/lib/reports/report-document";
-import { EmptyState, ErrorState, ReportSkeleton } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, ReportSkeleton } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -366,13 +367,7 @@ export function ReportPane({
 }) {
   if (query.isPending) return <ReportSkeleton />;
   if (query.isError) {
-    return (
-      <ErrorState
-        title="Could not load report"
-        description={friendlyAuthError(query.error)}
-        onRetry={() => void query.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[query]} title="Could not load report" />;
   }
   if (isEmpty) return <EmptyState title={emptyTitle} description={emptyDescription} />;
   return <>{children}</>;

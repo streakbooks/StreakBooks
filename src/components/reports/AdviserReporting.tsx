@@ -11,7 +11,8 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 export function AdviserReporting({ from, to }: { from: string; to: string }) {
   const firmsFn = useServerFn(listMyFirms),
     portfolioFn = useServerFn(getFirmReportingPortfolio);
@@ -29,13 +30,7 @@ export function AdviserReporting({ from, to }: { from: string; to: string }) {
   });
   if (firms.isPending) return <LoadingState />;
   if (firms.isError)
-    return (
-      <ErrorState
-        title="Could not load accounting firms"
-        description={friendlyAuthError(firms.error)}
-        onRetry={() => void firms.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[firms]} title="Could not load accounting firms" />;
   if (!firms.data.length)
     return (
       <div className="space-y-3">
@@ -126,11 +121,7 @@ export function AdviserReporting({ from, to }: { from: string; to: string }) {
       {portfolio.isPending ? (
         <LoadingState />
       ) : portfolio.isError ? (
-        <ErrorState
-          title="Could not load authorized client reporting"
-          description={friendlyAuthError(portfolio.error)}
-          onRetry={() => void portfolio.refetch()}
-        />
+        <QueryErrorState queries={[portfolio]} title="Could not load authorized client reporting" />
       ) : !clients.length ? (
         <EmptyState
           title="No authorized clients"

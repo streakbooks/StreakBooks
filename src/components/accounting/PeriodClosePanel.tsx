@@ -19,7 +19,8 @@ import { closeTieFromAsAt } from "@/lib/accounting/period-close-subledger";
 import { postYearEndClose, previewYearEndClose } from "@/lib/reports/year-end.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -220,13 +221,7 @@ export function PeriodClosePanel({
 
   if (periods.isPending) return <LoadingState />;
   if (periods.isError)
-    return (
-      <ErrorState
-        title="Could not load periods"
-        description={friendlyAuthError(periods.error)}
-        onRetry={() => periods.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[periods]} title="Could not load periods" />;
   if (openPeriods.length === 0)
     return (
       <EmptyState

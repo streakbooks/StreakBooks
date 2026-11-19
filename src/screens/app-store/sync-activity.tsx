@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -62,11 +63,7 @@ export function AppStoreSyncActivityPage() {
 
       {jobs.isLoading ? <LoadingState /> : null}
       {jobs.isError ? (
-        <ErrorState
-          title="Could not load sync jobs"
-          description={friendlyAuthError(jobs.error)}
-          onRetry={() => jobs.refetch()}
-        />
+        <QueryErrorState queries={[jobs]} title="Could not load sync jobs" />
       ) : null}
 
       {!jobs.isLoading && !jobs.isError ? (

@@ -1,9 +1,10 @@
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { listAdvisorsPortalAppointments } from "@/lib/advisors/portal.functions";
@@ -38,11 +39,7 @@ export function AdvisorsPortalAppointmentsPage() {
         >
           <AdvisorsPortalSubnav />
           <div role="alert">
-            <ErrorState
-              title="Appointments unavailable"
-              description={friendlyAuthError(query.error)}
-              onRetry={() => void query.refetch()}
-            />
+            <QueryErrorState queries={[query]} title="Appointments unavailable" />
           </div>
         </ListWorkspace>
       </main>

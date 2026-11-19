@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -97,11 +98,7 @@ export function AppStoreConnectionsPage() {
 
       {connections.isLoading ? <LoadingState /> : null}
       {connections.isError ? (
-        <ErrorState
-          title="Could not load connections"
-          description={friendlyAuthError(connections.error)}
-          onRetry={() => connections.refetch()}
-        />
+        <QueryErrorState queries={[connections]} title="Could not load connections" />
       ) : null}
 
       {!connections.isLoading && !connections.isError ? (

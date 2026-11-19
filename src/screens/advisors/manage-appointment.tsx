@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -15,7 +16,7 @@ import {
 } from "@/lib/advisors/booking.functions";
 import { detectCustomerTimeZone, formatSlotLabel } from "@/lib/advisors/booking-slots";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState } from "@/components/common/states";
+import { LoadingState } from "@/components/common/states";
 
 function toDayKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -75,11 +76,7 @@ export function AdvisorsManageAppointmentPage({ manageToken }: { manageToken: st
   if (appointmentQ.isError) {
     return (
       <main className="mx-auto max-w-xl p-6">
-        <ErrorState
-          title="Appointment unavailable"
-          description={friendlyAuthError(appointmentQ.error)}
-          onRetry={() => void appointmentQ.refetch()}
-        />
+        <QueryErrorState queries={[appointmentQ]} title="Appointment unavailable" />
       </main>
     );
   }

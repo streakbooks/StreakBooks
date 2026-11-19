@@ -1,11 +1,12 @@
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,11 +56,7 @@ export function AdvisorsPortalDocumentsPage() {
         <ListWorkspace title="Documents" description="Requested files for your delivery periods.">
           <AdvisorsPortalSubnav />
           <div role="alert">
-            <ErrorState
-              title="Documents unavailable"
-              description={friendlyAuthError(query.error)}
-              onRetry={() => void query.refetch()}
-            />
+            <QueryErrorState queries={[query]} title="Documents unavailable" />
           </div>
         </ListWorkspace>
       </main>

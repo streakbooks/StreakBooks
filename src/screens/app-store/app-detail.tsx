@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { TrustBadges } from "@/components/app-store/TrustBadges";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -90,11 +91,7 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
   }
   if (catalogue.isError) {
     return (
-      <ErrorState
-        title="Could not load application"
-        description={friendlyAuthError(catalogue.error)}
-        onRetry={() => catalogue.refetch()}
-      />
+      <QueryErrorState queries={[catalogue]} title="Could not load application" />
     );
   }
 

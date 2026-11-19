@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -72,11 +73,7 @@ export function AppStoreAdvisoryPage() {
 
       {recommendations.isLoading ? <LoadingState /> : null}
       {recommendations.isError ? (
-        <ErrorState
-          title="Could not load recommendations"
-          description={friendlyAuthError(recommendations.error)}
-          onRetry={() => recommendations.refetch()}
-        />
+        <QueryErrorState queries={[recommendations]} title="Could not load recommendations" />
       ) : null}
 
       {!recommendations.isLoading && !recommendations.isError ? (

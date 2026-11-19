@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -192,11 +193,7 @@ export function AppStorePrivacyPage() {
         <h2 className="text-lg font-semibold">Active consents</h2>
         {consents.isLoading ? <LoadingState /> : null}
         {consents.isError ? (
-          <ErrorState
-            title="Could not load consents"
-            description={friendlyAuthError(consents.error)}
-            onRetry={() => consents.refetch()}
-          />
+          <QueryErrorState queries={[consents]} title="Could not load consents" />
         ) : null}
         {!consents.isLoading && !consents.isError ? (
           activeConsents.length === 0 ? (
@@ -279,11 +276,7 @@ export function AppStorePrivacyPage() {
         <h2 className="text-lg font-semibold">Security alerts</h2>
         {alerts.isLoading ? <LoadingState /> : null}
         {alerts.isError ? (
-          <ErrorState
-            title="Could not load alerts"
-            description={friendlyAuthError(alerts.error)}
-            onRetry={() => alerts.refetch()}
-          />
+          <QueryErrorState queries={[alerts]} title="Could not load alerts" />
         ) : null}
         {!alerts.isLoading && !alerts.isError ? (
           (alerts.data?.length ?? 0) === 0 ? (

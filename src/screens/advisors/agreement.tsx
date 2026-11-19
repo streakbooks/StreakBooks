@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -10,7 +11,7 @@ import {
   getPublicAdvisorsAgreement,
 } from "@/lib/advisors/engagements.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { LoadingState } from "@/components/common/states";
 
 export function AdvisorsAgreementPage({ token }: { token: string }) {
   const qc = useQueryClient();
@@ -42,11 +43,7 @@ export function AdvisorsAgreementPage({ token }: { token: string }) {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-2xl p-6">
-        <ErrorState
-          title="Agreement unavailable"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
+        <QueryErrorState queries={[query]} title="Agreement unavailable" />
       </main>
     );
   }

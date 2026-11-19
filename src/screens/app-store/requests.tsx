@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -83,11 +84,7 @@ export function AppStoreRequestsPage() {
 
       {requests.isLoading || catalogue.isLoading ? <LoadingState /> : null}
       {requests.isError ? (
-        <ErrorState
-          title="Could not load requests"
-          description={friendlyAuthError(requests.error)}
-          onRetry={() => requests.refetch()}
-        />
+        <QueryErrorState queries={[requests]} title="Could not load requests" />
       ) : null}
 
       {!requests.isLoading && !catalogue.isLoading && !requests.isError ? (

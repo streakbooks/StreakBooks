@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { MarketplaceAppCard } from "@/components/app-store/MarketplaceAppCard";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -133,11 +134,7 @@ export function AppStoreTrustPage() {
   }
   if (catalogue.isError) {
     return (
-      <ErrorState
-        title="Could not load trust catalogue"
-        description={friendlyAuthError(catalogue.error)}
-        onRetry={() => catalogue.refetch()}
-      />
+      <QueryErrorState queries={[catalogue]} title="Could not load trust catalogue" />
     );
   }
 
@@ -233,11 +230,7 @@ export function AppStoreTrustPage() {
           <h2 className="text-xl font-semibold tracking-tight">Security approval queue</h2>
           {reviews.isLoading ? <LoadingState /> : null}
           {reviews.isError ? (
-            <ErrorState
-              title="Could not load security reviews"
-              description={friendlyAuthError(reviews.error)}
-              onRetry={() => reviews.refetch()}
-            />
+            <QueryErrorState queries={[reviews]} title="Could not load security reviews" />
           ) : null}
           {!reviews.isLoading && !reviews.isError ? (
             (reviews.data?.length ?? 0) === 0 ? (

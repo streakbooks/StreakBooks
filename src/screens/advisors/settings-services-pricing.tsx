@@ -1,11 +1,12 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -351,11 +352,7 @@ export function AdvisorsServicesPricingPage() {
         >
           <AdvisorsSubnav />
           <div role="alert">
-            <ErrorState
-              title="Advisors admin unavailable"
-              description={friendlyAuthError(query.error)}
-              onRetry={() => void query.refetch()}
-            />
+            <QueryErrorState queries={[query]} title="Advisors admin unavailable" />
           </div>
         </ListWorkspace>
       </main>

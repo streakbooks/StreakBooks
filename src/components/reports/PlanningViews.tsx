@@ -10,6 +10,7 @@ import {
 } from "@/lib/fixed-assets/fixed-assets.functions";
 import { DEPRECIATION_METHODS } from "@/lib/fixed-assets/depreciation";
 import type { VarianceCell, VarianceRow, VarianceSection } from "@/lib/budgets/budget-report";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LookupSelect } from "@/components/lookup";
@@ -175,7 +176,9 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
       extraControls={controls}
       getCsv={csv}
     >
-      {budgets.isPending ? null : budgets.data && !budgets.data.available ? (
+      {budgets.isError ? (
+        <QueryErrorState queries={[budgets]} title="Could not load budgets" />
+      ) : budgets.isPending ? null : budgets.data && !budgets.data.available ? (
         <Alert>
           <AlertDescription>
             Budgets are not available yet: the database update that adds them has not been applied.
@@ -374,6 +377,9 @@ export function FixedAssetRegisterView({ ctx }: { ctx: ReportCtx }) {
       }
       extraControls={
         <>
+          {accountsQ.isError ? (
+            <QueryErrorState queries={[accountsQ]} title="Could not load asset accounts" />
+          ) : null}
           <ReportAccountMultiSelect
             label="Asset accounts"
             accounts={accountOptions}
@@ -381,7 +387,7 @@ export function FixedAssetRegisterView({ ctx }: { ctx: ReportCtx }) {
             onChange={(ids) =>
               ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
             }
-            disabled={q.isPending || accountsQ.isPending}
+            disabled={q.isPending || accountsQ.isPending || accountsQ.isError}
           />
           <Button size="sm" variant="outline" asChild className="print:hidden">
             <Link to="/fixed-assets">Manage assets</Link>

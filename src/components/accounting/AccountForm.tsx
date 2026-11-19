@@ -25,6 +25,7 @@ import {
 } from "@/lib/accounting/reporting";
 import { listTaxCodes } from "@/lib/tax/tax.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { AccountLookup, LookupSelect, type LookupCreateContext } from "@/components/lookup";
 import { useCanDo } from "@/hooks/use-can";
 import { Button } from "@/components/ui/button";
@@ -224,6 +225,12 @@ export function AccountForm({
         mutation.mutate(false);
       }}
     >
+      {chartQuery.isError || taxQuery.isError ? (
+        <QueryErrorState
+          queries={[chartQuery, taxQuery]}
+          title="Could not load account form options"
+        />
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Account type">
           <Select

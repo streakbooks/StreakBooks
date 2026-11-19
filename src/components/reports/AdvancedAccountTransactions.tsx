@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Columns3, RotateCcw, Search, SlidersHorizontal, ArrowUp, ArrowDown } from "lucide-react";
 import { ReportAccountMultiSelect } from "./ReportAccountMultiSelect";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -174,6 +175,9 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
               <option value="cash">Cash (recognized settlements)</option>
             </select>
           </div>
+          {accountsQ.isError ? (
+            <QueryErrorState queries={[accountsQ]} title="Could not load report accounts" />
+          ) : null}
           <ReportAccountMultiSelect
             accounts={accounts}
             selected={accountId ? [accountId] : undefined}
@@ -184,7 +188,7 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
                 page: undefined,
               })
             }
-            disabled={accountsQ.isPending}
+            disabled={accountsQ.isPending || accountsQ.isError}
           />
         </>
       }

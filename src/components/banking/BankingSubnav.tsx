@@ -20,7 +20,12 @@ export function BankingSubnav() {
       settings={{ to: "/settings", section: "banking" }}
       items={[
         { to: "/banking", label: "Accounts", exact: true },
-        { to: "/banking/transactions", label: "Transactions", count: countsQ.data?.uncategorised },
+        {
+          to: "/banking/transactions",
+          label: "Transactions",
+          // Omit the badge when counts fail — never imply zero uncategorised items.
+          count: countsQ.isSuccess ? countsQ.data?.uncategorised : undefined,
+        },
         { to: "/banking/reconcile", label: "Reconcile" },
         { to: "/banking/cash-coding", label: "Cash coding" },
         { to: "/banking/transfers", label: "Transfers" },

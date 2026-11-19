@@ -819,7 +819,7 @@ function exportAssetRegisterCsv(
     anchor.click();
     URL.revokeObjectURL(url);
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : "Cannot export asset register.");
+    toast.error(friendlyAuthError(error));
   }
 }
 

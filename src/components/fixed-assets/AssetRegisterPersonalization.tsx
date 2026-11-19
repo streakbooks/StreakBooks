@@ -2,6 +2,7 @@ import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useState } from "react";
 import { Columns3, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { supabase } from "@/integrations/supabase/client";
 import {
   parseSavedAssetFilterViews,
@@ -189,7 +190,7 @@ export function FixedAssetSavedFilterViews({
         toast.success(existing ? "Saved view updated" : "Filter view saved to this browser");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not save this filter view");
+      toast.error(friendlyAuthError(error));
     }
   };
   const chosen = views.find((view) => view.name === selected);

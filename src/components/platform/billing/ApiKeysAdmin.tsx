@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LookupSelect } from "@/components/lookup";
 import { MultiLookupSelect } from "@/components/lookup/MultiLookupSelect";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
@@ -19,7 +20,7 @@ const queryKey = ["platform-api-keys"] as const;
 const SCOPE_OPTIONS = API_SCOPES.map((scope) => ({ id: scope, label: scope }));
 
 function errorText(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
+  return error instanceof Error || typeof error === "string" ? friendlyAuthError(error) : fallback;
 }
 
 export function ApiKeysAdmin({ isOwner }: { isOwner: boolean }) {

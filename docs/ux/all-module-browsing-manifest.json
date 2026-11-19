@@ -282,7 +282,9 @@
         "2026-11-19: Files parser ignores malformed null, undefined, primitive and array runtime search containers; code e46d86a0234d1f149d865bc04713155bf00d5736; SOURCE ONLY, NOT RUN.",
         "2026-11-19: malformed-container regression added in files-navigation.test.ts; commit a745640ef3d88a847c4b9c5a32ae621ad2a3e98d; WRITTEN, NOT RUN.",
         "2026-11-19: src/lib/documents/files-navigation.ts ignores accessor-backed own query properties without invoking getters; code commit db58187c0d55288891a2a07d80cab5e0b50f8099; SOURCE ONLY, NOT RUN.",
-        "2026-11-19: src/lib/documents/files-navigation.test.ts adds throwing-accessor regression with independent filter retention; commit 1b60a72d465e6f6cb1a080fba685a88ebb5a4df9; WRITTEN, NOT RUN."
+        "2026-11-19: src/lib/documents/files-navigation.test.ts adds throwing-accessor regression with independent filter retention; commit 1b60a72d465e6f6cb1a080fba685a88ebb5a4df9; WRITTEN, NOT RUN.",
+        "2026-11-19: Files parser catches throwing Proxy getOwnPropertyDescriptor traps per field, retaining independent sort/page; code commit 6ac80cee01b798d5cb4fb73c85e1925b15f25641; SOURCE ONLY, NOT RUN.",
+        "2026-11-19: Files throwing Proxy descriptor regression written in files-navigation.test.ts; commit 196a11552dbeefc24caf083480d0b5e44106ac0a; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Run actual app typecheck, lint, build, Vitest and authenticated Playwright",
@@ -292,7 +294,8 @@
         "Run Files canonical-page and invisible-control regressions; inventory guard, typecheck, lint, build, authenticated browser, accessibility and security/accounting tests NOT RUN.",
         "Run prototype-inheritance Files navigation regression, inventory guard, typecheck, Vitest, build and authenticated browser/RLS/accounting tests; NOT RUN.",
         "Execute malformed runtime search regression, inventory guard, typecheck, build, authenticated browser, accessibility and security/accounting checks; NOT RUN.",
-        "Run accessor-backed Files URL regression and inventory guard, typecheck, lint, build, authenticated browser, accessibility, RLS/accounting checks; NOT RUN."
+        "Run accessor-backed Files URL regression and inventory guard, typecheck, lint, build, authenticated browser, accessibility, RLS/accounting checks; NOT RUN.",
+        "Execute throwing Proxy descriptor regression, browsing inventory guard, typecheck, lint, build, authenticated browser, accessibility, RLS/accounting verification; NOT RUN."
       ]
     },
     {

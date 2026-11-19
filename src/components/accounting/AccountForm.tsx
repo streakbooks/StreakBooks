@@ -309,18 +309,21 @@ export function AccountForm({
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Sub-account of">
-          <AccountLookup
-            ariaLabel="Sub-account of"
-            purpose="parent"
-            accounts={parents}
-            value={draft.parentId}
-            onChange={(parentId) => setDraft({ ...draft, parentId })}
-            companyId={companyId}
-            placeholder="No parent"
-            allowClear
-          />
+          {chartQuery.isError ? null : (
+            <AccountLookup
+              ariaLabel="Sub-account of"
+              purpose="parent"
+              accounts={parents}
+              value={draft.parentId}
+              onChange={(parentId) => setDraft({ ...draft, parentId })}
+              companyId={companyId}
+              placeholder="No parent"
+              allowClear
+            />
+          )}
         </Field>
         <Field label="Default tax">
+          {taxQuery.isError ? null : (
           <LookupSelect
             ariaLabel="Default tax"
             options={taxCodes.map((code) => ({ id: code.id, label: code.label }))}
@@ -336,6 +339,7 @@ export function AccountForm({
               canTax ? (ctx) => <DefaultTaxCreate companyId={companyId} ctx={ctx} /> : undefined
             }
           />
+          )}
         </Field>
         <Field label={`Currency (organisation uses ${currency})`}>
           <Input
@@ -401,14 +405,29 @@ export function AccountForm({
         </div>
       ) : null}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={mutation.isPending}>
+        <Button
+          type="submit"
+          disabled={
+            mutation.isPending ||
+            chartQuery.isPending ||
+            taxQuery.isPending ||
+            chartQuery.isError ||
+            taxQuery.isError
+          }
+        >
           {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
           Save
         </Button>
         <Button
           type="button"
           variant="outline"
-          disabled={mutation.isPending}
+          disabled={
+            mutation.isPending ||
+            chartQuery.isPending ||
+            taxQuery.isPending ||
+            chartQuery.isError ||
+            taxQuery.isError
+          }
           onClick={() => mutation.mutate(true)}
         >
           Save and new

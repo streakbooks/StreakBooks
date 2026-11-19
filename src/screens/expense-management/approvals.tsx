@@ -589,7 +589,9 @@ export function ExpenseManagementApprovalsPage() {
                   </Button>
                 </div>
               </div>
-              {(delegationsQ.data ?? []).length === 0 ? (
+              {delegationsQ.isPending ? (
+                <LoadingState />
+              ) : (delegationsQ.data ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground">No delegations recorded yet.</p>
               ) : (
                 <Table>

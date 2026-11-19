@@ -411,15 +411,17 @@ function BankingAccounts() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <AccountLookup
-          ariaLabel="GL account"
-          accounts={glOptions}
-          value={glAccountId}
-          onChange={setGlAccountId}
-          companyId={companyId}
-          placeholder="GL account"
-          allowClear={false}
-        />
+        {glQ.isError && glQ.data === undefined ? null : (
+          <AccountLookup
+            ariaLabel="GL account"
+            accounts={glOptions}
+            value={glAccountId}
+            onChange={setGlAccountId}
+            companyId={companyId}
+            placeholder="GL account"
+            allowClear={false}
+          />
+        )}
         <RecordLookupSelect value={currency ?? baseCurrency} onValueChange={setCurrency}>
           <SelectTrigger aria-label="Currency">
             <SelectValue />
@@ -441,7 +443,12 @@ function BankingAccounts() {
         ) : null}
         <Button
           size="sm"
-          disabled={createM.isPending || !name.trim() || !glAccountId}
+          disabled={
+            createM.isPending ||
+            !name.trim() ||
+            !glAccountId ||
+            (glQ.isError && glQ.data === undefined)
+          }
           onClick={() => createM.mutate()}
         >
           Add account

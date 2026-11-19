@@ -156,15 +156,13 @@ function JournalEvidenceLookup({
       />
       {q.isError ? (
         <QueryErrorState queries={[q]} title="Could not load supporting journals" />
-      ) : null}
-      {multiple ? (
+      ) : multiple ? (
         <MultiLookupSelect
           options={options}
           values={values}
           onValuesChange={onChange}
           ariaLabel={label}
           loading={q.isPending}
-          disabled={q.isError}
         />
       ) : (
         <LookupSelect
@@ -173,7 +171,6 @@ function JournalEvidenceLookup({
           onChange={(id) => onChange(id ? [id] : [])}
           ariaLabel={label}
           loading={q.isPending}
-          disabled={q.isError}
         />
       )}
       <div className="flex flex-wrap gap-2">

@@ -209,20 +209,21 @@ export function BillMakePaymentPanel({
               <Label>Paid from</Label>
               {accountsQ.isError ? (
                 <QueryErrorState queries={[accountsQ]} title="Could not load payment accounts" />
-              ) : null}
-              <AccountLookup
-                ariaLabel="Paid from"
-                accounts={
-                  (accountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>
-                }
-                value={bankAccountId}
-                onChange={setBankAccountId}
-                companyId={companyId}
-                purpose="posting"
-                createKind="bank"
-                placeholder="Bank or cash account"
-                allowClear={false}
-              />
+              ) : (
+                <AccountLookup
+                  ariaLabel="Paid from"
+                  accounts={
+                    (accountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>
+                  }
+                  value={bankAccountId}
+                  onChange={setBankAccountId}
+                  companyId={companyId}
+                  purpose="posting"
+                  createKind="bank"
+                  placeholder="Bank or cash account"
+                  allowClear={false}
+                />
+              )}
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="pay-ref">Reference</Label>

@@ -482,7 +482,9 @@ export function ExpenseManagementReimbursementsPage() {
           still posts the reimbursement journal; categorise the bank line separately in Banking if
           needed.
         </p>
-        {bankSuggestQ.isError ? (
+        {bankSuggestQ.isPending ? (
+          <LoadingState />
+        ) : bankSuggestQ.isError ? (
           friendlyAuthError(bankSuggestQ.error).includes("20261107155000") ? (
             <Alert>
               <AlertTitle>Database update required</AlertTitle>

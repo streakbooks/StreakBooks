@@ -274,7 +274,11 @@ export function ExpenseManagementSettingsPage() {
       description="Organisation defaults for Expenses."
       actions={
         canEdit ? (
-          <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+          <Button
+            size="sm"
+            disabled={save.isPending || accountsQ.isPending || !accountsQ.isSuccess}
+            onClick={() => save.mutate()}
+          >
             {save.isPending ? "Saving…" : "Save settings"}
           </Button>
         ) : null
@@ -339,16 +343,20 @@ export function ExpenseManagementSettingsPage() {
 
         <div className="grid gap-2">
           <Label>Employee payable account</Label>
-          <AccountLookup
-            companyId={company.id}
-            accounts={liabilityAccounts}
-            value={draft.employeePayableAccountId}
-            onChange={(next) => setDraft({ ...draft, employeePayableAccountId: next ?? "" })}
-            allowClear
-            disabled={!canEdit || save.isPending}
-            ariaLabel="Employee payable account"
-            purpose="posting"
-          />
+          {accountsQ.isPending ? (
+            <LoadingState />
+          ) : (
+            <AccountLookup
+              companyId={company.id}
+              accounts={liabilityAccounts}
+              value={draft.employeePayableAccountId}
+              onChange={(next) => setDraft({ ...draft, employeePayableAccountId: next ?? "" })}
+              allowClear
+              disabled={!canEdit || save.isPending}
+              ariaLabel="Employee payable account"
+              purpose="posting"
+            />
+          )}
           <p className="text-sm text-muted-foreground">
             Required before posting approved employee-paid claims (EM-06 accrual).
           </p>
@@ -356,16 +364,20 @@ export function ExpenseManagementSettingsPage() {
 
         <div className="grid gap-2">
           <Label>Employee advance account</Label>
-          <AccountLookup
-            companyId={company.id}
-            accounts={assetAccounts}
-            value={draft.employeeAdvanceAccountId}
-            onChange={(next) => setDraft({ ...draft, employeeAdvanceAccountId: next ?? "" })}
-            allowClear
-            disabled={!canEdit || save.isPending}
-            ariaLabel="Employee advance account"
-            purpose="posting"
-          />
+          {accountsQ.isPending ? (
+            <LoadingState />
+          ) : (
+            <AccountLookup
+              companyId={company.id}
+              accounts={assetAccounts}
+              value={draft.employeeAdvanceAccountId}
+              onChange={(next) => setDraft({ ...draft, employeeAdvanceAccountId: next ?? "" })}
+              allowClear
+              disabled={!canEdit || save.isPending}
+              ariaLabel="Employee advance account"
+              purpose="posting"
+            />
+          )}
           <p className="text-sm text-muted-foreground">
             Asset cleared when cash-advance claims are posted (EM-08b). Required before issuing
             advances.
@@ -374,16 +386,20 @@ export function ExpenseManagementSettingsPage() {
 
         <div className="grid gap-2">
           <Label>Petty cash account</Label>
-          <AccountLookup
-            companyId={company.id}
-            accounts={assetAccounts}
-            value={draft.pettyCashAccountId}
-            onChange={(next) => setDraft({ ...draft, pettyCashAccountId: next ?? "" })}
-            allowClear
-            disabled={!canEdit || save.isPending}
-            ariaLabel="Petty cash account"
-            purpose="posting"
-          />
+          {accountsQ.isPending ? (
+            <LoadingState />
+          ) : (
+            <AccountLookup
+              companyId={company.id}
+              accounts={assetAccounts}
+              value={draft.pettyCashAccountId}
+              onChange={(next) => setDraft({ ...draft, pettyCashAccountId: next ?? "" })}
+              allowClear
+              disabled={!canEdit || save.isPending}
+              ariaLabel="Petty cash account"
+              purpose="posting"
+            />
+          )}
           <p className="text-sm text-muted-foreground">
             Asset funded from bank and credited when company-paid petty cash claims post (EM-08c).
           </p>
@@ -391,16 +407,20 @@ export function ExpenseManagementSettingsPage() {
 
         <div className="grid gap-2">
           <Label>Rebilling income account</Label>
-          <AccountLookup
-            companyId={company.id}
-            accounts={incomeAccounts}
-            value={draft.rebillingIncomeAccountId}
-            onChange={(next) => setDraft({ ...draft, rebillingIncomeAccountId: next ?? "" })}
-            allowClear
-            disabled={!canEdit || save.isPending}
-            ariaLabel="Rebilling income account"
-            purpose="posting"
-          />
+          {accountsQ.isPending ? (
+            <LoadingState />
+          ) : (
+            <AccountLookup
+              companyId={company.id}
+              accounts={incomeAccounts}
+              value={draft.rebillingIncomeAccountId}
+              onChange={(next) => setDraft({ ...draft, rebillingIncomeAccountId: next ?? "" })}
+              allowClear
+              disabled={!canEdit || save.isPending}
+              ariaLabel="Rebilling income account"
+              purpose="posting"
+            />
+          )}
           <p className="text-sm text-muted-foreground">
             Income account used when creating a customer invoice from a billable claim (EM-09b).
           </p>

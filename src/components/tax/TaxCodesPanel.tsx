@@ -71,9 +71,11 @@ function asApplies(v: string): Draft["appliesTo"] {
 export function TaxCodesPanel({
   companyId,
   accounts,
+  accountsLoadFailed = false,
 }: {
   companyId: string;
   accounts: PickerAccount[];
+  accountsLoadFailed?: boolean;
 }) {
   const qc = useQueryClient();
   const canTax = useCanDo("tax.settings");
@@ -344,15 +346,22 @@ export function TaxCodesPanel({
               </div>
               <div className="space-y-1">
                 <Label>Tax account (liability or asset)</Label>
-                <AccountLookup
-                  ariaLabel="Tax account"
-                  accounts={pickable}
-                  value={draft.accountId}
-                  onChange={(v) => setDraft({ ...draft, accountId: v })}
-                  companyId={companyId}
-                  placeholder="Use the organisation default"
-                  allowClear
-                />
+                {accountsLoadFailed ? (
+                  <p className="text-sm text-muted-foreground">
+                    Account picker unavailable until chart of accounts loads. Organisation default
+                    still applies if you save without a code-specific account.
+                  </p>
+                ) : (
+                  <AccountLookup
+                    ariaLabel="Tax account"
+                    accounts={pickable}
+                    value={draft.accountId}
+                    onChange={(v) => setDraft({ ...draft, accountId: v })}
+                    companyId={companyId}
+                    placeholder="Use the organisation default"
+                    allowClear
+                  />
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <Switch

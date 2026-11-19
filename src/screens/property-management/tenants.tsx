@@ -140,6 +140,9 @@ export function PmTenantsPage() {
             </Button>
           </div>
           {showForm && canManage ? (
+            contacts.isError && contacts.data === undefined ? (
+              <QueryErrorState queries={[contacts]} title="Could not load contacts" />
+            ) : (
             <Card className="mb-4">
               <CardHeader>
                 <CardTitle>Link tenant from Contacts</CardTitle>
@@ -179,7 +182,7 @@ export function PmTenantsPage() {
                 <div className="flex items-end">
                   <Button
                     type="button"
-                    disabled={!contactId || mutation.isPending}
+                    disabled={!contactId || mutation.isPending || !contacts.isSuccess}
                     onClick={() => mutation.mutate()}
                   >
                     {mutation.isPending ? "Saving…" : "Save tenant"}
@@ -187,6 +190,7 @@ export function PmTenantsPage() {
                 </div>
               </CardContent>
             </Card>
+            )
           ) : null}
           {tenants.isLoading ? <LoadingState /> : null}
           {tenants.isError ? (

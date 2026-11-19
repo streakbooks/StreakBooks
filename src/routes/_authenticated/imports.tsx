@@ -781,26 +781,27 @@ function ImportCentre() {
             <label className="block text-sm font-medium" htmlFor="budget-import-target">
               Target budget
             </label>
-            <RecordLookupSelect
-              id="budget-import-target"
-              className="w-full rounded-md border bg-background p-2"
-              value={budgetId}
-              onValueChange={(e) => {
-                setBudgetId(e);
-                setBudgetResult(null);
-              }}
-            >
-              <option value="">Select an existing budget</option>
-              {(budgetsQ.data?.budgets ?? []).map((budget) => (
-                <option key={budget.id} value={budget.id}>
-                  {budget.name} — FY from {budget.fiscal_year_start}
-                </option>
-              ))}
-            </RecordLookupSelect>
             {budgetsQ.isError ? (
               <QueryErrorState queries={[budgetsQ]} title="Could not load budgets" />
-            ) : null}
-            {!budgetsQ.data?.budgets.length && !budgetsQ.isPending && (
+            ) : (
+              <RecordLookupSelect
+                id="budget-import-target"
+                className="w-full rounded-md border bg-background p-2"
+                value={budgetId}
+                onValueChange={(e) => {
+                  setBudgetId(e);
+                  setBudgetResult(null);
+                }}
+              >
+                <option value="">Select an existing budget</option>
+                {(budgetsQ.data?.budgets ?? []).map((budget) => (
+                  <option key={budget.id} value={budget.id}>
+                    {budget.name} — FY from {budget.fiscal_year_start}
+                  </option>
+                ))}
+              </RecordLookupSelect>
+            )}
+            {!budgetsQ.isError && !budgetsQ.data?.budgets.length && !budgetsQ.isPending && (
               <p className="text-sm">
                 No budgets found.{" "}
                 <Link to="/budgets" className="underline">

@@ -397,33 +397,34 @@ export function AiJournalReviewQueue({
                 {canAssign && selected.status !== "reviewed" ? (
                   <div className="space-y-2">
                     <Label htmlFor="ai-review-assignee">Assign independent reviewer</Label>
-                    <RecordLookupSelect
-                      id="ai-review-assignee"
-                      className="flex h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
-                      value={assignee}
-                      disabled={mutate.isPending || reviewersQ.isPending}
-                      onValueChange={(nextValue) => setAssignee(nextValue)}
-                    >
-                      <option value="">Choose active colleague</option>
-                      {(reviewersQ.data ?? [])
-                        .filter((r) => r.user_id !== selected.created_by)
-                        .map((r) => (
-                          <option key={r.user_id} value={r.user_id}>
-                            {r.label} · {r.role}
-                          </option>
-                        ))}
-                    </RecordLookupSelect>
                     {reviewersQ.isError ? (
                       <QueryErrorState
                         queries={[reviewersQ]}
                         title="Could not load eligible reviewers"
                       />
-                    ) : null}
+                    ) : (
+                      <RecordLookupSelect
+                        id="ai-review-assignee"
+                        className="flex h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
+                        value={assignee}
+                        disabled={mutate.isPending || reviewersQ.isPending}
+                        onValueChange={(nextValue) => setAssignee(nextValue)}
+                      >
+                        <option value="">Choose active colleague</option>
+                        {(reviewersQ.data ?? [])
+                          .filter((r) => r.user_id !== selected.created_by)
+                          .map((r) => (
+                            <option key={r.user_id} value={r.user_id}>
+                              {r.label} · {r.role}
+                            </option>
+                          ))}
+                      </RecordLookupSelect>
+                    )}
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      disabled={!assignee || mutate.isPending}
+                      disabled={!assignee || mutate.isPending || reviewersQ.isError}
                       onClick={() => submit("assign")}
                     >
                       Assign reviewer

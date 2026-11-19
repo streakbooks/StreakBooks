@@ -184,13 +184,14 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
           </div>
           {accountsQ.isError ? (
             <QueryErrorState queries={[accountsQ]} title="Could not load report accounts" />
-          ) : null}
-          <ReportAccountMultiSelect
-            accounts={accountsQ.data ?? []}
-            selected={accountIds ? accountIds.split(",") : undefined}
-            onChange={selectAccounts}
-            disabled={accountsQ.isPending || accountsQ.isError}
-          />
+          ) : (
+            <ReportAccountMultiSelect
+              accounts={accountsQ.data ?? []}
+              selected={accountIds ? accountIds.split(",") : undefined}
+              onChange={selectAccounts}
+              disabled={accountsQ.isPending}
+            />
+          )}
           <div className="space-y-1">
             <Label htmlFor="report-account-scope">Accounts to include</Label>
             <select

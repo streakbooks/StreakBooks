@@ -93,7 +93,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
         <CardContent className="space-y-4">
           {dimsQ.isError ? (
             <QueryErrorState queries={[dimsQ]} title="Could not load tracking dimensions" />
-          ) : null}
+          ) : (
           <div className="grid gap-2 sm:grid-cols-3">
             <div className="space-y-1">
               <Label>New dimension</Label>
@@ -124,7 +124,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
             <div className="flex items-end">
               <Button
                 size="sm"
-                disabled={!canEdit || !catName.trim()}
+                disabled={!canEdit || !catName.trim() || !dimsQ.isSuccess}
                 onClick={async () => {
                   try {
                     await saveCat({
@@ -142,6 +142,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
               </Button>
             </div>
           </div>
+          )}
 
           <Table>
             <TableHeader>
@@ -191,13 +192,14 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
             </TableBody>
           </Table>
 
+          {dimsQ.isError ? null : (
           <div className="grid gap-2 border-t pt-4 sm:grid-cols-3">
             <div className="space-y-1">
               <Label>Dimension</Label>
               <LookupSelect
                 ariaLabel="Dimension"
                 allowClear={false}
-                disabled={!canEdit}
+                disabled={!canEdit || !dimsQ.isSuccess}
                 value={optCategoryId}
                 onChange={setOptCategoryId}
                 placeholder="Select…"
@@ -217,7 +219,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
               <Label>Option name</Label>
               <Input
                 value={optName}
-                disabled={!canEdit}
+                disabled={!canEdit || !dimsQ.isSuccess}
                 onChange={(e) => setOptName(e.target.value)}
                 placeholder="e.g. North region"
               />
@@ -225,7 +227,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
             <div className="flex items-end gap-2">
               <Button
                 size="sm"
-                disabled={!canEdit || !optCategoryId || !optName.trim()}
+                disabled={!canEdit || !optCategoryId || !optName.trim() || !dimsQ.isSuccess}
                 onClick={async () => {
                   try {
                     await saveOpt({
@@ -263,6 +265,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
               </Button>
             </div>
           </div>
+          )}
 
           {opts.length ? (
             <ul className="max-h-48 space-y-1 overflow-auto text-sm">

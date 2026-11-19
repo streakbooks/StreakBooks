@@ -11,7 +11,6 @@ import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
-import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { SalesOrderForm } from "@/screens/sales/orders.new";
 import { Button } from "@/components/ui/button";
@@ -118,24 +117,15 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
 
   if (editing === "edit" && detail.data) {
     return (
-      <TransactionWorkspace
+      <SalesOrderForm
+        key={`edit:${orderId}`}
+        companyId={companyId}
+        currency={currency}
+        initial={detail.data}
         title="Edit sales order"
-        description="Agree the customer order. Saving a draft has no ledger impact until you confirm and invoice."
-        breadcrumbs={[
-          { label: "Sales", to: "/sales" },
-          { label: "Orders", to: "/sales/orders" },
-          { label: "Edit" },
-        ]}
-      >
-        <SalesOrderForm
-          key={`edit:${orderId}`}
-          companyId={companyId}
-          currency={currency}
-          initial={detail.data}
-          onSaved={(id) => open(id)}
-          onCancel={() => setEditing(null)}
-        />
-      </TransactionWorkspace>
+        onSaved={(id) => open(id)}
+        onCancel={() => setEditing(null)}
+      />
     );
   }
 

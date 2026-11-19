@@ -307,22 +307,26 @@ export function CrmLeadsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Source</Label>
-                  <RecordLookupSelect
-                    value={sourceId || "__none"}
-                    onValueChange={(v) => setSourceId(v === "__none" ? "" : v)}
-                  >
-                    <SelectTrigger aria-label="Lead source">
-                      <SelectValue placeholder="Select source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">No source</SelectItem>
-                      {(sources.data ?? []).map((source) => (
-                        <SelectItem key={source.id} value={source.id}>
-                          {source.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
+                  {sources.isError && sources.data === undefined ? (
+                    <QueryErrorState queries={[sources]} title="Could not load lead sources" />
+                  ) : (
+                    <RecordLookupSelect
+                      value={sourceId || "__none"}
+                      onValueChange={(v) => setSourceId(v === "__none" ? "" : v)}
+                    >
+                      <SelectTrigger aria-label="Lead source">
+                        <SelectValue placeholder="Select source" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">No source</SelectItem>
+                        {(sources.data ?? []).map((source) => (
+                          <SelectItem key={source.id} value={source.id}>
+                            {source.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lead-value">Estimated value ({company.base_currency})</Label>

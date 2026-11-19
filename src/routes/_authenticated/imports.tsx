@@ -566,7 +566,8 @@ function ImportCentre() {
                 ))}
                 {importResult.auditError && (
                   <p className="text-destructive">
-                    Audit recording failed: {importResult.auditError}. Review the audit log before
+                    Audit recording failed: {friendlyAuthError(importResult.auditError)}. Review the
+                    audit log before
                     relying on this import.
                   </p>
                 )}
@@ -620,7 +621,8 @@ function ImportCentre() {
                 ))}
                 {projectResult.auditError && (
                   <p className="text-destructive">
-                    Audit recording failed: {projectResult.auditError}. Review the audit log before
+                    Audit recording failed: {friendlyAuthError(projectResult.auditError)}. Review
+                    the audit log before
                     relying on this import.
                   </p>
                 )}
@@ -691,7 +693,7 @@ function ImportCentre() {
                 ))}
                 {salesResult.auditError && (
                   <p className="text-destructive">
-                    Audit recording failed: {salesResult.auditError}.
+                    Audit recording failed: {friendlyAuthError(salesResult.auditError)}.
                   </p>
                 )}
               </div>
@@ -761,7 +763,7 @@ function ImportCentre() {
                 ))}
                 {billResult.auditError && (
                   <p className="text-destructive">
-                    Audit recording failed: {billResult.auditError}.
+                    Audit recording failed: {friendlyAuthError(billResult.auditError)}.
                   </p>
                 )}
               </div>
@@ -863,7 +865,8 @@ function ImportCentre() {
                 </p>
                 {budgetResult.auditError && (
                   <p className="text-destructive">
-                    Audit logging failed: {budgetResult.auditError}. Review the audit log.
+                    Audit logging failed: {friendlyAuthError(budgetResult.auditError)}. Review the
+                    audit log.
                   </p>
                 )}
               </div>

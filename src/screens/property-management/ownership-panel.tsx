@@ -106,6 +106,9 @@ export function PmOwnershipPanel({
           <span className="tabular-nums font-medium text-foreground">{totalOpen.toFixed(2)}%</span>
         </p>
         {showForm && canManage ? (
+          owners.isError && owners.data === undefined ? (
+            <QueryErrorState queries={[owners]} title="Could not load owners" />
+          ) : (
           <div className="grid gap-4 rounded-xl border border-border/70 p-4 sm:grid-cols-2">
             <div className="grid gap-2 sm:col-span-2">
               <Label>Owner</Label>
@@ -165,6 +168,7 @@ export function PmOwnershipPanel({
               </Button>
             </div>
           </div>
+          )
         ) : null}
         {ownership.isLoading ? <LoadingState /> : null}
         {ownership.isError ? (

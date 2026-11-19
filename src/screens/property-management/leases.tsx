@@ -153,6 +153,13 @@ export function PmLeasesPage() {
       ) : (
         <>
           {showForm && canManage ? (
+            (properties.isError && properties.data === undefined) ||
+            (tenants.isError && tenants.data === undefined) ? (
+              <QueryErrorState
+                queries={[properties, tenants]}
+                title="Could not load lease create options"
+              />
+            ) : (
             <Card className="mb-4">
               <CardHeader>
                 <CardTitle>New lease</CardTitle>
@@ -232,6 +239,7 @@ export function PmLeasesPage() {
                 </div>
               </CardContent>
             </Card>
+            )
           ) : null}
           {leases.isLoading ? <LoadingState /> : null}
           {leases.isError ? (

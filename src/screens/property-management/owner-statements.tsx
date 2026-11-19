@@ -207,6 +207,13 @@ export function PmOwnerStatementsPage() {
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           <div className="min-w-0 space-y-4">
             {showForm && canGenerate ? (
+              (owners.isError && owners.data === undefined) ||
+              (properties.isError && properties.data === undefined) ? (
+                <QueryErrorState
+                  queries={[owners, properties]}
+                  title="Could not load statement generate options"
+                />
+              ) : (
               <Card>
                 <CardHeader>
                   <CardTitle>Generate</CardTitle>
@@ -264,6 +271,7 @@ export function PmOwnerStatementsPage() {
                   </Button>
                 </CardContent>
               </Card>
+              )
             ) : null}
 
             {statements.isLoading ? <LoadingState /> : null}

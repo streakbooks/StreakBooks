@@ -146,6 +146,9 @@ export function PmRentChargesPage() {
       ) : (
         <>
           {showForm && canManage ? (
+            leases.isError && leases.data === undefined ? (
+              <QueryErrorState queries={[leases]} title="Could not load leases" />
+            ) : (
             <Card className="mb-4">
               <CardHeader>
                 <CardTitle>Generate rent charge</CardTitle>
@@ -191,6 +194,7 @@ export function PmRentChargesPage() {
                 </div>
               </CardContent>
             </Card>
+            )
           ) : null}
           {charges.isLoading ? <LoadingState /> : null}
           {charges.isError ? (

@@ -143,11 +143,16 @@ export function PmReservationsPage() {
       }
       subnav={<PmSubnav current="reservations" />}
     >
-      {!settings.data?.enabled ? (
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load Property Management settings" />
+      ) : !settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (
         <>
           {showForm && canManage ? (
+            properties.isError && properties.data === undefined ? (
+              <QueryErrorState queries={[properties]} title="Could not load properties" />
+            ) : (
             <Card className="mb-4">
               <CardHeader>
                 <CardTitle>New reservation</CardTitle>
@@ -268,6 +273,7 @@ export function PmReservationsPage() {
                 </div>
               </CardContent>
             </Card>
+            )
           ) : null}
           {reservations.isLoading ? <LoadingState /> : null}
           {reservations.isError ? (

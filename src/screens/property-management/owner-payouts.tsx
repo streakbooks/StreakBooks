@@ -162,11 +162,16 @@ export function PmOwnerPayoutsPage() {
       }
       subnav={<PmSubnav current="owner-payouts" />}
     >
-      {!settings.data?.enabled ? (
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load Property Management settings" />
+      ) : !settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (
         <>
           {showForm && canPrepare ? (
+            owners.isError && owners.data === undefined ? (
+              <QueryErrorState queries={[owners]} title="Could not load owners" />
+            ) : (
             <Card className="mb-4">
               <CardHeader>
                 <CardTitle>New owner payout</CardTitle>
@@ -229,6 +234,7 @@ export function PmOwnerPayoutsPage() {
                 </div>
               </CardContent>
             </Card>
+            )
           ) : null}
           {distributions.isLoading ? <LoadingState /> : null}
           {distributions.isError ? (

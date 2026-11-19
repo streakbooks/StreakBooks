@@ -201,7 +201,9 @@ export function PmOwnerStatementsPage() {
           will not silently invent journals.
         </AlertDescription>
       </Alert>
-      {!settings.data?.enabled ? (
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load Property Management settings" />
+      ) : !settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
       ) : (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">

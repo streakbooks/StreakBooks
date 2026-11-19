@@ -569,7 +569,9 @@ export function RecurringInvoices() {
                       {ended ? "finished" : r.is_active ? "active" : "paused"}
                     </Badge>
                     {r.last_error ? (
-                      <span className="ml-2 text-xs text-destructive">{r.last_error}</span>
+                      <span className="ml-2 text-xs text-destructive">
+                        {friendlyAuthError(r.last_error)}
+                      </span>
                     ) : null}
                   </TableCell>
                   <TableCell className="space-x-1 text-right">

@@ -297,6 +297,9 @@ export function TaxCodesPanel({
               </div>
               <div className="space-y-1">
                 <Label>Tax rate</Label>
+                {ratesQ.isError ? (
+                  <QueryErrorState queries={[ratesQ]} title="Could not load tax rates" />
+                ) : (
                 <LookupSelect
                   ariaLabel="Tax rate"
                   allowClear={false}
@@ -321,6 +324,7 @@ export function TaxCodesPanel({
                       : undefined
                   }
                 />
+                )}
               </div>
               <div className="space-y-1">
                 <Label>Applies to</Label>

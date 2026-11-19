@@ -366,12 +366,15 @@ export function ContactPortalPanel({
             ) : null}
           </li>
         ))}
-        {(access.data ?? []).length === 0 && !access.isPending ? (
+        {(access.data ?? []).length === 0 && !access.isPending && !access.isError ? (
           <li className="px-3 py-6 text-muted-foreground">No portal invitations.</li>
         ) : null}
       </ul>
       <section className="space-y-2">
         <h2 className="font-semibold">Messages</h2>
+        {messages.isError ? (
+          <QueryErrorState queries={[messages]} title="Could not load portal messages" />
+        ) : null}
         <ul className="space-y-2 text-sm">
           {(messages.data ?? []).map((row) => (
             <li key={String(row["id"])} className="rounded-md border border-border px-3 py-2">

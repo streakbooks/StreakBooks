@@ -431,7 +431,9 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                           {r.status}
                         </Badge>
                         {r.last_error ? (
-                          <div className="text-xs text-destructive">{r.last_error}</div>
+                          <div className="text-xs text-destructive">
+                            {friendlyAuthError(r.last_error)}
+                          </div>
                         ) : null}
                       </td>
                       <td className="p-2 text-right">

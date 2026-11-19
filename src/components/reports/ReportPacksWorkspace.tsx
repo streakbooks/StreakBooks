@@ -573,7 +573,9 @@ export function ReportPacksWorkspace({
                       <td className="p-2">{String(d["status"])}</td>
                       <td className="p-2">{String(d["attempts"])}</td>
                       <td className="p-2">
-                        {String(d["last_error"] ?? d["provider_id"] ?? "Awaiting worker")}
+                        {d["last_error"]
+                          ? friendlyAuthError(String(d["last_error"]))
+                          : String(d["provider_id"] ?? "Awaiting worker")}
                       </td>
                     </tr>
                   ))}

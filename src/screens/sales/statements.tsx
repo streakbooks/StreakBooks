@@ -20,6 +20,7 @@ import { ContactLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 
 export function Statements() {
   const { company } = useActiveCompany();
@@ -173,7 +174,9 @@ export function Statements() {
                   <li key={h.id} className="flex flex-wrap justify-between gap-2 px-3 py-2">
                     <span>
                       to {h.to_addresses.join(", ")}
-                      {h.error ? <span className="text-destructive"> — {h.error}</span> : null}
+                      {h.error ? (
+                        <span className="text-destructive"> — {friendlyAuthError(h.error)}</span>
+                      ) : null}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {h.status === "sent" ? "Sent" : "Failed"} · {fmt.dateTime(h.created_at)}

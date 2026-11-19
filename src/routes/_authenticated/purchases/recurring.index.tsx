@@ -387,8 +387,11 @@ function RecurringTransactionsPage() {
                               params={{ id: legacyId }}
                               className="underline-offset-2 hover:underline"
                             >
-                              {sched?.last_error ??
-                                (sched?.is_paused || !row.is_active ? "Paused" : "Active")}
+                              {sched?.last_error
+                                ? friendlyAuthError(sched.last_error)
+                                : sched?.is_paused || !row.is_active
+                                  ? "Paused"
+                                  : "Active"}
                             </Link>
                           </TableCell>
                           <TableCell className="text-right">

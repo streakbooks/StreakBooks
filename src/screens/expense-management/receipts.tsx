@@ -448,6 +448,9 @@ export function ExpenseManagementReceiptsPage() {
                       >
                         Request OCR
                       </Button>
+                      {claimsQ.isError ? (
+                        <QueryErrorState queries={[claimsQ]} title="Could not load claims" />
+                      ) : (
                       <RecordLookupSelect
                         value={matchClaimByEntry[entry.id] ?? ""}
                         onValueChange={(value) =>
@@ -468,10 +471,13 @@ export function ExpenseManagementReceiptsPage() {
                           ))}
                         </SelectContent>
                       </RecordLookupSelect>
+                      )}
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button
                           size="sm"
-                          disabled={match.isPending || !matchClaimByEntry[entry.id]}
+                          disabled={
+                            match.isPending || !matchClaimByEntry[entry.id] || claimsQ.isError
+                          }
                           onClick={() => match.mutate(entry.id)}
                         >
                           Match

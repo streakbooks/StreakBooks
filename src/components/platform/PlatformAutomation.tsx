@@ -15,6 +15,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { OpsField, EnumField } from "./PlatformOperationForms";
 import { AutomationAction, RuleEditor } from "./PlatformAutomationForms";
 const label: Record<AutomationModule, string> = {
@@ -259,7 +260,7 @@ export function PlatformAutomation({
                         ) : null}
                         {r.last_error ? (
                           <p role="status" className="text-destructive">
-                            {r.last_error}
+                            {friendlyAuthError(r.last_error)}
                           </p>
                         ) : null}
                       </div>

@@ -187,7 +187,9 @@ function RecurringJournalsPage() {
                 <TableCell>
                   <div className="font-medium">{r.name}</div>
                   {r.last_error ? (
-                    <div className="text-xs text-destructive">Last run failed: {r.last_error}</div>
+                    <div className="text-xs text-destructive">
+                      Last run failed: {friendlyAuthError(r.last_error)}
+                    </div>
                   ) : null}
                 </TableCell>
                 <TableCell>{everyLabel(r.interval_months)}</TableCell>

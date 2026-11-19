@@ -127,6 +127,9 @@ export function PmOwnersPage() {
       }
       subnav={<PmSubnav current="owners" />}
     >
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load Property Management settings" />
+      ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="Module disabled"

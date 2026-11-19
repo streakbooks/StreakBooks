@@ -122,6 +122,15 @@ export function AdvisorsManageAppointmentPage({ manageToken }: { manageToken: st
               }}
               disabled={{ before: new Date() }}
             />
+            {slotsQ.isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading slots…</p>
+            ) : null}
+            {slotsQ.isError ? (
+              <QueryErrorState queries={[slotsQ]} title="Could not load available slots" />
+            ) : null}
+            {slotsQ.data && !slotsQ.data.ready ? (
+              <p className="text-sm text-muted-foreground">{slotsQ.data.reason}</p>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {(slotsQ.data?.slots ?? []).map((slot) => (
                 <Button
@@ -135,6 +144,9 @@ export function AdvisorsManageAppointmentPage({ manageToken }: { manageToken: st
                 </Button>
               ))}
             </div>
+            {slotsQ.data?.ready && (slotsQ.data.slots ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">No open slots on this day.</p>
+            ) : null}
             <div className="space-y-1">
               <Label htmlFor="reschedule-slot">Selected slot (ISO)</Label>
               <Input id="reschedule-slot" value={selectedSlot} readOnly />

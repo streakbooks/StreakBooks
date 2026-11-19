@@ -554,11 +554,13 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
           isActive={chosen.is_active}
         />
       ) : null}
-      <CustomerPriceListDefaults
-        companyId={companyId}
-        currency={currency}
-        priceLists={listsQ.data ?? []}
-      />
+      {listsQ.isSuccess ? (
+        <CustomerPriceListDefaults
+          companyId={companyId}
+          currency={currency}
+          priceLists={listsQ.data}
+        />
+      ) : null}
     </div>
   );
 }

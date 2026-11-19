@@ -511,6 +511,9 @@ export function ConversionBalancesPanel({
             are not listed here.
           </p>
           {setup.isPending ? <LoadingState /> : null}
+          {setup.isError ? (
+            <QueryErrorState queries={[setup]} title="Could not load conversion setup" />
+          ) : null}
           <div className="max-h-96 overflow-auto">
             <EditableLineItemGrid
               aria-label="Trial balance"
@@ -562,14 +565,26 @@ export function ConversionBalancesPanel({
         <CardHeader>
           <CardTitle className="text-base">3. Unpaid customer invoices</CardTitle>
         </CardHeader>
-        <CardContent>{renderDocs("invoices")}</CardContent>
+        <CardContent>
+          {setup.isError ? (
+            <QueryErrorState queries={[setup]} title="Could not load conversion contacts" />
+          ) : (
+            renderDocs("invoices")
+          )}
+        </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">4. Unpaid supplier bills</CardTitle>
         </CardHeader>
-        <CardContent>{renderDocs("bills")}</CardContent>
+        <CardContent>
+          {setup.isError ? (
+            <QueryErrorState queries={[setup]} title="Could not load conversion contacts" />
+          ) : (
+            renderDocs("bills")
+          )}
+        </CardContent>
       </Card>
 
       <Card>
@@ -623,7 +638,9 @@ export function ConversionBalancesPanel({
             <Input id="conv-note" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
           <Button
-            disabled={!validation.canPost || nothingEntered || post.isPending}
+            disabled={
+              !validation.canPost || nothingEntered || post.isPending || setup.isError
+            }
             onClick={exportReview}
             variant="outline"
           >
@@ -637,7 +654,9 @@ export function ConversionBalancesPanel({
             <Checkbox
               id="conv-review-confirm"
               checked={reviewMatches}
-              disabled={!validation.canPost || nothingEntered || post.isPending}
+              disabled={
+                !validation.canPost || nothingEntered || post.isPending || setup.isError
+              }
               onCheckedChange={(checked) =>
                 setReviewedFingerprint(checked === true ? reviewFingerprint : "")
               }
@@ -648,7 +667,13 @@ export function ConversionBalancesPanel({
             </Label>
           </div>
           <Button
-            disabled={!validation.canPost || nothingEntered || !reviewMatches || post.isPending}
+            disabled={
+              !validation.canPost ||
+              nothingEntered ||
+              !reviewMatches ||
+              post.isPending ||
+              setup.isError
+            }
             onClick={() => {
               const adjustment =
                 s.plugMinor > 0n

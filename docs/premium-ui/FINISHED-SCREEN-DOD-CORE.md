@@ -130,6 +130,8 @@ Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails
 
 **Production honesty Batch 124:** Remaining HR dialog employee pickers (attendance, assets, documents, onboarding, offboarding, training, compensation, performance, transfers, relations) fail closed with `QueryErrorState` instead of empty selects. Staging/RBAC still **NOT VERIFIED**.
 
+**Production honesty Batch 125:** Payroll run adjust/settings, payments payslip allocation, HR payroll handoff components, bill/sales document option queries (incl. products and credit-note invoices), advisor reschedule slots, conversion setup/contacts, cash opening tax codes, and customer price-list defaults fail closed with `QueryErrorState` (or omit child UI until lists succeed). Staging/RBAC still **NOT VERIFIED**.
+
 **Bank coding + record totals (Batch 75):** `BankCodingPanel` uses shared `EditableLineItemGrid` + `TotalsSummary`. Bill and invoice read-only records use `TotalsSummary`. `MoneyDocumentPanel` fails closed with `QueryErrorState` when options queries fail. Staging/RBAC still **NOT VERIFIED**.
 
 **Bills line grid ELG (Batch 74):** `PurchasesDocumentLines` composes shared `EditableLineItemGrid` (Sales parity). Drag reorder, tracking columns, tax modes, keyboard/paste, Add-lines Select, and TotalsSummary preserved. Staging/RBAC still **NOT VERIFIED**.

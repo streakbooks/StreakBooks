@@ -1416,10 +1416,15 @@ export function NewBill({
   );
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (suppliersQ.isPending || accountsQ.isPending) return <LoadingState />;
-  const billOptionQueries = [suppliersQ, accountsQ];
+  const billOptionQueries = [suppliersQ, accountsQ, productsQ, taxCodesQ, termsQ, customersQ];
   if (billOptionQueries.some((query) => query.isError && query.data === undefined)) {
     return (
       <QueryErrorState queries={billOptionQueries} title="Could not load bill entry options" />
+    );
+  }
+  if (dimsQ.isError && dimsQ.data === undefined) {
+    return (
+      <QueryErrorState queries={[dimsQ]} title="Could not load tracking dimensions" />
     );
   }
 

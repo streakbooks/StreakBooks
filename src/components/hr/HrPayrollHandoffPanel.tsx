@@ -134,30 +134,43 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
                         <TableCell>
                           <div className="grid gap-1.5">
                             <Label className="sr-only">Component</Label>
-                            <RecordLookupSelect
-                              value={componentByChange[row.id] ?? ""}
-                              onValueChange={(v) =>
-                                setComponentByChange((prev) => ({ ...prev, [row.id]: v }))
-                              }
-                            >
-                              <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Select component" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {components.map((c) => (
-                                  <SelectItem key={c.id} value={c.id}>
-                                    {c.code} — {c.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </RecordLookupSelect>
+                            {componentsQ.isError && componentsQ.data === undefined ? (
+                              <QueryErrorState
+                                queries={[componentsQ]}
+                                title="Could not load components"
+                              />
+                            ) : (
+                              <RecordLookupSelect
+                                value={componentByChange[row.id] ?? ""}
+                                onValueChange={(v) =>
+                                  setComponentByChange((prev) => ({ ...prev, [row.id]: v }))
+                                }
+                                disabled={componentsQ.isPending}
+                              >
+                                <SelectTrigger className="w-[180px]">
+                                  <SelectValue placeholder="Select component" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {components.map((c) => (
+                                    <SelectItem key={c.id} value={c.id}>
+                                      {c.code} — {c.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </RecordLookupSelect>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
                             type="button"
                             size="sm"
-                            disabled={!componentByChange[row.id] || applyCompM.isPending}
+                            disabled={
+                              !componentByChange[row.id] ||
+                              applyCompM.isPending ||
+                              componentsQ.isError ||
+                              componentsQ.isPending
+                            }
                             onClick={() =>
                               applyCompM.mutate({
                                 changeId: row.id,

@@ -810,15 +810,17 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
               <option value="cash">Cash (payment date)</option>
             </select>
           </div>
-          <ReportAccountMultiSelect
-            label="Tax ledger accounts"
-            accounts={taxAccounts}
-            selected={accountIds ?? undefined}
-            onChange={(ids) =>
-              ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
-            }
-            disabled={!d || taxAccounts.length === 0}
-          />
+          {q.isError ? null : (
+            <ReportAccountMultiSelect
+              label="Tax ledger accounts"
+              accounts={taxAccounts}
+              selected={accountIds ?? undefined}
+              onChange={(ids) =>
+                ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+              }
+              disabled={!d || taxAccounts.length === 0}
+            />
+          )}
         </>
       }
       getCsv={() => {

@@ -79,25 +79,27 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
 
   const controls = (
     <>
-      <div className="space-y-1">
-        <Label htmlFor="bva-budget">Budget</Label>
-        <LookupSelect
-          id="bva-budget"
-          ariaLabel="Budget"
-          allowClear={false}
-          value={budgetId ?? ""}
-          onChange={(id) => ctx.setSearch({ budget: id || undefined })}
-          placeholder="Choose a budget"
-          searchPlaceholder="Search budget"
-          options={list.map((b) => ({
-            id: b.id,
-            name: b.name,
-            label: b.name,
-            description: b.fiscal_year_start.slice(0, 4),
-            keywords: `${b.name} ${b.fiscal_year_start}`,
-          }))}
-        />
-      </div>
+      {budgets.isError ? null : (
+        <div className="space-y-1">
+          <Label htmlFor="bva-budget">Budget</Label>
+          <LookupSelect
+            id="bva-budget"
+            ariaLabel="Budget"
+            allowClear={false}
+            value={budgetId ?? ""}
+            onChange={(id) => ctx.setSearch({ budget: id || undefined })}
+            placeholder="Choose a budget"
+            searchPlaceholder="Search budget"
+            options={list.map((b) => ({
+              id: b.id,
+              name: b.name,
+              label: b.name,
+              description: b.fiscal_year_start.slice(0, 4),
+              keywords: `${b.name} ${b.fiscal_year_start}`,
+            }))}
+          />
+        </div>
+      )}
       <div className="space-y-1">
         <Label htmlFor="bva-view">Columns</Label>
         <select
@@ -113,14 +115,16 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
           <option value="ytd">Year to date only</option>
         </select>
       </div>
-      <ReportAccountMultiSelect
-        accounts={accountOptions}
-        selected={selectedIds ?? undefined}
-        onChange={(ids) =>
-          ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
-        }
-        disabled={!d || d.notStarted}
-      />
+      {budgets.isError || q.isError ? null : (
+        <ReportAccountMultiSelect
+          accounts={accountOptions}
+          selected={selectedIds ?? undefined}
+          onChange={(ids) =>
+            ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+          }
+          disabled={!d || d.notStarted}
+        />
+      )}
     </>
   );
 

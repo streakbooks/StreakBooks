@@ -250,7 +250,7 @@ export function HrCompensationPage() {
             </Button>
             <Button
               type="button"
-              disabled={!employeeId || !effectiveOn || saveM.isPending}
+              disabled={!employeeId || !effectiveOn || saveM.isPending || !empQ.isSuccess}
               onClick={() => saveM.mutate()}
             >
               Save

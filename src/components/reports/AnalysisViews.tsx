@@ -322,19 +322,21 @@ export function CashSummaryView({ ctx }: { ctx: ReportCtx }) {
       mode="range"
       basis="Posted ledger movements on each bank account. Transfers between your own accounts are shown separately."
       extraControls={
-        <ReportAccountMultiSelect
-          label="Bank accounts"
-          accounts={(d?.rows ?? []).map((row) => ({
-            id: row.gl_account_id,
-            code: "",
-            name: row.bank_account_name,
-          }))}
-          selected={chosen ?? undefined}
-          onChange={(ids) =>
-            ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
-          }
-          disabled={!d}
-        />
+        q.isError ? null : (
+          <ReportAccountMultiSelect
+            label="Bank accounts"
+            accounts={(d?.rows ?? []).map((row) => ({
+              id: row.gl_account_id,
+              code: "",
+              name: row.bank_account_name,
+            }))}
+            selected={chosen ?? undefined}
+            onChange={(ids) =>
+              ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+            }
+            disabled={!d}
+          />
+        )
       }
       getCsv={() => (d ? csvFor(visible, cols) : null)}
     >
@@ -858,19 +860,21 @@ export function BankReconSummaryView({ ctx }: { ctx: ReportCtx }) {
       getCsv={() => (d ? csvFor(visible, cols) : null)}
       extraControls={
         <>
-          <ReportAccountMultiSelect
-            label="Bank accounts"
-            accounts={(d?.rows ?? []).map((row) => ({
-              id: row.gl_account_id,
-              code: "",
-              name: row.bank_account_name,
-            }))}
-            selected={chosen ?? undefined}
-            onChange={(ids) =>
-              ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
-            }
-            disabled={!d}
-          />
+          {q.isError ? null : (
+            <ReportAccountMultiSelect
+              label="Bank accounts"
+              accounts={(d?.rows ?? []).map((row) => ({
+                id: row.gl_account_id,
+                code: "",
+                name: row.bank_account_name,
+              }))}
+              selected={chosen ?? undefined}
+              onChange={(ids) =>
+                ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+              }
+              disabled={!d}
+            />
+          )}
           <Button size="sm" variant="outline" asChild className="print:hidden">
             <Link to="/banking/reconcile">Open reconciliation</Link>
           </Button>

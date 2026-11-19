@@ -435,7 +435,9 @@ export function HrAttendancePage() {
             </Button>
             <Button
               type="button"
-              disabled={!employeeId || !workDate || saveLogM.isPending}
+              disabled={
+                !employeeId || !workDate || saveLogM.isPending || !employeesQ.isSuccess
+              }
               onClick={() => saveLogM.mutate()}
             >
               Save
@@ -500,7 +502,13 @@ export function HrAttendancePage() {
             </Button>
             <Button
               type="button"
-              disabled={!employeeId || !workDate || !reason.trim() || saveCorrM.isPending}
+              disabled={
+                !employeeId ||
+                !workDate ||
+                !reason.trim() ||
+                saveCorrM.isPending ||
+                !employeesQ.isSuccess
+              }
               onClick={() => saveCorrM.mutate()}
             >
               Submit

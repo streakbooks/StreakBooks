@@ -304,9 +304,7 @@ export function ContactSettingsContent({
           </Button>
         </div>
         {groupsQ.isError ? (
-          <p role="alert" className="text-sm text-destructive">
-            Could not load groups: {friendlyAuthError(groupsQ.error)}
-          </p>
+          <QueryErrorState queries={[groupsQ]} title="Could not load contact groups" />
         ) : null}
         <ul className="text-sm">
           {((groupsQ.data ?? []) as Array<{ id: string; name: string; is_active: boolean }>).map(
@@ -350,9 +348,7 @@ export function ContactSettingsContent({
           </Button>
         </div>
         {tagsQ.isError ? (
-          <p role="alert" className="text-sm text-destructive">
-            Could not load tags: {friendlyAuthError(tagsQ.error)}
-          </p>
+          <QueryErrorState queries={[tagsQ]} title="Could not load contact tags" />
         ) : null}
         <ul className="flex flex-wrap gap-2 text-sm">
           {((tagsQ.data ?? []) as Array<{ id: string; name: string }>).map((t) => (

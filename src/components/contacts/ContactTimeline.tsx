@@ -326,9 +326,13 @@ export function ContactTimeline({
                 />
               </div>
               {assigneesQ.isError ? (
-                <p role="alert" className="text-xs text-destructive sm:col-span-2">
-                  Could not load team members. You can still assign this task to yourself.
-                </p>
+                <div className="sm:col-span-2">
+                  <QueryErrorState
+                    queries={[assigneesQ]}
+                    title="Could not load team members"
+                    description="You can still assign this task to yourself."
+                  />
+                </div>
               ) : null}
             </div>
           ) : null}

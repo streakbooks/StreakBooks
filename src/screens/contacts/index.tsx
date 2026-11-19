@@ -1247,9 +1247,11 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                   Save search, filters, sort and role tab for your account across devices.
                 </p>
                 {cloudPreferencesQ.isError ? (
-                  <p role="alert" className="text-xs text-destructive">
-                    Cloud settings could not be loaded. Browser-only views remain available.
-                  </p>
+                  <QueryErrorState
+                    queries={[cloudPreferencesQ]}
+                    title="Cloud settings could not be loaded"
+                    description="Browser-only views remain available."
+                  />
                 ) : null}
                 {canImportBrowserPreferences ? (
                   <div className="space-y-2 rounded-md border p-2">

@@ -272,12 +272,10 @@ export function PeriodClosePanel({
           </div>
 
           {facts.isError || ar.isError || ap.isError ? (
-            <Alert variant="destructive">
-              <AlertTitle>Could not run the checks</AlertTitle>
-              <AlertDescription>
-                {friendlyAuthError(facts.error ?? ar.error ?? ap.error)}
-              </AlertDescription>
-            </Alert>
+            <QueryErrorState
+              queries={[facts, ar, ap]}
+              title="Could not run period-close checks"
+            />
           ) : !items ? (
             <LoadingState />
           ) : (
@@ -320,10 +318,7 @@ export function PeriodClosePanel({
             {preview.isPending ? (
               <LoadingState />
             ) : preview.isError ? (
-              <Alert variant="destructive">
-                <AlertTitle>Preview unavailable</AlertTitle>
-                <AlertDescription>{friendlyAuthError(preview.error)}</AlertDescription>
-              </Alert>
+              <QueryErrorState queries={[preview]} title="Year-end closing preview unavailable" />
             ) : preview.data.alreadyClosedJournalId ? (
               <p className="text-sm">
                 Already closed in journal #{preview.data.alreadyClosedJournalNumber}.

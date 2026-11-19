@@ -176,3 +176,21 @@ test("recurring journal schedules open with the current settings and cancel with
   await edit.click();
   await expect(dialog.getByLabel("Name")).toHaveValue("Monthly rent");
 });
+
+test("supplier payment actions follow payment permission in an empty register", async ({
+  page,
+}) => {
+  await page.goto("/purchases/payments");
+  await expect(page.getByText("No payments", { exact: true })).toBeVisible();
+  const newPayments = page.getByRole("link", { name: "New payment", exact: true });
+  const batchPayment = page.getByRole("link", { name: "Batch payment", exact: true });
+  await expect(newPayments).toHaveCount(2);
+  for (const link of await newPayments.all()) {
+    await expect(link).toHaveAttribute("href", "/purchases/payments/new");
+  }
+  await expect(batchPayment).toHaveAttribute("href", "/purchases/payments/batch");
+  await page.evaluate(() => window.voiceFixture.setContext({ permissions: ["purchases.view"] }));
+  await expect(newPayments).toHaveCount(0);
+  await expect(batchPayment).toHaveCount(0);
+  await expect(page.getByText("Supplier payments will appear here.")).toBeVisible();
+});

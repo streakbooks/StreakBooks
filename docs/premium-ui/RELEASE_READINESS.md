@@ -24,7 +24,7 @@
 7. External integration sandbox validation where claimed
 8. Provider evidence tying the production deployment to the release commit
 
-Machine-readable honesty: `npm run check:section18` (add `--require-go-live` only when claiming Section 18 DONE).
+Run `npm run check:section18` to execute the local module checks and report release gates. Add `--require-go-live` to require every gate to pass.
 
 Production URL: https://linkbooks-puce.vercel.app — presence of a URL is **not** Section 14/18 DONE evidence.
 

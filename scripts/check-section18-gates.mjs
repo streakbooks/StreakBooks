@@ -4,7 +4,7 @@
  * Exit 0 with a status table by default. Pass --require-go-live to fail when
  * any blocker remains (used only when explicitly requesting a go-live claim).
  */
-import { execFileSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { verifyProductionRevision } from "./lib/production-revision.mjs";
@@ -15,6 +15,18 @@ const requireGoLive = process.argv.includes("--require-go-live");
 
 function fileExists(rel) {
   return fs.existsSync(path.join(root, rel));
+}
+
+function localChecksGate() {
+  try {
+    execSync("npm run check:modules", { cwd: root, stdio: "ignore", timeout: 60_000 });
+    return { status: "PASS", detail: "npm run check:modules passed for this checkout." };
+  } catch {
+    return {
+      status: "BLOCKED",
+      detail: "Local checks did not pass. Run npm run check:modules for diagnostics.",
+    };
+  }
 }
 
 function stagingGate() {
@@ -57,8 +69,7 @@ const gates = [
   {
     id: "local-chrome-gates",
     label: "Local chrome/honesty gates (modules/workspace/empty/error-retry)",
-    status: "PASS",
-    detail: "Enforced by npm run check:modules",
+    ...localChecksGate(),
   },
   {
     id: "program-authorization",

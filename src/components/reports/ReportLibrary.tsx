@@ -43,7 +43,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { PagerBar } from "./ReportShell";
 
 const runnable = REPORT_CATALOG.filter(
@@ -279,11 +280,7 @@ export function ReportLibrary({
       {q.isPending ? (
         <LoadingState />
       ) : q.isError ? (
-        <ErrorState
-          title="Could not load custom reports"
-          description={friendlyAuthError(q.error)}
-          onRetry={() => void q.refetch()}
-        />
+        <QueryErrorState queries={[q]} title="Could not load custom reports" />
       ) : (
         <>
           {!q.data.rows.length ? (

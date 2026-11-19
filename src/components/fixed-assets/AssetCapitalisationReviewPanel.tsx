@@ -6,7 +6,6 @@ import { Download, Search, RefreshCw } from "lucide-react";
 import { useFormat } from "@/hooks/use-format";
 import { todayIso } from "@/lib/accounting/fiscal-year";
 import { isReportDate } from "@/lib/reports/date-validation";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   listCapitalisableBillLines,
   type CapitaliseLine,
@@ -19,7 +18,8 @@ import {
   type CapitalisationReviewStatus,
 } from "@/lib/fixed-assets/capitalisation-review";
 import { LookupSelect } from "@/components/lookup";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -256,11 +256,7 @@ export function AssetCapitalisationReviewPanel({
       ) : candidates.isPending ? (
         <LoadingState />
       ) : candidates.isError ? (
-        <ErrorState
-          title="Could not review asset-coded purchases"
-          description={friendlyAuthError(candidates.error)}
-          onRetry={() => void candidates.refetch()}
-        />
+        <QueryErrorState queries={[candidates]} title="Could not review asset-coded purchases" />
       ) : reviewed.issue ? (
         <Alert variant="destructive">
           <AlertDescription>

@@ -4,12 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeftRight, Download } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { monthLabel } from "@/lib/budgets/budget-math";
 import type { ScenarioCell, ScenarioRow, ScenarioSection } from "@/lib/budgets/budget-scenarios";
 import { compareBudgetScenarios, type BudgetSummary } from "@/lib/budgets/budgets.functions";
 import { csvFilename, csvMoney, downloadCsv, toCsv } from "@/lib/reports/csv";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { LookupSelect } from "@/components/lookup";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -254,11 +254,7 @@ export function BudgetScenarioComparison({
       {reportQuery.isPending ? (
         <LoadingState />
       ) : reportQuery.isError ? (
-        <ErrorState
-          title="Could not compare budgets"
-          description={friendlyAuthError(reportQuery.error)}
-          onRetry={() => void reportQuery.refetch()}
-        />
+        <QueryErrorState queries={[reportQuery]} title="Could not compare budgets" />
       ) : data && comparison ? (
         <>
           <Alert>

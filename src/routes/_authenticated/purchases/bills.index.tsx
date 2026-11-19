@@ -45,7 +45,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { encodeBillsReturnContext } from "@/lib/purchases/bills-return-context";
 import { cn } from "@/lib/utils";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -1639,10 +1639,9 @@ function RecurringPane({
   if (loading) return <LoadingState />;
   if (error) {
     return (
-      <ErrorState
+      <QueryErrorState
+        queries={[{ isError: true, error, refetch: onRetry }]}
         title="Could not load recurring bills"
-        description={friendlyAuthError(error)}
-        onRetry={onRetry}
       />
     );
   }

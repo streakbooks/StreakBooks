@@ -37,7 +37,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 export function ManagementWorkspace({
   companyId,
   from,
@@ -187,11 +188,7 @@ export function ManagementWorkspace({
       {q.isPending ? (
         <LoadingState />
       ) : q.isError ? (
-        <ErrorState
-          title="Could not load management metrics"
-          description={friendlyAuthError(q.error)}
-          onRetry={() => void q.refetch()}
-        />
+        <QueryErrorState queries={[q]} title="Could not load management metrics" />
       ) : (
         <>
           <p className="text-sm text-muted-foreground">

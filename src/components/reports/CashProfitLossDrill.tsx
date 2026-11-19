@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getCashProfitLossTransactions } from "@/lib/reports/cash-drill.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +10,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { JournalLink } from "./ReportShell";
 
 export function CashProfitLossDrill({
@@ -51,11 +51,7 @@ export function CashProfitLossDrill({
         {query.isPending ? (
           <LoadingState />
         ) : query.isError ? (
-          <ErrorState
-            title="Could not load cash transactions"
-            description={friendlyAuthError(query.error)}
-            onRetry={() => void query.refetch()}
-          />
+          <QueryErrorState queries={[query]} title="Could not load cash transactions" />
         ) : data ? (
           <>
             <p className="font-medium">

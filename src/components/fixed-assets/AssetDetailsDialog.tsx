@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
 import {
   getFixedAsset,
@@ -11,7 +10,8 @@ import {
 } from "@/lib/fixed-assets/fixed-assets.functions";
 import { summarizeAssetDetailHistory } from "@/lib/fixed-assets/asset-detail-summary";
 import { DEPRECIATION_METHODS } from "@/lib/fixed-assets/depreciation";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -95,11 +95,7 @@ export function AssetDetailsDialog({
           {query.isPending ? (
             <LoadingState />
           ) : query.isError ? (
-            <ErrorState
-              title="Could not load asset details"
-              description={friendlyAuthError(query.error)}
-              onRetry={() => void query.refetch()}
-            />
+            <QueryErrorState queries={[query]} title="Could not load asset details" />
           ) : asset && detail ? (
             <div className="space-y-5">
               <div className="flex flex-wrap items-center gap-2">

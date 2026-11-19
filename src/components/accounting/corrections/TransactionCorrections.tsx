@@ -24,7 +24,8 @@ import {
   submitCorrectionApproval,
 } from "@/lib/accounting/corrections/approval.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { TransactionCorrectionsView } from "./TransactionCorrectionsView";
 import { CorrectionApprovalsPanel } from "./CorrectionApprovalsPanel";
 export function TransactionCorrections({ companyId }: { companyId: string }) {
@@ -84,18 +85,13 @@ export function TransactionCorrections({ companyId }: { companyId: string }) {
   if (setup.isPending || approvalSettings.isPending) return <LoadingState />;
   if (setup.isError)
     return (
-      <ErrorState
-        onRetry={() => void setup.refetch()}
-        title="Transaction corrections unavailable"
-        description={friendlyAuthError(setup.error)}
-      />
+      <QueryErrorState queries={[setup]} title="Transaction corrections unavailable" />
     );
   if (approvalSettings.isError)
     return (
-      <ErrorState
-        onRetry={() => void approvalSettings.refetch()}
+      <QueryErrorState
+        queries={[approvalSettings]}
         title="Correction approval settings unavailable"
-        description={friendlyAuthError(approvalSettings.error)}
       />
     );
   return (

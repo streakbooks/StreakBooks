@@ -29,7 +29,8 @@ import {
 } from "@/lib/tax/tax-return-view";
 import { useFormat } from "@/hooks/use-format";
 import { useCanDo } from "@/hooks/use-can";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -413,11 +414,7 @@ export function TaxReturnsPanel({
           {calc === null ? null : preview.isPending ? (
             <LoadingState />
           ) : preview.isError ? (
-            <ErrorState
-              title="Could not calculate the return"
-              description={friendlyAuthError(preview.error)}
-              onRetry={() => preview.refetch()}
-            />
+            <QueryErrorState queries={[preview]} title="Could not calculate the return" />
           ) : pv ? (
             <div className="space-y-3">
               {warningsFor(pv.summary, pv.regime).map((w) => (
@@ -515,11 +512,7 @@ export function TaxReturnsPanel({
           {list.isPending ? (
             <LoadingState />
           ) : list.isError ? (
-            <ErrorState
-              title="Could not load returns"
-              description={friendlyAuthError(list.error)}
-              onRetry={() => list.refetch()}
-            />
+            <QueryErrorState queries={[list]} title="Could not load returns" />
           ) : list.data.returns.length === 0 ? (
             <EmptyState
               title="No saved returns"
@@ -594,11 +587,7 @@ export function TaxReturnsPanel({
             {detail.isPending ? (
               <LoadingState />
             ) : detail.isError ? (
-              <ErrorState
-                title="Could not load the return"
-                description={friendlyAuthError(detail.error)}
-                onRetry={() => detail.refetch()}
-              />
+              <QueryErrorState queries={[detail]} title="Could not load the return" />
             ) : d ? (
               <>
                 <div className="flex flex-wrap items-center gap-2 text-sm">

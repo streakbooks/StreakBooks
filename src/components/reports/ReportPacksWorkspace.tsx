@@ -46,7 +46,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 type Workspace = {
   packs: ReportingPack[];
   schedules: Array<Record<string, unknown>>;
@@ -188,14 +189,7 @@ export function ReportPacksWorkspace({
   if (q.isPending || companyBasis.isPending) return <LoadingState />;
   if (q.isError || companyBasis.isError)
     return (
-      <ErrorState
-        title="Could not load reporting workspace"
-        description={friendlyAuthError(q.error ?? companyBasis.error)}
-        onRetry={() => {
-          void q.refetch();
-          void companyBasis.refetch();
-        }}
-      />
+      <QueryErrorState queries={[q, companyBasis]} title="Could not load reporting workspace" />
     );
   const workspace = q.data;
   const packs = workspace.packs;
@@ -388,11 +382,7 @@ export function ReportPacksWorkspace({
           {selected.isPending ? (
             <LoadingState />
           ) : selected.isError ? (
-            <ErrorState
-              title="Could not open pack"
-              description={friendlyAuthError(selected.error)}
-              onRetry={() => void selected.refetch()}
-            />
+            <QueryErrorState queries={[selected]} title="Could not open pack" />
           ) : (
             selected.data && (
               <>

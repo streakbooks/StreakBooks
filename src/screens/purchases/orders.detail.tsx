@@ -28,7 +28,7 @@ import {
 import type { PurchaseOrderDetail } from "@/lib/purchases/purchase-order-data";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { StatusBadge } from "@/components/common/stat-card";
@@ -609,11 +609,7 @@ export function PurchaseOrderDetailScreen({
           {activity.isPending ? (
             <p className="text-sm text-muted-foreground">Loading activity…</p>
           ) : activity.isError ? (
-            <ErrorState
-              title="Could not load order activity"
-              description={friendlyAuthError(activity.error)}
-              onRetry={() => void activity.refetch()}
-            />
+            <QueryErrorState queries={[activity]} title="Could not load order activity" />
           ) : (
             <>
               <h3 className="text-sm font-medium">Goods receipts</h3>

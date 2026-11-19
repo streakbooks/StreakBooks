@@ -27,7 +27,8 @@ import {
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { AccountLookup } from "@/components/lookup";
 import { DeferralLedgerAudit } from "@/components/accounting/DeferralLedgerAudit";
-import { LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -137,14 +138,7 @@ export function DeferralsPanel({ companyId, currency }: { companyId: string; cur
   if (q.isPending || accounts.isPending) return <LoadingState />;
   if (q.isError || accounts.isError)
     return (
-      <ErrorState
-        title="Could not load deferrals"
-        description={friendlyAuthError(q.error ?? accounts.error)}
-        onRetry={() => {
-          void q.refetch();
-          void accounts.refetch();
-        }}
-      />
+      <QueryErrorState queries={[q, accounts]} title="Could not load deferrals" />
     );
   const active = (accounts.data ?? []).filter((a) => a.is_active && a.is_postable);
   const counts = deferralPageCounts(q.data.rows, q.data.today);

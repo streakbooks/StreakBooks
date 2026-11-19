@@ -21,7 +21,8 @@ import {
 import { isPositiveRate, nextDay } from "@/lib/accounting/fx-reval";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { FxRealisedLedgerAudit } from "@/components/accounting/FxRealisedLedgerAudit";
 import { FxRevaluationLedgerAudit } from "@/components/accounting/FxRevaluationLedgerAudit";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -128,12 +129,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
 
   if (overview.isPending) return <LoadingState />;
   if (overview.isError) {
-    return (
-      <ErrorState
-        description={friendlyAuthError(overview.error)}
-        onRetry={() => void overview.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[overview]} title="Could not load foreign exchange review" />;
   }
   const ov = overview.data;
   if (!ov.available) {

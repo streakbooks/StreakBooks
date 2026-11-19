@@ -242,7 +242,7 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
           {suggestQ.isPending ? (
             <LoadingState rows={2} />
           ) : suggestQ.isError ? (
-            <p className="text-sm text-destructive">{friendlyAuthError(suggestQ.error)}</p>
+            <QueryErrorState queries={[suggestQ]} title="Could not load rule suggestions" />
           ) : suggestions.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No uncategorised line matches an active rule ({suggestQ.data?.scanned ?? 0} checked).

@@ -112,19 +112,7 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
 
   if (q.isPending) return <Skeleton className="h-64 w-full" />;
   if (q.isError) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Could not load workflow defaults</CardTitle>
-          <CardDescription>{friendlyAuthError(q.error)}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="outline" size="sm" onClick={() => void q.refetch()}>
-            Retry
-          </Button>
-        </CardContent>
-      </Card>
-    );
+    return <QueryErrorState queries={[q]} title="Could not load workflow defaults" />;
   }
 
   return (

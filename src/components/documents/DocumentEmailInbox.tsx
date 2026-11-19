@@ -123,17 +123,7 @@ export function DocumentEmailInbox({
           Loading inbox settings…
         </p>
       ) : settings.isError ? (
-        <div role="alert" className="rounded-lg border p-4 text-sm text-destructive">
-          {friendlyAuthError(settings.error)}
-          <Button
-            size="sm"
-            variant="outline"
-            className="ml-2"
-            onClick={() => void settings.refetch()}
-          >
-            Retry
-          </Button>
-        </div>
+        <QueryErrorState queries={[settings]} title="Could not load inbox settings" />
       ) : settings.data ? (
         <div className="rounded-lg border p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">

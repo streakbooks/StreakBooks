@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   createDocumentTag,
@@ -171,21 +172,10 @@ export function DocumentClassificationPanel({
           Loading file metadata…
         </p>
       ) : metadata.isError || tags.isError ? (
-        <div className="space-y-2">
-          <p role="alert" className="text-sm text-destructive">
-            {friendlyAuthError(metadata.error ?? tags.error)}
-          </p>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              void metadata.refetch();
-              void tags.refetch();
-            }}
-          >
-            Retry
-          </Button>
-        </div>
+        <QueryErrorState
+          queries={[metadata, tags]}
+          title="Could not load categories and tags"
+        />
       ) : metadata.data ? (
         <>
           <div className="flex flex-wrap items-center gap-2">

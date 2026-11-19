@@ -279,9 +279,9 @@ export function PlatformResource({
               Checking start months…
             </p>
           ) : cohorts.isError ? (
-            <p className="mt-2" role="alert">
-              {cohorts.error instanceof Error ? cohorts.error.message : "Start months failed."}
-            </p>
+            <div className="mt-2">
+              <QueryErrorState queries={[cohorts]} title="Could not load subscription start months" />
+            </div>
           ) : cohorts.data?.message ? (
             <p className="mt-2" role="status">
               {cohorts.data.message}

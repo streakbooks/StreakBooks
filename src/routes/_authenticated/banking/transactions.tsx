@@ -1171,18 +1171,10 @@ function BankTransactions() {
                                 </p>
                               ) : null}
                               {suggestQ.isError ? (
-                                <Alert variant="destructive">
-                                  <AlertDescription>
-                                    Coding suggestions could not be loaded.
-                                    <Button
-                                      variant="link"
-                                      size="sm"
-                                      onClick={() => void suggestQ.refetch()}
-                                    >
-                                      Retry
-                                    </Button>
-                                  </AlertDescription>
-                                </Alert>
+                                <QueryErrorState
+                                  queries={[suggestQ]}
+                                  title="Could not load coding suggestions"
+                                />
                               ) : suggestQ.isPending ? (
                                 <p role="status" className="text-xs text-muted-foreground">
                                   Loading coding suggestions…
@@ -1246,9 +1238,10 @@ function BankTransactions() {
                                   }}
                                 />
                               ) : optionsQ.isError ? (
-                                <p className="text-sm text-destructive">
-                                  {friendlyAuthError(optionsQ.error)}
-                                </p>
+                                <QueryErrorState
+                                  queries={[optionsQ]}
+                                  title="Could not load coding options"
+                                />
                               ) : (
                                 <ListSkeleton rows={2} />
                               )}

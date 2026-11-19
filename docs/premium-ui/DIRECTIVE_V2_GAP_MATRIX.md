@@ -213,3 +213,13 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Bills / sales / purchases line adoption | check:workspace locks PurchasesDocumentLines, SalesDocumentLines, bills.new, MoneyDocumentPanel FormGrid |
 | Includes Batches 66–71 | Rebased onto current main (supersedes PR #345) |
 
+## Batch 73 (chrome honesty + error retry)
+
+| Gap | Action |
+| --- | --- |
+| StatusBadge meta honesty | Credit notes, claims create, transfers, bills header use StatusBadge |
+| Sales/journal error retry | SalesDocumentEditor + JournalPanels ErrorState when options fail |
+| FormGrid / StatusBadge locks | check:workspace expands FormGrid + StatusBadge + ErrorState tokens |
+| DoD honesty | Strengthen local evidence; PurchasesDocumentLines still not ELG (Batch 74+) |
+| Includes Batches 66–72 | Carried on feature branch (supersedes PR #346) |
+

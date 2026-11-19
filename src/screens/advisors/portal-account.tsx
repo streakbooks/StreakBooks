@@ -1,10 +1,11 @@
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -110,11 +111,7 @@ export function AdvisorsPortalAccountPage() {
         <ListWorkspace title="Account" description="Contact details and service requests.">
           <AdvisorsPortalSubnav />
           <div role="alert">
-            <ErrorState
-              title="Account unavailable"
-              description={friendlyAuthError(homeQuery.error)}
-              onRetry={() => void homeQuery.refetch()}
-            />
+            <QueryErrorState queries={[homeQuery]} title="Account unavailable" />
           </div>
         </ListWorkspace>
       </main>

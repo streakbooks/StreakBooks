@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { MarketplaceAppCard } from "@/components/app-store/MarketplaceAppCard";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -50,11 +51,7 @@ export function AppStoreFeaturedPage() {
   }
   if (catalogue.isError) {
     return (
-      <ErrorState
-        title="Could not load featured apps"
-        description={friendlyAuthError(catalogue.error)}
-        onRetry={() => catalogue.refetch()}
-      />
+      <QueryErrorState queries={[catalogue]} title="Could not load featured apps" />
     );
   }
 

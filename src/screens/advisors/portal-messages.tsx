@@ -1,10 +1,11 @@
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -52,11 +53,7 @@ export function AdvisorsPortalMessagesPage() {
         <ListWorkspace title="Messages" description="Talk with your advisor.">
           <AdvisorsPortalSubnav />
           <div role="alert">
-            <ErrorState
-              title="Messages unavailable"
-              description={friendlyAuthError(query.error)}
-              onRetry={() => void query.refetch()}
-            />
+            <QueryErrorState queries={[query]} title="Messages unavailable" />
           </div>
         </ListWorkspace>
       </main>

@@ -1,10 +1,11 @@
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -140,11 +141,7 @@ export function AdvisorsAdminAppointmentsPage() {
         <ListWorkspace title="Appointments" description="Advisor calendar and booking controls.">
           <AdvisorsSubnav />
           <div role="alert">
-            <ErrorState
-              title="Booking admin unavailable"
-              description={friendlyAuthError(query.error)}
-              onRetry={() => void query.refetch()}
-            />
+            <QueryErrorState queries={[query]} title="Booking admin unavailable" />
           </div>
         </ListWorkspace>
       </main>

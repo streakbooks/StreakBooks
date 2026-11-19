@@ -1,4 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -6,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,14 +99,7 @@ export function AdvisorsAdminConversationsPage() {
         <ListWorkspace title="Conversations" description="Review Advisors qualification chats.">
           <AdvisorsSubnav />
           <div role="alert">
-            <ErrorState
-              title="Conversations unavailable"
-              description={friendlyAuthError(query.error ?? staffQuery.error)}
-              onRetry={() => {
-                void query.refetch();
-                void staffQuery.refetch();
-              }}
-            />
+            <QueryErrorState queries={[query, staffQuery]} title="Conversations unavailable" />
           </div>
         </ListWorkspace>
       </main>
@@ -236,11 +230,7 @@ export function AdvisorsAdminConversationsPage() {
             ) : detailQuery.isPending ? (
               <LoadingState />
             ) : detailQuery.isError ? (
-              <ErrorState
-                title="Conversation detail unavailable"
-                description={friendlyAuthError(detailQuery.error)}
-                onRetry={() => void detailQuery.refetch()}
-              />
+              <QueryErrorState queries={[detailQuery]} title="Conversation detail unavailable" />
             ) : detail ? (
               <>
                 <div>

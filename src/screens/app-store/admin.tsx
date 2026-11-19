@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -134,11 +135,7 @@ export function AppStoreAdminPage() {
         <h2 className="text-lg font-semibold">Security approval queue</h2>
         {reviews.isLoading ? <LoadingState /> : null}
         {reviews.isError ? (
-          <ErrorState
-            title="Could not load reviews"
-            description={friendlyAuthError(reviews.error)}
-            onRetry={() => reviews.refetch()}
-          />
+          <QueryErrorState queries={[reviews]} title="Could not load reviews" />
         ) : null}
         {!reviews.isLoading && !reviews.isError ? (
           pending.length === 0 ? (

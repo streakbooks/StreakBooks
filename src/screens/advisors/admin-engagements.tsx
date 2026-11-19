@@ -1,11 +1,12 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,15 +191,7 @@ export function AdvisorsAdminEngagementsPage() {
         >
           <AdvisorsSubnav />
           <div role="alert">
-            <ErrorState
-              title="Engagements unavailable"
-              description={friendlyAuthError(listQ.error ?? clientsQ.error ?? staffQ.error)}
-              onRetry={() => {
-                void listQ.refetch();
-                void clientsQ.refetch();
-                void staffQ.refetch();
-              }}
-            />
+            <QueryErrorState queries={[listQ, clientsQ, staffQ]} title="Engagements unavailable" />
           </div>
         </ListWorkspace>
       </main>
@@ -435,11 +428,7 @@ export function AdvisorsAdminEngagementsPage() {
               ) : detailQ.isPending ? (
                 <LoadingState />
               ) : detailQ.isError ? (
-                <ErrorState
-                  title="Engagement detail unavailable"
-                  description={friendlyAuthError(detailQ.error)}
-                  onRetry={() => void detailQ.refetch()}
-                />
+                <QueryErrorState queries={[detailQ]} title="Engagement detail unavailable" />
               ) : detail ? (
                 <>
                   <div>

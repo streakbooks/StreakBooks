@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,11 +24,7 @@ export function AdvisorsPortalHomePage() {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <ListWorkspace title="Advisors portal" description="Your Advisors service account.">
-          <ErrorState
-            title="Portal unavailable"
-            description={friendlyAuthError(query.error)}
-            onRetry={() => void query.refetch()}
-          />
+          <QueryErrorState queries={[query]} title="Portal unavailable" />
         </ListWorkspace>
       </main>
     );

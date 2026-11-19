@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { DeveloperSubnav } from "@/components/app-store/DeveloperSubnav";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -111,11 +112,7 @@ export function DeveloperDashboardPage() {
 
         {scopes.isLoading ? <LoadingState /> : null}
         {scopes.isError ? (
-          <ErrorState
-            title="Could not load API scopes"
-            description={friendlyAuthError(scopes.error)}
-            onRetry={() => scopes.refetch()}
-          />
+          <QueryErrorState queries={[scopes]} title="Could not load API scopes" />
         ) : null}
 
         {scopes.data ? (

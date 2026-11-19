@@ -1,10 +1,11 @@
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Link } from "@tanstack/react-router";
 import { Route } from "@/routes/_authenticated/advisors-portal.tasks";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { listAdvisorsPortalTasks } from "@/lib/advisors/portal.functions";
@@ -24,11 +25,7 @@ export function AdvisorsPortalTasksPage() {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <ListWorkspace title="Tasks" description="Delivery tasks on your Advisors workspace.">
-          <ErrorState
-            title="Tasks unavailable"
-            description={friendlyAuthError(query.error)}
-            onRetry={() => void query.refetch()}
-          />
+          <QueryErrorState queries={[query]} title="Tasks unavailable" />
         </ListWorkspace>
       </main>
     );

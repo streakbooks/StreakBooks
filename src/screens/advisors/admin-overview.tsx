@@ -1,9 +1,10 @@
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { getAdvisorsOverview } from "@/lib/advisors/management.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -45,11 +46,7 @@ export function AdvisorsAdminOverviewPage() {
         <ListWorkspace title="Advisors overview" description="Inquiry and delivery console.">
           <AdvisorsSubnav />
           <div role="alert">
-            <ErrorState
-              title="Overview unavailable"
-              description={friendlyAuthError(query.error)}
-              onRetry={() => void query.refetch()}
-            />
+            <QueryErrorState queries={[query]} title="Overview unavailable" />
           </div>
         </ListWorkspace>
       </main>

@@ -379,16 +379,17 @@ export function FixedAssetRegisterView({ ctx }: { ctx: ReportCtx }) {
         <>
           {accountsQ.isError ? (
             <QueryErrorState queries={[accountsQ]} title="Could not load asset accounts" />
-          ) : null}
-          <ReportAccountMultiSelect
-            label="Asset accounts"
-            accounts={accountOptions}
-            selected={selectedIds ?? undefined}
-            onChange={(ids) =>
-              ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
-            }
-            disabled={q.isPending || accountsQ.isPending || accountsQ.isError}
-          />
+          ) : (
+            <ReportAccountMultiSelect
+              label="Asset accounts"
+              accounts={accountOptions}
+              selected={selectedIds ?? undefined}
+              onChange={(ids) =>
+                ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+              }
+              disabled={q.isPending || accountsQ.isPending}
+            />
+          )}
           <Button size="sm" variant="outline" asChild className="print:hidden">
             <Link to="/fixed-assets">Manage assets</Link>
           </Button>

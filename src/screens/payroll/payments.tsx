@@ -653,33 +653,37 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </div>
             <div className="grid gap-2">
               <Label>Clearing account</Label>
-              {excludedClearingAccounts > 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  {excludedClearingAccounts} clearing account
-                  {excludedClearingAccounts === 1 ? "" : "s"} with a different currency hidden.
-                  Payroll settlements must use {payCurrency}.
-                </p>
-              ) : null}
-              <AccountLookup
-                ariaLabel="Clearing account"
-                companyId={company.id}
-                accounts={
-                  availableClearingAccounts as unknown as Array<{
-                    id: string;
-                    code: string;
-                    name: string;
-                    account_type: string;
-                    is_active: boolean;
-                    is_postable: boolean;
-                  }>
-                }
-                value={clearingAccountId}
-                onChange={(v) => setClearingAccountId(v ?? "")}
-                purpose="posting"
-                createKind="bank"
-                placeholder="Bank or cash account"
-                allowClear={false}
-              />
+              {accountsQ.isError ? null : (
+                <>
+                  {excludedClearingAccounts > 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      {excludedClearingAccounts} clearing account
+                      {excludedClearingAccounts === 1 ? "" : "s"} with a different currency hidden.
+                      Payroll settlements must use {payCurrency}.
+                    </p>
+                  ) : null}
+                  <AccountLookup
+                    ariaLabel="Clearing account"
+                    companyId={company.id}
+                    accounts={
+                      availableClearingAccounts as unknown as Array<{
+                        id: string;
+                        code: string;
+                        name: string;
+                        account_type: string;
+                        is_active: boolean;
+                        is_postable: boolean;
+                      }>
+                    }
+                    value={clearingAccountId}
+                    onChange={(v) => setClearingAccountId(v ?? "")}
+                    purpose="posting"
+                    createKind="bank"
+                    placeholder="Bank or cash account"
+                    allowClear={false}
+                  />
+                </>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="pr-pay-amount">Amount</Label>

@@ -153,6 +153,9 @@ export function PmOwnersPage() {
             </Button>
           </div>
           {showForm && canManage ? (
+            contacts.isError && contacts.data === undefined ? (
+              <QueryErrorState queries={[contacts]} title="Could not load contacts" />
+            ) : (
             <Card className="mb-4">
               <CardHeader>
                 <CardTitle>Link owner from Contacts</CardTitle>
@@ -206,7 +209,7 @@ export function PmOwnersPage() {
                 <div className="flex items-end">
                   <Button
                     type="button"
-                    disabled={!contactId || mutation.isPending}
+                    disabled={!contactId || mutation.isPending || !contacts.isSuccess}
                     onClick={() => mutation.mutate()}
                   >
                     {mutation.isPending ? "Saving…" : "Save owner"}
@@ -214,6 +217,7 @@ export function PmOwnersPage() {
                 </div>
               </CardContent>
             </Card>
+            )
           ) : null}
           {owners.isLoading ? <LoadingState /> : null}
           {owners.isError ? (

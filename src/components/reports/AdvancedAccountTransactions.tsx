@@ -177,19 +177,20 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
           </div>
           {accountsQ.isError ? (
             <QueryErrorState queries={[accountsQ]} title="Could not load report accounts" />
-          ) : null}
-          <ReportAccountMultiSelect
-            accounts={accounts}
-            selected={accountId ? [accountId] : undefined}
-            onChange={(ids) =>
-              ctx.setSearch({
-                account: ids?.length === 1 ? ids[0] : undefined,
-                accountIds: ids && ids.length > 1 ? ids.join(",") : undefined,
-                page: undefined,
-              })
-            }
-            disabled={accountsQ.isPending || accountsQ.isError}
-          />
+          ) : (
+            <ReportAccountMultiSelect
+              accounts={accounts}
+              selected={accountId ? [accountId] : undefined}
+              onChange={(ids) =>
+                ctx.setSearch({
+                  account: ids?.length === 1 ? ids[0] : undefined,
+                  accountIds: ids && ids.length > 1 ? ids.join(",") : undefined,
+                  page: undefined,
+                })
+              }
+              disabled={accountsQ.isPending}
+            />
+          )}
         </>
       }
       getCsv={() => {

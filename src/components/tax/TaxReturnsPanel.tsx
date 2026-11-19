@@ -155,10 +155,12 @@ export function TaxReturnsPanel({
   companyId,
   companyName,
   accounts,
+  accountsLoadFailed = false,
 }: {
   companyId: string;
   companyName: string;
   accounts: PickerAccount[];
+  accountsLoadFailed?: boolean;
 }) {
   const qc = useQueryClient();
   const f = useFormat();
@@ -773,17 +775,23 @@ export function TaxReturnsPanel({
                         <div className="flex flex-wrap items-end gap-3">
                           <div className="space-y-1">
                             <Label>Settlement account</Label>
-                            <AccountLookup
-                              className="w-72"
-                              ariaLabel="Settlement account"
-                              disabled={!canTax}
-                              accounts={settlementAccounts}
-                              value={settleAccount}
-                              onChange={setSettleAccount}
-                              companyId={companyId}
-                              placeholder="Choose an account"
-                              allowClear={false}
-                            />
+                            {accountsLoadFailed ? (
+                              <p className="text-sm text-muted-foreground">
+                                Settlement accounts unavailable until chart of accounts loads.
+                              </p>
+                            ) : (
+                              <AccountLookup
+                                className="w-72"
+                                ariaLabel="Settlement account"
+                                disabled={!canTax}
+                                accounts={settlementAccounts}
+                                value={settleAccount}
+                                onChange={setSettleAccount}
+                                companyId={companyId}
+                                placeholder="Choose an account"
+                                allowClear={false}
+                              />
+                            )}
                           </div>
                           <div className="space-y-1">
                             <Label htmlFor="settle-date">Journal date</Label>
@@ -814,7 +822,8 @@ export function TaxReturnsPanel({
                             !confirmSettle ||
                             !settleAccount ||
                             !settleDate ||
-                            settle.isPending
+                            settle.isPending ||
+                            accountsLoadFailed
                           }
                           onClick={() => settle.mutate()}
                         >

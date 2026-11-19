@@ -486,50 +486,51 @@ function TaxConfigPage() {
               liabilities; input tax: assets or liabilities; non-recoverable tax: expenses or
               assets).
             </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label>Output tax liability</Label>
-                <AccountLookup
-                  ariaLabel="Output tax liability"
-                  disabled={!canTax || accountsQ.isPending || accountsQ.isError}
-                  accounts={outputAccounts}
-                  value={outputAcc}
-                  onChange={setOutputAcc}
-                  companyId={companyId}
-                  placeholder="Use fallback (2100)"
-                  allowClear
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Recoverable input tax</Label>
-                <AccountLookup
-                  ariaLabel="Recoverable input tax"
-                  disabled={!canTax || accountsQ.isPending || accountsQ.isError}
-                  accounts={inputAccounts}
-                  value={inputAcc}
-                  onChange={setInputAcc}
-                  companyId={companyId}
-                  placeholder="Use fallback (1200)"
-                  allowClear
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Non-recoverable tax (cost)</Label>
-                <AccountLookup
-                  ariaLabel="Non-recoverable tax"
-                  disabled={!canTax || accountsQ.isPending || accountsQ.isError}
-                  accounts={nonRecAccounts}
-                  value={nonRecAcc}
-                  onChange={setNonRecAcc}
-                  companyId={companyId}
-                  placeholder="Not set"
-                  allowClear
-                />
-              </div>
-            </div>
             {accountsQ.isError ? (
               <QueryErrorState queries={[accountsQ]} title="Could not load tax accounts" />
-            ) : null}
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label>Output tax liability</Label>
+                  <AccountLookup
+                    ariaLabel="Output tax liability"
+                    disabled={!canTax || accountsQ.isPending}
+                    accounts={outputAccounts}
+                    value={outputAcc}
+                    onChange={setOutputAcc}
+                    companyId={companyId}
+                    placeholder="Use fallback (2100)"
+                    allowClear
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Recoverable input tax</Label>
+                  <AccountLookup
+                    ariaLabel="Recoverable input tax"
+                    disabled={!canTax || accountsQ.isPending}
+                    accounts={inputAccounts}
+                    value={inputAcc}
+                    onChange={setInputAcc}
+                    companyId={companyId}
+                    placeholder="Use fallback (1200)"
+                    allowClear
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Non-recoverable tax (cost)</Label>
+                  <AccountLookup
+                    ariaLabel="Non-recoverable tax"
+                    disabled={!canTax || accountsQ.isPending}
+                    accounts={nonRecAccounts}
+                    value={nonRecAcc}
+                    onChange={setNonRecAcc}
+                    companyId={companyId}
+                    placeholder="Not set"
+                    allowClear
+                  />
+                </div>
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
@@ -596,6 +597,7 @@ function TaxConfigPage() {
             companyId={companyId}
             companyName={company?.name ?? ""}
             accounts={allAccounts}
+            accountsLoadFailed={accountsQ.isError}
           />
         </TabsContent>
 
@@ -604,7 +606,11 @@ function TaxConfigPage() {
         </TabsContent>
 
         <TabsContent value="codes" className="space-y-4">
-          <TaxCodesPanel companyId={companyId} accounts={allAccounts} />
+          <TaxCodesPanel
+            companyId={companyId}
+            accounts={allAccounts}
+            accountsLoadFailed={accountsQ.isError}
+          />
         </TabsContent>
       </Tabs>
     </ListWorkspace>

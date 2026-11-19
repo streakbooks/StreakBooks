@@ -432,15 +432,16 @@ export function GlSummaryView({ ctx }: { ctx: ReportCtx }) {
         <>
           {accountsQ.isError ? (
             <QueryErrorState queries={[accountsQ]} title="Could not load report accounts" />
-          ) : null}
-          <ReportAccountMultiSelect
-            accounts={accountsQ.data ?? []}
-            selected={selectedIds ?? undefined}
-            onChange={(ids) =>
-              ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
-            }
-            disabled={accountsQ.isPending || accountsQ.isError}
-          />
+          ) : (
+            <ReportAccountMultiSelect
+              accounts={accountsQ.data ?? []}
+              selected={selectedIds ?? undefined}
+              onChange={(ids) =>
+                ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+              }
+              disabled={accountsQ.isPending}
+            />
+          )}
         </>
       }
       getCsv={() => (d ? csvFor(selectedRows, cols) : null)}

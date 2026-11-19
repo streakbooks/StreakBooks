@@ -2,13 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+
 import { getCrmCommsPolicy, getCrmSettings } from "@/lib/crm/crm.functions";
 import type { Permission } from "@/lib/permissions";
 
@@ -60,22 +61,14 @@ export function CrmCommunicationsPage() {
       ) : null}
 
       {settings.isError ? (
-        <ErrorState
-          title="Could not load CRM settings"
-          description={friendlyAuthError(settings.error)}
-          onRetry={() => settings.refetch()}
-        />
+        <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
       ) : null}
 
       {settings.data?.enabled ? (
         <div className="space-y-4">
           {policy.isLoading ? <LoadingState /> : null}
           {policy.isError ? (
-            <ErrorState
-              title="Could not load communications policy"
-              description={friendlyAuthError(policy.error)}
-              onRetry={() => policy.refetch()}
-            />
+            <QueryErrorState queries={[policy]} title="Could not load communications policy" />
           ) : null}
           {policy.data ? (
             <>

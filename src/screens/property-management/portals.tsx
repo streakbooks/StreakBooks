@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { PmSubnav } from "@/components/property-management/PmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -240,11 +241,7 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
           ) : null}
           {access.isLoading ? <LoadingState /> : null}
           {access.isError ? (
-            <ErrorState
-              title="Could not load portal access"
-              description={friendlyAuthError(access.error)}
-              onRetry={() => access.refetch()}
-            />
+            <QueryErrorState queries={[access]} title="Could not load portal access" />
           ) : null}
           {access.data?.length === 0 ? (
             <EmptyState

@@ -5,7 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { TableCard } from "@/components/common/table-card";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -277,11 +278,7 @@ export function HrLeavePage() {
         {typesQ.isPending ? (
           <LoadingState />
         ) : typesQ.isError ? (
-          <ErrorState
-            title="Could not load leave types"
-            description={friendlyAuthError(typesQ.error)}
-            onRetry={() => void typesQ.refetch()}
-          />
+          <QueryErrorState queries={[typesQ]} title="Could not load leave types" />
         ) : types.length === 0 ? (
           <EmptyState
             title="No leave types"

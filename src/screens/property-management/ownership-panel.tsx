@@ -2,7 +2,8 @@ import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -167,11 +168,7 @@ export function PmOwnershipPanel({
         ) : null}
         {ownership.isLoading ? <LoadingState /> : null}
         {ownership.isError ? (
-          <ErrorState
-            title="Could not load ownership"
-            description={friendlyAuthError(ownership.error)}
-            onRetry={() => ownership.refetch()}
-          />
+          <QueryErrorState queries={[ownership]} title="Could not load ownership" />
         ) : null}
         {ownership.data?.length === 0 ? (
           <EmptyState

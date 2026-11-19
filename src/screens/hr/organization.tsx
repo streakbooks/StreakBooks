@@ -5,7 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
@@ -144,11 +145,7 @@ export function HrOrganizationPage() {
       {orgQ.isPending ? (
         <LoadingState />
       ) : orgQ.isError ? (
-        <ErrorState
-          title="Could not load organisation"
-          description={friendlyAuthError(orgQ.error)}
-          onRetry={() => orgQ.refetch()}
-        />
+        <QueryErrorState queries={[orgQ]} title="Could not load organisation" />
       ) : !rows.length ? (
         <EmptyState
           title={`No ${kind}s yet`}

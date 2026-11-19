@@ -21,7 +21,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import {
   Select,
   SelectContent,
@@ -393,11 +394,7 @@ export function ContactTimeline({
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
-        <ErrorState
-          title="Could not load contact activity"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
+        <QueryErrorState queries={[query]} title="Could not load contact activity" />
       ) : rows.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border/80 bg-muted/20 p-6 text-sm text-muted-foreground">
           No activities match this filter.

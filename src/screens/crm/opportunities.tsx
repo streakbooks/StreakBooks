@@ -6,7 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CrmStatusBadge } from "@/components/crm/CrmStatusBadge";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -288,11 +289,7 @@ export function CrmOpportunitiesPage() {
     >
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
-        <ErrorState
-          title="Could not load CRM settings"
-          description={friendlyAuthError(settings.error)}
-          onRetry={() => settings.refetch()}
-        />
+        <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
       ) : null}
 
       {settings.data && !settings.data.enabled ? (
@@ -455,25 +452,13 @@ export function CrmOpportunitiesPage() {
           </div>
           {opps.isLoading || pipelines.isLoading ? <LoadingState /> : null}
           {opps.isError ? (
-            <ErrorState
-              title="Could not load opportunities"
-              description={friendlyAuthError(opps.error)}
-              onRetry={() => opps.refetch()}
-            />
+            <QueryErrorState queries={[opps]} title="Could not load opportunities" />
           ) : null}
           {pipelines.isError ? (
-            <ErrorState
-              title="Could not load pipeline stages"
-              description={friendlyAuthError(pipelines.error)}
-              onRetry={() => pipelines.refetch()}
-            />
+            <QueryErrorState queries={[pipelines]} title="Could not load pipeline stages" />
           ) : null}
           {closedOpps.isError ? (
-            <ErrorState
-              title="Could not load closed deals"
-              description={friendlyAuthError(closedOpps.error)}
-              onRetry={() => closedOpps.refetch()}
-            />
+            <QueryErrorState queries={[closedOpps]} title="Could not load closed deals" />
           ) : null}
 
           {opps.isSuccess && filteredOpenDeals.length === 0 ? (

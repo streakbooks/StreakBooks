@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import {
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+
 import { listHrAuditEvents } from "@/lib/hr/hr.functions";
 import type { HrAuditEvent } from "@/lib/hr/types";
 
@@ -56,11 +57,7 @@ export function HrAuditPage() {
       {auditQ.isPending ? (
         <LoadingState />
       ) : auditQ.isError ? (
-        <ErrorState
-          title="Could not load audit trail"
-          description={friendlyAuthError(auditQ.error)}
-          onRetry={() => auditQ.refetch()}
-        />
+        <QueryErrorState queries={[auditQ]} title="Could not load audit trail" />
       ) : !auditQ.data?.items.length ? (
         <EmptyState
           title="No audit events yet"

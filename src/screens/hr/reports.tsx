@@ -5,7 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { HrSubnav } from "@/components/hr/HrSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
@@ -208,11 +209,7 @@ export function HrReportsPage() {
       {reportQ.isPending ? (
         <LoadingState />
       ) : reportQ.isError ? (
-        <ErrorState
-          title="Could not run report"
-          description={friendlyAuthError(reportQ.error)}
-          onRetry={() => void reportQ.refetch()}
-        />
+        <QueryErrorState queries={[reportQ]} title="Could not run report" />
       ) : rows.length === 0 ? (
         <EmptyState title="No rows" description="No data for this report and date range." />
       ) : (

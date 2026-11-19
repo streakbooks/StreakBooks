@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { PmSubnav } from "@/components/property-management/PmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -211,11 +212,7 @@ export function PmOwnersPage() {
           ) : null}
           {owners.isLoading ? <LoadingState /> : null}
           {owners.isError ? (
-            <ErrorState
-              title="Could not load owners"
-              description={friendlyAuthError(owners.error)}
-              onRetry={() => owners.refetch()}
-            />
+            <QueryErrorState queries={[owners]} title="Could not load owners" />
           ) : null}
           {owners.data?.length === 0 ? (
             <EmptyState

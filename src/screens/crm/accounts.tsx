@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+
 import { getCrmSettings, listCrmAccountOverlay } from "@/lib/crm/crm.functions";
 import { formatCrmMinor } from "@/lib/crm/format";
 import type { Permission } from "@/lib/permissions";
@@ -142,11 +143,7 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
 
           {accounts.isLoading ? <LoadingState /> : null}
           {accounts.isError ? (
-            <ErrorState
-              title="Could not load CRM accounts"
-              description={friendlyAuthError(accounts.error)}
-              onRetry={() => accounts.refetch()}
-            />
+            <QueryErrorState queries={[accounts]} title="Could not load CRM accounts" />
           ) : null}
           {accounts.isSuccess && accounts.data.length === 0 ? (
             <EmptyState

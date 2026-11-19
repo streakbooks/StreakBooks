@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,11 +139,7 @@ export function CrmSettingsPage() {
     >
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
-        <ErrorState
-          title="Could not load settings"
-          description={friendlyAuthError(settings.error)}
-          onRetry={() => settings.refetch()}
-        />
+        <QueryErrorState queries={[settings]} title="Could not load settings" />
       ) : null}
       {current ? (
         <div className="space-y-4">

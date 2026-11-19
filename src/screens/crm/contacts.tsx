@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+
 import { getCrmSettings, listCrmContactPeople } from "@/lib/crm/crm.functions";
 import type { Permission } from "@/lib/permissions";
 
@@ -92,11 +93,7 @@ export function CrmContactsPage() {
     >
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
-        <ErrorState
-          title="Could not load CRM settings"
-          description={friendlyAuthError(settings.error)}
-          onRetry={() => settings.refetch()}
-        />
+        <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
       ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState
@@ -124,11 +121,7 @@ export function CrmContactsPage() {
           </div>
           {people.isLoading ? <LoadingState /> : null}
           {people.isError ? (
-            <ErrorState
-              title="Could not load CRM people"
-              description={friendlyAuthError(people.error)}
-              onRetry={() => people.refetch()}
-            />
+            <QueryErrorState queries={[people]} title="Could not load CRM people" />
           ) : null}
           {people.isSuccess && rows.length === 0 ? (
             <EmptyState

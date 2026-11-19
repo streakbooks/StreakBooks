@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { PmSubnav } from "@/components/property-management/PmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -270,11 +271,7 @@ export function PmReservationsPage() {
           ) : null}
           {reservations.isLoading ? <LoadingState /> : null}
           {reservations.isError ? (
-            <ErrorState
-              title="Could not load reservations"
-              description={friendlyAuthError(reservations.error)}
-              onRetry={() => reservations.refetch()}
-            />
+            <QueryErrorState queries={[reservations]} title="Could not load reservations" />
           ) : null}
           {reservations.data?.length === 0 ? (
             <EmptyState

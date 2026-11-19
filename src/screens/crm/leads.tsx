@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CrmStatusBadge } from "@/components/crm/CrmStatusBadge";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -388,10 +389,9 @@ export function CrmLeadsPage() {
                   ) : null}
                   {dupQuery.isError ? (
                     <div className="mb-3">
-                      <ErrorState
+                      <QueryErrorState
+                        queries={[dupQuery]}
                         title="Duplicate check unavailable"
-                        description="Lead creation is paused until duplicate records can be checked."
-                        onRetry={() => dupQuery.refetch()}
                       />
                     </div>
                   ) : null}
@@ -458,11 +458,7 @@ export function CrmLeadsPage() {
           ) : null}
           {leads.isLoading ? <LoadingState /> : null}
           {leads.isError ? (
-            <ErrorState
-              title="Could not load leads"
-              description={friendlyAuthError(leads.error)}
-              onRetry={() => leads.refetch()}
-            />
+            <QueryErrorState queries={[leads]} title="Could not load leads" />
           ) : null}
           {leads.isSuccess && rows.length === 0 ? (
             <EmptyState

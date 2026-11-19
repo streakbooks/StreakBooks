@@ -6,7 +6,8 @@ import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CrmStatusBadge } from "@/components/crm/CrmStatusBadge";
 import { CrmMeetingCalendar } from "@/components/crm/CrmMeetingCalendar";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -501,11 +502,7 @@ export function CrmActivitiesPage({
 
           {activities.isLoading ? <LoadingState /> : null}
           {activities.isError ? (
-            <ErrorState
-              title="Could not load activities"
-              description={friendlyAuthError(activities.error)}
-              onRetry={() => activities.refetch()}
-            />
+            <QueryErrorState queries={[activities]} title="Could not load activities" />
           ) : null}
           {activities.isSuccess && rows.length === 0 ? (
             <EmptyState

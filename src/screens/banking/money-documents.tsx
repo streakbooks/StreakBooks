@@ -89,21 +89,43 @@ function MoneyDocumentsInner() {
       title="Bank documents"
       description="Sales receipts, refunds, direct receipts, deposits, card payments and bank adjustments. Each one posts a single journal. Voiding posts a reversal and restores any credit it used."
       actions={
-        <select
-          aria-label="Filter by type"
-          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-          value={kind}
-          onChange={(e) => setKind(e.target.value)}
-        >
-          {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            aria-label="Filter by type"
+            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            value={kind}
+            onChange={(e) => setKind(e.target.value)}
+          >
+            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
-          <option value="">All types</option>
-          {Object.entries(KIND_LABEL).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+            <option value="">All types</option>
+            {Object.entries(KIND_LABEL).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <Button size="sm" asChild>
+            {kind === "receive_money" ? (
+              <Link to="/banking/receive-money">New receive money</Link>
+            ) : (
+              <Link
+                to="/banking/money-documents/new"
+                search={{
+                  kind: (kind || "sales_receipt") as
+                    | "sales_receipt"
+                    | "customer_refund"
+                    | "supplier_refund"
+                    | "bank_deposit"
+                    | "card_payment"
+                    | "bank_adjustment",
+                }}
+              >
+                New {KIND_LABEL[kind] ?? "sales receipt"}
+              </Link>
+            )}
+          </Button>
+        </div>
       }
     >
       {docsQ.isPending ? (
@@ -113,7 +135,14 @@ function MoneyDocumentsInner() {
       ) : rows.length === 0 ? (
         <EmptyState
           title="No bank documents yet"
-          description="Use New → Sales receipt, Receive money, Bank deposit and similar actions. They appear here after they post."
+          description="Create a sales receipt, refund, deposit, or bank adjustment. Receive money and Spend money also live under Banking."
+          action={
+            <Button size="sm" asChild>
+              <Link to="/banking/money-documents/new" search={{ kind: "sales_receipt" }}>
+                New sales receipt
+              </Link>
+            </Button>
+          }
         />
       ) : (
         <Table>

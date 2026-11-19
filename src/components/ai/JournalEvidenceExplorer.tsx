@@ -261,7 +261,7 @@ export function AiJournalEvidenceExplorer({
                     <Label htmlFor="ai-evidence-source">Journal source</Label>
                     <RecordLookupSelect
                       id="ai-evidence-source"
-                      className="flex h-10 w-60 max-w-full border-input px-3"
+                      className="flex h-10 w-60 max-w-full rounded-md border border-input bg-background px-3 text-sm"
                       value={source}
                       onValueChange={(nextValue) => {
                         setSource(nextValue);
@@ -458,7 +458,7 @@ export function AiJournalEvidenceExplorer({
                     <Label htmlFor="ai-evidence-account">Ledger account</Label>
                     <RecordLookupSelect
                       id="ai-evidence-account"
-                      className="flex h-10 w-full max-w-md border-input px-3"
+                      className="flex h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
                       value={accountId}
                       onValueChange={(nextValue) => {
                         setAccountId(nextValue);

@@ -13,6 +13,7 @@ export default defineConfig({
         "@/hooks/use-can",
         "@/lib/pos/catalogue-quote.functions",
         "@/lib/pos/registers.functions",
+        "@/lib/pos/cash-sale.functions",
       ].map((find) => ({ find, replacement: path.resolve(import.meta.dirname, "fixtures.ts") })),
       { find: "@", replacement: path.resolve(import.meta.dirname, "../../src") },
     ],

@@ -59,7 +59,7 @@ function ExpensesList() {
       description="Paid immediately from a bank/cash account — not supplier bills on AP. Distinct from employee claims."
       actions={
         <Button size="sm" asChild>
-          <Link to="/purchases/expenses/new">New expense</Link>
+          <Link to="/banking/spend-money">Spend money</Link>
         </Button>
       }
     >

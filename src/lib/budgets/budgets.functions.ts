@@ -622,7 +622,12 @@ export const saveBudgetDocument = createServerFn({ method: "POST" })
       expectedUpdatedAt: string;
       rows: Array<{ accountId: string; months: number[] }>;
     }) => {
-      const validated = validateBudgetDocumentInput({ ...input, notes: input.notes ?? null });
+      const validated = validateBudgetDocumentInput({
+        name: input.name,
+        notes: input.notes ?? null,
+        expectedUpdatedAt: input.expectedUpdatedAt,
+        rows: input.rows,
+      });
       return {
         companyId: companyIdOf(input),
         budgetId: assertUuid(input?.budgetId, "budget"),
@@ -785,7 +790,7 @@ export const importBudgetLinesCsv = createServerFn({ method: "POST" })
       BUDGET_MIGRATION,
     );
     const { error: auditError } = await context.supabase.rpc(
-      "record_app_audit_event" as never,
+      "record_audit_event" as never,
       {
         _company_id: data.companyId,
         _action: "budgets.csv_import",

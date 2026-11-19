@@ -25,10 +25,12 @@ const psql = [
 ];
 const sql = (input) => docker(psql, input);
 const read = (file) => readFileSync(path.join(root, file), "utf8");
-const migration = readdirSync(path.join(root, "supabase/migrations")).filter((file) =>
-  file.endsWith("_pos_register_session_foundation.sql"),
-);
-if (migration.length !== 1) throw Error("Expected exactly one POS register migration");
+const posMigrations = readdirSync(path.join(root, "supabase/migrations"))
+  .filter((file) => file.includes("_pos_"))
+  .sort();
+if (posMigrations.length < 2) {
+  throw Error(`Expected POS migrations; found ${posMigrations.length}: ${posMigrations.join(", ")}`);
+}
 const claims = `SET ROLE authenticated; SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001"}',false);`;
 const company = "20000000-0000-4000-8000-000000000001";
 const register = "50000000-0000-4000-8000-000000000001";
@@ -79,8 +81,11 @@ try {
   const audit = read("supabase/migrations/20261019200000_cross_cutting_settings_fx_demo.sql");
   const start = audit.indexOf("CREATE OR REPLACE FUNCTION public.record_audit_event(");
   sql(audit.slice(start, audit.indexOf("$$;", start) + 3));
-  sql(read(`supabase/migrations/${migration[0]}`));
+  for (const file of posMigrations) {
+    sql(read(`supabase/migrations/${file}`));
+  }
   sql(read("tests/integration/pos-register-sessions.sql"));
+  sql(read("tests/integration/pos-cash-sale.sql"));
   const identical = await race([
     "80000000-0000-4000-8000-000000000001",
     "80000000-0000-4000-8000-000000000001",
@@ -127,7 +132,7 @@ try {
     `SELECT public.test_assert((SELECT count(*)=0 FROM public.pos_register_sessions WHERE closed_at IS NULL),'concurrent close locks immutable history');`,
   );
   console.log(
-    "POS isolated PostgreSQL security, idempotency, audit rollback and three concurrency scenarios passed.",
+    `POS isolated PostgreSQL migrations (${posMigrations.join(", ")}) and integration suites passed.`,
   );
 } finally {
   try {

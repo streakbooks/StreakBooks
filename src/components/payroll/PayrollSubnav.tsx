@@ -1,44 +1,62 @@
 import { Link } from "@tanstack/react-router";
-import { cn } from "@/lib/utils";
+import {
+  GroupedModuleSubnav,
+  groupedModuleSectionClassName,
+} from "@/components/common/GroupedModuleSubnav";
+import { PAYROLL_GROUPS } from "@/lib/payroll/groups";
 
-const ITEMS = [
-  { label: "Overview", to: "/payroll" as const, key: "overview" as const },
-  { label: "Employees", to: "/payroll/employees" as const, key: "employees" as const },
+const PAYROLL_SECTIONS = [
+  { key: "overview", label: "Overview", group: "overview", to: "/payroll" as const },
+  { key: "employees", label: "Employees", group: "people", to: "/payroll/employees" as const },
   {
+    key: "salary-structures",
     label: "Salary structures",
+    group: "operations",
     to: "/payroll/salary-structures" as const,
-    key: "salary-structures" as const,
   },
-  { label: "Runs", to: "/payroll/runs" as const, key: "runs" as const },
-  { label: "Payslips", to: "/payroll/payslips" as const, key: "payslips" as const },
-  { label: "Payments", to: "/payroll/payments" as const, key: "payments" as const },
-  { label: "Reports", to: "/payroll/reports" as const, key: "reports" as const },
-  { label: "Settings", to: "/payroll/settings" as const, key: "settings" as const },
+  { key: "runs", label: "Runs", group: "operations", to: "/payroll/runs" as const },
+  { key: "payslips", label: "Payslips", group: "operations", to: "/payroll/payslips" as const },
+  { key: "payments", label: "Payments", group: "operations", to: "/payroll/payments" as const },
+  { key: "reports", label: "Reports", group: "admin", to: "/payroll/reports" as const },
+  { key: "settings", label: "Settings", group: "admin", to: "/payroll/settings" as const },
 ] as const;
 
-export type PayrollSubnavSection = (typeof ITEMS)[number]["key"];
+export type PayrollSubnavSection = (typeof PAYROLL_SECTIONS)[number]["key"];
 
+/**
+ * Compact Payroll navigation — grouped strip distinct from HR profiles.
+ * Routes and labels unchanged; presentation only.
+ */
 export function PayrollSubnav({ current }: { current: PayrollSubnavSection }) {
   return (
-    <nav aria-label="Payroll sections" className="mb-6 flex flex-wrap gap-2 border-b pb-3">
-      {ITEMS.map((item) => {
-        const active = current === item.key;
+    <GroupedModuleSubnav
+      label="Payroll"
+      groups={PAYROLL_GROUPS}
+      sections={PAYROLL_SECTIONS}
+      current={current}
+      overview={
+        current !== "overview" ? (
+          <Link
+            to="/payroll"
+            className="inline-flex h-8 items-center rounded-md border border-border px-2.5 text-[0.8125rem] font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-10 motion-reduce:transition-none"
+          >
+            Overview
+          </Link>
+        ) : null
+      }
+      renderSection={(section, active) => {
+        const item = PAYROLL_SECTIONS.find((entry) => entry.key === section.key);
+        if (!item) return null;
         return (
           <Link
-            key={item.to}
             to={item.to}
-            className={cn(
-              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-              active
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
+            className={groupedModuleSectionClassName(active)}
             aria-current={active ? "page" : undefined}
           >
             {item.label}
           </Link>
         );
-      })}
-    </nav>
+      }}
+    />
   );
 }

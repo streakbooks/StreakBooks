@@ -96,8 +96,8 @@ export function HrCompensationPage() {
       <ListWorkspace
         title="Compensation & Benefits"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Compensation & Benefits" }]}
-      >
-        <HrSubnav current="compensation" />
+      subnav={<HrSubnav current="compensation" />}
+    >
         <EmptyState title="No access" description="Missing permission: hr.employees.sensitive." />
       </ListWorkspace>
     );
@@ -125,8 +125,8 @@ export function HrCompensationPage() {
           Propose change
         </Button>
       }
+      subnav={<HrSubnav current="compensation" />}
     >
-      <HrSubnav current="compensation" />
       {dataQ.isPending ? (
         <LoadingState />
       ) : dataQ.isError ? (

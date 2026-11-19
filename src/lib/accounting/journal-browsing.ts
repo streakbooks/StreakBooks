@@ -72,7 +72,7 @@ export function parseJournalBrowseSearch(raw: Record<string, unknown>): JournalB
 
   const sort = raw["journalSort"];
   if (typeof sort === "string" && SORTS.has(sort)) {
-    result.journalSort = sort as NonNullable<JournalBrowseSearch["journalSort"]>;
+    result.journalSort = sort as "number" | "date" | "source" | "amount";
     result.journalDir = raw["journalDir"] === "desc" ? "desc" : "asc";
   }
   return result;

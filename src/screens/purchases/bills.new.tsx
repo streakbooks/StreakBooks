@@ -80,6 +80,7 @@ import {
 import { cleanupBlankPurchaseLines, incompletePurchaseLines } from "@/lib/purchases/blank-lines";
 import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { AccountLookup } from "@/components/lookup";
 import {
   DocumentRecordPanel,
@@ -87,6 +88,8 @@ import {
 } from "@/components/documents/DocumentRecordPanel";
 import { PurchasesDocumentLines } from "@/components/purchases/PurchasesDocumentLines";
 import { emptyPurchaseLine, type PurchaseLineFormState } from "@/lib/purchases/line-form-state";
+import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
+import type { LineColumnKey } from "@/components/purchases/PurchasesDocumentLines";
 import { BillWorkspaceLayout } from "@/components/purchases/BillWorkspaceLayout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -350,7 +353,12 @@ export function NewBill({
     postal: "",
     country: "",
   });
-  const [lines, setLines] = useState<PurchaseLineFormState[]>([emptyPurchaseLine()]);
+  const [lines, setLines] = useState<PurchaseLineFormState[]>(() =>
+    createEmptyDocumentLines(emptyPurchaseLine),
+  );
+  const [lineVisibleColumns, setLineVisibleColumns] = useState<LineColumnKey[]>(
+    () => DEFAULT_BILL_WORKSPACE_PREFS.visibleColumns as LineColumnKey[],
+  );
 
   useEffect(() => {
     if (!isTemplate || !seed) return;
@@ -715,6 +723,9 @@ export function NewBill({
     setSidebarWidth(prefsQ.data.sidebarWidthPx);
     setSidebarTab(prefsQ.data.sidebarTab);
     setViewMode(prefsQ.data.viewMode);
+    if (prefsQ.data.visibleColumns?.length) {
+      setLineVisibleColumns(prefsQ.data.visibleColumns as LineColumnKey[]);
+    }
     setPrefsHydrated(true);
   }, [prefsQ.data, prefsHydrated]);
 
@@ -725,6 +736,7 @@ export function NewBill({
       if (patch.sidebarWidthPx) setSidebarWidth(patch.sidebarWidthPx);
       if (patch.sidebarTab) setSidebarTab(patch.sidebarTab);
       if (patch.viewMode) setViewMode(patch.viewMode);
+      if (patch.visibleColumns) setLineVisibleColumns(patch.visibleColumns as LineColumnKey[]);
       try {
         await persistPrefs({ data: { companyId, prefs: patch } });
       } catch {
@@ -900,7 +912,7 @@ export function NewBill({
       );
     }
     const cleaned = cleanupBlankPurchaseLines(lines);
-    setLines(cleaned.length ? cleaned : [emptyPurchaseLine()]);
+    setLines(cleaned.length ? cleaned : createEmptyDocumentLines(emptyPurchaseLine));
     if (forAuthorise) {
       const bad = incompletePurchaseLines(cleaned);
       if (bad.length) {
@@ -1186,7 +1198,7 @@ export function NewBill({
     setTaxCalculation("exclusive");
     setAcknowledgeDuplicate(false);
     setAddr({ line1: "", line2: "", city: "", region: "", postal: "", country: "" });
-    setLines([emptyPurchaseLine()]);
+    setLines(createEmptyDocumentLines(emptyPurchaseLine));
     setPendingAttachments([]);
     setInternalNoteDraft("");
     setFormError(null);
@@ -1411,7 +1423,9 @@ export function NewBill({
   const headerBar: ReactNode = (
     <div className="flex flex-wrap items-center gap-2">
       <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-semibold tracking-tight">New bill</h1>
+        <h1 className="text-xl font-semibold tracking-tight">
+          {isTemplate ? "Recurring bill template" : "New bill"}
+        </h1>
         <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
           {isTemplate
             ? `Template · Status: ${templateId ? (scheduleActive ? "Active schedule" : "Saved template") : "Unsaved"} · Not posted · View: `
@@ -1455,6 +1469,14 @@ export function NewBill({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <Button size="sm" variant="ghost" onClick={handleCancel}>
+        Cancel
+      </Button>
+    </div>
+  );
+
+  const stickySaveActions: ReactNode = (
+    <>
       <Button
         size="sm"
         variant="outline"
@@ -1511,10 +1533,7 @@ export function NewBill({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <Button size="sm" variant="ghost" onClick={handleCancel}>
-        Cancel
-      </Button>
-    </div>
+    </>
   );
 
   return (
@@ -1532,6 +1551,7 @@ export function NewBill({
           void savePrefsPatch({ sidebarWidthPx: w });
         }}
         onSidebarTabChange={(t) => void savePrefsPatch({ sidebarTab: t })}
+        stickyActions={stickySaveActions}
         attachments={(attachmentsQ.data ?? []).map(
           (a: { id: string; file_name: string; content_type: string | null }) => ({
             id: a.id,
@@ -1841,7 +1861,7 @@ export function NewBill({
         ) : null}
 
         <div className="grid gap-3">
-          <div className="space-y-1.5">
+          <FormControlShell width="contact">
             <Label>Supplier</Label>
             <EntityCombobox
               voiceField={{
@@ -1873,7 +1893,7 @@ export function NewBill({
             >
               Open full supplier details form…
             </button>
-          </div>
+          </FormControlShell>
 
           <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
             <CollapsibleTrigger asChild>
@@ -1921,8 +1941,8 @@ export function NewBill({
             </CollapsibleContent>
           </Collapsible>
 
-          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            <div className="space-y-2">
+          <FormGrid columns={4}>
+            <FormControlShell width="date">
               <Label>Bill date</Label>
               <Input
                 type="date"
@@ -1944,8 +1964,8 @@ export function NewBill({
                   applyDueFromTerms(e.target.value, paymentTermId);
                 }}
               />
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell>
               <Label>Payment terms</Label>
               <EntityCombobox
                 voiceField={{
@@ -1974,8 +1994,8 @@ export function NewBill({
                 onAddNew={() => setNewTermOpen(true)}
                 addNewLabel="+ Add new payment terms…"
               />
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell width="date">
               <Label>
                 Due date
                 {dueDateManualOverride ? (
@@ -2009,8 +2029,8 @@ export function NewBill({
                   Return to automatic calculation
                 </Button>
               ) : null}
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell>
               <Label>Supplier invoice #</Label>
               <Input
                 voiceField={{
@@ -2033,8 +2053,8 @@ export function NewBill({
                 }}
                 placeholder="Supplier reference"
               />
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell className="sm:col-span-2">
               <Label>Memo / internal reference</Label>
               <Input
                 voiceField={{
@@ -2052,8 +2072,8 @@ export function NewBill({
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
               />
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell width="currency">
               <Label>Currency</Label>
               <RecordLookupSelect value={currencyCode} onValueChange={setCurrencyCode}>
                 <SelectTrigger>
@@ -2072,8 +2092,8 @@ export function NewBill({
                   Rate {fxRate} ({fxSource}) · {currencyCode} → {baseCurrency}
                 </p>
               ) : null}
-            </div>
-            <div className="space-y-2">
+            </FormControlShell>
+            <FormControlShell>
               <Label>Tax calculation</Label>
               <Select
                 value={taxCalculation}
@@ -2088,8 +2108,8 @@ export function NewBill({
                   <SelectItem value="none">No tax</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </div>
+            </FormControlShell>
+          </FormGrid>
 
           <PurchasesDocumentLines
             lines={lines}
@@ -2117,6 +2137,15 @@ export function NewBill({
             showProject={showProject}
             showBillable={showBillable}
             showDiscount={viewMode !== "basic"}
+            visibleColumns={
+              viewMode === "basic"
+                ? lineVisibleColumns.filter((column) => column !== "discount")
+                : lineVisibleColumns
+            }
+            onVisibleColumnsChange={(next) => {
+              setLineVisibleColumns(next);
+              void savePrefsPatch({ visibleColumns: next });
+            }}
             baseCurrencyEquivalent={
               currencyCode !== baseCurrency && baseEquivalent
                 ? `${baseEquivalent} ${baseCurrency}`
@@ -2360,7 +2389,7 @@ export function NewBill({
           </Tabs>
 
           <div className="flex flex-wrap gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
-            Keyboard: Tab between fields · Save actions also in the header.
+            Keyboard: Tab between fields · Save actions stay visible in the sticky footer.
           </div>
         </div>
       </BillWorkspaceLayout>

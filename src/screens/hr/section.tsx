@@ -26,12 +26,14 @@ import { HrTransfersPage } from "@/screens/hr/transfers";
 import { HrOffboardingPage } from "@/screens/hr/offboarding";
 import { HrReportsPage } from "@/screens/hr/reports";
 import { HrAutomationsPage } from "@/screens/hr/automations";
+import { HrWorkforceInsightsPage } from "@/screens/hr/workforce-insights";
 
 /**
  * Dispatches HR section routes. Wired batches render real screens.
  * Later batches stay honest and fail-closed — no fake KPIs or dummy actions.
  */
 export function HrSectionPage({ sectionKey }: { sectionKey: HrSectionKey }) {
+  if (sectionKey === "workforce-insights") return <HrWorkforceInsightsPage />;
   if (sectionKey === "employees") return <HrEmployeesPage />;
   if (sectionKey === "organization") return <HrOrganizationPage />;
   if (sectionKey === "recruitment") return <HrRecruitmentPage />;
@@ -63,8 +65,8 @@ export function HrSectionPage({ sectionKey }: { sectionKey: HrSectionKey }) {
       title={section.label}
       description={`Scheduled for ${section.batch}. Navigation and permissions are live; domain workflows remain fail-closed until that batch lands.`}
       breadcrumbs={[{ label: "HR", to: "/hr" }, { label: section.label }]}
+      subnav={<HrSubnav current={sectionKey} />}
     >
-      <HrSubnav current={sectionKey} />
       <EmptyState
         title={`${section.label} arrives in ${section.batch}`}
         description="This surface is registered for deep links and access control. Backend capabilities will ship in the listed batch with real authorization and persistence."

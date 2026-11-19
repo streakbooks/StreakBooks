@@ -133,9 +133,9 @@ function ExpenseDetail() {
               hint: "Return to the expense list",
             },
             {
-              label: "New expense",
-              to: "/purchases/expenses/new",
-              hint: "Record another direct expense",
+              label: "Spend money",
+              to: "/banking/spend-money",
+              hint: "Record another Banking spend",
             },
           ]}
           footer="Draft expenses have no ledger impact until posted."

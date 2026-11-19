@@ -26,7 +26,10 @@ import { DEFAULT_CURRENCY_DECIMALS, fromMinorUnits } from "@/lib/accounting/mone
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
 import { AccountLookup, ContactLookup, LookupSelect } from "@/components/lookup";
 import { AccountCreateForm, ContactCreateForm } from "@/components/lookup/create-forms";
 import {
@@ -35,7 +38,11 @@ import {
 } from "@/components/documents/DocumentRecordPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
+import { Trash2 } from "lucide-react";
 
 let lineKeySeed = 0;
 const newKey = () => `l${++lineKeySeed}`;
@@ -64,7 +71,7 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
   const [contactId, setContactId] = useState("");
   const [creditDate, setCreditDate] = useState(today);
   const [memo, setMemo] = useState("");
-  const [lines, setLines] = useState<CreditFormLine[]>([blankLine()]);
+  const [lines, setLines] = useState<CreditFormLine[]>(() => createEmptyDocumentLines(blankLine));
   const [billId, setBillId] = useState(initialBillId ?? "");
   const [fxRate, setFxRate] = useState("");
   const [billCurrency, setBillCurrency] = useState<string | null>(null);
@@ -259,13 +266,17 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
     mutation.isPending || anyInvalid || incomplete || fxInvalid || !contactId || totalMinor <= 0;
 
   return (
-    <ListWorkspace
+    <TransactionWorkspace
       title="New credit note"
       description="Reduce AP and reverse expense/tax on authorise. Pick a bill to copy its lines and apply the credit to it."
-    >
-      <div className="grid max-w-3xl gap-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
+      breadcrumbs={[
+        { label: "Purchases", to: "/purchases" },
+        { label: "Credit notes", to: "/purchases/credit-notes" },
+        { label: "New" },
+      ]}
+      details={
+        <FormGrid columns={4}>
+          <FormControlShell width="contact">
             <Label>Supplier</Label>
             <ContactLookup
               ariaLabel="Supplier"
@@ -289,155 +300,188 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
                 setBillCurrency(null);
               }}
             />
-          </div>
-          <div className="space-y-2">
+          </FormControlShell>
+          <FormControlShell width="date">
             <Label>Date</Label>
             <Input type="date" value={creditDate} onChange={(e) => setCreditDate(e.target.value)} />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Credit from a bill (optional)</Label>
-          <LookupSelect
-            ariaLabel="Credit from bill"
-            disabled={!contactId}
-            allowClear={false}
-            value={billId || "__none__"}
-            onChange={(v) => void chooseBill(v)}
-            placeholder={contactId ? "Not linked to a bill" : "Choose a supplier first"}
-            searchPlaceholder="Search bill reference or date"
-            options={[
-              { id: "__none__", label: "Not linked to a bill" },
-              ...openBills.map((b) => ({
-                id: b.id,
-                label: b.display_reference ?? b.bill_number ?? b.id.slice(0, 8),
-                description: `${b.bill_date} — owes ${fromMinorUnits(b.balance_due_minor, b.currency_code)}`,
-                meta: b.currency_code,
-                keywords: `${b.display_reference ?? ""} ${b.bill_number ?? ""} ${b.bill_date}`,
-              })),
-            ]}
-          />
-          {chosenBill ? (
-            <p className="text-xs text-muted-foreground">
-              On authorise, {fromMinorUnits(allocateMinor, currency)} {currency} is applied to this
-              bill (it still owes{" "}
-              {fromMinorUnits(
-                billOutstandingMinor({
-                  total_minor: chosenBill.total_minor,
-                  amount_paid_minor: chosenBill.amount_paid_minor,
-                  amount_credited_minor: chosenBill.amount_credited_minor,
-                }),
-                currency,
-              )}
-              ).
-            </p>
-          ) : null}
-        </div>
-
-        <div className="space-y-2">
-          <Label>Lines ({currency})</Label>
-          {lines.map((l, i) => (
-            <div key={l.key} className="grid gap-2 sm:grid-cols-[1fr_14rem_7rem_7rem_auto]">
-              <Input
-                aria-label={`Line ${i + 1} description`}
-                placeholder="Description"
-                value={l.description}
-                onChange={(e) => update(l.key, { description: e.target.value })}
-              />
-              <AccountLookup
-                ariaLabel={`Line ${i + 1} account`}
-                accounts={accounts}
-                value={l.accountId}
-                onChange={(v) => update(l.key, { accountId: v })}
-                companyId={companyId}
-                placeholder="Account"
-                allowClear={false}
-                canCreate={can("accounts.manage")}
-                createTitle="New account"
-                renderCreate={
-                  can("accounts.manage")
-                    ? (ctx) => (
-                        <AccountCreateForm
-                          companyId={companyId}
-                          currency={currency}
-                          initialKind="expense"
-                          ctx={ctx}
-                        />
-                      )
-                    : undefined
-                }
-              />
-              <Input
-                aria-label={`Line ${i + 1} net`}
-                value={l.net}
-                inputMode="decimal"
-                aria-invalid={tryParseMinor(l.net || "0", currency) === null}
-                onChange={(e) => update(l.key, { net: e.target.value })}
-              />
-              <Input
-                aria-label={`Line ${i + 1} tax`}
-                value={l.tax}
-                inputMode="decimal"
-                aria-invalid={tryParseMinor(l.tax || "0", currency) === null}
-                onChange={(e) => update(l.key, { tax: e.target.value })}
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                disabled={lines.length === 1}
-                onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
-              >
-                Remove
-              </Button>
-            </div>
-          ))}
-          <div className="flex items-center justify-between">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setLines((ls) => [...ls, blankLine()])}
-            >
-              Add line
-            </Button>
-            <span className="text-sm">
-              Credit total{" "}
-              <strong className="tabular-nums">
-                {fromMinorUnits(totalMinor, currency)} {currency}
-              </strong>
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground">Columns: description, account, net, tax.</p>
-        </div>
-
-        {foreign ? (
-          <div className="space-y-2">
-            <Label>
-              Exchange rate ({currency} to {baseCurrency})
-            </Label>
-            <Input
-              value={fxRate}
-              inputMode="decimal"
-              placeholder="Leave blank to use the stored rate"
-              aria-invalid={fxInvalid}
-              onChange={(e) => setFxRate(e.target.value)}
+          </FormControlShell>
+          <FormControlShell width="contact" className="sm:col-span-2">
+            <Label>Credit from a bill (optional)</Label>
+            <LookupSelect
+              ariaLabel="Credit from bill"
+              disabled={!contactId}
+              allowClear={false}
+              value={billId || "__none__"}
+              onChange={(v) => void chooseBill(v)}
+              placeholder={contactId ? "Not linked to a bill" : "Choose a supplier first"}
+              searchPlaceholder="Search bill reference or date"
+              options={[
+                { id: "__none__", label: "Not linked to a bill" },
+                ...openBills.map((b) => ({
+                  id: b.id,
+                  label: b.display_reference ?? b.bill_number ?? b.id.slice(0, 8),
+                  description: `${b.bill_date} — owes ${fromMinorUnits(b.balance_due_minor, b.currency_code)}`,
+                  meta: b.currency_code,
+                  keywords: `${b.display_reference ?? ""} ${b.bill_number ?? ""} ${b.bill_date}`,
+                })),
+              ]}
             />
-          </div>
-        ) : null}
-
-        <div className="space-y-2">
-          <Label>Memo</Label>
-          <Input value={memo} maxLength={500} onChange={(e) => setMemo(e.target.value)} />
-        </div>
-
+            {chosenBill ? (
+              <p className="text-xs text-muted-foreground">
+                On authorise, {fromMinorUnits(allocateMinor, currency)} {currency} is applied to this
+                bill (it still owes{" "}
+                {fromMinorUnits(
+                  billOutstandingMinor({
+                    total_minor: chosenBill.total_minor,
+                    amount_paid_minor: chosenBill.amount_paid_minor,
+                    amount_credited_minor: chosenBill.amount_credited_minor,
+                  }),
+                  currency,
+                )}
+                ).
+              </p>
+            ) : null}
+          </FormControlShell>
+          {foreign ? (
+            <FormControlShell width="money">
+              <Label>
+                Exchange rate ({currency} to {baseCurrency})
+              </Label>
+              <Input
+                value={fxRate}
+                inputMode="decimal"
+                placeholder="Leave blank to use the stored rate"
+                aria-invalid={fxInvalid}
+                onChange={(e) => setFxRate(e.target.value)}
+              />
+            </FormControlShell>
+          ) : null}
+          <FormControlShell width="full" className="sm:col-span-2 xl:col-span-4">
+            <Label>Memo</Label>
+            <Textarea
+              value={memo}
+              maxLength={500}
+              rows={1}
+              className="lb-spreadsheet-wrap min-h-8"
+              onChange={(e) => setMemo(e.target.value)}
+            />
+          </FormControlShell>
+        </FormGrid>
+      }
+      lines={
+        <EditableLineItemGrid
+          aria-label="Credit note lines"
+          columns={[
+            {
+              id: "description",
+              header: "Description",
+              widthPx: 280,
+              minWidthPx: 200,
+              fluid: true,
+            },
+            { id: "account", header: "Account", widthPx: 200, minWidthPx: 140 },
+            { id: "net", header: "Net", align: "right", widthPx: 110, minWidthPx: 88 },
+            { id: "tax", header: "Tax", align: "right", widthPx: 110, minWidthPx: 88 },
+            { id: "actions", header: "", widthPx: 48, minWidthPx: 40, resizable: false },
+          ]}
+          onAddRow={() => setLines((ls) => [...ls, blankLine()])}
+          addRowLabel="Add line"
+        >
+          {lines.map((l, i) => (
+            <TableRow key={l.key}>
+              <TableCell className="p-0 align-top">
+                <Textarea
+                  aria-label={`Line ${i + 1} description`}
+                  placeholder="Description"
+                  value={l.description}
+                  rows={1}
+                  className="lb-spreadsheet-wrap min-h-8"
+                  onChange={(e) => update(l.key, { description: e.target.value })}
+                />
+              </TableCell>
+              <TableCell className="p-0 align-middle">
+                <AccountLookup
+                  ariaLabel={`Line ${i + 1} account`}
+                  accounts={accounts}
+                  value={l.accountId}
+                  onChange={(v) => update(l.key, { accountId: v })}
+                  companyId={companyId}
+                  placeholder="Account"
+                  allowClear={false}
+                  canCreate={can("accounts.manage")}
+                  createTitle="New account"
+                  renderCreate={
+                    can("accounts.manage")
+                      ? (ctx) => (
+                          <AccountCreateForm
+                            companyId={companyId}
+                            currency={currency}
+                            initialKind="expense"
+                            ctx={ctx}
+                          />
+                        )
+                      : undefined
+                  }
+                />
+              </TableCell>
+              <TableCell className="p-0 align-middle">
+                <Input
+                  aria-label={`Line ${i + 1} net`}
+                  value={l.net}
+                  inputMode="decimal"
+                  className="h-8 rounded-none border-0 bg-transparent text-right shadow-none"
+                  aria-invalid={tryParseMinor(l.net || "0", currency) === null}
+                  onChange={(e) => update(l.key, { net: e.target.value })}
+                />
+              </TableCell>
+              <TableCell className="p-0 align-middle">
+                <Input
+                  aria-label={`Line ${i + 1} tax`}
+                  value={l.tax}
+                  inputMode="decimal"
+                  className="h-8 rounded-none border-0 bg-transparent text-right shadow-none"
+                  aria-invalid={tryParseMinor(l.tax || "0", currency) === null}
+                  onChange={(e) => update(l.key, { tax: e.target.value })}
+                />
+              </TableCell>
+              <TableCell className="p-0 align-middle">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  disabled={lines.length === 1}
+                  aria-label={`Remove line ${i + 1}`}
+                  onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </EditableLineItemGrid>
+      }
+      totals={
+        <TotalsSummary
+          lines={[
+            {
+              id: "total",
+              label: "Credit total",
+              value: `${fromMinorUnits(totalMinor, currency)} ${currency}`,
+              emphasis: "total",
+            },
+          ]}
+        />
+      }
+      support={
         <DocumentRecordPanel
           ref={recordRef}
           entityType="purchase_credit_note"
           entityId={null}
           audience="supplier"
         />
-        <div className="flex gap-2">
+      }
+      stickyActions={
+        <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
             variant="outline"
@@ -458,7 +502,7 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
             <Link to="/purchases/credit-notes">Cancel</Link>
           </Button>
         </div>
-      </div>
-    </ListWorkspace>
+      }
+    />
   );
 }

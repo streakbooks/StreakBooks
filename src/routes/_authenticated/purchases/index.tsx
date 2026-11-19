@@ -124,7 +124,7 @@ function PurchasesOverview() {
           </Button>
 
           <Button variant="outline" size="sm" asChild>
-            <Link to="/purchases/expenses/new">New expense</Link>
+            <Link to="/banking/spend-money">Spend money</Link>
           </Button>
           <Button size="sm" asChild>
             <Link to="/purchases/bills/new">New bill</Link>

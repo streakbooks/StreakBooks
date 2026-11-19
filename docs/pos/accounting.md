@@ -1,6 +1,6 @@
 # Accounting posting specification
 
-Batch 1 posts nothing. Existing owner is `postJournal` / database `post_journal`; source/period/FX rules stay there.
+Batch 1 posts nothing. The local cash-sale batch adds `pos_sale` and `pos_refund` journal source types and posts non-stock catalogue cash sales through existing `post_journal` (debit register cash asset, credit income and output tax). Cash in/out on a session adjusts `expected_cash_minor` only — no journal until a future variance/expense batch. Existing owner is `postJournal` / database `post_journal`; period/FX rules stay there.
 
 | Event                  | Debit                                    | Credit                     | Required evidence                                                   |
 | ---------------------- | ---------------------------------------- | -------------------------- | ------------------------------------------------------------------- |

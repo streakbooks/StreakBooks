@@ -224,8 +224,8 @@ export function CrmPipelinesPage() {
       title="Sales Pipelines"
       description="Configure pipelines and stage probabilities. Opportunity moves stay on the Opportunities board."
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "Pipelines" }]}
+      subnav={<CrmSubnav current="pipelines" />}
     >
-      <CrmSubnav current="pipelines" />
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"

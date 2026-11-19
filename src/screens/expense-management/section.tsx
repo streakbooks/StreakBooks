@@ -95,8 +95,10 @@ function SectionSuspense({ children }: { children: ReactNode }) {
 
 export function ExpenseManagementSectionPage({
   sectionKey,
+  forceCreate = false,
 }: {
   sectionKey: ExpenseManagementSectionKey;
+  forceCreate?: boolean;
 }) {
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
@@ -112,7 +114,7 @@ export function ExpenseManagementSectionPage({
   if (sectionKey === "my-expenses") {
     return (
       <SectionSuspense>
-        <ExpenseManagementClaimsPage mode="my-expenses" />
+        <ExpenseManagementClaimsPage mode="my-expenses" forceCreate={forceCreate} />
       </SectionSuspense>
     );
   }

@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { PersistedSwitch } from "@/components/common/PersistedSwitch";
 import {
   Select,
   SelectContent,
@@ -49,35 +49,45 @@ export function MessagingNotificationPreferences({ companyId }: { companyId: str
     if (query.data) setDraft(query.data);
   }, [query.data]);
 
+  const buildPayload = (source: Prefs) => {
+    const payload: {
+      companyId: string;
+      emailEnabled: boolean;
+      pushEnabled: boolean;
+      mentionOnly: boolean;
+      digestFrequency: "off" | "daily" | "weekly";
+      quietHoursStart?: string | null;
+      quietHoursEnd?: string | null;
+    } = {
+      companyId: companyId!,
+      emailEnabled: source.email_enabled,
+      pushEnabled: source.push_enabled,
+      mentionOnly: source.mention_only,
+      digestFrequency:
+        source.digest_frequency === "daily" || source.digest_frequency === "weekly"
+          ? source.digest_frequency
+          : "off",
+    };
+    payload.quietHoursStart = source.quiet_hours_start ?? null;
+    payload.quietHoursEnd = source.quiet_hours_end ?? null;
+    return payload;
+  };
+
   const mutation = useMutation({
-    mutationFn: () => {
-      const payload: {
-        companyId: string;
-        emailEnabled: boolean;
-        pushEnabled: boolean;
-        mentionOnly: boolean;
-        digestFrequency: "off" | "daily" | "weekly";
-        quietHoursStart?: string | null;
-        quietHoursEnd?: string | null;
-      } = {
-        companyId: companyId!,
-        emailEnabled: draft?.email_enabled ?? true,
-        pushEnabled: draft?.push_enabled ?? false,
-        mentionOnly: draft?.mention_only ?? false,
-        digestFrequency:
-          draft?.digest_frequency === "daily" || draft?.digest_frequency === "weekly"
-            ? draft.digest_frequency
-            : "off",
-      };
-      if (draft?.quiet_hours_start != null) payload.quietHoursStart = draft.quiet_hours_start;
-      else payload.quietHoursStart = null;
-      if (draft?.quiet_hours_end != null) payload.quietHoursEnd = draft.quiet_hours_end;
-      else payload.quietHoursEnd = null;
-      return savePrefs({ data: payload });
-    },
+    mutationFn: () => savePrefs({ data: buildPayload(draft!) }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ["messaging-notification-prefs", companyId] });
       notify.success("Notification preferences saved");
+    },
+    onError: (error) => notify.error(error, "Could not save preferences"),
+  });
+
+  const persistToggle = useMutation({
+    mutationFn: (next: Prefs) => savePrefs({ data: buildPayload(next) }),
+    onSuccess: (_result, next) => {
+      setDraft(next);
+      void client.invalidateQueries({ queryKey: ["messaging-notification-prefs", companyId] });
+      notify.success("Notification preference saved");
     },
     onError: (error) => notify.error(error, "Could not save preferences"),
   });
@@ -103,19 +113,27 @@ export function MessagingNotificationPreferences({ companyId }: { companyId: str
       </div>
       <div className="flex items-center justify-between gap-4">
         <Label htmlFor="msg-email">Email alerts</Label>
-        <Switch
+        <PersistedSwitch
           id="msg-email"
           checked={draft.email_enabled}
-          onCheckedChange={(value) => setDraft({ ...draft, email_enabled: value })}
+          aria-label="Email alerts"
+          disabled={mutation.isPending || persistToggle.isPending}
+          onPersist={async (value) => {
+            await persistToggle.mutateAsync({ ...draft, email_enabled: value });
+          }}
         />
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-4">
           <Label htmlFor="msg-push">Browser / push (when supported)</Label>
-          <Switch
+          <PersistedSwitch
             id="msg-push"
             checked={draft.push_enabled}
-            onCheckedChange={(value) => setDraft({ ...draft, push_enabled: value })}
+            aria-label="Browser push notifications"
+            disabled={mutation.isPending || persistToggle.isPending}
+            onPersist={async (value) => {
+              await persistToggle.mutateAsync({ ...draft, push_enabled: value });
+            }}
           />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -147,10 +165,14 @@ export function MessagingNotificationPreferences({ companyId }: { companyId: str
       </div>
       <div className="flex items-center justify-between gap-4">
         <Label htmlFor="msg-mention">Mentions only</Label>
-        <Switch
+        <PersistedSwitch
           id="msg-mention"
           checked={draft.mention_only}
-          onCheckedChange={(value) => setDraft({ ...draft, mention_only: value })}
+          aria-label="Mentions only"
+          disabled={mutation.isPending || persistToggle.isPending}
+          onPersist={async (value) => {
+            await persistToggle.mutateAsync({ ...draft, mention_only: value });
+          }}
         />
       </div>
       <div className="space-y-2">

@@ -46,6 +46,9 @@ const workspace = {
   canManage: true,
   canOpen: true,
   canClose: true,
+  canSell: true,
+  canAdjustCash: true,
+  canRefund: true,
 };
 beforeEach(() => {
   vi.resetAllMocks();

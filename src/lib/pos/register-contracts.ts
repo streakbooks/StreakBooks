@@ -14,6 +14,7 @@ const session = z.object({
   opened_by: id.nullable(),
   opened_at: z.string(),
   opening_float_minor: minor,
+  expected_cash_minor: minor,
   currency_code: z.string().regex(/^[A-Z]{3}$/),
   closed_at: z.string().nullable(),
   closing_count_minor: minor.nullable(),
@@ -47,6 +48,9 @@ export const posWorkspaceSchema = z.object({
   canManage: z.boolean(),
   canOpen: z.boolean(),
   canClose: z.boolean(),
+  canSell: z.boolean(),
+  canAdjustCash: z.boolean(),
+  canRefund: z.boolean(),
 });
 export type PosWorkspace = z.infer<typeof posWorkspaceSchema>;
 export type PosSession = z.infer<typeof session>;

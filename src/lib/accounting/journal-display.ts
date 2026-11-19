@@ -21,6 +21,8 @@ export const JOURNAL_SOURCE_LABELS: Record<JournalSourceType, string> = {
   depreciation: "Depreciation",
   asset_disposal: "Asset disposal",
   payroll: "Payroll",
+  pos_sale: "POS cash sale",
+  pos_refund: "POS cash refund",
 };
 
 /** A future/legacy source remains visible rather than silently disappearing. */

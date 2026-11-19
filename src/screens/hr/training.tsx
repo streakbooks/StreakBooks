@@ -123,8 +123,8 @@ export function HrTrainingPage() {
       <ListWorkspace
         title="Training & Development"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Training & Development" }]}
-      >
-        <HrSubnav current="training" />
+      subnav={<HrSubnav current="training" />}
+    >
         <EmptyState title="No access" description="You need hr.view." />
       </ListWorkspace>
     );
@@ -166,8 +166,8 @@ export function HrTrainingPage() {
           </div>
         ) : undefined
       }
+      subnav={<HrSubnav current="training" />}
     >
-      <HrSubnav current="training" />
       {dataQ.isPending ? (
         <LoadingState />
       ) : dataQ.isError ? (

@@ -10,9 +10,9 @@ Use existing companies, contacts, products, tax settings, accounts and dimension
 
 The `/pos` review surface uses `ListWorkspace` and a registered in-progress sidebar module with an explicit partial-implementation description. React Query keys include company and cart; the cart is keyed by active company and stores no localStorage data. No stale totals show during recalculation/errors. Refresh explicitly requests current prices. No custom design copies a competitor.
 
-## ADR-003: atomic online cash sale (proposed, not implemented)
+## ADR-003: atomic online cash sale (implemented locally; migration not live)
 
-A single authenticated database command locks the active session, validates cashier/location, pricing/tax versions, period and account mappings, creates sale/lines/payment, invokes existing posting, links source and commits. Unique company/device operation IDs return the same persisted result for identical retries; changed payload under same key is rejected. Roll back the whole sale on posting failure. Do not post both a sales invoice and direct POS revenue. Inventory work joins the transaction only after real valuation exists.
+A single authenticated database command locks the active session, validates cashier/location, reprices catalogue lines, creates sale/lines/payment, updates expected drawer cash, invokes `post_journal` with `pos_sale` and commits. Unique operation IDs return the same persisted result for identical retries; changed payload under the same key is rejected. Application wiring lives in `src/lib/pos/cash-sale*` and `/pos` checkout; SQL is in `supabase/migrations/20261118140000_pos_cash_sale_expected_cash.sql` and is not applied to production until separately authorized. Inventory/COGS remain out of scope.
 
 ## ADR-004: external effects (proposed)
 

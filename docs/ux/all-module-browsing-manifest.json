@@ -6,7 +6,9 @@
     "sourceBranch": "integration/all-pending-20261118",
     "routeInventoryCommit": "9263b0f6c0706727a9c67cd616979b16e90d291c",
     "navigationSource": "src/lib/nav.ts",
-    "routeRoot": "src/routes/_authenticated/"
+    "routeRoot": "src/routes/_authenticated/",
+    "syncedAt": "2026-11-18",
+    "note": "Inventory sync only. fullyVerified remains false until DoD evidence exists."
   },
   "invariant": "Every top-level sidebar item and every authenticated route file must appear exactly once in this manifest. New ones require an explicit coverage entry. Inventory inclusion is not implementation verification.",
   "counts": {
@@ -68,7 +70,8 @@
         "Verify authorization and KPI links, reporting and creation workflows with real data",
         "Verify personalized widgets, responsive layout, accessibility, performance and consistency",
         "Run full TypeScript, Vitest, build and authenticated browser suites"
-      ]
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "Banking",
@@ -80,12 +83,16 @@
         "banking/index.tsx",
         "banking/journal.$journalId.tsx",
         "banking/money-documents.tsx",
+        "banking/money-documents.new.tsx",
+        "banking/receive-money.tsx",
         "banking/reconcile.tsx",
         "banking/reconciliation-report.$sessionId.tsx",
         "banking/route.tsx",
         "banking/rules.tsx",
+        "banking/spend-money.tsx",
         "banking/transactions.tsx",
-        "banking/transfers.tsx"
+        "banking/transfers.index.tsx",
+        "banking/transfers.new.tsx"
       ],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
@@ -156,14 +163,22 @@
         "sales/receipts.$receiptId.tsx",
         "sales/receipts.index.tsx",
         "sales/receipts.new.tsx",
-        "sales/recurring.tsx",
+        "sales/recurring.index.tsx",
+        "sales/recurring.new.tsx",
+        "sales/recurring.$id.edit.tsx",
         "sales/reminders.tsx",
         "sales/route.tsx",
         "sales/settings.tsx",
         "sales/statements.tsx"
       ],
       "browsingImplementation": "partial_code_not_runtime_verified",
-      "fullyVerified": false
+      "fullyVerified": false,
+      "remaining": [
+        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+        "Run authenticated browser, unit and coverage acceptance suites"
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "Purchases",
@@ -200,7 +215,63 @@
         "purchases/suppliers.tsx"
       ],
       "browsingImplementation": "partial_code_not_runtime_verified",
-      "fullyVerified": false
+      "fullyVerified": false,
+      "remaining": [
+        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+        "Run authenticated browser, unit and coverage acceptance suites"
+      ],
+      "tests": "NOT RUN"
+    },
+    {
+      "label": "Expenses",
+      "href": "/expense-management",
+      "routeFiles": [
+        "expense-management/$section.tsx",
+        "expense-management/claims.$claimId.tsx",
+        "expense-management/index.tsx"
+      ],
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "remaining": [
+        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+        "Run authenticated browser, unit and coverage acceptance suites"
+      ],
+      "tests": "NOT RUN"
+    },
+    {
+      "label": "CRM",
+      "href": "/crm",
+      "routeFiles": [
+        "crm/$section.tsx",
+        "crm/index.tsx",
+        "crm/leads.$leadId.tsx"
+      ],
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "remaining": [
+        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+        "Run authenticated browser, unit and coverage acceptance suites"
+      ],
+      "tests": "NOT RUN"
+    },
+    {
+      "label": "Property Management",
+      "href": "/property-management",
+      "routeFiles": [
+        "property-management/$section.tsx",
+        "property-management/index.tsx"
+      ],
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "remaining": [
+        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+        "Run authenticated browser, unit and coverage acceptance suites"
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "Expenses",
@@ -262,14 +333,26 @@
         "contacts/settings.tsx"
       ],
       "browsingImplementation": "partial_code_not_runtime_verified",
-      "fullyVerified": false
+      "fullyVerified": false,
+      "remaining": [
+        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+        "Run authenticated browser, unit and coverage acceptance suites"
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "Products & Services",
       "href": "/products-services",
       "routeFiles": ["products-services.tsx"],
       "browsingImplementation": "partial_code_not_runtime_verified",
-      "fullyVerified": false
+      "fullyVerified": false,
+      "remaining": [
+        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+        "Run authenticated browser, unit and coverage acceptance suites"
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "Accounting",
@@ -346,7 +429,8 @@
         "Verify existing Action Center filters, paging, selection, notification permissions and UI against authenticated fixture data",
         "Run complete app check, unit/integration, browser, accessibility and performance verification",
         "Confirm other workspace tasks and cross-module actions in the module inventory"
-      ]
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "Files",
@@ -364,7 +448,8 @@
         "Run actual app typecheck, lint, build, Vitest and authenticated Playwright",
         "Review folder actions, document uploads, previews and selection permissions with seeded data",
         "Verify folder navigation, large lists, mobile, keyboard and performance on staging"
-      ]
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "Budgets",
@@ -572,7 +657,8 @@
       "remaining": [
         "Run typecheck, lint, build, unit and authenticated browser tests of asOf Back/Forward/refresh and invalid dates",
         "Audit all Accountant tabs, workpapers, journal posting, permissions, tenant isolation, accounting regression and responsive accessibility"
-      ]
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "Firm",
@@ -587,7 +673,8 @@
         "Authenticated browser tests of all 12 tabs and firm switching",
         "Role/RLS, accounting and responsive/accessibility regression",
         "Local typecheck, lint, build, unit tests and browsing guard NOT RUN"
-      ]
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "Advisors",
@@ -680,7 +767,41 @@
         "Verify account form submission, notifications retry, role permissions, drafts, keyboard navigation and server validation in authenticated browser; NOT RUN",
         "Verify service-request keyboard submit, request-kind pressed state, validation and permissions with authenticated browser tests; NOT RUN",
         "Test unsaved contact preservation across refetch and successful save, notification errors, tenant/RLS and accessibility with authenticated fixtures"
-      ]
+      ],
+      "tests": "NOT RUN"
+    },
+    {
+      "label": "App Store",
+      "href": "/app-store",
+      "routeFiles": [
+        "app-store/$section.tsx",
+        "app-store/apps.$appCode.tsx",
+        "app-store/index.tsx"
+      ],
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "remaining": [
+        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+        "Run authenticated browser, unit and coverage acceptance suites"
+      ],
+      "tests": "NOT RUN"
+    },
+    {
+      "label": "Developer",
+      "href": "/developer",
+      "routeFiles": [
+        "developer/$section.tsx",
+        "developer/index.tsx"
+      ],
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "remaining": [
+        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+        "Run authenticated browser, unit and coverage acceptance suites"
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "App Store",
@@ -743,7 +864,8 @@
         "Run authenticated AI-enabled browser tests and full app TypeScript, build and unit checks",
         "Verify conversation, recommendations, journal evidence, reviewCase and security/approvals remain correct",
         "Audit every AI Assistant subpanel and LinkBooks Signal/voice features for browsing and accessibility"
-      ]
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "Tax",
@@ -756,7 +878,8 @@
       ],
       "remaining": [
         "Verify tax form status announcements with screen reader, keyboard and authenticated browser tests; check permissions and tax accounting regressions"
-      ]
+      ],
+      "tests": "NOT RUN"
     },
     {
       "label": "Settings",

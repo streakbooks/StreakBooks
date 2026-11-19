@@ -14,7 +14,7 @@ for (const width of [1440, 768, 390]) {
     await chooseLookup(page, "Location", "City Store (CITY)");
     await chooseLookup(page, "Cash asset account", "1000 · Till cash");
     await page.getByRole("button", { name: "Create register", exact: true }).click();
-    const register = page.getByRole("region", { name: "Front Counter" });
+    const register = page.getByRole("region", { name: "Front Counter (TILL-1)" });
     await expect(register).toBeVisible();
     await chooseLookup(page, "Access location", "City Store");
     await chooseLookup(page, "Company member", "Cashier One (cashier@example.test)");
@@ -22,13 +22,14 @@ for (const width of [1440, 768, 390]) {
     await expect(page.getByText("Location access updated.")).toBeVisible();
     await register.getByLabel("Opening float (USD)").fill("100.00");
     await register.getByRole("button", { name: "Open register" }).click();
-    await expect(register.getByLabel("Counted cash (USD)")).toBeVisible();
-    await expect(register.getByLabel("Counted cash (USD)")).toHaveValue("");
-    await register.getByLabel("Counted cash (USD)").fill("99.00");
+    await expect(register.getByLabel("Physical count (USD)")).toBeVisible();
+    await expect(register.getByLabel("Physical count (USD)")).toHaveValue("");
+    await expect(register.getByText("Expected cash in drawer")).toBeVisible();
+    await register.getByLabel("Physical count (USD)").fill("99.00");
     await register.getByRole("button", { name: "Close session" }).click();
     await expect(register.getByRole("alert")).toContainText("Cash variance");
-    await expect(register.getByLabel("Counted cash (USD)")).toBeVisible();
-    await register.getByLabel("Counted cash (USD)").fill("100.00");
+    await expect(register.getByLabel("Physical count (USD)")).toBeVisible();
+    await register.getByLabel("Physical count (USD)").fill("100.00");
     await register.getByRole("button", { name: "Close session" }).click();
     await expect(register.getByLabel("Opening float (USD)")).toBeVisible();
     await expect(page.getByRole("region", { name: "Recent closed sessions" })).toContainText(

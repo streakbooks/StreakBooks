@@ -31,7 +31,11 @@ import {
   type CreateAction,
   type CreateGroup,
 } from "@/lib/create-new/registry";
-import { actionIsRunnable, searchCreateActions } from "@/lib/create-new/menu";
+import {
+  actionIsRunnable,
+  opensCreateAsFullPage,
+  searchCreateActions,
+} from "@/lib/create-new/menu";
 import { permissionsForRole } from "@/lib/permissions";
 import {
   readCreatePrefs,
@@ -141,14 +145,85 @@ export function CreateNewMenu() {
     persist(rememberAction(prefs, action.id));
     setMenuOpen(false);
     setQuery("");
+
+    // Document editors open as full-page workspaces with real browser history (Back works).
+    if (opensCreateAsFullPage(action) && action.route) {
+      flyoverDirty.current = false;
+      setFlyoverId(null);
+      setPanel(null);
+      setPanelError(null);
+      if (action.id === "customer") {
+        void navigate({ to: "/contacts/new", search: { kind: "customer" } });
+        return;
+      }
+      if (action.id === "supplier") {
+        void navigate({ to: "/contacts/new", search: { kind: "supplier" } });
+        return;
+      }
+      if (action.id === "manual_journal") {
+        void navigate({ to: "/accounting/journals/new", search: { mode: "post" } });
+        return;
+      }
+      if (action.id === "recurring_journal") {
+        void navigate({ to: "/accounting/journals/new", search: { mode: "template" } });
+        return;
+      }
+      if (action.id === "recurring_bill") {
+        void navigate({ to: "/purchases/recurring/new" });
+        return;
+      }
+      if (action.id === "recurring_invoice") {
+        void navigate({ to: "/sales/recurring/new" });
+        return;
+      }
+      if (action.id === "receive_money") {
+        void navigate({ to: "/banking/receive-money" });
+        return;
+      }
+      if (action.id === "expense") {
+        void navigate({ to: "/banking/spend-money" });
+        return;
+      }
+      if (action.id === "bank_transfer") {
+        void navigate({ to: "/banking/transfers/new" });
+        return;
+      }
+      if (action.id === "product") {
+        void navigate({ to: "/products-services", search: { create: true } });
+        return;
+      }
+      if (action.id === "reimbursement") {
+        void navigate({
+          to: "/expense-management/$section",
+          params: { section: "my-expenses" },
+          search: { create: true },
+        });
+        return;
+      }
+      const moneyKinds = [
+        "sales_receipt",
+        "customer_refund",
+        "supplier_refund",
+        "bank_deposit",
+        "card_payment",
+        "bank_adjustment",
+      ] as const;
+      const moneyKind = moneyKinds.find((id) => id === action.id);
+      if (moneyKind) {
+        void navigate({
+          to: "/banking/money-documents/new",
+          search: { kind: moneyKind },
+        });
+        return;
+      }
+      void navigate({ to: action.route as never });
+      return;
+    }
+
     setPanel(null);
     setPanelError(null);
     flyoverDirty.current = false;
     setFlyoverId(action.id);
-    // Keep the creation flyover mounted in the app shell while showing the relevant directory behind it.
-    if (action.id === "customer" || action.id === "supplier") {
-      void navigate({ to: action.id === "supplier" ? "/purchases" : "/sales" });
-    }
     void loadCreatePanel(action.id)
       .then((Loaded) => setPanel(() => Loaded))
       .catch((error: unknown) => {
@@ -225,7 +300,7 @@ export function CreateNewMenu() {
               <div>
                 <h2 className="text-lg font-semibold tracking-tight">Create new</h2>
                 <p className="text-sm text-muted-foreground">
-                  Choose an action to open its flyover
+                  Invoices, bills and other documents open full page
                 </p>
               </div>
               <button

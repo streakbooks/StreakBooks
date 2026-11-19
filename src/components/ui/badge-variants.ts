@@ -4,10 +4,10 @@ export const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground",
-        secondary: "border-transparent bg-secondary text-secondary-foreground",
-        destructive: "border-transparent bg-destructive text-destructive-foreground",
-        outline: "text-foreground",
+        default: "border-transparent bg-info-soft text-info-ink",
+        secondary: "border-transparent bg-neutral-soft text-neutral-ink",
+        destructive: "border-transparent bg-destructive-soft text-destructive-ink",
+        outline: "border-border text-foreground bg-card",
         /* Soft semantic variants (AA contrast on their own surface, light and dark). */
         success: "border-transparent bg-success-soft text-success-ink",
         complete: "border-transparent bg-complete-soft text-complete-ink",
@@ -15,6 +15,7 @@ export const badgeVariants = cva(
         info: "border-transparent bg-info-soft text-info-ink",
         danger: "border-transparent bg-destructive-soft text-destructive-ink",
         neutral: "border-transparent bg-neutral-soft text-neutral-ink",
+        ai: "border-transparent bg-ai-soft text-ai-ink",
       },
     },
     defaultVariants: {

@@ -21,6 +21,8 @@ import {
   openPosSession,
   closePosSession,
 } from "@/lib/pos/registers.functions";
+import { recordPosCashMovement } from "@/lib/pos/cash-sale.functions";
+import type { PosRecordCashMovementInput } from "@/lib/pos/cash-sale";
 import {
   posCountFromDisplay,
   type PosWorkspace,
@@ -73,9 +75,11 @@ function RegistersWorkspace({ companyId }: { companyId: string }) {
       subnav={<PosNavigation />}
     >
       <p className="mb-4 rounded-lg border border-border bg-muted/40 p-3 text-sm">
-        Opening float records cash already held; it does not create a transfer or journal. Sales and
-        cash movements are not available yet. Close only after counting the drawer. A variance keeps
-        the session open until an approved accounting adjustment is available.
+        Opening float records cash already held; it does not create a transfer or journal. Cash sales
+        increase expected drawer cash; controlled cash in/out adjusts the expected balance without
+        posting a sale. Close only after physically counting to the expected cash amount shown for
+        the session. A variance keeps the session open until an approved accounting adjustment is
+        available.
       </p>
       <QueryErrorState queries={[query]} />
       {query.isPending ? (
@@ -107,7 +111,7 @@ function RegisterContent({ companyId, workspace }: { companyId: string; workspac
           return (
             <section
               key={register.id}
-              aria-label={register.name}
+              aria-label={`${register.name} (${register.code})`}
               className="space-y-3 rounded-xl border border-border p-4"
             >
               <h2 className="text-lg font-semibold">{register.name}</h2>
@@ -118,9 +122,20 @@ function RegisterContent({ companyId, workspace }: { companyId: string; workspac
                 <>
                   <p>Open · {new Date(session.opened_at).toLocaleString()}</p>
                   <p>
-                    Recorded float: {session.currency_code}{" "}
+                    Opening float: {session.currency_code}{" "}
                     {fromMinorUnits(BigInt(session.opening_float_minor), session.currency_code)}
                   </p>
+                  <p>
+                    Expected cash in drawer: {session.currency_code}{" "}
+                    {fromMinorUnits(BigInt(session.expected_cash_minor), session.currency_code)}
+                  </p>
+                  {workspace.canAdjustCash ? (
+                    <CashMovementForm
+                      companyId={companyId}
+                      sessionId={session.id}
+                      currency={session.currency_code}
+                    />
+                  ) : null}
                   {workspace.canClose &&
                   (workspace.canManage || session.opened_by === workspace.userId) ? (
                     <SessionAction
@@ -217,12 +232,18 @@ function SessionAction({
       setError(failure);
     }
   }
-  const label = mode === "open" ? "Opening float" : "Counted cash";
+  const label = mode === "open" ? "Opening float" : "Physical count";
   return (
     <form onSubmit={submit} className="space-y-2">
       <Label htmlFor={`count-${targetId}`}>
         {label} ({currency})
       </Label>
+      {mode === "close" ? (
+        <p className="text-sm text-muted-foreground">
+          Count all cash in the drawer and enter the total. It must match expected cash, not just
+          the opening float.
+        </p>
+      ) : null}
       <Input
         id={`count-${targetId}`}
         value={amount}
@@ -236,6 +257,100 @@ function SessionAction({
       <Button type="submit" className="min-h-11" disabled={mutation.isPending}>
         {mutation.isPending ? "Saving…" : mode === "open" ? "Open register" : "Close session"}
       </Button>
+    </form>
+  );
+}
+function CashMovementForm({
+  companyId,
+  sessionId,
+  currency,
+}: {
+  companyId: string;
+  sessionId: string;
+  currency: string;
+}) {
+  const [kind, setKind] = useState<"cash_in" | "cash_out">("cash_in");
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<unknown>(null);
+  const operation = useRef<{ payload: string; id: string } | null>(null);
+  const record = useServerFn(recordPosCashMovement);
+  const client = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: (data: PosRecordCashMovementInput) => record({ data }),
+    onSuccess: () => {
+      setAmount("");
+      setNote("");
+      operation.current = null;
+      return client.invalidateQueries({ queryKey: workspaceKey(companyId) });
+    },
+  });
+  return (
+    <form
+      className="space-y-2 rounded-lg border border-dashed p-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (mutation.isPending) return;
+        try {
+          const amountMinor = posCountFromDisplay(amount, currency);
+          const payload = JSON.stringify([companyId, sessionId, kind, amountMinor, note]);
+          if (operation.current?.payload !== payload)
+            operation.current = { payload, id: crypto.randomUUID() };
+          setError(null);
+          mutation.mutate({
+            companyId,
+            sessionId,
+            operationId: operation.current.id,
+            kind,
+            amountMinor,
+            ...(note.trim() ? { note: note.trim() } : {}),
+          });
+        } catch (failure) {
+          setError(failure);
+        }
+      }}
+    >
+      <h3 className="font-medium">Cash in / out</h3>
+      <div>
+        <Label htmlFor={`movement-kind-${sessionId}`}>Movement</Label>
+        <select
+          id={`movement-kind-${sessionId}`}
+          className={selectStyle}
+          value={kind}
+          onChange={(event) => setKind(event.target.value as "cash_in" | "cash_out")}
+          disabled={mutation.isPending}
+        >
+          <option value="cash_in">Cash in</option>
+          <option value="cash_out">Cash out</option>
+        </select>
+      </div>
+      <div>
+        <Label htmlFor={`movement-amount-${sessionId}`}>Amount ({currency})</Label>
+        <Input
+          id={`movement-amount-${sessionId}`}
+          value={amount}
+          onChange={(event) => setAmount(event.target.value)}
+          inputMode="decimal"
+          required
+          disabled={mutation.isPending}
+          autoComplete="off"
+        />
+      </div>
+      <div>
+        <Label htmlFor={`movement-note-${sessionId}`}>Note (optional)</Label>
+        <Input
+          id={`movement-note-${sessionId}`}
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          maxLength={500}
+          disabled={mutation.isPending}
+        />
+      </div>
+      <Failure error={error ?? (mutation.isError ? mutation.error : null)} />
+      <Button type="submit" className="min-h-11" disabled={mutation.isPending}>
+        {mutation.isPending ? "Saving…" : "Record movement"}
+      </Button>
+      {mutation.isSuccess ? <p role="status">Expected cash updated.</p> : null}
     </form>
   );
 }

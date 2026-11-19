@@ -261,8 +261,8 @@ export function CrmActivitiesPage({
           </Button>
         ) : undefined
       }
+      subnav={<CrmSubnav current={sectionKey} />}
     >
-      <CrmSubnav current={sectionKey} />
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM to track activities." />
       ) : null}

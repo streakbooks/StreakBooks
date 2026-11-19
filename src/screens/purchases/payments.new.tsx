@@ -19,7 +19,9 @@ import { useCan, useCanDo } from "@/hooks/use-can";
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { AccountLookup } from "@/components/lookup";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
@@ -176,49 +178,54 @@ export function NewPayment() {
   if (suppliersQ.isPending || accountsQ.isPending) return <LoadingState />;
 
   return (
-    <ListWorkspace
+    <TransactionWorkspace
       title="New supplier payment"
       description="Posts DR Accounts Payable / CR bank, then updates bill outstanding balances."
+      breadcrumbs={[
+        { label: "Purchases", to: "/purchases" },
+        { label: "Payments", to: "/purchases/payments" },
+        { label: "New" },
+      ]}
+      meta={<StatusBadge status="draft" />}
       actions={
         <Button variant="outline" size="sm" asChild>
           <Link to="/purchases/payments">Back</Link>
         </Button>
       }
-    >
-      <div className="grid max-w-2xl gap-4">
-        <div className="space-y-2">
-          <Label>Supplier</Label>
-          <EntityCombobox
-            options={supplierOptions}
-            value={contactId}
-            onChange={(id) => {
-              setContactId(id);
-              setAlloc({});
-              setCurrencyOverride("");
-              setBillLimit(50);
-            }}
-            placeholder="Search suppliers"
-            allowClear={false}
-            companyId={companyId}
-            canAddNew={can("contacts.manage")}
-            createTitle="New supplier"
-            renderCreate={
-              can("contacts.manage")
-                ? (ctx) => <ContactCreateForm companyId={companyId} kind="supplier" ctx={ctx} />
-                : undefined
-            }
-          />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+      details={
+        <FormGrid columns={4}>
+          <FormControlShell width="contact">
+            <Label>Supplier</Label>
+            <EntityCombobox
+              options={supplierOptions}
+              value={contactId}
+              onChange={(id) => {
+                setContactId(id);
+                setAlloc({});
+                setCurrencyOverride("");
+                setBillLimit(50);
+              }}
+              placeholder="Search suppliers"
+              allowClear={false}
+              companyId={companyId}
+              canAddNew={can("contacts.manage")}
+              createTitle="New supplier"
+              renderCreate={
+                can("contacts.manage")
+                  ? (ctx) => <ContactCreateForm companyId={companyId} kind="supplier" ctx={ctx} />
+                  : undefined
+              }
+            />
+          </FormControlShell>
+          <FormControlShell width="date">
             <Label>Date</Label>
             <Input
               type="date"
               value={paymentDate}
               onChange={(e) => setPaymentDate(e.target.value)}
             />
-          </div>
-          <div className="space-y-2">
+          </FormControlShell>
+          <FormControlShell width="money">
             <Label>Amount ({currency})</Label>
             <Input
               value={amount}
@@ -229,76 +236,73 @@ export function NewPayment() {
             {amountInvalid ? (
               <p className="text-xs text-destructive">Enter a number, e.g. 1,250.00</p>
             ) : null}
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label>Currency</Label>
-          <RecordLookupSelect
-            value={currency}
-            onValueChange={(v) => {
-              setCurrencyOverride(v);
-              setAlloc({});
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[
-                ...new Set(
-                  [supplier?.default_currency, baseCurrency, currency]
-                    .filter((c): c is string => Boolean(c))
-                    .map((c) => c.toUpperCase()),
-                ),
-              ].map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </RecordLookupSelect>
-          <p className="text-xs text-muted-foreground">
-            A payment can only be allocated to bills in its own currency.
-          </p>
-        </div>
-        {currency !== baseCurrency ? (
-          <div className="space-y-2">
-            <Label>
-              Exchange rate ({currency} → {baseCurrency}), optional
-            </Label>
-            <Input
-              value={fxRate}
-              inputMode="decimal"
-              placeholder="Leave blank to use the bill's rate"
-              onChange={(e) => setFxRate(e.target.value)}
-            />
+          </FormControlShell>
+          <FormControlShell width="currency">
+            <Label>Currency</Label>
+            <RecordLookupSelect
+              value={currency}
+              onValueChange={(v) => {
+                setCurrencyOverride(v);
+                setAlloc({});
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[
+                  ...new Set(
+                    [supplier?.default_currency, baseCurrency, currency]
+                      .filter((c): c is string => Boolean(c))
+                      .map((c) => c.toUpperCase()),
+                  ),
+                ].map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </RecordLookupSelect>
             <p className="text-xs text-muted-foreground">
-              The difference to the rate the bill was booked at is posted as a realised exchange
-              gain or loss.
+              A payment can only be allocated to bills in its own currency.
             </p>
-          </div>
-        ) : null}
-        <div className="space-y-2">
-          <Label>Bank / cash account</Label>
-          <AccountLookup
-            ariaLabel="Bank / cash account"
-            accounts={(accountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>}
-            value={bankAccountId}
-            onChange={setBankAccountId}
-            companyId={companyId}
-            purpose="posting"
-            createKind="bank"
-            placeholder="Paid from (bank or cash account)"
-            allowClear={false}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Reference</Label>
-          <Input value={reference} onChange={(e) => setReference(e.target.value)} />
-        </div>
-
-        {contactId ? (
-          <div className="space-y-3 rounded-md border p-3">
+          </FormControlShell>
+          {currency !== baseCurrency ? (
+            <FormControlShell width="money">
+              <Label>
+                Exchange rate ({currency} → {baseCurrency}), optional
+              </Label>
+              <Input
+                value={fxRate}
+                inputMode="decimal"
+                placeholder="Leave blank to use the bill's rate"
+                onChange={(e) => setFxRate(e.target.value)}
+              />
+            </FormControlShell>
+          ) : null}
+          <FormControlShell width="contact">
+            <Label>Bank / cash account</Label>
+            <AccountLookup
+              ariaLabel="Bank / cash account"
+              accounts={(accountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>}
+              value={bankAccountId}
+              onChange={setBankAccountId}
+              companyId={companyId}
+              purpose="posting"
+              createKind="bank"
+              placeholder="Paid from (bank or cash account)"
+              allowClear={false}
+            />
+          </FormControlShell>
+          <FormControlShell>
+            <Label>Reference</Label>
+            <Input value={reference} onChange={(e) => setReference(e.target.value)} />
+          </FormControlShell>
+        </FormGrid>
+      }
+      lines={
+        contactId ? (
+          <div className="space-y-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <Label>Allocate to bills</Label>
               <p className="text-xs text-muted-foreground">
@@ -319,7 +323,7 @@ export function NewPayment() {
                 return (
                   <div
                     key={b.id}
-                    className="flex flex-wrap items-center gap-3 rounded border px-3 py-2 text-sm"
+                    className="flex flex-wrap items-center gap-3 rounded-md border border-border/70 px-3 py-2 text-sm"
                   >
                     <Checkbox
                       checked={checked}
@@ -361,36 +365,39 @@ export function NewPayment() {
                 );
               })
             )}
+            {totalOpenBills > openBills.length ? (
+              <Button variant="outline" size="sm" onClick={() => setBillLimit((n) => n + 50)}>
+                Show more bills ({openBills.length} of {totalOpenBills})
+              </Button>
+            ) : null}
           </div>
-        ) : null}
-        {contactId && totalOpenBills > openBills.length ? (
-          <Button variant="outline" size="sm" onClick={() => setBillLimit((n) => n + 50)}>
-            Show more bills ({openBills.length} of {totalOpenBills})
+        ) : null
+      }
+      stickyActions={
+        <div className="flex flex-wrap items-center gap-3">
+          {!canPay ? (
+            <p className="text-sm text-muted-foreground">
+              You do not have permission to record supplier payments.
+            </p>
+          ) : null}
+          <Button
+            size="sm"
+            disabled={
+              mutation.isPending ||
+              !canPay ||
+              !contactId ||
+              !bankAccountId ||
+              remaining < 0 ||
+              amountInvalid ||
+              allocInvalid
+            }
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            Post payment
           </Button>
-        ) : null}
-        {!canPay ? (
-          <p className="text-sm text-muted-foreground">
-            You do not have permission to record supplier payments.
-          </p>
-        ) : null}
-
-        <Button
-          size="sm"
-          disabled={
-            mutation.isPending ||
-            !canPay ||
-            !contactId ||
-            !bankAccountId ||
-            remaining < 0 ||
-            amountInvalid ||
-            allocInvalid
-          }
-          onClick={() => mutation.mutate()}
-        >
-          {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-          Post payment
-        </Button>
-      </div>
-    </ListWorkspace>
+        </div>
+      }
+    />
   );
 }

@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -70,7 +71,13 @@ function parseMinorNumber(value: string, label: string): number {
   return Number(parseMinorOrThrow(value, label));
 }
 
-export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "claims" }) {
+export function ExpenseManagementClaimsPage({
+  mode,
+  forceCreate = false,
+}: {
+  mode: "my-expenses" | "claims";
+  forceCreate?: boolean;
+}) {
   const sectionKey: ExpenseManagementSectionKey = mode;
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
@@ -90,7 +97,16 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
   const [cashAdvanceId, setCashAdvanceId] = useState("");
   const [pettyCashFloatId, setPettyCashFloatId] = useState("");
   const [corporateCardId, setCorporateCardId] = useState("");
-  const [lines, setLines] = useState<ExpenseDraftLineForm[]>([emptyDraftLine(today)]);
+  const [lines, setLines] = useState<ExpenseDraftLineForm[]>(() =>
+    Array.from({ length: 5 }, () => emptyDraftLine(today)),
+  );
+
+  useEffect(() => {
+    if (!forceCreate || mode !== "my-expenses") return;
+    const node = document.getElementById("expense-claim-create");
+    node?.scrollIntoView({ behavior: "smooth", block: "start" });
+    node?.querySelector<HTMLInputElement>("input, textarea, select")?.focus();
+  }, [forceCreate, mode]);
   const [splitLineKey, setSplitLineKey] = useState<string | null>(null);
   const [splitAccountA, setSplitAccountA] = useState("");
   const [splitAccountB, setSplitAccountB] = useState("");
@@ -314,7 +330,7 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
       setCashAdvanceId("");
       setPettyCashFloatId("");
       setCorporateCardId("");
-      setLines([emptyDraftLine(today)]);
+      setLines(Array.from({ length: 5 }, () => emptyDraftLine(today)));
       setTemplateName("");
       if (company?.id) setOfflineDrafts(listOfflineExpenseClaimDrafts(company.id));
       if (result && typeof result === "object" && "offline" in result && result.offline) {
@@ -468,7 +484,7 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
               isBillable: Boolean(line.isBillable),
             };
           })
-        : [emptyDraftLine(today)],
+        : Array.from({ length: 5 }, () => emptyDraftLine(today)),
     );
     toast.success(`Loaded template “${template.name}”.`);
   };
@@ -543,7 +559,12 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
     >
       {mode === "my-expenses" && canSubmit ? (
         <form
-          className="mb-8 grid max-w-4xl gap-4 rounded-lg border p-4"
+          id="expense-claim-create"
+          className={
+            forceCreate
+              ? "mb-8 grid gap-4 rounded-lg border border-border/70 bg-card/80 p-4 sm:p-5"
+              : "mb-8 grid max-w-4xl gap-4 rounded-lg border p-4"
+          }
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate();
@@ -638,7 +659,7 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                 <Label htmlFor="em-claim-advance">Cash advance</Label>
                 <RecordLookupSelect
                   id="em-claim-advance"
-                  className="flex h-10 w-full border-input px-3 py-2"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={cashAdvanceId}
                   onValueChange={(nextValue) => setCashAdvanceId(nextValue)}
                 >
@@ -657,7 +678,7 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                 <Label htmlFor="em-claim-petty">Petty cash float</Label>
                 <RecordLookupSelect
                   id="em-claim-petty"
-                  className="flex h-10 w-full border-input px-3 py-2"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={pettyCashFloatId}
                   onValueChange={(nextValue) => setPettyCashFloatId(nextValue)}
                 >
@@ -676,7 +697,7 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                 <Label htmlFor="em-claim-card">Corporate card</Label>
                 <RecordLookupSelect
                   id="em-claim-card"
-                  className="flex h-10 w-full border-input px-3 py-2"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={corporateCardId}
                   onValueChange={(nextValue) => setCorporateCardId(nextValue)}
                 >
@@ -742,8 +763,10 @@ export function ExpenseManagementClaimsPage({ mode }: { mode: "my-expenses" | "c
                 </div>
                 <div className="grid gap-2">
                   <Label>Description</Label>
-                  <Input
+                  <Textarea
                     value={line.description}
+                    rows={2}
+                    className="lb-spreadsheet-wrap min-h-16"
                     onChange={(event) => updateLine(line.key, { description: event.target.value })}
                     required
                   />

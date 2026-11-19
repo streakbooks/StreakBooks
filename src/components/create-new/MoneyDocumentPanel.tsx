@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -22,6 +23,12 @@ import { AccountLookup, ContactLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
+import type { FormControlWidth } from "@/lib/ui/form-density";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import type { BankAdjustmentType } from "@/lib/create-new/journal-contracts";
 
 type Kind =
@@ -43,8 +50,16 @@ const TITLES: Record<Kind, string> = {
   bank_adjustment: "Bank adjustment",
 };
 
-export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
+export function MoneyDocumentPanel({
+  kind,
+  initialBankAccountId,
+}: {
+  kind: Kind;
+  /** Prefill bank account from Banking account context or deep link. */
+  initialBankAccountId?: string;
+}) {
   const { company } = useActiveCompany();
+  const navigate = useNavigate();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
   const today = new Date().toISOString().slice(0, 10);
@@ -58,7 +73,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
 
   const [date, setDate] = useState(today);
   const [contactId, setContactId] = useState("");
-  const [bankAccountId, setBankAccountId] = useState("");
+  const [bankAccountId, setBankAccountId] = useState(initialBankAccountId ?? "");
   const [counterAccountId, setCounterAccountId] = useState("");
   const [amount, setAmount] = useState("");
   const [taxAmount, setTaxAmount] = useState("0");
@@ -72,10 +87,15 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
   const [recordId, setRecordId] = useState<string | null>(null);
   const recordRef = useRef<DocumentRecordHandle>(null);
   const recordMeta = moneyRecordMeta(kind);
+  const addAnotherPending = useRef(false);
 
   useEffect(() => {
     setRecordId(null);
   }, [kind]);
+
+  useEffect(() => {
+    if (initialBankAccountId) setBankAccountId(initialBankAccountId);
+  }, [initialBankAccountId]);
 
   const accountsQ = useQuery({
     queryKey: ["accounts", companyId],
@@ -151,7 +171,15 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
       }
       setRecordId(result.id);
       toast.success(result.replayed ? "This document was already saved" : `${TITLES[kind]} posted`);
-      // Start the next document with a fresh key so it is never mistaken for a replay.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["money-documents", companyId] }),
+        qc.invalidateQueries({ queryKey: ["undeposited", companyId] }),
+        qc.invalidateQueries({ queryKey: ["banking-counts", companyId] }),
+        qc.invalidateQueries({ queryKey: ["bank-transactions"] }),
+      ]);
+      const stayOpen = addAnotherPending.current;
+      addAnotherPending.current = false;
+      // Fresh key so the next post is never mistaken for a replay.
       idempotencyKey.current = crypto.randomUUID();
       setAmount("");
       setTaxAmount("0");
@@ -159,12 +187,10 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
       setReference("");
       setMemo("");
       setSourceIds([]);
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["money-documents", companyId] }),
-        qc.invalidateQueries({ queryKey: ["undeposited", companyId] }),
-        qc.invalidateQueries({ queryKey: ["banking-counts", companyId] }),
-        qc.invalidateQueries({ queryKey: ["bank-transactions"] }),
-      ]);
+      setRecordId(null);
+      if (!stayOpen) {
+        void navigate({ to: "/banking/money-documents" });
+      }
     },
     onError: (e) => setError(friendlyAuthError(e)),
   });
@@ -185,19 +211,99 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
 
   if (!companyId) return null;
 
+  const moneyTotals = (() => {
+    try {
+      const amountMinor = amount.trim() ? toMinorUnits(amount, currency) : 0n;
+      const taxMinor = taxAmount.trim() ? toMinorUnits(taxAmount, currency) : 0n;
+      const totalMinor = amountMinor + (needsIncome ? taxMinor : 0n);
+      return {
+        amount: fromMinorUnits(amountMinor, currency),
+        tax: fromMinorUnits(taxMinor, currency),
+        total: fromMinorUnits(totalMinor, currency),
+      };
+    } catch {
+      return null;
+    }
+  })();
+
   return (
     <form
       className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
+        addAnotherPending.current = kind === "receive_money";
         setError(null);
         saveM.mutate();
       }}
     >
-      <p className="text-sm text-muted-foreground">{help}</p>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Date">
+      <TransactionWorkspace
+        title={TITLES[kind]}
+        description={help}
+        breadcrumbs={
+          kind === "receive_money"
+            ? [
+                { label: "Banking", to: "/banking" },
+                { label: "Receive money" },
+              ]
+            : [
+                { label: "Banking", to: "/banking" },
+                { label: "Bank documents", to: "/banking/money-documents" },
+                { label: TITLES[kind] },
+              ]
+        }
+        meta={<StatusBadge status={recordId ? "posted" : "draft"} />}
+        stickyActions={
+          <div className="flex flex-wrap gap-2">
+            {kind === "receive_money" ? (
+              <Button type="button" variant="outline" size="sm" asChild>
+                <Link to="/banking">Cancel</Link>
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={saveM.isPending}
+              onClick={() => {
+                addAnotherPending.current = true;
+                setError(null);
+                saveM.mutate();
+              }}
+            >
+              Save & add another
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={saveM.isPending}
+              onClick={() => {
+                addAnotherPending.current = false;
+                setError(null);
+                saveM.mutate();
+              }}
+            >
+              {saveM.isPending ? "Posting…" : "Save & post"}
+            </Button>
+          </div>
+        }
+        totals={
+          moneyTotals && kind !== "bank_deposit" ? (
+            <TotalsSummary
+              lines={[
+                { id: "amount", label: "Amount", value: moneyTotals.amount },
+                ...(needsIncome
+                  ? [{ id: "tax", label: "Tax", value: moneyTotals.tax, emphasis: "muted" as const }]
+                  : []),
+                { id: "total", label: "Total", value: moneyTotals.total, emphasis: "total" as const },
+              ]}
+            />
+          ) : null
+        }
+        details={
+          <div className="space-y-4">
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            <FormGrid columns={4}>
+        <Field label="Date" width="date">
           <Input type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
         <Field label="Reference">
@@ -205,6 +311,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
         </Field>
         {needsContact ? (
           <Field
+            width="contact"
             label={
               kind === "supplier_refund"
                 ? "Supplier"
@@ -235,7 +342,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
           </Field>
         ) : null}
         {kind !== "bank_deposit" ? (
-          <Field label="Amount">
+          <Field label="Amount" width="money">
             <Input
               required
               inputMode="decimal"
@@ -245,7 +352,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
           </Field>
         ) : null}
         {needsIncome ? (
-          <Field label="Tax">
+          <Field label="Tax" width="money">
             <Input
               inputMode="decimal"
               value={taxAmount}
@@ -253,7 +360,10 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
             />
           </Field>
         ) : null}
-        <Field label={kind === "card_payment" ? "Pay from bank" : "Bank or clearing account"}>
+        <Field
+          width="contact"
+          label={kind === "card_payment" ? "Pay from bank" : "Bank or clearing account"}
+        >
           <AccountLookup
             ariaLabel={kind === "card_payment" ? "Pay from bank" : "Bank or clearing account"}
             accounts={banks}
@@ -270,7 +380,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
           />
         </Field>
         {needsIncome ? (
-          <Field label="Income account">
+          <Field label="Income account" width="contact">
             <AccountLookup
               ariaLabel="Income account"
               accounts={postable}
@@ -288,7 +398,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
           </Field>
         ) : null}
         {kind === "card_payment" ? (
-          <Field label="Credit card liability">
+          <Field label="Credit card liability" width="contact">
             <AccountLookup
               ariaLabel="Credit card liability"
               accounts={liabilities}
@@ -318,7 +428,7 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
                 ]}
               />
             </Field>
-            <Field label="Offset account">
+            <Field label="Offset account" width="contact">
               <AccountLookup
                 ariaLabel="Offset account"
                 accounts={postable}
@@ -340,74 +450,86 @@ export function MoneyDocumentPanel({ kind }: { kind: Kind }) {
             <Input required value={description} onChange={(e) => setDescription(e.target.value)} />
           </Field>
         ) : null}
-      </div>
-      {needsIncome ? (
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={settlement === "undeposited"}
-            onChange={(e) => setSettlement(e.target.checked ? "undeposited" : "bank")}
-          />
-          Hold in the clearing account for a later bank deposit
-        </label>
-      ) : null}
-      {kind === "bank_deposit" ? (
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">Undeposited receipts</legend>
-          {(
-            (undepositedQ.data ?? []) as Array<{
-              id: string;
-              document_date: string;
-              total_minor: number;
-              reference: string | null;
-              kind: string;
-            }>
-          ).map((row) => (
-            <label key={row.id} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={sourceIds.includes(row.id)}
-                onChange={(e) =>
-                  setSourceIds((current) =>
-                    e.target.checked ? [...current, row.id] : current.filter((id) => id !== row.id),
-                  )
-                }
-              />
-              {row.document_date} · {row.kind} · {(row.total_minor / 100).toFixed(2)}{" "}
-              {row.reference ?? ""}
-            </label>
-          ))}
-          {(undepositedQ.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No undeposited receipts for this organisation.
-            </p>
-          ) : null}
-        </fieldset>
-      ) : null}
-      <Field label="Memo">
-        <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
-      </Field>
-      {recordMeta ? (
-        <DocumentRecordPanel
-          ref={recordRef}
-          entityType={recordMeta.entityType}
-          entityId={recordId}
-          audience={recordMeta.audience}
-        />
-      ) : null}
-      <Button type="submit" disabled={saveM.isPending}>
-        {saveM.isPending ? "Posting…" : "Post"}
-      </Button>
+            </FormGrid>
+            {needsIncome ? (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={settlement === "undeposited"}
+                  onChange={(e) => setSettlement(e.target.checked ? "undeposited" : "bank")}
+                />
+                Hold in the clearing account for a later bank deposit
+              </label>
+            ) : null}
+            {kind === "bank_deposit" ? (
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium">Undeposited receipts</legend>
+                {(
+                  (undepositedQ.data ?? []) as Array<{
+                    id: string;
+                    document_date: string;
+                    total_minor: number;
+                    reference: string | null;
+                    kind: string;
+                  }>
+                ).map((row) => (
+                  <label key={row.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={sourceIds.includes(row.id)}
+                      onChange={(e) =>
+                        setSourceIds((current) =>
+                          e.target.checked
+                            ? [...current, row.id]
+                            : current.filter((id) => id !== row.id),
+                        )
+                      }
+                    />
+                    {row.document_date} · {row.kind} · {(row.total_minor / 100).toFixed(2)}{" "}
+                    {row.reference ?? ""}
+                  </label>
+                ))}
+                {(undepositedQ.data ?? []).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No undeposited receipts for this organisation.
+                  </p>
+                ) : null}
+              </fieldset>
+            ) : null}
+            <Field label="Memo">
+              <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
+            </Field>
+          </div>
+        }
+        support={
+          recordMeta ? (
+            <DocumentRecordPanel
+              ref={recordRef}
+              entityType={recordMeta.entityType}
+              entityId={recordId}
+              audience={recordMeta.audience}
+            />
+          ) : null
+        }
+      />
     </form>
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({
+  label,
+  children,
+  width = "default",
+}: {
+  label: string;
+  children: ReactNode;
+  width?: FormControlWidth;
+}) {
   return (
-    <label className="space-y-1.5 text-sm">
+    <FormControlShell width={width}>
       <Label>{label}</Label>
       {children}
-    </label>
+    </FormControlShell>
   );
 }
 
@@ -422,7 +544,7 @@ function Select({
 }) {
   return (
     <select
-      className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+      className="h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-2 text-sm"
       value={value}
       onChange={(event) => onChange(event.target.value)}
     >

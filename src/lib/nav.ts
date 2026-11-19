@@ -102,6 +102,13 @@ export const navItems: NavItem[] = [
     description: "Leads, pipelines and customer relationships",
   },
   {
+    label: "Property Management",
+    to: "/property-management",
+    icon: Building2,
+    group: "records",
+    description: "Portfolios, owners, rentals and owner settlement",
+  },
+  {
     label: "Contacts",
     to: "/contacts",
     icon: Users,

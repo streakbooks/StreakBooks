@@ -1,6 +1,18 @@
 import { permissionsForRole } from "@/lib/permissions";
 import { CREATE_ACTIONS, CREATE_GROUP_LABEL, type CreateAction } from "@/lib/create-new/registry";
 
+/**
+ * Full-page Create destinations (browser history + TransactionWorkspace).
+ * Quick panels without a dedicated workspace stay as flyovers.
+ */
+const CREATE_FLYOVER_ONLY = new Set(["account", "project", "document_upload"]);
+
+export function opensCreateAsFullPage(action: CreateAction): boolean {
+  if (!action.route) return false;
+  if (CREATE_FLYOVER_ONLY.has(action.id)) return false;
+  return true;
+}
+
 export function actionIsRunnable(
   action: CreateAction,
   role: string | null | undefined,

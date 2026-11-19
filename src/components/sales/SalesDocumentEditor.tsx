@@ -37,18 +37,23 @@ import {
 } from "@/lib/sales/price-list-draft";
 import { getWorkflowSettings } from "@/lib/settings/workflow-settings.functions";
 import { addDaysIso } from "@/lib/sales/line-helpers";
-import { toMinorUnits } from "@/lib/accounting/money";
+import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { decodeInvoiceReturnContext } from "@/lib/sales/invoice-list-navigation";
 import { useVoiceForm } from "@/components/ai-voice/voice-context";
 import { validateVoiceDraft } from "@/lib/ai-voice/form-adapter";
 import { recordVoiceDraftOutcome } from "@/lib/ai-voice/voice-audit.functions";
 import { LoadingState, EmptyState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { SplitButton } from "@/components/ui/split-button";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
 import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
 import { emptySalesLine, type SalesLineFormState } from "@/lib/sales/line-form-state";
+import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
+import { computeTaxLineRounded } from "@/lib/sales/line-math-rounded";
 import {
   currencyOptions,
   lineFormToInput,
@@ -61,9 +66,9 @@ import {
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
 import { Label } from "@/components/ui/label";
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -234,7 +239,7 @@ export function SalesDocumentEditor({
   const [lines, setLines] = useState<SalesLineFormState[]>(() =>
     existing
       ? existing.lines.map((l) => lineRowToForm(l, existing.currencyCode))
-      : [emptySalesLine()],
+      : createEmptyDocumentLines(emptySalesLine),
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [defaultsApplied, setDefaultsApplied] = useState(Boolean(existing));
@@ -767,10 +772,43 @@ export function SalesDocumentEditor({
         ? "/sales/quotes"
         : "/sales/credit-notes";
   const title = savedId || existing ? copy.editTitle : copy.newTitle;
+  const displayCurrency = currency || base;
+  const breadcrumbs = [
+    { label: "Sales", to: "/sales" },
+    {
+      label: kind === "invoice" ? "Invoices" : kind === "quote" ? "Quotes" : "Credit notes",
+      to: backTo,
+    },
+    { label: title },
+  ];
+  const totalsPreview = (() => {
+    try {
+      const taxCodes = config?.taxCodes ?? [];
+      const computed = lines.map((line) => {
+        const code = line.taxCodeId
+          ? taxCodes.find((entry) => entry.id === line.taxCodeId)
+          : undefined;
+        return computeTaxLineRounded({
+          quantity: Number(line.quantity),
+          unit_price_minor: Number(toMinorUnits(line.unitPrice || "0", displayCurrency)),
+          discount_minor: Number(toMinorUnits(line.discount || "0", displayCurrency)),
+          tax_rate_bps: code ? code.rate_bps : Number(line.taxRateBps || 0),
+          treatment,
+        });
+      });
+      return {
+        subtotal: computed.reduce((sum, row) => sum + Number(row.net_minor), 0),
+        tax: computed.reduce((sum, row) => sum + Number(row.tax_minor), 0),
+        total: computed.reduce((sum, row) => sum + Number(row.gross_minor), 0),
+      };
+    } catch {
+      return null;
+    }
+  })();
 
   return (
     <VoiceFields token={voiceToken}>
-      <ListWorkspace
+      <TransactionWorkspace
         title={title}
         description={
           kind === "credit_note"
@@ -779,6 +817,8 @@ export function SalesDocumentEditor({
               ? "Defaults come from Sales settings and the customer’s payment terms. Authorising posts AR + revenue/tax once."
               : "Quotes do not post to the ledger. Convert to an invoice when the customer accepts."
         }
+        breadcrumbs={breadcrumbs}
+        meta={<StatusBadge status="draft" />}
         actions={
           <Button variant="outline" size="sm" asChild>
             {kind === "invoice" ? (
@@ -790,147 +830,181 @@ export function SalesDocumentEditor({
             )}
           </Button>
         }
-      >
-        {formError ? (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{formError}</AlertDescription>
-          </Alert>
-        ) : null}
-        <div className="grid max-w-4xl gap-4">
-          <div className="space-y-2">
-            <Label>Customer</Label>
-            <EntityCombobox
-              voiceField={{ key: "contactId", label: "Customer", order: 10 }}
-              aria-label="Customer"
-              options={customerOptions}
-              value={contactId}
-              onChange={onCustomerChange}
-              placeholder="Search customers"
-              allowClear={false}
-              disabled={sourceLocked}
-              companyId={companyId}
-              canAddNew={can("contacts.manage") && !sourceLocked}
-              createTitle="New customer"
-              renderCreate={
-                can("contacts.manage") && !sourceLocked
-                  ? (ctx) => <ContactCreateForm companyId={companyId} kind="customer" ctx={ctx} />
-                  : undefined
+        stickyActions={
+          <>
+            <SplitButton
+              label={
+                <>
+                  {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                  {savedId ? "Save changes" : "Save draft"}
+                </>
               }
-              onCreated={(option) => {
-                if (kind !== "invoice") return;
-                const terms = Number(option.meta);
-                if (Number.isFinite(terms)) setSecondDate(addDaysIso(docDate || today, terms));
-              }}
+              disabled={mutation.isPending}
+              busy={mutation.isPending}
+              onClick={() => mutation.mutate(false)}
+              menuLabel="More save options"
+              items={
+                copy.authorise
+                  ? [
+                      {
+                        id: "authorise",
+                        label: copy.authorise,
+                        onSelect: () => mutation.mutate(true),
+                        disabled: mutation.isPending,
+                      },
+                    ]
+                  : []
+              }
             />
-          </div>
-          {kind === "credit_note" ? (
-            <div className="space-y-2">
-              <Label>Credit against invoice (optional)</Label>
-              <EntityCombobox
-                aria-label="Source invoice"
-                options={creditableInvoices.map((i) => ({
-                  value: i.id,
-                  label: `${i.invoice_number ?? i.id.slice(0, 8)} (${i.status.replace("_", " ")}, ${i.currency_code})`,
-                }))}
-                value={sourceInvoiceId}
-                onChange={(v) => {
-                  setSourceInvoiceId(v);
-                  const inv = creditableInvoices.find((i) => i.id === v);
-                  if (inv) setCurrency(inv.currency_code);
-                }}
-                placeholder={contactId ? "None — standalone credit" : "Choose a customer first"}
-                disabled={!contactId}
-              />
-            </div>
-          ) : null}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label>{copy.dateLabel}</Label>
-              <Input
-                type="date"
-                voiceField={{
-                  key: "date",
-                  label: "Document date",
-                  aliases: ["date", "invoice date", "quote date", "credit note date"],
-                  order: 20,
-                }}
-                value={docDate}
-                onChange={(e) => onDocumentDateChange(e.target.value)}
-              />
-            </div>
-            {copy.secondLabel ? (
-              <div className="space-y-2">
-                <Label>{copy.secondLabel}</Label>
+            {copy.authorise ? (
+              <Button size="sm" disabled={mutation.isPending} onClick={() => mutation.mutate(true)}>
+                {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                {copy.authorise}
+              </Button>
+            ) : null}
+          </>
+        }
+        details={
+          <div className="space-y-3">
+            {formError ? (
+              <Alert variant="destructive">
+                <AlertDescription>{formError}</AlertDescription>
+              </Alert>
+            ) : null}
+            <FormGrid columns={4}>
+              <FormControlShell width="contact">
+                <Label className="text-xs font-medium text-muted-foreground">Customer</Label>
+                <EntityCombobox
+                  voiceField={{ key: "contactId", label: "Customer", order: 10 }}
+                  aria-label="Customer"
+                  options={customerOptions}
+                  value={contactId}
+                  onChange={onCustomerChange}
+                  placeholder="Search customers"
+                  allowClear={false}
+                  disabled={sourceLocked}
+                  companyId={companyId}
+                  canAddNew={can("contacts.manage") && !sourceLocked}
+                  createTitle="New customer"
+                  renderCreate={
+                    can("contacts.manage") && !sourceLocked
+                      ? (ctx) => (
+                          <ContactCreateForm companyId={companyId} kind="customer" ctx={ctx} />
+                        )
+                      : undefined
+                  }
+                  onCreated={(option) => {
+                    if (kind !== "invoice") return;
+                    const terms = Number(option.meta);
+                    if (Number.isFinite(terms)) setSecondDate(addDaysIso(docDate || today, terms));
+                  }}
+                />
+              </FormControlShell>
+              {kind === "credit_note" ? (
+                <FormControlShell width="contact">
+                  <Label>Credit against invoice (optional)</Label>
+                  <EntityCombobox
+                    aria-label="Source invoice"
+                    options={creditableInvoices.map((i) => ({
+                      value: i.id,
+                      label: `${i.invoice_number ?? i.id.slice(0, 8)} (${i.status.replace("_", " ")}, ${i.currency_code})`,
+                    }))}
+                    value={sourceInvoiceId}
+                    onChange={(v) => {
+                      setSourceInvoiceId(v);
+                      const inv = creditableInvoices.find((i) => i.id === v);
+                      if (inv) setCurrency(inv.currency_code);
+                    }}
+                    placeholder={contactId ? "None — standalone credit" : "Choose a customer first"}
+                    disabled={!contactId}
+                  />
+                </FormControlShell>
+              ) : null}
+              <FormControlShell width="date">
+                <Label>{copy.dateLabel}</Label>
                 <Input
                   type="date"
                   voiceField={{
-                    key: "dueDate",
-                    label: "Due date",
-                    aliases: ["expiry date"],
-                    order: 30,
+                    key: "date",
+                    label: "Document date",
+                    aliases: ["date", "invoice date", "quote date", "credit note date"],
+                    order: 20,
                   }}
-                  value={secondDate}
-                  onChange={(e) => setSecondDate(e.target.value)}
+                  value={docDate}
+                  onChange={(e) => onDocumentDateChange(e.target.value)}
                 />
-              </div>
-            ) : null}
-            <div className="space-y-2">
-              <Label>{copy.numberLabel}</Label>
-              <Input
-                voiceField={{
-                  key: "number",
-                  label: "Number",
-                  aliases: [
-                    "reference",
-                    "invoice number",
-                    "supplier reference",
-                    "reference number",
-                  ],
-                  order: 40,
-                }}
-                value={number}
-                onChange={(e) => setNumber(e.target.value)}
-                placeholder="Leave blank to auto-number"
-              />
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Currency</Label>
-              <VoiceSelect
-                voiceField={{ key: "currency", label: "Currency", order: 50 }}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={currency}
-                disabled={sourceLocked}
-                onChange={(e) => onDocumentCurrencyChange(e.target.value)}
-              >
-                {currencyOptions(base, currency ? [currency] : []).map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                    {c === base ? " (base)" : ""}
-                  </option>
-                ))}
-              </VoiceSelect>
-            </div>
-            {isForeign ? (
-              <div className="space-y-2">
-                <Label>
-                  Exchange rate (1 {currency} = ? {base})
-                </Label>
+              </FormControlShell>
+              {copy.secondLabel ? (
+                <FormControlShell width="date">
+                  <Label>{copy.secondLabel}</Label>
+                  <Input
+                    type="date"
+                    voiceField={{
+                      key: "dueDate",
+                      label: "Due date",
+                      aliases: ["expiry date"],
+                      order: 30,
+                    }}
+                    value={secondDate}
+                    onChange={(e) => setSecondDate(e.target.value)}
+                  />
+                </FormControlShell>
+              ) : null}
+              <FormControlShell>
+                <Label>{copy.numberLabel}</Label>
                 <Input
-                  value={fxRate}
-                  onChange={(e) => setFxRate(e.target.value)}
-                  inputMode="decimal"
-                  placeholder="e.g. 0.79"
+                  voiceField={{
+                    key: "number",
+                    label: "Number",
+                    aliases: [
+                      "reference",
+                      "invoice number",
+                      "supplier reference",
+                      "reference number",
+                    ],
+                    order: 40,
+                  }}
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  placeholder="Leave blank to auto-number"
                 />
-              </div>
-            ) : null}
-          </div>
+              </FormControlShell>
+              <FormControlShell width="currency">
+                <Label>Currency</Label>
+                <VoiceSelect
+                  voiceField={{ key: "currency", label: "Currency", order: 50 }}
+                  className="h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={currency}
+                  disabled={sourceLocked}
+                  onChange={(e) => onDocumentCurrencyChange(e.target.value)}
+                >
+                  {currencyOptions(base, currency ? [currency] : []).map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                      {c === base ? " (base)" : ""}
+                    </option>
+                  ))}
+                </VoiceSelect>
+              </FormControlShell>
+              {isForeign ? (
+                <FormControlShell width="money">
+                  <Label>
+                    Exchange rate (1 {currency} = ? {base})
+                  </Label>
+                  <Input
+                    value={fxRate}
+                    onChange={(e) => setFxRate(e.target.value)}
+                    inputMode="decimal"
+                    placeholder="e.g. 0.79"
+                  />
+                </FormControlShell>
+              ) : null}
+            </FormGrid>
           {isSalesDraft ? (
-            <div className="space-y-3 rounded-md border p-3">
-              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-                <div className="space-y-2">
-                  <Label htmlFor="sales-price-list">Sales price list (optional)</Label>
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-end gap-2">
+                <FormControlShell width="contact">
+                  <Label htmlFor="sales-price-list">Sales price list</Label>
                   <RecordLookupSelect
                     value={selectedPriceListId || "none"}
                     onValueChange={(value) => {
@@ -959,40 +1033,39 @@ export function SalesDocumentEditor({
                         ))}
                     </SelectContent>
                   </RecordLookupSelect>
-                </div>
+                </FormControlShell>
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={!draftPricesReady || !pricePreview?.changed || mutation.isPending}
                   onClick={() => setApplyPriceListOpen(true)}
                 >
-                  Preview existing-line prices
+                  Preview line prices
                 </Button>
+                <details className="min-w-0 max-w-xl text-xs text-muted-foreground">
+                  <summary className="cursor-pointer select-none text-foreground/80 hover:text-foreground">
+                    How price lists apply
+                  </summary>
+                  <p className="mt-1.5 leading-relaxed">
+                    Price lists match the document currency. New catalogue picks use quantity tiers
+                    and date rules; existing lines never reprice silently — preview and confirm
+                    changes. The list selection itself is not stored on the saved document.
+                  </p>
+                </details>
               </div>
-              <p className="text-xs text-muted-foreground">
-                The selected price list and genuine line pricing sources are recorded when you save
-                this draft. Price lists are available in their own currency only. New catalogue
-                selections use the applicable quantity tier and document date, then a fixed or
-                catalogue price. A single eligible percentage rule can reduce that unit price before
-                separate line discount amounts and tax. Changing quantity or date never silently
-                reprices existing lines: review and confirm any price changes. Saved documents
-                retain line prices; the list selection itself is not stored on the document.
-              </p>
               {customerDefaultPending ? (
-                <p className="text-xs text-muted-foreground">
-                  Checking the selected customer's default price list…
-                </p>
+                <p className="text-xs text-muted-foreground">Checking customer default price list…</p>
               ) : null}
               {manualPriceListId === null && customerDefaultQ.data?.reason === "available" ? (
                 <p className="text-xs text-muted-foreground">
-                  Customer default selected for this new draft. You can choose a different list.
+                  Customer default selected for this draft.
                 </p>
               ) : null}
               {manualPriceListId === null &&
               customerDefaultQ.data?.reason === "unavailable_or_currency_mismatch" ? (
                 <p className="text-xs text-muted-foreground">
-                  The customer has a default list, but it is archived or uses another currency.
-                  Catalogue pricing will apply unless you choose an eligible list.
+                  Customer default list is archived or in another currency — catalogue pricing
+                  applies unless you choose another list.
                 </p>
               ) : null}
               {manualPriceListId === null && customerDefaultQ.isError ? (
@@ -1012,12 +1085,11 @@ export function SalesDocumentEditor({
               ) : null}
               {priceListTooLarge && selectedPriceListId ? (
                 <p role="alert" className="text-sm text-destructive">
-                  Too many different products to resolve this list (maximum 250). Reduce the
-                  catalogue selection before using a price list.
+                  Too many different products to resolve this list (maximum 250).
                 </p>
               ) : null}
               {selectedPriceListId && draftPricesQ.isPending && !priceListTooLarge ? (
-                <p className="text-sm text-muted-foreground">Loading price-list amounts…</p>
+                <p className="text-xs text-muted-foreground">Loading price-list amounts…</p>
               ) : null}
               {selectedPriceListId && draftPricesQ.isError ? (
                 <div role="alert" className="flex flex-wrap items-center gap-2">
@@ -1031,19 +1103,18 @@ export function SalesDocumentEditor({
               ) : null}
               {selectedPriceListId && !selectedPriceList && !priceListsQ.isPending ? (
                 <p role="alert" className="text-sm text-destructive">
-                  This price list is archived or does not match the document currency. Choose
-                  another list or the default catalogue prices.
+                  This price list is archived or does not match the document currency.
                 </p>
               ) : null}
               {pricePreview ? (
                 <p className="text-xs text-muted-foreground" aria-live="polite">
-                  {pricePreview.matched} current line(s) have eligible list prices;
-                  {pricePreview.changed} price(s) differ. No existing line is automatically changed.
+                  {pricePreview.matched} line(s) eligible; {pricePreview.changed} differ — none
+                  change until you confirm.
                 </p>
               ) : null}
             </div>
           ) : null}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label>Memo / customer message</Label>
             <Input
               voiceField={{
@@ -1056,6 +1127,9 @@ export function SalesDocumentEditor({
               onChange={(e) => setMemo(e.target.value)}
             />
           </div>
+          </div>
+        }
+        lines={
           <SalesDocumentLines
             lines={lines}
             onChange={setLines}
@@ -1077,31 +1151,41 @@ export function SalesDocumentEditor({
             companyId={companyId}
             baseCurrency={base}
           />
+        }
+        totals={
+          totalsPreview ? (
+            <TotalsSummary
+              lines={[
+                {
+                  id: "subtotal",
+                  label: "Subtotal",
+                  value: `${displayCurrency} ${fromMinorUnits(totalsPreview.subtotal, displayCurrency)}`,
+                },
+                {
+                  id: "tax",
+                  label: treatment === "inclusive" ? "Tax (included)" : "Tax",
+                  value: `${displayCurrency} ${fromMinorUnits(totalsPreview.tax, displayCurrency)}`,
+                  emphasis: "muted",
+                },
+                {
+                  id: "total",
+                  label: "Total",
+                  value: `${displayCurrency} ${fromMinorUnits(totalsPreview.total, displayCurrency)}`,
+                  emphasis: "total",
+                },
+              ]}
+            />
+          ) : null
+        }
+        support={
           <DocumentRecordPanel
             ref={recordRef}
             entityType={recordEntityType}
             entityId={savedId ?? null}
             audience="customer"
           />
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={mutation.isPending}
-              onClick={() => mutation.mutate(false)}
-            >
-              {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              {savedId ? "Save changes" : "Save draft"}
-            </Button>
-            {copy.authorise ? (
-              <Button size="sm" disabled={mutation.isPending} onClick={() => mutation.mutate(true)}>
-                {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                {copy.authorise}
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      </ListWorkspace>
+        }
+      />
       <Dialog
         open={applyPriceListOpen}
         onOpenChange={(open) => {
@@ -1117,7 +1201,7 @@ export function SalesDocumentEditor({
             prices on matching lines in this draft. Quantity, tax, discount, account and unlisted
             item prices are retained.
           </p>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {lines.map((line, index) => {
               const newPrice = pricePreview?.lines[index]?.unitPrice;
               if (newPrice === undefined || newPrice === line.unitPrice) return null;

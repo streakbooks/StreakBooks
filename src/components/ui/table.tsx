@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
     <div
+      data-slot="table-scroll"
       className="relative w-full min-w-0 overflow-auto overscroll-x-contain rounded-[inherit] focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
       tabIndex={0}
       role="region"
@@ -49,7 +50,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        "border-b transition-colors duration-150 hover:bg-accent/60 focus-within:bg-accent/45 data-[state=selected]:bg-accent/80",
+        "border-b transition-colors duration-[var(--lb-duration-fast)] hover:bg-accent/70 focus-within:bg-accent/55 data-[state=selected]:bg-accent motion-reduce:transition-none",
         className,
       )}
       {...props}
@@ -65,7 +66,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 whitespace-nowrap px-4 text-left align-middle text-xs font-semibold tracking-[0.015em] text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "h-[var(--lb-table-row-height)] whitespace-nowrap px-4 text-left align-middle text-xs font-semibold tracking-[0.015em] text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className,
     )}
     {...props}

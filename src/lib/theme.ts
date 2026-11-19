@@ -30,10 +30,10 @@ export const PALETTE_STORAGE_KEY = "linkbooks-theme-palette";
 export const CUSTOM_PALETTE_STORAGE_KEY = "linkbooks-theme-custom";
 
 export const DEFAULT_CUSTOM_PALETTE: CustomPalette = {
-  primary: "#225eae",
-  accent: "#167e93",
-  sidebar: "#101d32",
-  lightBackground: "#f7f9fd",
+  primary: "#4f7df3",
+  accent: "#2aa5a0",
+  sidebar: "#ffffff",
+  lightBackground: "#f7fafc",
   darkBackground: "#152135",
 };
 
@@ -48,17 +48,17 @@ export const PALETTE_OPTIONS: readonly {
   {
     id: "classic",
     name: "LinkBooks Signature",
-    description: "Premium blue",
-    primary: "#2460ab",
-    sidebar: "#101d32",
-    surface: "#f7f9fc",
+    description: "Soft premium blue",
+    primary: "#4f7df3",
+    sidebar: "#ffffff",
+    surface: "#f7fafc",
   },
   {
     id: "sapphire",
     name: "Sapphire Focus",
-    description: "Confident blues",
-    primary: "#2554ad",
-    sidebar: "#0c2040",
+    description: "Soft pastel blues",
+    primary: "#3b6de0",
+    sidebar: "#ffffff",
     surface: "#f4f8ff",
   },
   {
@@ -66,15 +66,15 @@ export const PALETTE_OPTIONS: readonly {
     name: "Rose Professional",
     description: "Soft pink elegance",
     primary: "#993b6e",
-    sidebar: "#38243c",
+    sidebar: "#ffffff",
     surface: "#fff5f9",
   },
   {
     id: "amethyst",
     name: "Royal Indigo",
-    description: "Rich indigo confidence",
+    description: "Soft indigo accents",
     primary: "#7542a6",
-    sidebar: "#2b2044",
+    sidebar: "#ffffff",
     surface: "#faf6ff",
   },
   {
@@ -82,7 +82,7 @@ export const PALETTE_OPTIONS: readonly {
     name: "Emerald Professional",
     description: "Calm green",
     primary: "#1b7458",
-    sidebar: "#123b35",
+    sidebar: "#ffffff",
     surface: "#f3fbf6",
   },
   {
@@ -90,7 +90,7 @@ export const PALETTE_OPTIONS: readonly {
     name: "Modern Teal",
     description: "Modern and clear",
     primary: "#126d79",
-    sidebar: "#123541",
+    sidebar: "#ffffff",
     surface: "#f1fbfb",
   },
   {
@@ -98,15 +98,15 @@ export const PALETTE_OPTIONS: readonly {
     name: "Warm Sand",
     description: "Warm natural canvas",
     primary: "#825d2b",
-    sidebar: "#332b21",
+    sidebar: "#ffffff",
     surface: "#fffbf3",
   },
   {
     id: "graphite",
     name: "Executive Slate",
-    description: "Sophisticated slate",
+    description: "Soft slate accents",
     primary: "#394e69",
-    sidebar: "#171f2b",
+    sidebar: "#ffffff",
     surface: "#f5f7fa",
   },
 ];
@@ -212,7 +212,11 @@ export function computeCustomTokens(colors: CustomPalette, dark: boolean): Recor
   const card = blend(canvas, foreground === "#ffffff" ? "#000000" : "#ffffff", 0.04);
   const cardInk = ink(card);
   const active = primary;
-  const activeBackground = blend(active, sidebar, 0.13);
+  const lightSidebar = luminance(sidebar) > 0.55;
+  // Light sidebars use soft selected tints; dark sidebars keep solid accent selection.
+  const activeBackground = lightSidebar
+    ? blend(sidebar, primary, 0.14)
+    : blend(active, sidebar, 0.13);
   const secondary = blend(canvas, foreground === "#ffffff" ? "#000000" : "#ffffff", 0.06);
   const muted = blend(canvas, foreground === "#ffffff" ? "#000000" : "#ffffff", 0.065);
   // Hover surfaces inherit the page's text in tables and links. Reduce the tint
@@ -254,20 +258,34 @@ export function computeCustomTokens(colors: CustomPalette, dark: boolean): Recor
     "--border": blend(canvas, foreground, 0.2),
     "--input": readable(readable(blend(canvas, foreground, 0.28), canvas, 3), card, 3),
     "--sidebar": sidebar,
-    "--sidebar-top": blend(sidebar, "#ffffff", 0.05),
-    "--sidebar-bottom": blend(sidebar, "#000000", 0.09),
-    "--sidebar-foreground": ink(sidebar),
+    "--sidebar-top": lightSidebar
+      ? blend(sidebar, "#ffffff", 0.35)
+      : blend(sidebar, "#ffffff", 0.05),
+    "--sidebar-bottom": lightSidebar
+      ? blend(sidebar, canvas, 0.35)
+      : blend(sidebar, "#000000", 0.09),
+    "--sidebar-foreground": lightSidebar
+      ? readable("#5b6b7f", sidebar, 4.5)
+      : ink(sidebar),
     "--sidebar-primary": primary,
     "--sidebar-primary-foreground": ink(primary),
-    "--sidebar-accent": tint(sidebar, ink(sidebar), ink(sidebar)),
-    "--sidebar-accent-foreground": ink(sidebar),
-    "--sidebar-border": blend(sidebar, ink(sidebar), 0.25),
+    "--sidebar-accent": lightSidebar
+      ? tint(sidebar, primary, readable("#1f2a37", sidebar, 4.5))
+      : tint(sidebar, ink(sidebar), ink(sidebar)),
+    "--sidebar-accent-foreground": lightSidebar
+      ? readable("#1f2a37", sidebar, 4.5)
+      : ink(sidebar),
+    "--sidebar-border": lightSidebar
+      ? blend(sidebar, "#1f2a37", 0.1)
+      : blend(sidebar, ink(sidebar), 0.25),
     "--sidebar-ring": readable(primary, sidebar, 3),
     "--sidebar-active": activeBackground,
     "--sidebar-active-strong": active,
     "--sidebar-active-foreground": ink(activeBackground),
-    "--sidebar-active-border": blend(active, ink(active), 0.22),
-    "--sidebar-active-indicator": blend(active, ink(active), 0.3),
+    "--sidebar-active-border": lightSidebar
+      ? blend(activeBackground, primary, 0.28)
+      : blend(active, ink(active), 0.22),
+    "--sidebar-active-indicator": primary,
   };
 }
 

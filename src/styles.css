@@ -57,6 +57,8 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
   --color-brand: var(--primary);
+  --color-ai: var(--ai);
+  --color-ai-foreground: var(--ai-foreground);
   --color-money-in: var(--money-in);
   --color-money-out: var(--money-out);
   --color-success-soft: var(--success-soft);
@@ -71,6 +73,8 @@
   --color-destructive-ink: var(--destructive-ink);
   --color-neutral-soft: var(--neutral-soft);
   --color-neutral-ink: var(--neutral-ink);
+  --color-ai-soft: var(--ai-soft);
+  --color-ai-ink: var(--ai-ink);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -92,85 +96,143 @@
   --shadow-card: 0 1px 2px oklch(0.2 0.03 250 / 0.05), 0 0 0 1px oklch(0.2 0.03 250 / 0.03);
   --shadow-raised: 0 1px 2px oklch(0.2 0.03 250 / 0.06), 0 8px 24px oklch(0.2 0.03 250 / 0.1);
   --shadow-overlay: 0 4px 6px oklch(0.2 0.03 250 / 0.05), 0 16px 40px oklch(0.2 0.03 250 / 0.16);
+
+  /* Density / chrome layout (Batch 25 + Batch 40 field widths). */
+  --lb-sidebar-width: 16rem;
+  --lb-sidebar-width-collapsed: 4.5rem;
+  --lb-header-height: 4rem;
+  --lb-brand-bar-height: 3.5rem;
+  --lb-control-height: 2.25rem; /* 36px — standard inputs/buttons */
+  --lb-control-height-coarse: 2.5rem;
+  --lb-table-control-height: 2rem; /* 32px — spreadsheet cells */
+  --lb-table-row-height: 2.5rem; /* 40px — within 36–44px band */
+  --lb-field-contact-max: 26.25rem; /* 420px */
+  --lb-field-date-max: 11.25rem; /* 180px */
+  --lb-field-money-max: 10rem; /* 160px */
+  --lb-field-currency-max: 7.5rem; /* 120px */
+  --lb-space-1: 0.25rem;
+  --lb-space-2: 0.5rem;
+  --lb-space-3: 0.75rem;
+  --lb-space-4: 1rem;
+  --lb-space-5: 1.5rem;
+  --lb-space-6: 2rem;
+  --lb-duration-fast: 150ms;
+  --lb-duration-normal: 200ms;
+  --lb-radius-surface: var(--radius);
 }
 
 :root {
   --radius: 0.625rem;
+  --lb-sidebar-width: 16rem;
+  --lb-sidebar-width-collapsed: 4.5rem;
+  --lb-header-height: 4rem;
+  --lb-brand-bar-height: 3.5rem;
+  --lb-control-height: 2.25rem;
+  --lb-control-height-coarse: 2.5rem;
+  --lb-table-control-height: 2rem;
+  --lb-table-row-height: 2.5rem;
+  --lb-field-contact-max: 26.25rem;
+  --lb-field-date-max: 11.25rem;
+  --lb-field-money-max: 10rem;
+  --lb-field-currency-max: 7.5rem;
+  --lb-space-1: 0.25rem;
+  --lb-space-2: 0.5rem;
+  --lb-space-3: 0.75rem;
+  --lb-space-4: 1rem;
+  --lb-space-5: 1.5rem;
+  --lb-space-6: 2rem;
+  --lb-duration-fast: 150ms;
+  --lb-duration-normal: 200ms;
+  --lb-radius-surface: var(--radius);
 
-  --background: oklch(0.982 0.003 250);
-  --foreground: oklch(0.22 0.03 255);
+  /* Batch 33 — light, soft, eye-friendly premium palette (long accounting sessions). */
+  --background: #f7fafc;
+  --foreground: #1f2a37;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.03 255);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.03 255);
+  --card: #ffffff;
+  --card-foreground: #1f2a37;
+  --popover: #ffffff;
+  --popover-foreground: #1f2a37;
 
-  /* Brand accent: the only saturated UI colour. */
-  --primary: oklch(0.5 0.15 255);
-  --primary-foreground: oklch(0.99 0.004 255);
+  /* Soft pastel primary blue — saturated only on actions/selection. */
+  --primary: #4f7df3;
+  --primary-foreground: #ffffff;
 
-  --secondary: oklch(0.955 0.007 250);
-  --secondary-foreground: oklch(0.3 0.04 255);
+  --secondary: #fbfdff;
+  --secondary-foreground: #1f2a37;
 
-  --muted: oklch(0.956 0.006 250);
-  --muted-foreground: oklch(0.5 0.025 255);
+  --muted: #f3f6fa;
+  --muted-foreground: #5b6b7f;
 
   /* Accent = subtle hover/selected surface (shadcn convention), not a second brand colour. */
-  --accent: oklch(0.95 0.012 255);
-  --accent-foreground: oklch(0.28 0.05 255);
+  --accent: #eef4ff;
+  --accent-foreground: #1f2a37;
 
-  --destructive: oklch(0.54 0.2 25);
-  --destructive-foreground: oklch(0.99 0.005 25);
-  --success: oklch(0.55 0.13 155);
-  --success-foreground: oklch(0.99 0.005 155);
-  --warning: oklch(0.75 0.15 75);
-  --warning-foreground: oklch(0.25 0.05 75);
-  --info: oklch(0.52 0.13 245);
-  --info-foreground: oklch(0.99 0.005 245);
+  --destructive: #c94a4a;
+  --destructive-foreground: #ffffff;
+  --success: #2f8f57;
+  --success-foreground: #ffffff;
+  --warning: #b7791f;
+  --warning-foreground: #ffffff;
+  --info: #4f7df3;
+  --info-foreground: #ffffff;
+  /* AI assistance only — never use for document lifecycle or money direction. */
+  --ai: #7b5ea7;
+  --ai-foreground: #ffffff;
 
   /* Semantic: money direction + soft status surfaces (text "ink" is AA on its "soft" bg). */
-  --money-in: oklch(0.45 0.12 155);
-  --money-out: oklch(0.5 0.17 25);
-  --success-soft: oklch(0.95 0.045 155);
-  --success-ink: oklch(0.4 0.1 155);
-  /* Persisted completed/paid/reconciled states use teal, distinct from approval green. */
-  --complete-soft: oklch(0.946 0.052 194);
-  --complete-ink: oklch(0.36 0.092 195);
-  --warning-soft: oklch(0.96 0.06 85);
-  --warning-ink: oklch(0.42 0.09 65);
-  --info-soft: oklch(0.95 0.03 250);
-  --info-ink: oklch(0.42 0.13 255);
-  --destructive-soft: oklch(0.955 0.035 25);
-  --destructive-ink: oklch(0.45 0.17 25);
-  --neutral-soft: oklch(0.945 0.006 250);
-  --neutral-ink: oklch(0.4 0.03 255);
+  --money-in: #2f8f57;
+  --money-out: #c94a4a;
+  --success-soft: #eaf8ef;
+  --success-ink: #2f8f57;
+  /* Teal complete: reconciled/settled/processing-complete — distinct from paid green and approved blue. */
+  --complete-soft: #e7f7f6;
+  --complete-ink: #2a8f88;
+  --warning-soft: #fff6e8;
+  --warning-ink: #b7791f;
+  --info-soft: #eef4ff;
+  --info-ink: #3d6ad6;
+  --destructive-soft: #fdedee;
+  --destructive-ink: #c94a4a;
+  --neutral-soft: #f3f6fa;
+  --neutral-ink: #6b7a8c;
+  --ai-soft: #f4eefb;
+  --ai-ink: #6b4f96;
+  /* Sidebar module-group icon accents (inactive only; never override status semantics). */
+  --nav-group-money: #4f7df3;
+  --nav-group-records: #2aa5a0;
+  --nav-group-accounting: #6b7ae8;
+  --nav-group-practice: #c48a3a;
+  --nav-group-tools: #9b6bc7;
+  --nav-group-overview: #4f7df3;
+  --nav-group-footer: #6b7a8c;
 
-  --border: oklch(0.91 0.008 250);
-  --input: oklch(0.88 0.01 250);
-  --ring: oklch(0.55 0.16 255);
+  --border: #e6edf5;
+  --input: #e6edf5;
+  --ring: #4f7df3;
 
-  --chart-1: oklch(0.55 0.15 255);
-  --chart-2: oklch(0.62 0.12 160);
-  --chart-3: oklch(0.7 0.14 70);
-  --chart-4: oklch(0.58 0.17 25);
-  --chart-5: oklch(0.55 0.12 300);
+  --chart-1: #4f7df3;
+  --chart-2: #2aa5a0;
+  --chart-3: #c48a3a;
+  --chart-4: #c94a4a;
+  --chart-5: #9b6bc7;
 
-  /* Premium navigation palette: midnight navy and restrained sapphire. */
-  --sidebar: #101d32;
-  --sidebar-top: #132640;
-  --sidebar-bottom: #0c182b;
-  --sidebar-foreground: #cbd8eb;
-  --sidebar-primary: #78b9ff;
-  --sidebar-primary-foreground: #09192c;
-  --sidebar-accent: #203450;
-  --sidebar-accent-foreground: #f7fbff;
-  --sidebar-border: #354661;
-  --sidebar-ring: #91caff;
-  --sidebar-active: #194b8c;
-  --sidebar-active-strong: #1e61b1;
-  --sidebar-active-foreground: #ffffff;
-  --sidebar-active-border: #568bca;
-  --sidebar-active-indicator: #9cdbff;
+  /* Light premium navigator — white/soft surfaces, soft blue selection. */
+  --sidebar: #ffffff;
+  --sidebar-top: #fbfdff;
+  --sidebar-bottom: #f7fafc;
+  --sidebar-foreground: #5b6b7f;
+  --sidebar-primary: #4f7df3;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef4ff;
+  --sidebar-accent-foreground: #1f2a37;
+  --sidebar-border: #e6edf5;
+  --sidebar-ring: #4f7df3;
+  --sidebar-active: #eef4ff;
+  --sidebar-active-strong: #4f7df3;
+  --sidebar-active-foreground: #1f2a37;
+  --sidebar-active-border: #d6e4ff;
+  --sidebar-active-indicator: #4f7df3;
 }
 
 .dark {
@@ -197,6 +259,8 @@
   --warning-foreground: oklch(0.2 0.04 75);
   --info: oklch(0.7 0.12 245);
   --info-foreground: oklch(0.16 0.03 245);
+  --ai: oklch(0.72 0.14 305);
+  --ai-foreground: oklch(0.16 0.04 305);
 
   --money-in: oklch(0.78 0.14 155);
   --money-out: oklch(0.75 0.14 25);
@@ -212,6 +276,15 @@
   --destructive-ink: oklch(0.82 0.11 25);
   --neutral-soft: oklch(0.3 0.02 258);
   --neutral-ink: oklch(0.82 0.015 252);
+  --ai-soft: oklch(0.32 0.07 305 / 0.55);
+  --ai-ink: oklch(0.86 0.1 305);
+  --nav-group-money: #8fc4ff;
+  --nav-group-records: #7ad4cb;
+  --nav-group-accounting: #b0baff;
+  --nav-group-practice: #e8c08a;
+  --nav-group-tools: #d2b4f5;
+  --nav-group-overview: #9cdbff;
+  --nav-group-footer: #b7c4d8;
 
   --border: oklch(1 0 0 / 11%);
   --input: oklch(1 0 0 / 16%);
@@ -435,10 +508,16 @@
 /* Shared data/workspace polish: no per-module colour decisions required. */
 [data-slot="card"] {
   isolation: isolate;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  border-color: var(--border);
+  background-color: var(--card);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 4%, transparent);
+  transition:
+    border-color var(--lb-duration-fast) ease,
+    box-shadow var(--lb-duration-fast) ease;
 }
 [data-slot="card"]:focus-within {
-  border-color: color-mix(in oklab, var(--ring) 25%, var(--border));
+  border-color: color-mix(in oklab, var(--ring) 22%, var(--border));
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--foreground) 6%, transparent);
 }
 [data-slot="card"] > :where([data-slot="card-header"]) {
   border-radius: inherit;
@@ -450,8 +529,36 @@
   letter-spacing: -0.025em;
   text-wrap: balance;
 }
+
+/* Soft premium micro-interactions (respect reduced motion). */
+[data-slot="dialog-content"],
+[data-slot="sheet-content"],
+[data-slot="popover-content"],
+[data-slot="dropdown-menu-content"],
+[data-slot="select-content"],
+[data-slot="tooltip-content"] {
+  transition:
+    opacity var(--lb-duration-fast) ease,
+    transform var(--lb-duration-fast) ease;
+}
+.lb-transaction-workspace,
+.lb-list-workspace,
+.lb-record-workspace {
+  transition: background-color var(--lb-duration-normal) ease;
+}
 @media (prefers-reduced-motion: reduce) {
-  [data-slot="card"] { transition: none; }
+  [data-slot="card"],
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"],
+  [data-slot="tooltip-content"],
+  .lb-transaction-workspace,
+  .lb-list-workspace,
+  .lb-record-workspace {
+    transition: none;
+  }
 }
 @media (forced-colors: active) {
   .lb-status, .lb-status-indicator { border: 1px solid CanvasText; }
@@ -666,7 +773,40 @@
 }
 
 .lb-nav-link[data-active="true"]:hover {
-  filter: brightness(1.08);
+  /* Soft light palettes: avoid harsh brightness filters on pastel selected rows. */
+  filter: none;
+  background: color-mix(in oklab, var(--sidebar-active) 82%, var(--sidebar-active-strong));
+}
+
+/* Colourful module icons by nav group — inactive only; active uses sidebar-active chrome. */
+.lb-nav-link:not([data-active="true"]) svg {
+  color: var(--nav-group-icon, var(--sidebar-foreground));
+  opacity: 0.92;
+}
+.lb-nav-link[data-nav-group="overview"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-overview);
+}
+.lb-nav-link[data-nav-group="money"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-money);
+}
+.lb-nav-link[data-nav-group="records"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-records);
+}
+.lb-nav-link[data-nav-group="accounting"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-accounting);
+}
+.lb-nav-link[data-nav-group="practice"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-practice);
+}
+.lb-nav-link[data-nav-group="tools"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-tools);
+}
+.lb-nav-link[data-nav-group="footer"]:not([data-active="true"]) {
+  --nav-group-icon: var(--nav-group-footer);
+}
+/* AI Assistant keeps tools group tint but may be marked data-nav-accent="ai". */
+.lb-nav-link[data-nav-accent="ai"]:not([data-active="true"]) {
+  --nav-group-icon: var(--ai-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -685,12 +825,12 @@
   height: 2.25rem;
   overflow: hidden;
   border-radius: 0.7rem;
-  border: 1px solid color-mix(in oklab, var(--sidebar-primary) 35%, transparent);
+  border: 1px solid color-mix(in oklab, var(--sidebar-border) 90%, var(--sidebar-primary));
   background:
-    radial-gradient(circle at 24% 20%, color-mix(in oklab, var(--sidebar-primary) 31%, transparent), transparent 48%),
-    linear-gradient(140deg, var(--sidebar-accent), var(--sidebar));
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--sidebar-foreground) 12%, transparent),
-    0 3px 8px color-mix(in oklab, var(--sidebar) 45%, transparent);
+    radial-gradient(circle at 24% 20%, color-mix(in oklab, var(--sidebar-primary) 18%, transparent), transparent 52%),
+    linear-gradient(140deg, var(--sidebar-accent), var(--sidebar-top));
+  box-shadow: inset 0 1px 0 color-mix(in oklab, #ffffff 70%, transparent),
+    0 2px 6px color-mix(in oklab, var(--foreground) 6%, transparent);
 }
 .lb-brand-mark-spine {
   position: absolute;
@@ -722,8 +862,8 @@
   border-left: 0;
 }
 .lb-premium-sidebar {
-  background: linear-gradient(160deg, var(--sidebar-top), var(--sidebar) 43%, var(--sidebar-bottom));
-  box-shadow: 8px 0 28px -24px color-mix(in oklab, var(--sidebar) 80%, transparent);
+  background: linear-gradient(180deg, var(--sidebar-top), var(--sidebar) 42%, var(--sidebar-bottom));
+  box-shadow: 1px 0 0 var(--sidebar-border), 8px 0 24px -22px color-mix(in oklab, var(--foreground) 12%, transparent);
 }
 .lb-list-workspace,
 .lb-record-workspace {
@@ -741,7 +881,12 @@
   box-shadow: 0 1px 6px color-mix(in oklab, var(--foreground) 4%, transparent);
 }
 .lb-workspace-canvas {
-  background-image: radial-gradient(ellipse at 80% -14%, color-mix(in oklab, var(--primary) 6%, transparent), transparent 50%);
+  background-color: var(--background);
+  background-image: radial-gradient(
+    ellipse at 80% -14%,
+    color-mix(in oklab, var(--primary) 5%, transparent),
+    transparent 52%
+  );
 }
 @media (prefers-reduced-transparency: reduce) {
   .lb-workspace-topbar { backdrop-filter: none; }
@@ -769,37 +914,37 @@
 /* sapphire — coherent light/dark surface, action and navigator palette. */
 :root[data-linkbooks-palette="sapphire"] {
   --background: #f4f8ff;
-  --primary: #2554ad;
+  --primary: #3b6de0;
   --card: #ffffff;
   --muted: #edf3fc;
   --border: #dce5f5;
-  --sidebar: #0c2040;
-  --sidebar-top: #152b52;
-  --sidebar-bottom: #091832;
-  --sidebar-active: #2355a3;
-  --sidebar-active-strong: #2866c2;
-  --sidebar-ring: #8fc9ff;
+  --sidebar: #ffffff;
+  --sidebar-top: #fbfdff;
+  --sidebar-bottom: #f4f8ff;
+  --sidebar-active: #eef4ff;
+  --sidebar-active-strong: #3b6de0;
+  --sidebar-ring: #3b6de0;
   --primary-foreground: #ffffff;
-  --foreground: #1b2637;
-  --card-foreground: #1b2637;
+  --foreground: #1f2a37;
+  --card-foreground: #1f2a37;
   --popover: #ffffff;
-  --popover-foreground: #1b2637;
-  --secondary: #edf3fc;
-  --secondary-foreground: #1b2637;
-  --accent: #edf3fc;
-  --accent-foreground: #1b2637;
-  --muted-foreground: #586476;
+  --popover-foreground: #1f2a37;
+  --secondary: #fbfdff;
+  --secondary-foreground: #1f2a37;
+  --accent: #eef4ff;
+  --accent-foreground: #1f2a37;
+  --muted-foreground: #5b6b7f;
   --input: #dce5f5;
-  --ring: #2554ad;
-  --sidebar-foreground: #f2f6ff;
-  --sidebar-primary: #8fc9ff;
-  --sidebar-primary-foreground: #142238;
-  --sidebar-accent: #152b52;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #152b52;
-  --sidebar-active-foreground: #ffffff;
-  --sidebar-active-border: #8fc9ff;
-  --sidebar-active-indicator: #8fc9ff;
+  --ring: #3b6de0;
+  --sidebar-foreground: #5b6b7f;
+  --sidebar-primary: #3b6de0;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef4ff;
+  --sidebar-accent-foreground: #1f2a37;
+  --sidebar-border: #e6edf5;
+  --sidebar-active-foreground: #1f2a37;
+  --sidebar-active-border: #d6e4ff;
+  --sidebar-active-indicator: #3b6de0;
 }
 :root.dark[data-linkbooks-palette="sapphire"] {
   --background: #111a2c;
@@ -843,33 +988,33 @@
   --card: #fffafd;
   --muted: #fff0f6;
   --border: #edd6e2;
-  --sidebar: #38243c;
-  --sidebar-top: #493047;
-  --sidebar-bottom: #281b30;
-  --sidebar-active: #7b345d;
-  --sidebar-active-strong: #a44377;
-  --sidebar-ring: #ffb5d3;
+  --sidebar: #ffffff;
+  --sidebar-top: #fffafd;
+  --sidebar-bottom: #fff6fa;
+  --sidebar-active: #fff0f6;
+  --sidebar-active-strong: #993b6e;
+  --sidebar-ring: #993b6e;
   --primary-foreground: #ffffff;
-  --foreground: #1b2637;
-  --card-foreground: #1b2637;
+  --foreground: #1f2a37;
+  --card-foreground: #1f2a37;
   --popover: #fffafd;
-  --popover-foreground: #1b2637;
-  --secondary: #fff0f6;
-  --secondary-foreground: #1b2637;
+  --popover-foreground: #1f2a37;
+  --secondary: #fffafd;
+  --secondary-foreground: #1f2a37;
   --accent: #fff0f6;
-  --accent-foreground: #1b2637;
-  --muted-foreground: #586476;
+  --accent-foreground: #1f2a37;
+  --muted-foreground: #5b6b7f;
   --input: #edd6e2;
   --ring: #993b6e;
-  --sidebar-foreground: #f2f6ff;
-  --sidebar-primary: #ffb5d3;
-  --sidebar-primary-foreground: #142238;
-  --sidebar-accent: #493047;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #493047;
-  --sidebar-active-foreground: #ffffff;
-  --sidebar-active-border: #ffb5d3;
-  --sidebar-active-indicator: #ffb5d3;
+  --sidebar-foreground: #5b6b7f;
+  --sidebar-primary: #993b6e;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #fff0f6;
+  --sidebar-accent-foreground: #1f2a37;
+  --sidebar-border: #edd6e2;
+  --sidebar-active-foreground: #1f2a37;
+  --sidebar-active-border: #f3d5e4;
+  --sidebar-active-indicator: #993b6e;
 }
 :root.dark[data-linkbooks-palette="rose"] {
   --background: #201823;
@@ -913,33 +1058,33 @@
   --card: #fefbff;
   --muted: #f3edfc;
   --border: #e5daee;
-  --sidebar: #2b2044;
-  --sidebar-top: #3a2d59;
-  --sidebar-bottom: #201933;
-  --sidebar-active: #61428e;
-  --sidebar-active-strong: #8355bb;
-  --sidebar-ring: #c9a8f6;
+  --sidebar: #ffffff;
+  --sidebar-top: #fefbff;
+  --sidebar-bottom: #faf6ff;
+  --sidebar-active: #f3edfc;
+  --sidebar-active-strong: #7542a6;
+  --sidebar-ring: #7542a6;
   --primary-foreground: #ffffff;
-  --foreground: #1b2637;
-  --card-foreground: #1b2637;
+  --foreground: #1f2a37;
+  --card-foreground: #1f2a37;
   --popover: #fefbff;
-  --popover-foreground: #1b2637;
-  --secondary: #f3edfc;
-  --secondary-foreground: #1b2637;
+  --popover-foreground: #1f2a37;
+  --secondary: #fefbff;
+  --secondary-foreground: #1f2a37;
   --accent: #f3edfc;
-  --accent-foreground: #1b2637;
-  --muted-foreground: #586476;
+  --accent-foreground: #1f2a37;
+  --muted-foreground: #5b6b7f;
   --input: #e5daee;
   --ring: #7542a6;
-  --sidebar-foreground: #f2f6ff;
-  --sidebar-primary: #c9a8f6;
-  --sidebar-primary-foreground: #142238;
-  --sidebar-accent: #3a2d59;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #3a2d59;
-  --sidebar-active-foreground: #ffffff;
-  --sidebar-active-border: #c9a8f6;
-  --sidebar-active-indicator: #c9a8f6;
+  --sidebar-foreground: #5b6b7f;
+  --sidebar-primary: #7542a6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3edfc;
+  --sidebar-accent-foreground: #1f2a37;
+  --sidebar-border: #e5daee;
+  --sidebar-active-foreground: #1f2a37;
+  --sidebar-active-border: #e0d2f2;
+  --sidebar-active-indicator: #7542a6;
 }
 :root.dark[data-linkbooks-palette="amethyst"] {
   --background: #1d172b;
@@ -983,33 +1128,33 @@
   --card: #fbfffc;
   --muted: #eaf5ee;
   --border: #d4e9dc;
-  --sidebar: #123b35;
-  --sidebar-top: #1d5149;
-  --sidebar-bottom: #102a27;
-  --sidebar-active: #195f4d;
-  --sidebar-active-strong: #238369;
-  --sidebar-ring: #a7e9c8;
+  --sidebar: #ffffff;
+  --sidebar-top: #fbfffc;
+  --sidebar-bottom: #f3fbf6;
+  --sidebar-active: #eaf8ef;
+  --sidebar-active-strong: #1b7458;
+  --sidebar-ring: #1b7458;
   --primary-foreground: #ffffff;
-  --foreground: #1b2637;
-  --card-foreground: #1b2637;
+  --foreground: #1f2a37;
+  --card-foreground: #1f2a37;
   --popover: #fbfffc;
-  --popover-foreground: #1b2637;
-  --secondary: #eaf5ee;
-  --secondary-foreground: #1b2637;
+  --popover-foreground: #1f2a37;
+  --secondary: #fbfffc;
+  --secondary-foreground: #1f2a37;
   --accent: #eaf5ee;
-  --accent-foreground: #1b2637;
-  --muted-foreground: #586476;
+  --accent-foreground: #1f2a37;
+  --muted-foreground: #5b6b7f;
   --input: #d4e9dc;
   --ring: #1b7458;
-  --sidebar-foreground: #f2f6ff;
-  --sidebar-primary: #a7e9c8;
-  --sidebar-primary-foreground: #142238;
-  --sidebar-accent: #1d5149;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #1d5149;
-  --sidebar-active-foreground: #ffffff;
-  --sidebar-active-border: #a7e9c8;
-  --sidebar-active-indicator: #a7e9c8;
+  --sidebar-foreground: #5b6b7f;
+  --sidebar-primary: #1b7458;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eaf5ee;
+  --sidebar-accent-foreground: #1f2a37;
+  --sidebar-border: #d4e9dc;
+  --sidebar-active-foreground: #1f2a37;
+  --sidebar-active-border: #cfe9db;
+  --sidebar-active-indicator: #1b7458;
 }
 :root.dark[data-linkbooks-palette="emerald"] {
   --background: #12231e;
@@ -1053,33 +1198,33 @@
   --card: #fbffff;
   --muted: #e8f4f5;
   --border: #cee7e9;
-  --sidebar: #123541;
-  --sidebar-top: #1d4853;
-  --sidebar-bottom: #0d2731;
-  --sidebar-active: #1a6576;
-  --sidebar-active-strong: #198499;
-  --sidebar-ring: #a6e3ef;
+  --sidebar: #ffffff;
+  --sidebar-top: #fbffff;
+  --sidebar-bottom: #f1fbfb;
+  --sidebar-active: #e7f7f6;
+  --sidebar-active-strong: #126d79;
+  --sidebar-ring: #126d79;
   --primary-foreground: #ffffff;
-  --foreground: #1b2637;
-  --card-foreground: #1b2637;
+  --foreground: #1f2a37;
+  --card-foreground: #1f2a37;
   --popover: #fbffff;
-  --popover-foreground: #1b2637;
-  --secondary: #e8f4f5;
-  --secondary-foreground: #1b2637;
+  --popover-foreground: #1f2a37;
+  --secondary: #fbffff;
+  --secondary-foreground: #1f2a37;
   --accent: #e8f4f5;
-  --accent-foreground: #1b2637;
-  --muted-foreground: #586476;
+  --accent-foreground: #1f2a37;
+  --muted-foreground: #5b6b7f;
   --input: #cee7e9;
   --ring: #126d79;
-  --sidebar-foreground: #f2f6ff;
-  --sidebar-primary: #a6e3ef;
-  --sidebar-primary-foreground: #142238;
-  --sidebar-accent: #1d4853;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #1d4853;
-  --sidebar-active-foreground: #ffffff;
-  --sidebar-active-border: #a6e3ef;
-  --sidebar-active-indicator: #a6e3ef;
+  --sidebar-foreground: #5b6b7f;
+  --sidebar-primary: #126d79;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8f4f5;
+  --sidebar-accent-foreground: #1f2a37;
+  --sidebar-border: #cee7e9;
+  --sidebar-active-foreground: #1f2a37;
+  --sidebar-active-border: #c5e6e8;
+  --sidebar-active-indicator: #126d79;
 }
 :root.dark[data-linkbooks-palette="teal"] {
   --background: #122229;
@@ -1123,33 +1268,33 @@
   --card: #fffefd;
   --muted: #f8f1e5;
   --border: #e9ddc8;
-  --sidebar: #332b21;
-  --sidebar-top: #483b2b;
-  --sidebar-bottom: #251f1a;
-  --sidebar-active: #70552e;
-  --sidebar-active-strong: #99713c;
-  --sidebar-ring: #e8c68f;
+  --sidebar: #ffffff;
+  --sidebar-top: #fffefd;
+  --sidebar-bottom: #fffbf3;
+  --sidebar-active: #fff6e8;
+  --sidebar-active-strong: #825d2b;
+  --sidebar-ring: #825d2b;
   --primary-foreground: #ffffff;
-  --foreground: #1b2637;
-  --card-foreground: #1b2637;
+  --foreground: #1f2a37;
+  --card-foreground: #1f2a37;
   --popover: #fffefd;
-  --popover-foreground: #1b2637;
-  --secondary: #f8f1e5;
-  --secondary-foreground: #1b2637;
+  --popover-foreground: #1f2a37;
+  --secondary: #fffefd;
+  --secondary-foreground: #1f2a37;
   --accent: #f8f1e5;
-  --accent-foreground: #1b2637;
-  --muted-foreground: #586476;
+  --accent-foreground: #1f2a37;
+  --muted-foreground: #5b6b7f;
   --input: #e9ddc8;
   --ring: #825d2b;
-  --sidebar-foreground: #f2f6ff;
-  --sidebar-primary: #e8c68f;
-  --sidebar-primary-foreground: #142238;
-  --sidebar-accent: #483b2b;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #483b2b;
-  --sidebar-active-foreground: #ffffff;
-  --sidebar-active-border: #e8c68f;
-  --sidebar-active-indicator: #e8c68f;
+  --sidebar-foreground: #5b6b7f;
+  --sidebar-primary: #825d2b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f8f1e5;
+  --sidebar-accent-foreground: #1f2a37;
+  --sidebar-border: #e9ddc8;
+  --sidebar-active-foreground: #1f2a37;
+  --sidebar-active-border: #ead9b8;
+  --sidebar-active-indicator: #825d2b;
 }
 :root.dark[data-linkbooks-palette="champagne"] {
   --background: #221d19;
@@ -1193,33 +1338,33 @@
   --card: #ffffff;
   --muted: #ecf0f5;
   --border: #dce2e9;
-  --sidebar: #171f2b;
-  --sidebar-top: #253144;
-  --sidebar-bottom: #101823;
-  --sidebar-active: #324b70;
-  --sidebar-active-strong: #43678f;
-  --sidebar-ring: #b0cbe7;
+  --sidebar: #ffffff;
+  --sidebar-top: #fbfdff;
+  --sidebar-bottom: #f5f7fa;
+  --sidebar-active: #f3f6fa;
+  --sidebar-active-strong: #394e69;
+  --sidebar-ring: #394e69;
   --primary-foreground: #ffffff;
-  --foreground: #1b2637;
-  --card-foreground: #1b2637;
+  --foreground: #1f2a37;
+  --card-foreground: #1f2a37;
   --popover: #ffffff;
-  --popover-foreground: #1b2637;
-  --secondary: #ecf0f5;
-  --secondary-foreground: #1b2637;
+  --popover-foreground: #1f2a37;
+  --secondary: #fbfdff;
+  --secondary-foreground: #1f2a37;
   --accent: #ecf0f5;
-  --accent-foreground: #1b2637;
-  --muted-foreground: #586476;
+  --accent-foreground: #1f2a37;
+  --muted-foreground: #5b6b7f;
   --input: #dce2e9;
   --ring: #394e69;
-  --sidebar-foreground: #f2f6ff;
-  --sidebar-primary: #b0cbe7;
-  --sidebar-primary-foreground: #142238;
-  --sidebar-accent: #253144;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #253144;
-  --sidebar-active-foreground: #ffffff;
-  --sidebar-active-border: #b0cbe7;
-  --sidebar-active-indicator: #b0cbe7;
+  --sidebar-foreground: #5b6b7f;
+  --sidebar-primary: #394e69;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ecf0f5;
+  --sidebar-accent-foreground: #1f2a37;
+  --sidebar-border: #dce2e9;
+  --sidebar-active-foreground: #1f2a37;
+  --sidebar-active-border: #d3dae4;
+  --sidebar-active-indicator: #394e69;
 }
 :root.dark[data-linkbooks-palette="graphite"] {
   --background: #151920;
@@ -1298,4 +1443,132 @@
       border-color: ButtonText;
     }
   }
+}
+
+/* Spreadsheet-style document line grids: fill the container; fluid columns absorb leftover width. */
+.lb-spreadsheet-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 100%;
+  border-collapse: collapse;
+}
+.lb-editable-line-item-grid {
+  width: 100%;
+  min-width: 0;
+}
+.lb-editable-line-item-grid [data-slot="line-grid-scroll"],
+.lb-editable-line-item-grid [data-slot="table-scroll"] {
+  width: 100%;
+  min-width: 0;
+}
+.lb-spreadsheet-table th[data-fluid="true"],
+.lb-spreadsheet-table td[data-fluid="true"] {
+  width: auto;
+}
+.lb-spreadsheet-table th,
+.lb-spreadsheet-table td {
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+  vertical-align: middle;
+}
+.lb-spreadsheet-table th {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--muted-foreground);
+  background: color-mix(in oklab, var(--muted) 70%, var(--card));
+  padding: 0.4rem 0.5rem;
+  white-space: nowrap;
+}
+.lb-spreadsheet-table td {
+  padding: 0;
+  background: var(--card);
+}
+.lb-spreadsheet-table tr:hover td {
+  background: color-mix(in oklab, var(--muted) 35%, var(--card));
+}
+.lb-spreadsheet-table :where(input, button[role="combobox"], [data-slot="select-trigger"]) {
+  height: var(--lb-table-control-height);
+  min-height: var(--lb-table-control-height);
+  border-radius: 0;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.lb-spreadsheet-table :where(input:focus-visible, button[role="combobox"]:focus-visible, [data-slot="select-trigger"]:focus-visible) {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px var(--ring);
+  background: var(--background);
+}
+.lb-spreadsheet-resize {
+  position: absolute;
+  inset-block: 0.25rem;
+  right: 0;
+  width: 0.35rem;
+  cursor: col-resize;
+  border-radius: 999px;
+}
+.lb-spreadsheet-resize:hover,
+.lb-spreadsheet-resize:focus-visible {
+  background: color-mix(in oklab, var(--primary) 45%, transparent);
+}
+.lb-editable-line-item-grid .lb-spreadsheet-table th,
+.lb-editable-line-item-grid .lb-spreadsheet-table td {
+  border-inline-end: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+}
+.lb-spreadsheet-wrap {
+  display: block;
+  width: 100%;
+  min-height: var(--lb-table-control-height);
+  height: auto;
+  resize: vertical;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.3;
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.lb-spreadsheet-wrap:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px var(--ring);
+  background: var(--background);
+}
+
+/* Intelligent field widths — never stretch contact/date/money across the full content row. */
+.lb-field-contact {
+  max-width: min(100%, var(--lb-field-contact-max));
+}
+.lb-field-date {
+  max-width: min(100%, var(--lb-field-date-max));
+}
+.lb-field-money {
+  max-width: min(100%, var(--lb-field-money-max));
+}
+.lb-field-currency {
+  max-width: min(100%, var(--lb-field-currency-max));
+}
+.lb-field-full {
+  max-width: none;
+  width: 100%;
+}
+
+/* Compact transaction header labels — professional density without oversized chrome. */
+.lb-transaction-workspace [data-slot="transaction-details"] {
+  padding-block: 0.75rem;
+}
+.lb-transaction-workspace [data-slot="transaction-details"] :where(label) {
+  font-size: 0.75rem;
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  color: var(--muted-foreground);
+}
+.lb-transaction-workspace [data-slot="transaction-details"] :where(.space-y-1 > label, .space-y-2 > label) {
+  margin-bottom: 0;
+}
+.lb-transaction-workspace [data-slot="form-control-shell"] :where(button[role="combobox"], [data-slot="select-trigger"], input:not([type="checkbox"]):not([type="radio"])) {
+  max-width: 100%;
 }

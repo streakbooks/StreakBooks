@@ -1,78 +1,61 @@
 import { Link } from "@tanstack/react-router";
+import {
+  GroupedModuleSubnav,
+  groupedModuleSectionClassName,
+} from "@/components/common/GroupedModuleSubnav";
 import { useCan } from "@/hooks/use-can";
+import { HR_GROUPS } from "@/lib/hr/groups";
 import { HR_SECTIONS, type HrSectionKey } from "@/lib/hr/sections";
 import type { Permission } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
 
-const GROUP_LABELS: Record<string, string> = {
-  workspace: "Workspace",
-  people: "People",
-  time: "Time",
-  talent: "Talent",
-  lifecycle: "Lifecycle",
-  insights: "Insights",
-  admin: "Admin",
-};
-
+/**
+ * Compact two-row HR navigation (Batch 43 five-group IA).
+ *
+ * Overview · People · Workforce · Talent & Lifecycle · Administration
+ * with contextual section links. Every permitted destination remains a native Link.
+ */
 export function HrSubnav({ current }: { current: HrSectionKey }) {
   const { can } = useCan();
   const visible = HR_SECTIONS.filter((section) =>
     section.anyOf.some((permission) => can(permission as Permission)),
   );
 
-  const groups = visible.reduce<Record<string, typeof visible>>((acc, section) => {
-    const group = section.group;
-    if (!acc[group]) acc[group] = [] as unknown as typeof visible;
-    (acc[group] as Array<(typeof HR_SECTIONS)[number]>).push(section);
-    return acc;
-  }, {});
-
   return (
-    <nav
-      aria-label="HR sections"
-      className="mb-6 space-y-3 border-b border-border pb-3 print:hidden"
-    >
-      {Object.entries(groups).map(([group, items]) => (
-        <div key={group} className="min-w-0">
-          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {GROUP_LABELS[group] ?? group}
-          </p>
-          <div className="flex min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain">
-            {items.map((item) => {
-              const active = current === item.key;
-              const className = cn(
-                "inline-flex min-h-10 shrink-0 items-center rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11 motion-reduce:transition-none",
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              );
-              if (item.key === "overview") {
-                return (
-                  <Link
-                    key={item.key}
-                    to="/hr"
-                    className={className}
-                    aria-current={active ? "page" : undefined}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              }
-              return (
-                <Link
-                  key={item.key}
-                  to="/hr/$section"
-                  params={{ section: item.key }}
-                  className={className}
-                  aria-current={active ? "page" : undefined}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </nav>
+    <GroupedModuleSubnav
+      label="HR"
+      groups={HR_GROUPS}
+      sections={visible}
+      current={current}
+      overview={
+        visible.some((section) => section.key === "overview") && current !== "overview" ? (
+          <Link
+            to="/hr"
+            className="inline-flex h-8 items-center rounded-md border border-border px-2.5 text-[0.8125rem] font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-10 motion-reduce:transition-none"
+          >
+            Dashboard
+          </Link>
+        ) : null
+      }
+      renderSection={(section, active) => {
+        const className = groupedModuleSectionClassName(active);
+        if (section.key === "overview") {
+          return (
+            <Link to="/hr" className={className} aria-current={active ? "page" : undefined}>
+              {section.label}
+            </Link>
+          );
+        }
+        return (
+          <Link
+            to="/hr/$section"
+            params={{ section: section.key }}
+            className={className}
+            aria-current={active ? "page" : undefined}
+          >
+            {section.label}
+          </Link>
+        );
+      }}
+    />
   );
 }

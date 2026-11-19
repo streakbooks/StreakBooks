@@ -1,6 +1,16 @@
 import type { ReactNode } from "react";
 import { Label } from "@/components/ui/label";
+import type { FormControlWidth } from "@/lib/ui/form-density";
 import { cn } from "@/lib/utils";
+
+const FORM_CONTROL_WIDTH_CLASS: Record<FormControlWidth, string | undefined> = {
+  contact: "lb-field-contact",
+  date: "lb-field-date",
+  money: "lb-field-money",
+  currency: "lb-field-currency",
+  full: "lb-field-full",
+  default: undefined,
+};
 
 /**
  * Titled group of related fields inside a form. Left column describes the section on wide
@@ -23,7 +33,7 @@ export function FormSection({
     <section
       aria-label={title}
       className={cn(
-        "grid min-w-0 gap-4 border-b border-border/70 py-6 first:pt-0 last:border-b-0 lg:grid-cols-[minmax(11rem,14rem)_minmax(0,1fr)] lg:gap-8",
+        "grid min-w-0 gap-3 border-b border-border/70 py-4 first:pt-0 last:border-b-0 lg:grid-cols-[minmax(10rem,13rem)_minmax(0,1fr)] lg:gap-6",
         className,
       )}
     >
@@ -32,12 +42,12 @@ export function FormSection({
           {title}
         </h2>
         {description ? (
-          <p className="mt-2 pl-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
+          <p className="mt-1.5 pl-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
         ) : null}
       </div>
       <div
         className={cn(
-          "grid min-w-0 gap-4",
+          "grid min-w-0 gap-3",
           columns === 1 && "grid-cols-1",
           columns === 2 && "sm:grid-cols-2",
           columns === 3 && "sm:grid-cols-2 xl:grid-cols-3",
@@ -95,6 +105,61 @@ export function FormField({
           {error}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * Compact responsive field grid for transaction headers (contact, dates, reference).
+ * Prefer 3–4 columns on wide screens without forcing equal heights on every control.
+ * Pair children with `FormControlShell` so contact/date/money fields keep intelligent widths.
+ */
+export function FormGrid({
+  children,
+  columns = 3,
+  className,
+}: {
+  children: ReactNode;
+  columns?: 2 | 3 | 4;
+  className?: string;
+}) {
+  return (
+    <div
+      data-slot="form-grid"
+      className={cn(
+        "lb-form-grid grid min-w-0 gap-3",
+        columns === 2 && "sm:grid-cols-2",
+        columns === 3 && "sm:grid-cols-2 xl:grid-cols-3",
+        columns === 4 && "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Width-constrained field shell for transaction headers.
+ * Contact selectors stay 280–420px; dates ~150–180px; money/currency stay compact.
+ * Never force full-row width unless `width="full"`.
+ */
+export function FormControlShell({
+  width = "default",
+  children,
+  className,
+}: {
+  width?: FormControlWidth;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      data-slot="form-control-shell"
+      data-width={width}
+      className={cn("min-w-0 space-y-1", FORM_CONTROL_WIDTH_CLASS[width], className)}
+    >
+      {children}
     </div>
   );
 }

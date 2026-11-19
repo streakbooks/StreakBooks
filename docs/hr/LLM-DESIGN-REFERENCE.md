@@ -8,30 +8,32 @@
 
 | Group | Menu | Primary behaviours |
 |-------|------|--------------------|
-| Workspace | HR Overview | KPIs, pending approvals, alerts, deadlines |
+| Overview | HR Overview | KPIs, pending approvals, alerts, deadlines |
+| Overview | Employee Self-Service | Profile, requests, leave, attendance, documents |
+| Overview | Manager Workspace | Team, approvals, schedules, exceptions, delegation |
 | People | Employees | Directory, search/filters, profiles, history |
 | People | Organization | Companies/branches, departments, designations, reporting, org chart |
-| Lifecycle | Recruitment | Requisitions, openings, applications, interviews, offers |
-| Lifecycle | Onboarding | Pre-joining, documents checklist, orientation, approvals |
-| Time | Attendance | Check-in/out, logs, corrections, regularization, timesheets |
-| Time | Shifts & Rosters | Schedules, rotations, breaks, weekly offs, overtime |
-| Time | Leave Management | Policies, balances, requests, approvals, accruals |
-| Time | Holidays & Calendar | Holiday calendars, locations, team availability |
 | People | Employee Documents | Contracts, IDs, expiry, signatures |
-| Workspace | Employee Self-Service | Profile, requests, leave, attendance, documents |
-| Workspace | Manager Workspace | Team, approvals, schedules, exceptions, delegation |
-| Talent | Performance | Goals, KPIs, evaluations, feedback, appraisals |
-| Talent | Training & Development | Courses, certifications, learning plans, skills |
-| Talent | Compensation & Benefits | Comp history, benefits enrollment, approved changes |
 | People | Employee Assets | Allocation, return, condition, custody |
-| Lifecycle | Employee Relations | Grievances, HR cases, disciplinary workflows |
-| Lifecycle | Transfers & Promotions | Role/dept/manager/location changes |
-| Lifecycle | Offboarding | Resignations, clearances, asset returns, exit |
-| Insights | HR Reports | Workforce, attendance, leave, turnover, performance |
-| Admin | HR Approvals | Multilevel approvals, delegation |
-| Admin | HR Automations | Reminders, escalations, scheduled workflows |
-| Admin | HR Settings | Policies, roles, schedules, custom fields |
-| Admin | HR Audit Trail | Sensitive changes, actor, timestamp, approvals |
+| Recruitment | Recruitment | Requisitions, openings, applications, interviews, offers |
+| Recruitment | Onboarding | Pre-joining, documents checklist, orientation, approvals |
+| Recruitment | Employee Relations | Grievances, HR cases, disciplinary workflows |
+| Recruitment | Transfers & Promotions | Role/dept/manager/location changes |
+| Recruitment | Offboarding | Resignations, clearances, asset returns, exit |
+| Time & Leave | Attendance | Check-in/out, logs, corrections, regularization, timesheets |
+| Time & Leave | Shifts & Rosters | Schedules, rotations, breaks, weekly offs, overtime |
+| Time & Leave | Leave Management | Policies, balances, requests, approvals, accruals |
+| Time & Leave | Holidays & Calendar | Holiday calendars, locations, team availability |
+| Performance | Performance | Goals, KPIs, evaluations, feedback, appraisals |
+| Performance | Training & Development | Courses, certifications, learning plans, skills |
+| Compensation | Compensation & Benefits | Comp history, benefits enrollment, approved changes |
+| Reports | HR Reports | Workforce, attendance, leave, turnover, performance |
+| Administration | HR Approvals | Multilevel approvals, delegation |
+| Administration | HR Automations | Reminders, escalations, scheduled workflows |
+| Administration | HR Settings | Policies, roles, schedules, custom fields |
+| Administration | HR Audit Trail | Sensitive changes, actor, timestamp, approvals |
+
+Presentation uses compact two-row `GroupedModuleSubnav` (group selectors + section links). Routes and section keys are unchanged.
 
 ## 2. Dashboard structure (HR Overview)
 

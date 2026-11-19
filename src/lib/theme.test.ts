@@ -130,7 +130,8 @@ describe("appearance modes and palettes", () => {
     expect(light["--foreground"]).toBe("#ffffff");
     expect(dark["--foreground"]).toBe("#142033");
     expect(light["--primary-foreground"]).toBe("#142033");
-    expect(light["--sidebar-foreground"]).toBe("#142033");
+    // Light sidebars use soft secondary ink rather than pure navy on white.
+    expect(light["--sidebar-foreground"]).toBe("#5b6b7f");
     expect(light["--sidebar-active-foreground"]).toBe("#142033");
     expect(light["--background"]).toBe("#101010");
     expect(light["--chart-2"]).toBe("#227f8b");

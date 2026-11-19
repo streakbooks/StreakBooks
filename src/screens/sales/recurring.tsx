@@ -1,6 +1,7 @@
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useMemo, useState } from "react";
 
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -23,7 +24,9 @@ import { toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
 import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
 import { emptySalesLine, type SalesLineFormState } from "@/lib/sales/line-form-state";
@@ -60,29 +63,30 @@ const FREQUENCIES = [
   { value: "yearly", label: "Yearly" },
 ];
 
-export function RecurringInvoices() {
+const DEFAULT_LINES = () => Array.from({ length: 2 }, () => emptySalesLine());
+
+type RecurringInvoiceWorkspaceProps = {
+  editingId?: string | null;
+  onCancel: () => void;
+  onSaved: () => void;
+};
+
+function RecurringInvoiceWorkspace({
+  editingId = null,
+  onCancel,
+  onSaved,
+}: RecurringInvoiceWorkspaceProps) {
   const { company } = useActiveCompany();
   const { can } = useCan();
   const companyId = company?.id;
-  const qc = useQueryClient();
   const enabled = Boolean(companyId);
-  const fetchList = useServerFn(listRecurringInvoices);
-  const runDue = useServerFn(runDueRecurringInvoices);
   const fetchOne = useServerFn(getRecurringInvoice);
   const fetchCustomers = useServerFn(listCustomers);
   const fetchAccounts = useServerFn(listAccounts);
   const fetchProducts = useServerFn(listProducts);
   const fetchConfig = useServerFn(getSalesDocumentConfig);
   const save = useServerFn(saveRecurringInvoice);
-  const generate = useServerFn(generateRecurringInvoice);
-  const setActive = useServerFn(setRecurringActive);
-  const remove = useServerFn(deleteRecurringInvoice);
 
-  const listQ = useQuery({
-    queryKey: ["sales-recurring", companyId],
-    enabled,
-    queryFn: () => fetchList({ data: { companyId: companyId! } }),
-  });
   const customersQ = useQuery({
     queryKey: ["customers", companyId],
     enabled,
@@ -107,8 +111,6 @@ export function RecurringInvoices() {
   const base = configQ.data?.baseCurrency ?? company?.base_currency ?? "GBP";
   const today = configQ.data?.today ?? new Date().toISOString().slice(0, 10);
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState("");
   const [contactId, setContactId] = useState("");
   const [frequency, setFrequency] = useState("monthly");
@@ -118,12 +120,45 @@ export function RecurringInvoices() {
   const [terms, setTerms] = useState("");
   const [memo, setMemo] = useState("");
   const [autoAuth, setAutoAuth] = useState(false);
-  const [lines, setLines] = useState<SalesLineFormState[]>([emptySalesLine()]);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [lines, setLines] = useState<SalesLineFormState[]>(DEFAULT_LINES);
+  const [hydratedId, setHydratedId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!nextDue && configQ.data) setNextDue(configQ.data.today);
   }, [nextDue, configQ.data]);
+
+  useEffect(() => {
+    if (!companyId || !editingId || hydratedId === editingId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await fetchOne({ data: { companyId, recurringId: editingId } });
+        if (cancelled) return;
+        setName(r.name);
+        setContactId(r.contact_id);
+        setFrequency(r.frequency);
+        setNextDue(r.next_due_date);
+        setEndDate(r.end_date ?? "");
+        setMaxOcc(r.max_occurrences ? String(r.max_occurrences) : "");
+        setTerms(r.payment_terms_days !== null ? String(r.payment_terms_days) : "");
+        setMemo(r.memo ?? "");
+        setAutoAuth(r.auto_authorise);
+        setLines(
+          r.sales_recurring_invoice_lines.length
+            ? r.sales_recurring_invoice_lines.map((l) => lineRowToForm(l, r.currency_code))
+            : DEFAULT_LINES(),
+        );
+        setHydratedId(editingId);
+        setLoadError(null);
+      } catch (e) {
+        if (!cancelled) setLoadError(friendlyAuthError(e));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId, editingId, fetchOne, hydratedId]);
 
   const incomeAccounts = useMemo(
     () =>
@@ -149,45 +184,6 @@ export function RecurringInvoices() {
     }),
   );
 
-  const reset = () => {
-    setEditingId(null);
-    setFormOpen(false);
-    setName("");
-    setContactId("");
-    setFrequency("monthly");
-    setNextDue(today);
-    setEndDate("");
-    setMaxOcc("");
-    setTerms("");
-    setMemo("");
-    setAutoAuth(false);
-    setLines([emptySalesLine()]);
-  };
-
-  const startEdit = async (id: string) => {
-    try {
-      const r = await fetchOne({ data: { companyId: companyId!, recurringId: id } });
-      setEditingId(id);
-      setFormOpen(true);
-      setName(r.name);
-      setContactId(r.contact_id);
-      setFrequency(r.frequency);
-      setNextDue(r.next_due_date);
-      setEndDate(r.end_date ?? "");
-      setMaxOcc(r.max_occurrences ? String(r.max_occurrences) : "");
-      setTerms(r.payment_terms_days !== null ? String(r.payment_terms_days) : "");
-      setMemo(r.memo ?? "");
-      setAutoAuth(r.auto_authorise);
-      setLines(
-        r.sales_recurring_invoice_lines.length
-          ? r.sales_recurring_invoice_lines.map((l) => lineRowToForm(l, r.currency_code))
-          : [emptySalesLine()],
-      );
-    } catch (e) {
-      toast.error(friendlyAuthError(e));
-    }
-  };
-
   const saveM = useMutation({
     mutationFn: () => {
       if (!contactId) throw new Error("Choose a customer");
@@ -209,13 +205,203 @@ export function RecurringInvoices() {
         },
       });
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["sales-recurring", companyId] });
+    onSuccess: () => {
       toast.success(editingId ? "Recurring invoice updated" : "Recurring invoice created");
-      reset();
+      onSaved();
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+
+  const requiredQueries = [customersQ, accountsQ, productsQ, configQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined)) {
+    return (
+      <QueryErrorState queries={requiredQueries} title="Could not load recurring invoice options" />
+    );
+  }
+
+  if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
+  if (customersQ.isPending || accountsQ.isPending || productsQ.isPending || configQ.isPending) {
+    return <LoadingState />;
+  }
+  if (editingId && !hydratedId && !loadError) return <LoadingState />;
+  if (loadError) {
+    return <ErrorState title="Could not load schedule" description={loadError} onRetry={onCancel} />;
+  }
+
+  return (
+    <TransactionWorkspace
+      title={editingId ? "Edit recurring invoice" : "New recurring invoice"}
+      description="Schedule generates draft invoices on demand with customer terms and tax. Auto-authorise posts only when you have sales.authorise. Base currency only."
+      breadcrumbs={[
+        { label: "Sales", to: "/sales" },
+        { label: "Recurring invoices", to: "/sales/recurring" },
+        { label: editingId ? "Edit" : "New" },
+      ]}
+      stickyActions={
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button size="sm" disabled={saveM.isPending} onClick={() => saveM.mutate()}>
+            {saveM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            {editingId ? "Save changes" : "Create schedule"}
+          </Button>
+        </div>
+      }
+      details={
+        <FormGrid columns={4}>
+          <FormControlShell>
+            <Label>Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </FormControlShell>
+          <FormControlShell width="contact">
+            <Label>Customer</Label>
+            <EntityCombobox
+              aria-label="Customer"
+              options={customerOptions}
+              value={contactId}
+              onChange={setContactId}
+              placeholder="Search customers"
+              allowClear={false}
+              companyId={companyId}
+              canAddNew={can("contacts.manage")}
+              createTitle="New customer"
+              renderCreate={
+                can("contacts.manage")
+                  ? (ctx) => <ContactCreateForm companyId={companyId} kind="customer" ctx={ctx} />
+                  : undefined
+              }
+            />
+          </FormControlShell>
+          <FormControlShell>
+            <Label>Frequency</Label>
+            <select
+              className="h-[var(--lb-control-height)] w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={frequency}
+              onChange={(e) => setFrequency(e.target.value)}
+            >
+              {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+              {FREQUENCIES.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </FormControlShell>
+          <FormControlShell width="date">
+            <Label>Next invoice date</Label>
+            <Input
+              type="date"
+              value={nextDue || today}
+              onChange={(e) => setNextDue(e.target.value)}
+            />
+          </FormControlShell>
+          <FormControlShell width="date">
+            <Label>End date (optional)</Label>
+            <Input
+              type="date"
+              value={endDate}
+              min={nextDue || today}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </FormControlShell>
+          <FormControlShell width="money">
+            <Label>Stop after N invoices (optional)</Label>
+            <Input value={maxOcc} inputMode="numeric" onChange={(e) => setMaxOcc(e.target.value)} />
+          </FormControlShell>
+          <FormControlShell width="money">
+            <Label>Payment terms, days (blank = customer terms)</Label>
+            <Input value={terms} inputMode="numeric" onChange={(e) => setTerms(e.target.value)} />
+          </FormControlShell>
+          <FormControlShell className="sm:col-span-2">
+            <Label>Memo</Label>
+            <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
+          </FormControlShell>
+          <FormControlShell className="sm:col-span-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={autoAuth}
+                onChange={(e) => setAutoAuth(e.target.checked)}
+              />
+              Auto-authorise when generated
+            </label>
+          </FormControlShell>
+        </FormGrid>
+      }
+      lines={
+        <SalesDocumentLines
+          lines={lines}
+          onChange={setLines}
+          products={(productsQ.data ?? []) as never}
+          accounts={incomeAccounts}
+          currency={base}
+          treatment={configQ.data?.treatment ?? "exclusive"}
+          taxCodes={configQ.data?.taxCodes ?? []}
+          toMinor={(d) => toMinorUnits(d, base)}
+          companyId={companyId}
+          baseCurrency={base}
+        />
+      }
+    />
+  );
+}
+
+/** Full-page create destination for Create menu and Sales → Recurring → New. */
+export function NewRecurringInvoice() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { company } = useActiveCompany();
+  const companyId = company?.id;
+
+  return (
+    <RecurringInvoiceWorkspace
+      onCancel={() => void navigate({ to: "/sales/recurring" })}
+      onSaved={async () => {
+        await qc.invalidateQueries({ queryKey: ["sales-recurring", companyId] });
+        void navigate({ to: "/sales/recurring" });
+      }}
+    />
+  );
+}
+
+/** Full-page edit destination with browser history and deep links. */
+export function EditRecurringInvoice({ recurringId }: { recurringId: string }) {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { company } = useActiveCompany();
+  const companyId = company?.id;
+
+  return (
+    <RecurringInvoiceWorkspace
+      editingId={recurringId}
+      onCancel={() => void navigate({ to: "/sales/recurring" })}
+      onSaved={async () => {
+        await qc.invalidateQueries({ queryKey: ["sales-recurring", companyId] });
+        void navigate({ to: "/sales/recurring" });
+      }}
+    />
+  );
+}
+
+export function RecurringInvoices() {
+  const { company } = useActiveCompany();
+  const companyId = company?.id;
+  const qc = useQueryClient();
+  const enabled = Boolean(companyId);
+  const fetchList = useServerFn(listRecurringInvoices);
+  const runDue = useServerFn(runDueRecurringInvoices);
+  const generate = useServerFn(generateRecurringInvoice);
+  const setActive = useServerFn(setRecurringActive);
+  const remove = useServerFn(deleteRecurringInvoice);
+
+  const listQ = useQuery({
+    queryKey: ["sales-recurring", companyId],
+    enabled,
+    queryFn: () => fetchList({ data: { companyId: companyId! } }),
+  });
+
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const genM = useMutation({
     mutationFn: (recurringId: string) => generate({ data: { companyId: companyId!, recurringId } }),
@@ -247,13 +433,8 @@ export function RecurringInvoices() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  const requiredQueries = [customersQ, accountsQ, productsQ, configQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
-    return (
-      <QueryErrorState queries={requiredQueries} title="Could not load recurring invoice options" />
-    );
-
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
+
   const rows = listQ.data ?? [];
 
   return (
@@ -261,127 +442,21 @@ export function RecurringInvoices() {
       title="Recurring invoices"
       description="Generates draft invoices on demand with customer terms and tax. Auto-authorise posts only when you have sales.authorise. Base currency only."
       actions={
-        !formOpen ? (
-          <div className="flex gap-2">
-            <RunDueButton
-              label="invoices"
-              run={() => runDue({ data: { companyId: companyId! } })}
-              invalidateKeys={[
-                ["sales-recurring", companyId],
-                ["sales-invoices", companyId],
-              ]}
-            />
-            <Button size="sm" onClick={() => setFormOpen(true)}>
-              New recurring invoice
-            </Button>
-          </div>
-        ) : null
+        <div className="flex gap-2">
+          <RunDueButton
+            label="invoices"
+            run={() => runDue({ data: { companyId: companyId! } })}
+            invalidateKeys={[
+              ["sales-recurring", companyId],
+              ["sales-invoices", companyId],
+            ]}
+          />
+          <Button size="sm" asChild>
+            <Link to="/sales/recurring/new">New recurring invoice</Link>
+          </Button>
+        </div>
       }
     >
-      {formOpen ? (
-        <div className="mb-8 grid max-w-4xl gap-3 rounded-md border p-4">
-          <Label className="text-base">{editingId ? "Edit schedule" : "Create schedule"}</Label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label>Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label>Customer</Label>
-              <EntityCombobox
-                aria-label="Customer"
-                options={customerOptions}
-                value={contactId}
-                onChange={setContactId}
-                placeholder="Search customers"
-                allowClear={false}
-                companyId={companyId}
-                canAddNew={can("contacts.manage")}
-                createTitle="New customer"
-                renderCreate={
-                  can("contacts.manage")
-                    ? (ctx) => <ContactCreateForm companyId={companyId} kind="customer" ctx={ctx} />
-                    : undefined
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Frequency</Label>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={frequency}
-                onChange={(e) => setFrequency(e.target.value)}
-              >
-                {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
-
-                {FREQUENCIES.map((f) => (
-                  <option key={f.value} value={f.value}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <Label>Next invoice date</Label>
-              <Input type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label>End date (optional)</Label>
-              <Input
-                type="date"
-                value={endDate}
-                min={nextDue}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Stop after N invoices (optional)</Label>
-              <Input
-                value={maxOcc}
-                inputMode="numeric"
-                onChange={(e) => setMaxOcc(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Payment terms, days (blank = customer terms)</Label>
-              <Input value={terms} inputMode="numeric" onChange={(e) => setTerms(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label>Memo</Label>
-              <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
-            </div>
-          </div>
-          <SalesDocumentLines
-            lines={lines}
-            onChange={setLines}
-            products={(productsQ.data ?? []) as never}
-            accounts={incomeAccounts}
-            currency={base}
-            treatment={configQ.data?.treatment ?? "exclusive"}
-            taxCodes={configQ.data?.taxCodes ?? []}
-            toMinor={(d) => toMinorUnits(d, base)}
-            companyId={companyId}
-            baseCurrency={base}
-          />
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={autoAuth}
-              onChange={(e) => setAutoAuth(e.target.checked)}
-            />
-            Auto-authorise when generated
-          </label>
-          <div className="flex gap-2">
-            <Button size="sm" disabled={saveM.isPending} onClick={() => saveM.mutate()}>
-              {saveM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              {editingId ? "Save changes" : "Create"}
-            </Button>
-            <Button size="sm" variant="outline" onClick={reset}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      ) : null}
       {listQ.isPending ? (
         <LoadingState />
       ) : listQ.isError ? (
@@ -391,7 +466,15 @@ export function RecurringInvoices() {
           onRetry={() => listQ.refetch()}
         />
       ) : rows.length === 0 ? (
-        <EmptyState title="No recurring invoices" description="Create a schedule to start." />
+        <EmptyState
+          title="No recurring invoices"
+          description="Create a schedule to start."
+          action={
+            <Button size="sm" asChild>
+              <Link to="/sales/recurring/new">New recurring invoice</Link>
+            </Button>
+          }
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -432,8 +515,10 @@ export function RecurringInvoices() {
                     ) : null}
                   </TableCell>
                   <TableCell className="space-x-1 text-right">
-                    <Button size="sm" variant="ghost" onClick={() => startEdit(r.id)}>
-                      Edit
+                    <Button size="sm" variant="ghost" asChild>
+                      <Link to="/sales/recurring/$id/edit" params={{ id: r.id }}>
+                        Edit
+                      </Link>
                     </Button>
                     {!ended ? (
                       <Button

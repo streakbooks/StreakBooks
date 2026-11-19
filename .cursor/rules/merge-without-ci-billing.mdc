@@ -1,0 +1,14 @@
+---
+description: Merge LinkBooks PRs without waiting when GitHub Actions fail solely due to org billing
+alwaysApply: true
+---
+
+# Merge without waiting for CI billing
+
+Gulshan (Operations) authorised this standing instruction for LinkBooks (`linkbusinessadvisory/LinkBooks`):
+
+1. When GitHub Actions jobs fail because **org billing / spending limit** prevented jobs from starting (not because of real test failures), **do not wait** for billing to be restored before merging.
+2. Merge with `--admin` (or equivalent) after **local quality gates** pass for the batch (relevant Vitest, `check:navigation`, `check:browsing-coverage`, and other batch-specific checks).
+3. Document honestly in the final report: CI blocked by billing; local gates PASS; merge authorised.
+4. Never treat a real failing test/lint/typecheck as a billing skip. Only skip waiting when the failure is billing/spending-limit and jobs never ran.
+5. Continue production-ready batches after merge without re-asking for this permission.

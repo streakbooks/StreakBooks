@@ -2,7 +2,13 @@ import { useCaptcha } from "@/hooks/use-captcha";
 import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
 import { MoneyField } from "@/components/banking/MoneyField";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { CheckoutForm } from "@/components/billing/CheckoutForm";
 import { Route as ContactImportRoute } from "@/routes/_authenticated/contacts/import";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
@@ -23,9 +29,14 @@ import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { CsvImportPreview } from "@/components/common/CsvImportPreview";
-import { FormSection, FormField } from "@/components/common/form-layout";
+import { FormSection, FormField, FormGrid, FormControlShell } from "@/components/common/form-layout";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { createEmptyDocumentLines } from "@/lib/ui/document-line-defaults";
+import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import {
   Dialog,
   DialogContent,
@@ -212,6 +223,102 @@ function BillFixture() {
       >
         <Input aria-label="Unsaved bill note" defaultValue="Keep this note" />
       </BillWorkspaceLayout>
+    </main>
+  );
+}
+
+function DensityFixture() {
+  const lines = createEmptyDocumentLines(() => ({ id: crypto.randomUUID() }));
+  return (
+    <main className="min-h-screen bg-background p-4">
+      <TransactionWorkspace
+        title="New bill density"
+        breadcrumbs={[
+          { label: "Purchases", to: "/" },
+          { label: "Bills", to: "/" },
+          { label: "New" },
+        ]}
+        stickyActions={
+          <>
+            <Button variant="outline">Save draft</Button>
+            <Button>Save & authorise</Button>
+          </>
+        }
+        details={
+          <FormGrid columns={4}>
+            <FormControlShell width="contact">
+              <Label htmlFor="density-supplier">Supplier</Label>
+              <Input id="density-supplier" aria-label="Supplier" defaultValue="Northfield" />
+            </FormControlShell>
+            <FormControlShell width="date">
+              <Label htmlFor="density-bill-date">Bill date</Label>
+              <Input id="density-bill-date" aria-label="Bill date" type="date" defaultValue="2026-11-18" />
+            </FormControlShell>
+            <FormControlShell width="date">
+              <Label htmlFor="density-due-date">Due date</Label>
+              <Input id="density-due-date" aria-label="Due date" type="date" defaultValue="2026-12-18" />
+            </FormControlShell>
+            <FormControlShell width="currency">
+              <Label>Currency</Label>
+              <Select defaultValue="GBP">
+                <SelectTrigger aria-label="Currency">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="GBP">GBP</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormControlShell>
+            <FormControlShell width="money">
+              <Label htmlFor="density-qty">Quantity</Label>
+              <Input id="density-qty" aria-label="Quantity" inputMode="decimal" defaultValue="1" />
+            </FormControlShell>
+          </FormGrid>
+        }
+        lines={
+          <EditableLineItemGrid
+            aria-label="Line items"
+            columns={[
+              {
+                id: "description",
+                header: "Description",
+                widthPx: 280,
+                minWidthPx: 200,
+                fluid: true,
+              },
+              { id: "qty", header: "Qty", align: "right", widthPx: 72, minWidthPx: 64 },
+              { id: "price", header: "Price", align: "right", widthPx: 100, minWidthPx: 80 },
+              { id: "actions", header: "", widthPx: 48, minWidthPx: 40, resizable: false },
+            ]}
+            onAddRow={() => undefined}
+            footer={
+              <TotalsSummary
+                lines={[
+                  { id: "subtotal", label: "Subtotal", value: "0.00" },
+                  { id: "tax", label: "Total tax", value: "0.00" },
+                  { id: "total", label: "Total", value: "0.00", emphasis: "total" },
+                ]}
+              />
+            }
+          >
+            {lines.map((line, index) => (
+              <TableRow key={line.id}>
+                <TableCell className="p-0">
+                  <Input aria-label={`Line ${index + 1} description`} defaultValue="" />
+                </TableCell>
+                <TableCell className="p-0">
+                  <Input aria-label={`Line ${index + 1} qty`} defaultValue="" className="text-right" />
+                </TableCell>
+                <TableCell className="p-0">
+                  <Input aria-label={`Line ${index + 1} price`} defaultValue="" className="text-right" />
+                </TableCell>
+                <TableCell className="p-0" />
+              </TableRow>
+            ))}
+          </EditableLineItemGrid>
+        }
+      />
+      <output aria-label="Default line count">{lines.length}</output>
     </main>
   );
 }
@@ -472,6 +579,7 @@ function Scenario() {
       </main>
     );
   if (params.get("flow") === "bill") return <BillFixture />;
+  if (params.get("flow") === "density") return <DensityFixture />;
   return <Fixture />;
 }
 const root = createRootRoute({ component: Scenario });

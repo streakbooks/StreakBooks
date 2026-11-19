@@ -32,12 +32,15 @@ type Props = {
   attachments?: AttachmentPreview[] | undefined;
   onDownloadAttachment?: ((id: string) => void) | undefined;
   header: ReactNode;
+  /** Sticky save / authorise bar — remains visible while scrolling line entry. */
+  stickyActions?: ReactNode;
   children: ReactNode;
   className?: string | undefined;
 };
 
 /**
- * Premium three-pane New Bill shell: header + expanding main workspace + right supplier sidebar.
+ * LinkBooks original three-pane New Bill shell: header + expanding main workspace + supplier
+ * insight sidebar. Uses AppShell density tokens and LinkBooks surfaces — not a competitor layout.
  * Closing/collapsing the sidebar expands the main form without remounting children.
  */
 export function BillWorkspaceLayout({
@@ -53,6 +56,7 @@ export function BillWorkspaceLayout({
   attachments,
   onDownloadAttachment,
   header,
+  stickyActions,
   children,
   className,
 }: Props) {
@@ -62,8 +66,15 @@ export function BillWorkspaceLayout({
     if (wide) setMobileSummaryOpen(false);
   }, [wide]);
   return (
-    <div className={cn("flex min-h-[calc(100vh-4rem)] min-w-0 flex-col", className)}>
-      <div className="shrink-0 border-b border-border/75 bg-gradient-to-r from-card via-card to-accent/20 px-2 pb-4 pt-1 sm:px-3">
+    <div
+      data-slot="bill-workspace-layout"
+      className={cn(
+        "flex min-h-[calc(100vh-var(--lb-header-height,4rem))] min-w-0 flex-col",
+        stickyActions ? "pb-24" : undefined,
+        className,
+      )}
+    >
+      <div className="shrink-0 border-b border-border/75 bg-card px-2 pb-4 pt-1 sm:px-3">
         {header}
         {sidebarState === "closed" ? (
           <div className="mt-2 hidden items-center gap-3 xl:flex">
@@ -98,7 +109,12 @@ export function BillWorkspaceLayout({
         ) : null}
       </div>
       <Sheet open={mobileSummaryOpen} onOpenChange={setMobileSummaryOpen}>
-        <div className="sticky bottom-0 z-10 border-t border-border/80 bg-card/95 p-3 shadow-raised xl:hidden print:hidden">
+        <div
+          className={cn(
+            "sticky z-10 border-t border-border/80 bg-card/95 p-3 shadow-raised xl:hidden print:hidden",
+            stickyActions ? "bottom-16" : "bottom-0",
+          )}
+        >
           <SheetTrigger asChild>
             <Button
               type="button"
@@ -132,6 +148,16 @@ export function BillWorkspaceLayout({
           />
         </SheetContent>
       </Sheet>
+      {stickyActions ? (
+        <div
+          data-slot="bill-sticky-actions"
+          className="fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-card/95 px-3 py-3 backdrop-blur-sm supports-[backdrop-filter]:bg-card/85 lg:left-[var(--lb-sidebar-current-width,var(--lb-sidebar-width))] print:hidden"
+        >
+          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2">
+            {stickyActions}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

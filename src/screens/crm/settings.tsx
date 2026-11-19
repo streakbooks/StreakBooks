@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { PersistedSwitch } from "@/components/common/PersistedSwitch";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -44,7 +44,6 @@ export function CrmSettingsPage() {
     retry: false,
   });
 
-  const [enabled, setEnabled] = useState<boolean | null>(null);
   const [leadPrefix, setLeadPrefix] = useState<string | null>(null);
   const [oppPrefix, setOppPrefix] = useState<string | null>(null);
   const [staleDays, setStaleDays] = useState<number | null>(null);
@@ -55,7 +54,7 @@ export function CrmSettingsPage() {
       return saveSettings({
         data: {
           companyId: company.id,
-          enabled: enabled ?? settings.data.enabled,
+          enabled: settings.data.enabled,
           leadNumberPrefix: leadPrefix ?? settings.data.leadNumberPrefix,
           opportunityNumberPrefix: oppPrefix ?? settings.data.opportunityNumberPrefix,
           staleDealDays: staleDays ?? settings.data.staleDealDays,
@@ -65,10 +64,31 @@ export function CrmSettingsPage() {
     },
     onSuccess: async () => {
       toast.success("CRM settings saved");
-      setEnabled(null);
       setLeadPrefix(null);
       setOppPrefix(null);
       setStaleDays(null);
+      await queryClient.invalidateQueries({ queryKey: ["crm-settings", company?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["crm-dashboard-kpis", company?.id] });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const enableMutation = useMutation({
+    mutationFn: async (nextEnabled: boolean) => {
+      if (!company || !settings.data) throw new Error("Settings not loaded");
+      return saveSettings({
+        data: {
+          companyId: company.id,
+          enabled: nextEnabled,
+          leadNumberPrefix: leadPrefix ?? settings.data.leadNumberPrefix,
+          opportunityNumberPrefix: oppPrefix ?? settings.data.opportunityNumberPrefix,
+          staleDealDays: staleDays ?? settings.data.staleDealDays,
+          expectedVersion: settings.data.version,
+        },
+      });
+    },
+    onSuccess: async () => {
+      toast.success("CRM enablement saved");
       await queryClient.invalidateQueries({ queryKey: ["crm-settings", company?.id] });
       await queryClient.invalidateQueries({ queryKey: ["crm-dashboard-kpis", company?.id] });
     },
@@ -81,8 +101,9 @@ export function CrmSettingsPage() {
   }
   if (!canAdmin) {
     return (
-      <ListWorkspace title="CRM Settings" description="Organisation CRM configuration.">
-        <CrmSubnav current="settings" />
+      <ListWorkspace title="CRM Settings" description="Organisation CRM configuration."
+      subnav={<CrmSubnav current="settings" />}
+    >
         <EmptyState
           title="Administrator access required"
           description="Only users with crm.admin can change CRM settings."
@@ -92,7 +113,7 @@ export function CrmSettingsPage() {
   }
 
   const current = settings.data;
-  const enabledValue = enabled ?? current?.enabled ?? false;
+  const enabledValue = current?.enabled ?? false;
   const leadPrefixValue = leadPrefix ?? current?.leadNumberPrefix ?? "LEAD-";
   const oppPrefixValue = oppPrefix ?? current?.opportunityNumberPrefix ?? "OPP-";
   const staleValue = staleDays ?? current?.staleDealDays ?? 30;
@@ -111,8 +132,8 @@ export function CrmSettingsPage() {
           {mutation.isPending ? "Saving…" : "Save settings"}
         </Button>
       }
+      subnav={<CrmSubnav current="settings" />}
     >
-      <CrmSubnav current="settings" />
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (
         <ErrorState
@@ -139,11 +160,14 @@ export function CrmSettingsPage() {
                     Required before creating leads or opportunities.
                   </p>
                 </div>
-                <Switch
+                <PersistedSwitch
                   id="crm-enabled"
                   checked={enabledValue}
-                  onCheckedChange={setEnabled}
                   aria-label="Enable CRM"
+                  disabled={!current || enableMutation.isPending || mutation.isPending}
+                  onPersist={async (next) => {
+                    await enableMutation.mutateAsync(next);
+                  }}
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">

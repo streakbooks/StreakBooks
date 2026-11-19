@@ -306,7 +306,7 @@ function AccountantTools() {
         <TabsContent value="journals" className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" asChild>
-              <Link to="/accounting" search={{ tab: "post" }}>
+              <Link to="/accounting/journals/new" search={{ mode: "post" }}>
                 Create manual journal
               </Link>
             </Button>

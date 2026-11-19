@@ -51,6 +51,12 @@ const required = [
   ["src/routes/_authenticated/index.tsx", "WorkspaceInsights"],
   ["src/screens/accounting.tsx", "ListWorkspace"],
   ["src/screens/accounting.tsx", "WorkspaceInsights"],
+  ["src/screens/crm/overview.tsx", "ListWorkspace"],
+  ["src/screens/pos/index.tsx", "ListWorkspace"],
+  ["src/screens/hr/overview.tsx", "ListWorkspace"],
+  ["src/screens/messages/index.tsx", "ListWorkspace"],
+  ["src/screens/property-management/overview.tsx", "ListWorkspace"],
+  ["src/screens/expense-management/settings.tsx", "ListWorkspace"],
   ["e2e/ui/main.tsx", "ListWorkspace"],
   ["e2e/ui/main.tsx", "RecordWorkspace"],
 ];

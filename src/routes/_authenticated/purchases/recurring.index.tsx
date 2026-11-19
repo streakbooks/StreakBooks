@@ -19,9 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RecurringBillOverlay } from "@/components/recurring/RecurringBillOverlay";
-import { NewRecurringBillDialog } from "@/components/recurring/NewRecurringBillDialog";
+import { Tabs, TabsList } from "@/components/ui/tabs";
 import {
   archiveRecurringBill,
   duplicateRecurringBill,
@@ -47,7 +45,7 @@ const searchSchema = z.object({
   nextTo: z.string().optional(),
 });
 
-export const Route = createFileRoute("/_authenticated/purchases/recurring")({
+export const Route = createFileRoute("/_authenticated/purchases/recurring/")({
   validateSearch: (s) => searchSchema.parse(s),
   component: RecurringTransactionsPage,
 });
@@ -60,7 +58,6 @@ function RecurringTransactionsPage() {
   const qc = useQueryClient();
 
   const [qDraft, setQDraft] = useState(search.q ?? "");
-  const [createOpen, setCreateOpen] = useState(false);
   const view = search.view ?? "schedules";
   const page = search.page ?? 0;
 
@@ -120,7 +117,7 @@ function RecurringTransactionsPage() {
     onSuccess: async (r) => {
       toast.success("Duplicated");
       await qc.invalidateQueries({ queryKey: ["recurring-workspace", companyId] });
-      navigate({ search: (prev) => ({ ...prev, id: r.id, tab: "details" }) });
+      void navigate({ to: "/purchases/recurring/$id/edit", params: { id: r.id } });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -154,12 +151,16 @@ function RecurringTransactionsPage() {
     return () => clearTimeout(t);
   }, [qDraft, navigate, search.q]);
 
-  const openId = search.id;
-  const overlayOpen = Boolean(openId);
-
-  const closeOverlay = () => {
-    navigate({ search: (prev) => ({ ...prev, id: undefined, tab: undefined }) });
-  };
+  // Legacy deep links ?id=… → full-page edit workspace.
+  useEffect(() => {
+    if (search.id) {
+      void navigate({
+        to: "/purchases/recurring/$id/edit",
+        params: { id: search.id },
+        replace: true,
+      });
+    }
+  }, [navigate, search.id]);
 
   if (!companyId) {
     return <EmptyState title="No organisation" description="Select a company." />;
@@ -168,16 +169,21 @@ function RecurringTransactionsPage() {
   return (
     <ListWorkspace
       title="Recurring transactions"
-      description="Supplier bill schedules — premium overlay, idempotent generation, exceptions and forecast."
+      description="Supplier bill schedules — full-page templates, idempotent generation, exceptions and forecast."
       actions={
-        <RunDueButton
-          label="bills"
-          run={() => runDue({ data: { companyId: companyId! } })}
-          invalidateKeys={[
-            ["recurring-bills", companyId],
-            ["bills", companyId],
-          ]}
-        />
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" asChild>
+            <Link to="/purchases/recurring/new">New recurring bill</Link>
+          </Button>
+          <RunDueButton
+            label="bills"
+            run={() => runDue({ data: { companyId: companyId! } })}
+            invalidateKeys={[
+              ["recurring-bills", companyId],
+              ["bills", companyId],
+            ]}
+          />
+        </div>
       }
     >
       <Tabs value={view} className="mb-4">
@@ -291,9 +297,6 @@ function RecurringTransactionsPage() {
                 })
               }
             />
-            <Button variant="default" size="sm" onClick={() => setCreateOpen(true)}>
-              New recurring bill
-            </Button>
           </div>
 
           {workspaceQ.isPending ? (
@@ -307,9 +310,12 @@ function RecurringTransactionsPage() {
           ) : (workspaceQ.data?.rows ?? []).length === 0 ? (
             <EmptyState
               title="No recurring bill templates"
-              description="Use New recurring bill above to add a supplier template with schedule and automation."
-              actionLabel="New recurring bill"
-              onActionClick={() => setCreateOpen(true)}
+              description="Use New recurring bill to add a supplier template with schedule and automation."
+              action={
+                <Button size="sm" asChild>
+                  <Link to="/purchases/recurring/new">New recurring bill</Link>
+                </Button>
+              }
             />
           ) : (
             <>
@@ -353,10 +359,8 @@ function RecurringTransactionsPage() {
                         <TableRow key={row.id} className="hover:bg-muted/50">
                           <TableCell>
                             <Link
-                              to="/purchases/recurring"
-                              search={(prev) =>
-                                ({ ...prev, id: legacyId, tab: "details" }) as never
-                              }
+                              to="/purchases/recurring/$id/edit"
+                              params={{ id: legacyId }}
                               className="font-medium underline-offset-2 hover:underline"
                             >
                               {row.name}
@@ -364,10 +368,8 @@ function RecurringTransactionsPage() {
                           </TableCell>
                           <TableCell>
                             <Link
-                              to="/purchases/recurring"
-                              search={(prev) =>
-                                ({ ...prev, id: legacyId, tab: "details" }) as never
-                              }
+                              to="/purchases/recurring/$id/edit"
+                              params={{ id: legacyId }}
                               className="underline-offset-2 hover:underline"
                             >
                               {row.contacts?.name ?? "—"}
@@ -375,10 +377,8 @@ function RecurringTransactionsPage() {
                           </TableCell>
                           <TableCell>
                             <Link
-                              to="/purchases/recurring"
-                              search={(prev) =>
-                                ({ ...prev, id: legacyId, tab: "details" }) as never
-                              }
+                              to="/purchases/recurring/$id/edit"
+                              params={{ id: legacyId }}
                               className="underline-offset-2 hover:underline"
                             >
                               {sched?.next_occurrence_date ?? "—"}
@@ -386,10 +386,8 @@ function RecurringTransactionsPage() {
                           </TableCell>
                           <TableCell className="max-w-[180px] truncate text-destructive">
                             <Link
-                              to="/purchases/recurring"
-                              search={(prev) =>
-                                ({ ...prev, id: legacyId, tab: "details" }) as never
-                              }
+                              to="/purchases/recurring/$id/edit"
+                              params={{ id: legacyId }}
                               className="underline-offset-2 hover:underline"
                             >
                               {sched?.last_error ??
@@ -562,25 +560,6 @@ function RecurringTransactionsPage() {
         </>
       )}
 
-      {openId ? (
-        <RecurringBillOverlay
-          companyId={companyId}
-          recurringBillId={openId}
-          open={overlayOpen}
-          onOpenChange={(o) => !o && closeOverlay()}
-          initialTab={search.tab ?? "details"}
-        />
-      ) : null}
-
-      <NewRecurringBillDialog
-        companyId={companyId}
-        currencyCode={company?.base_currency ?? "GBP"}
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onCreated={(id) => {
-          navigate({ search: (prev) => ({ ...prev, id, tab: "details" }) });
-        }}
-      />
     </ListWorkspace>
   );
 }

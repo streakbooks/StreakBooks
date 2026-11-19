@@ -20,6 +20,7 @@ import { ConfirmButton } from "@/components/banking/ConfirmButton";
 import { MoneyField } from "@/components/banking/MoneyField";
 import { moneyFieldMinor } from "@/lib/banking/money-field";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { MeasuredProgress } from "@/components/common/MeasuredProgress";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -273,30 +274,39 @@ function Reconcile() {
         />
       ) : ws ? (
         <>
-          <div className="sticky top-0 z-10 mb-4 grid gap-2 rounded-md border bg-background p-3 text-sm sm:grid-cols-5">
-            <div>
-              <div className="text-xs text-muted-foreground">Opening</div>
-              <div className="numeric">{openingMinor === null ? "—" : money(openingMinor)}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Ticked ({clearedAmounts.length})</div>
-              <div className="numeric">{summary ? money(summary.cleared) : "—"}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Statement closing</div>
-              <div className="numeric">{closingMinor === null ? "—" : money(closingMinor)}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Difference</div>
-              <div
-                className={`numeric ${summary?.balanced ? "text-money-in" : "text-destructive"}`}
-              >
-                {summary ? money(summary.difference) : "—"}
+          <div className="sticky top-0 z-10 mb-4 space-y-3 rounded-md border bg-background p-3 text-sm">
+            <MeasuredProgress
+              completed={tickedGroups.size}
+              total={ws.groups.filter((g) => !g.inconsistent).length}
+              unit="matched statement groups ticked"
+              emptyLabel="No matched statement groups to tick"
+              tone={summary?.balanced ? "success" : "info"}
+            />
+            <div className="grid gap-2 sm:grid-cols-5">
+              <div>
+                <div className="text-xs text-muted-foreground">Opening</div>
+                <div className="numeric">{openingMinor === null ? "—" : money(openingMinor)}</div>
               </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Ledger balance at {statementDate}</div>
-              <div className="numeric">{money(ws.ledgerBalanceMinor)}</div>
+              <div>
+                <div className="text-xs text-muted-foreground">Ticked ({clearedAmounts.length})</div>
+                <div className="numeric">{summary ? money(summary.cleared) : "—"}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Statement closing</div>
+                <div className="numeric">{closingMinor === null ? "—" : money(closingMinor)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Difference</div>
+                <div
+                  className={`numeric ${summary?.balanced ? "text-money-in" : "text-destructive"}`}
+                >
+                  {summary ? money(summary.difference) : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Ledger balance at {statementDate}</div>
+                <div className="numeric">{money(ws.ledgerBalanceMinor)}</div>
+              </div>
             </div>
           </div>
 

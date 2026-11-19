@@ -177,8 +177,8 @@ export function HrAttendancePage() {
       <ListWorkspace
         title="Attendance"
         breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Attendance" }]}
-      >
-        <HrSubnav current="attendance" />
+      subnav={<HrSubnav current="attendance" />}
+    >
         <EmptyState title="No access" description="You need hr.view to open attendance." />
       </ListWorkspace>
     );
@@ -229,8 +229,8 @@ export function HrAttendancePage() {
           )}
         </>
       }
+      subnav={<HrSubnav current="attendance" />}
     >
-      <HrSubnav current="attendance" />
 
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         Attendance logs

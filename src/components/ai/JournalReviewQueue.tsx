@@ -222,7 +222,7 @@ export function AiJournalReviewQueue({
                 <Label htmlFor="ai-review-status">Status</Label>
                 <RecordLookupSelect
                   id="ai-review-status"
-                  className="flex h-10 w-44 border-input px-3"
+                  className="flex h-10 w-44 rounded-md border border-input bg-background px-3 text-sm"
                   value={status}
                   onValueChange={(nextValue) => {
                     setStatus(nextValue as ReviewStatus);
@@ -414,7 +414,7 @@ export function AiJournalReviewQueue({
                     <Label htmlFor="ai-review-assignee">Assign independent reviewer</Label>
                     <RecordLookupSelect
                       id="ai-review-assignee"
-                      className="flex h-10 w-full max-w-md border-input px-3"
+                      className="flex h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
                       value={assignee}
                       disabled={mutate.isPending || reviewersQ.isPending}
                       onValueChange={(nextValue) => setAssignee(nextValue)}

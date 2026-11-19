@@ -104,8 +104,8 @@ export function CrmOverviewPage() {
           </Button>
         ) : undefined
       }
+      subnav={<CrmSubnav current="overview" />}
     >
-      <CrmSubnav current="overview" />
 
       {settings.isLoading ? <LoadingState /> : null}
       {settings.isError ? (

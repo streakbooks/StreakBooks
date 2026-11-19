@@ -2,11 +2,11 @@ import type { PurchaseOrderDetail } from "@/lib/purchases/purchase-order-data";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { impliedDiscountMinor } from "@/lib/purchases/po-convert";
 import { getPurchaseOrder } from "@/lib/purchases/purchases.functions";
-import { useRef, useState } from "react";
+import { useRef, useState, type DragEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2 } from "lucide-react";
+import { Copy, GripVertical, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
@@ -23,7 +23,11 @@ import { sumLines } from "@/lib/purchases/line-math";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { EditableLineItemGrid } from "@/components/common/EditableLineItemGrid";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
@@ -34,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { TableCell, TableRow } from "@/components/ui/table";
 
 export function NewOrder({ initialEditId }: { initialEditId?: string | undefined } = {}) {
   const { company } = useActiveCompany();
@@ -111,7 +116,7 @@ function OrderForm({
   );
   const [currencyOverride, setCurrencyOverride] = useState(initial?.currency_code.trim() ?? "");
   const [memo, setMemo] = useState(initial?.memo ?? "");
-  const nextKey = useRef(initial?.purchase_order_lines.length ?? 1);
+  const nextKey = useRef(initial?.purchase_order_lines.length ?? 5);
   const [lines, setLines] = useState(() =>
     initial
       ? [...initial.purchase_order_lines]
@@ -126,7 +131,7 @@ function OrderForm({
             discount: fromMinorUnits(impliedDiscountMinor(l), initial.currency_code),
             taxPercent: String(l.tax_rate_bps / 100),
           }))
-      : [{ ...emptyOrderLine(), key: 0 }],
+      : Array.from({ length: 5 }, (_, i) => ({ ...emptyOrderLine(), key: i })),
   );
   const [savedId, setSavedId] = useState<string | null>(null);
   const recordRef = useRef<DocumentRecordHandle>(null);
@@ -209,13 +214,28 @@ function OrderForm({
   });
   const updateLine = (key: number, patch: Partial<PurchaseOrderLineForm>) =>
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
-  const moveLine = (index: number, direction: number) =>
+  const onDragStart = (event: DragEvent, index: number) => {
+    event.dataTransfer.setData("text/plain", String(index));
+    event.dataTransfer.effectAllowed = "move";
+  };
+  const onDrop = (event: DragEvent, toIndex: number) => {
+    event.preventDefault();
+    const fromIndex = Number(event.dataTransfer.getData("text/plain"));
+    if (
+      !Number.isInteger(fromIndex) ||
+      fromIndex === toIndex ||
+      fromIndex < 0 ||
+      fromIndex >= lines.length
+    ) {
+      return;
+    }
     setLines((current) => {
       const next = [...current];
-      const moved = next.splice(index, 1)[0]!;
-      next.splice(index + direction, 0, moved);
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved!);
       return next;
     });
+  };
   if (suppliersQ.isPending || accountsQ.isPending || orgQ.isPending) return <LoadingState />;
   if (suppliersQ.isError || accountsQ.isError || orgQ.isError)
     return (
@@ -230,137 +250,167 @@ function OrderForm({
       />
     );
   const locked = mutation.isPending || Boolean(savedId);
+  const title = initial ? `Edit ${initial.order_number ?? "purchase order"}` : "New purchase order";
   return (
-    <ListWorkspace
-      title={initial ? `Edit ${initial.order_number ?? "purchase order"}` : "New purchase order"}
+    <TransactionWorkspace
+      title={title}
       description="Agree supplier costs before billing. A purchase order does not affect the ledger."
-    >
-      {savedId ? (
-        <div role="status" className="mb-4 rounded-md border p-4">
-          <p>Purchase order saved.</p>
-          <Link
-            className="text-primary underline"
-            to="/purchases/orders/$orderId"
-            params={{ orderId: savedId }}
-          >
-            Open saved order
-          </Link>
-        </div>
-      ) : null}
-      <fieldset disabled={locked} className="space-y-5 disabled:opacity-70">
-        <div className="grid max-w-3xl gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Supplier</Label>
-            <ContactLookup
-              ariaLabel="Supplier"
-              contacts={suppliers.map((s) => ({ ...s, kind: "supplier" }))}
-              value={contactId}
-              onChange={setContactId}
-              companyId={companyId}
-              placeholder="Select supplier"
-              allowClear={false}
-              canCreate={can("contacts.manage")}
-              createTitle="New supplier"
-              renderCreate={
-                can("contacts.manage")
-                  ? (ctx) => <ContactCreateForm companyId={companyId} kind="supplier" ctx={ctx} />
-                  : undefined
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="order-date">Order date</Label>
-            <Input
-              id="order-date"
-              type="date"
-              value={orderDate}
-              onChange={(e) => setOrderDate(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="max-w-sm space-y-2">
-          <Label>Order currency</Label>
-          <LookupSelect
-            ariaLabel="Order currency"
-            value={currency}
-            onChange={setCurrencyOverride}
-            allowClear={false}
-            options={[
-              ...new Set([baseCurrency, currency, ...(orgQ.data?.enabledCurrencies ?? [])]),
-            ].map((code) => ({ id: code, label: code }))}
-          />
-          <p className="text-xs text-muted-foreground">
-            Changing currency keeps the numeric prices. Review each line before saving.
+      breadcrumbs={[
+        { label: "Purchases", to: "/purchases" },
+        { label: "Purchase orders", to: "/purchases/orders" },
+        { label: title },
+      ]}
+      meta={<StatusBadge status="draft" label={savedId ? "Saved draft" : "Draft"} />}
+      actions={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/purchases/orders">Back to orders</Link>
+        </Button>
+      }
+      stickyActions={
+        <Button
+          size="sm"
+          disabled={locked || Boolean(validation.error) || !can("purchases.draft")}
+          onClick={() => mutation.mutate()}
+        >
+          {mutation.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+          Save order
+        </Button>
+      }
+      details={
+        <fieldset disabled={locked} className="space-y-4 disabled:opacity-70">
+          {savedId ? (
+            <div role="status" className="rounded-lg border border-border/70 bg-muted/30 p-4 text-sm">
+              <p>Purchase order saved.</p>
+              <Link
+                className="font-medium text-primary underline-offset-4 hover:underline"
+                to="/purchases/orders/$orderId"
+                params={{ orderId: savedId }}
+              >
+                Open saved order
+              </Link>
+            </div>
+          ) : null}
+          <FormGrid columns={4}>
+            <FormControlShell width="contact">
+              <Label>Supplier</Label>
+              <ContactLookup
+                ariaLabel="Supplier"
+                contacts={suppliers.map((s) => ({ ...s, kind: "supplier" }))}
+                value={contactId}
+                onChange={setContactId}
+                companyId={companyId}
+                placeholder="Select supplier"
+                allowClear={false}
+                canCreate={can("contacts.manage")}
+                createTitle="New supplier"
+                renderCreate={
+                  can("contacts.manage")
+                    ? (ctx) => <ContactCreateForm companyId={companyId} kind="supplier" ctx={ctx} />
+                    : undefined
+                }
+              />
+            </FormControlShell>
+            <FormControlShell width="date">
+              <Label htmlFor="order-date">Order date</Label>
+              <Input
+                id="order-date"
+                type="date"
+                value={orderDate}
+                onChange={(e) => setOrderDate(e.target.value)}
+              />
+            </FormControlShell>
+            <FormControlShell width="currency">
+              <Label>Order currency</Label>
+              <LookupSelect
+                ariaLabel="Order currency"
+                value={currency}
+                onChange={setCurrencyOverride}
+                allowClear={false}
+                options={[
+                  ...new Set([baseCurrency, currency, ...(orgQ.data?.enabledCurrencies ?? [])]),
+                ].map((code) => ({ id: code, label: code }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Changing currency keeps numeric prices. Review each line before saving.
+              </p>
+            </FormControlShell>
+          </FormGrid>
+          <p className="text-sm text-muted-foreground">
+            Currency <strong className="text-foreground">{currency}</strong>. Prices exclude tax.
+            Discounts are amounts in {currency} per line.
           </p>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Currency: <strong>{currency}</strong>. Prices exclude tax. Discounts are amounts in{" "}
-          {currency} per line.
-        </p>
-        <div className="space-y-4" aria-label="Order lines">
-          {lines.map((line, index) => (
-            <section
-              key={line.key}
-              className="rounded-lg border p-4"
-              aria-label={`Order line ${index + 1}`}
-            >
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="font-medium">Line {index + 1}</h2>
-                <div className="flex flex-wrap gap-1">
-                  <Button
+          <div className="space-y-2">
+            <Label htmlFor="order-memo">Supplier instructions / memo</Label>
+            <Textarea
+              id="order-memo"
+              maxLength={500}
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+            />
+          </div>
+        </fieldset>
+      }
+      lines={
+        <fieldset disabled={locked} className="disabled:opacity-70">
+          <EditableLineItemGrid
+            aria-label="Order lines"
+            columns={[
+              { id: "reorder", header: "", widthPx: 36, minWidthPx: 36, resizable: false },
+              {
+                id: "description",
+                header: "Description",
+                widthPx: 280,
+                minWidthPx: 200,
+                fluid: true,
+              },
+              { id: "account", header: "Account", widthPx: 180, minWidthPx: 140 },
+              { id: "qty", header: "Qty", align: "right", widthPx: 72, minWidthPx: 64 },
+              { id: "price", header: "Price", align: "right", widthPx: 100, minWidthPx: 80 },
+              { id: "discount", header: "Discount", align: "right", widthPx: 96, minWidthPx: 72 },
+              { id: "tax", header: "Tax %", align: "right", widthPx: 80, minWidthPx: 64 },
+              { id: "actions", header: "", widthPx: 88, minWidthPx: 72, resizable: false },
+            ]}
+            {...(lines.length < 200
+              ? {
+                  onAddRow: () =>
+                    setLines((current) => [
+                      ...current,
+                      { ...emptyOrderLine(), key: nextKey.current++ },
+                    ]),
+                }
+              : {})}
+            addRowLabel="Add line"
+          >
+            {lines.map((line, index) => (
+              <TableRow
+                key={line.key}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => onDrop(event, index)}
+              >
+                <TableCell className="p-0 align-middle">
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={index === 0}
-                    onClick={() => moveLine(index, -1)}
-                    aria-label={`Move line ${index + 1} up`}
+                    className="cursor-grab p-1 text-muted-foreground"
+                    draggable={!locked}
+                    onDragStart={(event) => onDragStart(event, index)}
+                    aria-label={`Drag to reorder line ${index + 1}`}
+                    disabled={locked}
                   >
-                    Move up
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={index === lines.length - 1}
-                    onClick={() => moveLine(index, 1)}
-                    aria-label={`Move line ${index + 1} down`}
-                  >
-                    Move down
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={lines.length >= 200}
-                    onClick={() =>
-                      setLines((current) => [...current, { ...line, key: nextKey.current++ }])
-                    }
-                  >
-                    Duplicate line {index + 1}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={lines.length === 1}
-                    onClick={() => setLines((current) => current.filter((l) => l.key !== line.key))}
-                  >
-                    Remove line {index + 1}
-                  </Button>
-                </div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor={`description-${line.key}`}>Description</Label>
-                  <Input
+                    <GripVertical className="size-4" aria-hidden />
+                  </button>
+                </TableCell>
+                <TableCell className="align-top p-0">
+                  <Textarea
                     id={`description-${line.key}`}
+                    aria-label={`Line ${index + 1} description`}
                     value={line.description}
                     maxLength={2000}
+                    rows={1}
+                    className="lb-spreadsheet-wrap min-h-8"
                     onChange={(e) => updateLine(line.key, { description: e.target.value })}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>Expense / asset account</Label>
+                </TableCell>
+                <TableCell className="align-top">
                   <AccountLookup
                     ariaLabel={`Line ${index + 1} account`}
                     accounts={accounts}
@@ -384,85 +434,97 @@ function OrderForm({
                         : undefined
                     }
                   />
-                </div>
+                </TableCell>
                 {(
                   [
-                    ["quantity", "Quantity"],
-                    ["unitPrice", `Unit price (${currency})`],
-                    ["discount", `Discount (${currency})`],
-                    ["taxPercent", "Tax (%)"],
+                    ["quantity", `Line ${index + 1} quantity`],
+                    ["unitPrice", `Line ${index + 1} unit price`],
+                    ["discount", `Line ${index + 1} discount`],
+                    ["taxPercent", `Line ${index + 1} tax percent`],
                   ] as const
-                ).map(([field, label]) => (
-                  <div className="space-y-2" key={field}>
-                    <Label htmlFor={`${field}-${line.key}`}>{label}</Label>
+                ).map(([field, ariaLabel]) => (
+                  <TableCell key={field} className="align-top">
                     <Input
                       id={`${field}-${line.key}`}
+                      aria-label={ariaLabel}
                       inputMode="decimal"
+                      className="text-right"
                       value={line[field]}
                       onChange={(e) => updateLine(line.key, { [field]: e.target.value })}
                     />
-                  </div>
+                  </TableCell>
                 ))}
-              </div>
-            </section>
-          ))}
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={lines.length >= 200}
-          onClick={() =>
-            setLines((current) => [...current, { ...emptyOrderLine(), key: nextKey.current++ }])
-          }
-        >
-          Add line
-        </Button>
-        <div aria-live="polite" className="flex flex-wrap justify-end gap-6 text-sm">
-          {validation.totals ? (
-            <>
-              <span>
-                Subtotal <strong>{fmt.money(validation.totals.subtotal_minor, currency)}</strong>
-              </span>
-              <span>
-                Tax <strong>{fmt.money(validation.totals.tax_minor, currency)}</strong>
-              </span>
-              <span>
-                Total <strong>{fmt.money(validation.totals.total_minor, currency)}</strong>
-              </span>
-            </>
-          ) : (
-            <p className="text-muted-foreground">{validation.error}</p>
-          )}
-        </div>
-        <div className="max-w-3xl space-y-2">
-          <Label htmlFor="order-memo">Supplier instructions / memo</Label>
-          <Textarea
-            id="order-memo"
-            maxLength={500}
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
+                <TableCell className="align-middle p-0">
+                  <div className="flex items-center gap-0.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={locked || lines.length >= 200}
+                      onClick={() =>
+                        setLines((current) => [...current, { ...line, key: nextKey.current++ }])
+                      }
+                      aria-label={`Duplicate line ${index + 1}`}
+                    >
+                      <Copy className="size-4" aria-hidden />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive"
+                      disabled={locked || lines.length === 1}
+                      onClick={() =>
+                        setLines((current) => current.filter((l) => l.key !== line.key))
+                      }
+                      aria-label={`Remove line ${index + 1}`}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </EditableLineItemGrid>
+        </fieldset>
+      }
+      totals={
+        validation.totals ? (
+          <TotalsSummary
+            lines={[
+              {
+                id: "subtotal",
+                label: "Subtotal",
+                value: fmt.money(validation.totals.subtotal_minor, currency),
+              },
+              {
+                id: "tax",
+                label: "Tax",
+                value: fmt.money(validation.totals.tax_minor, currency),
+                emphasis: "muted",
+              },
+              {
+                id: "total",
+                label: "Total",
+                value: fmt.money(validation.totals.total_minor, currency),
+                emphasis: "total",
+              },
+            ]}
           />
-        </div>
-      </fieldset>
-      <DocumentRecordPanel
-        ref={recordRef}
-        entityType="purchase_order"
-        entityId={savedId ?? initial?.id ?? null}
-        audience="supplier"
-      />
-      <div className="mt-4 flex gap-2">
-        <Button
-          size="sm"
-          disabled={locked || Boolean(validation.error) || !can("purchases.draft")}
-          onClick={() => mutation.mutate()}
-        >
-          {mutation.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}Save order
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/purchases/orders">Back to orders</Link>
-        </Button>
-      </div>
-    </ListWorkspace>
+        ) : (
+          <p className="text-sm text-muted-foreground" role="status">
+            {validation.error}
+          </p>
+        )
+      }
+      support={
+        <DocumentRecordPanel
+          ref={recordRef}
+          entityType="purchase_order"
+          entityId={savedId ?? initial?.id ?? null}
+          audience="supplier"
+        />
+      }
+    />
   );
 }

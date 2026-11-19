@@ -14,15 +14,20 @@
 | Bank recon match suggestions | partially-implemented | Strong in Xero/QBO class | Transparent match reasons only |
 | Multi-view Kanban on ledgers | not-applicable | Often overused | Explicitly refused for journals |
 | Visual resemblance to Odoo | must remain absent | N/A | Independent IA, tokens, composition |
+| Visual resemblance to Xero / QBO trade dress | must remain absent | N/A | No green primary Save/Approve brands; no boxed top-nav facsimile; see ORIGINALITY_AND_REFERENCE_POLICY.md |
+| Transaction entry completeness (bill/invoice/PO/money/journal) | partial (Batches 25–27) | Mature tools expose dense grids + sticky actions | Original `TransactionWorkspace` + FormGrid + EditableLineItemGrid |
+| Notes / history / attachments under the fold | partial | Common | Reuse DocumentRecordPanel — do not clone competitor “History & Notes” chrome |
 
-## Originality dossier (Batch 1 seed)
+## Originality dossier (Batch 1 seed + Batch 28 reinforcement)
 
 1. **Principles:** clarity, trusted money semantics, native browser behaviour, fail-closed actions.
-2. **Wireframe rationale:** shell → subnav → page header → toolbar → dense table → optional insight rail.
-3. **Tokens:** existing Inter + IBM Plex Mono, cool neutrals, single brand accent, semantic money/status tokens in `src/styles.css`.
+2. **Wireframe rationale:** AppShell sidebar → module subnav → page header → FormGrid → dense table → TotalsSummary → support panels.
+3. **Tokens:** existing Inter + IBM Plex Mono, cool neutrals, single brand accent, semantic money/status tokens in `src/styles.css`; density `--lb-*` from Batch 25.
 4. **Icons:** Lucide only (already licensed via dependency).
-5. **Differentiation:** navy sidebar + restrained blue accent; no Odoo purple enterprise chrome; no Xero green mimicry; no QBO green-tab facsimile.
-6. **SBOM:** see `LEGAL_ASSET_LICENSE_REGISTER.md`.
-7. **Legal review:** required before public marketing claims — counsel not yet engaged (`not-yet-verified`).
+5. **Differentiation:** navy sidebar + restrained blue accent; no Odoo purple enterprise chrome; no Xero green mimicry; no QBO green-tab facsimile; no status chevron ribbons.
+6. **References:** screenshots may be viewed offline for workflow cues; **never** committed into `src/` or marketing.
+7. **SBOM:** see `LEGAL_ASSET_LICENSE_REGISTER.md`.
+8. **Policy:** [ORIGINALITY_AND_REFERENCE_POLICY.md](./ORIGINALITY_AND_REFERENCE_POLICY.md).
+9. **Legal review:** required before public marketing claims — counsel not yet engaged (`not-yet-verified`).
 
-Update after each visual batch with side-by-side review notes.
+Update after each visual batch with principle gaps only — never screenshot diffs that encourage mimicry.

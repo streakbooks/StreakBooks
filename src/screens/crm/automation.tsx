@@ -53,8 +53,8 @@ export function CrmAutomationPage() {
       title="Automation"
       description="Workflow triggers stay flagged off until durable runners and audit logs exist."
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "Automation" }]}
+      subnav={<CrmSubnav current="automation" />}
     >
-      <CrmSubnav current="automation" />
 
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before reviewing automation." />

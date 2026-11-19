@@ -24,7 +24,10 @@ function KpiCard({
   value: number;
   hint: string;
   href?:
-    | { kind: "absolute"; to: "/purchases/employee-expenses" | "/purchases/expenses" }
+    | {
+        kind: "absolute";
+        to: "/purchases/employee-expenses" | "/purchases/expenses" | "/banking/spend-money";
+      }
     | { kind: "section"; section: string };
 }) {
   const body = (
@@ -137,7 +140,12 @@ export function ExpenseManagementOverviewPage() {
             <Link to="/purchases/employee-expenses">Legacy claims</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link to="/purchases/expenses">Spend money</Link>
+            <Link
+              to="/banking/spend-money"
+              search={{ returnTo: "/expense-management" }}
+            >
+              Spend money
+            </Link>
           </Button>
           {canManagePolicies ? (
             <Button asChild size="sm">
@@ -180,7 +188,7 @@ export function ExpenseManagementOverviewPage() {
           label="Posted spend-money expenses"
           value={kpis.directExpensesPosted}
           hint={`${kpis.directExpensesDraft} draft direct expenses remain`}
-          href={{ kind: "absolute", to: "/purchases/expenses" }}
+          href={{ kind: "absolute", to: "/banking/spend-money" }}
         />
       </div>
 
@@ -233,7 +241,12 @@ export function ExpenseManagementOverviewPage() {
             <Link to="/purchases/employee-expenses">Submit legacy claim</Link>
           </Button>
           <Button asChild variant="secondary" size="sm">
-            <Link to="/purchases/expenses/new">Record spend money</Link>
+            <Link
+              to="/banking/spend-money"
+              search={{ returnTo: "/expense-management" }}
+            >
+              Record spend money
+            </Link>
           </Button>
         </CardContent>
       </Card>

@@ -20,7 +20,7 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
     }
     case "recurring_invoice": {
       const m = await import("@/screens/sales/recurring");
-      return m.RecurringInvoices;
+      return m.NewRecurringInvoice;
     }
     case "customer_statement": {
       const m = await import("@/screens/sales/statements");
@@ -60,7 +60,7 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
     }
     case "bank_transfer": {
       const m = await import("@/screens/banking/transfers");
-      return m.Transfers;
+      return m.NewTransfer;
     }
     case "sales_receipt":
     case "customer_refund":

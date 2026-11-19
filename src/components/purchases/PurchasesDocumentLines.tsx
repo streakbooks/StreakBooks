@@ -1,18 +1,29 @@
 "use client";
 
+import {
+  useCallback,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
 import { type PurchaseLineFormState, emptyPurchaseLine } from "@/lib/purchases/line-form-state";
 
 import { useVoiceSession } from "@/components/ai-voice/voice-context";
 
 import { isPurchaseTaxCode } from "@/lib/purchases/tax-code-eligibility";
-import { Trash2, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
+import { Trash2, GripVertical } from "lucide-react";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { computeBillTotals, type TaxCalculationMode } from "@/lib/purchases/bill-form-helpers";
 import { Button } from "@/components/ui/button";
-import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
+import { VoiceInput as Input, VoiceTextarea } from "@/components/ai-voice/voice-fields";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EntityCombobox, type EntityOption } from "@/components/common/EntityCombobox";
+import { LineGridColumnMenu } from "@/components/common/LineGridColumnMenu";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
 import {
   AccountCreateForm,
   ContactCreateForm,
@@ -20,6 +31,15 @@ import {
   TaxCodeCreateForm,
 } from "@/components/lookup/create-forms";
 import { useCan } from "@/hooks/use-can";
+import { interpretLineGridKey } from "@/lib/ui/line-grid-keyboard";
+import { parseLineGridClipboard } from "@/lib/ui/line-grid-paste";
+import {
+  clampColumnWidth,
+  DEFAULT_PURCHASE_LINE_COLUMN_WIDTHS,
+  PURCHASE_LINE_COLUMN_OPTIONS,
+  type PurchaseLineColumnKey,
+} from "@/lib/ui/document-line-column-widths";
+import { lineGridTableMinWidth } from "@/lib/ui/line-grid-layout";
 import {
   Select,
   SelectContent,
@@ -27,6 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 type ProductOption = {
   id: string;
@@ -56,20 +77,7 @@ type TaxCodeOption = {
 type TrackingOption = { id: string; name: string; categoryId: string };
 type CustomerOption = { id: string; name: string };
 
-export type LineColumnKey =
-  | "item"
-  | "description"
-  | "quantity"
-  | "unitPrice"
-  | "discount"
-  | "account"
-  | "tax"
-  | "class"
-  | "location"
-  | "customer"
-  | "project"
-  | "billable"
-  | "amount";
+export type LineColumnKey = PurchaseLineColumnKey;
 
 type Props = {
   lines: PurchaseLineFormState[];
@@ -100,10 +108,15 @@ type Props = {
   showBillable?: boolean;
   showDiscount?: boolean;
   visibleColumns?: LineColumnKey[];
+  onVisibleColumnsChange?: (next: LineColumnKey[]) => void;
+  columnWidths?: Record<string, number>;
+  onColumnWidthsChange?: (next: Record<string, number>) => void;
   baseCurrencyEquivalent?: string | null;
   companyId?: string;
   baseCurrency?: string;
 };
+
+const CELL_INPUT = "lb-spreadsheet-input h-8 rounded-none border-0 bg-transparent px-2 shadow-none";
 
 function accountGroupLabel(type?: string): string {
   switch (type) {
@@ -150,14 +163,39 @@ export function PurchasesDocumentLines({
   showBillable = false,
   showDiscount = true,
   visibleColumns,
+  onVisibleColumnsChange,
+  columnWidths: columnWidthsProp,
+  onColumnWidthsChange,
   baseCurrencyEquivalent,
   companyId,
   baseCurrency,
 }: Props) {
   const { can } = useCan();
   const voice = useVoiceSession();
+  const [localWidths, setLocalWidths] = useState<Record<string, number>>({
+    ...DEFAULT_PURCHASE_LINE_COLUMN_WIDTHS,
+  });
+  const [localVisible, setLocalVisible] = useState<LineColumnKey[] | null>(null);
+  const widths = columnWidthsProp ?? localWidths;
+  const setWidths = useCallback(
+    (next: Record<string, number>) => {
+      if (onColumnWidthsChange) onColumnWidthsChange(next);
+      else setLocalWidths(next);
+    },
+    [onColumnWidthsChange],
+  );
+  const effectiveVisible = visibleColumns ?? localVisible ?? undefined;
+  const setVisible = useCallback(
+    (next: LineColumnKey[]) => {
+      if (onVisibleColumnsChange) onVisibleColumnsChange(next);
+      else setLocalVisible(next);
+    },
+    [onVisibleColumnsChange],
+  );
+  const widthDrag = useRef<{ id: string; startX: number; startW: number } | null>(null);
+
   const col = (key: LineColumnKey) => {
-    if (visibleColumns) return visibleColumns.includes(key);
+    if (effectiveVisible) return effectiveVisible.includes(key);
     if (key === "class") return showClass;
     if (key === "location") return showLocation;
     if (key === "customer") return showCustomer;
@@ -166,6 +204,66 @@ export function PurchasesDocumentLines({
     if (key === "discount") return showDiscount;
     return true;
   };
+
+  const w = (key: string) =>
+    widths[key] ??
+    (DEFAULT_PURCHASE_LINE_COLUMN_WIDTHS as Record<string, number>)[key] ??
+    100;
+
+  const onResizePointerDown = (event: ReactPointerEvent<HTMLSpanElement>, id: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const startW = w(id);
+    widthDrag.current = { id, startX: event.clientX, startW };
+    const target = event.currentTarget;
+    target.setPointerCapture(event.pointerId);
+    const onMove = (moveEvent: PointerEvent) => {
+      const drag = widthDrag.current;
+      if (!drag) return;
+      const nextW = clampColumnWidth(drag.startW + (moveEvent.clientX - drag.startX));
+      setWidths({ ...widths, [drag.id]: nextW });
+    };
+    const onUp = (upEvent: PointerEvent) => {
+      widthDrag.current = null;
+      target.releasePointerCapture(upEvent.pointerId);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const Th = ({
+    id,
+    children,
+    align,
+    fluid,
+  }: {
+    id: string;
+    children: ReactNode;
+    align?: "right" | "center";
+    fluid?: boolean;
+  }) => (
+    <th
+      className={cn("relative", align === "right" && "text-right", align === "center" && "text-center")}
+      scope="col"
+      data-fluid={fluid ? "true" : undefined}
+      style={
+        fluid
+          ? { minWidth: w(id), width: "auto" }
+          : { width: w(id), minWidth: w(id) }
+      }
+    >
+      {children}
+      <span
+        role="separator"
+        aria-orientation="vertical"
+        aria-label={`Resize ${id} column`}
+        className="lb-spreadsheet-resize"
+        onPointerDown={(event) => onResizePointerDown(event, id)}
+      />
+    </th>
+  );
 
   const productOptions: EntityOption[] = products.map((p) => ({
     value: p.id,
@@ -184,6 +282,76 @@ export function PurchasesDocumentLines({
     label: c.name,
   }));
   const addItem = onAddNewItem ?? onCreateItem;
+
+  /** Numeric spreadsheet cells: qty → unit price → discount (when visible). */
+  const numericCols = (
+    [
+      col("quantity") ? "quantity" : null,
+      col("unitPrice") ? "unitPrice" : null,
+      col("discount") ? "discount" : null,
+    ] as const
+  ).filter((key): key is "quantity" | "unitPrice" | "discount" => key !== null);
+
+  const onNumericKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colKey: "quantity" | "unitPrice" | "discount",
+  ) => {
+    const colIndex = numericCols.indexOf(colKey);
+    if (colIndex < 0) return;
+    const action = interpretLineGridKey(event.key, {
+      shiftKey: event.shiftKey,
+      atLastRow: rowIndex === lines.length - 1,
+      atLastCol: colIndex === numericCols.length - 1,
+    });
+    if (action.type === "none") return;
+    if (action.type === "add-row") {
+      event.preventDefault();
+      voice?.clearField();
+      onChange([...lines, emptyPurchaseLine()]);
+      return;
+    }
+    if (
+      action.type === "move" &&
+      (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp")
+    ) {
+      event.preventDefault();
+      const nextRow = Math.max(0, Math.min(lines.length - 1, rowIndex + action.rowDelta));
+      const nextCol = Math.max(0, Math.min(numericCols.length - 1, colIndex + action.colDelta));
+      const targetKey = numericCols[nextCol];
+      if (!targetKey) return;
+      const target = document.querySelector<HTMLElement>(
+        `[data-purchase-cell="${nextRow}-${targetKey}"]`,
+      );
+      target?.focus();
+    }
+  };
+
+  const onNumericPaste = (
+    event: ClipboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colKey: "quantity" | "unitPrice" | "discount",
+  ) => {
+    const text = event.clipboardData.getData("text");
+    const grid = parseLineGridClipboard(text);
+    if (grid.length <= 1 && (grid[0]?.length ?? 0) <= 1) return;
+    event.preventDefault();
+    const startCol = numericCols.indexOf(colKey);
+    if (startCol < 0) return;
+    const next = lines.map((line) => ({ ...line }));
+    for (let r = 0; r < grid.length; r++) {
+      const targetRow = rowIndex + r;
+      while (next.length <= targetRow) next.push(emptyPurchaseLine());
+      const row = grid[r] ?? [];
+      for (let c = 0; c < row.length; c++) {
+        const key = numericCols[startCol + c];
+        if (!key) break;
+        next[targetRow] = { ...next[targetRow]!, [key]: row[c] ?? "" };
+      }
+    }
+    voice?.clearField();
+    onChange(next);
+  };
 
   const update = (idx: number, patch: Partial<PurchaseLineFormState>) => {
     const next = [...lines];
@@ -230,17 +398,6 @@ export function PurchasesDocumentLines({
     });
   };
 
-  const moveLine = (idx: number, dir: -1 | 1) => {
-    voice?.clearField();
-    const j = idx + dir;
-    if (j < 0 || j >= lines.length) return;
-    const next = [...lines];
-    const tmp = next[idx]!;
-    next[idx] = next[j]!;
-    next[j] = tmp;
-    onChange(next);
-  };
-
   const addMultiple = (n: number) => {
     voice?.clearField();
     onChange([...lines, ...Array.from({ length: n }, () => emptyPurchaseLine())]);
@@ -281,11 +438,37 @@ export function PurchasesDocumentLines({
 
   const purchaseTaxCodes = taxCodes.filter(isPurchaseTaxCode);
 
+  const columnMenuIds = (
+    effectiveVisible ??
+    PURCHASE_LINE_COLUMN_OPTIONS.filter((option) => col(option.id)).map((option) => option.id)
+  ) as string[];
+
+  const menuColumns = PURCHASE_LINE_COLUMN_OPTIONS.filter((option) => {
+    if (option.id === "class") return showClass || Boolean(effectiveVisible);
+    if (option.id === "location") return showLocation || Boolean(effectiveVisible);
+    if (option.id === "customer") return showCustomer || Boolean(effectiveVisible);
+    if (option.id === "project") return showProject || Boolean(effectiveVisible);
+    if (option.id === "billable") return showBillable || Boolean(effectiveVisible);
+    if (option.id === "discount") return showDiscount || Boolean(effectiveVisible);
+    return true;
+  });
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-slot="purchases-document-lines">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <Label>Line items</Label>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <LineGridColumnMenu
+            columns={menuColumns}
+            visibleIds={columnMenuIds}
+            onChange={(next) =>
+              setVisible(
+                next.filter((id): id is LineColumnKey =>
+                  PURCHASE_LINE_COLUMN_OPTIONS.some((option) => option.id === id),
+                ),
+              )
+            }
+          />
           <Select
             onValueChange={(v) => {
               voice?.clearField();
@@ -311,76 +494,55 @@ export function PurchasesDocumentLines({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-md border border-border">
-        <table className="w-full min-w-[1100px] border-collapse text-sm">
-          <thead>
-            <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
-              <th className="p-2 w-8" scope="col">
+      <div className="lb-editable-line-item-grid w-full min-w-0 overflow-hidden rounded-xl border border-border bg-card">
+        <div className="w-full min-w-0 overflow-x-auto" data-slot="line-grid-scroll">
+        <table
+          className="lb-spreadsheet-table text-sm"
+          style={{
+            width: "100%",
+            minWidth: lineGridTableMinWidth(
+              Object.entries(widths).map(([id, widthPx]) => ({
+                widthPx,
+                minWidthPx: widthPx,
+                ...(id === "description" ? { fluid: true as const } : {}),
+              })),
+            ),
+          }}
+        >
+          <thead className="sticky top-0 z-10">
+            <tr>
+              <Th id="reorder">
                 <span className="sr-only">Reorder</span>
-              </th>
-              {col("item") ? (
-                <th className="p-2" scope="col">
-                  Item / service
-                </th>
-              ) : null}
+              </Th>
+              {col("item") ? <Th id="item">Item / service</Th> : null}
               {col("description") ? (
-                <th className="p-2" scope="col">
+                <Th id="description" fluid>
                   Description
-                </th>
+                </Th>
               ) : null}
-              {col("quantity") ? (
-                <th className="p-2 w-20" scope="col">
-                  Qty
-                </th>
-              ) : null}
-              {col("unitPrice") ? (
-                <th className="p-2 w-24" scope="col">
-                  Unit price
-                </th>
-              ) : null}
-              {col("discount") ? (
-                <th className="p-2 w-24" scope="col">
-                  Discount
-                </th>
-              ) : null}
-              {col("account") ? (
-                <th className="p-2" scope="col">
-                  Expense / asset account
-                </th>
-              ) : null}
-              {col("tax") ? (
-                <th className="p-2" scope="col">
-                  Tax rate
-                </th>
-              ) : null}
-              {col("class") ? (
-                <th className="p-2" scope="col">
-                  Class
-                </th>
-              ) : null}
-              {col("location") ? (
-                <th className="p-2" scope="col">
-                  Location
-                </th>
-              ) : null}
+              {col("quantity") ? <Th id="quantity">Qty</Th> : null}
+              {col("unitPrice") ? <Th id="unitPrice">Unit price</Th> : null}
+              {col("discount") ? <Th id="discount">Discount</Th> : null}
+              {col("account") ? <Th id="account">Expense / asset account</Th> : null}
+              {col("tax") ? <Th id="tax">Tax rate</Th> : null}
+              {col("class") ? <Th id="class">Class</Th> : null}
+              {col("location") ? <Th id="location">Location</Th> : null}
               {col("customer") || col("project") ? (
-                <th className="p-2" scope="col">
-                  Customer / project
-                </th>
+                <Th id="customer">Customer / project</Th>
               ) : null}
               {col("billable") ? (
-                <th className="p-2 w-16" scope="col">
+                <Th id="billable" align="center">
                   Billable
-                </th>
+                </Th>
               ) : null}
               {col("amount") ? (
-                <th className="p-2 w-24 text-right" scope="col">
+                <Th id="amount" align="right">
                   Amount
-                </th>
+                </Th>
               ) : null}
-              <th className="p-2 w-20" scope="col">
+              <Th id="actions">
                 <span className="sr-only">Actions</span>
-              </th>
+              </Th>
             </tr>
           </thead>
           <tbody>
@@ -409,7 +571,7 @@ export function PurchasesDocumentLines({
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => onDrop(e, idx)}
                 >
-                  <td className="p-1">
+                  <td className="p-0">
                     <button
                       type="button"
                       className="cursor-grab p-1 text-muted-foreground"
@@ -421,7 +583,7 @@ export function PurchasesDocumentLines({
                     </button>
                   </td>
                   {col("item") ? (
-                    <td className="p-1 min-w-[140px]">
+                    <td className="p-0">
                       <EntityCombobox
                         aria-label={`Line ${idx + 1} product`}
                         options={productOptions}
@@ -463,8 +625,8 @@ export function PurchasesDocumentLines({
                     </td>
                   ) : null}
                   {col("description") ? (
-                    <td className="p-1 min-w-[160px]">
-                      <Input
+                    <td className="p-0 align-top">
+                      <VoiceTextarea
                         aria-label={`Line ${idx + 1} description`}
                         voiceField={{
                           key: "description",
@@ -476,14 +638,16 @@ export function PurchasesDocumentLines({
                         value={line.description}
                         onChange={(e) => update(idx, { description: e.target.value })}
                         placeholder="Description"
-                        className="h-9"
+                        rows={1}
+                        className="lb-spreadsheet-wrap min-h-8"
                       />
                     </td>
                   ) : null}
                   {col("quantity") ? (
-                    <td className="p-1">
+                    <td className="p-0">
                       <Input
                         aria-label={`Line ${idx + 1} quantity`}
+                        data-purchase-cell={`${idx}-quantity`}
                         voiceField={{
                           key: "quantity",
                           label: "Quantity",
@@ -493,15 +657,18 @@ export function PurchasesDocumentLines({
                         }}
                         value={line.quantity}
                         onChange={(e) => update(idx, { quantity: e.target.value })}
+                        onKeyDown={(e) => onNumericKeyDown(e, idx, "quantity")}
+                        onPaste={(e) => onNumericPaste(e, idx, "quantity")}
                         inputMode="decimal"
-                        className="h-9"
+                        className={cn(CELL_INPUT, "text-right tabular-nums")}
                       />
                     </td>
                   ) : null}
                   {col("unitPrice") ? (
-                    <td className="p-1">
+                    <td className="p-0">
                       <Input
                         aria-label={`Line ${idx + 1} unit price`}
+                        data-purchase-cell={`${idx}-unitPrice`}
                         voiceField={{
                           key: "unitPrice",
                           label: "Unit price",
@@ -511,15 +678,18 @@ export function PurchasesDocumentLines({
                         }}
                         value={line.unitPrice}
                         onChange={(e) => update(idx, { unitPrice: e.target.value })}
+                        onKeyDown={(e) => onNumericKeyDown(e, idx, "unitPrice")}
+                        onPaste={(e) => onNumericPaste(e, idx, "unitPrice")}
                         inputMode="decimal"
-                        className="h-9"
+                        className={cn(CELL_INPUT, "text-right tabular-nums")}
                       />
                     </td>
                   ) : null}
                   {col("discount") ? (
-                    <td className="p-1">
+                    <td className="p-0">
                       <Input
                         aria-label={`Line ${idx + 1} discount`}
+                        data-purchase-cell={`${idx}-discount`}
                         voiceField={{
                           key: "discount",
                           label: "Discount",
@@ -529,13 +699,15 @@ export function PurchasesDocumentLines({
                         }}
                         value={line.discount}
                         onChange={(e) => update(idx, { discount: e.target.value })}
+                        onKeyDown={(e) => onNumericKeyDown(e, idx, "discount")}
+                        onPaste={(e) => onNumericPaste(e, idx, "discount")}
                         inputMode="decimal"
-                        className="h-9"
+                        className={cn(CELL_INPUT, "text-right tabular-nums")}
                       />
                     </td>
                   ) : null}
                   {col("account") ? (
-                    <td className="p-1 min-w-[160px]">
+                    <td className="p-0">
                       <EntityCombobox
                         aria-label={`Line ${idx + 1} account`}
                         options={accountOptions}
@@ -569,7 +741,7 @@ export function PurchasesDocumentLines({
                     </td>
                   ) : null}
                   {col("tax") ? (
-                    <td className="p-1 min-w-[130px]">
+                    <td className="p-0">
                       <EntityCombobox
                         aria-label={`Line ${idx + 1} tax rate`}
                         options={
@@ -635,7 +807,7 @@ export function PurchasesDocumentLines({
                     </td>
                   ) : null}
                   {col("class") ? (
-                    <td className="p-1 min-w-[100px]">
+                    <td className="p-0">
                       <EntityCombobox
                         aria-label={`Line ${idx + 1} class`}
                         options={classOptions.map((o) => ({ value: o.id, label: o.name }))}
@@ -648,7 +820,7 @@ export function PurchasesDocumentLines({
                     </td>
                   ) : null}
                   {col("location") ? (
-                    <td className="p-1 min-w-[100px]">
+                    <td className="p-0">
                       <EntityCombobox
                         aria-label={`Line ${idx + 1} location`}
                         options={locationOptions.map((o) => ({ value: o.id, label: o.name }))}
@@ -661,7 +833,7 @@ export function PurchasesDocumentLines({
                     </td>
                   ) : null}
                   {col("customer") || col("project") ? (
-                    <td className="p-1 min-w-[140px] space-y-1">
+                    <td className="space-y-1 p-0">
                       {col("customer") ? (
                         <EntityCombobox
                           aria-label={`Line ${idx + 1} customer`}
@@ -699,7 +871,7 @@ export function PurchasesDocumentLines({
                     </td>
                   ) : null}
                   {col("billable") ? (
-                    <td className="p-2">
+                    <td className="p-2 text-center">
                       <Checkbox
                         checked={line.isBillable}
                         onCheckedChange={(c) => update(idx, { isBillable: Boolean(c) })}
@@ -708,81 +880,66 @@ export function PurchasesDocumentLines({
                     </td>
                   ) : null}
                   {col("amount") ? (
-                    <td className="p-2 text-right tabular-nums whitespace-nowrap">{lineAmount}</td>
+                    <td className="px-2 py-1 text-right tabular-nums whitespace-nowrap">{lineAmount}</td>
                   ) : null}
-                  <td className="p-1">
-                    <div className="flex items-center gap-0.5">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-7"
-                        disabled={idx === 0}
-                        onClick={() => moveLine(idx, -1)}
-                        aria-label={`Move line ${idx + 1} up`}
-                      >
-                        <ChevronUp className="size-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-7"
-                        disabled={idx >= lines.length - 1}
-                        onClick={() => moveLine(idx, 1)}
-                        aria-label={`Move line ${idx + 1} down`}
-                      >
-                        <ChevronDown className="size-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-7 text-destructive"
-                        disabled={lines.length <= 1}
-                        onClick={() => {
-                          voice?.clearField();
-                          onChange(lines.filter((_, i) => i !== idx));
-                        }}
-                        aria-label={`Delete line ${idx + 1}`}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
+                  <td className="p-0">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 text-destructive"
+                      disabled={lines.length <= 1}
+                      onClick={() => {
+                        voice?.clearField();
+                        onChange(lines.filter((_, i) => i !== idx));
+                      }}
+                      aria-label={`Delete line ${idx + 1}`}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-      </div>
-
-      {preview ? (
-        <div className="flex flex-wrap justify-end gap-x-6 gap-y-1 text-sm">
-          <span>
-            Subtotal{" "}
-            <strong className="tabular-nums">
-              {fromMinorUnits(preview.subtotal_minor, currency)}
-            </strong>
-          </span>
-          <span>
-            Total tax{" "}
-            <strong className="tabular-nums">{fromMinorUnits(preview.tax_minor, currency)}</strong>
-          </span>
-          <span>
-            Total{" "}
-            <strong className="tabular-nums">
-              {fromMinorUnits(preview.total_minor, currency)}
-            </strong>
-          </span>
-          {baseCurrencyEquivalent ? (
-            <span className="text-muted-foreground">
-              Base-currency equivalent{" "}
-              <strong className="tabular-nums">{baseCurrencyEquivalent}</strong>
-            </span>
-          ) : null}
         </div>
-      ) : null}
+        {preview ? (
+          <div className="flex justify-end border-t border-border px-3 py-3">
+            <TotalsSummary
+              lines={[
+                {
+                  id: "subtotal",
+                  label: "Subtotal",
+                  value: fromMinorUnits(preview.subtotal_minor, currency),
+                },
+                {
+                  id: "tax",
+                  label: "Total tax",
+                  value: fromMinorUnits(preview.tax_minor, currency),
+                  emphasis: "muted",
+                },
+                {
+                  id: "total",
+                  label: "Total",
+                  value: fromMinorUnits(preview.total_minor, currency),
+                  emphasis: "total",
+                },
+                ...(baseCurrencyEquivalent
+                  ? [
+                      {
+                        id: "base",
+                        label: "Base-currency equivalent",
+                        value: baseCurrencyEquivalent,
+                        emphasis: "muted" as const,
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -265,7 +265,7 @@ export function LookupSelect({
             disabled={disabled}
             onKeyDown={onKeyDown}
             className={cn(
-              "h-9 min-w-0 flex-1 shrink justify-between bg-background px-2.5 text-sm font-normal",
+              "h-[var(--lb-control-height)] pointer-coarse:h-[var(--lb-control-height-coarse)] min-w-0 flex-1 shrink justify-between rounded-md bg-background px-2.5 text-sm font-normal",
               triggerClassName,
             )}
           >

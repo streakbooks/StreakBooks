@@ -205,8 +205,8 @@ export function HrOnboardingPage() {
           </div>
         ) : undefined
       }
+      subnav={<HrSubnav current="onboarding" />}
     >
-      <HrSubnav current="onboarding" />
 
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">

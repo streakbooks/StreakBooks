@@ -1,16 +1,29 @@
 # LinkBooks design system
 
-**Version:** 2026-11-07 Batch 1 (foundation). Extends existing tokens — does not introduce a second design system.
+**Version:** 2026-11-18 Batch 33 (light premium palette + Batch 29 semantic system). Extends existing tokens — does not introduce a second design system.
 
 ## Foundations
 
 | Layer | Source |
 | ----- | ------ |
-| CSS tokens | `src/styles.css` (`@theme inline`, semantic money/status) |
+| CSS tokens | `src/styles.css` (`@theme inline`, semantic money/status, density `--lb-*`) |
 | Theme palettes (8 + custom) | `src/lib/theme.ts` |
 | Typography | Inter (UI), IBM Plex Mono (tabular money) |
 | Primitives | Radix / shadcn under `src/components/ui/*` |
-| Product chrome | `AppShell`, `PageHeader`, `ModuleSubnav`, `ListWorkspace`, `RecordWorkspace` |
+| Product chrome | `AppShell`, `PageHeader`, `ModuleSubnav`, `ListWorkspace`, `RecordWorkspace`, `TransactionWorkspace` |
+
+## Density tokens (Batch 25)
+
+| Token | Target |
+| ----- | ------ |
+| `--lb-sidebar-width` | 16rem (256px) |
+| `--lb-sidebar-width-collapsed` | 4.5rem (72px) |
+| `--lb-header-height` | 4rem (64px) |
+| `--lb-control-height` | 2.5rem (40px) |
+| `--lb-control-height-coarse` | 2.75rem (44px) |
+| `--lb-table-row-height` | 2.75rem (44px) |
+| `--lb-space-1`…`6` | 4/8/12/16/24/32px |
+| `--lb-duration-fast` / `--lb-duration-normal` | 150ms / 200ms |
 
 ## Rules
 
@@ -19,15 +32,23 @@
 - Honor `prefers-reduced-motion`.
 - Coarse pointers: ≥44px interactive height where shared buttons apply.
 - Dense financial tables remain scannable; amounts use `.numeric` / `.money`.
+- Transaction entry follows [TRANSACTION_WORKSPACE_UX.md](./TRANSACTION_WORKSPACE_UX.md).
+- Semantic colour meaning follows [SEMANTIC_COLOUR_SYSTEM.md](./SEMANTIC_COLOUR_SYSTEM.md); originality rules in [ORIGINALITY_AND_REFERENCE_POLICY.md](./ORIGINALITY_AND_REFERENCE_POLICY.md).
 
 ## Component inventory (contracts)
 
 | Component | Behaviour contract |
 | --------- | ------------------ |
 | PageHeader | Title, optional crumbs (native links), one primary action region |
-| ModuleSubnav | All sections as native links; scrollable; no hidden essential items |
+| ModuleSubnav | Flat scrollable section strip (Sales/Purchases/Banking); compact 32px items |
+| GroupedModuleSubnav | Two-row dense modules: group segmented controls + native section Links |
 | ListWorkspace | Header + optional subnav/toolbar/insight rail |
 | RecordWorkspace | Header + related + body + timeline + insight rail |
+| TransactionWorkspace | Header + details + lines + totals + support + optional sticky actions |
+| FormGrid / FormField | Compact transaction header fields |
+| EditableLineItemGrid | Sticky header line table chrome + add-row |
+| TotalsSummary | Presentational subtotal/tax/total strip (engine-supplied values) |
+| SplitButton | Primary action + overflow menu for Save variants |
 | StatusBadge | Label + icon + tone from persisted status only |
 | DataTableToolbar | Search, columns, density, export feedback, selection bar |
 
@@ -35,4 +56,6 @@ Live demonstrations stay inside the product / developer sandbox — no separate 
 
 ## Themes
 
-Eight named palettes + custom; light/dark/system independent. Persistence is browser-local today (`linkbooks-theme*` keys); per-user/company sync remains a later verified batch.
+Eight named palettes + custom; light/dark/system independent. Persistence is browser-local today (`linkbooks-theme*` keys); per-user/company sync remains a later verified batch. Theme changes must not alter semantic financial status colours.
+
+**Light-mode default (Batch 33):** very light canvas (`#F7FAFC`), white cards, soft pastel primary blue (`#4F7DF3`), **light sidebar** with `#EEF4FF` selected states. Avoid dark-heavy navigator blocks in light mode. See [LIGHT_PREMIUM_PALETTE.md](./LIGHT_PREMIUM_PALETTE.md).

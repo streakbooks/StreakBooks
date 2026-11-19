@@ -425,7 +425,7 @@ export function PayrollSettingsPage() {
               <Field label="Default pay schedule" htmlFor={`${uiId}-schedule`}>
                 <RecordLookupSelect
                   id={`${uiId}-schedule`}
-                  className="flex h-10 w-full border-input px-3"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={draft.defaultPayScheduleId}
                   disabled={!canEdit}
                   onValueChange={(nextValue) =>
@@ -484,7 +484,7 @@ export function PayrollSettingsPage() {
               <Field label="Default payment method" htmlFor={`${uiId}-method`}>
                 <RecordLookupSelect
                   id={`${uiId}-method`}
-                  className="flex h-10 w-full border-input px-3"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={draft.defaultPaymentMethod}
                   disabled={!canEdit}
                   onValueChange={(nextValue) =>
@@ -505,7 +505,7 @@ export function PayrollSettingsPage() {
               <Field label="Rounding mode" htmlFor={`${uiId}-rounding`}>
                 <RecordLookupSelect
                   id={`${uiId}-rounding`}
-                  className="flex h-10 w-full border-input px-3"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={draft.roundingMode}
                   disabled={!canEdit}
                   onValueChange={(nextValue) =>
@@ -721,7 +721,7 @@ export function PayrollSettingsPage() {
                 <Field label="Frequency" htmlFor={`${uiId}-sched-freq`}>
                   <RecordLookupSelect
                     id={`${uiId}-sched-freq`}
-                    className="flex h-10 w-full border-input px-3"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={scheduleDraft.frequency}
                     disabled={!canEdit}
                     onValueChange={(nextValue) =>
@@ -943,7 +943,7 @@ export function PayrollSettingsPage() {
                 <Field label="Kind" htmlFor={`${uiId}-comp-kind`}>
                   <RecordLookupSelect
                     id={`${uiId}-comp-kind`}
-                    className="flex h-10 w-full border-input px-3"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={componentDraft.kind}
                     disabled={!canEdit}
                     onValueChange={(nextValue) =>
@@ -960,7 +960,7 @@ export function PayrollSettingsPage() {
                 <Field label="Calculation" htmlFor={`${uiId}-comp-calc`}>
                   <RecordLookupSelect
                     id={`${uiId}-comp-calc`}
-                    className="flex h-10 w-full border-input px-3"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={componentDraft.calculationMethod}
                     disabled={!canEdit}
                     onValueChange={(nextValue) =>
@@ -981,7 +981,7 @@ export function PayrollSettingsPage() {
                   <Field label="Percentage base" htmlFor={`${uiId}-comp-base`}>
                     <RecordLookupSelect
                       id={`${uiId}-comp-base`}
-                      className="flex h-10 w-full border-input px-3"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                       value={componentDraft.percentageBase}
                       disabled={!canEdit}
                       onValueChange={(nextValue) =>

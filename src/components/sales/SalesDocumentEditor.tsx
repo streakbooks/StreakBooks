@@ -1,5 +1,6 @@
+"use client";
+
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-("use client");
 
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 

@@ -84,20 +84,22 @@ describe("Files workspace native browsing state", () => {
   });
 
   it("normalizes Files search while retaining independent browsing filters", () => {
-    expect(parseFilesListSearch({ q: "  Tax & books  ", sort: "name", page: 2 }))
-      .toEqual({ q: "Tax & books", sort: "name", page: 2 });
-    expect(parseFilesListSearch({ q: "   ", sort: "oldest" }))
-      .toEqual({ sort: "oldest" });
-    expect(parseFilesListSearch({ q: " ".repeat(10) + "x".repeat(120) + " " }))
-      .toEqual({ q: "x".repeat(120) });
-    expect(parseFilesListSearch({ q: "x".repeat(121), view: "review" }))
-      .toEqual({ view: "review" });
+    expect(parseFilesListSearch({ q: "  Tax & books  ", sort: "name", page: 2 })).toEqual({
+      q: "Tax & books",
+      sort: "name",
+      page: 2,
+    });
+    expect(parseFilesListSearch({ q: "   ", sort: "oldest" })).toEqual({ sort: "oldest" });
+    expect(parseFilesListSearch({ q: " ".repeat(10) + "x".repeat(120) + " " })).toEqual({
+      q: "x".repeat(120),
+    });
+    expect(parseFilesListSearch({ q: "x".repeat(121), view: "review" })).toEqual({
+      view: "review",
+    });
     for (const bad of ["a\nb", "a\tb", "a\u202eb", "a\u200bb", "a\u2060b"]) {
-      expect(parseFilesListSearch({ q: bad, sort: "largest" }))
-        .toEqual({ sort: "largest" });
+      expect(parseFilesListSearch({ q: bad, sort: "largest" })).toEqual({ sort: "largest" });
     }
-    expect(parseFilesListSearch({ q: "  फ़ाइल 文件  " }))
-      .toEqual({ q: "फ़ाइल 文件" });
+    expect(parseFilesListSearch({ q: "  फ़ाइल 文件  " })).toEqual({ q: "फ़ाइल 文件" });
   });
 
   it("rejects noncanonical pagination while retaining independent filters", () => {
@@ -116,12 +118,23 @@ describe("Files workspace native browsing state", () => {
   });
 
   it("ignores prototype-inherited query values without losing own fields", () => {
-    const inherited = Object.create({ folder, file, q: "spoofed", type: "company", sort: "largest", view: "review", page: "8" }) as Record<string, unknown>;
+    const inherited = Object.create({
+      folder,
+      file,
+      q: "spoofed",
+      type: "company",
+      sort: "largest",
+      view: "review",
+      page: "8",
+    }) as Record<string, unknown>;
     expect(parseFilesListSearch(inherited)).toEqual({});
     inherited["q"] = "  actual search  ";
     inherited["page"] = "2";
     expect(parseFilesListSearch(inherited)).toEqual({ q: "actual search", page: 2 });
-    const nullPrototype = Object.assign(Object.create(null) as Record<string, unknown>, { folder, sort: "name" });
+    const nullPrototype = Object.assign(Object.create(null) as Record<string, unknown>, {
+      folder,
+      sort: "name",
+    });
     expect(parseFilesListSearch(nullPrototype)).toEqual({ folder, sort: "name" });
   });
 

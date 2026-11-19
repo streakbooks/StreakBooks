@@ -94,6 +94,22 @@ describe("Files workspace native browsing state", () => {
     expect(parseFilesListSearch(nullPrototype)).toEqual({ folder, sort: "name" });
   });
 
+  it("does not execute accessor-backed route search fields", () => {
+    let invoked = 0;
+    const raw: Record<string, unknown> = { sort: "name", page: "2" };
+    for (const key of ["folder", "file", "q", "type", "view"] as const) {
+      Object.defineProperty(raw, key, {
+        enumerable: true,
+        get() {
+          invoked += 1;
+          throw new Error("untrusted getter executed");
+        },
+      });
+    }
+    expect(parseFilesListSearch(raw)).toEqual({ sort: "name", page: 2 });
+    expect(invoked).toBe(0);
+  });
+
   it("preserves filter characters safely through a standard URL", () => {
     const query = "Tax & books + FY/26";
     const params = new URLSearchParams({ q: query, sort: "name", view: "to-file" });

@@ -65,7 +65,8 @@
 | OrderEntryLines ELG Batch 72 | Superseded by Batch 73 | OrderEntryLines spreadsheet grid + keyboard; default row honesty |
 | Chrome honesty Batch 73 | Done (merged #347) | StatusBadge meta; Sales/journal ErrorState; FormGrid locks |
 | PurchasesDocumentLines ELG Batch 74 | Done (merged #351) | Bills line grid on shared EditableLineItemGrid |
-| Bank coding ELG Batch 75 | In progress | BankCodingPanel ELG + record TotalsSummary + money QueryErrorState |
+| Bank coding ELG Batch 75 | Done (merged #352) | BankCodingPanel ELG + record TotalsSummary + money QueryErrorState |
+| Conversion balances ELG Batch 76 | In progress | ConversionBalancesPanel ELG + TotalsSummary |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

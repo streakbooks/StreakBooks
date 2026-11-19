@@ -78,6 +78,8 @@ const required = [
   ["src/components/create-new/JournalPanels.tsx", "TotalsSummary"],
   ["src/components/create-new/JournalPanels.tsx", "FormGrid"],
   ["src/components/create-new/JournalPanels.tsx", "interpretLineGridKey"],
+  ["src/components/accounting/ConversionBalancesPanel.tsx", "EditableLineItemGrid"],
+  ["src/components/accounting/ConversionBalancesPanel.tsx", "TotalsSummary"],
   ["src/components/sales/SalesDocumentEditor.tsx", "TransactionWorkspace"],
   ["src/components/sales/SalesDocumentEditor.tsx", "TotalsSummary"],
   ["src/components/sales/SalesDocumentEditor.tsx", "FormGrid"],

@@ -26,7 +26,8 @@ import {
   revokeFirmClient,
 } from "@/lib/firm/firm.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -205,11 +206,7 @@ function FirmPage() {
       {firmsQ.isPending ? (
         <LoadingState />
       ) : firmsQ.isError ? (
-        <ErrorState
-          onRetry={() => void firmsQ.refetch()}
-          title="Could not load firms"
-          description={friendlyAuthError(firmsQ.error)}
-        />
+        <QueryErrorState queries={[firmsQ]} title="Could not load firms" />
       ) : (firmsQ.data ?? []).length === 0 ? (
         <div className="space-y-4">
           <EmptyState
@@ -390,11 +387,7 @@ function FirmPage() {
               {clientsQ.isPending ? (
                 <LoadingState />
               ) : clientsQ.isError ? (
-                <ErrorState
-                  onRetry={() => void clientsQ.refetch()}
-                  title="Could not load clients"
-                  description={friendlyAuthError(clientsQ.error)}
-                />
+                <QueryErrorState queries={[clientsQ]} title="Could not load clients" />
               ) : (clientsQ.data ?? []).length === 0 ? (
                 <div className="space-y-3">
                   <EmptyState
@@ -443,11 +436,7 @@ function FirmPage() {
               {clientsQ.isPending ? (
                 <LoadingState />
               ) : clientsQ.isError ? (
-                <ErrorState
-                  onRetry={() => void clientsQ.refetch()}
-                  title="Could not load clients"
-                  description={friendlyAuthError(clientsQ.error)}
-                />
+                <QueryErrorState queries={[clientsQ]} title="Could not load clients" />
               ) : (
                 <FirmOnboardingPanel
                   key={firmId}
@@ -462,11 +451,7 @@ function FirmPage() {
               {clientsQ.isPending ? (
                 <LoadingState />
               ) : clientsQ.isError ? (
-                <ErrorState
-                  onRetry={() => void clientsQ.refetch()}
-                  title="Could not load clients"
-                  description={friendlyAuthError(clientsQ.error)}
-                />
+                <QueryErrorState queries={[clientsQ]} title="Could not load clients" />
               ) : (
                 <FirmEngagementPanel
                   key={firmId}
@@ -482,11 +467,7 @@ function FirmPage() {
               {clientsQ.isPending ? (
                 <LoadingState />
               ) : clientsQ.isError ? (
-                <ErrorState
-                  onRetry={() => void clientsQ.refetch()}
-                  title="Could not load clients"
-                  description={friendlyAuthError(clientsQ.error)}
-                />
+                <QueryErrorState queries={[clientsQ]} title="Could not load clients" />
               ) : (
                 <FirmStaffAssignments
                   key={firmId}
@@ -501,11 +482,7 @@ function FirmPage() {
               {clientsQ.isPending ? (
                 <LoadingState />
               ) : clientsQ.isError ? (
-                <ErrorState
-                  onRetry={() => void clientsQ.refetch()}
-                  title="Could not load clients"
-                  description={friendlyAuthError(clientsQ.error)}
-                />
+                <QueryErrorState queries={[clientsQ]} title="Could not load clients" />
               ) : (
                 <div className="space-y-6">
                   <FirmRequestsPanel
@@ -528,11 +505,7 @@ function FirmPage() {
               {clientsQ.isPending ? (
                 <LoadingState />
               ) : clientsQ.isError ? (
-                <ErrorState
-                  onRetry={() => void clientsQ.refetch()}
-                  title="Could not load clients"
-                  description={friendlyAuthError(clientsQ.error)}
-                />
+                <QueryErrorState queries={[clientsQ]} title="Could not load clients" />
               ) : (
                 <FirmBillingPanel
                   key={firmId}
@@ -588,11 +561,7 @@ function FirmPage() {
                   {activityQ.isPending ? (
                     <LoadingState rows={3} />
                   ) : activityQ.isError ? (
-                    <ErrorState
-                      onRetry={() => void activityQ.refetch()}
-                      title="Could not load activity"
-                      description={friendlyAuthError(activityQ.error)}
-                    />
+                    <QueryErrorState queries={[activityQ]} title="Could not load activity" />
                   ) : (activityQ.data ?? []).length === 0 ? (
                     <EmptyState
                       title="No audit events yet"

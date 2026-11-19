@@ -7,9 +7,9 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { getPrintableDocument } from "@/lib/documents/documents.functions";
 import { DOCUMENT_KIND_LABEL, isDocumentKind } from "@/lib/documents/types";
 import { documentFileName } from "@/lib/documents/helpers";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { DocumentSheet } from "@/components/documents/DocumentSheet";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/documents/print/$kind/$id")({
@@ -54,13 +54,7 @@ function PrintDocumentPage() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
   if (query.isError) {
-    return (
-      <ErrorState
-        title="Could not load the document"
-        description={friendlyAuthError(query.error)}
-        onRetry={() => query.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[query]} title="Could not load the document" />;
   }
 
   const { document: doc, branding, locale, dateFormat } = query.data;

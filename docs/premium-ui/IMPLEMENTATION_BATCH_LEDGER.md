@@ -87,7 +87,8 @@ eature/premium-ui-batch40-density-acceptance | [PR #286](https://github.com/link
 | 88 | Phase 3–5 | Quote/CN edit + sales orders/customers + purchase CN list QueryErrorState | `feature/premium-ui-batch88-production-gaps` | [PR #361](https://github.com/linkbusinessadvisory/LinkBooks/pull/361) merged | sales + purchases | done |
 | 89 | Phase 3–5 | Sales/purchases/banking overviews + PO/suppliers/expenses lists QueryErrorState | `feature/premium-ui-batch89-production-gaps` | [PR #362](https://github.com/linkbusinessadvisory/LinkBooks/pull/362) merged | sales + purchases + banking | done |
 | 90 | Phase 3–5 | Projects, recurring journals, budgets, journal detail, statements, cash-coding, contacts QueryErrorState | `feature/premium-ui-batch90-production-gaps` | [PR #363](https://github.com/linkbusinessadvisory/LinkBooks/pull/363) merged | accounting + banking + contacts | done |
-| 91 | Phase 3–5 | Dashboard, tax, contact record, statements, products, fixed assets, recon report, claim detail QueryErrorState | `feature/premium-ui-batch91-production-gaps` | pending PR | core + tax + assets + expenses | in progress |
-| 92+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do Batches 46–91) | TBD | — | all modules | planned |
+| 91 | Phase 3–5 | Dashboard, tax, contact record, statements, products, fixed assets, recon report, claim detail QueryErrorState | `feature/premium-ui-batch91-production-gaps` | [PR #364](https://github.com/linkbusinessadvisory/LinkBooks/pull/364) merged | core + tax + assets + expenses | done |
+| 92 | Phase 3–5 | Duplicates, accountant, reports, files, profile, print, platform, firm QueryErrorState | `feature/premium-ui-batch92-production-gaps` | pending PR | contacts + reports + platform + firm | in progress |
+| 93+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do Batches 46–92) | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

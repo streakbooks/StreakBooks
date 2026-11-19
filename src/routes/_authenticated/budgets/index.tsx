@@ -48,7 +48,10 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/budgets/")({
-  validateSearch: (raw: Record<string, unknown>) => ({ ...parseBudgetListSearch(raw), ...(parseCreateSearchFlag(raw) ? { create: true } : {}) }),
+  validateSearch: (raw: Record<string, unknown>) => ({
+    ...parseBudgetListSearch(raw),
+    ...(parseCreateSearchFlag(raw) ? { create: true } : {}),
+  }),
   head: () => ({ meta: [{ title: "Budgets — LinkBooks" }] }),
   component: BudgetsPage,
 });

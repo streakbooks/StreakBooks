@@ -17,12 +17,13 @@ export const ACCOUNTING_TABS = [
   "cash-classification",
 ] as const;
 export type AccountingTab = (typeof ACCOUNTING_TABS)[number];
-export type AccountingSearch = JournalBrowseSearch & ChartBrowseSearch & {
-  cashReview?: string | undefined;
-  tab?: AccountingTab | undefined;
-  journal?: string | undefined;
-  period?: string | undefined;
-};
+export type AccountingSearch = JournalBrowseSearch &
+  ChartBrowseSearch & {
+    cashReview?: string | undefined;
+    tab?: AccountingTab | undefined;
+    journal?: string | undefined;
+    period?: string | undefined;
+  };
 export type Search = {
   bankAccountId?: string;
   amount?: string;

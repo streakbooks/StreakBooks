@@ -395,7 +395,10 @@ function CatalogueCart({ companyId }: { companyId: string }) {
                       <p className="text-sm font-medium">Itemised price preview</p>
                       <ul className="space-y-1 text-sm text-muted-foreground">
                         {quote.data.lines.map((line) => (
-                          <li key={`${line.productId}-${line.quantity}`} className="rounded-md border border-border p-3">
+                          <li
+                            key={`${line.productId}-${line.quantity}`}
+                            className="rounded-md border border-border p-3"
+                          >
                             <p className="font-medium">{line.name}</p>
                             <p className="text-muted-foreground">
                               {line.code ?? "No SKU"} · {line.quantity} ×{" "}

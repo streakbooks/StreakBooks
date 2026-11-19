@@ -96,7 +96,11 @@ function dedupeSettingsTrail(trail: SettingsPanelId[]): SettingsPanelId[] {
 export function settingsPanelTrail(value: unknown): SettingsPanelId[] {
   return Array.isArray(value) &&
     value.length <= 8 &&
-    Array.from(value, (id, index) => Object.prototype.hasOwnProperty.call(value, index) && parseSettingsPanel(id) !== undefined).every(Boolean)
+    Array.from(
+      value,
+      (id, index) =>
+        Object.prototype.hasOwnProperty.call(value, index) && parseSettingsPanel(id) !== undefined,
+    ).every(Boolean)
     ? (Array.from(value) as SettingsPanelId[])
     : [];
 }

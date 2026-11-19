@@ -18,7 +18,6 @@ import { PAYROLL_RUN_STATUSES, type PayrollRunStatus } from "@/lib/payroll/types
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
-import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

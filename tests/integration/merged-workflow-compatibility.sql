@@ -7,7 +7,7 @@ select set_config('merge.fixture_attachment',gen_random_uuid()::text,true);
 do $$ declare target text; begin
   foreach target in array array['document_email_inboxes','document_tags','document_attachment_tags',
     'document_attachment_versions','document_retention_settings','document_storage_cleanup_jobs',
-    'firm_client_requests','hr_locations','pos_location_access','pos_registers','pos_register_sessions'] loop
+    'firm_client_requests','hr_locations','pos_location_access','pos_registers','pos_register_sessions','pos_sales','pos_sale_lines','pos_sale_payments','pos_cash_movements','pos_refunds'] loop
     if not exists(select 1 from pg_catalog.pg_policy p join pg_catalog.pg_class c on c.oid=p.polrelid
       join pg_catalog.pg_namespace n on n.oid=c.relnamespace
       where n.nspname='public' and c.relname=target and c.relrowsecurity and not p.polpermissive
@@ -49,6 +49,6 @@ do $$ begin
       and cardinality(storage_paths)=1 and completed_at is null) then
     raise exception 'Authorised demo reset lost the durable Storage cleanup receipt';
   end if;
-  raise notice 'Merged workflows: 11 restrictive MFA policies, non-demo denial, spoofed-delete denial and authorised demo reset/cleanup receipt passed';
+  raise notice 'Merged workflows: 16 restrictive MFA policies, non-demo denial, spoofed-delete denial and authorised demo reset/cleanup receipt passed';
 end $$;
 rollback;

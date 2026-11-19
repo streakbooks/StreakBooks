@@ -7,7 +7,12 @@ import { normalizePayrollRunSearch } from "@/lib/payroll/run-search";
 export const Route = createFileRoute("/_authenticated/payroll/runs/")({
   validateSearch: (
     raw: Record<string, unknown>,
-  ): { status?: string | undefined; q?: string | undefined; sort?: string | undefined; create?: boolean | undefined } => ({
+  ): {
+    status?: string | undefined;
+    q?: string | undefined;
+    sort?: string | undefined;
+    create?: boolean | undefined;
+  } => ({
     ...(parseCreateSearchFlag(raw) ? { create: true } : {}),
     status:
       typeof raw["status"] === "string" &&

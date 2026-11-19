@@ -40,6 +40,8 @@ const required = [
   ["src/screens/sales/recurring.tsx", "TransactionWorkspace"],
   ["src/screens/sales/recurring.tsx", "TotalsSummary"],
   ["src/screens/sales/recurring.tsx", "QueryErrorState"],
+  ["src/routes/_authenticated/purchases/recurring.index.tsx", "QueryErrorState"],
+  ["src/routes/_authenticated/purchases/recurring.$id.edit.tsx", "QueryErrorState"],
   ["src/screens/sales/orders.new.tsx", "TransactionWorkspace"],
   ["src/screens/sales/orders.new.tsx", "TotalsSummary"],
   ["src/screens/sales/orders.new.tsx", "FormGrid"],

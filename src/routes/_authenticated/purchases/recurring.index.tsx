@@ -5,7 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -301,12 +302,8 @@ function RecurringTransactionsPage() {
 
           {workspaceQ.isPending ? (
             <LoadingState />
-          ) : workspaceQ.isError ? (
-            <ErrorState
-              onRetry={() => void workspaceQ.refetch()}
-              title="Could not load"
-              description={friendlyAuthError(workspaceQ.error)}
-            />
+          ) : workspaceQ.isError && workspaceQ.data === undefined ? (
+            <QueryErrorState queries={[workspaceQ]} title="Could not load recurring bills" />
           ) : (workspaceQ.data?.rows ?? []).length === 0 ? (
             <EmptyState
               title="No recurring bill templates"

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import {
   listFirmServiceCategories,
   saveFirmServiceCategory,
@@ -53,11 +54,8 @@ export function FirmServiceCatalogPanel({
         changed when a category is renamed or archived.
       </p>
       {query.isError ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          <span>{friendlyAuthError(query.error)}</span>
-          <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
-            Retry
-          </Button>
+        <div className="mt-3">
+          <QueryErrorState queries={[query]} title="Could not load service categories" />
         </div>
       ) : query.isPending ? (
         <p className="mt-3 text-sm text-muted-foreground">Loading categories…</p>

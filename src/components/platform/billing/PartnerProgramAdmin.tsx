@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LookupSelect } from "@/components/lookup";
 import { MultiLookupSelect } from "@/components/lookup/MultiLookupSelect";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,12 +88,7 @@ export function PartnerProgramAdmin({ canEdit, isOwner }: { canEdit: boolean; is
         </p>
       </header>
       {query.isError ? (
-        <div className="space-y-2 text-sm">
-          <p className="text-destructive">{errorText(query.error, "Could not load.")}</p>
-          <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
-            Retry
-          </Button>
-        </div>
+        <QueryErrorState queries={[query]} title="Could not load partner programme" />
       ) : null}
       {data ? (
         <>

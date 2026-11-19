@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import {
   applyFirmCustomOnboarding,
   listFirmCustomOnboarding,
@@ -74,11 +75,8 @@ export function FirmCustomOnboardingTemplates({
         completed evidence or existing steps. Archiving a template does not erase client history.
       </p>
       {query.isError ? (
-        <div className="mt-3 flex items-center gap-2">
-          <p className="text-sm">{friendlyAuthError(query.error)}</p>
-          <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
-            Retry
-          </Button>
+        <div className="mt-3">
+          <QueryErrorState queries={[query]} title="Could not load custom onboarding templates" />
         </div>
       ) : query.isPending ? (
         <p className="mt-3 text-sm text-muted-foreground">Loading custom templates…</p>

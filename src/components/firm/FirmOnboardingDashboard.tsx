@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { listFirmOnboardingOverview } from "@/lib/firm/firm-workflows.functions";
 import { onboardingStepSummary } from "@/lib/firm/onboarding-insights";
 import { getFirmClientName, type FirmClientRow } from "@/lib/firm/client-portfolio";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 
 export function FirmOnboardingDashboard({
@@ -101,9 +101,7 @@ export function FirmOnboardingDashboard({
         </Button>
       </div>
       {query.isError ? (
-        <p className="text-sm text-destructive">
-          The onboarding overview could not load: {friendlyAuthError(query.error)}
-        </p>
+        <QueryErrorState queries={[query]} title="Could not load onboarding overview" />
       ) : query.isPending ? (
         <p className="text-sm text-muted-foreground">Loading onboarding progress…</p>
       ) : (

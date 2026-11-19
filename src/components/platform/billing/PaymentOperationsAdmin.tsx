@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LookupSelect } from "@/components/lookup";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,9 +56,7 @@ export function PaymentOperationsAdmin({
       </header>
       {query.isLoading ? <p className="text-sm">Loading payment settings…</p> : null}
       {query.isError ? (
-        <p className="text-sm text-destructive">
-          {errorText(query.error, "Payment settings could not be loaded.")}
-        </p>
+        <QueryErrorState queries={[query]} title="Could not load payment settings" />
       ) : null}
       {query.data ? (
         <>

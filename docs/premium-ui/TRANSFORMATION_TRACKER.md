@@ -52,7 +52,7 @@
 | Empty CTA wave 2 Batch 59 | Merged | PR #315 → `5847e317` — remaining HR/PM/CRM empty New CTAs |
 | Empty CTA wave 3 Batch 60 | Done | [PR #317](https://github.com/linkbusinessadvisory/LinkBooks/pull/317) → `b52e1c88` |
 | Empty CTA wave 4 Batch 61 | Done | [PR #319](https://github.com/linkbusinessadvisory/LinkBooks/pull/319) → `b03a9fab` |
-| Empty CTA wave 5 Batch 62 | In progress | Advisors admin/portal; HR attendance; CRM contacts |
+| Empty CTA wave 5 Batch 62 | Done | [PR #321](https://github.com/linkbusinessadvisory/LinkBooks/pull/321) → `6ab92ab6` |
 | Staging / Section 18 go-live | Blocked | No E2E staging credentials on workstation |
 | Production DoD claim | Not ready | `npm run check:section18` |
 

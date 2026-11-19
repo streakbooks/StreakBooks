@@ -19,6 +19,7 @@ import {
 } from "@/lib/ai/review-queue.functions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -269,15 +270,7 @@ export function AiJournalReviewQueue({
                 Loading persistent AI reviews…
               </p>
             ) : casesQ.isError ? (
-              <Alert variant="destructive">
-                <AlertTitle>AI review queue unavailable</AlertTitle>
-                <AlertDescription>
-                  {friendlyAuthError(casesQ.error)}{" "}
-                  <Button variant="outline" size="sm" onClick={() => void casesQ.refetch()}>
-                    Retry
-                  </Button>
-                </AlertDescription>
-              </Alert>
+              <QueryErrorState queries={[casesQ]} title="AI review queue unavailable" />
             ) : casesQ.data ? (
               <>
                 <p className="text-xs text-muted-foreground">
@@ -362,15 +355,7 @@ export function AiJournalReviewQueue({
               </>
             ) : null}
             {caseQ.isError ? (
-              <Alert variant="destructive">
-                <AlertTitle>Requested AI review case unavailable</AlertTitle>
-                <AlertDescription>
-                  {friendlyAuthError(caseQ.error)}{" "}
-                  <Button size="sm" variant="outline" onClick={() => void caseQ.refetch()}>
-                    Retry
-                  </Button>
-                </AlertDescription>
-              </Alert>
+              <QueryErrorState queries={[caseQ]} title="Requested AI review case unavailable" />
             ) : null}
             {selected ? (
               <div className="space-y-4 rounded-lg border p-4">
@@ -508,10 +493,7 @@ export function AiJournalReviewQueue({
                   {eventsQ.isPending ? (
                     <p className="text-xs text-muted-foreground">Loading review events…</p>
                   ) : eventsQ.isError ? (
-                    <Alert variant="destructive">
-                      <AlertTitle>Event history unavailable</AlertTitle>
-                      <AlertDescription>{friendlyAuthError(eventsQ.error)}</AlertDescription>
-                    </Alert>
+                    <QueryErrorState queries={[eventsQ]} title="Event history unavailable" />
                   ) : eventsQ.data?.length ? (
                     <div className="max-h-80 space-y-2 overflow-y-auto">
                       {eventsQ.data.map((event) => (

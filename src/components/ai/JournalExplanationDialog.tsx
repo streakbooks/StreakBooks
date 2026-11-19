@@ -6,8 +6,8 @@ import { ClipboardCopy, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { getAiJournalExplanation } from "@/lib/ai/journal-explanation.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { JournalLink, SourceLink } from "@/components/reports/ReportShell";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,7 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table,
   TableBody,
@@ -101,15 +100,7 @@ export function AiJournalExplanationDialog({
             Retrieving the authorised posted journal and account information…
           </p>
         ) : query.isError ? (
-          <Alert variant="destructive">
-            <AlertTitle>Could not explain this journal</AlertTitle>
-            <AlertDescription>
-              {friendlyAuthError(query.error)}{" "}
-              <Button variant="outline" size="sm" onClick={() => void query.refetch()}>
-                Retry
-              </Button>
-            </AlertDescription>
-          </Alert>
+          <QueryErrorState queries={[query]} title="Could not explain this journal" />
         ) : result ? (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">

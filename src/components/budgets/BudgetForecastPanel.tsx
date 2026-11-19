@@ -23,6 +23,7 @@ import {
   type ForecastSourceData,
 } from "@/lib/budgets/budgets.functions";
 import { csvFilename, csvMoney, downloadCsv, toCsv } from "@/lib/reports/csv";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
@@ -329,19 +330,7 @@ export function BudgetForecastPanel({
         query.isPending ? (
           <p className="text-sm text-muted-foreground">Loading fiscal budget and posted actuals…</p>
         ) : query.isError ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Could not load forecasting data: {friendlyAuthError(query.error)}.
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-2"
-                onClick={() => void query.refetch()}
-              >
-                Retry
-              </Button>
-            </AlertDescription>
-          </Alert>
+          <QueryErrorState queries={[query]} title="Could not load forecasting data" />
         ) : data ? (
           <>
             {!data.scenariosAvailable ? (

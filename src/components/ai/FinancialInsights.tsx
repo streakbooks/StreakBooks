@@ -8,7 +8,7 @@ import { todayIso, monthStart } from "@/lib/accounting/fiscal-year";
 import { priorPeriodRange } from "@/lib/reports/statements";
 import { isReportDate } from "@/lib/reports/date-validation";
 import { buildFinancialInsights, type FinancialSnapshot } from "@/lib/ai/financial-insights";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -201,15 +201,7 @@ export function AiFinancialInsights({
                 Calculating metrics from the authorised reporting engine…
               </div>
             ) : currentQ.isError ? (
-              <Alert variant="destructive">
-                <AlertTitle>Financial insight data unavailable</AlertTitle>
-                <AlertDescription>
-                  {friendlyAuthError(currentQ.error)}{" "}
-                  <Button size="sm" variant="outline" onClick={() => void currentQ.refetch()}>
-                    Retry
-                  </Button>
-                </AlertDescription>
-              </Alert>
+              <QueryErrorState queries={[currentQ]} title="Financial insight data unavailable" />
             ) : result && current ? (
               <>
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
@@ -232,15 +224,11 @@ export function AiFinancialInsights({
                     Loading preceding period for comparison…
                   </p>
                 ) : compare && priorQ.isError ? (
-                  <Alert variant="destructive">
-                    <AlertTitle>Comparison unavailable</AlertTitle>
-                    <AlertDescription>
-                      {friendlyAuthError(priorQ.error)}. Current-period figures remain available.
-                      <Button size="sm" variant="outline" onClick={() => void priorQ.refetch()}>
-                        Retry comparison
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
+                  <QueryErrorState
+                    queries={[priorQ]}
+                    title="Comparison unavailable"
+                    description="Current-period figures remain available."
+                  />
                 ) : null}
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   {result.cards.map((card) => (

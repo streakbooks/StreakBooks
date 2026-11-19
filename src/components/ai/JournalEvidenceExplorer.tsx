@@ -20,6 +20,7 @@ import {
   summariseJournalEvidence,
 } from "@/lib/ai/evidence-review";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -295,15 +296,7 @@ export function AiJournalEvidenceExplorer({
                     Loading posted journal evidence…
                   </p>
                 ) : journalsQ.isError ? (
-                  <Alert variant="destructive">
-                    <AlertTitle>Journal evidence unavailable</AlertTitle>
-                    <AlertDescription>
-                      {friendlyAuthError(journalsQ.error)}{" "}
-                      <Button variant="outline" size="sm" onClick={() => void journalsQ.refetch()}>
-                        Retry
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
+                  <QueryErrorState queries={[journalsQ]} title="Journal evidence unavailable" />
                 ) : evidence && summary ? (
                   <>
                     <p className="text-xs text-muted-foreground">
@@ -495,15 +488,7 @@ export function AiJournalEvidenceExplorer({
                     Loading permitted chart of accounts…
                   </p>
                 ) : accountsQ.isError ? (
-                  <Alert variant="destructive">
-                    <AlertTitle>Accounts unavailable</AlertTitle>
-                    <AlertDescription>
-                      {friendlyAuthError(accountsQ.error)}{" "}
-                      <Button variant="outline" size="sm" onClick={() => void accountsQ.refetch()}>
-                        Retry
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
+                  <QueryErrorState queries={[accountsQ]} title="Accounts unavailable" />
                 ) : !accountId ? (
                   <p className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
                     Select an account to inspect the exact posted movements returned by its
@@ -514,15 +499,7 @@ export function AiJournalEvidenceExplorer({
                     Loading account evidence…
                   </p>
                 ) : accountQ.isError ? (
-                  <Alert variant="destructive">
-                    <AlertTitle>Account evidence unavailable</AlertTitle>
-                    <AlertDescription>
-                      {friendlyAuthError(accountQ.error)}{" "}
-                      <Button variant="outline" size="sm" onClick={() => void accountQ.refetch()}>
-                        Retry
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
+                  <QueryErrorState queries={[accountQ]} title="Account evidence unavailable" />
                 ) : transactions ? (
                   <>
                     <div className="grid grid-cols-1 gap-3 rounded-lg border p-4 text-sm sm:grid-cols-3">

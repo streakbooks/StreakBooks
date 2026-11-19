@@ -10,6 +10,7 @@ import {
   setBudgetLock,
   type BudgetGovernanceResult,
 } from "@/lib/budgets/budgets.functions";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -248,9 +249,10 @@ export function BudgetGovernancePanel({
                 {selectedRevision.isPending ? (
                   <p className="text-sm">Loading stored revision…</p>
                 ) : selectedRevision.isError ? (
-                  <Alert variant="destructive">
-                    <AlertDescription>{friendlyAuthError(selectedRevision.error)}</AlertDescription>
-                  </Alert>
+                  <QueryErrorState
+                    queries={[selectedRevision]}
+                    title="Could not load stored revision"
+                  />
                 ) : revision ? (
                   <>
                     <p className="text-sm font-semibold">

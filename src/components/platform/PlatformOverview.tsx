@@ -19,6 +19,7 @@ import {
 } from "@/lib/platform/platform.functions";
 import { formatConsoleInstant, formatUtcDay } from "@/lib/platform/console-time";
 import { revenueCardState } from "@/lib/platform/revenue-metrics";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 export function PlatformOverview({ allowedSections }: { allowedSections: readonly string[] }) {
@@ -68,9 +69,7 @@ export function PlatformOverview({ allowedSections }: { allowedSections: readonl
       {query.isPending ? (
         <p role="status">Loading verified metrics…</p>
       ) : query.isError ? (
-        <p role="alert" className="text-destructive">
-          {query.error.message}
-        </p>
+        <QueryErrorState queries={[query]} title="Could not load platform metrics" />
       ) : (
         <>
           <p className="text-xs text-muted-foreground">

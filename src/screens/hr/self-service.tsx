@@ -327,6 +327,21 @@ export function HrSelfServicePage() {
               <EmptyState
                 title="No leave requests"
                 description="Submit a leave request when needed."
+                action={
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      setLeaveTypeId(types[0]?.id ?? "");
+                      setStartDate("");
+                      setEndDate("");
+                      setReason("");
+                      setLeaveOpen(true);
+                    }}
+                  >
+                    Request leave
+                  </Button>
+                }
               />
             ) : (
               <TableCard>

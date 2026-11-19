@@ -1,5 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -62,7 +62,13 @@ const STATUS_LABEL: Record<(typeof EMPLOYEE_STATUSES)[number], string> = {
   terminated: "Terminated",
 };
 
-export function PayrollEmployeesPage() {
+export function PayrollEmployeesPage({
+  forceCreate = false,
+  onCreateClosed,
+}: {
+  forceCreate?: boolean;
+  onCreateClosed?: () => void;
+} = {}) {
   const { company, isPending } = useActiveCompany();
   const canView = useCanDo("payroll.view");
   const canManage = useCanDo("payroll.employees.manage");
@@ -116,11 +122,32 @@ export function PayrollEmployeesPage() {
     onSuccess: async (row) => {
       await queryClient.invalidateQueries({ queryKey: ["payroll-employees", company?.id] });
       setAddOpen(false);
+      setNewDraft(null);
       toast.success("Employee added");
       void navigate({ to: "/payroll/employees/$employeeId", params: { employeeId: row.id } });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+
+  function closeAdd() {
+    setAddOpen(false);
+    setNewDraft(null);
+    if (forceCreate) onCreateClosed?.();
+  }
+
+  useEffect(() => {
+    if (!forceCreate || !canManage || !company || addOpen || newDraft) return;
+    const countryCode =
+      settingsQ.data?.settings?.operating_country_code ??
+      settingsQ.data?.company.country_code ??
+      company.country_code;
+    const currencyCode =
+      settingsQ.data?.settings?.payroll_currency ??
+      settingsQ.data?.company.base_currency ??
+      company.base_currency;
+    setNewDraft(emptyEmployeeDraft(countryCode, currencyCode));
+    setAddOpen(true);
+  }, [forceCreate, canManage, company, addOpen, newDraft, settingsQ.data]);
 
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -281,7 +308,7 @@ export function PayrollEmployeesPage() {
         ]}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setAddOpen(false)}>
+            <Button variant="outline" size="sm" onClick={closeAdd}>
               Cancel
             </Button>
             <Button

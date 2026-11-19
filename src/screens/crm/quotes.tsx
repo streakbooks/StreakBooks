@@ -127,6 +127,13 @@ export function CrmQuotesPage() {
             <EmptyState
               title="No opportunities yet"
               description="Create or convert a lead into an opportunity first."
+              action={
+                <Button asChild size="sm">
+                  <Link to="/crm/$section" params={{ section: "opportunities" }}>
+                    Open opportunities
+                  </Link>
+                </Button>
+              }
             />
           ) : null}
           {rows.length > 0 ? (

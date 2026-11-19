@@ -250,6 +250,13 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
             <EmptyState
               title={`No ${kind} portal grants`}
               description="Invite a contact linked to an existing record."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    Invite
+                  </Button>
+                ) : undefined
+              }
             />
           ) : null}
           {access.data && access.data.length > 0 ? (

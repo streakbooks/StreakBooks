@@ -1,23 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { z } from "zod";
 
 import { ProductsPage } from "@/screens/products-services";
+import { parseCreateSearchFlag } from "@/lib/navigation/create-search";
 
 export const Route = createFileRoute("/_authenticated/products-services/")({
-  validateSearch: (search: Record<string, unknown>) =>
-    z
-      .object({
-        create: z.union([z.boolean(), z.literal("true"), z.literal("1")]).optional(),
-      })
-      .parse({
-        create:
-          search["create"] === true ||
-          search["create"] === "true" ||
-          search["create"] === "1" ||
-          search["create"] === 1
-            ? true
-            : undefined,
-      }),
+  validateSearch: (search: Record<string, unknown>): { create?: boolean } =>
+    parseCreateSearchFlag(search) ? { create: true } : {},
   head: () => ({
     meta: [
       { title: "Products & Services — LinkBooks" },
@@ -37,7 +25,13 @@ function ProductsPageRoute() {
     <ProductsPage
       forceCreate={Boolean(create)}
       onCreateClosed={() => {
-        void navigate({ search: { create: undefined }, replace: true });
+        void navigate({
+          search: (prev) => {
+            const { create: _create, ...rest } = prev;
+            return rest;
+          },
+          replace: true,
+        });
       }}
     />
   );

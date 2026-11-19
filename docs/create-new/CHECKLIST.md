@@ -30,6 +30,8 @@ These navigate to dedicated routes (browser history, Back, deep links):
 | Customer / Supplier | `/contacts/new?kind=…` |
 | Product / Service | `/products-services/new` (RecordWorkspace create; list `?create=true` also sticky) |
 | Fixed asset | `/fixed-assets/new` → sticky `?create=true` workspace |
+| Budget (module CTA / deep link) | `/budgets?create=true` sticky until Close |
+| Payroll employee / run (deep link) | `/payroll/employees?create=true`, `/payroll/runs?create=true` |
 
 ## Enabled (list / tooling / flyover)
 

@@ -282,6 +282,13 @@ export function CrmCampaignsPage() {
             <EmptyState
               title="No campaigns yet"
               description="Create a campaign to track outreach separately from lead sources."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    New campaign
+                  </Button>
+                ) : undefined
+              }
             />
           ) : null}
           {campaignRows.length > 0 ? (

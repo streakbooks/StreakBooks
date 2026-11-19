@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Copy, GitCompareArrows, Loader2, Trash2 } from "lucide-react";
@@ -10,6 +10,7 @@ import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fiscalYearStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { nextBudgetYearStart } from "@/lib/budgets/budget-math";
+import { parseCreateSearchFlag } from "@/lib/navigation/create-search";
 import { BudgetScenarioComparison } from "@/components/budgets/BudgetScenarioComparison";
 import {
   deleteBudget,
@@ -43,6 +44,8 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/budgets/")({
+  validateSearch: (raw: Record<string, unknown>): { create?: boolean } =>
+    parseCreateSearchFlag(raw) ? { create: true } : {},
   head: () => ({ meta: [{ title: "Budgets — LinkBooks" }] }),
   component: BudgetsPage,
 });
@@ -50,7 +53,8 @@ export const Route = createFileRoute("/_authenticated/budgets/")({
 function BudgetsPage() {
   const { company } = useActiveCompany();
   const fmt = useFormat();
-  const navigate = useNavigate();
+  const navigate = Route.useNavigate();
+  const { create: forceCreate } = Route.useSearch();
   const queryClient = useQueryClient();
   const canManage = useCanDo("accounts.manage");
   const listFn = useServerFn(listBudgets);
@@ -72,7 +76,7 @@ function BudgetsPage() {
   );
   const [name, setName] = useState("");
   const [search, setSearch] = useState("");
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useState(Boolean(forceCreate));
   const [showScenarioComparison, setShowScenarioComparison] = useState(false);
   const [copySource, setCopySource] = useState<BudgetSummary | null>(null);
   const [copyName, setCopyName] = useState("");
@@ -86,6 +90,23 @@ function BudgetsPage() {
     enabled: Boolean(companyId),
     queryFn: () => listFn({ data: { companyId: companyId! } }),
   });
+
+  useEffect(() => {
+    if (!forceCreate || !canManage) return;
+    setShowCreate(true);
+  }, [forceCreate, canManage]);
+
+  function closeCreate() {
+    setShowCreate(false);
+    if (!forceCreate) return;
+    void navigate({
+      search: (prev) => {
+        const { create: _create, ...rest } = prev;
+        return rest;
+      },
+      replace: true,
+    });
+  }
 
   const create = useMutation({
     mutationFn: () =>
@@ -192,7 +213,7 @@ function BudgetsPage() {
                 Create a financial-year plan, then add your accounts and monthly amounts.
               </p>
             </div>
-            <Button size="sm" variant="ghost" onClick={() => setShowCreate(false)}>
+            <Button size="sm" variant="ghost" onClick={closeCreate}>
               Close
             </Button>
           </div>

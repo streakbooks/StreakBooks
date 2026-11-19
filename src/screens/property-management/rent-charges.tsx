@@ -203,6 +203,13 @@ export function PmRentChargesPage() {
             <EmptyState
               title="No rent charges"
               description="Generate a charge for an active lease period."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    Generate charge
+                  </Button>
+                ) : undefined
+              }
             />
           ) : null}
           {charges.data && charges.data.length > 0 ? (

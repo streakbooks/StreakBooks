@@ -277,7 +277,17 @@ export function PmReservationsPage() {
             />
           ) : null}
           {reservations.data?.length === 0 ? (
-            <EmptyState title="No reservations" description="Create a booking or import later." />
+            <EmptyState
+              title="No reservations"
+              description="Create a booking or import later."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    New reservation
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : null}
           {reservations.data && reservations.data.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-border">

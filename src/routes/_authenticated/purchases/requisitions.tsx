@@ -1,15 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PurchasesRequisitionsScreen } from "@/screens/purchases/requisitions";
+import { parseCreateSearchFlag } from "@/lib/navigation/create-search";
 
 export const Route = createFileRoute("/_authenticated/purchases/requisitions")({
-  validateSearch: (raw: Record<string, unknown>): { create?: boolean } => {
-    const create =
-      raw["create"] === true ||
-      raw["create"] === "true" ||
-      raw["create"] === "1" ||
-      raw["create"] === 1;
-    return create ? { create: true } : {};
-  },
+  validateSearch: (raw: Record<string, unknown>): { create?: boolean } =>
+    parseCreateSearchFlag(raw) ? { create: true } : {},
   component: PurchasesRequisitionsRoute,
   staticData: {
     moduleId: "purchases",
@@ -19,5 +14,20 @@ export const Route = createFileRoute("/_authenticated/purchases/requisitions")({
 
 function PurchasesRequisitionsRoute() {
   const { create } = Route.useSearch();
-  return <PurchasesRequisitionsScreen forceCreate={Boolean(create)} />;
+  const navigate = Route.useNavigate();
+  return (
+    <PurchasesRequisitionsScreen
+      forceCreate={Boolean(create)}
+      onCreateClosed={() => {
+        if (!create) return;
+        void navigate({
+          search: (prev) => {
+            const { create: _create, ...rest } = prev;
+            return rest;
+          },
+          replace: true,
+        });
+      }}
+    />
+  );
 }

@@ -277,6 +277,13 @@ export function PmOwnerStatementsPage() {
               <EmptyState
                 title="No statements yet"
                 description="Generate a statement for an owner and period."
+                action={
+                  canGenerate ? (
+                    <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                      Generate statement
+                    </Button>
+                  ) : undefined
+                }
               />
             ) : null}
             {statements.data && statements.data.length > 0 ? (

@@ -145,7 +145,10 @@ function FixedAssetsPage() {
     setDialog(null);
     if (wasCreateAsset) {
       void navigate({
-        search: (prev) => ({ ...prev, create: undefined }),
+        search: (prev) => {
+          const { create: _create, ...rest } = prev;
+          return rest;
+        },
         replace: true,
       });
     }

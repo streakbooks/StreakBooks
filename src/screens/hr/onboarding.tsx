@@ -223,6 +223,13 @@ export function HrOnboardingPage() {
           <EmptyState
             title="No onboarding templates"
             description="Create a template with checklist tasks before starting cases."
+            action={
+              canManage ? (
+                <Button size="sm" type="button" onClick={() => setTemplateOpen(true)}>
+                  New template
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>
@@ -266,6 +273,22 @@ export function HrOnboardingPage() {
           <EmptyState
             title="No onboarding cases"
             description="Start an onboarding case for a hired employee using a template."
+            action={
+              canManage && (templatesQ.data?.templates.length ?? 0) > 0 ? (
+                <Button size="sm" type="button" onClick={() => setCaseOpen(true)}>
+                  Start onboarding
+                </Button>
+              ) : canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  onClick={() => setTemplateOpen(true)}
+                >
+                  New template first
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>

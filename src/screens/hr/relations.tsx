@@ -153,6 +153,25 @@ export function HrRelationsPage() {
         <EmptyState
           title="No cases"
           description="Open a grievance or disciplinary case when needed."
+          action={
+            canManage ? (
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => {
+                  setEmployeeId("");
+                  setCaseType("grievance");
+                  setTitle("");
+                  setSeverity("medium");
+                  setStatus("open");
+                  setSummary("");
+                  setOpen(true);
+                }}
+              >
+                Open case
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <TableCard>

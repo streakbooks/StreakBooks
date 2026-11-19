@@ -216,6 +216,13 @@ export function PmPropertiesPage() {
             <EmptyState
               title="No properties yet"
               description="Create the first property to begin the portfolio register."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    New property
+                  </Button>
+                ) : undefined
+              }
             />
           ) : null}
           {properties.data && properties.data.length > 0 ? (

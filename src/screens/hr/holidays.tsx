@@ -194,6 +194,22 @@ export function HrHolidaysPage() {
           <EmptyState
             title="No holiday calendars"
             description="Create a default calendar, then add public holidays."
+            action={
+              canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setCode("");
+                    setName("");
+                    setIsDefault(calendars.length === 0 ? "yes" : "no");
+                    setCalOpen(true);
+                  }}
+                >
+                  New calendar
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>
@@ -233,6 +249,37 @@ export function HrHolidaysPage() {
           <EmptyState
             title="No holidays listed"
             description="Add dated holidays to an active calendar."
+            action={
+              canManage && activeCalendars.length > 0 ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setCalendarId(activeCalendars[0]?.id ?? "");
+                    setHolidayDate("");
+                    setHolidayName("");
+                    setIsOptional("no");
+                    setHolOpen(true);
+                  }}
+                >
+                  Add holiday
+                </Button>
+              ) : canManage ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setCode("");
+                    setName("");
+                    setIsDefault("yes");
+                    setCalOpen(true);
+                  }}
+                >
+                  New calendar first
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <TableCard>

@@ -67,3 +67,48 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Project create sticky URL + close on save | Refresh-safe; `ProjectPanel onSaved` closes panel |
 | Production build | Local `vite build` PASS on this batch |
 
+## Batch 57 (sticky create honesty)
+
+| Gap | Action |
+| --- | --- |
+| Shared create-search helpers | `parseCreateSearchFlag` + omit pattern (exactOptional-safe) |
+| Budgets deep-link create | Sticky `?create=true` until Close |
+| Payroll employee/run create deep links | Sticky `?create=true` opens RecordWorkspace |
+| Requisition create URL sticky | Clear only when editor Cancel/Save |
+| Expense claim Cancel | Clears `create` search so form does not reopen |
+| Products create clear | exactOptional-safe omit (no `create: undefined`) |
+
+## Batch 58 (empty CTA honesty)
+
+| Gap | Action |
+| --- | --- |
+| HR training / performance / onboarding empty lists | EmptyState actions mirror header New controls |
+| CRM territories empty | New territory CTA |
+| PM properties / units / tenants empty | New property / unit / Link tenant CTAs |
+
+## Batch 59 (empty CTA wave 2)
+
+| Gap | Action |
+| --- | --- |
+| HR leave / shifts / transfers / relations / offboarding / recruitment / holidays / compensation | EmptyState actions mirror header create controls |
+| PM leases / owners / agreements / payouts / statements / reservations | EmptyState New/Link/Generate CTAs |
+| CRM campaigns | EmptyState New campaign CTA |
+
+## Batch 60 (empty CTA wave 3)
+
+| Gap | Action |
+| --- | --- |
+| PM rent charges / portals / ownership panel | EmptyState Generate/Invite/Add share CTAs |
+| HR self-service leave empty | Request leave CTA |
+| Messages conversation empties | New message / New group CTAs |
+| CRM quotes / relationships / forecasting empties | Links to opportunities / quotes / pipelines |
+
+## Batch 61 (empty CTA wave 4)
+
+| Gap | Action |
+| --- | --- |
+| HR assets / documents empties | Open New asset type / Assign / Add document dialogs |
+| EM cards / spending / petty / exit | Scroll-to-form EmptyState CTAs |
+| EM mileage / travel rate empties | Scroll to rate admin forms |
+| CRM team No members | Link to Settings users |
+

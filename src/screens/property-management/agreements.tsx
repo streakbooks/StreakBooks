@@ -261,6 +261,13 @@ export function PmAgreementsPage() {
             <EmptyState
               title="No agreements yet"
               description="Create a draft or active management agreement for a property."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    New agreement
+                  </Button>
+                ) : undefined
+              }
             />
           ) : null}
           {agreements.data && agreements.data.length > 0 ? (

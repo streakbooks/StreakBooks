@@ -59,8 +59,10 @@ import {
 
 export function PurchasesRequisitionsScreen({
   forceCreate = false,
+  onCreateClosed,
 }: {
   forceCreate?: boolean;
+  onCreateClosed?: () => void;
 } = {}) {
   const { company } = useActiveCompany();
   return company ? (
@@ -69,6 +71,7 @@ export function PurchasesRequisitionsScreen({
       companyId={company.id}
       baseCurrency={company.base_currency}
       forceCreate={forceCreate}
+      {...(onCreateClosed ? { onCreateClosed } : {})}
     />
   ) : (
     <EmptyState
@@ -81,10 +84,12 @@ function RequisitionsWorkspace({
   companyId,
   baseCurrency,
   forceCreate = false,
+  onCreateClosed,
 }: {
   companyId: string;
   baseCurrency: string;
   forceCreate?: boolean;
+  onCreateClosed?: () => void;
 }) {
   const { can } = useCan();
   const fmt = useFormat();
@@ -102,6 +107,12 @@ function RequisitionsWorkspace({
     if (!forceCreate || !canDraft) return;
     setEditor("new");
   }, [forceCreate, canDraft]);
+
+  function closeEditor() {
+    const wasCreate = editor === "new" && forceCreate;
+    setEditor(null);
+    if (wasCreate) onCreateClosed?.();
+  }
   const query = useQuery({
     queryKey: ["purchase-requisitions", companyId, status, search, page],
     enabled: can("purchases.view"),
@@ -139,7 +150,7 @@ function RequisitionsWorkspace({
           { label: editor === "new" ? "New" : "Edit" },
         ]}
         stickyActions={
-          <Button size="sm" variant="outline" onClick={() => setEditor(null)}>
+          <Button size="sm" variant="outline" onClick={closeEditor}>
             Cancel
           </Button>
         }
@@ -150,11 +161,11 @@ function RequisitionsWorkspace({
           baseCurrency={baseCurrency}
           initial={editor === "new" ? undefined : editor}
           onSaved={async (row) => {
-            setEditor(null);
+            closeEditor();
             setSelected(row);
             await client.invalidateQueries({ queryKey: ["purchase-requisitions", companyId] });
           }}
-          onCancel={() => setEditor(null)}
+          onCancel={closeEditor}
         />
       </TransactionWorkspace>
     );

@@ -205,7 +205,17 @@ export function PmUnitsPage() {
             />
           ) : null}
           {units.data?.length === 0 ? (
-            <EmptyState title="No units yet" description="Create a unit under a property." />
+            <EmptyState
+              title="No units yet"
+              description="Create a unit under a property."
+              action={
+                canManage ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    New unit
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : null}
           {units.data && units.data.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-border">

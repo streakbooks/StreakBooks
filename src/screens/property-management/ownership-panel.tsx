@@ -177,6 +177,13 @@ export function PmOwnershipPanel({
           <EmptyState
             title="No ownership rows"
             description="Add at least one owner share before generating owner statements."
+            action={
+              canManage ? (
+                <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                  Add share
+                </Button>
+              ) : undefined
+            }
           />
         ) : null}
         {ownership.data && ownership.data.length > 0 ? (

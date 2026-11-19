@@ -1,26 +1,14 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { z } from "zod";
 import {
   isExpenseManagementSectionKey,
   type ExpenseManagementSectionKey,
 } from "@/lib/expenses/sections";
+import { parseCreateSearchFlag } from "@/lib/navigation/create-search";
 import { ExpenseManagementSectionPage } from "@/screens/expense-management/section";
 
 export const Route = createFileRoute("/_authenticated/expense-management/$section")({
-  validateSearch: (search: Record<string, unknown>) =>
-    z
-      .object({
-        create: z.boolean().optional(),
-      })
-      .parse({
-        create:
-          search["create"] === true ||
-          search["create"] === "true" ||
-          search["create"] === "1" ||
-          search["create"] === 1
-            ? true
-            : undefined,
-      }),
+  validateSearch: (search: Record<string, unknown>): { create?: boolean } =>
+    parseCreateSearchFlag(search) ? { create: true } : {},
   head: ({ params }) => ({
     meta: [
       {

@@ -241,6 +241,13 @@ export function PmOwnerPayoutsPage() {
             <EmptyState
               title="No owner payouts"
               description="Create a draft payout after approving an owner statement."
+              action={
+                canPrepare ? (
+                  <Button size="sm" type="button" onClick={() => setShowForm(true)}>
+                    New owner payout
+                  </Button>
+                ) : undefined
+              }
             />
           ) : null}
           {distributions.data && distributions.data.length > 0 ? (

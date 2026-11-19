@@ -154,27 +154,28 @@ export function PriceListTierRules({
                 setSelectedProductId("");
               }}
             />
-            <RecordLookupSelect value={selectedProductId} onValueChange={setSelectedProductId}>
-              <SelectTrigger aria-label="Product for pricing rule">
-                <SelectValue placeholder="Choose product" />
-              </SelectTrigger>
-              <SelectContent>
-                {selectedProductId &&
-                selectedRule &&
-                !productsQ.data?.some((p) => p.id === selectedProductId) ? (
-                  <SelectItem value={selectedProductId}>{selectedRule.product_name}</SelectItem>
-                ) : null}
-                {(productsQ.data ?? []).map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.code ? `${p.code} — ` : ""}
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </RecordLookupSelect>
             {productsQ.isError ? (
               <QueryErrorState queries={[productsQ]} title="Could not load products" />
-            ) : null}
+            ) : (
+              <RecordLookupSelect value={selectedProductId} onValueChange={setSelectedProductId}>
+                <SelectTrigger aria-label="Product for pricing rule">
+                  <SelectValue placeholder="Choose product" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedProductId &&
+                  selectedRule &&
+                  !productsQ.data?.some((p) => p.id === selectedProductId) ? (
+                    <SelectItem value={selectedProductId}>{selectedRule.product_name}</SelectItem>
+                  ) : null}
+                  {(productsQ.data ?? []).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.code ? `${p.code} — ` : ""}
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </RecordLookupSelect>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="tier-quantity">Minimum quantity (up to 4 decimal places)</Label>

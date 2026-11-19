@@ -154,25 +154,26 @@ export function PriceListDiscountRules({
                 setProductId("");
               }}
             />
-            <RecordLookupSelect value={productId} onValueChange={setProductId}>
-              <SelectTrigger aria-label="Product for percentage discount rule">
-                <SelectValue placeholder="Choose product" />
-              </SelectTrigger>
-              <SelectContent>
-                {productId && editing && !productsQ.data?.some((p) => p.id === productId) ? (
-                  <SelectItem value={productId}>{editing.product_name}</SelectItem>
-                ) : null}
-                {(productsQ.data ?? []).map((p) => (
-                  <SelectItem value={p.id} key={p.id}>
-                    {p.code ? `${p.code} — ` : ""}
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </RecordLookupSelect>
             {productsQ.isError ? (
               <QueryErrorState queries={[productsQ]} title="Could not load products" />
-            ) : null}
+            ) : (
+              <RecordLookupSelect value={productId} onValueChange={setProductId}>
+                <SelectTrigger aria-label="Product for percentage discount rule">
+                  <SelectValue placeholder="Choose product" />
+                </SelectTrigger>
+                <SelectContent>
+                  {productId && editing && !productsQ.data?.some((p) => p.id === productId) ? (
+                    <SelectItem value={productId}>{editing.product_name}</SelectItem>
+                  ) : null}
+                  {(productsQ.data ?? []).map((p) => (
+                    <SelectItem value={p.id} key={p.id}>
+                      {p.code ? `${p.code} — ` : ""}
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </RecordLookupSelect>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="discount-quantity">Minimum quantity (up to 4 decimals)</Label>

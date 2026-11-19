@@ -121,7 +121,11 @@ export function HrOrganizationPage() {
       breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "Organization" }]}
       actions={
         canManage ? (
-          <Button type="button" onClick={() => setOpen(true)}>
+          <Button
+            type="button"
+            onClick={() => setOpen(true)}
+            disabled={orgQ.isPending || orgQ.isError}
+          >
             Add {kind}
           </Button>
         ) : undefined
@@ -244,43 +248,51 @@ export function HrOrganizationPage() {
             {kind === "department" ? (
               <div className="space-y-1">
                 <Label>Parent department</Label>
-                <RecordLookupSelect
-                  value={parentId || "__none"}
-                  onValueChange={(value) => setParentId(value === "__none" ? "" : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="None" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">None</SelectItem>
-                    {(orgQ.data?.departments ?? []).map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </RecordLookupSelect>
+                {orgQ.isError ? (
+                  <QueryErrorState queries={[orgQ]} title="Could not load organisation" />
+                ) : (
+                  <RecordLookupSelect
+                    value={parentId || "__none"}
+                    onValueChange={(value) => setParentId(value === "__none" ? "" : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">None</SelectItem>
+                      {(orgQ.data?.departments ?? []).map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </RecordLookupSelect>
+                )}
               </div>
             ) : null}
             {kind === "branch" ? (
               <div className="space-y-1">
                 <Label>Location</Label>
-                <RecordLookupSelect
-                  value={locationId || "__none"}
-                  onValueChange={(value) => setLocationId(value === "__none" ? "" : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="None" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">None</SelectItem>
-                    {(orgQ.data?.locations ?? []).map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </RecordLookupSelect>
+                {orgQ.isError ? (
+                  <QueryErrorState queries={[orgQ]} title="Could not load organisation" />
+                ) : (
+                  <RecordLookupSelect
+                    value={locationId || "__none"}
+                    onValueChange={(value) => setLocationId(value === "__none" ? "" : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">None</SelectItem>
+                      {(orgQ.data?.locations ?? []).map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </RecordLookupSelect>
+                )}
               </div>
             ) : null}
           </div>

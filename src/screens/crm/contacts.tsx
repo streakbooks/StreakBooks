@@ -138,6 +138,11 @@ export function CrmContactsPage() {
                   ? "Try a different search, or open Contacts for the complete customer master."
                   : "Add a person to a customer account in Contacts, then refresh this view."
               }
+              action={
+                <Button asChild size="sm">
+                  <Link to="/contacts">{term ? "Open Contacts" : "Manage Contacts"}</Link>
+                </Button>
+              }
             />
           ) : null}
           {people.isSuccess && rows.length > 0 ? (

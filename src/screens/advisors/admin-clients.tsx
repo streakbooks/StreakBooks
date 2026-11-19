@@ -219,6 +219,21 @@ export function AdvisorsAdminClientsPage() {
               <EmptyState
                 title="No clients yet"
                 description="Promote an inquiry or create a client record to begin service delivery."
+                action={
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      setForm(emptyForm);
+                      document
+                        .getElementById("advisors-client-form")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      document.getElementById("client-email")?.focus();
+                    }}
+                  >
+                    New client
+                  </Button>
+                }
               />
             ) : (
               query.data.map((client) => (
@@ -252,7 +267,10 @@ export function AdvisorsAdminClientsPage() {
             )}
           </section>
 
-          <section className="space-y-3 rounded-xl border border-border/70 p-4">
+          <section
+            id="advisors-client-form"
+            className="space-y-3 rounded-xl border border-border/70 p-4"
+          >
             <h2 className="font-semibold">{form.id ? "Edit client" : "New client"}</h2>
             <div className="space-y-1">
               <Label htmlFor="client-reason">Change reason</Label>

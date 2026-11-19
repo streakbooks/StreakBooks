@@ -112,3 +112,13 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | EM mileage / travel rate empties | Scroll to rate admin forms |
 | CRM team No members | Link to Settings users |
 
+## Batch 62 (empty CTA wave 5)
+
+| Gap | Action |
+| --- | --- |
+| Advisors clients/staff/engagements empties | Scroll-to-form New client/advisor/engagement CTAs |
+| Advisors billing/workspaces/documents/onboarding/overview | Bridge links to engagements, workspaces, inquiries, appointments |
+| Advisors portal appointments/home | Book consultation (+ view appointments) |
+| HR attendance empty logs | Record attendance dialog CTA |
+| CRM contacts empty people | Link to Contacts master |
+

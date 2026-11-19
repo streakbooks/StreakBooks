@@ -1,4 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -115,6 +116,11 @@ export function AdvisorsAdminDocumentsPage() {
             <EmptyState
               title="No document requests"
               description="Opening a work period seeds document requests for bookkeeping and coaching prep."
+              action={
+                <Button asChild size="sm">
+                  <Link to="/advisors-admin/workspaces">Open workspaces</Link>
+                </Button>
+              }
             />
           ) : (
             query.data.map((request) => (

@@ -387,7 +387,9 @@ function BankTransactions() {
       setSelected(new Set());
       if (r.failed > 0) {
         const first = r.results.find((x) => !x.ok);
-        toast.warning(`${r.succeeded} coded, ${r.failed} failed. ${first?.error ?? ""}`);
+        toast.warning(
+          `${r.succeeded} coded, ${r.failed} failed. ${first?.error ? friendlyAuthError(first.error) : ""}`,
+        );
       } else toast.success(`${r.succeeded} transactions coded`);
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -423,7 +425,11 @@ function BankTransactions() {
       setBulkProgress(null);
       await invalidate();
       if (r.failed > 0)
-        toast.warning(`${r.coded} coded, ${r.failed} could not be coded. ${r.errors[0] ?? ""}`);
+        toast.warning(
+          `${r.coded} coded, ${r.failed} could not be coded. ${
+            r.errors[0] ? friendlyAuthError(r.errors[0]) : ""
+          }`,
+        );
       else toast.success(`${r.coded} transactions coded`);
     },
     onError: async (e) => {

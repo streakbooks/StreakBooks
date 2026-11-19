@@ -285,6 +285,16 @@ export function ExpenseManagementReimbursementsPage() {
       </ListWorkspace>
     );
   }
+  if (banksQ.isError && banksQ.data === undefined) {
+    return (
+      <ListWorkspace
+        title="Reimbursements"
+        subnav={<ExpenseManagementSubnav current="reimbursements" />}
+      >
+        <QueryErrorState queries={[banksQ]} title="Could not load bank accounts" />
+      </ListWorkspace>
+    );
+  }
 
   const allSelected = openClaims.length > 0 && selectedIds.length === openClaims.length;
 

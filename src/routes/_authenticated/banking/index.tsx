@@ -391,6 +391,13 @@ function BankingAccounts() {
         </Button>
       ) : null}
 
+      {glQ.isError && glQ.data === undefined ? (
+        <QueryErrorState queries={[glQ]} title="Could not load GL accounts for banking" />
+      ) : null}
+      {detailsQ.isError && detailsQ.data === undefined ? (
+        <QueryErrorState queries={[detailsQ]} title="Could not load bank account details" />
+      ) : null}
+
       <div
         className="grid max-w-lg gap-3 rounded-md border p-4"
         role="group"

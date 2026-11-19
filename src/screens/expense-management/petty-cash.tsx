@@ -212,6 +212,10 @@ export function ExpenseManagementPettyCashPage() {
         <QueryErrorState queries={[floatsQ]} title="Could not load petty cash floats" />
       ) : null}
 
+      {canManage && banksQ.isError && banksQ.data === undefined ? (
+        <QueryErrorState queries={[banksQ]} title="Could not load bank accounts" />
+      ) : null}
+
       {canManage ? (
         <>
           <section id="em-pc-float" className="mb-8 space-y-4 rounded-lg border p-4">

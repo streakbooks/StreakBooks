@@ -1155,12 +1155,12 @@ export function NewBill({
       if (result.authoriseError) {
         if (result.statusHint === "posted_unauthorised") {
           setFormError(
-            `The journal was posted but the bill status was not linked. Open the bill and click Authorise again — it will not post twice. ${result.authoriseError}`,
+            `The journal was posted but the bill status was not linked. Open the bill and click Authorise again — it will not post twice. ${friendlyAuthError(result.authoriseError)}`,
           );
           toast.error("Journal posted — retry Authorise to link status");
         } else {
           setFormError(
-            `Saved as a draft, but it could not be authorised: ${result.authoriseError}`,
+            `Saved as a draft, but it could not be authorised: ${friendlyAuthError(result.authoriseError)}`,
           );
           toast.error("Saved as draft — authorise failed");
         }

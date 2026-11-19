@@ -13,6 +13,7 @@ import { roleLabels } from "@/lib/company-constants";
 import { ROLE_SUMMARIES } from "@/lib/access-role-summaries";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { companyContextKey } from "@/hooks/use-active-company";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,8 +54,10 @@ function InvitePage() {
       <Card className="mx-auto max-w-lg">
         <CardHeader>
           <CardTitle>This invitation could not be opened</CardTitle>
-          <CardDescription>{friendlyAuthError(q.error)}</CardDescription>
         </CardHeader>
+        <CardContent>
+          <QueryErrorState queries={[q]} title="Could not open invitation" />
+        </CardContent>
       </Card>
     );
   }

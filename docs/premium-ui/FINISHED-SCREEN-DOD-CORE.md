@@ -104,6 +104,8 @@ Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails
 
 **Production honesty Batch 111:** Platform API keys/billing shell/country pricing, org subscription/invoices, settings overview/features/comms, firm partner portal, report activity/saved views, document posting journals, contacts groups/tags, and imports budgets/assets readiness use `QueryErrorState`. Staging/RBAC still **NOT VERIFIED**.
 
+**Production honesty Batch 112:** Bank integrity banner, digest/notification preferences, subscription lifecycle, message receipts, project tags, standard statement filter options, company invite, platform access gate, and shared invoice use `QueryErrorState`. Staging/RBAC still **NOT VERIFIED**.
+
 **Bank coding + record totals (Batch 75):** `BankCodingPanel` uses shared `EditableLineItemGrid` + `TotalsSummary`. Bill and invoice read-only records use `TotalsSummary`. `MoneyDocumentPanel` fails closed with `QueryErrorState` when options queries fail. Staging/RBAC still **NOT VERIFIED**.
 
 **Bills line grid ELG (Batch 74):** `PurchasesDocumentLines` composes shared `EditableLineItemGrid` (Sales parity). Drag reorder, tracking columns, tax modes, keyboard/paste, Add-lines Select, and TotalsSummary preserved. Staging/RBAC still **NOT VERIFIED**.

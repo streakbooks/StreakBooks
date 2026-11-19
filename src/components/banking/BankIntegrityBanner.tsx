@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { getBankIntegrity } from "@/lib/banking/bank-ops.functions";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 /**
@@ -23,10 +24,9 @@ export function BankIntegrityBanner() {
   if (!companyId || query.isPending) return null;
   if (query.isError) {
     return (
-      <Alert className="mb-4">
-        <AlertTitle>Bank data check could not run</AlertTitle>
-        <AlertDescription>Try reloading the page.</AlertDescription>
-      </Alert>
+      <div className="mb-4">
+        <QueryErrorState queries={[query]} title="Bank data check could not run" />
+      </div>
     );
   }
   if (!query.data.available) {

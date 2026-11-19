@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { listMessagingMessageReceipts } from "@/lib/messaging/messaging.functions";
 
 export function MessageReceipts({
@@ -19,7 +20,10 @@ export function MessageReceipts({
   if (query.isPending) {
     return <p className="text-xs text-muted-foreground">Checking read receipts…</p>;
   }
-  if (query.isError || !query.data?.length) {
+  if (query.isError) {
+    return <QueryErrorState queries={[query]} title="Could not load read receipts" />;
+  }
+  if (!query.data?.length) {
     return <p className="text-xs text-muted-foreground">No read receipts yet</p>;
   }
 

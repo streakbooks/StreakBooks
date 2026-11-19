@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -67,11 +68,9 @@ export function DigestPreferences({
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
-        {query.isError && (
-          <p role="alert" className="text-sm text-destructive">
-            Could not load digest schedule.
-          </p>
-        )}
+        {query.isError ? (
+          <QueryErrorState queries={[query]} title="Could not load digest schedule" />
+        ) : null}
         {!providerConfigured && (
           <p className="text-sm text-muted-foreground">
             Sending requires the Resend provider and verified sender domain to be configured.

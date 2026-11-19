@@ -15,7 +15,8 @@ import {
   upsertContactTag,
 } from "@/lib/contacts/contacts.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,11 +156,7 @@ export function ContactSettingsContent({
   if (settingsQ.isPending) return <LoadingState />;
   if (settingsQ.isError) {
     return (
-      <ErrorState
-        onRetry={() => void settingsQ.refetch()}
-        title="Could not load settings"
-        description={friendlyAuthError(settingsQ.error)}
-      />
+      <QueryErrorState queries={[settingsQ]} title="Could not load settings" />
     );
   }
 

@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import {
   listBlockedMessagingUsers,
   unblockMessagingUser,
@@ -31,7 +32,7 @@ export function MessagingBlockedUsers({ companyId }: { companyId: string | null 
   if (!companyId) return null;
   if (query.isPending) return <LoadingState rows={2} />;
   if (query.isError) {
-    return <ErrorState title="Could not load blocked users" onRetry={() => void query.refetch()} />;
+    return <QueryErrorState queries={[query]} title="Could not load blocked users" />;
   }
 
   return (

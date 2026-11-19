@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { listBankAccounts } from "@/lib/banking/banking.functions";
-import { EmptyState, LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,11 +43,7 @@ export function BankFeedsContent({ embedded = false }: { embedded?: boolean }) {
       {accountsQ.isPending ? (
         <LoadingState />
       ) : accountsQ.isError ? (
-        <ErrorState
-          title="Could not load bank connections"
-          description={friendlyAuthError(accountsQ.error)}
-          onRetry={() => void accountsQ.refetch()}
-        />
+        <QueryErrorState queries={[accountsQ]} title="Could not load bank connections" />
       ) : !accountsQ.data?.length ? (
         <EmptyState
           title="No bank accounts yet"

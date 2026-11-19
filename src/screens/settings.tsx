@@ -34,7 +34,8 @@ import {
   resolveSettingsCategory,
   type SettingsCategory,
 } from "@/lib/settings/registry";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { PortalSettingsPanel } from "@/components/portals/staff-panels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -595,11 +596,7 @@ export function SettingsForCompany({
   if (detailsQuery.isPending) return <LoadingState />;
   if (detailsQuery.isError) {
     return (
-      <ErrorState
-        title="Could not load organisation settings"
-        description={friendlyAuthError(detailsQuery.error)}
-        onRetry={() => detailsQuery.refetch()}
-      />
+      <QueryErrorState queries={[detailsQuery]} title="Could not load organisation settings" />
     );
   }
 
@@ -1622,11 +1619,7 @@ export function SettingsForCompany({
                         ) : auditQuery.isPending ? (
                           <LoadingState rows={4} />
                         ) : auditQuery.isError ? (
-                          <ErrorState
-                            title="Could not load audit"
-                            description={friendlyAuthError(auditQuery.error)}
-                            onRetry={() => auditQuery.refetch()}
-                          />
+                          <QueryErrorState queries={[auditQuery]} title="Could not load audit" />
                         ) : auditPageRows.length === 0 ? (
                           <p className="text-sm text-muted-foreground">
                             No events match these filters.

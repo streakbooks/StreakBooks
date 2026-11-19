@@ -12,7 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import {
   getMessagingNotificationPreferences,
   saveMessagingNotificationPreferences,
@@ -96,10 +97,7 @@ export function MessagingNotificationPreferences({ companyId }: { companyId: str
   if (query.isPending || !draft) return <LoadingState rows={3} />;
   if (query.isError) {
     return (
-      <ErrorState
-        title="Could not load notification preferences"
-        onRetry={() => void query.refetch()}
-      />
+      <QueryErrorState queries={[query]} title="Could not load notification preferences" />
     );
   }
 

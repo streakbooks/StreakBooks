@@ -23,7 +23,8 @@ import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
 import { EMPLOYEE_STATUSES, EMPLOYMENT_TYPES, PAYMENT_METHODS } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { TableCard } from "@/components/common/table-card";
@@ -165,22 +166,10 @@ export function PayrollEmployeesPage({
   }
   if (listQ.isPending || settingsQ.isPending) return <LoadingState />;
   if (settingsQ.isError) {
-    return (
-      <ErrorState
-        title="Could not load payroll settings"
-        description={friendlyAuthError(settingsQ.error)}
-        onRetry={() => settingsQ.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[settingsQ]} title="Could not load payroll settings" />;
   }
   if (listQ.isError) {
-    return (
-      <ErrorState
-        title="Could not load employees"
-        description={friendlyAuthError(listQ.error)}
-        onRetry={() => listQ.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[listQ]} title="Could not load employees" />;
   }
 
   const settings = settingsQ.data;

@@ -4,7 +4,8 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { LoadingState, ErrorState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { useMessagingSettings } from "@/hooks/use-messaging";
 import {
   previewMessagingDigest,
@@ -76,11 +77,7 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
   if (settings.isPending) return <LoadingState />;
   if (settings.isError) {
     return (
-      <ErrorState
-        title="Messaging settings unavailable"
-        description="Could not load messaging configuration."
-        onRetry={() => void settings.refetch()}
-      />
+      <QueryErrorState queries={[settings]} title="Messaging settings unavailable" />
     );
   }
 

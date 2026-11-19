@@ -3,7 +3,8 @@ import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -318,17 +319,9 @@ export function MessagesScreen({
   }
 
   if (settings.isError) {
-    const detail =
-      settings.error instanceof Error && settings.error.message
-        ? settings.error.message
-        : "Could not load messaging settings.";
     return (
       <ListWorkspace title="Messages" description="Organisation messaging">
-        <ErrorState
-          title="Messaging unavailable"
-          description={detail}
-          onRetry={() => void settings.refetch()}
-        />
+        <QueryErrorState queries={[settings]} title="Messaging unavailable" />
       </ListWorkspace>
     );
   }
@@ -502,11 +495,7 @@ export function MessagesScreen({
           ) : null}
           {conversations.isPending && <LoadingState />}
           {conversations.isError && (
-            <ErrorState
-              title="Could not load conversations"
-              description="Check your connection and try again."
-              onRetry={() => void conversations.refetch()}
-            />
+            <QueryErrorState queries={[conversations]} title="Could not load conversations" />
           )}
           {!conversations.isPending &&
             !conversations.isError &&
@@ -936,11 +925,7 @@ export function MessagesScreen({
               >
                 {messages.isPending && <LoadingState />}
                 {messages.isError && (
-                  <ErrorState
-                    title="Could not load messages"
-                    description="Retry to recover missed messages after reconnecting."
-                    onRetry={() => void messages.refetch()}
-                  />
+                  <QueryErrorState queries={[messages]} title="Could not load messages" />
                 )}
                 {!messages.isPending && messages.hasMoreOlder ? (
                   <div className="flex justify-center">

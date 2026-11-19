@@ -6,7 +6,6 @@ import { Printer } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { documentFileName } from "@/lib/documents/helpers";
 import {
   type PayslipSnapshot,
@@ -18,7 +17,8 @@ import { getPayrollPayslipPage } from "@/lib/payroll/runs.functions";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { PRINT_CSS } from "@/components/documents/DocumentSheet";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Button } from "@/components/ui/button";
@@ -99,13 +99,7 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
   }
   if (pageQ.isPending) return <LoadingState />;
   if (pageQ.isError) {
-    return (
-      <ErrorState
-        title="Could not load payslip"
-        description={friendlyAuthError(pageQ.error)}
-        onRetry={() => pageQ.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[pageQ]} title="Could not load payslip" />;
   }
 
   const { payslip, run, employee } = pageQ.data;

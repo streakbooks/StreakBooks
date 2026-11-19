@@ -33,7 +33,8 @@ import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { AttachmentsPanel } from "@/components/documents/AttachmentsPanel";
 import { bpsToPercentString } from "@/components/sales/sales-form-utils";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { EmptyState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Badge } from "@/components/ui/badge";
@@ -191,13 +192,7 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
   }
   if (pageQ.isPending) return <LoadingState />;
   if (pageQ.isError) {
-    return (
-      <ErrorState
-        title="Employee not found"
-        description={friendlyAuthError(pageQ.error)}
-        onRetry={() => pageQ.refetch()}
-      />
-    );
+    return <QueryErrorState queries={[pageQ]} title="Employee not found" />;
   }
 
   const data = pageQ.data;

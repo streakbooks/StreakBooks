@@ -30,7 +30,8 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useCan } from "@/hooks/use-can";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { permissionsForRole, type Permission } from "@/lib/permissions";
-import { ErrorState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -139,13 +140,9 @@ export function UsersAccessPanel({ companyId }: { companyId: string }) {
           {membersQuery.isPending || adjustmentsQuery.isPending ? (
             <LoadingState rows={3} />
           ) : membersQuery.isError || adjustmentsQuery.isError ? (
-            <ErrorState
+            <QueryErrorState
+              queries={[membersQuery, adjustmentsQuery]}
               title="Could not load people"
-              description={friendlyAuthError(membersQuery.error ?? adjustmentsQuery.error)}
-              onRetry={() => {
-                void membersQuery.refetch();
-                void adjustmentsQuery.refetch();
-              }}
             />
           ) : (
             <Table>
@@ -635,10 +632,9 @@ function InvitationsCard({
         {isPending ? (
           <LoadingState rows={2} />
         ) : isError ? (
-          <ErrorState
+          <QueryErrorState
+            queries={[{ isError, error, refetch: onRetry }]}
             title="Could not load invitations"
-            description={friendlyAuthError(error)}
-            onRetry={onRetry}
           />
         ) : invitations.length === 0 ? (
           <p className="text-sm text-muted-foreground">No invitations yet.</p>

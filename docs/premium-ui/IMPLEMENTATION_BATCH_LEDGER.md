@@ -63,6 +63,7 @@ eature/premium-ui-batch40-density-acceptance | [PR #286](https://github.com/link
 | 64 | Phase 4–5 | Empty CTA wave 7: App Store bridges; EM/HR approval queues; PM statement select | `feature/premium-ui-batch64-production-gaps` | [PR #328](https://github.com/linkbusinessadvisory/LinkBooks/pull/328) → `10876d529886c658456fc2288f7388a0fec77dc0` | app-store + em + hr + pm | done |
 | 65 | Phase 3–5 | Expense claim EditableLineItemGrid (close deferred claims spreadsheet) | `feature/premium-ui-batch65-production-gaps` | [PR #332](https://github.com/linkbusinessadvisory/LinkBooks/pull/332) → `e3a691def165330a48b4d5fb5d5d96f0ccaa8fdd` | expense-management | done |
 | 66 | Phase 3–5 | Claim TotalsSummary + workspace adoption for claims/spend-money; Expense DoD local evidence | `feature/premium-ui-batch66-production-gaps` | pending PR | expense-management + banking spend | in progress |
-| 67+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do create Batches 46–66) | TBD | — | all modules | planned |
+| 67 | Phase 3–5 | Claim grid keyboard/paste; receive-money workspace adoption; includes Batch 66 rebased | `feature/premium-ui-batch67-production-gaps` | pending PR | expense-management + banking | in progress |
+| 68+ | Phase 4–10 | Remaining module DoD, staging runtime evidence (do not re-do create Batches 46–67) | TBD | — | all modules | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`. Central progress: [TRANSFORMATION_TRACKER.md](./TRANSFORMATION_TRACKER.md).

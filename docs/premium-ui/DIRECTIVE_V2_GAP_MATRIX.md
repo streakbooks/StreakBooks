@@ -157,3 +157,11 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Workspace adoption gaps for spend/claims | Enforce TransactionWorkspace / EditableLineItemGrid / TotalsSummary in check:workspace |
 | Expense DoD honesty | Document local evidence in FINISHED-SCREEN-DOD-CORE (still IN PROGRESS) |
 
+## Batch 67 (claim keyboard + receive-money adoption)
+
+| Gap | Action |
+| --- | --- |
+| Claim spreadsheet keyboard/paste | Enter/Arrow navigation + net/tax multi-cell paste (journal parity) |
+| Receive Money workspace adoption | Enforce MoneyDocumentPanel TransactionWorkspace + TotalsSummary in check:workspace |
+| Includes Batch 66 | Claim TotalsSummary + spend/claims workspace rules rebased onto current main |
+

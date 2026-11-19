@@ -331,34 +331,35 @@ export function CrmOpportunitiesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Customer / Account</Label>
-                  <RecordLookupSelect
-                    value={contactId || "__none"}
-                    onValueChange={(value) => setContactId(value === "__none" ? "" : value)}
-                  >
-                    <SelectTrigger aria-label="Customer linked to opportunity">
-                      <SelectValue placeholder="Link existing customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">No customer linked</SelectItem>
-                      {(accounts.data ?? []).map((account) => (
-                        <SelectItem key={account.contactId} value={account.contactId}>
-                          {account.name}
-                          {account.email ? ` · ${account.email}` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
-                  <p className="text-xs text-muted-foreground">
-                    Reuses the shared Contacts master. A linked customer and positive value are
-                    needed before creating a Sales quote.
-                  </p>
                   {accounts.isError ? (
                     <QueryErrorState
                       queries={[accounts]}
                       title="Customer list unavailable"
                       description="An unlinked deal can be saved, but quote creation will remain blocked."
                     />
-                  ) : null}
+                  ) : (
+                    <RecordLookupSelect
+                      value={contactId || "__none"}
+                      onValueChange={(value) => setContactId(value === "__none" ? "" : value)}
+                    >
+                      <SelectTrigger aria-label="Customer linked to opportunity">
+                        <SelectValue placeholder="Link existing customer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">No customer linked</SelectItem>
+                        {(accounts.data ?? []).map((account) => (
+                          <SelectItem key={account.contactId} value={account.contactId}>
+                            {account.name}
+                            {account.email ? ` · ${account.email}` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Reuses the shared Contacts master. A linked customer and positive value are
+                    needed before creating a Sales quote.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Stage</Label>
@@ -415,27 +416,29 @@ export function CrmOpportunitiesPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="min-w-40 space-y-1">
               <Label htmlFor="crm-pipeline-picker">Pipeline</Label>
-              <RecordLookupSelect
-                value={selectedPipeline?.id ?? ""}
-                onValueChange={(value) => {
-                  setSelectedPipelineId(value);
-                  setStageId("");
-                  setPage(0);
-                }}
-              >
-                <SelectTrigger id="crm-pipeline-picker" aria-label="Select CRM pipeline">
-                  <SelectValue placeholder="Choose pipeline" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(pipelines.data?.pipelines ?? [])
-                    .filter((pipeline) => pipeline.isActive)
-                    .map((pipeline) => (
-                      <SelectItem value={pipeline.id} key={pipeline.id}>
-                        {pipeline.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {pipelines.isError ? null : (
+                <RecordLookupSelect
+                  value={selectedPipeline?.id ?? ""}
+                  onValueChange={(value) => {
+                    setSelectedPipelineId(value);
+                    setStageId("");
+                    setPage(0);
+                  }}
+                >
+                  <SelectTrigger id="crm-pipeline-picker" aria-label="Select CRM pipeline">
+                    <SelectValue placeholder="Choose pipeline" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(pipelines.data?.pipelines ?? [])
+                      .filter((pipeline) => pipeline.isActive)
+                      .map((pipeline) => (
+                        <SelectItem value={pipeline.id} key={pipeline.id}>
+                          {pipeline.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
             <Label htmlFor="crm-deal-search" className="sr-only">
               Search loaded opportunities

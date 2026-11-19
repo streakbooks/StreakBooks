@@ -423,31 +423,32 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
                     setProductId("");
                   }}
                 />
-                <RecordLookupSelect
-                  value={productId}
-                  onValueChange={(value) => {
-                    setProductId(value);
-                    const existing = pricesQ.data?.find((item) => item.product_id === value);
-                    setPrice(
-                      existing ? fromMinorUnits(BigInt(existing.unit_price_minor), currency) : "",
-                    );
-                  }}
-                >
-                  <SelectTrigger aria-label="Product for price override">
-                    <SelectValue placeholder="Select item" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {productsQ.data?.map((product) => (
-                      <SelectItem value={product.id} key={product.id}>
-                        {product.code ? `${product.code} — ` : ""}
-                        {product.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </RecordLookupSelect>
                 {productsQ.isError ? (
                   <QueryErrorState queries={[productsQ]} title="Could not load products" />
-                ) : null}
+                ) : (
+                  <RecordLookupSelect
+                    value={productId}
+                    onValueChange={(value) => {
+                      setProductId(value);
+                      const existing = pricesQ.data?.find((item) => item.product_id === value);
+                      setPrice(
+                        existing ? fromMinorUnits(BigInt(existing.unit_price_minor), currency) : "",
+                      );
+                    }}
+                  >
+                    <SelectTrigger aria-label="Product for price override">
+                      <SelectValue placeholder="Select item" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {productsQ.data?.map((product) => (
+                        <SelectItem value={product.id} key={product.id}>
+                          {product.code ? `${product.code} — ` : ""}
+                          {product.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </RecordLookupSelect>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="price-list-value">Unit sales price ({currency})</Label>

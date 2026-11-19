@@ -192,24 +192,32 @@ export function CrmTeamPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Owner</Label>
-                  <RecordLookupSelect
-                    value={ownerUserId || "__none"}
-                    onValueChange={(v) => setOwnerUserId(v === "__none" ? "" : v)}
-                  >
-                    <SelectTrigger aria-label="Territory owner">
-                      <SelectValue placeholder="Unassigned" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">Unassigned</SelectItem>
-                      {rows
-                        .filter((m) => m.status === "active")
-                        .map((member) => (
-                          <SelectItem key={member.userId} value={member.userId}>
-                            {member.fullName || member.email || member.userId.slice(0, 8)}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
+                  {team.isError ? (
+                    <QueryErrorState
+                      queries={[team]}
+                      title="Could not load team members"
+                      description="Territory can still be created unassigned after retry."
+                    />
+                  ) : (
+                    <RecordLookupSelect
+                      value={ownerUserId || "__none"}
+                      onValueChange={(v) => setOwnerUserId(v === "__none" ? "" : v)}
+                    >
+                      <SelectTrigger aria-label="Territory owner">
+                        <SelectValue placeholder="Unassigned" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">Unassigned</SelectItem>
+                        {rows
+                          .filter((m) => m.status === "active")
+                          .map((member) => (
+                            <SelectItem key={member.userId} value={member.userId}>
+                              {member.fullName || member.email || member.userId.slice(0, 8)}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  )}
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="territory-description">Description</Label>
@@ -222,7 +230,11 @@ export function CrmTeamPage() {
                 <div className="sm:col-span-2">
                   <Button
                     type="button"
-                    disabled={createMutation.isPending || !name.trim()}
+                    disabled={
+                      createMutation.isPending ||
+                      !name.trim() ||
+                      (team.isError && Boolean(ownerUserId))
+                    }
                     onClick={() => createMutation.mutate()}
                   >
                     {createMutation.isPending ? "Saving…" : "Create territory"}

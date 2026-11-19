@@ -382,83 +382,86 @@ export function CrmActivitiesPage({
                 {relatedType === "lead" ? (
                   <div className="space-y-2">
                     <Label>Lead</Label>
-                    <RecordLookupSelect
-                      value={leadId || "__none"}
-                      onValueChange={(v) => setLeadId(v === "__none" ? "" : v)}
-                    >
-                      <SelectTrigger aria-label="Related lead">
-                        <SelectValue placeholder="Select lead" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none">Select lead</SelectItem>
-                        {(leads.data ?? []).map((lead) => (
-                          <SelectItem key={lead.id} value={lead.id}>
-                            {displayLeadName(lead)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </RecordLookupSelect>
                     {leads.isError ? (
                       <QueryErrorState
                         queries={[leads]}
                         title="Could not load leads"
                         description="Retry the form."
                       />
-                    ) : null}
+                    ) : (
+                      <RecordLookupSelect
+                        value={leadId || "__none"}
+                        onValueChange={(v) => setLeadId(v === "__none" ? "" : v)}
+                      >
+                        <SelectTrigger aria-label="Related lead">
+                          <SelectValue placeholder="Select lead" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">Select lead</SelectItem>
+                          {(leads.data ?? []).map((lead) => (
+                            <SelectItem key={lead.id} value={lead.id}>
+                              {displayLeadName(lead)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </RecordLookupSelect>
+                    )}
                   </div>
                 ) : relatedType === "opportunity" ? (
                   <div className="space-y-2">
                     <Label>Opportunity</Label>
-                    <RecordLookupSelect
-                      value={opportunityId || "__none"}
-                      onValueChange={(v) => setOpportunityId(v === "__none" ? "" : v)}
-                    >
-                      <SelectTrigger aria-label="Related opportunity">
-                        <SelectValue placeholder="Select opportunity" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none">Select opportunity</SelectItem>
-                        {(opportunities.data ?? []).map((opportunity) => (
-                          <SelectItem key={opportunity.id} value={opportunity.id}>
-                            {opportunity.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </RecordLookupSelect>
                     {opportunities.isError ? (
                       <QueryErrorState
                         queries={[opportunities]}
                         title="Could not load opportunities"
                         description="Retry the form."
                       />
-                    ) : null}
+                    ) : (
+                      <RecordLookupSelect
+                        value={opportunityId || "__none"}
+                        onValueChange={(v) => setOpportunityId(v === "__none" ? "" : v)}
+                      >
+                        <SelectTrigger aria-label="Related opportunity">
+                          <SelectValue placeholder="Select opportunity" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">Select opportunity</SelectItem>
+                          {(opportunities.data ?? []).map((opportunity) => (
+                            <SelectItem key={opportunity.id} value={opportunity.id}>
+                              {opportunity.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </RecordLookupSelect>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-2">
                     <Label>Customer / Contact</Label>
-                    <RecordLookupSelect
-                      value={contactId || "__none"}
-                      onValueChange={(v) => setContactId(v === "__none" ? "" : v)}
-                    >
-                      <SelectTrigger aria-label="Related CRM contact">
-                        <SelectValue placeholder="Select contact" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none">Select contact</SelectItem>
-                        {(accounts.data ?? []).map((account) => (
-                          <SelectItem key={account.contactId} value={account.contactId}>
-                            {account.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </RecordLookupSelect>
                     {accounts.isError ? (
                       <QueryErrorState
                         queries={[accounts]}
                         title="Could not load Contacts"
                         description="Retry the form."
                       />
-                    ) : null}
+                    ) : (
+                      <RecordLookupSelect
+                        value={contactId || "__none"}
+                        onValueChange={(v) => setContactId(v === "__none" ? "" : v)}
+                      >
+                        <SelectTrigger aria-label="Related CRM contact">
+                          <SelectValue placeholder="Select contact" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">Select contact</SelectItem>
+                          {(accounts.data ?? []).map((account) => (
+                            <SelectItem key={account.contactId} value={account.contactId}>
+                              {account.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </RecordLookupSelect>
+                    )}
                   </div>
                 )}
                 <div className="space-y-2">

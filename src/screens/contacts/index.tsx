@@ -1132,43 +1132,49 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                 </div>
                 <div className="space-y-1">
                   <Label>Group membership</Label>
-                  <RecordLookupSelect
-                    required
-                    value={filters.groupId || "any"}
-                    onValueChange={(value) => updateFilter("groupId", value === "any" ? "" : value)}
-                  >
-                    <SelectTrigger aria-label="Filter contacts by group">
-                      <SelectValue placeholder="Any group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Any group</SelectItem>
-                      {groups.map((group) => (
-                        <SelectItem key={group.id} value={group.id}>
-                          {group.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
+                  {groupsQ.isError ? null : (
+                    <RecordLookupSelect
+                      required
+                      value={filters.groupId || "any"}
+                      onValueChange={(value) =>
+                        updateFilter("groupId", value === "any" ? "" : value)
+                      }
+                    >
+                      <SelectTrigger aria-label="Filter contacts by group">
+                        <SelectValue placeholder="Any group" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any group</SelectItem>
+                        {groups.map((group) => (
+                          <SelectItem key={group.id} value={group.id}>
+                            {group.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label>Tag membership</Label>
-                  <RecordLookupSelect
-                    required
-                    value={filters.tagId || "any"}
-                    onValueChange={(value) => updateFilter("tagId", value === "any" ? "" : value)}
-                  >
-                    <SelectTrigger aria-label="Filter contacts by tag">
-                      <SelectValue placeholder="Any tag" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Any tag</SelectItem>
-                      {tags.map((tag) => (
-                        <SelectItem key={tag.id} value={tag.id}>
-                          {tag.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
+                  {tagsQ.isError ? null : (
+                    <RecordLookupSelect
+                      required
+                      value={filters.tagId || "any"}
+                      onValueChange={(value) => updateFilter("tagId", value === "any" ? "" : value)}
+                    >
+                      <SelectTrigger aria-label="Filter contacts by tag">
+                        <SelectValue placeholder="Any tag" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any tag</SelectItem>
+                        {tags.map((tag) => (
+                          <SelectItem key={tag.id} value={tag.id}>
+                            {tag.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  )}
                 </div>
                 {groupsQ.isError || tagsQ.isError ? (
                   <QueryErrorState

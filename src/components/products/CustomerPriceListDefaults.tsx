@@ -102,32 +102,33 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
               placeholder="Search active customers"
               onChange={(event) => setSearch(event.target.value)}
             />
-            <RecordLookupSelect
-              value={contactId}
-              onValueChange={selectCustomer}
-              disabled={defaultsQ.isPending || defaultsQ.isError}
-            >
-              <SelectTrigger aria-label="Customer for default price list">
-                <SelectValue placeholder="Choose customer" />
-              </SelectTrigger>
-              <SelectContent>
-                {contactId && !selectedExistsInSearch ? (
-                  <SelectItem value={contactId}>{selectedCustomerName}</SelectItem>
-                ) : null}
-                {(customersQ.data ?? []).map((row) => (
-                  <SelectItem key={row.id} value={row.id}>
-                    {row.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </RecordLookupSelect>
-            {(customersQ.data?.length ?? 0) >= 100 ? (
+            {customersQ.isError ? (
+              <QueryErrorState queries={[customersQ]} title="Could not load customers" />
+            ) : (
+              <RecordLookupSelect
+                value={contactId}
+                onValueChange={selectCustomer}
+                disabled={defaultsQ.isPending || defaultsQ.isError}
+              >
+                <SelectTrigger aria-label="Customer for default price list">
+                  <SelectValue placeholder="Choose customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {contactId && !selectedExistsInSearch ? (
+                    <SelectItem value={contactId}>{selectedCustomerName}</SelectItem>
+                  ) : null}
+                  {(customersQ.data ?? []).map((row) => (
+                    <SelectItem key={row.id} value={row.id}>
+                      {row.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </RecordLookupSelect>
+            )}
+            {!customersQ.isError && (customersQ.data?.length ?? 0) >= 100 ? (
               <p className="text-xs text-muted-foreground">
                 Showing up to 100 customers. Search to narrow the list.
               </p>
-            ) : null}
-            {customersQ.isError ? (
-              <QueryErrorState queries={[customersQ]} title="Could not load customers" />
             ) : null}
           </div>
           <div className="space-y-2">

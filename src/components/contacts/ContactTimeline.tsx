@@ -304,13 +304,15 @@ export function ContactTimeline({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="me">Assign to me</SelectItem>
-                    {assignees
-                      .filter((member) => member.id !== assigneesQ.data?.selfId)
-                      .map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.name}
-                        </SelectItem>
-                      ))}
+                    {assigneesQ.isError
+                      ? null
+                      : assignees
+                          .filter((member) => member.id !== assigneesQ.data?.selfId)
+                          .map((member) => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.name}
+                            </SelectItem>
+                          ))}
                   </SelectContent>
                 </RecordLookupSelect>
               </div>

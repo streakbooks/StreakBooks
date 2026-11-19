@@ -175,3 +175,13 @@ Batches 46–54 merged create routing, money ownership, journal/recurring full p
 | Workspace adoption | check:workspace enforces interpretLineGridKey on claims/spend/PO/CN |
 | Includes Batches 66–67 | Rebased onto current main (supersedes PR #338) |
 
+## Batch 69 (allocate / transfer TotalsSummary)
+
+| Gap | Action |
+| --- | --- |
+| Receipt allocate totals | TotalsSummary Amount / Allocated / Unallocated on receipts.new |
+| Payment allocate chrome + totals | Dense bill table + Allocate oldest first + TotalsSummary Remaining |
+| Transfer totals | TotalsSummary Amount (+ Received on FX mismatch) on NewTransfer |
+| Workspace adoption | check:workspace gates receipts/payments/transfers TotalsSummary |
+| Includes Batches 66–68 | Carried on feature branch (supersedes PR #340) |
+

@@ -25,7 +25,8 @@ import {
 } from "@/lib/tax/country-packs";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { AccountLookup } from "@/components/lookup";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -198,13 +199,7 @@ function TaxConfigPage() {
   }
   if (settingsQ.isPending) return <LoadingState />;
   if (settingsQ.isError) {
-    return (
-      <ErrorState
-        onRetry={() => void settingsQ.refetch()}
-        title="Could not load tax settings"
-        description={friendlyAuthError(settingsQ.error)}
-      />
-    );
+    return <QueryErrorState queries={[settingsQ]} title="Could not load tax settings" />;
   }
 
   const allAccounts = (accountsQ.data ?? []) as unknown as PickerAccount[];

@@ -12,7 +12,8 @@ import {
 } from "@/lib/demo/demo.functions";
 import { getDashboardSnapshot } from "@/lib/dashboard/dashboard.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { ErrorState, LoadingState, CardGridSkeleton } from "@/components/common/states";
+import { LoadingState, CardGridSkeleton } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -205,11 +206,7 @@ function Dashboard() {
           <LoadingState rows={6} />
         </div>
       ) : dashQ.isError ? (
-        <ErrorState
-          title="Could not load the dashboard"
-          description={friendlyAuthError(dashQ.error)}
-          onRetry={() => void dashQ.refetch()}
-        />
+        <QueryErrorState queries={[dashQ]} title="Could not load the dashboard" />
       ) : data ? (
         <div className="space-y-6">
           <GettingStarted data={data} />
@@ -231,11 +228,7 @@ function Dashboard() {
                     </p>
                     {modulesQ.isPending ? <LoadingState rows={2} /> : null}
                     {modulesQ.isError ? (
-                      <ErrorState
-                        compact
-                        title="Could not load module status"
-                        onRetry={() => void modulesQ.refetch()}
-                      />
+                      <QueryErrorState queries={[modulesQ]} title="Could not load module status" />
                     ) : null}
                     <ul className="max-h-64 space-y-2 overflow-y-auto text-sm">
                       {(modulesQ.data?.modules ?? []).map((m) => (

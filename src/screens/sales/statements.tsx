@@ -14,8 +14,7 @@ import { useFormat } from "@/hooks/use-format";
 import { getDocumentBranding, getDocumentDelivery } from "@/lib/documents/documents.functions";
 import { renderEmail } from "@/lib/documents/email-templates";
 import { EmailDocumentDialog } from "@/components/documents/EmailDocumentDialog";
-import { friendlyAuthError } from "@/lib/auth-helpers";
-import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ContactLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
@@ -144,11 +143,7 @@ export function Statements() {
       ) : stmtQ.isPending ? (
         <LoadingState />
       ) : stmtQ.isError ? (
-        <ErrorState
-          onRetry={() => void stmtQ.refetch()}
-          title="Could not load statement"
-          description={friendlyAuthError(stmtQ.error)}
-        />
+        <QueryErrorState queries={[stmtQ]} title="Could not load statement" />
       ) : (
         <div className="space-y-6">
           <div className="overflow-auto">

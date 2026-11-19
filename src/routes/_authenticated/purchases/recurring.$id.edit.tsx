@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { getRecurringBill } from "@/lib/purchases/purchases.functions";
-import { friendlyAuthError } from "@/lib/auth-helpers";
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { NewBill, type RecurringBillSeed } from "@/screens/purchases/bills.new";
 
@@ -27,14 +27,10 @@ function EditRecurringBillRoute() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (templateQ.isPending) return <LoadingState />;
-  if (templateQ.isError) {
+  if (templateQ.isError && templateQ.data === undefined) {
     return (
       <div className="space-y-3">
-        <ErrorState
-          title="Could not load recurring bill"
-          description={friendlyAuthError(templateQ.error)}
-          onRetry={() => void templateQ.refetch()}
-        />
+        <QueryErrorState queries={[templateQ]} title="Could not load recurring bill" />
         <Button size="sm" variant="outline" asChild>
           <Link to="/purchases/recurring">Back to recurring bills</Link>
         </Button>

@@ -16,6 +16,7 @@ import {
   orderLinesFromForm,
   type PurchaseOrderLineForm,
 } from "@/lib/purchases/purchase-order";
+import { sumLines } from "@/lib/purchases/line-math";
 import {
   listPurchaseRequisitions,
   savePurchaseRequisition,
@@ -28,6 +29,9 @@ import {
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TransactionWorkspace } from "@/components/workspace/TransactionWorkspace";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { TotalsSummary } from "@/components/common/TotalsSummary";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { FormControlShell, FormGrid } from "@/components/common/form-layout";
 import { ContactLookup } from "@/components/lookup";
 import { OrderEntryLines } from "@/components/orders/OrderEntryLines";
 import { Button } from "@/components/ui/button";
@@ -142,33 +146,18 @@ function RequisitionsWorkspace({
     );
   if (editor) {
     return (
-      <TransactionWorkspace
-        title={editor === "new" ? "New purchase requisition" : "Edit requisition"}
-        description="Amounts and supplier details become fixed when submitted. Changes require a new approval."
-        breadcrumbs={[
-          { label: "Purchases", to: "/purchases" },
-          { label: "Requisitions", to: "/purchases/requisitions" },
-          { label: editor === "new" ? "New" : "Edit" },
-        ]}
-        stickyActions={
-          <Button size="sm" variant="outline" onClick={closeEditor}>
-            Cancel
-          </Button>
-        }
-      >
-        <RequisitionEditor
-          key={editor === "new" ? "new" : editor.id}
-          companyId={companyId}
-          baseCurrency={baseCurrency}
-          initial={editor === "new" ? undefined : editor}
-          onSaved={async (row) => {
-            closeEditor();
-            setSelected(row);
-            await client.invalidateQueries({ queryKey: ["purchase-requisitions", companyId] });
-          }}
-          onCancel={closeEditor}
-        />
-      </TransactionWorkspace>
+      <RequisitionEditor
+        key={editor === "new" ? "new" : editor.id}
+        companyId={companyId}
+        baseCurrency={baseCurrency}
+        initial={editor === "new" ? undefined : editor}
+        onSaved={async (row) => {
+          closeEditor();
+          setSelected(row);
+          await client.invalidateQueries({ queryKey: ["purchase-requisitions", companyId] });
+        }}
+        onCancel={closeEditor}
+      />
     );
   }
   const actionButton = (action: RequisitionAction, label: string) => (
@@ -452,6 +441,7 @@ function RequisitionEditor({
   onCancel?: () => void;
 }) {
   const { can } = useCan();
+  const fmt = useFormat();
   const save = useServerFn(savePurchaseRequisition);
   const fetchSuppliers = useServerFn(listSuppliers);
   const fetchAccounts = useServerFn(listAccounts);
@@ -484,6 +474,12 @@ function RequisitionEditor({
     queryKey: ["accounts", companyId],
     queryFn: () => fetchAccounts({ data: { companyId } }),
   });
+  let totals: { subtotal_minor: bigint; tax_minor: bigint; total_minor: bigint } | null = null;
+  try {
+    totals = sumLines(orderLinesFromForm(lines, currencyCode));
+  } catch {
+    /* Incomplete input is validated on submit. */
+  }
   const mutation = useMutation({
     mutationFn: () =>
       save({
@@ -519,16 +515,18 @@ function RequisitionEditor({
       />
     );
   return (
-    <form
-      className="space-y-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        mutation.mutate();
-      }}
-    >
-      <fieldset disabled={mutation.isPending} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
+    <TransactionWorkspace
+      title={initial ? "Edit requisition" : "New purchase requisition"}
+      description="Amounts and supplier details become fixed when submitted. Changes require a new approval."
+      breadcrumbs={[
+        { label: "Purchases", to: "/purchases" },
+        { label: "Requisitions", to: "/purchases/requisitions" },
+        { label: initial ? "Edit" : "New" },
+      ]}
+      meta={<StatusBadge status="draft" label={initial ? "Editing draft" : "Draft"} />}
+      details={
+        <FormGrid columns={4}>
+          <FormControlShell className="sm:col-span-2">
             <Label htmlFor="req-title">Title</Label>
             <Input
               id="req-title"
@@ -538,8 +536,8 @@ function RequisitionEditor({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
-          </div>
-          <div className="space-y-2">
+          </FormControlShell>
+          <FormControlShell width="contact">
             <Label>Supplier</Label>
             <ContactLookup
               companyId={companyId}
@@ -550,8 +548,8 @@ function RequisitionEditor({
               contacts={(suppliers.data ?? []) as Array<{ id: string; name: string }>}
               allowClear={false}
             />
-          </div>
-          <div className="space-y-2">
+          </FormControlShell>
+          <FormControlShell width="currency">
             <Label htmlFor="req-currency">Currency</Label>
             <Input
               id="req-currency"
@@ -561,8 +559,8 @@ function RequisitionEditor({
               value={currencyCode}
               onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
             />
-          </div>
-          <div className="space-y-2">
+          </FormControlShell>
+          <FormControlShell width="date">
             <Label htmlFor="req-requested">Request date</Label>
             <Input
               id="req-requested"
@@ -571,8 +569,8 @@ function RequisitionEditor({
               value={requestedOn}
               onChange={(e) => setRequestedOn(e.target.value)}
             />
-          </div>
-          <div className="space-y-2">
+          </FormControlShell>
+          <FormControlShell width="date">
             <Label htmlFor="req-required">Required date</Label>
             <Input
               id="req-required"
@@ -581,43 +579,90 @@ function RequisitionEditor({
               value={requiredOn}
               onChange={(e) => setRequiredOn(e.target.value)}
             />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
+          </FormControlShell>
+          <FormControlShell className="sm:col-span-2">
             <Label htmlFor="req-justification">Business justification</Label>
             <Textarea
               id="req-justification"
               maxLength={4000}
+              rows={2}
+              className="lb-spreadsheet-wrap min-h-8"
               value={justification}
               onChange={(e) => setJustification(e.target.value)}
             />
-          </div>
-        </div>
-        <OrderEntryLines
-          companyId={companyId}
-          currency={currencyCode}
-          lines={lines}
-          onChange={setLines}
-          accounts={(
-            (accounts.data ?? []) as Array<{
-              id: string;
-              code: string;
-              name: string;
-              is_active: boolean;
-              is_postable: boolean;
-            }>
-          ).filter((account) => account.is_active && account.is_postable)}
+          </FormControlShell>
+        </FormGrid>
+      }
+      lines={
+        <fieldset disabled={mutation.isPending} className="disabled:opacity-70">
+          <OrderEntryLines
+            companyId={companyId}
+            currency={currencyCode}
+            lines={lines}
+            onChange={setLines}
+            accounts={(
+              (accounts.data ?? []) as Array<{
+                id: string;
+                code: string;
+                name: string;
+                is_active: boolean;
+                is_postable: boolean;
+              }>
+            ).filter((account) => account.is_active && account.is_postable)}
+          />
+        </fieldset>
+      }
+      totals={
+        <TotalsSummary
+          aria-label="Requisition totals"
+          lines={
+            totals
+              ? [
+                  {
+                    id: "subtotal",
+                    label: "Subtotal",
+                    value: fmt.money(totals.subtotal_minor, currencyCode),
+                  },
+                  {
+                    id: "tax",
+                    label: "Tax",
+                    value: fmt.money(totals.tax_minor, currencyCode),
+                    emphasis: "muted",
+                  },
+                  {
+                    id: "total",
+                    label: "Total",
+                    value: fmt.money(totals.total_minor, currencyCode),
+                    emphasis: "total",
+                  },
+                ]
+              : [
+                  {
+                    id: "total",
+                    label: "Total",
+                    value: "Complete valid lines",
+                    emphasis: "total",
+                  },
+                ]
+          }
         />
-      </fieldset>
-      <div className="flex flex-wrap gap-2">
-        {onCancel ? (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
+      }
+      stickyActions={
+        <div className="flex flex-wrap gap-2">
+          {onCancel ? (
+            <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          ) : null}
+          <Button
+            size="sm"
+            disabled={mutation.isPending || !can("purchases.draft") || !contactId || !title.trim()}
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? "Saving…" : "Save draft"}
           </Button>
-        ) : null}
-        <Button disabled={mutation.isPending || !can("purchases.draft")} type="submit">
-          {mutation.isPending ? "Saving…" : "Save draft"}
-        </Button>
-      </div>
-    </form>
+        </div>
+      }
+    />
   );
 }

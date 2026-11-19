@@ -10,6 +10,7 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { AccountLookup } from "@/components/lookup";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -206,6 +207,9 @@ export function BillMakePaymentPanel({
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Paid from</Label>
+              {accountsQ.isError ? (
+                <QueryErrorState queries={[accountsQ]} title="Could not load payment accounts" />
+              ) : null}
               <AccountLookup
                 ariaLabel="Paid from"
                 accounts={
@@ -245,7 +249,13 @@ export function BillMakePaymentPanel({
             <Button
               size="sm"
               className="bg-emerald-700 text-white hover:bg-emerald-800"
-              disabled={payM.isPending || overpay || amountInvalid || accountsQ.isPending}
+              disabled={
+                payM.isPending ||
+                overpay ||
+                amountInvalid ||
+                accountsQ.isPending ||
+                accountsQ.isError
+              }
               onClick={() => payM.mutate()}
             >
               {payM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}

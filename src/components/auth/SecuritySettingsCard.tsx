@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { friendlyAuthError, validateOtp } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 
 type Enrolment = { factorId: string; qrCode: string; secret: string };
 
@@ -140,7 +141,11 @@ export function SecuritySettingsCard() {
                 or similar each time you sign in.
               </p>
             </div>
-            {verified.length > 0 ? <Badge>On</Badge> : <Badge variant="secondary">Off</Badge>}
+            {factorsQ.isError ? null : verified.length > 0 ? (
+              <Badge>On</Badge>
+            ) : (
+              <Badge variant="secondary">Off</Badge>
+            )}
           </div>
 
           {error ? (
@@ -149,9 +154,13 @@ export function SecuritySettingsCard() {
             </Alert>
           ) : null}
 
+          {factorsQ.isError ? (
+            <QueryErrorState queries={[factorsQ]} title="Could not load authenticator factors" />
+          ) : null}
+
           {factorsQ.isPending ? (
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
-          ) : (
+          ) : factorsQ.isError ? null : (
             <ul className="space-y-2">
               {verified.map((f) => (
                 <li
@@ -246,9 +255,12 @@ export function SecuritySettingsCard() {
 
         <section className="space-y-2">
           <h3 className="text-sm font-medium">Connected sign-in methods</h3>
+          {identitiesQ.isError ? (
+            <QueryErrorState queries={[identitiesQ]} title="Could not load sign-in methods" />
+          ) : null}
           {identitiesQ.isPending ? (
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
-          ) : (
+          ) : identitiesQ.isError ? null : (
             <div className="flex flex-wrap gap-2">
               {(identitiesQ.data ?? []).map((i) => (
                 <Badge key={i.identity_id ?? i.id} variant="secondary">

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { normaliseReferralCode, REFERRAL_STORAGE_KEY } from "@/lib/billing/domain/partners";
@@ -57,6 +58,9 @@ export function ReferralPanel({ companyId }: { companyId: string }) {
       toast.error(error instanceof Error ? error.message : "The referral could not be saved."),
   });
 
+  if (query.isError) {
+    return <QueryErrorState queries={[query]} title="Could not load referral status" />;
+  }
   const data = query.data;
   if (!data || (!data.programOpen && !data.attribution)) return null;
   const locked = data.attribution?.locked && data.attribution.status === "active";

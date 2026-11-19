@@ -12,6 +12,7 @@ import {
 import { dimensionKindLabel } from "@/lib/settings/dimension-helpers";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -90,6 +91,9 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {dimsQ.isError ? (
+            <QueryErrorState queries={[dimsQ]} title="Could not load tracking dimensions" />
+          ) : null}
           <div className="grid gap-2 sm:grid-cols-3">
             <div className="space-y-1">
               <Label>New dimension</Label>
@@ -308,6 +312,9 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
             <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
             <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </div>
+          {reportQ.isError ? (
+            <QueryErrorState queries={[reportQ]} title="Could not load dimension P&L" />
+          ) : null}
           {reportQ.data ? (
             <Table>
               <TableHeader>

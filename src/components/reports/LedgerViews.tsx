@@ -17,6 +17,7 @@ import { getAgedReceivablesAsAt } from "@/lib/sales/ar-reports.functions";
 import { getAgedPayablesAsAt } from "@/lib/purchases/ap-reports.functions";
 import { getCashGeneralLedgerAll } from "@/lib/reports/cash-general-ledger.functions";
 import { SOURCE_LABELS, sourceLabel } from "@/lib/reports/links";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { LookupSelect } from "@/components/lookup";
@@ -181,11 +182,14 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
               <option value="cash">Cash (recognized settlements)</option>
             </select>
           </div>
+          {accountsQ.isError ? (
+            <QueryErrorState queries={[accountsQ]} title="Could not load report accounts" />
+          ) : null}
           <ReportAccountMultiSelect
             accounts={accountsQ.data ?? []}
             selected={accountIds ? accountIds.split(",") : undefined}
             onChange={selectAccounts}
-            disabled={accountsQ.isPending}
+            disabled={accountsQ.isPending || accountsQ.isError}
           />
           <div className="space-y-1">
             <Label htmlFor="report-account-scope">Accounts to include</Label>

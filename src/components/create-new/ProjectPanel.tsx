@@ -12,6 +12,7 @@ import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContactLookup } from "@/components/lookup";
@@ -84,6 +85,9 @@ export function ProjectPanel({ onSaved }: { onSaved?: () => void } = {}) {
         A project belongs to this organisation. It is separate from tracking dimensions.
       </p>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {customersQ.isError ? (
+        <QueryErrorState queries={[customersQ]} title="Could not load customers" />
+      ) : null}
       <Label>Code</Label>
       <Input required value={code} onChange={(e) => setCode(e.target.value)} />
       <Label>Name</Label>

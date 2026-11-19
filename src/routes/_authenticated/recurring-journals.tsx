@@ -305,6 +305,7 @@ function EditScheduleDialog({
       }}
     >
       <DialogContent
+        closeDisabled={save.isPending}
         onCloseAutoFocus={(event) => {
           if (trigger.isConnected) {
             event.preventDefault();
@@ -319,6 +320,9 @@ function EditScheduleDialog({
             occurrence. The posting limit includes occurrences already posted.
           </DialogDescription>
         </DialogHeader>
+        <p role="status" className="sr-only">
+          {save.isPending ? "Saving schedule…" : ""}
+        </p>
         <form
           className="grid gap-4"
           onSubmit={(event) => {
@@ -330,6 +334,7 @@ function EditScheduleDialog({
             <Label htmlFor="recurring-schedule-name">Name</Label>
             <Input
               id="recurring-schedule-name"
+              readOnly={save.isPending}
               required
               maxLength={160}
               value={name}
@@ -340,6 +345,7 @@ function EditScheduleDialog({
             <Label htmlFor="recurring-schedule-interval">Repeat every (months)</Label>
             <Input
               id="recurring-schedule-interval"
+              readOnly={save.isPending}
               type="number"
               required
               min={1}
@@ -352,6 +358,7 @@ function EditScheduleDialog({
             <Label htmlFor="recurring-schedule-end">End date (optional)</Label>
             <Input
               id="recurring-schedule-end"
+              readOnly={save.isPending}
               type="date"
               min={row.start_date}
               value={endDate}
@@ -362,6 +369,7 @@ function EditScheduleDialog({
             <Label htmlFor="recurring-schedule-limit">Total posting limit (optional)</Label>
             <Input
               id="recurring-schedule-limit"
+              readOnly={save.isPending}
               type="number"
               min={1}
               max={2147483647}

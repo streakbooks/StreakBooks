@@ -3,6 +3,7 @@ import { CalendarClock, Calculator, ClipboardCheck, LayoutList } from "lucide-re
 import { useFormat } from "@/hooks/use-format";
 import { buildAssetPortfolioSnapshot } from "@/lib/fixed-assets/portfolio-dashboard";
 import type { AssetTypeRow, FixedAssetRow } from "@/lib/fixed-assets/fixed-assets.functions";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ export function AssetPortfolioPanel({
         <Alert variant="destructive">
           <AlertDescription role="alert">
             The asset overview could not calculate trustworthy totals:{" "}
-            {error instanceof Error ? error.message : "Inconsistent asset register data."} Review
+            {friendlyAuthError(error)} Review
             the saved asset amounts and depreciation history before relying on this dashboard. No
             accounting records have been changed.
           </AlertDescription>

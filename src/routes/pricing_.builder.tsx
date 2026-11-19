@@ -6,6 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { quoteCustomerPlan } from "@/lib/billing/plan-quote.functions";
 import { formatMinor, type BillingCurrency } from "@/lib/billing/pricing";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { FEATURE_REGISTRY } from "@/lib/platform/feature-registry";
 
 export const Route = createFileRoute("/pricing_/builder")({
@@ -114,7 +115,7 @@ function PlanBuilderPage() {
       </form>
       {mutation.isError ? (
         <p role="alert">
-          {mutation.error instanceof Error ? mutation.error.message : "Quote failed."}
+          {friendlyAuthError(mutation.error)}
         </p>
       ) : null}
       {result?.message ? <p role="status">{result.message}</p> : null}

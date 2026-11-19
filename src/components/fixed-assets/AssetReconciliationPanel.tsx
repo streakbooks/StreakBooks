@@ -15,6 +15,7 @@ import {
 } from "@/lib/fixed-assets/reconciliation-review";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { LoadingState } from "@/components/common/states";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,7 @@ export function AssetReconciliationPanel({ companyId }: { companyId: string }) {
       return {
         rows: [],
         summary: null,
-        issue: error instanceof Error ? error.message : "Invalid reconciliation data.",
+        issue: friendlyAuthError(error),
       };
     }
   }, [currentReport, filter, search, order]);

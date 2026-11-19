@@ -20,6 +20,7 @@ import {
 import { LookupSelect } from "@/components/lookup";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { LoadingState } from "@/components/common/states";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,7 +85,7 @@ export function AssetCapitalisationReviewPanel({
     } catch (error) {
       return {
         result: null,
-        issue: error instanceof Error ? error.message : "Invalid purchase review data.",
+        issue: friendlyAuthError(error),
       };
     }
   }, [candidates.data, asOf, currency]);

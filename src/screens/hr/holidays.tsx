@@ -153,6 +153,7 @@ export function HrHolidaysPage() {
             <Button
               type="button"
               variant="outline"
+              disabled={!dataQ.isSuccess || activeCalendars.length === 0}
               onClick={() => {
                 setCalendarId(activeCalendars[0]?.id ?? "");
                 setHolidayDate("");
@@ -358,18 +359,22 @@ export function HrHolidaysPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Calendar</Label>
-              <RecordLookupSelect value={calendarId} onValueChange={setCalendarId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select calendar" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeCalendars.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.code} — {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {dataQ.isError && dataQ.data === undefined ? (
+                <QueryErrorState queries={[dataQ]} title="Could not load holiday calendars" />
+              ) : (
+                <RecordLookupSelect value={calendarId} onValueChange={setCalendarId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select calendar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeCalendars.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.code} — {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label>Date</Label>
@@ -406,7 +411,13 @@ export function HrHolidaysPage() {
             </Button>
             <Button
               type="button"
-              disabled={!calendarId || !holidayDate || !holidayName.trim() || saveHolM.isPending}
+              disabled={
+                !calendarId ||
+                !holidayDate ||
+                !holidayName.trim() ||
+                saveHolM.isPending ||
+                !dataQ.isSuccess
+              }
               onClick={() => saveHolM.mutate()}
             >
               Save

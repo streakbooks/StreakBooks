@@ -1020,9 +1020,9 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
             <CardTitle className="text-base">Requests assigned to me ({incoming.length})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {incoming.length === 0 && (
+            {requests.isSuccess && incoming.length === 0 ? (
               <p className="text-sm text-muted-foreground">No open requests assigned to you</p>
-            )}
+            ) : null}
             {incoming.map((r) => {
               const matches = (files.data ?? []).filter((f) => f.created_at >= r.created_at);
               return (
@@ -1079,9 +1079,9 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
             <CardTitle className="text-base">Requests I sent ({outgoing.length})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {outgoing.length === 0 && (
+            {requests.isSuccess && outgoing.length === 0 ? (
               <p className="text-sm text-muted-foreground">No pending requests</p>
-            )}
+            ) : null}
             {outgoing.map((r) => (
               <div key={r.id} className="rounded border p-3 text-sm">
                 <div className="font-medium">{r.subject}</div>

@@ -439,18 +439,22 @@ export function HrSelfServicePage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Leave type</Label>
-              <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {types.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.code} — {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {typesQ.isError && typesQ.data === undefined ? (
+                <QueryErrorState queries={[typesQ]} title="Could not load leave types" />
+              ) : (
+                <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {types.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.code} — {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
@@ -477,7 +481,13 @@ export function HrSelfServicePage() {
             </Button>
             <Button
               type="button"
-              disabled={!leaveTypeId || !startDate || !endDate || leaveM.isPending}
+              disabled={
+                !leaveTypeId ||
+                !startDate ||
+                !endDate ||
+                leaveM.isPending ||
+                !typesQ.isSuccess
+              }
               onClick={() => leaveM.mutate()}
             >
               Submit

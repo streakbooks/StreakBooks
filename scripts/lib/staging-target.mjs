@@ -4,7 +4,7 @@ import { isIP } from "node:net";
  * Explicitly verify that authenticated tests target the intended dedicated staging host.
  * Fail closed when the expected hostname or production comparison is not configured.
  */
-function asHttpsUrl(raw, label) {
+export function asHttpsUrl(raw, label) {
   if (!raw || typeof raw !== "string") throw new Error(label + " must be configured.");
   let url;
   try {

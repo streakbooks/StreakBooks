@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,6 +10,7 @@ import {
   listRecurringJournals,
   runDueRecurringJournals,
   setRecurringJournalActive,
+  updateRecurringJournalSchedule,
   type RecurringJournalRow,
 } from "@/lib/create-new/recurring-journals.functions";
 import { generateRecurringJournal } from "@/lib/create-new/money-documents.functions";
@@ -18,6 +20,16 @@ import { LoadingState, ErrorState, EmptyState } from "@/components/common/states
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -45,7 +57,15 @@ function RecurringJournalsPage() {
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
   const qc = useQueryClient();
-  const canPost = useCanDo("journals.manual");
+  const canEdit = useCanDo("journals.manual");
+  const canPostToLedger = useCanDo("accounting.post");
+  const canPost = canEdit && canPostToLedger;
+  const [editing, setEditing] = useState<{
+    companyId: string;
+    row: RecurringJournalRow;
+    trigger: HTMLButtonElement;
+  }>();
+  const currentEdit = canEdit && editing?.companyId === companyId ? editing : undefined;
   const list = useServerFn(listRecurringJournals);
   const runDue = useServerFn(runDueRecurringJournals);
   const postNow = useServerFn(generateRecurringJournal);
@@ -100,11 +120,13 @@ function RecurringJournalsPage() {
           <Button size="sm" variant="outline" asChild>
             <Link to="/accounting">Accounting</Link>
           </Button>
-          <Button size="sm" asChild disabled={!canPost}>
-            <Link to="/accounting/journals/new" search={{ mode: "template" }}>
-              New recurring journal
-            </Link>
-          </Button>
+          {canEdit ? (
+            <Button size="sm" asChild>
+              <Link to="/accounting/journals/new" search={{ mode: "template" }}>
+                New recurring journal
+              </Link>
+            </Button>
+          ) : null}
           <Button
             size="sm"
             disabled={!canPost || runMutation.isPending || dueCount === 0}
@@ -138,11 +160,13 @@ function RecurringJournalsPage() {
           title="No recurring journals"
           description="Create a recurring journal template to schedule rent, depreciation, or accruals."
           action={
-            <Button size="sm" asChild disabled={!canPost}>
-              <Link to="/accounting/journals/new" search={{ mode: "template" }}>
-                New recurring journal
-              </Link>
-            </Button>
+            canEdit ? (
+              <Button size="sm" asChild>
+                <Link to="/accounting/journals/new" search={{ mode: "template" }}>
+                  New recurring journal
+                </Link>
+              </Button>
+            ) : undefined
           }
         />
       ) : (
@@ -187,6 +211,18 @@ function RecurringJournalsPage() {
                   <Badge variant="outline">{r.is_active ? "Active" : "Paused / ended"}</Badge>
                 </TableCell>
                 <TableCell className="space-x-2 text-right">
+                  {canEdit ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      aria-label={`Edit schedule for ${r.name}`}
+                      onClick={(event) =>
+                        setEditing({ companyId, row: r, trigger: event.currentTarget })
+                      }
+                    >
+                      Edit schedule
+                    </Button>
+                  ) : null}
                   <Button
                     size="sm"
                     variant="outline"
@@ -198,7 +234,7 @@ function RecurringJournalsPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled={!canPost || activeMutation.isPending}
+                    disabled={!canEdit || activeMutation.isPending}
                     onClick={() =>
                       activeMutation.mutate({ templateId: r.id, active: !r.is_active })
                     }
@@ -211,6 +247,143 @@ function RecurringJournalsPage() {
           </TableBody>
         </Table>
       )}
+      {currentEdit ? (
+        <EditScheduleDialog
+          key={`${currentEdit.companyId}:${currentEdit.row.id}`}
+          companyId={currentEdit.companyId}
+          row={currentEdit.row}
+          trigger={currentEdit.trigger}
+          onClose={() => setEditing(undefined)}
+        />
+      ) : null}
     </ListWorkspace>
+  );
+}
+
+function EditScheduleDialog({
+  companyId,
+  row,
+  trigger,
+  onClose,
+}: {
+  companyId: string;
+  row: RecurringJournalRow;
+  trigger: HTMLButtonElement;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const updateSchedule = useServerFn(updateRecurringJournalSchedule);
+  const [name, setName] = useState(row.name);
+  const [interval, setInterval] = useState(String(row.interval_months));
+  const [endDate, setEndDate] = useState(row.end_date ?? "");
+  const [limit, setLimit] = useState(row.max_occurrences?.toString() ?? "");
+  const save = useMutation({
+    mutationFn: () =>
+      updateSchedule({
+        data: {
+          companyId,
+          templateId: row.id,
+          expectedUpdatedAt: row.updated_at,
+          name,
+          intervalMonths: Number(interval),
+          endDate: endDate || null,
+          maxOccurrences: limit === "" ? null : Number(limit),
+        },
+      }),
+    onError: () => queryClient.invalidateQueries({ queryKey: ["recurring-journals", companyId] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["recurring-journals", companyId] });
+      toast.success("Schedule updated");
+      onClose();
+    },
+  });
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !save.isPending) onClose();
+      }}
+    >
+      <DialogContent
+        onCloseAutoFocus={(event) => {
+          if (trigger.isConnected) {
+            event.preventDefault();
+            trigger.focus();
+          }
+        }}
+      >
+        <DialogHeader>
+          <DialogTitle>Edit recurring journal schedule</DialogTitle>
+          <DialogDescription>
+            The next scheduled date is {row.next_date}. The updated interval applies after that
+            occurrence. The posting limit includes occurrences already posted.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="grid gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!save.isPending && name.trim()) save.mutate();
+          }}
+        >
+          <div className="grid gap-1.5">
+            <Label htmlFor="recurring-schedule-name">Name</Label>
+            <Input
+              id="recurring-schedule-name"
+              required
+              maxLength={160}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="recurring-schedule-interval">Repeat every (months)</Label>
+            <Input
+              id="recurring-schedule-interval"
+              type="number"
+              required
+              min={1}
+              max={12}
+              value={interval}
+              onChange={(e) => setInterval(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="recurring-schedule-end">End date (optional)</Label>
+            <Input
+              id="recurring-schedule-end"
+              type="date"
+              min={row.start_date}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="recurring-schedule-limit">Total posting limit (optional)</Label>
+            <Input
+              id="recurring-schedule-limit"
+              type="number"
+              min={1}
+              max={2147483647}
+              value={limit}
+              onChange={(e) => setLimit(e.target.value)}
+            />
+          </div>
+          {save.isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {friendlyAuthError(save.error)}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={save.isPending}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={save.isPending || !name.trim()}>
+              {save.isPending ? "Saving…" : "Save schedule"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

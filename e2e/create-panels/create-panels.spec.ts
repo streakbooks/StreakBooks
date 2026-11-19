@@ -157,3 +157,22 @@ test("legacy Accounting journal bookmarks open the canonical full-page editor", 
   await expect(page).toHaveURL(/accounting\/journals\/new\?mode=post$/);
   await expect(page.getByRole("heading", { name: "Manual journal", exact: true })).toBeVisible();
 });
+
+test("recurring journal schedules open with the current settings and cancel without saving", async ({
+  page,
+}) => {
+  await page.goto("/recurring-journals");
+  const edit = page.getByRole("button", { name: "Edit schedule for Monthly rent" });
+  await edit.click();
+  const dialog = page.getByRole("dialog", { name: "Edit recurring journal schedule" });
+  await expect(dialog.getByLabel("Name")).toHaveValue("Monthly rent");
+  await expect(dialog.getByLabel("Repeat every (months)")).toHaveValue("1");
+  await expect(dialog.getByLabel("Total posting limit (optional)")).toHaveValue("24");
+  await expect(dialog).toContainText("The next scheduled date is 2026-12-31");
+  await dialog.getByLabel("Name").fill("Temporary name");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(edit).toBeFocused();
+  await edit.click();
+  await expect(dialog.getByLabel("Name")).toHaveValue("Monthly rent");
+});

@@ -1,3 +1,4 @@
+import { Route as RecurringJournalsRoute } from "@/routes/_authenticated/recurring-journals";
 import { createRoot } from "react-dom/client";
 import {
   createRootRoute,
@@ -93,6 +94,11 @@ const receive = ReceiveRoute.update({
   id: "/banking/receive-money",
   path: "/banking/receive-money",
 } as never);
+const recurringJournals = RecurringJournalsRoute.update({
+  getParentRoute: () => auth,
+  id: "/recurring-journals",
+  path: "/recurring-journals",
+} as never);
 const router = createRouter({
   routeTree: root.addChildren([
     auth.addChildren([
@@ -104,6 +110,7 @@ const router = createRouter({
       bankDocuments.addChildren([bankDocument]),
       spend,
       receive,
+      recurringJournals,
     ]),
   ]),
 });

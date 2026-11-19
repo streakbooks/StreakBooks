@@ -13,6 +13,7 @@ import {
   saveWorkpaperReconcilingItem,
   type WorkpaperReconcilingItem,
 } from "@/lib/accountant/reconciling-items.functions";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -150,9 +151,7 @@ export function WorkpaperReconcilingItemsPanel({
       {list.isPending ? (
         <p className="text-sm text-muted-foreground">Loading reconciling issues…</p>
       ) : list.isError ? (
-        <p role="alert" className="text-sm text-destructive">
-          {friendlyAuthError(list.error)}
-        </p>
+        <QueryErrorState queries={[list]} title="Could not load reconciling items" />
       ) : (
         <>
           <div className="flex flex-wrap gap-2 text-sm">
@@ -203,9 +202,7 @@ export function WorkpaperReconcilingItemsPanel({
                     history.isPending ? (
                       <p className="text-xs text-muted-foreground">Loading history…</p>
                     ) : history.isError ? (
-                      <p role="alert" className="text-xs text-destructive">
-                        {friendlyAuthError(history.error)}
-                      </p>
+                      <QueryErrorState queries={[history]} title="Could not load item history" />
                     ) : (
                       <ul className="mt-2 space-y-1 text-xs">
                         {history.data?.map((event) => (

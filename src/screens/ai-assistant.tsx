@@ -402,15 +402,9 @@ function AiAssistantWorkspace({
       </Alert>
 
       {canUse && statusQ.isError ? (
-        <Alert variant="destructive" className="mb-5">
-          <AlertTitle>Could not check provider status</AlertTitle>
-          <AlertDescription>
-            {friendlyAuthError(statusQ.error)}{" "}
-            <Button size="sm" variant="outline" onClick={() => void statusQ.refetch()}>
-              Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <div className="mb-5">
+          <QueryErrorState queries={[statusQ]} title="Could not check provider status" />
+        </div>
       ) : canUse && statusQ.data ? (
         <Alert className="mb-5" variant={statusQ.data.configured ? "default" : "destructive"}>
           <AlertTitle>
@@ -554,16 +548,11 @@ function AiAssistantWorkspace({
             )}
 
             {historyQ.isError && canUse ? (
-              <Alert variant="destructive">
-                <AlertTitle>Saved conversation history unavailable</AlertTitle>
-                <AlertDescription>
-                  Check the database migration and access permissions. New answers still work, but
-                  may not be retained.{" "}
-                  <Button size="sm" variant="outline" onClick={() => void historyQ.refetch()}>
-                    Retry
-                  </Button>
-                </AlertDescription>
-              </Alert>
+              <QueryErrorState
+                queries={[historyQ]}
+                title="Saved conversation history unavailable"
+                description="Check the database migration and access permissions. New answers still work, but may not be retained."
+              />
             ) : null}
             <div
               className="space-y-4"
@@ -981,10 +970,10 @@ function AiAssistantWorkspace({
             </AlertDescription>
           </Alert>
           {accountsQ.isError ? (
-            <Alert variant="destructive">
-              <AlertTitle>Could not verify journal account names</AlertTitle>
-              <AlertDescription>{friendlyAuthError(accountsQ.error)}</AlertDescription>
-            </Alert>
+            <QueryErrorState
+              queries={[accountsQ]}
+              title="Could not verify journal account names"
+            />
           ) : accountsQ.isFetching ? (
             <p className="text-xs text-muted-foreground">Loading chart of accounts for review…</p>
           ) : journalLines && !accountsResolved ? (

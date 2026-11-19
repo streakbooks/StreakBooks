@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { LoadingState } from "@/components/common/states";
 export function ReportAccessDialog({
   companyId,
@@ -118,7 +119,7 @@ export function ReportAccessDialog({
             (q.isPending ? (
               <LoadingState />
             ) : q.isError ? (
-              <p role="alert">{friendlyAuthError(q.error)}</p>
+              <QueryErrorState queries={[q]} title="Could not load sharing recipients" />
             ) : (
               <div className="space-y-3">
                 <MultiLookupSelect
@@ -188,7 +189,7 @@ export function ReportAccessDialog({
           <Button
             disabled={
               mutation.isPending ||
-              (level === "selected" && !Object.keys(grants).length) ||
+              (level === "selected" && (q.isError || !Object.keys(grants).length)) ||
               (level === "firm" && !firmId)
             }
             onClick={() => mutation.mutate()}

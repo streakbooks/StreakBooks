@@ -14,6 +14,7 @@ import {
 import { applyCorrection } from "@/lib/accounting/corrections/correction.functions";
 import { correctionInput, exactMoney } from "@/lib/accounting/corrections/contracts";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -162,9 +163,7 @@ export function CorrectionApprovalsPanel({
         </p>
       </div>
       {rowsQ.isError ? (
-        <p role="alert" className="text-sm text-destructive">
-          Could not load approval requests: {friendlyAuthError(rowsQ.error)}
-        </p>
+        <QueryErrorState queries={[rowsQ]} title="Could not load approval requests" />
       ) : null}
       {rowsQ.isPending ? <p>Loading approval queue…</p> : null}
       {!rowsQ.isPending && all.length === 0 ? (
@@ -310,7 +309,9 @@ export function CorrectionApprovalsPanel({
                 <div className="space-y-1 rounded border p-3">
                   <h4 className="font-medium">Immutable approval events (first 100)</h4>
                   {eventsQ.isPending ? <p>Loading audit evidence…</p> : null}
-                  {eventsQ.isError ? <p role="alert">{friendlyAuthError(eventsQ.error)}</p> : null}
+                  {eventsQ.isError ? (
+                    <QueryErrorState queries={[eventsQ]} title="Could not load approval events" />
+                  ) : null}
                   {eventsQ.data?.map((event) => (
                     <p key={event.id}>
                       {event.created_at} · {event.action} · {event.actor_id} · v{event.version}

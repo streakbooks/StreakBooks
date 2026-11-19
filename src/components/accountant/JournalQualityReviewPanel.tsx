@@ -7,7 +7,6 @@ import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import { scanManualJournalQuality } from "@/lib/accountant/journal-quality.functions";
 import { listAccountantExceptionReviews } from "@/lib/accountant/exception-reviews.functions";
 import { JournalExceptionReviewDetails } from "@/components/accountant/JournalExceptionReviewDetails";
-import { friendlyAuthError } from "@/lib/auth-helpers";
 import { toCsv } from "@/lib/sales/csv";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { LoadingState } from "@/components/common/states";
@@ -166,9 +165,7 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
               </div>
               <p className="text-xs text-muted-foreground">{query.data.disclaimer}</p>
               {reviews.isError ? (
-                <p role="alert" className="text-sm text-destructive">
-                  Review history unavailable: {friendlyAuthError(reviews.error)}
-                </p>
+                <QueryErrorState queries={[reviews]} title="Could not load review history" />
               ) : null}
               {query.data.findings.length ? (
                 <div className="overflow-x-auto">

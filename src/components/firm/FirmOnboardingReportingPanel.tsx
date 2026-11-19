@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { getFirmClientName, type FirmClientRow } from "@/lib/firm/client-portfolio";
 import { listFirmOnboardingOverview } from "@/lib/firm/firm-workflows.functions";
 import { listFirmOnboardingWorkloadContext } from "@/lib/firm/firm-onboarding-workload.functions";
@@ -244,12 +245,17 @@ export function FirmOnboardingReportingPanel({
           Refresh reports
         </Button>
       </div>
-      {reportError && (
-        <p role="alert" className="text-sm text-destructive">
-          A report query failed. Only successfully loaded reports can be exported:
-          {friendlyAuthError(reportError)}
-        </p>
-      )}
+      {overviewQ.isError || staffQ.isError || historyQ.isError ? (
+        <QueryErrorState
+          queries={[overviewQ, staffQ, historyQ]}
+          title="Could not load onboarding reports"
+          {...(reportError
+            ? {
+                description: `Only successfully loaded reports can be exported. ${friendlyAuthError(reportError)}`,
+              }
+            : {})}
+        />
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1">
           <Label>Client</Label>

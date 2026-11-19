@@ -22,6 +22,7 @@ import {
 import { daysOverdue } from "@/lib/documents/helpers";
 import { DOCUMENT_KIND_LABEL, type DocumentKind } from "@/lib/documents/types";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -147,6 +148,12 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
         <CardTitle className="text-base">Send &amp; share</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
+        {docQ.isError || deliveryQ.isError ? (
+          <QueryErrorState
+            queries={[docQ, deliveryQ]}
+            title="Could not load send and share details"
+          />
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link to="/documents/print/$kind/$id" params={{ kind, id }}>

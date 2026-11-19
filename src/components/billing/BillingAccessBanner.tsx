@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { getBillingOverview } from "@/lib/billing/billing.functions";
 
 export function BillingAccessBanner({ companyId }: { companyId: string }) {
@@ -9,6 +10,13 @@ export function BillingAccessBanner({ companyId }: { companyId: string }) {
     queryKey: ["billing-overview", companyId],
     queryFn: () => fetchOverview({ data: { companyId } }),
   });
+  if (overview.isError) {
+    return (
+      <div className="border-b px-4 py-2 print:hidden md:px-6">
+        <QueryErrorState queries={[overview]} title="Could not verify billing access" />
+      </div>
+    );
+  }
   if (overview.data?.access !== "read_only") return null;
   return (
     <div

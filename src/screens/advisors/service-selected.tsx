@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Check } from "lucide-react";
 import { AdvisorChatPanel } from "@/components/advisors/AdvisorChatPanel";
 import { AdvisorServiceIllustration } from "@/components/advisors/AdvisorServiceIllustration";
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import {
   ADVISORS_EXCLUSIONS,
@@ -28,7 +29,8 @@ export function AdvisorsServiceSelectedPage({ serviceCode }: { serviceCode: stri
   const valid = isAdvisorServiceCode(serviceCode);
   const code = (valid ? serviceCode : "bookkeeping") as AdvisorServiceCode;
   const service =
-    catalogue.data?.services.find((item) => item.code === code) ?? getDefaultAdvisorService(code);
+    catalogue.data?.services.find((item) => item.code === code) ??
+    (catalogue.isError ? null : getDefaultAdvisorService(code));
 
   useEffect(() => {
     if (valid) rememberAdvisorServiceSelection(code);
@@ -42,6 +44,18 @@ export function AdvisorsServiceSelectedPage({ serviceCode }: { serviceCode: stri
           Choose one of the two LinkBooks Advisors services to continue.
         </p>
         <Button asChild className="mt-6">
+          <Link to="/advisors">Back to Advisors</Link>
+        </Button>
+      </main>
+    );
+  }
+
+  if (catalogue.isError || !service) {
+    return (
+      <main className="mx-auto max-w-3xl space-y-4 px-4 py-16">
+        <h1 className="text-2xl font-semibold">Could not load this service</h1>
+        <QueryErrorState queries={[catalogue]} title="Could not load advisor services" />
+        <Button asChild variant="outline">
           <Link to="/advisors">Back to Advisors</Link>
         </Button>
       </main>

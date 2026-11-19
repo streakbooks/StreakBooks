@@ -146,6 +146,9 @@ export function CrmTeamPage() {
       }
       subnav={<CrmSubnav current="team" />}
     >
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
+      ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"

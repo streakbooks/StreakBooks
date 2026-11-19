@@ -242,7 +242,7 @@ export function HrHolidaysPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Holidays
         </h2>
-        {holidays.length === 0 ? (
+        {dataQ.isError ? null : holidays.length === 0 ? (
           <EmptyState
             title="No holidays listed"
             description="Add dated holidays to an active calendar."

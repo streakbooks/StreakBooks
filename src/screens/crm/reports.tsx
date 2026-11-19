@@ -81,6 +81,9 @@ export function CrmReportsPage() {
       }
       subnav={<CrmSubnav current="reports" />}
     >
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
+      ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before running reports." />
       ) : null}

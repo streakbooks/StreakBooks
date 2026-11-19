@@ -91,6 +91,9 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
       subnav={<CrmSubnav current={current} />}
     >
       {settings.isLoading ? <LoadingState /> : null}
+      {settings.isError ? (
+        <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
+      ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"

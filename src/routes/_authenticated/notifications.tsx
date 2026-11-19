@@ -1035,28 +1035,32 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                   >
                     Upload in Files <ArrowUpRight className="size-3" />
                   </a>
-                  <RecordLookupSelect
-                    value={uploaded[r.id] ?? ""}
-                    onValueChange={(id) => setUploaded((old) => ({ ...old, [r.id]: id }))}
-                  >
-                    <SelectTrigger aria-label={`Attachment for ${r.subject}`}>
-                      <SelectValue placeholder="Select a file you uploaded for this request" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {matches.map((f) => (
-                        <SelectItem key={f.id} value={f.id}>
-                          {f.file_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
+                  {files.isError ? (
+                    <QueryErrorState queries={[files]} title="Could not load uploaded files" />
+                  ) : (
+                    <RecordLookupSelect
+                      value={uploaded[r.id] ?? ""}
+                      onValueChange={(id) => setUploaded((old) => ({ ...old, [r.id]: id }))}
+                    >
+                      <SelectTrigger aria-label={`Attachment for ${r.subject}`}>
+                        <SelectValue placeholder="Select a file you uploaded for this request" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {matches.map((f) => (
+                          <SelectItem key={f.id} value={f.id}>
+                            {f.file_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  )}
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => void files.refetch()}>
                       Refresh uploaded files
                     </Button>
                     <Button
                       size="sm"
-                      disabled={!uploaded[r.id] || finishRequest.isPending}
+                      disabled={!uploaded[r.id] || finishRequest.isPending || files.isError}
                       onClick={() =>
                         finishRequest.mutate({ id: r.id, attachmentId: uploaded[r.id]! })
                       }

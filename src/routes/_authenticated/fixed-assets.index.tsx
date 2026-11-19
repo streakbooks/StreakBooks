@@ -1209,7 +1209,9 @@ function DepreciationPanel({
         );
       }
       if (result.failure)
-        toast.error(`Stopped at ${fmt.date(result.failure.periodEnd)}: ${result.failure.message}`);
+        toast.error(
+          `Stopped at ${fmt.date(result.failure.periodEnd)}: ${friendlyAuthError(result.failure.message)}`,
+        );
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -1508,8 +1510,9 @@ function DepreciationPanel({
               {post.data.failure ? (
                 <Alert variant="destructive">
                   <AlertDescription>
-                    Stopped at {fmt.date(post.data.failure.periodEnd)}: {post.data.failure.message}.
-                    Earlier months may have posted; review them before retrying.
+                    Stopped at {fmt.date(post.data.failure.periodEnd)}:{" "}
+                    {friendlyAuthError(post.data.failure.message)}. Earlier months may have posted;
+                    review them before retrying.
                   </AlertDescription>
                 </Alert>
               ) : null}

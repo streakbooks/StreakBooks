@@ -156,6 +156,11 @@ export function PayrollSalaryStructuresPage() {
   if (listQ.isError) {
     return <QueryErrorState queries={[listQ]} title="Could not load salary structures" />;
   }
+  if (settingsQ.isError && settingsQ.data === undefined) {
+    return (
+      <QueryErrorState queries={[settingsQ]} title="Could not load payroll components" />
+    );
+  }
 
   const list = listQ.data;
 

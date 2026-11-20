@@ -178,10 +178,8 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
       ) : (
         <>
           {showForm && canManage ? (
-            (contacts.isError && contacts.data === undefined) ||
-            (kind === "owner"
-              ? owners.isError && owners.data === undefined
-              : tenants.isError && tenants.data === undefined) ? (
+            contacts.isError ||
+            (kind === "owner" ? owners.isError : tenants.isError) ? (
               <QueryErrorState
                 queries={[contacts, kind === "owner" ? owners : tenants]}
                 title="Could not load portal invite options"
@@ -195,6 +193,9 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
+                {contacts.isSuccess &&
+                (kind === "owner" ? owners.isSuccess : tenants.isSuccess) ? (
+                  <>
                 <div className="grid gap-2">
                   <Label>Contact</Label>
                   <RecordLookupSelect value={contactId} onValueChange={setContactId}>
@@ -231,6 +232,12 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
                     </SelectContent>
                   </RecordLookupSelect>
                 </div>
+                  </>
+                ) : (
+                  <div className="sm:col-span-2">
+                    <LoadingState />
+                  </div>
+                )}
                 <div className="grid gap-2 sm:col-span-2">
                   <Label htmlFor={`pm-portal-email-${kind}`}>Invite email (optional)</Label>
                   <Input
@@ -243,7 +250,13 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
                 <div className="flex items-end">
                   <Button
                     type="button"
-                    disabled={!contactId || !partyId || inviteMutation.isPending}
+                    disabled={
+                      !contactId ||
+                      !partyId ||
+                      inviteMutation.isPending ||
+                      !contacts.isSuccess ||
+                      (kind === "owner" ? !owners.isSuccess : !tenants.isSuccess)
+                    }
                     onClick={() => inviteMutation.mutate()}
                   >
                     {inviteMutation.isPending ? "Saving…" : "Save invite"}

@@ -157,8 +157,7 @@ export function PmLeasesPage() {
       ) : (
         <>
           {showForm && canManage ? (
-            (properties.isError && properties.data === undefined) ||
-            (tenants.isError && tenants.data === undefined) ? (
+            properties.isError || tenants.isError ? (
               <QueryErrorState
                 queries={[properties, tenants]}
                 title="Could not load lease create options"
@@ -170,6 +169,8 @@ export function PmLeasesPage() {
                 <CardDescription>Amounts are entered in major currency units.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
+                {properties.isSuccess && tenants.isSuccess ? (
+                  <>
                 <div className="grid gap-2">
                   <Label>Property</Label>
                   <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
@@ -200,6 +201,12 @@ export function PmLeasesPage() {
                     </SelectContent>
                   </RecordLookupSelect>
                 </div>
+                  </>
+                ) : (
+                  <div className="sm:col-span-2">
+                    <LoadingState />
+                  </div>
+                )}
                 <div className="grid gap-2">
                   <Label htmlFor="pm-rent">Monthly rent</Label>
                   <Input
@@ -235,7 +242,13 @@ export function PmLeasesPage() {
                 <div className="flex items-end">
                   <Button
                     type="button"
-                    disabled={!propertyId || !tenantId || mutation.isPending}
+                    disabled={
+                      !propertyId ||
+                      !tenantId ||
+                      mutation.isPending ||
+                      !properties.isSuccess ||
+                      !tenants.isSuccess
+                    }
                     onClick={() => mutation.mutate()}
                   >
                     {mutation.isPending ? "Saving…" : "Save lease"}

@@ -150,7 +150,7 @@ export function PmRentChargesPage() {
       ) : (
         <>
           {showForm && canManage ? (
-            leases.isError && leases.data === undefined ? (
+            leases.isError ? (
               <QueryErrorState queries={[leases]} title="Could not load leases" />
             ) : (
             <Card className="mb-4">
@@ -163,20 +163,24 @@ export function PmRentChargesPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Lease</Label>
-                  <RecordLookupSelect value={leaseId} onValueChange={setLeaseId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select lease" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(leases.data ?? [])
-                        .filter((lease) => lease.status === "active" || lease.status === "draft")
-                        .map((lease) => (
-                          <SelectItem key={lease.id} value={lease.id}>
-                            {lease.leaseNumber}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
+                  {leases.isSuccess ? (
+                    <RecordLookupSelect value={leaseId} onValueChange={setLeaseId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select lease" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(leases.data ?? [])
+                          .filter((lease) => lease.status === "active" || lease.status === "draft")
+                          .map((lease) => (
+                            <SelectItem key={lease.id} value={lease.id}>
+                              {lease.leaseNumber}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  ) : (
+                    <LoadingState />
+                  )}
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pm-rent-month">Period month</Label>
@@ -190,7 +194,7 @@ export function PmRentChargesPage() {
                 <div className="flex items-end">
                   <Button
                     type="button"
-                    disabled={!leaseId || mutation.isPending}
+                    disabled={!leaseId || mutation.isPending || !leases.isSuccess}
                     onClick={() => mutation.mutate()}
                   >
                     {mutation.isPending ? "Generating…" : "Generate"}

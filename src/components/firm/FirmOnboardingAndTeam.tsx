@@ -550,6 +550,7 @@ export function FirmTeamPanel({ firmId }: { firmId: string }) {
     return (
       <QueryErrorState queries={[teamQ]} title="Could not load firm team" />
     );
+  if (!teamQ.isSuccess) return <LoadingState />;
   return (
     <section className="space-y-4">
       <div>

@@ -202,12 +202,15 @@ function TaxConfigPage() {
   if (settingsQ.isError) {
     return <QueryErrorState queries={[settingsQ]} title="Could not load tax settings" />;
   }
+  if (!settingsQ.isSuccess) return <LoadingState />;
+  const settingsData = settingsQ.data;
+  if (!settingsData) return <LoadingState />;
 
   const allAccounts = (accountsQ.data ?? []) as unknown as PickerAccount[];
   const outputAccounts = filterTaxAccountPicker(allAccounts, "output");
   const inputAccounts = filterTaxAccountPicker(allAccounts, "input");
   const nonRecAccounts = filterTaxAccountPicker(allAccounts, "non_recoverable");
-  const persisted = settingsQ.data as {
+  const persisted = settingsData as {
     tax_regime: string;
     jurisdiction_code: string | null;
     registration_number: string | null;
@@ -355,7 +358,7 @@ function TaxConfigPage() {
         <TabsContent value="overview" className="space-y-4">
           <TaxOverviewPanel
             companyId={companyId}
-            settings={settingsQ.data as TaxOverviewSettings | null}
+            settings={settingsData as TaxOverviewSettings | null}
           />
         </TabsContent>
 

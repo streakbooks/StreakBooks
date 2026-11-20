@@ -66,6 +66,7 @@ export function PortalHome() {
     return (
       <QueryErrorState queries={[query]} />
     );
+  if (!query.isSuccess || !query.data) return <LoadingState />;
   const home = query.data;
   if (home["role"] === "supplier") {
     return (
@@ -244,6 +245,7 @@ export function PortalInvoiceDetail({ invoiceId }: { invoiceId: string }) {
     return (
       <QueryErrorState queries={[query]} />
     );
+  if (!query.isSuccess || !query.data) return <LoadingState />;
   const data = query.data;
   const invoice = (data["invoice"] as Row) ?? {};
   const branding = (data["branding"] as Row | null) ?? {};
@@ -394,6 +396,7 @@ export function PortalCredits() {
     return (
       <QueryErrorState queries={[query]} />
     );
+  if (!query.isSuccess) return <LoadingState />;
   return (
     <ul className="divide-y divide-border rounded-md border border-border">
       {(query.data ?? []).map((row) => (

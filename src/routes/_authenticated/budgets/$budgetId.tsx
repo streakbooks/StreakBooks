@@ -91,6 +91,7 @@ function BudgetEditorPage() {
   if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load budget" />;
   }
+  if (!query.isSuccess || !query.data) return <LoadingState />;
   // Re-mount after every save so the grid always reflects what is stored.
   return (
     <BudgetEditor

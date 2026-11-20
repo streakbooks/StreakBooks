@@ -37,6 +37,7 @@ function EditRecurringBillRoute() {
       </div>
     );
   }
+  if (!templateQ.isSuccess) return <LoadingState />;
   if (!templateQ.data) {
     return (
       <EmptyState

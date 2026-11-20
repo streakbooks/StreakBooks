@@ -15,6 +15,7 @@ export function ReportingFeatureGate({
   if (access.isPending) return <LoadingState />;
   if (access.isError)
     return <QueryErrorState queries={[access]} title="Could not verify reporting access" />;
+  if (!access.isSuccess || !access.data) return <LoadingState />;
   if (!access.data.allowed)
     return (
       <section role="status" className="space-y-2 rounded border p-5">

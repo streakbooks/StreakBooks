@@ -16,5 +16,7 @@ export function ReportActivityHome({ companyId }: { companyId: string }) {
     return <p className="text-sm text-muted-foreground">Loading your report activity…</p>;
   if (activity.isError)
     return <QueryErrorState queries={[activity]} title="Could not load report activity" />;
+  if (!activity.isSuccess || !activity.data)
+    return <p className="text-sm text-muted-foreground">Loading your report activity…</p>;
   return <ReportActivityList activity={activity.data} fmt={fmt} />;
 }

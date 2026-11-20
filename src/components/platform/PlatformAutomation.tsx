@@ -80,7 +80,10 @@ export function PlatformAutomation({
   if (context.isError) {
     return <QueryErrorState queries={[context]} title="Could not load automation access" />;
   }
-  const worker = context.data!.worker;
+  if (!context.isSuccess || !context.data) {
+    return <p role="status">Verifying automation permissions…</p>;
+  }
+  const worker = context.data.worker;
   return (
     <div className="space-y-6">
       <div>

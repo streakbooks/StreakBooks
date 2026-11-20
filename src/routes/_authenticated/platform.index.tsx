@@ -28,6 +28,7 @@ function PlatformHome() {
   if (query.isPending) return <LoadingState rows={4} />;
   if (query.isError)
     return <QueryErrorState queries={[query]} title="Could not load platform access" />;
+  if (!query.isSuccess || !query.data) return <LoadingState rows={4} />;
   const allowed = visibleSections(query.data.permissions);
   const current = allowed.find(([id]) => id === section) ?? allowed[0];
   if (!current)

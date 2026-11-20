@@ -27,6 +27,7 @@ function EditQuote() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (q.isPending) return <LoadingState />;
   if (q.isError) return <QueryErrorState queries={[q]} title="Could not load quote" />;
+  if (!q.isSuccess || !q.data) return <LoadingState />;
   const quote = q.data;
   if (quote.status === "converted" || quote.status === "void") {
     return (

@@ -41,6 +41,7 @@ export function ReportingHome({
   if (q.isPending) return <LoadingState />;
   if (q.isError)
     return <QueryErrorState queries={[q]} title="Could not load reporting home" />;
+  if (!q.isSuccess || !q.data) return <LoadingState />;
   const counts = q.data.packCounts;
   const count = (...states: string[]) => states.reduce((n, state) => n + (counts[state] ?? 0), 0);
   return (

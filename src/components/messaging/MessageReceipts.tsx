@@ -23,6 +23,9 @@ export function MessageReceipts({
   if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load read receipts" />;
   }
+  if (!query.isSuccess) {
+    return <p className="text-xs text-muted-foreground">Checking read receipts…</p>;
+  }
   if (!query.data?.length) {
     return <p className="text-xs text-muted-foreground">No read receipts yet</p>;
   }

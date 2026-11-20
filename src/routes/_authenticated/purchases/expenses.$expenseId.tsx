@@ -90,6 +90,7 @@ function ExpenseDetail() {
   if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load expense" />;
   }
+  if (!query.isSuccess) return <LoadingState />;
   const expense = query.data;
   if (!expense) {
     return <EmptyState title="Expense not found" description="This expense is unavailable." />;

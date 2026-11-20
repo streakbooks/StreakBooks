@@ -248,6 +248,7 @@ export function ConversionBalancesPanel({
   if (overview.isPending) return <LoadingState />;
   if (overview.isError)
     return <QueryErrorState queries={[overview]} title="Could not load conversion balances" />;
+  if (!overview.isSuccess || !overview.data) return <LoadingState />;
   const ov = overview.data;
 
   if (!ov.available) {

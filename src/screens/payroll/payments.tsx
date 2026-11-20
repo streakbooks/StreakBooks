@@ -653,7 +653,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </div>
             <div className="grid gap-2">
               <Label>Clearing account</Label>
-              {accountsQ.isError ? null : (
+              {accountsQ.isError ? null : accountsQ.isSuccess ? (
                 <>
                   {excludedClearingAccounts > 0 ? (
                     <p className="text-xs text-muted-foreground">
@@ -683,6 +683,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                     allowClear={false}
                   />
                 </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading clearing accounts…</p>
               )}
             </div>
             <div className="grid gap-2">

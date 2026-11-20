@@ -70,13 +70,13 @@ export function SettingsCommunicationsPanel({
     queryFn: () => getStatus({ data: { companyId } }),
   });
   useEffect(() => {
-    if (!config.data || dirty) return;
+    if (!config.isSuccess || !config.data || dirty) return;
     const parsed = notificationsConfigSchema.safeParse(config.data.document);
     if (parsed.success) {
       setDoc(parsed.data);
       setLoadedVersion(config.data.version);
     }
-  }, [config.data, dirty]);
+  }, [config.isSuccess, config.data, dirty]);
 
   const navigationBlocker = useBlocker({
     shouldBlockFn: () => dirty,
@@ -143,9 +143,13 @@ export function SettingsCommunicationsPanel({
   });
   const savingBlocked =
     !canEdit || save.isPending || config.isPending || config.isError || serverChanged;
-  const providerReady = Boolean(status.data?.configured);
-  const canTest = Boolean(providerReady && status.data?.canSend && status.data?.recipient);
-  const canDigest = Boolean(providerReady && status.data?.canDigest && status.data?.recipient);
+  const providerReady = Boolean(status.isSuccess && status.data?.configured);
+  const canTest = Boolean(
+    status.isSuccess && providerReady && status.data?.canSend && status.data?.recipient,
+  );
+  const canDigest = Boolean(
+    status.isSuccess && providerReady && status.data?.canDigest && status.data?.recipient,
+  );
   const set = <K extends keyof Config>(key: K, value: Config[K]) => {
     setDirty(true);
     setDoc((old) => ({ ...old, [key]: value }));
@@ -404,7 +408,7 @@ export function SettingsCommunicationsPanel({
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              disabled={!canTest || test.isPending || digest.isPending}
+              disabled={!canTest || !status.isSuccess || test.isPending || digest.isPending}
               onClick={() => test.mutate()}
             >
               <Send className="mr-1 size-4" />
@@ -413,7 +417,7 @@ export function SettingsCommunicationsPanel({
             <Button
               size="sm"
               variant="outline"
-              disabled={!canDigest || digest.isPending || test.isPending}
+              disabled={!canDigest || !status.isSuccess || digest.isPending || test.isPending}
               onClick={() => digest.mutate()}
             >
               <Clock className="mr-1 size-4" />

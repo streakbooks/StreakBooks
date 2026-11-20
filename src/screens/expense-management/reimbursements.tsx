@@ -306,7 +306,12 @@ export function ExpenseManagementReimbursementsPage() {
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
-            disabled={batchPay.isPending || selectedIds.length === 0 || !bankGlAccountId}
+            disabled={
+              batchPay.isPending ||
+              selectedIds.length === 0 ||
+              !bankGlAccountId ||
+              !banksQ.isSuccess
+            }
             onClick={() => batchPay.mutate()}
           >
             {batchPay.isPending ? "Paying batch…" : `Pay selected (${selectedIds.length})`}
@@ -330,19 +335,25 @@ export function ExpenseManagementReimbursementsPage() {
       <div className="mb-6 grid max-w-xl gap-3 rounded-lg border p-4">
         <div className="grid gap-2">
           <Label>Bank account</Label>
-          <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
-            <SelectTrigger aria-label="Bank account for reimbursement">
-              <SelectValue placeholder="Select bank account" />
-            </SelectTrigger>
-            <SelectContent>
-              {bankOptions.map((account) => (
-                <SelectItem key={account.id} value={account.gl_account_id}>
-                  {account.name}
-                  {account.accounts?.code ? ` (${account.accounts.code})` : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </RecordLookupSelect>
+          {banksQ.isError ? (
+            <QueryErrorState queries={[banksQ]} title="Could not load bank accounts" />
+          ) : banksQ.isSuccess ? (
+            <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
+              <SelectTrigger aria-label="Bank account for reimbursement">
+                <SelectValue placeholder="Select bank account" />
+              </SelectTrigger>
+              <SelectContent>
+                {bankOptions.map((account) => (
+                  <SelectItem key={account.id} value={account.gl_account_id}>
+                    {account.name}
+                    {account.accounts?.code ? ` (${account.accounts.code})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </RecordLookupSelect>
+          ) : (
+            <p className="text-sm text-muted-foreground">Loading bank accounts…</p>
+          )}
         </div>
         <div className="grid gap-2">
           <Label htmlFor="em-reimburse-date">Payment date</Label>

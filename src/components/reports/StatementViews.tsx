@@ -55,7 +55,7 @@ export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
           : d?.basis
       }
       extraControls={
-        q.isError ? null : (
+        q.isError ? null : q.isSuccess ? (
           <ReportAccountMultiSelect
             accounts={(d?.rows ?? []).map((row) => ({
               id: row.account_id,
@@ -68,7 +68,7 @@ export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
             }
             disabled={!d}
           />
-        )
+        ) : null
       }
       getCsv={() =>
         d

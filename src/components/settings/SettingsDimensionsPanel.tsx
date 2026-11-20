@@ -250,6 +250,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
               <Button
                 size="sm"
                 variant="outline"
+                disabled={!dimsQ.isSuccess || dimsQ.isFetching}
                 onClick={async () => {
                   try {
                     const res = await exportFn({ data: { companyId } });
@@ -303,7 +304,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
               <div className="sm:col-span-3">
                 <QueryErrorState queries={[dimsQ]} title="Could not load tracking dimensions" />
               </div>
-            ) : (
+            ) : dimsQ.isSuccess ? (
               <LookupSelect
                 ariaLabel="Report dimension"
                 allowClear={false}
@@ -321,6 +322,8 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
                   keywords: `${c.name} ${c.dimension_kind}`,
                 }))}
               />
+            ) : (
+              <p className="text-sm text-muted-foreground sm:col-span-3">Loading dimensions…</p>
             )}
             <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
             <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />

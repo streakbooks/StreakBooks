@@ -328,7 +328,12 @@ export function ExpenseManagementTravelPage() {
               <div className="md:col-span-2">
                 <Button
                   onClick={() => createTripMut.mutate()}
-                  disabled={createTripMut.isPending || !tripRateId || dayCount == null}
+                  disabled={
+                    createTripMut.isPending ||
+                    !tripRateId ||
+                    dayCount == null ||
+                    !ratesQ.isSuccess
+                  }
                 >
                   {createTripMut.isPending ? "Creating…" : "Create draft claim"}
                 </Button>
@@ -375,7 +380,7 @@ export function ExpenseManagementTravelPage() {
             </div>
             <div className="grid gap-2 md:col-span-2">
               <Label>Expense account</Label>
-              {accountsQ.isError && accountsQ.data === undefined ? null : (
+              {accountsQ.isError ? null : accountsQ.isSuccess ? (
                 <AccountLookup
                   companyId={company.id}
                   accounts={expenseAccounts}
@@ -386,6 +391,8 @@ export function ExpenseManagementTravelPage() {
                   ariaLabel="Per diem expense account"
                   purpose="posting"
                 />
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading expense accounts…</p>
               )}
             </div>
             <div>

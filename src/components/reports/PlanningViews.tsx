@@ -385,7 +385,7 @@ export function FixedAssetRegisterView({ ctx }: { ctx: ReportCtx }) {
         <>
           {accountsQ.isError ? (
             <QueryErrorState queries={[accountsQ]} title="Could not load asset accounts" />
-          ) : (
+          ) : accountsQ.isSuccess ? (
             <ReportAccountMultiSelect
               label="Asset accounts"
               accounts={accountOptions}
@@ -395,7 +395,7 @@ export function FixedAssetRegisterView({ ctx }: { ctx: ReportCtx }) {
               }
               disabled={q.isPending || accountsQ.isPending}
             />
-          )}
+          ) : null}
           <Button size="sm" variant="outline" asChild className="print:hidden">
             <Link to="/fixed-assets">Manage assets</Link>
           </Button>

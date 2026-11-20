@@ -260,7 +260,7 @@ export function SettingsForCompany({
   });
   const auditPageRows = (auditQuery.data ?? []).slice(0, AUDIT_PAGE_SIZE);
   const exportAuditPage = () => {
-    if (!auditPageRows.length) return;
+    if (!auditQuery.isSuccess || !auditPageRows.length) return;
     const csv = buildSettingsAuditCsv(auditPageRows);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -333,6 +333,7 @@ export function SettingsForCompany({
   }, [detailsQuery.data, detailsDirty]);
 
   useEffect(() => {
+    if (!extendedQuery.isSuccess) return;
     const e = extendedQuery.data;
     if (!e?.company) return;
     if (!localizationDirty) {
@@ -354,7 +355,13 @@ export function SettingsForCompany({
       setCurrenciesBaseline(JSON.stringify(e.enabledCurrencies));
       setEnabledFx(e.enabledCurrencies);
     }
-  }, [extendedQuery.data, localizationDirty, brandingDirty, currenciesDirty]);
+  }, [
+    extendedQuery.isSuccess,
+    extendedQuery.data,
+    localizationDirty,
+    brandingDirty,
+    currenciesDirty,
+  ]);
 
   const detailsServerChanged = Boolean(
     detailsDirty && detailsQuery.data && JSON.stringify(detailsQuery.data) !== detailsBaseline,
@@ -1319,7 +1326,12 @@ export function SettingsForCompany({
                       <CardContent>
                         {extendedQuery.isPending ? (
                           <LoadingState rows={3} />
-                        ) : (
+                        ) : extendedQuery.isError ? (
+                          <QueryErrorState
+                            queries={[extendedQuery]}
+                            title="Could not load document sequences"
+                          />
+                        ) : extendedQuery.isSuccess ? (
                           <Table>
                             <TableHeader>
                               <TableRow>
@@ -1359,7 +1371,7 @@ export function SettingsForCompany({
                               ))}
                             </TableBody>
                           </Table>
-                        )}
+                        ) : null}
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -1476,47 +1488,56 @@ export function SettingsForCompany({
                             </div>
                           </div>
                         ) : null}
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Pair</TableHead>
-                              <TableHead>Rate</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead />
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {(extendedQuery.data?.exchangeRates ?? []).map((r) => (
-                              <TableRow key={r.id}>
-                                <TableCell>{r.rate_date}</TableCell>
-                                <TableCell>
-                                  {r.from_currency}/{r.to_currency}
-                                </TableCell>
-                                <TableCell>{r.rate}</TableCell>
-                                <TableCell>{r.voided_at ? "Voided" : "Active"}</TableCell>
-                                <TableCell>
-                                  {canEdit && !r.voided_at ? (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() =>
-                                        voidRate({ data: { rateId: r.id } }).then(async () => {
-                                          await queryClient.invalidateQueries({
-                                            queryKey: ["org-extended", companyId],
-                                          });
-                                          toast.success("Rate voided");
-                                        })
-                                      }
-                                    >
-                                      Void
-                                    </Button>
-                                  ) : null}
-                                </TableCell>
+                        {extendedQuery.isPending ? (
+                          <LoadingState rows={3} />
+                        ) : extendedQuery.isError ? (
+                          <QueryErrorState
+                            queries={[extendedQuery]}
+                            title="Could not load exchange rates"
+                          />
+                        ) : extendedQuery.isSuccess ? (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Pair</TableHead>
+                                <TableHead>Rate</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead />
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+                            <TableBody>
+                              {(extendedQuery.data?.exchangeRates ?? []).map((r) => (
+                                <TableRow key={r.id}>
+                                  <TableCell>{r.rate_date}</TableCell>
+                                  <TableCell>
+                                    {r.from_currency}/{r.to_currency}
+                                  </TableCell>
+                                  <TableCell>{r.rate}</TableCell>
+                                  <TableCell>{r.voided_at ? "Voided" : "Active"}</TableCell>
+                                  <TableCell>
+                                    {canEdit && !r.voided_at ? (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          voidRate({ data: { rateId: r.id } }).then(async () => {
+                                            await queryClient.invalidateQueries({
+                                              queryKey: ["org-extended", companyId],
+                                            });
+                                            toast.success("Rate voided");
+                                          })
+                                        }
+                                      >
+                                        Void
+                                      </Button>
+                                    ) : null}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        ) : null}
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -1588,7 +1609,11 @@ export function SettingsForCompany({
                           <Button
                             variant="outline"
                             size="sm"
-                            disabled={!auditPageRows.length || auditQuery.isFetching}
+                            disabled={
+                              !auditQuery.isSuccess ||
+                              !auditPageRows.length ||
+                              auditQuery.isFetching
+                            }
                             onClick={exportAuditPage}
                           >
                             Export current page (CSV)

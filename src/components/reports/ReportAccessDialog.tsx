@@ -59,11 +59,14 @@ export function ReportAccessDialog({
   });
   const initializedReport = useRef<string | null>(null);
   useEffect(() => {
-    if (q.data && initializedReport.current !== report.id) {
-      setGrants(Object.fromEntries(q.data.grants.map((g) => [g.user_id, g.access])));
-      initializedReport.current = report.id;
+    if (initializedReport.current !== report.id) {
+      setGrants({});
+      initializedReport.current = null;
     }
-  }, [q.data, report.id]);
+    if (!q.isSuccess || !q.data || initializedReport.current === report.id) return;
+    setGrants(Object.fromEntries(q.data.grants.map((g) => [g.user_id, g.access])));
+    initializedReport.current = report.id;
+  }, [q.isSuccess, q.data, report.id]);
   const firms = useQuery({ queryKey: ["reporting-my-firms"], queryFn: () => firmsFn() });
   const mutation = useMutation({
     mutationFn: () =>
@@ -195,7 +198,8 @@ export function ReportAccessDialog({
           <Button
             disabled={
               mutation.isPending ||
-              (level === "selected" && (q.isError || !Object.keys(grants).length)) ||
+              (level === "selected" &&
+                (q.isError || !q.isSuccess || !Object.keys(grants).length)) ||
               (level === "firm" && (!firmId || firms.isError || !firms.isSuccess))
             }
             onClick={() => mutation.mutate()}

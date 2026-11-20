@@ -712,7 +712,7 @@ function OpeningForm({
                   )
                 }
               />
-              {codes.isError ? null : (
+              {codes.isError ? null : codes.isSuccess ? (
                 <LookupSelect
                   ariaLabel="Opening tax code"
                   value={line.code}
@@ -725,6 +725,8 @@ function OpeningForm({
                   })}
                   disabled={codes.isPending}
                 />
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading tax codes…</p>
               )}
 
               <Button

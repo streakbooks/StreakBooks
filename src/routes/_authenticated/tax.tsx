@@ -107,6 +107,7 @@ function TaxConfigPage() {
   const [nonRecAcc, setNonRecAcc] = useState("");
 
   useEffect(() => {
+    if (!settingsQ.isSuccess) return;
     const s = settingsQ.data as {
       tax_regime: string;
       registration_number: string | null;
@@ -129,7 +130,7 @@ function TaxConfigPage() {
     setNonRecAcc(s.non_recoverable_tax_account_id ?? "");
     setFiling(s.filing_frequency ?? "");
     setRegDate((s as { registration_date?: string | null }).registration_date ?? "");
-  }, [settingsQ.data]);
+  }, [settingsQ.isSuccess, settingsQ.data]);
 
   // TX-02: each form sends only its own fields. The server updates just those columns, so saving
   // registration never wipes the account mappings or default codes (and the reverse).
@@ -488,7 +489,7 @@ function TaxConfigPage() {
             </p>
             {accountsQ.isError ? (
               <QueryErrorState queries={[accountsQ]} title="Could not load tax accounts" />
-            ) : (
+            ) : accountsQ.isSuccess ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
                   <Label>Output tax liability</Label>
@@ -530,6 +531,8 @@ function TaxConfigPage() {
                   />
                 </div>
               </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading tax accounts…</p>
             )}
             <div className="flex flex-wrap gap-2">
               <Button
@@ -537,7 +540,7 @@ function TaxConfigPage() {
                 disabled={
                   !canTax ||
                   !mappingsDirty ||
-                  accountsQ.isPending ||
+                  !accountsQ.isSuccess ||
                   accountsQ.isError ||
                   mappingsM.isPending
                 }

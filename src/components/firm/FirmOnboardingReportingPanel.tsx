@@ -259,7 +259,7 @@ export function FirmOnboardingReportingPanel({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1">
           <Label>Client</Label>
-          {overviewQ.isError ? null : (
+          {overviewQ.isError ? null : overviewQ.isSuccess ? (
             <RecordLookupSelect value={effectiveCompany} onValueChange={setSelectedCompany}>
               <SelectTrigger aria-label="Filter onboarding report by client">
                 <SelectValue placeholder="All accessible clients" />
@@ -273,11 +273,13 @@ export function FirmOnboardingReportingPanel({
                 ))}
               </SelectContent>
             </RecordLookupSelect>
+          ) : (
+            <p className="text-sm text-muted-foreground">Loading clients…</p>
           )}
         </div>
         <div className="space-y-1">
           <Label>Assigned staff</Label>
-          {staffQ.isError ? null : (
+          {staffQ.isError ? null : staffQ.isSuccess ? (
             <RecordLookupSelect value={effectiveAssignee} onValueChange={setSelectedAssignee}>
               <SelectTrigger aria-label="Filter onboarding report by staff">
                 <SelectValue />
@@ -292,6 +294,8 @@ export function FirmOnboardingReportingPanel({
                 ))}
               </SelectContent>
             </RecordLookupSelect>
+          ) : (
+            <p className="text-sm text-muted-foreground">Loading staff…</p>
           )}
         </div>
         <div className="space-y-1">

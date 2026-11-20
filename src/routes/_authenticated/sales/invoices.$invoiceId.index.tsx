@@ -178,7 +178,7 @@ function InvoiceDetail() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
-  if (query.isError && query.data === undefined) {
+  if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load invoice" />;
   }
   if (!query.data) {

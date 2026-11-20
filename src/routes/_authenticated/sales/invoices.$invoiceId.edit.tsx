@@ -27,7 +27,7 @@ function EditInvoice() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (q.isPending) return <LoadingState />;
-  if (q.isError && q.data === undefined) {
+  if (q.isError) {
     return <QueryErrorState queries={[q]} title="Could not load invoice" />;
   }
   if (!q.data) {

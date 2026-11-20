@@ -27,7 +27,7 @@ function EditRecurringBillRoute() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (templateQ.isPending) return <LoadingState />;
-  if (templateQ.isError && templateQ.data === undefined) {
+  if (templateQ.isError) {
     return (
       <div className="space-y-3">
         <QueryErrorState queries={[templateQ]} title="Could not load recurring bill" />

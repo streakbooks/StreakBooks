@@ -373,7 +373,7 @@ export function SalesDocumentEditor({
 
   // Defaults (dates in the company's timezone, base currency, terms, notes) once config loads.
   useEffect(() => {
-    if (defaultsApplied || !config || !settingsQ.data) return;
+    if (defaultsApplied || !config || !settingsQ.isSuccess || !settingsQ.data) return;
     setDocDate(today);
     setCurrency(base);
     if (kind === "invoice") {
@@ -385,11 +385,11 @@ export function SalesDocumentEditor({
       setMemo(settingsQ.data.sales_default_notes);
     }
     setDefaultsApplied(true);
-  }, [defaultsApplied, config, settingsQ.data, today, base, kind]);
+  }, [defaultsApplied, config, settingsQ.isSuccess, settingsQ.data, today, base, kind]);
 
   // "Credit from invoice": copy customer, currency and lines from the source invoice.
   useEffect(() => {
-    if (sourceApplied || !sourceInvQ.data) return;
+    if (sourceApplied || !sourceInvQ.isSuccess || !sourceInvQ.data) return;
     const inv = sourceInvQ.data;
     setContactId(inv.contact_id);
     setCurrency(inv.currency_code);
@@ -413,7 +413,7 @@ export function SalesDocumentEditor({
       ),
     );
     setSourceApplied(true);
-  }, [sourceApplied, sourceInvQ.data]);
+  }, [sourceApplied, sourceInvQ.isSuccess, sourceInvQ.data]);
 
   const customers = useMemo(
     () =>
@@ -777,11 +777,12 @@ export function SalesDocumentEditor({
     return <LoadingState />;
   }
   const documentOptionQueries = [customersQ, accountsQ, configQ, settingsQ, productsQ];
-  if (documentOptionQueries.some((query) => query.isError && query.data === undefined)) {
+  if (documentOptionQueries.some((query) => query.isError)) {
     return (
       <QueryErrorState queries={documentOptionQueries} title="Could not load document options" />
     );
   }
+  const documentOptionsReady = documentOptionQueries.every((query) => query.isSuccess);
 
   const backTo =
     kind === "invoice"
@@ -857,7 +858,7 @@ export function SalesDocumentEditor({
                   {savedId ? "Save changes" : "Save draft"}
                 </>
               }
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || !documentOptionsReady}
               busy={mutation.isPending}
               onClick={() => mutation.mutate(false)}
               menuLabel="More save options"
@@ -868,14 +869,18 @@ export function SalesDocumentEditor({
                         id: "authorise",
                         label: copy.authorise,
                         onSelect: () => mutation.mutate(true),
-                        disabled: mutation.isPending,
+                        disabled: mutation.isPending || !documentOptionsReady,
                       },
                     ]
                   : []
               }
             />
             {copy.authorise ? (
-              <Button size="sm" disabled={mutation.isPending} onClick={() => mutation.mutate(true)}>
+              <Button
+                size="sm"
+                disabled={mutation.isPending || !documentOptionsReady}
+                onClick={() => mutation.mutate(true)}
+              >
                 {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                 {copy.authorise}
               </Button>

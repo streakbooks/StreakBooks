@@ -237,7 +237,12 @@ export function ExpenseManagementPettyCashPage() {
               <div className="flex items-end">
                 <Button
                   onClick={() => createMut.mutate()}
-                  disabled={createMut.isPending || !name.trim()}
+                  disabled={
+                    createMut.isPending ||
+                    !name.trim() ||
+                    !banksQ.isSuccess ||
+                    banksQ.isError
+                  }
                 >
                   {createMut.isPending ? "Saving…" : "Create float"}
                 </Button>

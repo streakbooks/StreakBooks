@@ -252,11 +252,14 @@ function CashCoding() {
   });
 
   const requiredQueries = [accountsQ, optionsQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isPending))
+    return <LoadingState />;
+  if (requiredQueries.some((query) => query.isError))
     return <QueryErrorState queries={requiredQueries} title="Could not load cash coding options" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
+  const optionsReady = accountsQ.isSuccess && optionsQ.isSuccess;
   const allPageSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
   const taxChoices = (optionsQ.data?.taxCodes ?? []).filter(
     (t) => t.rateActive && t.treatment !== "reverse_charge",
@@ -393,7 +396,7 @@ function CashCoding() {
         />
         <Button
           size="sm"
-          disabled={!selected.size || !offsetAccountId || bulkM.isPending}
+          disabled={!selected.size || !offsetAccountId || bulkM.isPending || !optionsReady}
           onClick={() => bulkM.mutate()}
         >
           Post selected ({selected.size})
@@ -402,7 +405,7 @@ function CashCoding() {
           title={`Exclude ${selected.size} transaction(s)?`}
           description="Excluded lines are not posted anywhere. You can restore them later."
           confirmLabel="Exclude"
-          disabled={!selected.size || excludeM.isPending}
+          disabled={!selected.size || excludeM.isPending || !optionsReady}
           onConfirm={() => excludeM.mutate()}
         >
           Exclude selected
@@ -413,7 +416,7 @@ function CashCoding() {
             title={`Code all ${total} matching lines?`}
             description="Every uncategorised line matching the account and date filters above is coded to the chosen account, one journal each. Lines that cannot be coded are skipped and reported."
             confirmLabel={`Code all ${total}`}
-            disabled={!offsetAccountId || allMatchingM.isPending}
+            disabled={!offsetAccountId || allMatchingM.isPending || !optionsReady}
             onConfirm={() => allMatchingM.mutate()}
           >
             Select all {total} matching and code

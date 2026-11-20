@@ -29,6 +29,7 @@ import type { FormControlWidth } from "@/lib/ui/form-density";
 import { TotalsSummary } from "@/components/common/TotalsSummary";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import type { BankAdjustmentType } from "@/lib/create-new/journal-contracts";
 
@@ -221,11 +222,15 @@ export function MoneyDocumentPanel({
       : []),
     ...(kind === "bank_deposit" ? [undepositedQ] : []),
   ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined)) {
+  if (requiredQueries.some((query) => query.isPending)) {
+    return <LoadingState />;
+  }
+  if (requiredQueries.some((query) => query.isError)) {
     return (
       <QueryErrorState queries={requiredQueries} title="Could not load money document options" />
     );
   }
+  const optionsReady = requiredQueries.every((query) => query.isSuccess);
 
   const moneyTotals = (() => {
     try {
@@ -276,7 +281,7 @@ export function MoneyDocumentPanel({
               type="button"
               variant="outline"
               size="sm"
-              disabled={saveM.isPending}
+              disabled={saveM.isPending || !optionsReady}
               onClick={() => {
                 addAnotherPending.current = true;
                 setError(null);
@@ -288,7 +293,7 @@ export function MoneyDocumentPanel({
             <Button
               type="button"
               size="sm"
-              disabled={saveM.isPending}
+              disabled={saveM.isPending || !optionsReady}
               onClick={() => {
                 addAnotherPending.current = false;
                 setError(null);

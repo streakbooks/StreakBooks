@@ -150,8 +150,9 @@ export function ExpenseManagementSettingsPage() {
   );
 
   useEffect(() => {
-    if (settingsQ.data) setDraft(toDraft(settingsQ.data));
-  }, [settingsQ.data]);
+    if (!settingsQ.isSuccess || !settingsQ.data) return;
+    setDraft(toDraft(settingsQ.data));
+  }, [settingsQ.isSuccess, settingsQ.data]);
 
   const buildSaveDraft = (source: Draft, enabledOverride?: boolean) => {
     const threshold = Number(source.requireReceiptAboveMinor);

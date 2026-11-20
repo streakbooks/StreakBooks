@@ -501,11 +501,12 @@ function RequisitionEditor({
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
   const requiredQueries = [suppliers, accounts];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return (
       <QueryErrorState queries={requiredQueries} title="Could not load purchasing options" />
     );
   if (suppliers.isPending || accounts.isPending) return <LoadingState />;
+  const optionsReady = suppliers.isSuccess && accounts.isSuccess;
   return (
     <TransactionWorkspace
       title={initial ? "Edit requisition" : "New purchase requisition"}
@@ -647,7 +648,13 @@ function RequisitionEditor({
           ) : null}
           <Button
             size="sm"
-            disabled={mutation.isPending || !can("purchases.draft") || !contactId || !title.trim()}
+            disabled={
+              mutation.isPending ||
+              !can("purchases.draft") ||
+              !contactId ||
+              !title.trim() ||
+              !optionsReady
+            }
             onClick={() => mutation.mutate()}
           >
             {mutation.isPending ? "Saving…" : "Save draft"}

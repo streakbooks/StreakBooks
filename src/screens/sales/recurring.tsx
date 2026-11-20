@@ -133,11 +133,11 @@ function RecurringInvoiceWorkspace({
   });
 
   useEffect(() => {
-    if (!nextDue && configQ.data) setNextDue(configQ.data.today);
-  }, [nextDue, configQ.data]);
+    if (!nextDue && configQ.isSuccess && configQ.data) setNextDue(configQ.data.today);
+  }, [nextDue, configQ.isSuccess, configQ.data]);
 
   useEffect(() => {
-    if (!editingId || !scheduleQ.data || hydratedId === editingId) return;
+    if (!editingId || !scheduleQ.isSuccess || !scheduleQ.data || hydratedId === editingId) return;
     const r = scheduleQ.data;
     setName(r.name);
     setContactId(r.contact_id);
@@ -154,7 +154,7 @@ function RecurringInvoiceWorkspace({
         : DEFAULT_LINES(),
     );
     setHydratedId(editingId);
-  }, [editingId, scheduleQ.data, hydratedId]);
+  }, [editingId, scheduleQ.isSuccess, scheduleQ.data, hydratedId]);
 
   const incomeAccounts = useMemo(
     () =>
@@ -238,7 +238,7 @@ function RecurringInvoiceWorkspace({
   });
 
   const requiredQueries = [customersQ, accountsQ, productsQ, configQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined)) {
+  if (requiredQueries.some((query) => query.isError)) {
     return (
       <QueryErrorState queries={requiredQueries} title="Could not load recurring invoice options" />
     );
@@ -249,10 +249,13 @@ function RecurringInvoiceWorkspace({
     return <LoadingState />;
   }
   if (editingId && scheduleQ.isPending) return <LoadingState />;
-  if (editingId && scheduleQ.isError && scheduleQ.data === undefined) {
+  if (editingId && scheduleQ.isError) {
     return <QueryErrorState queries={[scheduleQ]} title="Could not load schedule" />;
   }
   if (editingId && !hydratedId) return <LoadingState />;
+  const optionsReady =
+    requiredQueries.every((query) => query.isSuccess) &&
+    (!editingId || scheduleQ.isSuccess);
 
   return (
     <TransactionWorkspace
@@ -269,7 +272,11 @@ function RecurringInvoiceWorkspace({
           <Button type="button" variant="outline" size="sm" onClick={onCancel}>
             Cancel
           </Button>
-          <Button size="sm" disabled={saveM.isPending} onClick={() => saveM.mutate()}>
+          <Button
+            size="sm"
+            disabled={saveM.isPending || !optionsReady}
+            onClick={() => saveM.mutate()}
+          >
             {saveM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
             {editingId ? "Save changes" : "Create schedule"}
           </Button>

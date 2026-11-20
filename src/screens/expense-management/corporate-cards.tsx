@@ -600,6 +600,8 @@ export function ExpenseManagementCorporateCardsPage() {
               <LoadingState />
             ) : txQ.isError ? (
               <QueryErrorState queries={[txQ]} title="Could not load card transactions" />
+            ) : !txQ.isSuccess ? (
+              <LoadingState />
             ) : disputedTx.length === 0 ? (
               <EmptyState
                 title="No disputes"

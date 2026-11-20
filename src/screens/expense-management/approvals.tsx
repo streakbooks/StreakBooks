@@ -598,6 +598,10 @@ export function ExpenseManagementApprovalsPage() {
               </div>
               {delegationsQ.isPending ? (
                 <LoadingState />
+              ) : delegationsQ.isError ? (
+                <QueryErrorState queries={[delegationsQ]} title="Could not load delegations" />
+              ) : !delegationsQ.isSuccess ? (
+                <LoadingState />
               ) : (delegationsQ.data ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground">No delegations recorded yet.</p>
               ) : (

@@ -1090,6 +1090,33 @@ export const cancelExpenseClaimPayrollQueue = createServerFn({ method: "POST" })
     return mapExpenseClaimDetail(raw);
   });
 
+export const getExpenseRequiredApprovalCount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(
+    async ({ data, context }): Promise<{ requiredApprovalCount: number; version: number }> => {
+      await assertCompanyMember(context.supabase, data.companyId);
+      const { data: row, error } = await context.supabase
+        .from("expense_management_settings" as never)
+        .select("required_approval_count, version" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .maybeSingle();
+      if (error) {
+        if (isMissingRelation(error)) {
+          throw new Error(EXPENSE_MULTILEVEL_APPROVAL_MIGRATION);
+        }
+        throw new Error(error.message);
+      }
+      const record = row as { required_approval_count?: number; version?: number } | null;
+      return {
+        requiredApprovalCount: Number(record?.required_approval_count ?? 1),
+        version: Number(record?.version ?? 0),
+      };
+    },
+  );
+
 export const saveExpenseRequiredApprovalCount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; count: number }) => ({

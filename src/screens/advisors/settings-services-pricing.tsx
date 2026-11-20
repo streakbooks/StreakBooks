@@ -281,10 +281,10 @@ export function AdvisorsServicesPricingPage() {
   const [newPlanCode, setNewPlanCode] = useState("");
 
   useEffect(() => {
-    if (!query.data) return;
+    if (!query.isSuccess || !query.data) return;
     setDraft(clonePayload(query.data.draft?.payload ?? query.data.live));
     setLabel(query.data.draft?.label || "Working draft");
-  }, [query.data]);
+  }, [query.isSuccess, query.data]);
 
   const canEdit = query.data?.role === "platform_owner" || query.data?.role === "platform_finance";
   const activeService = useMemo(

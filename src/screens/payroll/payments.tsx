@@ -392,7 +392,12 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <Button
                 size="sm"
                 variant="outline"
-                disabled={exportMut.isPending}
+                disabled={
+                  exportMut.isPending ||
+                  !paymentsQ.isSuccess ||
+                  paymentsQ.isError ||
+                  paymentsQ.isFetching
+                }
                 onClick={() => exportMut.mutate()}
               >
                 Generic bank CSV

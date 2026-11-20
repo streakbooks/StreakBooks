@@ -146,7 +146,16 @@ export function ExpenseManagementReportsPage() {
       description="Claim volumes, open aging, CSV export and recent audit events."
       actions={
         canExport ? (
-          <Button size="sm" disabled={exportMut.isPending} onClick={() => exportMut.mutate()}>
+          <Button
+            size="sm"
+            disabled={
+              exportMut.isPending ||
+              !reportQ.isSuccess ||
+              reportQ.isError ||
+              reportQ.isFetching
+            }
+            onClick={() => exportMut.mutate()}
+          >
             {exportMut.isPending ? "Exporting…" : "Export claims CSV"}
           </Button>
         ) : null

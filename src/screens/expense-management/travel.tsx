@@ -245,7 +245,9 @@ export function ExpenseManagementTravelPage() {
             Creates a draft employee-paid claim with one per diem line. Inclusive calendar days ×
             daily rate.
           </p>
-          {ratesQ.isError ? null : !ratesQ.isSuccess ? null : activeRates.length === 0 ? (
+          {ratesQ.isError ? null : ratesQ.isPending || !ratesQ.isSuccess ? (
+            <LoadingState />
+          ) : activeRates.length === 0 ? (
             <EmptyState
               title="No effective per diem rates"
               description={

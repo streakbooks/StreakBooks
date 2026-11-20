@@ -50,7 +50,7 @@ export function AdvisorsAdminAppointmentsPage() {
   const [exceptionLabel, setExceptionLabel] = useState("");
 
   useEffect(() => {
-    if (!query.data) return;
+    if (!query.isSuccess || !query.data) return;
     const settings = query.data.settings;
     const advisor = query.data.advisor;
     if (settings) {
@@ -60,7 +60,7 @@ export function AdvisorsAdminAppointmentsPage() {
       setMaxDaily(settings.maxDailyAppointments);
     }
     if (advisor) setTimezone(advisor.timezone);
-  }, [query.data]);
+  }, [query.isSuccess, query.data]);
 
   const saveM = useMutation({
     mutationFn: () =>

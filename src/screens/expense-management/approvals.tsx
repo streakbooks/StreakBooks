@@ -46,6 +46,7 @@ import {
   returnExpenseClaim,
   revokeExpenseApprovalDelegation,
   saveExpenseApprovalDelegation,
+  getExpenseRequiredApprovalCount,
   saveExpenseApprovalEscalationDays,
   saveExpenseRequiredApprovalCount,
   startExpenseClaimReview,
@@ -88,12 +89,20 @@ export function ExpenseManagementApprovalsPage() {
   const fetchEscalations = useServerFn(listExpenseApprovalEscalations);
   const refreshEscalations = useServerFn(refreshExpenseApprovalEscalations);
   const saveEscalationDays = useServerFn(saveExpenseApprovalEscalationDays);
+  const fetchRequiredApprovals = useServerFn(getExpenseRequiredApprovalCount);
   const saveRequiredApprovals = useServerFn(saveExpenseRequiredApprovalCount);
 
   const escalationsQ = useQuery({
     queryKey: ["expense-approval-escalations", company?.id],
     queryFn: () => fetchEscalations({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && (canApprove || can("expenses.audit" as Permission)),
+    retry: false,
+  });
+
+  const requiredApprovalsQ = useQuery({
+    queryKey: ["expense-required-approval-count", company?.id],
+    queryFn: () => fetchRequiredApprovals({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canApprove,
     retry: false,
   });
 
@@ -294,9 +303,12 @@ export function ExpenseManagementApprovalsPage() {
       }
       return saveRequiredApprovals({ data: { companyId: company.id, count } });
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       setRequiredApprovalsDraft(String(result.requiredApprovalCount));
       toast.success(`Required approvals set to ${result.requiredApprovalCount}`);
+      await queryClient.invalidateQueries({
+        queryKey: ["expense-required-approval-count", company?.id],
+      });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -305,6 +317,11 @@ export function ExpenseManagementApprovalsPage() {
     if (!escalationsQ.isSuccess || !escalationsQ.data) return;
     setEscalationDaysDraft(String(escalationsQ.data.escalationDays));
   }, [escalationsQ.isSuccess, escalationsQ.data]);
+
+  useEffect(() => {
+    if (!requiredApprovalsQ.isSuccess || !requiredApprovalsQ.data) return;
+    setRequiredApprovalsDraft(String(requiredApprovalsQ.data.requiredApprovalCount));
+  }, [requiredApprovalsQ.isSuccess, requiredApprovalsQ.data]);
 
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -404,13 +421,19 @@ export function ExpenseManagementApprovalsPage() {
             size="sm"
             disabled={
               saveRequiredApprovalsMut.isPending ||
-              !escalationsQ.isSuccess ||
-              escalationsQ.isError
+              !requiredApprovalsQ.isSuccess ||
+              requiredApprovalsQ.isError
             }
             onClick={() => saveRequiredApprovalsMut.mutate()}
           >
             {saveRequiredApprovalsMut.isPending ? "Saving…" : "Save policy"}
           </Button>
+          {requiredApprovalsQ.isError ? (
+            <QueryErrorState
+              queries={[requiredApprovalsQ]}
+              title="Could not load approval policy"
+            />
+          ) : null}
         </section>
       ) : null}
 

@@ -252,9 +252,11 @@ export const DocumentRecordPanel = forwardRef<
             You can view files. Adding files is not available for your role.
           </p>
         )}
-        {filesQ.isError ? (
+        {filesQ.isPending ? (
+          <LoadingState />
+        ) : filesQ.isError ? (
           <QueryErrorState queries={[filesQ]} title="Could not load document files" />
-        ) : (
+        ) : filesQ.isSuccess || pending.length > 0 ? (
           <ul className="space-y-1 text-sm">
             {(filesQ.data ?? []).map((file) => (
               <li key={file.id} className="flex flex-wrap items-center gap-2">
@@ -308,7 +310,7 @@ export const DocumentRecordPanel = forwardRef<
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
         <p className="text-xs text-muted-foreground">
           Limit {MAX_FILE_BYTES / (1024 * 1024)} MB per file.
         </p>
@@ -340,7 +342,12 @@ export const DocumentRecordPanel = forwardRef<
               type="button"
               size="sm"
               variant="outline"
-              disabled={addNoteM.isPending || !draft.trim()}
+              disabled={
+                addNoteM.isPending ||
+                !draft.trim() ||
+                notesQ.isError ||
+                (Boolean(entityId) && !notesQ.isSuccess)
+              }
               onClick={() => addNoteM.mutate()}
             >
               Add note

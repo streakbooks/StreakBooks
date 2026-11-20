@@ -91,11 +91,13 @@ function PricingPage() {
     retry: false,
   });
   const [interval, setInterval] = useState<"month" | "year">("month");
-  const currency = query.data?.currency ?? "USD";
-  const priceList = prices.data?.list ?? null;
-  const country = prices.data?.country ?? null;
+  const currency = (query.isSuccess ? query.data?.currency : undefined) ?? "USD";
+  const priceList = prices.isSuccess ? (prices.data?.list ?? null) : null;
+  const country = prices.isSuccess ? (prices.data?.country ?? null) : null;
   const [signedIn, setSignedIn] = useState(false);
-  const plans = (Array.isArray(query.data?.plans) ? query.data.plans : []) as PublicPlan[];
+  const plans = (
+    query.isSuccess && Array.isArray(query.data?.plans) ? query.data.plans : []
+  ) as PublicPlan[];
   const bookPrice = (code: string, cadence: "month" | "year") =>
     planPrice(priceList, code, cadence);
   const anyPriced = plans.some(
@@ -201,9 +203,10 @@ function PricingPage() {
       {query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load published plans" />
       ) : null}
-      {query.data?.ready === false ? (
+      {query.isSuccess && query.data?.ready === false ? (
         <p>Published prices appear here after the billing migration is applied.</p>
       ) : null}
+      {query.isSuccess ? (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => {
           const published = bookPrice(plan.code, interval);
@@ -279,6 +282,7 @@ function PricingPage() {
           );
         })}
       </div>
+      ) : null}
       <section className="space-y-2 text-sm">
         <h2 className="text-lg font-semibold">Questions</h2>
         {trialDays ? (

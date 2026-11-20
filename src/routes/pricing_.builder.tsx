@@ -44,7 +44,7 @@ function PlanBuilderPage() {
         },
       }),
   });
-  const result = mutation.data;
+  const result = mutation.isSuccess ? mutation.data : undefined;
   const currency = (result?.currency ?? "USD") as BillingCurrency;
   return (
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-10">
@@ -114,9 +114,12 @@ function PlanBuilderPage() {
         </Button>
       </form>
       {mutation.isError ? (
-        <p role="alert">
-          {friendlyAuthError(mutation.error)}
-        </p>
+        <div role="alert" className="space-y-2 rounded-md border border-destructive/40 p-3 text-sm">
+          <p>{friendlyAuthError(mutation.error)}</p>
+          <Button type="button" size="sm" variant="outline" onClick={() => mutation.reset()}>
+            Dismiss and try again
+          </Button>
+        </div>
       ) : null}
       {result?.message ? <p role="status">{result.message}</p> : null}
       {result?.quote ? (

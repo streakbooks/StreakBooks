@@ -52,7 +52,7 @@ export function LegalDocumentsAdmin({ canEdit, isOwner }: { canEdit: boolean; is
       {query.isSuccess && query.data ? (
         <DocumentList documents={query.data} canEdit={canEdit} isOwner={isOwner} />
       ) : null}
-      {canEdit ? <DraftForm /> : null}
+      {canEdit && !query.isError ? <DraftForm /> : null}
     </section>
   );
 }

@@ -66,7 +66,7 @@ export function CountryPricingAdmin({ canEdit }: { canEdit: boolean }) {
   if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load country pricing" />;
   }
-  if (!query.data) return null;
+  if (!query.isSuccess || !query.data) return null;
   return <CountryPricingPanels data={query.data} canEdit={canEdit} />;
 }
 

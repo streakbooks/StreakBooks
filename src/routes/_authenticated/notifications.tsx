@@ -945,7 +945,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
             >
               <div className="space-y-1">
                 <label className="text-sm font-medium">Team member</label>
-                {recipients.isError ? null : (
+                {recipients.isError ? null : recipients.isSuccess ? (
                   <RecordLookupSelect value={recipient} onValueChange={setRecipient}>
                     <SelectTrigger aria-label="Select document recipient">
                       <SelectValue placeholder="Choose colleague" />
@@ -958,6 +958,11 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                       ))}
                     </SelectContent>
                   </RecordLookupSelect>
+                ) : (
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                    Loading team members…
+                  </p>
                 )}
               </div>
               <div className="space-y-1">
@@ -999,7 +1004,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                 disabled={
                   createRequest.isPending ||
                   recipients.isError ||
-                  recipients.isPending ||
+                  !recipients.isSuccess ||
                   !recipient ||
                   subject.trim().length < 3
                 }
@@ -1040,7 +1045,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                   </a>
                   {files.isError ? (
                     <QueryErrorState queries={[files]} title="Could not load uploaded files" />
-                  ) : (
+                  ) : files.isSuccess ? (
                     <RecordLookupSelect
                       value={uploaded[r.id] ?? ""}
                       onValueChange={(id) => setUploaded((old) => ({ ...old, [r.id]: id }))}
@@ -1056,6 +1061,11 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                         ))}
                       </SelectContent>
                     </RecordLookupSelect>
+                  ) : (
+                    <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                      Loading uploaded files…
+                    </p>
                   )}
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => void files.refetch()}>
@@ -1063,7 +1073,12 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                     </Button>
                     <Button
                       size="sm"
-                      disabled={!uploaded[r.id] || finishRequest.isPending || files.isError}
+                      disabled={
+                        !uploaded[r.id] ||
+                        finishRequest.isPending ||
+                        files.isError ||
+                        !files.isSuccess
+                      }
                       onClick={() =>
                         finishRequest.mutate({ id: r.id, attachmentId: uploaded[r.id]! })
                       }

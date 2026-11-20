@@ -1137,7 +1137,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                 </div>
                 <div className="space-y-1">
                   <Label>Group membership</Label>
-                  {groupsQ.isError ? null : (
+                  {groupsQ.isError ? null : groupsQ.isSuccess ? (
                     <RecordLookupSelect
                       required
                       value={filters.groupId || "any"}
@@ -1157,11 +1157,13 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                         ))}
                       </SelectContent>
                     </RecordLookupSelect>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Loading groups…</p>
                   )}
                 </div>
                 <div className="space-y-1">
                   <Label>Tag membership</Label>
-                  {tagsQ.isError ? null : (
+                  {tagsQ.isError ? null : tagsQ.isSuccess ? (
                     <RecordLookupSelect
                       required
                       value={filters.tagId || "any"}
@@ -1179,6 +1181,8 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                         ))}
                       </SelectContent>
                     </RecordLookupSelect>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Loading tags…</p>
                   )}
                 </div>
                 {groupsQ.isError || tagsQ.isError ? (

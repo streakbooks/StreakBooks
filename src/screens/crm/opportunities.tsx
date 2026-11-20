@@ -363,7 +363,7 @@ export function CrmOpportunitiesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Stage</Label>
-                  {pipelines.isError ? null : (
+                  {pipelines.isError ? null : pipelines.isSuccess ? (
                     <RecordLookupSelect
                       value={stageId || "__default"}
                       onValueChange={(v) => setStageId(v === "__default" ? "" : v)}
@@ -382,6 +382,8 @@ export function CrmOpportunitiesPage() {
                           ))}
                       </SelectContent>
                     </RecordLookupSelect>
+                  ) : (
+                    <LoadingState />
                   )}
                 </div>
                 <div className="sm:col-span-2 space-y-2">
@@ -403,7 +405,7 @@ export function CrmOpportunitiesPage() {
                       createMutation.isPending ||
                       !formValidation.valid ||
                       !selectedPipeline ||
-                      pipelines.isLoading ||
+                      !pipelines.isSuccess ||
                       pipelines.isError
                     }
                     onClick={() => createMutation.mutate()}
@@ -418,7 +420,7 @@ export function CrmOpportunitiesPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="min-w-40 space-y-1">
               <Label htmlFor="crm-pipeline-picker">Pipeline</Label>
-              {pipelines.isError ? null : (
+              {pipelines.isError ? null : pipelines.isSuccess ? (
                 <RecordLookupSelect
                   value={selectedPipeline?.id ?? ""}
                   onValueChange={(value) => {
@@ -440,6 +442,8 @@ export function CrmOpportunitiesPage() {
                       ))}
                   </SelectContent>
                 </RecordLookupSelect>
+              ) : (
+                <LoadingState />
               )}
             </div>
             <Label htmlFor="crm-deal-search" className="sr-only">

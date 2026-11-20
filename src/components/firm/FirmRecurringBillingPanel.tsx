@@ -192,7 +192,7 @@ export function FirmRecurringBillingPanel({
               <Label>Engagement</Label>
               {engagementsQ.isError ? (
                 <QueryErrorState queries={[engagementsQ]} title="Cannot load engagements" />
-              ) : (
+              ) : engagementsQ.isSuccess ? (
                 <RecordLookupSelect
                   required
                   value={currentEngagementId}
@@ -209,6 +209,8 @@ export function FirmRecurringBillingPanel({
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
+              ) : (
+                <LoadingState rows={1} />
               )}
             </div>
           </div>

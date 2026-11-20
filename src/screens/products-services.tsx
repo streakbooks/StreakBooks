@@ -566,7 +566,7 @@ function ProductsWorkspace({
   }
 
   const requiredQueries = [accountsQ, taxCodesQ, categoriesQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return (
       <QueryErrorState queries={requiredQueries} title="Could not load item accounting options" />
     );
@@ -588,30 +588,34 @@ function ProductsWorkspace({
       </div>
       <div className="grid gap-1">
         <Label>Category</Label>
-        <RecordLookupSelect
-          value={form.categoryId || "none"}
-          onValueChange={(categoryId) =>
-            setForm((current) => ({
-              ...current,
-              categoryId: categoryId === "none" ? "" : categoryId,
-            }))
-          }
-        >
-          <SelectTrigger aria-label="Product category">
-            <SelectValue placeholder="No category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">No category</SelectItem>
-            {(categoriesQ.data ?? [])
-              .filter((category) => category.is_active || category.id === form.categoryId)
-              .map((category) => (
-                <SelectItem value={category.id} key={category.id}>
-                  {category.name}
-                  {category.is_active ? "" : " (archived)"}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </RecordLookupSelect>
+        {categoriesQ.isPending ? (
+          <LoadingState />
+        ) : categoriesQ.isSuccess ? (
+          <RecordLookupSelect
+            value={form.categoryId || "none"}
+            onValueChange={(categoryId) =>
+              setForm((current) => ({
+                ...current,
+                categoryId: categoryId === "none" ? "" : categoryId,
+              }))
+            }
+          >
+            <SelectTrigger aria-label="Product category">
+              <SelectValue placeholder="No category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No category</SelectItem>
+              {(categoriesQ.data ?? [])
+                .filter((category) => category.is_active || category.id === form.categoryId)
+                .map((category) => (
+                  <SelectItem value={category.id} key={category.id}>
+                    {category.name}
+                    {category.is_active ? "" : " (archived)"}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </RecordLookupSelect>
+        ) : null}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-1">
@@ -677,52 +681,64 @@ function ProductsWorkspace({
       </div>
       <div className="grid gap-1">
         <Label>Income account</Label>
-        <AccountLookup
-          ariaLabel="Income account"
-          accounts={incomeAccounts}
-          value={form.incomeAccountId}
-          onChange={(v) => setForm((f) => ({ ...f, incomeAccountId: v }))}
-          companyId={companyId}
-          purpose="income"
-          productKind={form.kind}
-          placeholder="None"
-          allowClear
-        />
+        {accountsQ.isPending ? (
+          <LoadingState />
+        ) : accountsQ.isSuccess ? (
+          <AccountLookup
+            ariaLabel="Income account"
+            accounts={incomeAccounts}
+            value={form.incomeAccountId}
+            onChange={(v) => setForm((f) => ({ ...f, incomeAccountId: v }))}
+            companyId={companyId}
+            purpose="income"
+            productKind={form.kind}
+            placeholder="None"
+            allowClear
+          />
+        ) : null}
       </div>
       <div className="grid gap-1">
         <Label>Purchase / expense account</Label>
-        <AccountLookup
-          ariaLabel="Purchase / expense account"
-          accounts={expenseAccounts}
-          value={form.expenseAccountId}
-          onChange={(v) => setForm((f) => ({ ...f, expenseAccountId: v }))}
-          companyId={companyId}
-          purpose="expense"
-          productKind={form.kind}
-          placeholder="None"
-          allowClear
-        />
+        {accountsQ.isSuccess ? (
+          <AccountLookup
+            ariaLabel="Purchase / expense account"
+            accounts={expenseAccounts}
+            value={form.expenseAccountId}
+            onChange={(v) => setForm((f) => ({ ...f, expenseAccountId: v }))}
+            companyId={companyId}
+            purpose="expense"
+            productKind={form.kind}
+            placeholder="None"
+            allowClear
+          />
+        ) : null}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-1">
           <Label>Sales tax</Label>
-          <TaxSelect
-            companyId={companyId}
-            canCreate={canTax}
-            value={form.salesTaxBps}
-            choices={taxChoices}
-            onChange={(v) => setForm((f) => ({ ...f, salesTaxBps: v }))}
-          />
+          {taxCodesQ.isPending ? (
+            <LoadingState />
+          ) : taxCodesQ.isSuccess ? (
+            <TaxSelect
+              companyId={companyId}
+              canCreate={canTax}
+              value={form.salesTaxBps}
+              choices={taxChoices}
+              onChange={(v) => setForm((f) => ({ ...f, salesTaxBps: v }))}
+            />
+          ) : null}
         </div>
         <div className="grid gap-1">
           <Label>Purchase tax</Label>
-          <TaxSelect
-            companyId={companyId}
-            canCreate={canTax}
-            value={form.purchaseTaxBps}
-            choices={taxChoices}
-            onChange={(v) => setForm((f) => ({ ...f, purchaseTaxBps: v }))}
-          />
+          {taxCodesQ.isSuccess ? (
+            <TaxSelect
+              companyId={companyId}
+              canCreate={canTax}
+              value={form.purchaseTaxBps}
+              choices={taxChoices}
+              onChange={(v) => setForm((f) => ({ ...f, purchaseTaxBps: v }))}
+            />
+          ) : null}
         </div>
       </div>
       <div className="flex items-center gap-3 rounded-md border p-3">
@@ -755,7 +771,10 @@ function ProductsWorkspace({
     purchaseCostInvalid ||
     Boolean(codeProblem) ||
     !form.name.trim() ||
-    !canManage;
+    !canManage ||
+    !accountsQ.isSuccess ||
+    !taxCodesQ.isSuccess ||
+    !categoriesQ.isSuccess;
 
   if (open && !editing) {
     return (
@@ -833,7 +852,13 @@ function ProductsWorkspace({
           <Button
             size="sm"
             variant="outline"
-            disabled={exportMut.isPending || productsQ.isPending || q !== debouncedQ}
+            disabled={
+              exportMut.isPending ||
+              productsQ.isPending ||
+              !productsQ.isSuccess ||
+              productsQ.isError ||
+              q !== debouncedQ
+            }
             title="Reporting export (up to 5,000 items / 5 MB). Existing CSV import is not lossless."
             onClick={() => exportMut.mutate()}
           >

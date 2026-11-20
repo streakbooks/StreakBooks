@@ -200,12 +200,11 @@ export function TaxReturnsPanel({
     queryFn: () => fetchDefaults({ data: { companyId } }),
   });
   useEffect(() => {
-    if (defaults.data && !start && !end) {
-      setStart(defaults.data.start);
-      setEnd(defaults.data.end);
-      setBasis(defaults.data.basis);
-    }
-  }, [defaults.data, start, end]);
+    if (!defaults.isSuccess || !defaults.data || start || end) return;
+    setStart(defaults.data.start);
+    setEnd(defaults.data.end);
+    setBasis(defaults.data.basis);
+  }, [defaults.isSuccess, defaults.data, start, end]);
 
   const preview = useQuery({
     queryKey: ["tax-return-preview", companyId, calc?.start, calc?.end, calc?.basis],
@@ -449,6 +448,8 @@ export function TaxReturnsPanel({
                     !canTax ||
                     previewStale ||
                     saveDraft.isPending ||
+                    !preview.isSuccess ||
+                    preview.isError ||
                     (list.data ? !list.data.available : false)
                   }
                   onClick={() => saveDraft.mutate()}
@@ -458,7 +459,7 @@ export function TaxReturnsPanel({
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={previewStale}
+                  disabled={previewStale || !preview.isSuccess || preview.isError}
                   onClick={() =>
                     exportCsv(
                       pv.lines,
@@ -582,7 +583,9 @@ export function TaxReturnsPanel({
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
-              {d ? `Return ${f.date(d.period_start)} to ${f.date(d.period_end)}` : "Return"}
+              {detail.isSuccess && d
+                ? `Return ${f.date(d.period_start)} to ${f.date(d.period_end)}`
+                : "Return"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

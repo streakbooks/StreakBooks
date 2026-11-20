@@ -168,7 +168,7 @@ export function PersistentReconciliationReviews({
           <Button type="button" variant="outline" disabled={busy} onClick={refresh}>
             {queue.isPending ? "Loading saved cases…" : "Load saved review cases"}
           </Button>
-          {queue.data ? (
+          {queue.isSuccess && queue.data ? (
             <span className="text-xs text-muted-foreground">
               Showing {queue.data.cases.length} saved case(s)
               {queue.data.hasMore ? " · more than 100 exist; queue is sampled" : ""}
@@ -233,23 +233,27 @@ export function PersistentReconciliationReviews({
           </div>
           <div className="space-y-2">
             <Label htmlFor="exc-saved-review">Saved cases in this organisation</Label>
-            <RecordLookupSelect
-              id="exc-saved-review"
-              className="w-full"
-              value={selectedSavedId}
-              onValueChange={(nextValue) => {
-                setSelectedSavedId(nextValue);
-                setSelectedKey("");
-                setNote("");
-              }}
-            >
-              <option value="">Choose a saved case</option>
-              {queue.data?.cases.map((row) => (
-                <option key={row.id} value={row.id}>
-                  {row.status} · {row.source_type} · {row.title.slice(0, 75)}
-                </option>
-              ))}
-            </RecordLookupSelect>
+            {queue.isError ? null : queue.isSuccess ? (
+              <RecordLookupSelect
+                id="exc-saved-review"
+                className="w-full"
+                value={selectedSavedId}
+                onValueChange={(nextValue) => {
+                  setSelectedSavedId(nextValue);
+                  setSelectedKey("");
+                  setNote("");
+                }}
+              >
+                <option value="">Choose a saved case</option>
+                {queue.data?.cases.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.status} · {row.source_type} · {row.title.slice(0, 75)}
+                  </option>
+                ))}
+              </RecordLookupSelect>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading saved cases…</p>
+            )}
             {selectedSaved ? (
               <div className="space-y-1 rounded-md border p-2 text-xs">
                 <p>
@@ -365,6 +369,9 @@ export function PersistentReconciliationReviews({
               size="sm"
               disabled={
                 busy ||
+                !queue.isSuccess ||
+                queue.isError ||
+                !selectedSaved ||
                 (action === "comment" && note.trim().length < 2) ||
                 (action === "status" &&
                   (note.trim().length < 5 || nextStatus === selectedSaved.status)) ||

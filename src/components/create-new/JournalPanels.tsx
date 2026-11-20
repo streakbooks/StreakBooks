@@ -100,7 +100,12 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   const totals = review;
   const balanced = review.balanced;
   const reverseError = mode === "post" ? validateAutoReverseDate(date, autoReverseOn) : null;
-  const canSubmit = review.canPost && !reverseError && (mode === "post" || name.trim().length > 0);
+  const canSubmit =
+    review.canPost &&
+    !reverseError &&
+    (mode === "post" || name.trim().length > 0) &&
+    accountsQ.isSuccess &&
+    !accountsQ.isError;
 
   async function handleCsvImport(file: File) {
     if (file.size > 256000) throw new Error("CSV file exceeds the 256 KB import limit.");
@@ -222,7 +227,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
 
   if (!companyId) return null;
   if (accountsQ.isPending) return <LoadingState />;
-  if (accountsQ.isError && accountsQ.data === undefined) {
+  if (accountsQ.isError) {
     return <QueryErrorState queries={[accountsQ]} title="Could not load chart of accounts" />;
   }
 

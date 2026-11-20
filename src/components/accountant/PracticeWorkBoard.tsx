@@ -91,13 +91,13 @@ function AssigneeOptions({ companyId }: { companyId: string }) {
         <option disabled value="">
           Team could not be loaded — refresh the board
         </option>
-      ) : (
+      ) : members.isSuccess ? (
         (members.data ?? []).map((m) => (
           <option key={m.user_id} value={m.user_id}>
             {m.name}
           </option>
         ))
-      )}
+      ) : null}
     </>
   );
 }

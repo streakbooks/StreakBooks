@@ -443,6 +443,14 @@ export function AiJournalEvidenceExplorer({
               </div>
             ) : (
               <div className="space-y-3">
+                {accountsQ.isPending ? (
+                  <p className="text-sm text-muted-foreground">
+                    Loading permitted chart of accounts…
+                  </p>
+                ) : accountsQ.isError ? (
+                  <QueryErrorState queries={[accountsQ]} title="Accounts unavailable" />
+                ) : accountsQ.isSuccess ? (
+                  <>
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="ai-evidence-account">Ledger account</Label>
@@ -480,13 +488,7 @@ export function AiJournalEvidenceExplorer({
                     </Link>
                   ) : null}
                 </div>
-                {accountsQ.isPending ? (
-                  <p className="text-sm text-muted-foreground">
-                    Loading permitted chart of accounts…
-                  </p>
-                ) : accountsQ.isError ? (
-                  <QueryErrorState queries={[accountsQ]} title="Accounts unavailable" />
-                ) : !accountId ? (
+                {!accountId ? (
                   <p className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
                     Select an account to inspect the exact posted movements returned by its
                     general-ledger report.
@@ -641,6 +643,8 @@ export function AiJournalEvidenceExplorer({
                         </Button>
                       </div>
                     </div>
+                  </>
+                ) : null}
                   </>
                 ) : null}
               </div>

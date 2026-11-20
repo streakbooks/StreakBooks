@@ -510,29 +510,27 @@ export function MessagesScreen({
           {conversations.isError && (
             <QueryErrorState queries={[conversations]} title="Could not load conversations" />
           )}
-          {!conversations.isPending &&
-            !conversations.isError &&
-            (conversations.data?.length ?? 0) === 0 && (
-              <EmptyState
-                title="No conversations"
-                description="Start a direct message or create a group with eligible organisation members."
-                action={
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" type="button" onClick={() => setShowNew("dm")}>
-                      New message
-                    </Button>
-                    <Button
-                      size="sm"
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowNew("group")}
-                    >
-                      New group
-                    </Button>
-                  </div>
-                }
-              />
-            )}
+          {conversations.isSuccess && (conversations.data?.length ?? 0) === 0 ? (
+            <EmptyState
+              title="No conversations"
+              description="Start a direct message or create a group with eligible organisation members."
+              action={
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" type="button" onClick={() => setShowNew("dm")}>
+                    New message
+                  </Button>
+                  <Button
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowNew("group")}
+                  >
+                    New group
+                  </Button>
+                </div>
+              }
+            />
+          ) : null}
           {conversations.isSuccess ? (
             <ul className="divide-y">
               {conversations.data.map((conversation) => (

@@ -141,11 +141,13 @@ export function SecuritySettingsCard() {
                 or similar each time you sign in.
               </p>
             </div>
-            {factorsQ.isError ? null : verified.length > 0 ? (
-              <Badge>On</Badge>
-            ) : (
-              <Badge variant="secondary">Off</Badge>
-            )}
+            {factorsQ.isSuccess ? (
+              verified.length > 0 ? (
+                <Badge>On</Badge>
+              ) : (
+                <Badge variant="secondary">Off</Badge>
+              )
+            ) : null}
           </div>
 
           {error ? (
@@ -154,113 +156,112 @@ export function SecuritySettingsCard() {
             </Alert>
           ) : null}
 
-          {factorsQ.isError ? (
-            <QueryErrorState queries={[factorsQ]} title="Could not load authenticator factors" />
-          ) : null}
-
           {factorsQ.isPending ? (
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
-          ) : factorsQ.isError ? null : (
-            <ul className="space-y-2">
-              {verified.map((f) => (
-                <li
-                  key={f.id}
-                  className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
-                >
-                  <span className="flex items-center gap-2">
-                    <Smartphone className="size-4 text-muted-foreground" aria-hidden />
-                    {f.friendly_name || "Authenticator app"}
-                    <span className="text-xs text-muted-foreground">
-                      added {new Date(f.created_at).toLocaleDateString()}
+          ) : factorsQ.isError ? (
+            <QueryErrorState queries={[factorsQ]} title="Could not load authenticator factors" />
+          ) : factorsQ.isSuccess ? (
+            <>
+              <ul className="space-y-2">
+                {verified.map((f) => (
+                  <li
+                    key={f.id}
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Smartphone className="size-4 text-muted-foreground" aria-hidden />
+                      {f.friendly_name || "Authenticator app"}
+                      <span className="text-xs text-muted-foreground">
+                        added {new Date(f.created_at).toLocaleDateString()}
+                      </span>
                     </span>
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={removeM.isPending}
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          "Remove this authenticator? Sign-in will no longer ask for its code.",
-                        )
-                      ) {
-                        removeM.mutate(f.id);
-                      }
-                    }}
-                  >
-                    Remove
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {enrolment ? (
-            <div className="grid gap-4 rounded-md border border-border p-4 sm:grid-cols-[160px_1fr]">
-              <img
-                src={enrolment.qrCode}
-                alt="QR code for your authenticator app"
-                className="size-40 rounded bg-white p-2"
-              />
-              <div className="space-y-3">
-                <ol className="list-decimal space-y-1 pl-4 text-sm">
-                  <li>Scan the QR code with your authenticator app.</li>
-                  <li>
-                    Can&apos;t scan? Enter this key:{" "}
-                    <code className="break-all rounded bg-muted px-1 py-0.5 text-xs">
-                      {enrolment.secret}
-                    </code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={removeM.isPending}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            "Remove this authenticator? Sign-in will no longer ask for its code.",
+                          )
+                        ) {
+                          removeM.mutate(f.id);
+                        }
+                      }}
+                    >
+                      Remove
+                    </Button>
                   </li>
-                  <li>Enter the 6-digit code the app shows.</li>
-                </ol>
-                <div className="space-y-2">
-                  <Label htmlFor="enrol-code">Code</Label>
-                  <OtpCodeInput
-                    id="enrol-code"
-                    value={code}
-                    onChange={setCode}
-                    onComplete={(v) => verifyM.mutate(v)}
-                    disabled={verifyM.isPending}
+                ))}
+              </ul>
+
+              {enrolment ? (
+                <div className="grid gap-4 rounded-md border border-border p-4 sm:grid-cols-[160px_1fr]">
+                  <img
+                    src={enrolment.qrCode}
+                    alt="QR code for your authenticator app"
+                    className="size-40 rounded bg-white p-2"
                   />
+                  <div className="space-y-3">
+                    <ol className="list-decimal space-y-1 pl-4 text-sm">
+                      <li>Scan the QR code with your authenticator app.</li>
+                      <li>
+                        Can&apos;t scan? Enter this key:{" "}
+                        <code className="break-all rounded bg-muted px-1 py-0.5 text-xs">
+                          {enrolment.secret}
+                        </code>
+                      </li>
+                      <li>Enter the 6-digit code the app shows.</li>
+                    </ol>
+                    <div className="space-y-2">
+                      <Label htmlFor="enrol-code">Code</Label>
+                      <OtpCodeInput
+                        id="enrol-code"
+                        value={code}
+                        onChange={setCode}
+                        onComplete={(v) => verifyM.mutate(v)}
+                        disabled={verifyM.isPending}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        disabled={verifyM.isPending}
+                        onClick={() => verifyM.mutate(code)}
+                      >
+                        {verifyM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                        Verify and turn on
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEnrolment(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    disabled={verifyM.isPending}
-                    onClick={() => verifyM.mutate(code)}
-                  >
-                    {verifyM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                    Verify and turn on
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setEnrolment(null)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={startM.isPending}
-              onClick={() => startM.mutate()}
-            >
-              {startM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              {verified.length > 0 ? "Add another authenticator" : "Set up authenticator app"}
-            </Button>
-          )}
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={startM.isPending}
+                  onClick={() => startM.mutate()}
+                >
+                  {startM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                  {verified.length > 0 ? "Add another authenticator" : "Set up authenticator app"}
+                </Button>
+              )}
+            </>
+          ) : null}
         </section>
 
         <Separator />
 
         <section className="space-y-2">
           <h3 className="text-sm font-medium">Connected sign-in methods</h3>
-          {identitiesQ.isError ? (
-            <QueryErrorState queries={[identitiesQ]} title="Could not load sign-in methods" />
-          ) : null}
           {identitiesQ.isPending ? (
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
-          ) : identitiesQ.isError ? null : (
+          ) : identitiesQ.isError ? (
+            <QueryErrorState queries={[identitiesQ]} title="Could not load sign-in methods" />
+          ) : identitiesQ.isSuccess ? (
             <div className="flex flex-wrap gap-2">
               {(identitiesQ.data ?? []).map((i) => (
                 <Badge key={i.identity_id ?? i.id} variant="secondary">
@@ -268,7 +269,7 @@ export function SecuritySettingsCard() {
                 </Badge>
               ))}
             </div>
-          )}
+          ) : null}
         </section>
 
         <Separator />

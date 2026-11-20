@@ -64,12 +64,11 @@ export function DeveloperApiDocsPage() {
           </AlertDescription>
         </Alert>
 
-        {scopes.isLoading ? <LoadingState /> : null}
-        {scopes.isError ? (
+        {scopes.isPending || scopes.isLoading ? (
+          <LoadingState />
+        ) : scopes.isError ? (
           <QueryErrorState queries={[scopes]} title="Could not load scopes" />
-        ) : null}
-
-        {scopes.data ? (
+        ) : scopes.isSuccess && scopes.data ? (
           <div className="space-y-8">
             <div className="rounded-lg border">
               <Table>

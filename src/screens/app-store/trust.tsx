@@ -228,11 +228,11 @@ export function AppStoreTrustPage() {
       {canCertify ? (
         <section className="mb-8 space-y-3">
           <h2 className="text-xl font-semibold tracking-tight">Security approval queue</h2>
-          {reviews.isLoading ? <LoadingState /> : null}
-          {reviews.isError ? (
-            <QueryErrorState queries={[reviews]} title="Could not load security reviews" />
-          ) : null}
-          {!reviews.isLoading && !reviews.isError ? (
+          {reviews.isPending || reviews.isLoading ? (
+        <LoadingState />
+      ) : reviews.isError ? (
+        <QueryErrorState queries={[reviews]} title="Could not load security reviews" />
+      ) : reviews.isSuccess ? (
             (reviews.data?.length ?? 0) === 0 ? (
               <EmptyState
                 title="No security reviews yet"

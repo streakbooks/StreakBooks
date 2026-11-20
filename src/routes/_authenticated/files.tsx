@@ -1300,14 +1300,14 @@ function FilesPage() {
             setTagFilter(value);
             setPage(0);
           }}
-          disabled={tagsQ.isError || !tagsQ.data?.length}
+          disabled={tagsQ.isError || !tagsQ.isSuccess || !(tagsQ.data?.length)}
         >
           <SelectTrigger className="w-48" aria-label="Filter by company document tag">
             <SelectValue placeholder="All tags" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All tags</SelectItem>
-            {(tagsQ.data ?? []).map((tag) => (
+            {(tagsQ.isSuccess ? (tagsQ.data ?? []) : []).map((tag) => (
               <SelectItem key={tag.id} value={tag.id}>
                 {tag.name}
               </SelectItem>
@@ -1350,7 +1350,7 @@ function FilesPage() {
           </Button>
         )}
       </div>
-      {filesQ.data && !filesQ.isError ? (
+      {filesQ.isSuccess ? (
         <p role="status" className="mb-3 text-xs text-muted-foreground">
           Showing {filesQ.data.files.length} of {filesQ.data.total} matching files
           {folderId && includeSubfolders ? " (including nested folders)" : ""}
@@ -1570,7 +1570,7 @@ function FilesPage() {
         <LoadingState />
       ) : filesQ.isError ? (
         <QueryErrorState queries={[filesQ]} title="Could not load files" />
-      ) : filesQ.data.files.length === 0 ? (
+      ) : !filesQ.isSuccess ? null : filesQ.data.files.length === 0 ? (
         <EmptyState
           title="No files"
           description={

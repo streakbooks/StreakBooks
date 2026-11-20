@@ -167,7 +167,7 @@ export function PriceListTierRules({
                   !productsQ.data?.some((p) => p.id === selectedProductId) ? (
                     <SelectItem value={selectedProductId}>{selectedRule.product_name}</SelectItem>
                   ) : null}
-                  {(productsQ.data ?? []).map((p) => (
+                  {(productsQ.isSuccess ? (productsQ.data ?? []) : []).map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.code ? `${p.code} — ` : ""}
                       {p.name}

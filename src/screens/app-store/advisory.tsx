@@ -71,12 +71,11 @@ export function AppStoreAdvisoryPage() {
         </AlertDescription>
       </Alert>
 
-      {recommendations.isLoading ? <LoadingState /> : null}
-      {recommendations.isError ? (
+      {recommendations.isPending || recommendations.isLoading ? (
+        <LoadingState />
+      ) : recommendations.isError ? (
         <QueryErrorState queries={[recommendations]} title="Could not load recommendations" />
-      ) : null}
-
-      {!recommendations.isLoading && !recommendations.isError ? (
+      ) : recommendations.isSuccess ? (
         (recommendations.data?.length ?? 0) === 0 ? (
           <EmptyState
             title="No recommendations yet"

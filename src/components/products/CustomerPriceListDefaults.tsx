@@ -117,7 +117,7 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
                   {contactId && !selectedExistsInSearch ? (
                     <SelectItem value={contactId}>{selectedCustomerName}</SelectItem>
                   ) : null}
-                  {(customersQ.data ?? []).map((row) => (
+                  {(customersQ.isSuccess ? (customersQ.data ?? []) : []).map((row) => (
                     <SelectItem key={row.id} value={row.id}>
                       {row.name}
                     </SelectItem>
@@ -125,7 +125,7 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
                 </SelectContent>
               </RecordLookupSelect>
             )}
-            {!customersQ.isError && (customersQ.data?.length ?? 0) >= 100 ? (
+            {customersQ.isSuccess && (customersQ.data?.length ?? 0) >= 100 ? (
               <p className="text-xs text-muted-foreground">
                 Showing up to 100 customers. Search to narrow the list.
               </p>

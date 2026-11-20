@@ -191,11 +191,11 @@ export function AppStorePrivacyPage() {
 
       <div className="mb-8 space-y-3">
         <h2 className="text-lg font-semibold">Active consents</h2>
-        {consents.isLoading ? <LoadingState /> : null}
-        {consents.isError ? (
-          <QueryErrorState queries={[consents]} title="Could not load consents" />
-        ) : null}
-        {!consents.isLoading && !consents.isError ? (
+        {consents.isPending || consents.isLoading ? (
+        <LoadingState />
+      ) : consents.isError ? (
+        <QueryErrorState queries={[consents]} title="Could not load consents" />
+      ) : consents.isSuccess ? (
           activeConsents.length === 0 ? (
             <EmptyState
               title="No active consents"
@@ -274,11 +274,11 @@ export function AppStorePrivacyPage() {
 
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">Security alerts</h2>
-        {alerts.isLoading ? <LoadingState /> : null}
-        {alerts.isError ? (
-          <QueryErrorState queries={[alerts]} title="Could not load alerts" />
-        ) : null}
-        {!alerts.isLoading && !alerts.isError ? (
+        {alerts.isPending || alerts.isLoading ? (
+        <LoadingState />
+      ) : alerts.isError ? (
+        <QueryErrorState queries={[alerts]} title="Could not load alerts" />
+      ) : alerts.isSuccess ? (
           (alerts.data?.length ?? 0) === 0 ? (
             <EmptyState
               title="No security alerts"

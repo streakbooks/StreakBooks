@@ -96,12 +96,11 @@ export function AppStoreConnectionsPage() {
         </AlertDescription>
       </Alert>
 
-      {connections.isLoading ? <LoadingState /> : null}
-      {connections.isError ? (
+      {connections.isPending || connections.isLoading ? (
+        <LoadingState />
+      ) : connections.isError ? (
         <QueryErrorState queries={[connections]} title="Could not load connections" />
-      ) : null}
-
-      {!connections.isLoading && !connections.isError ? (
+      ) : connections.isSuccess ? (
         (connections.data?.length ?? 0) === 0 ? (
           <EmptyState
             title="No connections yet"

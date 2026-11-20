@@ -79,12 +79,11 @@ export function AppStoreExplorePage() {
       />
       <AppStoreSubnav current="explore" />
 
-      {catalogue.isLoading ? <LoadingState /> : null}
-      {catalogue.isError ? (
+      {catalogue.isPending || catalogue.isLoading ? (
+        <LoadingState />
+      ) : catalogue.isError ? (
         <QueryErrorState queries={[catalogue]} title="Could not load catalogue" />
-      ) : null}
-
-      {!catalogue.isLoading && !catalogue.isError ? (
+      ) : catalogue.isSuccess ? (
         <>
           <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             <Input

@@ -82,15 +82,18 @@ export function AppStoreRequestsPage() {
         </AlertDescription>
       </Alert>
 
-      {requests.isLoading || catalogue.isLoading ? <LoadingState /> : null}
-      {requests.isError ? (
-        <QueryErrorState queries={[requests]} title="Could not load requests" />
-      ) : null}
-      {catalogue.isError ? (
-        <QueryErrorState queries={[catalogue]} title="Could not load catalogue installs" />
-      ) : null}
-
-      {!requests.isLoading && !catalogue.isLoading && !requests.isError && !catalogue.isError ? (
+      {requests.isPending || catalogue.isPending || requests.isLoading || catalogue.isLoading ? (
+        <LoadingState />
+      ) : requests.isError || catalogue.isError ? (
+        <>
+          {requests.isError ? (
+            <QueryErrorState queries={[requests]} title="Could not load requests" />
+          ) : null}
+          {catalogue.isError ? (
+            <QueryErrorState queries={[catalogue]} title="Could not load catalogue installs" />
+          ) : null}
+        </>
+      ) : requests.isSuccess && catalogue.isSuccess ? (
         <>
           <section className="mb-8 space-y-3">
             <h2 className="text-lg font-semibold">Catalogue requests / installs</h2>

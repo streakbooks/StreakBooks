@@ -110,12 +110,11 @@ export function DeveloperDashboardPage() {
           </Card>
         </div>
 
-        {scopes.isLoading ? <LoadingState /> : null}
-        {scopes.isError ? (
+        {scopes.isPending || scopes.isLoading ? (
+          <LoadingState />
+        ) : scopes.isError ? (
           <QueryErrorState queries={[scopes]} title="Could not load API scopes" />
-        ) : null}
-
-        {scopes.data ? (
+        ) : scopes.isSuccess && scopes.data ? (
           <Card>
             <CardHeader>
               <CardTitle>Partner integration path</CardTitle>

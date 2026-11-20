@@ -353,19 +353,18 @@ function AiAssistantWorkspace({
     }
   }
 
-  const savedExchanges: Exchange[] = ((historyQ.data ?? []) as AiConversationRow[])
-    .slice()
-    .reverse()
-    .map((entry) => ({
-      id: entry.id,
-      question: entry.question,
-      intent: entry.intent,
-      answer: entry.reply_markdown,
-      mode: entry.mode,
-      injectionFlagged: entry.injection_flagged,
-      facts: entry.facts ?? [],
-      suggestionId: entry.suggestion_id,
-    }));
+  const savedExchanges: Exchange[] = historyQ.isSuccess
+    ? ((historyQ.data ?? []) as AiConversationRow[]).slice().reverse().map((entry) => ({
+        id: entry.id,
+        question: entry.question,
+        intent: entry.intent,
+        answer: entry.reply_markdown,
+        mode: entry.mode,
+        injectionFlagged: entry.injection_flagged,
+        facts: entry.facts ?? [],
+        suggestionId: entry.suggestion_id,
+      }))
+    : [];
   const savedIds = new Set(savedExchanges.map((entry) => entry.id));
   const exchanges = [...savedExchanges, ...history.filter((entry) => !savedIds.has(entry.id))];
   const rows = (suggestionsQ.data ?? []) as Suggestion[];
@@ -547,7 +546,11 @@ function AiAssistantWorkspace({
               </>
             )}
 
-            {historyQ.isError && canUse ? (
+            {canUse && historyQ.isPending ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="size-3 animate-spin" /> Loading saved conversations…
+              </div>
+            ) : canUse && historyQ.isError ? (
               <QueryErrorState
                 queries={[historyQ]}
                 title="Saved conversation history unavailable"
@@ -560,17 +563,14 @@ function AiAssistantWorkspace({
               aria-live="polite"
               aria-label="Assistant responses"
             >
-              {historyQ.isPending && canUse ? (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="size-3 animate-spin" /> Loading saved conversations…
-                </div>
-              ) : null}
-              {exchanges.length === 0 ? (
+              {exchanges.length === 0 &&
+              !(canUse && historyQ.isPending) &&
+              !(canUse && historyQ.isError) ? (
                 <div className="rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-5 py-9 text-center text-sm text-muted-foreground">
                   <Sparkles className="mx-auto mb-2 size-6" />
                   Responses will appear here. Nothing is posted automatically.
                 </div>
-              ) : (
+              ) : exchanges.length > 0 ? (
                 exchanges.map((entry) => (
                   <article
                     key={entry.id}
@@ -669,7 +669,7 @@ function AiAssistantWorkspace({
                     </div>
                   </article>
                 ))
-              )}
+              ) : null}
             </div>
           </CardContent>
         </Card>
@@ -1008,7 +1008,13 @@ function AiAssistantWorkspace({
             </Button>
             <Button
               disabled={
-                !selected || !journalLines || !accountsResolved || !journalDate || applyM.isPending
+                !selected ||
+                !journalLines ||
+                !accountsResolved ||
+                !journalDate ||
+                applyM.isPending ||
+                accountsQ.isError ||
+                !accountsQ.isSuccess
               }
               onClick={() => selected && applyM.mutate(selected.id)}
             >

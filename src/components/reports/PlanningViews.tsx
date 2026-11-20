@@ -11,6 +11,7 @@ import {
 import { DEPRECIATION_METHODS } from "@/lib/fixed-assets/depreciation";
 import type { VarianceCell, VarianceRow, VarianceSection } from "@/lib/budgets/budget-report";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LookupSelect } from "@/components/lookup";
@@ -184,7 +185,9 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
     >
       {budgets.isError ? (
         <QueryErrorState queries={[budgets]} title="Could not load budgets" />
-      ) : budgets.isPending ? null : budgets.data && !budgets.data.available ? (
+      ) : budgets.isPending || !budgets.isSuccess ? (
+        <LoadingState />
+      ) : budgets.data && !budgets.data.available ? (
         <Alert>
           <AlertDescription>
             Budgets are not available yet: the database update that adds them has not been applied.

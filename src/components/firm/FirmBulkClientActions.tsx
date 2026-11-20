@@ -361,6 +361,8 @@ export function FirmBulkClientActions({
               <div className="p-4">
                 <QueryErrorState queries={[auditQ]} title="Could not load profile history" />
               </div>
+            ) : !auditQ.isSuccess ? (
+              <p className="p-4 text-sm text-muted-foreground">Loading recent changes…</p>
             ) : !auditQ.data?.length ? (
               <p className="p-4 text-sm text-muted-foreground">No profile changes recorded yet.</p>
             ) : (

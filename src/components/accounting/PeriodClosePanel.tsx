@@ -319,6 +319,8 @@ export function PeriodClosePanel({
               <LoadingState />
             ) : preview.isError ? (
               <QueryErrorState queries={[preview]} title="Year-end closing preview unavailable" />
+            ) : !preview.isSuccess ? (
+              <LoadingState />
             ) : preview.data.alreadyClosedJournalId ? (
               <p className="text-sm">
                 Already closed in journal #{preview.data.alreadyClosedJournalNumber}.

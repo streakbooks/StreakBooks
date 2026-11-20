@@ -150,6 +150,8 @@ export function HrOrganizationPage() {
         <LoadingState />
       ) : orgQ.isError ? (
         <QueryErrorState queries={[orgQ]} title="Could not load organisation" />
+      ) : !orgQ.isSuccess ? (
+        <LoadingState />
       ) : !rows.length ? (
         <EmptyState
           title={`No ${kind}s yet`}

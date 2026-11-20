@@ -53,6 +53,7 @@ function JournalDetail() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (q.isPending) return <LoadingState />;
   if (q.isError) return <QueryErrorState queries={[q]} title="Could not load journal" />;
+  if (!q.isSuccess || !q.data) return <LoadingState />;
 
   const { journal, lines } = q.data;
   const currency = journal.currency_code ?? company?.base_currency ?? "GBP";

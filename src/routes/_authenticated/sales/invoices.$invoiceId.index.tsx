@@ -181,6 +181,7 @@ function InvoiceDetail() {
   if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load invoice" />;
   }
+  if (!query.isSuccess) return <LoadingState />;
   if (!query.data) {
     return <EmptyState title="Invoice not found" description="This invoice is unavailable." />;
   }

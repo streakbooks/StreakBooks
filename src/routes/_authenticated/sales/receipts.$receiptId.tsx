@@ -100,6 +100,7 @@ function ReceiptDetail() {
   if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load receipt" />;
   }
+  if (!query.isSuccess) return <LoadingState />;
   if (!query.data) {
     return <EmptyState title="Receipt not found" description="This receipt is unavailable." />;
   }

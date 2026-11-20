@@ -164,6 +164,7 @@ function PaymentDocument() {
   if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load payment" />;
   }
+  if (!query.isSuccess) return <LoadingState />;
   if (!query.data) {
     return <EmptyState title="Payment not found" description="This payment is unavailable." />;
   }

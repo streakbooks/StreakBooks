@@ -54,6 +54,8 @@ export function DocumentPostingJournals({
     return <p className="text-sm text-muted-foreground">Loading posted journal entries…</p>;
   if (q.isError)
     return <QueryErrorState queries={[q]} title="Could not load posted journal entries" />;
+  if (!q.isSuccess)
+    return <p className="text-sm text-muted-foreground">Loading posted journal entries…</p>;
   if (!q.data?.length)
     return (
       <p className="text-sm text-muted-foreground">

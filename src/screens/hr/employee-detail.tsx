@@ -172,6 +172,7 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
       </RecordWorkspace>
     );
   }
+  if (!detailQ.isSuccess) return <LoadingState />;
   if (!detailQ.data) {
     return (
       <RecordWorkspace title="Employee" description="HR profile">

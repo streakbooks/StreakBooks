@@ -219,6 +219,7 @@ export function PurchaseOrderDetailScreen({
   if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load purchase order" />;
   }
+  if (!query.isSuccess) return <LoadingState />;
   const order = query.data;
   if (!order)
     return (

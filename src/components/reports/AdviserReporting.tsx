@@ -31,6 +31,7 @@ export function AdviserReporting({ from, to }: { from: string; to: string }) {
   if (firms.isPending) return <LoadingState />;
   if (firms.isError)
     return <QueryErrorState queries={[firms]} title="Could not load accounting firms" />;
+  if (!firms.isSuccess || !firms.data) return <LoadingState />;
   if (!firms.data.length)
     return (
       <div className="space-y-3">

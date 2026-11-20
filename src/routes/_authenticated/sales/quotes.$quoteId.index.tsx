@@ -131,6 +131,7 @@ function QuoteDetailPage() {
   if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load quote" />;
   }
+  if (!query.isSuccess) return <LoadingState />;
   if (!query.data) {
     return <EmptyState title="Quote not found" description="This quote is unavailable." />;
   }

@@ -315,6 +315,7 @@ export function FirmAnalyticsPanel({ firmId }: { firmId: string }) {
     return (
       <QueryErrorState queries={[pulse]} title="Could not load practice insights" />
     );
+  if (!pulse.isSuccess || !pulse.data) return <LoadingState />;
   const item = pulse.data;
   const metrics = [
     { label: "Clients I can access", value: item.accessibleClients },

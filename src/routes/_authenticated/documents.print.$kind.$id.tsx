@@ -56,6 +56,7 @@ function PrintDocumentPage() {
   if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load the document" />;
   }
+  if (!query.isSuccess || !query.data) return <LoadingState />;
 
   const { document: doc, branding, locale, dateFormat } = query.data;
   return (

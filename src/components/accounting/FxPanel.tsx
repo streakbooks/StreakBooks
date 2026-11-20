@@ -131,6 +131,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
   if (overview.isError) {
     return <QueryErrorState queries={[overview]} title="Could not load foreign exchange review" />;
   }
+  if (!overview.isSuccess || !overview.data) return <LoadingState />;
   const ov = overview.data;
   if (!ov.available) {
     return (

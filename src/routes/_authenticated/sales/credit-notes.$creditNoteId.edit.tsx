@@ -27,6 +27,7 @@ function EditCreditNote() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (q.isPending) return <LoadingState />;
   if (q.isError) return <QueryErrorState queries={[q]} title="Could not load credit note" />;
+  if (!q.isSuccess || !q.data) return <LoadingState />;
   const cn = q.data;
   if (cn.status !== "draft") {
     return (

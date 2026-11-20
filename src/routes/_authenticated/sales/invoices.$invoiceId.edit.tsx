@@ -30,6 +30,7 @@ function EditInvoice() {
   if (q.isError) {
     return <QueryErrorState queries={[q]} title="Could not load invoice" />;
   }
+  if (!q.isSuccess) return <LoadingState />;
   if (!q.data) {
     return <EmptyState title="Invoice not found" description="This invoice is unavailable." />;
   }

@@ -156,10 +156,10 @@ function TaxIdForm({ companyId }: { companyId: string }) {
   const [scheme, setScheme] = useState<TaxScheme>("GSTIN");
   const [taxId, setTaxId] = useState("");
   useEffect(() => {
-    if (!account.data) return;
+    if (!account.isSuccess || !account.data) return;
     setScheme((account.data.taxIdScheme as TaxScheme | null) ?? "GSTIN");
     setTaxId(account.data.taxId ?? "");
-  }, [account.data]);
+  }, [account.isSuccess, account.data]);
   const mutation = useMutation({
     mutationFn: () => save({ data: { accountId: account.data!.id, scheme, taxId } }),
     onSuccess: () => {
@@ -206,7 +206,12 @@ function TaxIdForm({ companyId }: { companyId: string }) {
           placeholder="Leave empty if not registered"
         />
       </label>
-      <Button type="submit" size="sm" variant="outline" disabled={mutation.isPending}>
+      <Button
+        type="submit"
+        size="sm"
+        variant="outline"
+        disabled={mutation.isPending || !account.isSuccess || account.isError}
+      >
         Save
       </Button>
     </form>

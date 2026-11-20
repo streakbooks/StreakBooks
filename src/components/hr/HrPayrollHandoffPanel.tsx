@@ -212,7 +212,11 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
                           <Button
                             type="button"
                             size="sm"
-                            disabled={applyExitM.isPending}
+                            disabled={
+                              applyExitM.isPending ||
+                              !handoffQ.isSuccess ||
+                              handoffQ.isError
+                            }
                             onClick={() => applyExitM.mutate(row.id)}
                           >
                             Terminate in Payroll

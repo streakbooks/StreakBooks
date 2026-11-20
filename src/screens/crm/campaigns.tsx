@@ -219,9 +219,11 @@ export function CrmCampaignsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Lead source</Label>
-                  {sources.isError && sources.data === undefined ? (
+                  {sources.isError ? (
                     <QueryErrorState queries={[sources]} title="Could not load lead sources" />
-                  ) : (
+                  ) : sources.isPending ? (
+                    <LoadingState />
+                  ) : sources.isSuccess ? (
                     <RecordLookupSelect
                       value={sourceId || "__none"}
                       onValueChange={(v) => setSourceId(v === "__none" ? "" : v)}
@@ -238,7 +240,7 @@ export function CrmCampaignsPage() {
                         ))}
                       </SelectContent>
                     </RecordLookupSelect>
-                  )}
+                  ) : null}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="campaign-budget">Budget ({currency})</Label>
@@ -270,7 +272,11 @@ export function CrmCampaignsPage() {
                 <div className="sm:col-span-2">
                   <Button
                     type="button"
-                    disabled={createMutation.isPending || !name.trim()}
+                    disabled={
+                      createMutation.isPending ||
+                      !name.trim() ||
+                      (Boolean(sourceId) && (!sources.isSuccess || sources.isError))
+                    }
                     onClick={() => createMutation.mutate()}
                   >
                     {createMutation.isPending ? "Saving…" : "Create campaign"}

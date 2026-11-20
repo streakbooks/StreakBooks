@@ -172,7 +172,16 @@ function CatalogueCart({ companyId }: { companyId: string }) {
   }
   function submitSale(event: FormEvent) {
     event.preventDefault();
-    if (!canCheckout || saleMutation.isPending || !quote.data) return;
+    if (
+      !canCheckout ||
+      saleMutation.isPending ||
+      !quote.isSuccess ||
+      !quote.data ||
+      !workspace.isSuccess ||
+      quote.isError
+    ) {
+      return;
+    }
     try {
       const cashTenderedMinor = posCountFromDisplay(tendered, quote.data.currency);
       const gross = BigInt(quote.data.grossMinor);
@@ -458,7 +467,13 @@ function CatalogueCart({ companyId }: { companyId: string }) {
                         <Button
                           type="submit"
                           className="min-h-11 w-full"
-                          disabled={saleMutation.isPending}
+                          disabled={
+                            saleMutation.isPending ||
+                            !quote.isSuccess ||
+                            quote.isError ||
+                            !workspace.isSuccess ||
+                            workspace.isError
+                          }
                         >
                           {saleMutation.isPending ? "Posting sale…" : "Complete cash sale"}
                         </Button>

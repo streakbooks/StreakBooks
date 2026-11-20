@@ -179,6 +179,8 @@ export function HrTransfersPage() {
         <LoadingState />
       ) : listQ.isError ? (
         <QueryErrorState queries={[listQ]} title="Could not load transfers" />
+      ) : !listQ.isSuccess ? (
+        <LoadingState />
       ) : items.length === 0 ? (
         <EmptyState
           title="No transfer requests"

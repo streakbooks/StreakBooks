@@ -122,6 +122,8 @@ export function HrAutomationsPage() {
         <LoadingState />
       ) : dataQ.isError ? (
         <QueryErrorState queries={[dataQ]} title="Could not load automations" />
+      ) : !dataQ.isSuccess ? (
+        <LoadingState />
       ) : items.length === 0 ? (
         <EmptyState
           title="No automation rules"

@@ -207,6 +207,8 @@ function FirmPage() {
         <LoadingState />
       ) : firmsQ.isError ? (
         <QueryErrorState queries={[firmsQ]} title="Could not load firms" />
+      ) : !firmsQ.isSuccess ? (
+        <LoadingState />
       ) : (firmsQ.data ?? []).length === 0 ? (
         <div className="space-y-4">
           <EmptyState
@@ -388,6 +390,8 @@ function FirmPage() {
                 <LoadingState />
               ) : clientsQ.isError ? (
                 <QueryErrorState queries={[clientsQ]} title="Could not load clients" />
+              ) : !clientsQ.isSuccess ? (
+                <LoadingState />
               ) : (clientsQ.data ?? []).length === 0 ? (
                 <div className="space-y-3">
                   <EmptyState
@@ -537,6 +541,8 @@ function FirmPage() {
                 <LoadingState />
               ) : clientsQ.isError ? (
                 <QueryErrorState queries={[clientsQ]} title="Could not load clients" />
+              ) : !clientsQ.isSuccess ? (
+                <LoadingState />
               ) : (clientsQ.data ?? []).length === 0 ? (
                 <EmptyState
                   title="No linked clients"
@@ -566,6 +572,8 @@ function FirmPage() {
                     <LoadingState rows={3} />
                   ) : activityQ.isError ? (
                     <QueryErrorState queries={[activityQ]} title="Could not load activity" />
+                  ) : !activityQ.isSuccess ? (
+                    <LoadingState rows={3} />
                   ) : (activityQ.data ?? []).length === 0 ? (
                     <EmptyState
                       title="No audit events yet"

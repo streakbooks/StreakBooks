@@ -180,6 +180,8 @@ export function AttachmentsPanel({
           <p className="text-muted-foreground">Loading files…</p>
         ) : listQ.isError ? (
           <QueryErrorState queries={[listQ]} title="Could not load attachments" />
+        ) : !listQ.isSuccess ? (
+          <p className="text-muted-foreground">Loading files…</p>
         ) : rows.length === 0 ? (
           <p className="text-muted-foreground">
             No files attached.{" "}

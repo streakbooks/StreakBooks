@@ -63,6 +63,8 @@ function CreditNotesList() {
         <ListSkeleton />
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load credit notes" />
+      ) : !query.isSuccess ? (
+        <ListSkeleton />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState
           title="No credit notes"

@@ -809,6 +809,8 @@ function AiAssistantWorkspace({
             <LoadingState rows={4} />
           ) : suggestionsQ.isError ? (
             <QueryErrorState queries={[suggestionsQ]} title="Unable to load AI suggestions" />
+          ) : !suggestionsQ.isSuccess ? (
+            <LoadingState rows={4} />
           ) : filtered.length === 0 ? (
             <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
               {rows.length === 0

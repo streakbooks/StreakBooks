@@ -827,8 +827,12 @@ export function ExpenseManagementApprovalsPage() {
       {canPost ? (
         <div className="mt-10">
           <h2 className="mb-3 text-base font-semibold">Ready to post</h2>
-          {readyToPostQ.isError ? (
+          {readyToPostQ.isPending || readyToPostQ.isLoading ? (
+            <LoadingState />
+          ) : readyToPostQ.isError ? (
             <QueryErrorState queries={[readyToPostQ]} title="Could not load claims ready to post" />
+          ) : !readyToPostQ.isSuccess ? (
+            <LoadingState />
           ) : readyToPost.length === 0 ? (
             <EmptyState
               title="No approved claims ready"
@@ -867,11 +871,7 @@ export function ExpenseManagementApprovalsPage() {
                     <TableCell className="text-right">
                       <Button
                         size="sm"
-                        disabled={
-                          post.isPending ||
-                          !readyToPostQ.isSuccess ||
-                          readyToPostQ.isError
-                        }
+                        disabled={post.isPending || !readyToPostQ.isSuccess}
                         onClick={() => post.mutate(claim)}
                       >
                         Post accrual

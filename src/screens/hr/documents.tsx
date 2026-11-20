@@ -170,6 +170,8 @@ export function HrDocumentsPage() {
         <LoadingState />
       ) : docsQ.isError ? (
         <QueryErrorState queries={[docsQ]} title="Could not load documents" />
+      ) : !docsQ.isSuccess ? (
+        <LoadingState />
       ) : items.length === 0 ? (
         <EmptyState
           title="No documents yet"

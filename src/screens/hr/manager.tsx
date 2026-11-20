@@ -147,6 +147,8 @@ export function HrManagerPage() {
           <LoadingState />
         ) : inboxQ.isError ? (
           <QueryErrorState queries={[inboxQ]} title="Could not load pending leave" />
+        ) : !inboxQ.isSuccess ? (
+          <LoadingState />
         ) : leave.length === 0 ? (
           <EmptyState
             title="No pending leave"
@@ -186,6 +188,8 @@ export function HrManagerPage() {
           <LoadingState />
         ) : inboxQ.isError ? (
           <QueryErrorState queries={[inboxQ]} title="Could not load attendance corrections" />
+        ) : !inboxQ.isSuccess ? (
+          <LoadingState />
         ) : corrections.length === 0 ? (
           <EmptyState
             title="No pending corrections"

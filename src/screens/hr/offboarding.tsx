@@ -163,6 +163,8 @@ export function HrOffboardingPage() {
         <LoadingState />
       ) : listQ.isError ? (
         <QueryErrorState queries={[listQ]} title="Could not load offboarding" />
+      ) : !listQ.isSuccess ? (
+        <LoadingState />
       ) : items.length === 0 ? (
         <EmptyState
           title="No offboarding cases"

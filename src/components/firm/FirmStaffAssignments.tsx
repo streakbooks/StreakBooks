@@ -243,6 +243,8 @@ export function FirmStaffAssignments({
                 <LoadingState rows={2} />
               ) : candidatesQ.isError ? (
                 <QueryErrorState queries={[candidatesQ]} title="Could not load eligible colleagues" />
+              ) : !candidatesQ.isSuccess ? (
+                <LoadingState />
               ) : candidates.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No eligible unlinked colleagues in this company.

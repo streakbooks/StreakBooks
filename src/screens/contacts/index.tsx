@@ -1551,6 +1551,8 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
             <ListSkeleton />
           ) : query.isError ? (
             <QueryErrorState queries={[query]} title="Could not load contacts" />
+          ) : !query.isSuccess ? (
+            <ListSkeleton />
           ) : (query.data ?? []).length === 0 ? (
             <EmptyState
               icon={Users}

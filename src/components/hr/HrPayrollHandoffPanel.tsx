@@ -102,6 +102,8 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
         <LoadingState />
       ) : handoffQ.isError ? (
         <QueryErrorState queries={[handoffQ]} title="Could not load handoffs" />
+      ) : !handoffQ.isSuccess ? (
+        <LoadingState />
       ) : compensation.length === 0 && offboarding.length === 0 ? (
         <EmptyState
           title="No open Payroll handoffs"

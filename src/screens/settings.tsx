@@ -1643,6 +1643,8 @@ export function SettingsForCompany({
                           <LoadingState rows={4} />
                         ) : auditQuery.isError ? (
                           <QueryErrorState queries={[auditQuery]} title="Could not load audit" />
+                        ) : !auditQuery.isSuccess ? (
+                          <LoadingState rows={4} />
                         ) : auditPageRows.length === 0 ? (
                           <p className="text-sm text-muted-foreground">
                             No events match these filters.

@@ -214,6 +214,8 @@ export function FirmRequestsPanel({
                 <LoadingState rows={1} />
               ) : recipientsQ.isError ? (
                 <QueryErrorState queries={[recipientsQ]} title="Could not load authorised recipients" />
+              ) : !recipientsQ.isSuccess ? (
+                <LoadingState />
               ) : recipients.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No other eligible active company staff. Invite an authorised company user through
@@ -283,6 +285,8 @@ export function FirmRequestsPanel({
             <LoadingState />
           ) : requestsQ.isError ? (
             <QueryErrorState queries={[requestsQ]} title="Could not load document requests" />
+          ) : !requestsQ.isSuccess ? (
+            <LoadingState />
           ) : (requestsQ.data ?? []).length === 0 ? (
             <EmptyState
               title="No tracked requests"

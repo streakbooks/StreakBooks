@@ -139,6 +139,8 @@ export function BankMatchPanel({
         <LoadingState rows={2} />
       ) : q.isError ? (
         <QueryErrorState queries={[q]} title="Could not load match candidates" />
+      ) : !q.isSuccess ? (
+        <LoadingState />
       ) : candidates.length === 0 ? (
         <p className="text-muted-foreground">
           No unreconciled ledger lines on this bank account within ±{windowDays} days. Code the line

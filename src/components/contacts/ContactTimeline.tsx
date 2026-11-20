@@ -401,6 +401,8 @@ export function ContactTimeline({
         <LoadingState />
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load contact activity" />
+      ) : !query.isSuccess ? (
+        <LoadingState />
       ) : rows.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border/80 bg-muted/20 p-6 text-sm text-muted-foreground">
           No activities match this filter.

@@ -79,7 +79,7 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
 
   const controls = (
     <>
-      {budgets.isError ? null : (
+      {budgets.isError ? null : budgets.isSuccess ? (
         <div className="space-y-1">
           <Label htmlFor="bva-budget">Budget</Label>
           <LookupSelect
@@ -99,6 +99,8 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
             }))}
           />
         </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">Loading budgets…</p>
       )}
       <div className="space-y-1">
         <Label htmlFor="bva-view">Columns</Label>
@@ -115,7 +117,7 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
           <option value="ytd">Year to date only</option>
         </select>
       </div>
-      {budgets.isError || q.isError ? null : (
+      {budgets.isError || q.isError ? null : budgets.isSuccess && q.isSuccess ? (
         <ReportAccountMultiSelect
           accounts={accountOptions}
           selected={selectedIds ?? undefined}
@@ -124,7 +126,7 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
           }
           disabled={!d || d.notStarted}
         />
-      )}
+      ) : null}
     </>
   );
 

@@ -373,7 +373,7 @@ export function FirmOnboardingPanel({
                                         queries={[assigneesQ]}
                                         title="Eligible staff unavailable"
                                       />
-                                    ) : (
+                                    ) : assigneesQ.isSuccess ? (
                                       <LookupSelect
                                         ariaLabel={`Assign ${step.title}`}
                                         allowClear
@@ -391,6 +391,8 @@ export function FirmOnboardingPanel({
                                           label: member.full_name || member.email || "Colleague",
                                         }))}
                                       />
+                                    ) : (
+                                      <LoadingState rows={1} />
                                     )}
                                   </div>
                                   <div className="space-y-1">

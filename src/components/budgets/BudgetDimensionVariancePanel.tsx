@@ -196,7 +196,7 @@ export function BudgetDimensionVariancePanel({
             </div>
             <div className="space-y-1">
               <Label htmlFor="dim-report-view">View</Label>
-              {query.isError ? null : (
+              {query.isError ? null : query.isSuccess ? (
                 <RecordLookupSelect
                   id="dim-report-view"
                   value={viewMonth}
@@ -210,6 +210,8 @@ export function BudgetDimensionVariancePanel({
                     </option>
                   ))}
                 </RecordLookupSelect>
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading view…</p>
               )}
             </div>
             <Button

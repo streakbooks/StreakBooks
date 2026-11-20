@@ -301,31 +301,33 @@ export function TaxCodesPanel({
                 <Label>Tax rate</Label>
                 {ratesQ.isError ? (
                   <QueryErrorState queries={[ratesQ]} title="Could not load tax rates" />
+                ) : ratesQ.isSuccess ? (
+                  <LookupSelect
+                    ariaLabel="Tax rate"
+                    allowClear={false}
+                    value={draft.rateId}
+                    onChange={(v) => setDraft({ ...draft, rateId: v })}
+                    placeholder="Choose a rate"
+                    searchPlaceholder="Search tax rate"
+                    options={rates.map((r) => ({
+                      id: r.id,
+                      name: r.name,
+                      label: r.name,
+                      status: r.is_active ? null : "Inactive",
+                      disabled: !r.is_active && r.id !== draft.rateId,
+                      keywords: r.name,
+                    }))}
+                    companyId={companyId}
+                    canCreate={canTax}
+                    createTitle="New tax rate"
+                    renderCreate={
+                      canTax
+                        ? (ctx) => <TaxRateCreateForm companyId={companyId} ctx={ctx} />
+                        : undefined
+                    }
+                  />
                 ) : (
-                <LookupSelect
-                  ariaLabel="Tax rate"
-                  allowClear={false}
-                  value={draft.rateId}
-                  onChange={(v) => setDraft({ ...draft, rateId: v })}
-                  placeholder="Choose a rate"
-                  searchPlaceholder="Search tax rate"
-                  options={rates.map((r) => ({
-                    id: r.id,
-                    name: r.name,
-                    label: r.name,
-                    status: r.is_active ? null : "Inactive",
-                    disabled: !r.is_active && r.id !== draft.rateId,
-                    keywords: r.name,
-                  }))}
-                  companyId={companyId}
-                  canCreate={canTax}
-                  createTitle="New tax rate"
-                  renderCreate={
-                    canTax
-                      ? (ctx) => <TaxRateCreateForm companyId={companyId} ctx={ctx} />
-                      : undefined
-                  }
-                />
+                  <LoadingState />
                 )}
               </div>
               <div className="space-y-1">
@@ -391,7 +393,9 @@ export function TaxCodesPanel({
                 save.isPending ||
                 !draft?.code.trim() ||
                 !draft?.name.trim() ||
-                !draft?.rateId
+                !draft?.rateId ||
+                !ratesQ.isSuccess ||
+                ratesQ.isError
               }
               onClick={() => draft && save.mutate(draft)}
             >

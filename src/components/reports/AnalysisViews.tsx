@@ -322,7 +322,7 @@ export function CashSummaryView({ ctx }: { ctx: ReportCtx }) {
       mode="range"
       basis="Posted ledger movements on each bank account. Transfers between your own accounts are shown separately."
       extraControls={
-        q.isError ? null : (
+        q.isError ? null : q.isSuccess ? (
           <ReportAccountMultiSelect
             label="Bank accounts"
             accounts={(d?.rows ?? []).map((row) => ({
@@ -336,7 +336,7 @@ export function CashSummaryView({ ctx }: { ctx: ReportCtx }) {
             }
             disabled={!d}
           />
-        )
+        ) : null
       }
       getCsv={() => (d ? csvFor(visible, cols) : null)}
     >
@@ -860,7 +860,7 @@ export function BankReconSummaryView({ ctx }: { ctx: ReportCtx }) {
       getCsv={() => (d ? csvFor(visible, cols) : null)}
       extraControls={
         <>
-          {q.isError ? null : (
+          {q.isError ? null : q.isSuccess ? (
             <ReportAccountMultiSelect
               label="Bank accounts"
               accounts={(d?.rows ?? []).map((row) => ({
@@ -874,7 +874,7 @@ export function BankReconSummaryView({ ctx }: { ctx: ReportCtx }) {
               }
               disabled={!d}
             />
-          )}
+          ) : null}
           <Button size="sm" variant="outline" asChild className="print:hidden">
             <Link to="/banking/reconcile">Open reconciliation</Link>
           </Button>

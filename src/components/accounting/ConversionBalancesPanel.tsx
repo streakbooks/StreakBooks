@@ -514,7 +514,7 @@ export function ConversionBalancesPanel({
           {setup.isError ? (
             <QueryErrorState queries={[setup]} title="Could not load conversion setup" />
           ) : null}
-          {setup.isError ? null : (
+          {setup.isSuccess ? (
           <div className="max-h-96 overflow-auto">
             <EditableLineItemGrid
               aria-label="Trial balance"
@@ -559,7 +559,7 @@ export function ConversionBalancesPanel({
               ))}
             </EditableLineItemGrid>
           </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 

@@ -810,7 +810,7 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
               <option value="cash">Cash (payment date)</option>
             </select>
           </div>
-          {q.isError ? null : (
+          {q.isError ? null : q.isSuccess ? (
             <ReportAccountMultiSelect
               label="Tax ledger accounts"
               accounts={taxAccounts}
@@ -820,7 +820,7 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
               }
               disabled={!d || taxAccounts.length === 0}
             />
-          )}
+          ) : null}
         </>
       }
       getCsv={() => {

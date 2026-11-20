@@ -75,6 +75,8 @@ export function ApiKeysAdmin({ isOwner }: { isOwner: boolean }) {
       </header>
       {query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load billing API keys" />
+      ) : !query.isSuccess ? (
+        <p className="text-sm text-muted-foreground">Loading billing API keys…</p>
       ) : (
         <>
           <ul className="space-y-1 text-sm">

@@ -70,6 +70,8 @@ export function CouponsAdmin({ canEdit }: { canEdit: boolean }) {
       </header>
       {query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load promo codes" />
+      ) : !query.isSuccess ? (
+        <p className="text-sm text-muted-foreground">Loading promo codes…</p>
       ) : (
         <>
           <ul className="space-y-2 text-sm">

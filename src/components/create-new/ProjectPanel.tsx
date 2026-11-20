@@ -13,6 +13,7 @@ import {
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContactLookup } from "@/components/lookup";
@@ -93,19 +94,20 @@ export function ProjectPanel({ onSaved }: { onSaved?: () => void } = {}) {
       <Label>Name</Label>
       <Input required value={name} onChange={(e) => setName(e.target.value)} />
       <Label>Customer</Label>
-      <ContactLookup
-        ariaLabel="Customer"
-        contacts={(customersQ.data ?? []) as Array<{ id: string; name: string }>}
-        value={contactId}
-        onChange={setContactId}
-        companyId={companyId}
-        createKind="customer"
-        placeholder="None"
-        allowClear
-        loading={customersQ.isPending}
-        error={customersQ.isError ? friendlyAuthError(customersQ.error) : null}
-        onRetry={() => void customersQ.refetch()}
-      />
+      {customersQ.isError ? null : customersQ.isPending ? (
+        <LoadingState />
+      ) : customersQ.isSuccess ? (
+        <ContactLookup
+          ariaLabel="Customer"
+          contacts={(customersQ.data ?? []) as Array<{ id: string; name: string }>}
+          value={contactId}
+          onChange={setContactId}
+          companyId={companyId}
+          createKind="customer"
+          placeholder="None"
+          allowClear
+        />
+      ) : null}
       <Label>Start</Label>
       <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
       <Label>End</Label>
@@ -120,7 +122,10 @@ export function ProjectPanel({ onSaved }: { onSaved?: () => void } = {}) {
         entityId={recordId}
         audience="internal"
       />
-      <Button type="submit" disabled={saveM.isPending}>
+      <Button
+        type="submit"
+        disabled={saveM.isPending || !customersQ.isSuccess || customersQ.isError}
+      >
         {saveM.isPending ? "Saving…" : "Save project"}
       </Button>
     </form>

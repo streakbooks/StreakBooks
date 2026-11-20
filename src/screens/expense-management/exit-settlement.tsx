@@ -382,7 +382,13 @@ export function ExpenseManagementExitSettlementPage() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Settlements</h2>
-        {(settlementsQ.data ?? []).length === 0 ? (
+        {settlementsQ.isPending ? (
+          <LoadingState />
+        ) : settlementsQ.isError ? (
+          <QueryErrorState queries={[settlementsQ]} title="Could not load exit settlements" />
+        ) : !settlementsQ.isSuccess ? (
+          <LoadingState />
+        ) : (settlementsQ.data ?? []).length === 0 ? (
           <EmptyState
             title="No exit settlements"
             description="Create a draft for a leaving employee, clear blockers, then finalize."

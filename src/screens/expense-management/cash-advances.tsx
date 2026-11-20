@@ -297,7 +297,13 @@ export function ExpenseManagementCashAdvancesPage() {
             <div className="flex items-end">
               <Button
                 onClick={() => createMut.mutate()}
-                disabled={createMut.isPending || !title.trim() || !amount.trim()}
+                disabled={
+                  createMut.isPending ||
+                  !title.trim() ||
+                  !amount.trim() ||
+                  !banksQ.isSuccess ||
+                  banksQ.isError
+                }
               >
                 {createMut.isPending ? "Saving…" : "Save draft"}
               </Button>

@@ -603,7 +603,7 @@ export function NewBill({
   }, [companyId, currencyCode, billDate, baseCurrency, fetchFx]);
 
   useEffect(() => {
-    if (defaultsApplied || !settingsQ.data) return;
+    if (defaultsApplied || !settingsQ.isSuccess || !settingsQ.data) return;
     const days = settingsQ.data.purchases_default_payment_terms_days ?? 30;
     if (!dueDateManualOverride) {
       setDueDate(calculateDueDate(today, { days, calculation_method: "days_after_bill_date" }));
@@ -612,7 +612,7 @@ export function NewBill({
     if (settingsQ.data.purchases_default_notes) setMemo(settingsQ.data.purchases_default_notes);
     setCurrencyCode(baseCurrency);
     setDefaultsApplied(true);
-  }, [settingsQ.data, defaultsApplied, today, dueDateManualOverride, baseCurrency]);
+  }, [settingsQ.isSuccess, settingsQ.data, defaultsApplied, today, dueDateManualOverride, baseCurrency]);
 
   // Capture baseline after first paint so opening alone is not "dirty"
   useEffect(() => {
@@ -724,7 +724,7 @@ export function NewBill({
   );
 
   useEffect(() => {
-    if (prefsHydrated || !prefsQ.data) return;
+    if (prefsHydrated || !prefsQ.isSuccess || !prefsQ.data) return;
     setSidebarState(prefsQ.data.sidebarState);
     setSidebarWidth(prefsQ.data.sidebarWidthPx);
     setSidebarTab(prefsQ.data.sidebarTab);
@@ -733,7 +733,7 @@ export function NewBill({
       setLineVisibleColumns(prefsQ.data.visibleColumns as LineColumnKey[]);
     }
     setPrefsHydrated(true);
-  }, [prefsQ.data, prefsHydrated]);
+  }, [prefsQ.isSuccess, prefsQ.data, prefsHydrated]);
 
   const savePrefsPatch = useCallback(
     async (patch: Partial<BillWorkspacePrefs>) => {
@@ -1417,16 +1417,20 @@ export function NewBill({
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (suppliersQ.isPending || accountsQ.isPending) return <LoadingState />;
   const billOptionQueries = [suppliersQ, accountsQ, productsQ, taxCodesQ, termsQ, customersQ];
-  if (billOptionQueries.some((query) => query.isError && query.data === undefined)) {
+  if (billOptionQueries.some((query) => query.isError)) {
     return (
       <QueryErrorState queries={billOptionQueries} title="Could not load bill entry options" />
     );
   }
-  if (dimsQ.isError && dimsQ.data === undefined) {
+  if (dimsQ.isError) {
     return (
       <QueryErrorState queries={[dimsQ]} title="Could not load tracking dimensions" />
     );
   }
+  const billOptionsReady =
+    billOptionQueries.every((query) => query.isSuccess) &&
+    dimsQ.isSuccess &&
+    settingsQ.isSuccess;
 
   const headerBar: ReactNode = (
     <div className="flex flex-wrap items-center gap-2">
@@ -1507,7 +1511,7 @@ export function NewBill({
       <Button
         size="sm"
         variant="outline"
-        disabled={mutation.isPending}
+        disabled={mutation.isPending || !billOptionsReady}
         onClick={() => mutation.mutate("draft")}
       >
         {mutation.isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
@@ -1517,7 +1521,7 @@ export function NewBill({
         <Button
           size="sm"
           className="rounded-r-none"
-          disabled={mutation.isPending}
+          disabled={mutation.isPending || !billOptionsReady}
           onClick={() => mutation.mutate("authorise")}
         >
           {isTemplate ? "Save & activate" : "Save & authorise"}
@@ -1527,7 +1531,7 @@ export function NewBill({
             <Button
               size="sm"
               aria-label="More bill save actions"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || !billOptionsReady}
               className="rounded-l-none border-l border-primary-foreground/20 px-2"
             >
               <ChevronDown className="size-3.5" />

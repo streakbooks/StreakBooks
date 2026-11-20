@@ -144,13 +144,13 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
   const prefilled = useRef(false);
   const recordRef = useRef<DocumentRecordHandle>(null);
   useEffect(() => {
-    if (!prefillBill || prefilled.current) return;
+    if (!prefillQ.isSuccess || !prefillBill || prefilled.current) return;
     prefilled.current = true;
     setContactId(prefillBill.contact_id);
     applyBill(billToCredit(prefillBill));
     // applyBill only sets state; it is intentionally not a dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefillBill]);
+  }, [prefillQ.isSuccess, prefillBill]);
 
   const chooseBill = async (id: string) => {
     if (id === "__none__") {
@@ -325,7 +325,7 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
   });
 
   const requiredQueries = [suppliersQ, accountsQ, billsQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return (
       <QueryErrorState queries={requiredQueries} title="Could not load supplier credit options" />
     );
@@ -333,8 +333,15 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (suppliersQ.isPending || accountsQ.isPending) return <LoadingState />;
 
+  const optionsReady = requiredQueries.every((query) => query.isSuccess);
   const blocked =
-    mutation.isPending || anyInvalid || incomplete || fxInvalid || !contactId || totalMinor <= 0;
+    mutation.isPending ||
+    anyInvalid ||
+    incomplete ||
+    fxInvalid ||
+    !contactId ||
+    totalMinor <= 0 ||
+    !optionsReady;
 
   return (
     <TransactionWorkspace

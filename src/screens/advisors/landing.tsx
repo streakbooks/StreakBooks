@@ -83,14 +83,13 @@ export function AdvisorsLandingPage() {
           </p>
         </header>
 
-        {catalogue.isLoading ? (
+        {catalogue.isPending || catalogue.isLoading ? (
           <p className="text-sm text-muted-foreground" role="status">
             Loading services…
           </p>
-        ) : null}
-        {catalogue.isError ? (
+        ) : catalogue.isError ? (
           <QueryErrorState queries={[catalogue]} title="Could not load advisor services" />
-        ) : (
+        ) : catalogue.isSuccess ? (
           <section
             aria-label="Advisor service choices"
             className="grid gap-6 lg:grid-cols-2 lg:gap-8"
@@ -99,7 +98,7 @@ export function AdvisorsLandingPage() {
               <ServiceCard key={service.code} service={service} />
             ))}
           </section>
-        )}
+        ) : null}
 
         <p className="max-w-2xl text-sm text-muted-foreground">
           Choose a service to view plans and book a free consultation. No chatbot opens until you

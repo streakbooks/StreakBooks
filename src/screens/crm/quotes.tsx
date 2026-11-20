@@ -129,7 +129,7 @@ export function CrmQuotesPage() {
               }
             />
           ) : null}
-          {rows.length > 0 ? (
+          {opps.isSuccess && rows.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>

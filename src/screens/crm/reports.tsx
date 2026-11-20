@@ -105,7 +105,7 @@ export function CrmReportsPage() {
             <QueryErrorState queries={[kpis]} title="Could not load KPI report" />
           ) : null}
 
-          {kpi ? (
+          {kpis.isSuccess && kpi ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="pb-2">
@@ -141,7 +141,7 @@ export function CrmReportsPage() {
             </div>
           ) : null}
 
-          {report ? (
+          {forecast.isSuccess && report ? (
             <Card>
               <CardHeader>
                 <CardTitle>Weighted pipeline (live)</CardTitle>

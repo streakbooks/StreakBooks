@@ -112,7 +112,7 @@ export function CrmProductsPage() {
               }
             />
           ) : null}
-          {rows.length > 0 ? (
+          {products.isSuccess && rows.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>

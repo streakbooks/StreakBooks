@@ -71,7 +71,7 @@ export function CrmAutomationPage() {
           {policy.isError ? (
             <QueryErrorState queries={[policy]} title="Could not load automation policy" />
           ) : null}
-          {policy.data ? (
+          {policy.isSuccess && policy.data ? (
             <>
               <Alert>
                 <AlertTitle>Engine {policy.data.engineEnabled ? "enabled" : "disabled"}</AlertTitle>

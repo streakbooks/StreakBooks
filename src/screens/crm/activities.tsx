@@ -541,7 +541,7 @@ export function CrmActivitiesPage({
               }
             />
           ) : null}
-          {rows.length > 0 ? (
+          {activities.isSuccess && rows.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>

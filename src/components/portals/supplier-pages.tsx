@@ -161,29 +161,31 @@ export function PortalBills() {
         </CardContent>
       </Card>
       <div className="space-y-3">
-        {query.isError ? <QueryErrorState queries={[query]} /> : null}
         <h2 className="font-semibold">Your submissions</h2>
         {query.isPending ? <LoadingState /> : null}
-        <ul className="divide-y divide-border rounded-md border border-border text-sm">
-          {submissions.map((row) => (
-            <li key={String(row["id"])} className="px-3 py-3">
-              <p className="font-medium">
-                {String(row["supplier_reference"])} · {String(row["status"])}
-              </p>
-              <p className="text-muted-foreground">
-                {formatMoney(
-                  Number(row["total_minor"] ?? 0),
-                  String(row["currency_code"] ?? current.currency),
-                  current.locale,
-                )}
-              </p>
-              {row["rejection_reason"] ? <p>{String(row["rejection_reason"])}</p> : null}
-            </li>
-          ))}
-          {query.isSuccess && submissions.length === 0 ? (
-            <li className="px-3 py-6 text-muted-foreground">No submissions yet.</li>
-          ) : null}
-        </ul>
+        {query.isError ? <QueryErrorState queries={[query]} /> : null}
+        {query.isSuccess ? (
+          <ul className="divide-y divide-border rounded-md border border-border text-sm">
+            {submissions.map((row) => (
+              <li key={String(row["id"])} className="px-3 py-3">
+                <p className="font-medium">
+                  {String(row["supplier_reference"])} · {String(row["status"])}
+                </p>
+                <p className="text-muted-foreground">
+                  {formatMoney(
+                    Number(row["total_minor"] ?? 0),
+                    String(row["currency_code"] ?? current.currency),
+                    current.locale,
+                  )}
+                </p>
+                {row["rejection_reason"] ? <p>{String(row["rejection_reason"])}</p> : null}
+              </li>
+            ))}
+            {submissions.length === 0 ? (
+              <li className="px-3 py-6 text-muted-foreground">No submissions yet.</li>
+            ) : null}
+          </ul>
+        ) : null}
       </div>
     </div>
   );

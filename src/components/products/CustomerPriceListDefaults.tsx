@@ -157,6 +157,8 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
               !canManage ||
               !contactId ||
               saveMut.isPending ||
+              !customersQ.isSuccess ||
+              !defaultsQ.isSuccess ||
               (priceListId !== "none" && !activeLists.some((x) => x.id === priceListId))
             }
             onClick={() =>
@@ -173,51 +175,53 @@ export function CustomerPriceListDefaults({ companyId, currency, priceLists }: P
         {defaultsQ.isError ? (
           <QueryErrorState queries={[defaultsQ]} title="Could not load customer price defaults" />
         ) : null}
-        {defaults.length === 0 && !defaultsQ.isPending && !defaultsQ.isError ? (
+        {defaultsQ.isSuccess && defaults.length === 0 ? (
           <p className="rounded-md border p-3 text-sm text-muted-foreground">
             No customer-specific defaults configured yet.
           </p>
         ) : null}
-        <div className="space-y-2">
-          {defaults.map((row) => (
-            <div
-              key={row.contact_id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
-            >
-              <div className="min-w-0">
-                <p className="font-medium">{row.contact_name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {row.price_list_name} · {row.price_list_currency || "Unknown currency"}
-                  {row.price_list_active ? "" : " · Archived list"}
-                </p>
+        {defaultsQ.isSuccess ? (
+          <div className="space-y-2">
+            {defaults.map((row) => (
+              <div
+                key={row.contact_id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">{row.contact_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {row.price_list_name} · {row.price_list_currency || "Unknown currency"}
+                    {row.price_list_active ? "" : " · Archived list"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setContactId(row.contact_id);
+                      setPriceListId(row.price_list_id);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!canManage || saveMut.isPending}
+                    onClick={() => {
+                      if (window.confirm(`Remove the default for ${row.contact_name}?`)) {
+                        saveMut.mutate({ contactId: row.contact_id, priceListId: null });
+                      }
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setContactId(row.contact_id);
-                    setPriceListId(row.price_list_id);
-                  }}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!canManage || saveMut.isPending}
-                  onClick={() => {
-                    if (window.confirm(`Remove the default for ${row.contact_name}?`)) {
-                      saveMut.mutate({ contactId: row.contact_id, priceListId: null });
-                    }
-                  }}
-                >
-                  Remove
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : null}
         {defaults.length >= 500 ? (
           <p className="text-xs text-muted-foreground">
             Showing the first 500 assignments. Customer-default pagination remains pending.

@@ -252,62 +252,63 @@ export const DocumentRecordPanel = forwardRef<
             You can view files. Adding files is not available for your role.
           </p>
         )}
-        <ul className="space-y-1 text-sm">
-          {(filesQ.data ?? []).map((file) => (
-            <li key={file.id} className="flex flex-wrap items-center gap-2">
-              <span>
-                {file.file_name}{" "}
-                <span className="text-muted-foreground">({formatFileSize(file.size_bytes)})</span>
-              </span>
-              <Button
-                type="button"
-                variant="link"
-                size="sm"
-                className="h-auto p-0"
-                onClick={() =>
-                  void openFile(file.id, canPreviewAttachment(file.file_name, file.content_type))
-                }
-              >
-                {canPreviewAttachment(file.file_name, file.content_type) ? "Preview" : "Download"}
-              </Button>
-              {canManage ? (
+        {filesQ.isError ? (
+          <QueryErrorState queries={[filesQ]} title="Could not load document files" />
+        ) : (
+          <ul className="space-y-1 text-sm">
+            {(filesQ.data ?? []).map((file) => (
+              <li key={file.id} className="flex flex-wrap items-center gap-2">
+                <span>
+                  {file.file_name}{" "}
+                  <span className="text-muted-foreground">({formatFileSize(file.size_bytes)})</span>
+                </span>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={() =>
+                    void openFile(file.id, canPreviewAttachment(file.file_name, file.content_type))
+                  }
+                >
+                  {canPreviewAttachment(file.file_name, file.content_type) ? "Preview" : "Download"}
+                </Button>
+                {canManage ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (!confirm(`Remove ${file.file_name}?`)) return;
+                      void removeFile({ data: { companyId: companyId!, attachmentId: file.id } })
+                        .then(() => (entityId ? refresh(entityId) : undefined))
+                        .catch((error) => toast.error(friendlyAuthError(error)));
+                    }}
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </li>
+            ))}
+            {pending.map((item) => (
+              <li key={item.key} className="flex items-center gap-2 text-muted-foreground">
+                {item.file.name} (pending save){" "}
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    if (!confirm(`Remove ${file.file_name}?`)) return;
-                    void removeFile({ data: { companyId: companyId!, attachmentId: file.id } })
-                      .then(() => (entityId ? refresh(entityId) : undefined))
-                      .catch((error) => toast.error(friendlyAuthError(error)));
+                    const next = pendingRef.current.filter((row) => row.key !== item.key);
+                    pendingRef.current = next;
+                    setPending(next);
                   }}
                 >
                   Remove
                 </Button>
-              ) : null}
-            </li>
-          ))}
-          {pending.map((item) => (
-            <li key={item.key} className="flex items-center gap-2 text-muted-foreground">
-              {item.file.name} (pending save){" "}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const next = pendingRef.current.filter((row) => row.key !== item.key);
-                  pendingRef.current = next;
-                  setPending(next);
-                }}
-              >
-                Remove
-              </Button>
-            </li>
-          ))}
-        </ul>
-        {filesQ.isError ? (
-          <QueryErrorState queries={[filesQ]} title="Could not load document files" />
-        ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
         <p className="text-xs text-muted-foreground">
           Limit {MAX_FILE_BYTES / (1024 * 1024)} MB per file.
         </p>

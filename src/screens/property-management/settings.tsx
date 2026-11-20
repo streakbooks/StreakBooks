@@ -195,7 +195,7 @@ export function PmSettingsPage() {
     <div className="grid gap-2" key={key}>
       <Label>{label}</Label>
       <p className="text-sm text-muted-foreground">{hint}</p>
-      {accounts.isError && accounts.data === undefined ? null : (
+      {accounts.isError ? null : (
         <RecordLookupSelect
           value={mappingValue(key)}
           onValueChange={(value) => setMapping(key, value)}
@@ -228,7 +228,7 @@ export function PmSettingsPage() {
       actions={
         <Button
           type="button"
-          disabled={!current || mutation.isPending}
+          disabled={!settings.isSuccess || !current || mutation.isPending || accounts.isError}
           onClick={() => mutation.mutate()}
         >
           {mutation.isPending ? "Saving…" : "Save settings"}
@@ -240,10 +240,10 @@ export function PmSettingsPage() {
       {settings.isError ? (
         <QueryErrorState queries={[settings]} title="Could not load settings" />
       ) : null}
-      {accounts.isError && accounts.data === undefined ? (
+      {accounts.isError ? (
         <QueryErrorState queries={[accounts]} title="Could not load chart accounts" />
       ) : null}
-      {current ? (
+      {settings.isSuccess && current ? (
         <div className="grid gap-4">
           <Card>
             <CardHeader>

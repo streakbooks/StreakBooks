@@ -531,56 +531,58 @@ export function MessagesScreen({
                 }
               />
             )}
-          <ul className="divide-y">
-            {conversations.data?.map((conversation) => (
-              <li key={conversation.id}>
-                <button
-                  type="button"
-                  className={cn(
-                    "flex w-full flex-col gap-1 px-3 py-3 text-left transition-colors hover:bg-muted/40",
-                    conversationId === conversation.id && "bg-muted/60",
-                  )}
-                  onClick={() =>
-                    void navigate({
-                      to: "/messages",
-                      search: messagesSearch({ filter, conversation: conversation.id }),
-                    })
-                  }
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-medium">
-                      {conversation.title ||
-                        (conversation.conversation_type === "dm"
-                          ? "Direct message"
-                          : conversation.conversation_type)}
-                    </span>
-                    {conversation.unread ? (
-                      <Badge variant="default">
-                        {conversation.unread_count > 99
-                          ? "99+"
-                          : conversation.unread_count > 1
-                            ? conversation.unread_count
-                            : "Unread"}
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-xs text-muted-foreground">
-                      {conversation.last_message_preview || "No messages yet"}
-                    </span>
-                    {conversation.last_message_at ? (
-                      <time
-                        className="shrink-0 text-[10px] text-muted-foreground"
-                        dateTime={conversation.last_message_at}
-                      >
-                        {formatMessagingRelativeTime(conversation.last_message_at)}
-                      </time>
-                    ) : null}
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
+          {conversations.isSuccess ? (
+            <ul className="divide-y">
+              {conversations.data.map((conversation) => (
+                <li key={conversation.id}>
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex w-full flex-col gap-1 px-3 py-3 text-left transition-colors hover:bg-muted/40",
+                      conversationId === conversation.id && "bg-muted/60",
+                    )}
+                    onClick={() =>
+                      void navigate({
+                        to: "/messages",
+                        search: messagesSearch({ filter, conversation: conversation.id }),
+                      })
+                    }
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-medium">
+                        {conversation.title ||
+                          (conversation.conversation_type === "dm"
+                            ? "Direct message"
+                            : conversation.conversation_type)}
+                      </span>
+                      {conversation.unread ? (
+                        <Badge variant="default">
+                          {conversation.unread_count > 99
+                            ? "99+"
+                            : conversation.unread_count > 1
+                              ? conversation.unread_count
+                              : "Unread"}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-xs text-muted-foreground">
+                        {conversation.last_message_preview || "No messages yet"}
+                      </span>
+                      {conversation.last_message_at ? (
+                        <time
+                          className="shrink-0 text-[10px] text-muted-foreground"
+                          dateTime={conversation.last_message_at}
+                        >
+                          {formatMessagingRelativeTime(conversation.last_message_at)}
+                        </time>
+                      ) : null}
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </section>
 
         <section

@@ -309,7 +309,7 @@ export function AccountForm({
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Sub-account of">
-          {chartQuery.isError ? null : (
+          {chartQuery.isError ? null : chartQuery.isSuccess ? (
             <AccountLookup
               ariaLabel="Sub-account of"
               purpose="parent"
@@ -320,25 +320,29 @@ export function AccountForm({
               placeholder="No parent"
               allowClear
             />
+          ) : (
+            <p className="text-sm text-muted-foreground">Loading accounts…</p>
           )}
         </Field>
         <Field label="Default tax">
-          {taxQuery.isError ? null : (
-          <LookupSelect
-            ariaLabel="Default tax"
-            options={taxCodes.map((code) => ({ id: code.id, label: code.label }))}
-            value={draft.defaultTaxCodeId}
-            onChange={(defaultTaxCodeId) => setDraft({ ...draft, defaultTaxCodeId })}
-            placeholder="No default"
-            searchPlaceholder="Search tax code"
-            allowClear
-            companyId={companyId}
-            canCreate={canTax}
-            createTitle="New tax code"
-            renderCreate={
-              canTax ? (ctx) => <DefaultTaxCreate companyId={companyId} ctx={ctx} /> : undefined
-            }
-          />
+          {taxQuery.isError ? null : taxQuery.isSuccess ? (
+            <LookupSelect
+              ariaLabel="Default tax"
+              options={taxCodes.map((code) => ({ id: code.id, label: code.label }))}
+              value={draft.defaultTaxCodeId}
+              onChange={(defaultTaxCodeId) => setDraft({ ...draft, defaultTaxCodeId })}
+              placeholder="No default"
+              searchPlaceholder="Search tax code"
+              allowClear
+              companyId={companyId}
+              canCreate={canTax}
+              createTitle="New tax code"
+              renderCreate={
+                canTax ? (ctx) => <DefaultTaxCreate companyId={companyId} ctx={ctx} /> : undefined
+              }
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">Loading tax codes…</p>
           )}
         </Field>
         <Field label={`Currency (organisation uses ${currency})`}>
@@ -409,8 +413,8 @@ export function AccountForm({
           type="submit"
           disabled={
             mutation.isPending ||
-            chartQuery.isPending ||
-            taxQuery.isPending ||
+            !chartQuery.isSuccess ||
+            !taxQuery.isSuccess ||
             chartQuery.isError ||
             taxQuery.isError
           }
@@ -423,8 +427,8 @@ export function AccountForm({
           variant="outline"
           disabled={
             mutation.isPending ||
-            chartQuery.isPending ||
-            taxQuery.isPending ||
+            !chartQuery.isSuccess ||
+            !taxQuery.isSuccess ||
             chartQuery.isError ||
             taxQuery.isError
           }

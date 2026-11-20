@@ -139,7 +139,7 @@ export function SalesOrderForm({
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
   const requiredQueries = [customers, accounts, config];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return <QueryErrorState queries={requiredQueries} title="Could not load order options" />;
   if (customers.isPending || accounts.isPending || config.isPending) return <LoadingState />;
   return (

@@ -257,7 +257,7 @@ export function ExpenseManagementSettingsPage() {
       </ListWorkspace>
     );
   }
-  if (accountsQ.isError && accountsQ.data === undefined) {
+  if (accountsQ.isError) {
     return (
       <ListWorkspace
         title="Expense settings"

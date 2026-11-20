@@ -298,8 +298,10 @@ function InvoicesList() {
       </div>
       {query.isPending ? (
         <ListSkeleton />
-      ) : query.isError && query.data === undefined ? (
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load invoices" />
+      ) : !query.isSuccess ? (
+        <ListSkeleton />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No invoices"

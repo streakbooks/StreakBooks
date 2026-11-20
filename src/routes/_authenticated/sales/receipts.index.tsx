@@ -107,8 +107,10 @@ function ReceiptsList() {
       />
       {query.isPending ? (
         <ListSkeleton />
-      ) : query.isError && query.data === undefined ? (
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load receipts" />
+      ) : !query.isSuccess ? (
+        <ListSkeleton />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No receipts"

@@ -302,8 +302,10 @@ function RecurringTransactionsPage() {
 
           {workspaceQ.isPending ? (
             <LoadingState />
-          ) : workspaceQ.isError && workspaceQ.data === undefined ? (
+          ) : workspaceQ.isError ? (
             <QueryErrorState queries={[workspaceQ]} title="Could not load recurring bills" />
+          ) : !workspaceQ.isSuccess ? (
+            <LoadingState />
           ) : (workspaceQ.data?.rows ?? []).length === 0 ? (
             <EmptyState
               title="No recurring bill templates"

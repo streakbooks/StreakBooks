@@ -70,7 +70,7 @@ function Statements() {
       ?.name ?? "Supplier";
 
   const requiredQueries = [suppliersQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return <QueryErrorState queries={requiredQueries} title="Could not load suppliers" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;

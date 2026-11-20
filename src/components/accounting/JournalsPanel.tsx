@@ -359,8 +359,10 @@ export function JournalsPanel({
         </p>
       ) : query.isPending ? (
         <LoadingState />
-      ) : query.isError && query.data === undefined ? (
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load journals" />
+      ) : !query.isSuccess ? (
+        <LoadingState />
       ) : rows.length === 0 ? (
         <div className="space-y-3">
           <EmptyState

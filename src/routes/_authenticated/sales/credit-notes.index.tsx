@@ -96,8 +96,10 @@ function CreditNotesList() {
       />
       {query.isPending ? (
         <ListSkeleton />
-      ) : query.isError && query.data === undefined ? (
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load credit notes" />
+      ) : !query.isSuccess ? (
+        <ListSkeleton />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No credit notes"

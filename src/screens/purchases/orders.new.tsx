@@ -76,8 +76,7 @@ function OrderLoader({
     queryFn: () => fetch({ data: { companyId, orderId: edit! } }),
   });
   if (edit && q.isPending) return <LoadingState />;
-  if (edit && q.isError && q.data === undefined)
-    return <QueryErrorState queries={[q]} title="Could not load order" />;
+  if (edit && q.isError) return <QueryErrorState queries={[q]} title="Could not load order" />;
   if (
     q.data &&
     (q.data.status !== "draft" ||
@@ -304,7 +303,7 @@ function OrderForm({
     });
   };
   const requiredQueries = [suppliersQ, accountsQ, orgQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return <QueryErrorState queries={requiredQueries} title="Could not load order options" />;
   if (suppliersQ.isPending || accountsQ.isPending || orgQ.isPending) return <LoadingState />;
   const title = initial ? `Edit ${initial.order_number ?? "purchase order"}` : "New purchase order";

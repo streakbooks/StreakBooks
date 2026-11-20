@@ -440,7 +440,7 @@ function BankTransactions() {
   });
 
   const requiredQueries = [accountsQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return <QueryErrorState queries={requiredQueries} title="Could not load bank accounts" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
@@ -835,8 +835,10 @@ function BankTransactions() {
 
       {txnsQ.isPending ? (
         <ListSkeleton />
-      ) : txnsQ.isError && txnsQ.data === undefined ? (
+      ) : txnsQ.isError ? (
         <QueryErrorState queries={[txnsQ]} title="Could not load transactions" />
+      ) : !txnsQ.isSuccess ? (
+        <ListSkeleton />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No transactions"

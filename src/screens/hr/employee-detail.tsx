@@ -182,7 +182,7 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
       </RecordWorkspace>
     );
   }
-  if (orgQ.isError && orgQ.data === undefined) {
+  if (orgQ.isError) {
     return (
       <RecordWorkspace title="Employee" description="HR profile">
         <QueryErrorState queries={[orgQ]} title="Could not load organisation structure" />

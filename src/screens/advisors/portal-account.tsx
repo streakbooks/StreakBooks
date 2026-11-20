@@ -117,6 +117,7 @@ export function AdvisorsPortalAccountPage() {
       </main>
     );
   }
+  if (!homeQuery.isSuccess || !homeQuery.data) return null;
 
   const client = homeQuery.data.client;
 
@@ -218,17 +219,19 @@ export function AdvisorsPortalAccountPage() {
           {notesQuery.isSuccess && notesQuery.data.length === 0 ? (
             <p className="text-sm text-muted-foreground">No notifications yet.</p>
           ) : null}
-          <ul className="space-y-2">
-            {(notesQuery.data ?? []).map((item) => (
-              <li key={item.id} className="rounded-md border border-border p-3 text-sm">
-                <p className="font-medium">
-                  {item.title}
-                  {!item.readAt ? <span className="ml-2 text-xs text-primary">new</span> : null}
-                </p>
-                <p className="text-muted-foreground">{item.body}</p>
-              </li>
-            ))}
-          </ul>
+          {notesQuery.isSuccess ? (
+            <ul className="space-y-2">
+              {notesQuery.data.map((item) => (
+                <li key={item.id} className="rounded-md border border-border p-3 text-sm">
+                  <p className="font-medium">
+                    {item.title}
+                    {!item.readAt ? <span className="ml-2 text-xs text-primary">new</span> : null}
+                  </p>
+                  <p className="text-muted-foreground">{item.body}</p>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </section>
 
         <section className="space-y-3 rounded-lg border border-border p-4">

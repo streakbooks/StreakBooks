@@ -295,6 +295,7 @@ export function ExpenseManagementReimbursementsPage() {
       </ListWorkspace>
     );
   }
+  if (!claimsQ.isSuccess || !banksQ.isSuccess) return null;
 
   const allSelected = openClaims.length > 0 && selectedIds.length === openClaims.length;
 

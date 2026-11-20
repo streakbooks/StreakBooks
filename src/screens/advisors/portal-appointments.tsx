@@ -45,6 +45,7 @@ export function AdvisorsPortalAppointmentsPage() {
       </main>
     );
   }
+  if (!query.isSuccess || !query.data) return null;
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-6">

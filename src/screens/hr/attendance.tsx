@@ -239,6 +239,8 @@ export function HrAttendancePage() {
         <LoadingState />
       ) : logsQ.isError ? (
         <QueryErrorState queries={[logsQ]} title="Could not load attendance" />
+      ) : !logsQ.isSuccess ? (
+        <LoadingState />
       ) : logs.length === 0 ? (
         <EmptyState
           title="No attendance logs yet"
@@ -306,6 +308,8 @@ export function HrAttendancePage() {
         <LoadingState />
       ) : correctionsQ.isError ? (
         <QueryErrorState queries={[correctionsQ]} title="Could not load corrections" />
+      ) : !correctionsQ.isSuccess ? (
+        <LoadingState />
       ) : corrections.length === 0 ? (
         <p className="text-muted-foreground text-sm">No correction requests.</p>
       ) : (

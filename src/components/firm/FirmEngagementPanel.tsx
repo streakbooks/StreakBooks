@@ -167,6 +167,8 @@ export function FirmEngagementPanel({
             <LoadingState />
           ) : engagementsQ.isError ? (
             <QueryErrorState queries={[engagementsQ]} title="Could not load engagements" />
+          ) : !engagementsQ.isSuccess ? (
+            <LoadingState />
           ) : (engagementsQ.data ?? []).length === 0 ? (
             <EmptyState
               title="No engagements yet"

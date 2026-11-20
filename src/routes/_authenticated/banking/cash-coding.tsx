@@ -439,6 +439,8 @@ function CashCoding() {
         <LoadingState />
       ) : txnsQ.isError ? (
         <QueryErrorState queries={[txnsQ]} title="Could not load transactions" />
+      ) : !txnsQ.isSuccess ? (
+        <LoadingState />
       ) : rows.length === 0 ? (
         <EmptyState title="Nothing to code" description="No uncategorised transactions." />
       ) : (

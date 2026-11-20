@@ -221,6 +221,8 @@ export function ExpenseManagementReportsPage() {
           <LoadingState />
         ) : auditQ.isError ? (
           <QueryErrorState queries={[auditQ]} title="Could not load audit events" />
+        ) : !auditQ.isSuccess ? (
+          <LoadingState />
         ) : (auditQ.data ?? []).length === 0 ? (
           <EmptyState
             title="No claim events yet"

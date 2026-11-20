@@ -382,6 +382,8 @@ export const DocumentRecordPanel = forwardRef<
             <LoadingState />
           ) : activityQ.isError ? (
             <QueryErrorState queries={[activityQ]} title="Could not load activity history" />
+          ) : !activityQ.isSuccess ? (
+            <LoadingState />
           ) : activity.length === 0 ? (
             <p className="text-sm text-muted-foreground">{activityEmptyMessage(true)}</p>
           ) : (

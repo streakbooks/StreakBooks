@@ -212,6 +212,8 @@ export function HrShiftsPage() {
           <LoadingState />
         ) : shiftsQ.isError ? (
           <QueryErrorState queries={[shiftsQ]} title="Could not load shifts" />
+        ) : !shiftsQ.isSuccess ? (
+          <LoadingState />
         ) : shifts.length === 0 ? (
           <EmptyState
             title="No shift templates"
@@ -266,6 +268,8 @@ export function HrShiftsPage() {
           <LoadingState />
         ) : assignmentsQ.isError ? (
           <QueryErrorState queries={[assignmentsQ]} title="Could not load shift assignments" />
+        ) : !assignmentsQ.isSuccess ? (
+          <LoadingState />
         ) : assignments.length === 0 ? (
           <EmptyState
             title="No roster assignments"

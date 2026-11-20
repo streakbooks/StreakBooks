@@ -216,6 +216,8 @@ export function HrReportsPage() {
         <LoadingState />
       ) : reportQ.isError ? (
         <QueryErrorState queries={[reportQ]} title="Could not run report" />
+      ) : !reportQ.isSuccess ? (
+        <LoadingState />
       ) : rows.length === 0 ? (
         <EmptyState title="No rows" description="No data for this report and date range." />
       ) : (

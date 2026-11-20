@@ -64,6 +64,8 @@ function SuppliersPage() {
         <LoadingState />
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load suppliers" />
+      ) : !query.isSuccess ? (
+        <LoadingState />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState
           title="No suppliers"

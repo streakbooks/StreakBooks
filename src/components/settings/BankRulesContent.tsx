@@ -257,6 +257,8 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
             <LoadingState rows={2} />
           ) : suggestQ.isError ? (
             <QueryErrorState queries={[suggestQ]} title="Could not load rule suggestions" />
+          ) : !suggestQ.isSuccess ? (
+            <LoadingState />
           ) : suggestions.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No uncategorised line matches an active rule ({suggestQ.data?.scanned ?? 0} checked).
@@ -517,6 +519,8 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
         <LoadingState />
       ) : rulesQ.isError ? (
         <QueryErrorState queries={[rulesQ]} title="Could not load rules" />
+      ) : !rulesQ.isSuccess ? (
+        <LoadingState />
       ) : (rulesQ.data ?? []).length === 0 ? (
         <EmptyState title="No rules" description="Create a matching rule above." />
       ) : (

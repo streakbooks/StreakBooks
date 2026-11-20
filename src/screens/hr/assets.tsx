@@ -199,6 +199,8 @@ export function HrAssetsPage() {
           <LoadingState />
         ) : typesQ.isError ? (
           <QueryErrorState queries={[typesQ]} title="Could not load asset types" />
+        ) : !typesQ.isSuccess ? (
+          <LoadingState />
         ) : types.length === 0 ? (
           <EmptyState
             title="No asset types"
@@ -252,6 +254,8 @@ export function HrAssetsPage() {
           <LoadingState />
         ) : assignQ.isError ? (
           <QueryErrorState queries={[assignQ]} title="Could not load asset assignments" />
+        ) : !assignQ.isSuccess ? (
+          <LoadingState />
         ) : assignments.length === 0 ? (
           <EmptyState
             title="No assignments"

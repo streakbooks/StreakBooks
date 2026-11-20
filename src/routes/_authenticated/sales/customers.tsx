@@ -66,6 +66,8 @@ function Customers() {
         <LoadingState />
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load customers" />
+      ) : !query.isSuccess ? (
+        <LoadingState />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState
           title="No customers"

@@ -77,6 +77,8 @@ function DuplicatesPage() {
         <LoadingState />
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not scan for duplicates" />
+      ) : !query.isSuccess ? (
+        <LoadingState />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState
           title="No likely duplicates"

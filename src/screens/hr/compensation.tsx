@@ -132,6 +132,8 @@ export function HrCompensationPage() {
         <LoadingState />
       ) : dataQ.isError ? (
         <QueryErrorState queries={[dataQ]} title="Could not load compensation" />
+      ) : !dataQ.isSuccess ? (
+        <LoadingState />
       ) : items.length === 0 ? (
         <EmptyState
           title="No compensation proposals"

@@ -279,6 +279,8 @@ export function HrLeavePage() {
           <LoadingState />
         ) : typesQ.isError ? (
           <QueryErrorState queries={[typesQ]} title="Could not load leave types" />
+        ) : !typesQ.isSuccess ? (
+          <LoadingState />
         ) : types.length === 0 ? (
           <EmptyState
             title="No leave types"
@@ -342,6 +344,8 @@ export function HrLeavePage() {
           <LoadingState />
         ) : balancesQ.isError ? (
           <QueryErrorState queries={[balancesQ]} title="Could not load leave balances" />
+        ) : !balancesQ.isSuccess ? (
+          <LoadingState />
         ) : balances.length === 0 ? (
           <EmptyState
             title="No balances yet"
@@ -397,6 +401,8 @@ export function HrLeavePage() {
           <LoadingState />
         ) : requestsQ.isError ? (
           <QueryErrorState queries={[requestsQ]} title="Could not load leave requests" />
+        ) : !requestsQ.isSuccess ? (
+          <LoadingState />
         ) : requests.length === 0 ? (
           <EmptyState
             title="No leave requests"

@@ -122,6 +122,8 @@ export function FinancialYearsPanel({ companyId }: { companyId: string }) {
         <LoadingState />
       ) : periods.isError ? (
         <QueryErrorState queries={[periods]} title="Could not load periods" />
+      ) : !periods.isSuccess ? (
+        <LoadingState />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No accounting periods"

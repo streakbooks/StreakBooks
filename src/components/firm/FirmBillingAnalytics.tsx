@@ -203,6 +203,8 @@ export function FirmBillingPanel({
                 <LoadingState rows={2} />
               ) : linksQ.isError ? (
                 <QueryErrorState queries={[linksQ]} title="Could not load linked invoices" />
+              ) : !linksQ.isSuccess ? (
+                <LoadingState rows={2} />
               ) : (linksQ.data ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No linked practice invoices for this engagement.

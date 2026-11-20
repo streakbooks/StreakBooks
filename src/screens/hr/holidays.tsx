@@ -188,6 +188,8 @@ export function HrHolidaysPage() {
           <LoadingState />
         ) : dataQ.isError ? (
           <QueryErrorState queries={[dataQ]} title="Could not load holiday calendars" />
+        ) : !dataQ.isSuccess ? (
+          <LoadingState />
         ) : calendars.length === 0 ? (
           <EmptyState
             title="No holiday calendars"

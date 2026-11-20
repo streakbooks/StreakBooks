@@ -1057,6 +1057,8 @@ function ProductsWorkspace({
         <LoadingState />
       ) : productsQ.isError ? (
         <QueryErrorState queries={[productsQ]} title="Could not load products" />
+      ) : !productsQ.isSuccess ? (
+        <LoadingState />
       ) : rows.length === 0 ? (
         <EmptyState
           icon={Package}

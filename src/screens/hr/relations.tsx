@@ -140,6 +140,8 @@ export function HrRelationsPage() {
         <LoadingState />
       ) : casesQ.isError ? (
         <QueryErrorState queries={[casesQ]} title="Could not load cases" />
+      ) : !casesQ.isSuccess ? (
+        <LoadingState />
       ) : items.length === 0 ? (
         <EmptyState
           title="No cases"

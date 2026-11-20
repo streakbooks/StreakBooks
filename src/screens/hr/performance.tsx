@@ -196,6 +196,8 @@ export function HrPerformancePage() {
           <LoadingState />
         ) : cyclesQ.isError ? (
           <QueryErrorState queries={[cyclesQ]} title="Could not load cycles" />
+        ) : !cyclesQ.isSuccess ? (
+          <LoadingState />
         ) : cycles.length === 0 ? (
           <EmptyState
             title="No cycles"
@@ -255,6 +257,8 @@ export function HrPerformancePage() {
           <LoadingState />
         ) : goalsQ.isError ? (
           <QueryErrorState queries={[goalsQ]} title="Could not load goals" />
+        ) : !goalsQ.isSuccess ? (
+          <LoadingState />
         ) : goals.length === 0 ? (
           <EmptyState
             title="No goals"

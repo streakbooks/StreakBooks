@@ -809,6 +809,8 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
         <LoadingState />
       ) : importsQ.isError ? (
         <QueryErrorState queries={[importsQ]} title="Could not load imports" />
+      ) : !importsQ.isSuccess ? (
+        <LoadingState />
       ) : (importsQ.data ?? []).length === 0 ? (
         <EmptyState title="No imports yet" description="Upload a CSV, OFX, QFX or QIF statement." />
       ) : (

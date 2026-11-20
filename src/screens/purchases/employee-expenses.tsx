@@ -136,6 +136,8 @@ export function EmployeeExpensesPage() {
         <LoadingState />
       ) : claimsQ.isError ? (
         <QueryErrorState queries={[claimsQ]} title="Could not load claims" />
+      ) : !claimsQ.isSuccess ? (
+        <LoadingState />
       ) : (claimsQ.data ?? []).length === 0 ? (
         <EmptyState
           title="No legacy claims"

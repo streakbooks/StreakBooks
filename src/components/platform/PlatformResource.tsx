@@ -319,6 +319,10 @@ export function PlatformResource({
         </p>
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load platform records" />
+      ) : !query.isSuccess ? (
+        <p role="status" className="p-8">
+          Loading records…
+        </p>
       ) : rows.length === 0 ? (
         <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
           No matching records.

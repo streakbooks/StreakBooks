@@ -154,6 +154,8 @@ function RecurringJournalsPage() {
         <LoadingState />
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load recurring journals" />
+      ) : !query.isSuccess ? (
+        <LoadingState />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No recurring journals"

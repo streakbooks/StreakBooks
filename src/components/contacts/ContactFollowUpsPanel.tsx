@@ -90,6 +90,8 @@ export function ContactFollowUpsPanel({ companyId }: { companyId: string }) {
         <p className="py-4 text-sm text-muted-foreground">Loading follow-up reminders…</p>
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load follow-ups" />
+      ) : !query.isSuccess ? (
+        <p className="py-4 text-sm text-muted-foreground">Loading follow-up reminders…</p>
       ) : tasks.length === 0 ? (
         <p className="py-4 text-sm text-muted-foreground">
           No matching tasks need a reminder in this period.

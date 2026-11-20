@@ -515,6 +515,8 @@ export function ExpenseManagementReimbursementsPage() {
           ) : (
             <QueryErrorState queries={[bankSuggestQ]} title="Could not load bank suggestions" />
           )
+        ) : !bankSuggestQ.isSuccess ? (
+          <LoadingState />
         ) : (bankSuggestQ.data ?? []).length === 0 ? (
           <p className="text-sm text-muted-foreground">No amount/date matches right now.</p>
         ) : (

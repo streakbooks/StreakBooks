@@ -217,6 +217,8 @@ function BankingAccounts() {
         <LoadingState />
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load accounts" />
+      ) : !query.isSuccess ? (
+        <LoadingState />
       ) : accounts.length === 0 ? (
         <EmptyState
           icon={Landmark}

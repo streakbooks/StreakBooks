@@ -145,7 +145,7 @@ export function ExecutiveSummaryView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   return (
     <ReportShell
       title="Executive Summary"
@@ -273,7 +273,7 @@ export function CashSummaryView({ ctx }: { ctx: ReportCtx }) {
     queryKey: ["report-cash-summary", ctx.companyId, ctx.from, ctx.to],
     queryFn: () => fetchFn({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const chosen = ctx.search.accountIds?.split(",") ?? null;
   const visible = chosen
     ? (d?.rows ?? []).filter((row) => chosen.includes(row.gl_account_id))
@@ -376,7 +376,7 @@ export function GlSummaryView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const selectedIds = ctx.search.accountIds?.split(",") ?? null;
   const selectedRows = selectedIds
     ? (d?.rows ?? []).filter((row) => selectedIds.includes(row.account_id))
@@ -531,7 +531,7 @@ export function SalesByContactView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   type Row = NonNullable<typeof d>["rows"][number];
   const filteredRows = d ? filterAnalysisRows(d.rows, ctx.search, (r) => r.contact_name) : [];
   const m = (v: number) => fmt.amount(v, ctx.currency);
@@ -614,7 +614,7 @@ export function SalesByItemView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   type Row = NonNullable<typeof d>["rows"][number];
   const filteredRows = d
     ? filterAnalysisRows(d.rows, ctx.search, (r) =>
@@ -700,7 +700,7 @@ export function PurchasesBySupplierView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   type Row = NonNullable<typeof d>["rows"][number];
   const filteredRows = d ? filterAnalysisRows(d.rows, ctx.search, (r) => r.contact_name) : [];
   const m = (v: number) => fmt.amount(v, ctx.currency);
@@ -779,7 +779,7 @@ export function BankReconSummaryView({ ctx }: { ctx: ReportCtx }) {
     queryKey: ["report-bank-recon-summary", ctx.companyId, ctx.to],
     queryFn: () => fetchFn({ data: { companyId: ctx.companyId, asOf: ctx.to } }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const chosen = ctx.search.accountIds?.split(",") ?? null;
   const visible = chosen
     ? (d?.rows ?? []).filter((row) => chosen.includes(row.gl_account_id))
@@ -923,7 +923,7 @@ export function CashFlowIndirectView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const sections = d
     ? ([
         ["Operating activities", d.operating, d.operatingMinor],

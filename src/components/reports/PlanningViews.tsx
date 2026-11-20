@@ -70,7 +70,7 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const selectedIds = ctx.search.accountIds?.split(",") ?? null;
   const report = d ? focusBudgetReport(d.report, selectedIds ?? undefined) : null;
   const accountOptions = [...(d?.report.income.rows ?? []), ...(d?.report.expense.rows ?? [])].map(
@@ -362,7 +362,7 @@ export function FixedAssetRegisterView({ ctx }: { ctx: ReportCtx }) {
     queryKey: ["report-fa-register", ctx.companyId, ctx.to],
     queryFn: () => fetchFn({ data: { companyId: ctx.companyId, asOf: ctx.to } }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const selectedIds = ctx.search.accountIds?.split(",") ?? null;
   const rows = selectedIds
     ? (d?.rows ?? []).filter((row) => selectedIds.includes(row.asset_account_id))
@@ -541,7 +541,7 @@ export function DepreciationScheduleView({ ctx }: { ctx: ReportCtx }) {
     queryKey: ["report-depreciation", ctx.companyId, ctx.from, ctx.to],
     queryFn: () => fetchFn({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const rows = d?.rows ?? [];
   const m = (v: number) => fmt.amount(v, ctx.currency);
   const sum = (pick: (r: (typeof rows)[number]) => number) => rows.reduce((n, r) => n + pick(r), 0);

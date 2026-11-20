@@ -47,7 +47,7 @@ export function AdvisorsAgreementPage({ token }: { token: string }) {
       </main>
     );
   }
-
+  if (!query.isSuccess || !query.data) return null;
   const agreement = query.data;
   const open = agreement.status === "presented";
 

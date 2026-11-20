@@ -54,7 +54,7 @@ export function AppStoreFeaturedPage() {
       <QueryErrorState queries={[catalogue]} title="Could not load featured apps" />
     );
   }
-
+  if (!catalogue.isSuccess) return null;
   const apps = catalogue.data?.apps ?? [];
   const featured = filterMarketplaceApps(apps, { featured: true });
   const recommended = filterMarketplaceApps(apps, { recommended: true });

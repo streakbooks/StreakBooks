@@ -198,7 +198,7 @@ export function AdvisorsAdminWorkspacesPage() {
       </main>
     );
   }
-
+  if (!listQ.isSuccess || !candidatesQ.isSuccess || !listQ.data) return null;
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
       <ListWorkspace

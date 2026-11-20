@@ -137,7 +137,7 @@ export function AppStoreTrustPage() {
       <QueryErrorState queries={[catalogue]} title="Could not load trust catalogue" />
     );
   }
-
+  if (!catalogue.isSuccess) return null;
   const apps = catalogue.data?.apps ?? [];
   const verified = apps.filter((a) => a.publisherVerified);
   const certified = apps.filter((a) => isCertified(a.certificationStatus));

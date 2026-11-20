@@ -197,7 +197,7 @@ export function AdvisorsAdminEngagementsPage() {
       </main>
     );
   }
-
+  if (!listQ.isSuccess || !clientsQ.isSuccess || !staffQ.isSuccess) return null;
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
       <ListWorkspace

@@ -52,7 +52,7 @@ export function AdvisorsAdminOverviewPage() {
       </main>
     );
   }
-
+  if (!query.isSuccess || !query.data) return null;
   const data = query.data;
 
   return (

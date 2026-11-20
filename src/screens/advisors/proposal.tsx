@@ -54,7 +54,7 @@ export function AdvisorsProposalPage({ token }: { token: string }) {
       </main>
     );
   }
-
+  if (!query.isSuccess || !query.data) return null;
   const proposal = query.data;
   const open = proposal.status === "sent";
 

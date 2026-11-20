@@ -80,7 +80,7 @@ export function AdvisorsManageAppointmentPage({ manageToken }: { manageToken: st
       </main>
     );
   }
-
+  if (!appointmentQ.isSuccess || !appointmentQ.data) return null;
   const appt = appointmentQ.data;
   const startsAt = appt.startsAt;
   const status = appt.status;

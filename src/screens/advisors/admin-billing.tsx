@@ -195,7 +195,7 @@ export function AdvisorsAdminBillingPage() {
       </main>
     );
   }
-
+  if (!query.isSuccess || !query.data) return null;
   const board = query.data;
 
   return (

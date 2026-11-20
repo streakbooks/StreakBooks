@@ -130,7 +130,7 @@ export function AdvisorsAdminInquiriesPage() {
       </main>
     );
   }
-
+  if (!query.isSuccess || !staffQuery.isSuccess) return null;
   const staff = staffQuery.data ?? [];
 
   return (

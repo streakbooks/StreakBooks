@@ -105,7 +105,7 @@ export function AdvisorsAdminConversationsPage() {
       </main>
     );
   }
-
+  if (!query.isSuccess || !staffQuery.isSuccess) return null;
   const staff = staffQuery.data ?? [];
   const detail = detailQuery.data;
 

@@ -331,13 +331,15 @@ export function CrmOpportunitiesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Customer / Account</Label>
-                  {accounts.isError ? (
+                  {accounts.isPending ? (
+                    <LoadingState />
+                  ) : accounts.isError ? (
                     <QueryErrorState
                       queries={[accounts]}
                       title="Customer list unavailable"
                       description="An unlinked deal can be saved, but quote creation will remain blocked."
                     />
-                  ) : (
+                  ) : accounts.isSuccess ? (
                     <RecordLookupSelect
                       value={contactId || "__none"}
                       onValueChange={(value) => setContactId(value === "__none" ? "" : value)}
@@ -355,7 +357,7 @@ export function CrmOpportunitiesPage() {
                         ))}
                       </SelectContent>
                     </RecordLookupSelect>
-                  )}
+                  ) : null}
                   <p className="text-xs text-muted-foreground">
                     Reuses the shared Contacts master. A linked customer and positive value are
                     needed before creating a Sales quote.

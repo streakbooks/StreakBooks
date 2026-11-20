@@ -167,7 +167,12 @@ export function AppStoreAdminPage() {
                       <TableCell className="space-x-2">
                         <Button
                           size="sm"
-                          disabled={decideMutation.isPending}
+                          disabled={
+                            decideMutation.isPending ||
+                            !reviews.isSuccess ||
+                            reviews.isError ||
+                            reviews.isFetching
+                          }
                           onClick={() => decideMutation.mutate({ reviewId: row.id, approve: true })}
                         >
                           Approve checklist
@@ -175,7 +180,12 @@ export function AppStoreAdminPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={decideMutation.isPending}
+                          disabled={
+                            decideMutation.isPending ||
+                            !reviews.isSuccess ||
+                            reviews.isError ||
+                            reviews.isFetching
+                          }
                           onClick={() =>
                             decideMutation.mutate({ reviewId: row.id, approve: false })
                           }

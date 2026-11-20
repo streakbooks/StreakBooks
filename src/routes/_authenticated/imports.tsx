@@ -42,6 +42,7 @@ import {
 } from "@/lib/imports/import-definitions";
 import { previewImportCsv } from "@/lib/imports/import-preflight";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 
@@ -781,9 +782,11 @@ function ImportCentre() {
             <label className="block text-sm font-medium" htmlFor="budget-import-target">
               Target budget
             </label>
-            {budgetsQ.isError ? (
+            {budgetsQ.isPending ? (
+              <LoadingState />
+            ) : budgetsQ.isError ? (
               <QueryErrorState queries={[budgetsQ]} title="Could not load budgets" />
-            ) : (
+            ) : budgetsQ.isSuccess ? (
               <RecordLookupSelect
                 id="budget-import-target"
                 className="w-full rounded-md border bg-background p-2"
@@ -800,8 +803,8 @@ function ImportCentre() {
                   </option>
                 ))}
               </RecordLookupSelect>
-            )}
-            {!budgetsQ.isError && !budgetsQ.data?.budgets.length && !budgetsQ.isPending && (
+            ) : null}
+            {budgetsQ.isSuccess && !budgetsQ.data?.budgets.length && (
               <p className="text-sm">
                 No budgets found.{" "}
                 <Link to="/budgets" className="underline">

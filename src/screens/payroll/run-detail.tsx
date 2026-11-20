@@ -848,6 +848,8 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
               queries={[settingsQ]}
               title="Could not load payroll components"
             />
+          ) : !settingsQ.isSuccess ? (
+            <LoadingState />
           ) : manualComponents.length === 0 && adjustHourlyUnitComponents.length === 0 ? (
             <EmptyState
               title="Nothing to adjust yet"

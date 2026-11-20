@@ -303,6 +303,10 @@ export function DocumentEmailInbox({
                 </p>
               ) : attachments.isError ? (
                 <QueryErrorState queries={[attachments]} title="Could not load email attachments" />
+              ) : !attachments.isSuccess ? (
+                <p role="status" className="text-sm text-muted-foreground">
+                  Loading attachments…
+                </p>
               ) : attachments.data.rows.length ? (
                 attachments.data.rows.map((file) => (
                   <div

@@ -1661,6 +1661,8 @@ function BillLinesDialog({
           <LoadingState />
         ) : q.isError ? (
           <QueryErrorState queries={[q]} title="Could not load bill lines" />
+        ) : !q.isSuccess ? (
+          <LoadingState />
         ) : q.data.lines.length === 0 ? (
           <EmptyState
             title="No asset-coded posted bill lines"

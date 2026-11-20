@@ -173,6 +173,8 @@ export function FirmBillingPanel({
             <LoadingState rows={2} />
           ) : engagementsQ.isError ? (
             <QueryErrorState queries={[engagementsQ]} title="Could not load engagements" />
+          ) : !engagementsQ.isSuccess ? (
+            <LoadingState rows={2} />
           ) : !engagements.length ? (
             <EmptyState
               title="No engagements"
@@ -251,6 +253,8 @@ export function FirmBillingPanel({
                   <LoadingState rows={2} />
                 ) : invoicesQ.isError ? (
                   <QueryErrorState queries={[invoicesQ]} title="Could not list practice invoices" />
+                ) : !invoicesQ.isSuccess ? (
+                  <LoadingState rows={2} />
                 ) : !invoices.length ? (
                   <p className="text-sm text-muted-foreground">
                     No recent invoices in the active billing company.

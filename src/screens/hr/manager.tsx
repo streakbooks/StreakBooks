@@ -92,6 +92,8 @@ export function HrManagerPage() {
             <LoadingState />
           ) : teamQ.isError ? (
             <QueryErrorState queries={[teamQ]} title="Could not load team" />
+          ) : !teamQ.isSuccess ? (
+            <LoadingState />
           ) : !teamQ.data?.linked ? (
             <EmptyState
               title="Manager account not linked"

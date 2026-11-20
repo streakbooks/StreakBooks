@@ -114,6 +114,8 @@ export function ReportingHome({
           <p className="text-sm text-muted-foreground">Loading favourites…</p>
         ) : saved.isError ? (
           <QueryErrorState queries={[saved]} title="Could not load favourite reports" />
+        ) : !saved.isSuccess ? (
+          <p className="text-sm text-muted-foreground">Loading favourites…</p>
         ) : !saved.data.rows.length ? (
           <p className="text-sm text-muted-foreground">Star a saved report to keep it here.</p>
         ) : (

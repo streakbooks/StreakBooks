@@ -122,6 +122,8 @@ export function AdviserReporting({ from, to }: { from: string; to: string }) {
         <LoadingState />
       ) : portfolio.isError ? (
         <QueryErrorState queries={[portfolio]} title="Could not load authorized client reporting" />
+      ) : !portfolio.isSuccess ? (
+        <LoadingState />
       ) : !clients.length ? (
         <EmptyState
           title="No authorized clients"

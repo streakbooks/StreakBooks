@@ -339,6 +339,10 @@ export function DocumentRecycleBin({
             </p>
           ) : cleanup.isError ? (
             <QueryErrorState queries={[cleanup]} title="Could not load cleanup backlog" />
+          ) : !cleanup.isSuccess ? (
+            <p role="status" className="text-xs text-muted-foreground">
+              Loading cleanup backlog…
+            </p>
           ) : cleanup.data.total === 0 ? (
             <p className="text-xs text-muted-foreground">No pending cleanup jobs.</p>
           ) : (

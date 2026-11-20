@@ -102,6 +102,10 @@ export function DocumentOcrPanel({
         </p>
       ) : available.isError ? (
         <QueryErrorState queries={[available]} title="Could not check OCR configuration" />
+      ) : !available.isSuccess ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          Checking OCR configuration…
+        </p>
       ) : !available.data?.configured ? (
         <p role="status" className="text-sm text-muted-foreground">
           OCR is not configured. Administrator setup needed:{" "}

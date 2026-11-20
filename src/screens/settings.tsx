@@ -1676,7 +1676,7 @@ export function SettingsForCompany({
                             </TableBody>
                           </Table>
                         )}
-                        {auditDatesValid && !auditQuery.isPending && !auditQuery.isError ? (
+                        {auditDatesValid && auditQuery.isSuccess ? (
                           <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
                             <p role="status" className="text-xs text-muted-foreground">
                               {formatSettingsAuditPageLabel(auditOffset, auditPageRows.length)}

@@ -219,7 +219,7 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
           </SelectContent>
         </Select>
         {!canTax ? <Badge variant="outline">View only</Badge> : null}
-        {!q.isPending && !q.isError ? (
+        {q.isSuccess ? (
           <span className="text-xs text-muted-foreground">
             {visibleRows.length} of {rows.length} rates
           </span>
@@ -230,7 +230,7 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
         <LoadingState />
       ) : q.isError ? (
         <QueryErrorState queries={[q]} title="Could not load tax rates" />
-      ) : rows.length === 0 ? (
+      ) : !q.isSuccess ? null : rows.length === 0 ? (
         <EmptyState title="No tax rates" description="Add a rate, or apply a country pack." />
       ) : visibleRows.length === 0 ? (
         <EmptyState

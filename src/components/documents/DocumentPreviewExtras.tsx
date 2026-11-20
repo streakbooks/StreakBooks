@@ -99,7 +99,7 @@ export function DocumentPreviewExtras({
       <section aria-label="Line items" className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold">Line items</h3>
-          {!detailQ.isPending && !detailQ.isError ? (
+          {detailQ.isSuccess ? (
             <span className="text-xs text-muted-foreground tabular-nums">
               {lines.length} {lines.length === 1 ? "line" : "lines"}
             </span>
@@ -111,7 +111,7 @@ export function DocumentPreviewExtras({
           </p>
         ) : detailQ.isError ? (
           <QueryErrorState queries={[detailQ]} title="Could not load document line items" />
-        ) : lines.length === 0 ? (
+        ) : !detailQ.isSuccess ? null : lines.length === 0 ? (
           <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
             No line items were recorded.
           </p>
@@ -145,7 +145,7 @@ export function DocumentPreviewExtras({
         <div className="flex items-center gap-2">
           <Paperclip className="size-4 text-muted-foreground" aria-hidden />
           <h3 className="text-sm font-semibold">Attachments</h3>
-          {!attachmentsQ.isPending && !attachmentsQ.isError ? (
+          {attachmentsQ.isSuccess ? (
             <span className="text-xs text-muted-foreground">({attachments.length})</span>
           ) : null}
         </div>
@@ -155,7 +155,7 @@ export function DocumentPreviewExtras({
           </p>
         ) : attachmentsQ.isError ? (
           <QueryErrorState queries={[attachmentsQ]} title="Could not load attachments" />
-        ) : attachments.length === 0 ? (
+        ) : !attachmentsQ.isSuccess ? null : attachments.length === 0 ? (
           <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
             No attachments linked to this document.
           </p>

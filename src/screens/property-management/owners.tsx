@@ -153,71 +153,73 @@ export function PmOwnersPage() {
             </Button>
           </div>
           {showForm && canManage ? (
-            contacts.isError && contacts.data === undefined ? (
+            contacts.isPending ? (
+              <LoadingState />
+            ) : contacts.isError ? (
               <QueryErrorState queries={[contacts]} title="Could not load contacts" />
-            ) : (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle>Link owner from Contacts</CardTitle>
-                <CardDescription>
-                  Create or update the contact first if they are not listed.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2 sm:col-span-2">
-                  <Label>Contact</Label>
-                  <RecordLookupSelect
-                    value={contactId}
-                    onValueChange={(value) => {
-                      setContactId(value);
-                      const match = contactOptions.find((row) => row.id === value);
-                      if (match) {
-                        setDisplayName(match.name);
-                        setEmail(match.email ?? "");
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select contact" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contactOptions.map((contact) => (
-                        <SelectItem key={contact.id} value={contact.id}>
-                          {contact.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-owner-name">Display name</Label>
-                  <Input
-                    id="pm-owner-name"
-                    value={displayName}
-                    onChange={(event) => setDisplayName(event.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-owner-email">Statement delivery email</Label>
-                  <Input
-                    id="pm-owner-email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    disabled={!contactId || mutation.isPending || !contacts.isSuccess}
-                    onClick={() => mutation.mutate()}
-                  >
-                    {mutation.isPending ? "Saving…" : "Save owner"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            )
+            ) : contacts.isSuccess ? (
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>Link owner from Contacts</CardTitle>
+                  <CardDescription>
+                    Create or update the contact first if they are not listed.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2 sm:col-span-2">
+                    <Label>Contact</Label>
+                    <RecordLookupSelect
+                      value={contactId}
+                      onValueChange={(value) => {
+                        setContactId(value);
+                        const match = contactOptions.find((row) => row.id === value);
+                        if (match) {
+                          setDisplayName(match.name);
+                          setEmail(match.email ?? "");
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select contact" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contactOptions.map((contact) => (
+                          <SelectItem key={contact.id} value={contact.id}>
+                            {contact.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-owner-name">Display name</Label>
+                    <Input
+                      id="pm-owner-name"
+                      value={displayName}
+                      onChange={(event) => setDisplayName(event.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-owner-email">Statement delivery email</Label>
+                    <Input
+                      id="pm-owner-email"
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      disabled={!contactId || mutation.isPending || !contacts.isSuccess}
+                      onClick={() => mutation.mutate()}
+                    >
+                      {mutation.isPending ? "Saving…" : "Save owner"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null
           ) : null}
           {owners.isLoading ? <LoadingState /> : null}
           {owners.isError ? (

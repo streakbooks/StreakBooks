@@ -398,9 +398,11 @@ export function HrShiftsPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              {employeesQ.isError && employeesQ.data === undefined ? (
+              {employeesQ.isPending ? (
+                <LoadingState />
+              ) : employeesQ.isError ? (
                 <QueryErrorState queries={[employeesQ]} title="Could not load employees" />
-              ) : (
+              ) : employeesQ.isSuccess ? (
                 <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select employee" />
@@ -413,13 +415,15 @@ export function HrShiftsPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label>Shift template</Label>
-              {shiftsQ.isError && shiftsQ.data === undefined ? (
+              {shiftsQ.isPending ? (
+                <LoadingState />
+              ) : shiftsQ.isError ? (
                 <QueryErrorState queries={[shiftsQ]} title="Could not load shifts" />
-              ) : (
+              ) : shiftsQ.isSuccess ? (
                 <RecordLookupSelect value={shiftTemplateId} onValueChange={setShiftTemplateId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select shift" />
@@ -432,7 +436,7 @@ export function HrShiftsPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">

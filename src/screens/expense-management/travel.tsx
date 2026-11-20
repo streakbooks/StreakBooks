@@ -234,7 +234,7 @@ export function ExpenseManagementTravelPage() {
         <QueryErrorState queries={[ratesQ]} title="Could not load per diem rates" />
       ) : null}
 
-      {canAdmin && accountsQ.isError && accountsQ.data === undefined ? (
+      {canAdmin && accountsQ.isError ? (
         <QueryErrorState queries={[accountsQ]} title="Could not load expense accounts" />
       ) : null}
 

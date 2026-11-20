@@ -263,9 +263,11 @@ export function HrTransfersPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              {empQ.isError && empQ.data === undefined ? (
+              {empQ.isPending ? (
+                <LoadingState />
+              ) : empQ.isError ? (
                 <QueryErrorState queries={[empQ]} title="Could not load employees" />
-              ) : (
+              ) : empQ.isSuccess ? (
                 <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select employee" />
@@ -278,7 +280,7 @@ export function HrTransfersPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label>Change type</Label>
@@ -303,9 +305,11 @@ export function HrTransfersPage() {
                 onChange={(e) => setEffectiveOn(e.target.value)}
               />
             </div>
-            {orgQ.isError && orgQ.data === undefined ? (
+            {orgQ.isPending ? (
+              <LoadingState />
+            ) : orgQ.isError ? (
               <QueryErrorState queries={[orgQ]} title="Could not load organisation structure" />
-            ) : (
+            ) : orgQ.isSuccess ? (
               <>
                 <div className="grid gap-1.5">
                   <Label>To department</Label>
@@ -353,12 +357,14 @@ export function HrTransfersPage() {
                   </RecordLookupSelect>
                 </div>
               </>
-            )}
+            ) : null}
             <div className="grid gap-1.5">
               <Label>To manager</Label>
-              {empQ.isError && empQ.data === undefined ? (
+              {empQ.isPending ? (
+                <LoadingState />
+              ) : empQ.isError ? (
                 <QueryErrorState queries={[empQ]} title="Could not load employees" />
-              ) : (
+              ) : empQ.isSuccess ? (
                 <RecordLookupSelect
                   value={toManagerEmployeeId}
                   onValueChange={setToManagerEmployeeId}
@@ -374,7 +380,7 @@ export function HrTransfersPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label>Reason</Label>
@@ -392,7 +398,7 @@ export function HrTransfersPage() {
                 !effectiveOn ||
                 saveM.isPending ||
                 !empQ.isSuccess ||
-                orgQ.isError
+                !orgQ.isSuccess
               }
               onClick={() => saveM.mutate()}
             >

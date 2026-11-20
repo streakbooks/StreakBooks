@@ -342,9 +342,11 @@ export function HrAssetsPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              {employeesQ.isError && employeesQ.data === undefined ? (
+              {employeesQ.isPending ? (
+                <LoadingState />
+              ) : employeesQ.isError ? (
                 <QueryErrorState queries={[employeesQ]} title="Could not load employees" />
-              ) : (
+              ) : employeesQ.isSuccess ? (
                 <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select employee" />
@@ -357,13 +359,15 @@ export function HrAssetsPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label>Asset type</Label>
-              {typesQ.isError && typesQ.data === undefined ? (
+              {typesQ.isPending ? (
+                <LoadingState />
+              ) : typesQ.isError ? (
                 <QueryErrorState queries={[typesQ]} title="Could not load asset types" />
-              ) : (
+              ) : typesQ.isSuccess ? (
                 <RecordLookupSelect value={assetTypeId} onValueChange={setAssetTypeId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -376,7 +380,7 @@ export function HrAssetsPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label>Asset tag</Label>

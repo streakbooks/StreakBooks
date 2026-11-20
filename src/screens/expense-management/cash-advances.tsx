@@ -256,7 +256,7 @@ export function ExpenseManagementCashAdvancesPage() {
         <QueryErrorState queries={[advancesQ]} title="Could not load cash advances" />
       ) : null}
 
-      {canManage && banksQ.isError && banksQ.data === undefined ? (
+      {canManage && banksQ.isError ? (
         <QueryErrorState queries={[banksQ]} title="Could not load bank accounts" />
       ) : null}
 

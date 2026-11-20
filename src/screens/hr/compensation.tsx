@@ -190,9 +190,11 @@ export function HrCompensationPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              {empQ.isError && empQ.data === undefined ? (
+              {empQ.isPending ? (
+                <LoadingState />
+              ) : empQ.isError ? (
                 <QueryErrorState queries={[empQ]} title="Could not load employees" />
-              ) : (
+              ) : empQ.isSuccess ? (
                 <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select employee" />
@@ -205,7 +207,7 @@ export function HrCompensationPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label>Effective on</Label>

@@ -365,9 +365,11 @@ export function HrPerformancePage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Cycle</Label>
-              {cyclesQ.isError && cyclesQ.data === undefined ? (
+              {cyclesQ.isPending ? (
+                <LoadingState />
+              ) : cyclesQ.isError ? (
                 <QueryErrorState queries={[cyclesQ]} title="Could not load cycles" />
-              ) : (
+              ) : cyclesQ.isSuccess ? (
                 <RecordLookupSelect value={cycleId} onValueChange={setCycleId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select cycle" />
@@ -380,13 +382,15 @@ export function HrPerformancePage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              {empQ.isError && empQ.data === undefined ? (
+              {empQ.isPending ? (
+                <LoadingState />
+              ) : empQ.isError ? (
                 <QueryErrorState queries={[empQ]} title="Could not load employees" />
-              ) : (
+              ) : empQ.isSuccess ? (
                 <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select employee" />
@@ -399,7 +403,7 @@ export function HrPerformancePage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label>Title</Label>

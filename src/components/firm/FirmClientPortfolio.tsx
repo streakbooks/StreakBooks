@@ -561,7 +561,12 @@ export function FirmClientPortfolio({
           <RecordLookupSelect
             required
             value={selectedViewId || "none"}
-            disabled={preferenceBusy || cloudPreferencesQ.isError || savedViews.length === 0}
+            disabled={
+              preferenceBusy ||
+              !cloudPreferencesQ.isSuccess ||
+              cloudPreferencesQ.isError ||
+              savedViews.length === 0
+            }
             onValueChange={(value) => {
               if (value !== "none") applySavedView(value);
             }}
@@ -593,7 +598,12 @@ export function FirmClientPortfolio({
         <Button
           size="sm"
           variant="outline"
-          disabled={preferenceBusy || cloudPreferencesQ.isError || !savedViewName.trim()}
+          disabled={
+            preferenceBusy ||
+            !cloudPreferencesQ.isSuccess ||
+            cloudPreferencesQ.isError ||
+            !savedViewName.trim()
+          }
           onClick={saveCurrentView}
         >
           {preferenceM.isPending ? "Saving…" : "Save view"}
@@ -601,7 +611,12 @@ export function FirmClientPortfolio({
         <Button
           size="sm"
           variant="ghost"
-          disabled={preferenceBusy || cloudPreferencesQ.isError || !selectedViewId}
+          disabled={
+            preferenceBusy ||
+            !cloudPreferencesQ.isSuccess ||
+            cloudPreferencesQ.isError ||
+            !selectedViewId
+          }
           onClick={deleteSavedView}
         >
           Delete view

@@ -99,56 +99,61 @@ export function StandardStatementView({
           <>
             {choices.isError ? (
               <QueryErrorState queries={[choices]} title="Could not load report filter options" />
-            ) : null}
-            <StandardReportControls
-              settings={settings}
-              onApply={(value) =>
-                ctx.setSearch({
-                  from: columnFrom,
-                  settings: encodeStandardSettings(value),
-                  basis: value.basis,
-                  columns: undefined,
-                  compare: undefined,
-                })
-              }
-              report={report}
-              accounts={choices.data?.accounts ?? []}
-              filterOptions={choices.data?.options ?? { currencies: [], sources: [] }}
-              loadingFilters={choices.isPending}
-              {...(choices.isError ? { filterError: friendlyAuthError(choices.error) } : {})}
-              onOpen={() => setChoicesOpen(true)}
-              onRetryFilters={() => void choices.refetch()}
-            />
-            <StatementBasisSelect
-              basis={settings.basis}
-              report={report}
-              onChange={(basis) => {
-                ctx.setSearch({ basis, settings: encodeStandardSettings({ ...settings, basis }) });
-              }}
-            />
-            {report === "balance-sheet" && settings.group !== "total" && (
-              <div className="space-y-1">
-                <Label htmlFor="statement-column-from">Column periods from</Label>
-                <Input
-                  id="statement-column-from"
-                  type="date"
-                  value={columnFrom}
-                  onChange={(e) => e.target.value && ctx.setSearch({ from: e.target.value })}
+            ) : (
+              <>
+                <StandardReportControls
+                  settings={settings}
+                  onApply={(value) =>
+                    ctx.setSearch({
+                      from: columnFrom,
+                      settings: encodeStandardSettings(value),
+                      basis: value.basis,
+                      columns: undefined,
+                      compare: undefined,
+                    })
+                  }
+                  report={report}
+                  accounts={choices.data?.accounts ?? []}
+                  filterOptions={choices.data?.options ?? { currencies: [], sources: [] }}
+                  loadingFilters={choices.isPending}
+                  onOpen={() => setChoicesOpen(true)}
+                  onRetryFilters={() => void choices.refetch()}
                 />
-              </div>
+                <StatementBasisSelect
+                  basis={settings.basis}
+                  report={report}
+                  onChange={(basis) => {
+                    ctx.setSearch({
+                      basis,
+                      settings: encodeStandardSettings({ ...settings, basis }),
+                    });
+                  }}
+                />
+                {report === "balance-sheet" && settings.group !== "total" && (
+                  <div className="space-y-1">
+                    <Label htmlFor="statement-column-from">Column periods from</Label>
+                    <Input
+                      id="statement-column-from"
+                      type="date"
+                      value={columnFrom}
+                      onChange={(e) => e.target.value && ctx.setSearch({ from: e.target.value })}
+                    />
+                  </div>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={q.isFetching || !choices.isSuccess}
+                  onClick={() => void q.refetch()}
+                >
+                  <RefreshCw
+                    className={`mr-1 size-4 ${q.isFetching ? "animate-spin" : ""}`}
+                    aria-hidden="true"
+                  />
+                  Refresh
+                </Button>
+              </>
             )}
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={q.isFetching}
-              onClick={() => void q.refetch()}
-            >
-              <RefreshCw
-                className={`mr-1 size-4 ${q.isFetching ? "animate-spin" : ""}`}
-                aria-hidden="true"
-              />
-              Refresh
-            </Button>
           </>
         }
         toolbarActions={
@@ -157,7 +162,15 @@ export function StandardStatementView({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={!canExport || !doc || q.isError || exporting.isPending}
+                disabled={
+                  !canExport ||
+                  !doc ||
+                  q.isError ||
+                  !q.isSuccess ||
+                  exporting.isPending ||
+                  choices.isError ||
+                  !choices.isSuccess
+                }
                 aria-label="Download report"
               >
                 <Download className="mr-2 size-4" aria-hidden="true" />

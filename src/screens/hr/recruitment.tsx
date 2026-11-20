@@ -427,9 +427,11 @@ export function HrRecruitmentPage() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Requisition</Label>
-              {reqsQ.isError && reqsQ.data === undefined ? (
+              {reqsQ.isPending ? (
+                <LoadingState />
+              ) : reqsQ.isError ? (
                 <QueryErrorState queries={[reqsQ]} title="Could not load requisitions" />
-              ) : (
+              ) : reqsQ.isSuccess ? (
                 <RecordLookupSelect value={selectedReqId} onValueChange={setSelectedReqId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select requisition" />
@@ -442,7 +444,7 @@ export function HrRecruitmentPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">

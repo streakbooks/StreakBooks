@@ -355,7 +355,7 @@ export function Transfers({
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  if (transfersQ.isError && transfersQ.data === undefined)
+  if (transfersQ.isError)
     return <QueryErrorState queries={[transfersQ]} title="Could not load bank transfers" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
@@ -373,6 +373,8 @@ export function Transfers({
       }
     >
       {transfersQ.isPending ? (
+        <LoadingState />
+      ) : !transfersQ.isSuccess ? (
         <LoadingState />
       ) : (transfersQ.data ?? []).length === 0 ? (
         <EmptyState

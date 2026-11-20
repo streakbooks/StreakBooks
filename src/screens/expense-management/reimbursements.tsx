@@ -285,7 +285,7 @@ export function ExpenseManagementReimbursementsPage() {
       </ListWorkspace>
     );
   }
-  if (banksQ.isError && banksQ.data === undefined) {
+  if (banksQ.isError) {
     return (
       <ListWorkspace
         title="Reimbursements"

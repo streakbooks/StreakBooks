@@ -528,8 +528,10 @@ export function RecurringInvoices() {
     >
       {listQ.isPending ? (
         <LoadingState />
-      ) : listQ.isError && listQ.data === undefined ? (
+      ) : listQ.isError ? (
         <QueryErrorState queries={[listQ]} title="Could not load recurring invoices" />
+      ) : !listQ.isSuccess ? (
+        <LoadingState />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No recurring invoices"

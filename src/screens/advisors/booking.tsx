@@ -187,6 +187,7 @@ export function AdvisorsBookingPage({
             </>
           )}
 
+          {slotsQ.isError ? null : (
           <form
             className="grid gap-3 sm:grid-cols-2"
             onSubmit={(event) => {
@@ -240,12 +241,15 @@ export function AdvisorsBookingPage({
             <div className="sm:col-span-2">
               <Button
                 type="submit"
-                disabled={bookM.isPending || slotsQ.isError || !selectedSlot}
+                disabled={
+                  bookM.isPending || !slotsQ.isSuccess || slotsQ.isError || !selectedSlot
+                }
               >
                 Confirm free consultation
               </Button>
             </div>
           </form>
+          )}
         </section>
       </div>
     </main>

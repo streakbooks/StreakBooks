@@ -161,7 +161,7 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
               <Printer className="mr-1 size-4" /> Print / Save as PDF
             </Link>
           </Button>
-          {template ? (
+          {deliveryReady && template ? (
             <Button
               variant="outline"
               size="sm"
@@ -183,11 +183,10 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
               <Mail className="mr-1 size-4" /> Email…
             </Button>
           ) : null}
-          {canRemind ? (
+          {deliveryReady && canRemind ? (
             <Button
               variant="outline"
               size="sm"
-              disabled={!deliveryReady}
               onClick={() => {
                 setReminder(true);
                 setEmailOpen(true);
@@ -196,11 +195,11 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
               Send reminder
             </Button>
           ) : null}
-          {kind === "sales_invoice" && sendable && canSend ? (
+          {deliveryReady && kind === "sales_invoice" && sendable && canSend ? (
             <Button
               variant="outline"
               size="sm"
-              disabled={linkM.isPending || !deliveryReady}
+              disabled={linkM.isPending}
               onClick={() => linkM.mutate()}
             >
               {linkM.isPending ? (
@@ -211,11 +210,11 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
               Create online link
             </Button>
           ) : null}
-          {kind === "sales_invoice" && sendable && canSend ? (
+          {deliveryReady && kind === "sales_invoice" && sendable && canSend ? (
             <Button
               variant="outline"
               size="sm"
-              disabled={portalM.isPending || !deliveryReady}
+              disabled={portalM.isPending}
               onClick={() => portalM.mutate()}
             >
               {portalM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
@@ -224,10 +223,10 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
           ) : null}
         </div>
 
-        {delivery && !delivery.emailConfigured ? (
+        {deliveryReady && delivery && !delivery.emailConfigured ? (
           <p className="text-xs text-muted-foreground">{EMAIL_NOT_CONFIGURED_TEXT}</p>
         ) : null}
-        {delivery?.blockedReason === "demo" ? (
+        {deliveryReady && delivery?.blockedReason === "demo" ? (
           <p className="text-xs text-muted-foreground">
             Email sending is switched off in the Demo Company.
           </p>

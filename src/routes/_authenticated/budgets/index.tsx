@@ -198,7 +198,9 @@ function BudgetsPage() {
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
-            disabled={!canManage || query.data?.available === false}
+            disabled={
+              !canManage || !query.isSuccess || query.data?.available === false || query.isError
+            }
             onClick={() => setShowCreate(true)}
           >
             New budget
@@ -206,7 +208,12 @@ function BudgetsPage() {
           <Button
             size="sm"
             variant={showScenarioComparison ? "secondary" : "outline"}
-            disabled={!query.data?.available || query.data.budgets.length < 2}
+            disabled={
+              !query.isSuccess ||
+              !query.data?.available ||
+              query.data.budgets.length < 2 ||
+              query.isError
+            }
             onClick={() => setShowScenarioComparison((value) => !value)}
             aria-expanded={showScenarioComparison}
           >

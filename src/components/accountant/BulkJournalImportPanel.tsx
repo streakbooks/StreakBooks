@@ -231,7 +231,9 @@ export function BulkJournalImportPanel({
                 <Badge variant="outline">{completed.current.size} confirmed posted</Badge>
                 <Button
                   size="sm"
-                  disabled={!pending.length || posting.isPending}
+                  disabled={
+                    !pending.length || posting.isPending || !accountsQ.isSuccess || accountsQ.isError
+                  }
                   onClick={confirmPosting}
                 >
                   {posting.isPending

@@ -150,17 +150,26 @@ export function AdvisorsManageAppointmentPage({ manageToken }: { manageToken: st
                 ) : null}
               </>
             )}
-            <div className="space-y-1">
-              <Label htmlFor="reschedule-slot">Selected slot (ISO)</Label>
-              <Input id="reschedule-slot" value={selectedSlot} readOnly />
-            </div>
-            <Button
-              type="button"
-              disabled={!selectedSlot || rescheduleM.isPending || slotsQ.isError}
-              onClick={() => rescheduleM.mutate()}
-            >
-              Confirm reschedule
-            </Button>
+            {slotsQ.isError ? null : (
+              <>
+                <div className="space-y-1">
+                  <Label htmlFor="reschedule-slot">Selected slot (ISO)</Label>
+                  <Input id="reschedule-slot" value={selectedSlot} readOnly />
+                </div>
+                <Button
+                  type="button"
+                  disabled={
+                    !selectedSlot ||
+                    rescheduleM.isPending ||
+                    !slotsQ.isSuccess ||
+                    slotsQ.isError
+                  }
+                  onClick={() => rescheduleM.mutate()}
+                >
+                  Confirm reschedule
+                </Button>
+              </>
+            )}
           </section>
         </>
       ) : null}

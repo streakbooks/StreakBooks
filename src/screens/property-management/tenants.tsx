@@ -140,57 +140,59 @@ export function PmTenantsPage() {
             </Button>
           </div>
           {showForm && canManage ? (
-            contacts.isError && contacts.data === undefined ? (
+            contacts.isPending ? (
+              <LoadingState />
+            ) : contacts.isError ? (
               <QueryErrorState queries={[contacts]} title="Could not load contacts" />
-            ) : (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle>Link tenant from Contacts</CardTitle>
-                <CardDescription>Create the contact first if they are missing.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2 sm:col-span-2">
-                  <Label>Contact</Label>
-                  <RecordLookupSelect
-                    value={contactId}
-                    onValueChange={(value) => {
-                      setContactId(value);
-                      const match = contactOptions.find((row) => row.id === value);
-                      if (match) setDisplayName(match.name);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select contact" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contactOptions.map((contact) => (
-                        <SelectItem key={contact.id} value={contact.id}>
-                          {contact.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-tenant-name">Display name</Label>
-                  <Input
-                    id="pm-tenant-name"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    disabled={!contactId || mutation.isPending || !contacts.isSuccess}
-                    onClick={() => mutation.mutate()}
-                  >
-                    {mutation.isPending ? "Saving…" : "Save tenant"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            )
+            ) : contacts.isSuccess ? (
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>Link tenant from Contacts</CardTitle>
+                  <CardDescription>Create the contact first if they are missing.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2 sm:col-span-2">
+                    <Label>Contact</Label>
+                    <RecordLookupSelect
+                      value={contactId}
+                      onValueChange={(value) => {
+                        setContactId(value);
+                        const match = contactOptions.find((row) => row.id === value);
+                        if (match) setDisplayName(match.name);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select contact" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contactOptions.map((contact) => (
+                          <SelectItem key={contact.id} value={contact.id}>
+                            {contact.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-tenant-name">Display name</Label>
+                    <Input
+                      id="pm-tenant-name"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      disabled={!contactId || mutation.isPending || !contacts.isSuccess}
+                      onClick={() => mutation.mutate()}
+                    >
+                      {mutation.isPending ? "Saving…" : "Save tenant"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null
           ) : null}
           {tenants.isLoading ? <LoadingState /> : null}
           {tenants.isError ? (

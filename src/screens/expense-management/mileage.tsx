@@ -230,7 +230,7 @@ export function ExpenseManagementMileagePage() {
         <QueryErrorState queries={[ratesQ]} title="Could not load mileage rates" />
       ) : null}
 
-      {canAdmin && accountsQ.isError && accountsQ.data === undefined ? (
+      {canAdmin && accountsQ.isError ? (
         <QueryErrorState queries={[accountsQ]} title="Could not load expense accounts" />
       ) : null}
 

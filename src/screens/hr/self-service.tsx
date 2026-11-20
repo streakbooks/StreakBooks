@@ -439,9 +439,11 @@ export function HrSelfServicePage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Leave type</Label>
-              {typesQ.isError && typesQ.data === undefined ? (
+              {typesQ.isPending ? (
+                <LoadingState />
+              ) : typesQ.isError ? (
                 <QueryErrorState queries={[typesQ]} title="Could not load leave types" />
-              ) : (
+              ) : typesQ.isSuccess ? (
                 <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -454,7 +456,7 @@ export function HrSelfServicePage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">

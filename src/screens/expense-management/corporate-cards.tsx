@@ -308,10 +308,10 @@ export function ExpenseManagementCorporateCardsPage() {
         <QueryErrorState queries={[cardsQ]} title="Could not load corporate cards" />
       ) : null}
 
-      {canManage && accountsQ.isError && accountsQ.data === undefined ? (
+      {canManage && accountsQ.isError ? (
         <QueryErrorState queries={[accountsQ]} title="Could not load liability accounts" />
       ) : null}
-      {canManage && claimsQ.isError && claimsQ.data === undefined ? (
+      {canManage && claimsQ.isError ? (
         <QueryErrorState queries={[claimsQ]} title="Could not load card claims for matching" />
       ) : null}
 

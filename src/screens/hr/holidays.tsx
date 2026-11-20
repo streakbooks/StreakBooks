@@ -361,9 +361,11 @@ export function HrHolidaysPage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Calendar</Label>
-              {dataQ.isError && dataQ.data === undefined ? (
+              {dataQ.isPending ? (
+                <LoadingState />
+              ) : dataQ.isError ? (
                 <QueryErrorState queries={[dataQ]} title="Could not load holiday calendars" />
-              ) : (
+              ) : dataQ.isSuccess ? (
                 <RecordLookupSelect value={calendarId} onValueChange={setCalendarId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select calendar" />
@@ -376,7 +378,7 @@ export function HrHolidaysPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label>Date</Label>

@@ -557,9 +557,11 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
               </p>
               <div className="grid max-w-md gap-2">
                 <Label>Customer</Label>
-                {contactsQ.isError && contactsQ.data === undefined ? (
+                {contactsQ.isPending ? (
+                  <LoadingState />
+                ) : contactsQ.isError ? (
                   <QueryErrorState queries={[contactsQ]} title="Could not load customers" />
-                ) : (
+                ) : contactsQ.isSuccess ? (
                   <ContactLookup
                     ariaLabel="Rebilling customer"
                     contacts={customers}
@@ -569,7 +571,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
                     placeholder="Select customer"
                     allowClear
                   />
-                )}
+                ) : null}
               </div>
               {!settingsQ.data?.rebillingIncomeAccountId ? (
                 <Alert>

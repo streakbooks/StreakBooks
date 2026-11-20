@@ -245,7 +245,7 @@ export function ExpenseManagementTravelPage() {
             Creates a draft employee-paid claim with one per diem line. Inclusive calendar days ×
             daily rate.
           </p>
-          {ratesQ.isError ? null : activeRates.length === 0 ? (
+          {ratesQ.isError ? null : !ratesQ.isSuccess ? null : activeRates.length === 0 ? (
             <EmptyState
               title="No effective per diem rates"
               description={
@@ -394,7 +394,8 @@ export function ExpenseManagementTravelPage() {
                 disabled={
                   saveRateMut.isPending ||
                   !rateAccountId ||
-                  (accountsQ.isError && accountsQ.data === undefined)
+                  !accountsQ.isSuccess ||
+                  accountsQ.isError
                 }
               >
                 {saveRateMut.isPending ? "Saving…" : "Save rate"}
@@ -408,7 +409,9 @@ export function ExpenseManagementTravelPage() {
         <h2 className="text-lg font-medium">Configured rates</h2>
         {ratesQ.isLoading ? (
           <LoadingState />
-        ) : ratesQ.isError ? null : (ratesQ.data ?? []).length === 0 ? (
+        ) : ratesQ.isError ? null : !ratesQ.isSuccess ? (
+          <LoadingState />
+        ) : (ratesQ.data ?? []).length === 0 ? (
           <EmptyState
             title="No per diem rates yet"
             description="Expense admins can add rates by location and effective period."

@@ -70,16 +70,16 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
   const [lockBaselineVersion, setLockBaselineVersion] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!lockQ.data || lockTouched) return;
+    if (!lockQ.isSuccess || !lockQ.data || lockTouched) return;
     setEveryone(lockQ.data.lock_date_everyone ?? "");
     setAdvisors(lockQ.data.lock_date_except_advisors ?? "");
     setConversion(lockQ.data.conversion_date ?? "");
     setRequireOverrideReason(lockQ.data.require_override_reason ?? true);
     setLockBaselineVersion(lockQ.data.version);
-  }, [lockQ.data, lockTouched]);
+  }, [lockQ.isSuccess, lockQ.data, lockTouched]);
 
   useEffect(() => {
-    if (!cfgQ.data?.document || cfgTouched) return;
+    if (!cfgQ.isSuccess || !cfgQ.data?.document || cfgTouched) return;
     const d = cfgQ.data.document;
     setWarnDup(Boolean(d["warn_duplicate_document_numbers"] ?? true));
     setWarnControl(Boolean(d["warn_post_to_control_account"] ?? true));
@@ -88,7 +88,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     setAutoCredits(Boolean(d["auto_apply_credits"] ?? false));
     setBasis((d["reporting_basis"] as "accrual" | "cash") ?? "accrual");
     setCfgBaselineVersion(cfgQ.data.version);
-  }, [cfgQ.data, cfgTouched]);
+  }, [cfgQ.isSuccess, cfgQ.data, cfgTouched]);
 
   // Protect both in-app navigation and browser unload while either draft is unsaved.
   const dirty = hasUnsavedAccountingSettings(lockTouched, cfgTouched);
@@ -239,13 +239,16 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
               You need the periods.lock permission to change lock dates.
             </p>
           ) : null}
+          {lockQ.isError ? (
+            <QueryErrorState queries={[lockQ]} title="Lock policy unavailable" />
+          ) : null}
           <div className="space-y-1">
             <Label htmlFor="settings-lock-everyone">Lock date for everyone</Label>
             <Input
               id="settings-lock-everyone"
               type="date"
               value={everyone}
-              disabled={!canLock}
+              disabled={!canLock || !lockQ.isSuccess}
               onChange={(e) => {
                 setEveryone(e.target.value);
                 setLockTouched(true);
@@ -258,7 +261,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
               id="settings-lock-advisers"
               type="date"
               value={advisors}
-              disabled={!canLock}
+              disabled={!canLock || !lockQ.isSuccess}
               onChange={(e) => {
                 setAdvisors(e.target.value);
                 setLockTouched(true);
@@ -271,7 +274,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
               id="settings-lock-conversion"
               type="date"
               value={conversion}
-              disabled={!canLock}
+              disabled={!canLock || !lockQ.isSuccess}
               onChange={(e) => {
                 setConversion(e.target.value);
                 setLockTouched(true);
@@ -309,7 +312,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
             <Textarea
               id="settings-lock-reason"
               value={reason}
-              disabled={!canLock}
+              disabled={!canLock || !lockQ.isSuccess}
               onChange={(e) => {
                 setReason(e.target.value);
                 setLockTouched(true);
@@ -344,7 +347,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
             </Button>
             <Button
               variant="outline"
-              disabled={!lockTouched || lockMut.isPending}
+              disabled={!lockTouched || lockMut.isPending || !lockQ.isSuccess}
               onClick={resetLockDraft}
             >
               Discard changes

@@ -248,7 +248,7 @@ export function ExpenseManagementPettyCashPage() {
           <section className="mb-6 grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
               <Label>Bank account for funding</Label>
-              {banksQ.isError && banksQ.data === undefined ? null : (
+              {banksQ.isError ? null : banksQ.isSuccess ? (
                 <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select bank / cash account" />
@@ -261,6 +261,8 @@ export function ExpenseManagementPettyCashPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading bank accounts…</p>
               )}
             </div>
             <div className="grid gap-2">
@@ -279,7 +281,9 @@ export function ExpenseManagementPettyCashPage() {
 
       {floatsQ.isLoading ? (
         <LoadingState />
-      ) : floatsQ.isError ? null : (floatsQ.data ?? []).length === 0 ? (
+      ) : floatsQ.isError ? null : !floatsQ.isSuccess ? (
+        <LoadingState />
+      ) : (floatsQ.data ?? []).length === 0 ? (
         <EmptyState
           title="No petty cash floats"
           description="Create a float, fund it from bank, then record spends as company-paid claims."
@@ -340,7 +344,12 @@ export function ExpenseManagementPettyCashPage() {
                         {gap > 0 ? (
                           <Button
                             size="sm"
-                            disabled={fundMut.isPending || !bankGlAccountId || !pettyConfigured}
+                            disabled={
+                              fundMut.isPending ||
+                              !bankGlAccountId ||
+                              !pettyConfigured ||
+                              !banksQ.isSuccess
+                            }
                             onClick={() =>
                               fundMut.mutate({
                                 id: float.id,
@@ -356,7 +365,12 @@ export function ExpenseManagementPettyCashPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={fundMut.isPending || !bankGlAccountId || !pettyConfigured}
+                            disabled={
+                              fundMut.isPending ||
+                              !bankGlAccountId ||
+                              !pettyConfigured ||
+                              !banksQ.isSuccess
+                            }
                             onClick={() => {
                               const amountMinor = Number(
                                 parseMinorOrThrow(fundAmount, "Fund amount"),

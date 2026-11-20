@@ -18,6 +18,7 @@ import { getAgedPayablesAsAt } from "@/lib/purchases/ap-reports.functions";
 import { getCashGeneralLedgerAll } from "@/lib/reports/cash-general-ledger.functions";
 import { SOURCE_LABELS, sourceLabel } from "@/lib/reports/links";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { LookupSelect } from "@/components/lookup";
@@ -182,7 +183,9 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
               <option value="cash">Cash (recognized settlements)</option>
             </select>
           </div>
-          {accountsQ.isError ? (
+          {accountsQ.isPending ? (
+            <LoadingState />
+          ) : accountsQ.isError ? (
             <QueryErrorState queries={[accountsQ]} title="Could not load report accounts" />
           ) : accountsQ.isSuccess ? (
             <ReportAccountMultiSelect
@@ -1156,9 +1159,11 @@ export function AuditView({ ctx }: { ctx: ReportCtx }) {
         <>
           <div className="space-y-1">
             <Label htmlFor="audit-actor">User</Label>
-            {optionsQ.isError ? (
+            {optionsQ.isPending ? (
+              <LoadingState />
+            ) : optionsQ.isError ? (
               <QueryErrorState queries={[optionsQ]} title="Could not load audit users" />
-            ) : (
+            ) : optionsQ.isSuccess ? (
               <LookupSelect
                 id="audit-actor"
                 ariaLabel="User"
@@ -1173,7 +1178,7 @@ export function AuditView({ ctx }: { ctx: ReportCtx }) {
                 searchPlaceholder="Search user"
                 options={[
                   { id: "__everyone__", label: "Everyone" },
-                  ...(optionsQ.isSuccess ? (optionsQ.data?.actors ?? []) : []).map((a) => ({
+                  ...(optionsQ.data?.actors ?? []).map((a) => ({
                     id: a.id,
                     name: a.name,
                     label: a.name,
@@ -1181,7 +1186,7 @@ export function AuditView({ ctx }: { ctx: ReportCtx }) {
                   })),
                 ]}
               />
-            )}
+            ) : null}
           </div>
           <div className="space-y-1">
             <Label htmlFor="audit-entity">Entity</Label>

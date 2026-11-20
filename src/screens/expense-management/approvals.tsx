@@ -402,7 +402,11 @@ export function ExpenseManagementApprovalsPage() {
           </div>
           <Button
             size="sm"
-            disabled={saveRequiredApprovalsMut.isPending}
+            disabled={
+              saveRequiredApprovalsMut.isPending ||
+              !escalationsQ.isSuccess ||
+              escalationsQ.isError
+            }
             onClick={() => saveRequiredApprovalsMut.mutate()}
           >
             {saveRequiredApprovalsMut.isPending ? "Saving…" : "Save policy"}
@@ -424,7 +428,11 @@ export function ExpenseManagementApprovalsPage() {
               <Button
                 size="sm"
                 variant="secondary"
-                disabled={refreshEscalationMut.isPending}
+                disabled={
+                  refreshEscalationMut.isPending ||
+                  !escalationsQ.isSuccess ||
+                  escalationsQ.isError
+                }
                 onClick={() => refreshEscalationMut.mutate()}
               >
                 {refreshEscalationMut.isPending ? "Refreshing…" : "Refresh escalations"}

@@ -484,7 +484,12 @@ export function ExpenseManagementCorporateCardsPage() {
               <div>
                 <Button
                   onClick={() => createTxMut.mutate()}
-                  disabled={createTxMut.isPending || !txAmount.trim()}
+                  disabled={
+                    createTxMut.isPending ||
+                    !txAmount.trim() ||
+                    !cardsQ.isSuccess ||
+                    cardsQ.isError
+                  }
                 >
                   {createTxMut.isPending ? "Saving…" : "Add transaction"}
                 </Button>

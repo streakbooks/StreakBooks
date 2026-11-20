@@ -208,10 +208,10 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
   });
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
-  if (
-    (optionsQ.isError && optionsQ.data === undefined) ||
-    (accountsQ.isError && accountsQ.data === undefined)
-  ) {
+  if (optionsQ.isPending || accountsQ.isPending) {
+    return <LoadingState />;
+  }
+  if (optionsQ.isError || accountsQ.isError) {
     return (
       <QueryErrorState
         queries={[optionsQ, accountsQ]}

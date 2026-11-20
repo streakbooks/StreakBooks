@@ -478,7 +478,12 @@ export function ExpenseManagementReimbursementsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={payrollMut.isPending || claim.reimbursedMinor > 0}
+                      disabled={
+                        payrollMut.isPending ||
+                        claim.reimbursedMinor > 0 ||
+                        !claimsQ.isSuccess ||
+                        claimsQ.isError
+                      }
                       onClick={() => payrollMut.mutate({ id: claim.id, version: claim.version })}
                     >
                       Queue payroll

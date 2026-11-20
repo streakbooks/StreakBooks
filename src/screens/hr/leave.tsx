@@ -570,7 +570,13 @@ export function HrLeavePage() {
             </Button>
             <Button
               type="button"
-              disabled={!code.trim() || !name.trim() || saveTypeM.isPending}
+              disabled={
+                !code.trim() ||
+                !name.trim() ||
+                saveTypeM.isPending ||
+                !typesQ.isSuccess ||
+                typesQ.isError
+              }
               onClick={() => saveTypeM.mutate()}
             >
               Save
@@ -587,9 +593,11 @@ export function HrLeavePage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              {employeesQ.isError && employeesQ.data === undefined ? (
+              {employeesQ.isPending ? (
+                <LoadingState />
+              ) : employeesQ.isError ? (
                 <QueryErrorState queries={[employeesQ]} title="Could not load employees" />
-              ) : (
+              ) : employeesQ.isSuccess ? (
                 <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select employee" />
@@ -602,13 +610,15 @@ export function HrLeavePage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label>Leave type</Label>
-              {typesQ.isError && typesQ.data === undefined ? (
+              {typesQ.isPending ? (
+                <LoadingState />
+              ) : typesQ.isError ? (
                 <QueryErrorState queries={[typesQ]} title="Could not load leave types" />
-              ) : (
+              ) : typesQ.isSuccess ? (
                 <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -621,7 +631,7 @@ export function HrLeavePage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
@@ -690,9 +700,11 @@ export function HrLeavePage() {
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Employee</Label>
-              {employeesQ.isError && employeesQ.data === undefined ? (
+              {employeesQ.isPending ? (
+                <LoadingState />
+              ) : employeesQ.isError ? (
                 <QueryErrorState queries={[employeesQ]} title="Could not load employees" />
-              ) : (
+              ) : employeesQ.isSuccess ? (
                 <RecordLookupSelect value={employeeId} onValueChange={setEmployeeId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select employee" />
@@ -705,13 +717,15 @@ export function HrLeavePage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label>Leave type</Label>
-              {typesQ.isError && typesQ.data === undefined ? (
+              {typesQ.isPending ? (
+                <LoadingState />
+              ) : typesQ.isError ? (
                 <QueryErrorState queries={[typesQ]} title="Could not load leave types" />
-              ) : (
+              ) : typesQ.isSuccess ? (
                 <RecordLookupSelect value={leaveTypeId} onValueChange={setLeaveTypeId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -724,7 +738,7 @@ export function HrLeavePage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
           </div>
           <DialogFooter>

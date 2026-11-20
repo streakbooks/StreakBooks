@@ -202,7 +202,7 @@ export function HrOnboardingPage() {
             </Button>
             <Button
               type="button"
-              disabled={templatesQ.isError}
+              disabled={!templatesQ.isSuccess || templatesQ.isError}
               onClick={() => setCaseOpen(true)}
             >
               Start onboarding
@@ -410,7 +410,13 @@ export function HrOnboardingPage() {
             </Button>
             <Button
               type="button"
-              disabled={!code.trim() || !name.trim() || templateMut.isPending}
+              disabled={
+                !code.trim() ||
+                !name.trim() ||
+                templateMut.isPending ||
+                !templatesQ.isSuccess ||
+                templatesQ.isError
+              }
               onClick={() => templateMut.mutate()}
             >
               {templateMut.isPending ? "Saving…" : "Save template"}
@@ -427,9 +433,11 @@ export function HrOnboardingPage() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Template</Label>
-              {templatesQ.isError && templatesQ.data === undefined ? (
+              {templatesQ.isPending ? (
+                <LoadingState />
+              ) : templatesQ.isError ? (
                 <QueryErrorState queries={[templatesQ]} title="Could not load templates" />
-              ) : (
+              ) : templatesQ.isSuccess ? (
                 <RecordLookupSelect
                   value={templateId || "__none"}
                   onValueChange={(v) => setTemplateId(v === "__none" ? "" : v)}
@@ -446,13 +454,15 @@ export function HrOnboardingPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="space-y-1">
               <Label>Employee</Label>
-              {employeesQ.isError && employeesQ.data === undefined ? (
+              {employeesQ.isPending ? (
+                <LoadingState />
+              ) : employeesQ.isError ? (
                 <QueryErrorState queries={[employeesQ]} title="Could not load employees" />
-              ) : (
+              ) : employeesQ.isSuccess ? (
                 <RecordLookupSelect
                   value={employeeId || "__none"}
                   onValueChange={(v) => setEmployeeId(v === "__none" ? "" : v)}
@@ -469,7 +479,7 @@ export function HrOnboardingPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              )}
+              ) : null}
             </div>
             <div className="space-y-1">
               <Label htmlFor="join-date">Target join date</Label>

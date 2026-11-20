@@ -111,11 +111,11 @@ export function PlatformSearch({ context }: { context: PlatformContext }) {
             <p role="status">Searching platform records…</p>
           ) : result.isError ? (
             <QueryErrorState queries={[result]} title="Could not search platform records" />
-          ) : result.data?.length === 0 ? (
+          ) : result.isSuccess && result.data?.length === 0 ? (
             <p>No matching platform records.</p>
           ) : null}
         </div>
-        {submitted && result.data && !result.isFetching && !result.isError ? (
+        {submitted && result.isSuccess && result.data && !result.isFetching ? (
           <>
             <ul
               ref={list}

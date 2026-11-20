@@ -206,6 +206,8 @@ export function DocumentReviewQueue({
         <QueryErrorState queries={[queue]} title="Could not load document review queue" />
       ) : queue.isPending ? (
         <p className="text-sm text-muted-foreground">Loading review queue…</p>
+      ) : !queue.isSuccess ? (
+        <p className="text-sm text-muted-foreground">Loading review queue…</p>
       ) : queue.data.rows.length === 0 ? (
         <p className="rounded-lg border p-6 text-sm text-muted-foreground">
           No documents match this review state. Upload files through Files to add them here.

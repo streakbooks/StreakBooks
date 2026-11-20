@@ -70,6 +70,8 @@ export function PlatformOverview({ allowedSections }: { allowedSections: readonl
         <p role="status">Loading verified metrics…</p>
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load platform metrics" />
+      ) : !query.isSuccess ? (
+        <p role="status">Loading verified metrics…</p>
       ) : (
         <>
           <p className="text-xs text-muted-foreground">

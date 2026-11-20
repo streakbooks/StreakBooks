@@ -251,17 +251,18 @@ function ContactDetail() {
   }, [c, currency]);
 
   useEffect(() => {
-    const g = (contactQ.data?.groups ?? []) as Array<{
+    if (!contactQ.isSuccess || !contactQ.data) return;
+    const g = (contactQ.data.groups ?? []) as Array<{
       group_id?: string;
       contact_groups?: { id: string };
     }>;
     setSelectedGroups(g.map((x) => x.group_id ?? x.contact_groups?.id).filter(Boolean) as string[]);
-    const t = (contactQ.data?.tags ?? []) as Array<{
+    const t = (contactQ.data.tags ?? []) as Array<{
       tag_id?: string;
       contact_tags?: { id: string };
     }>;
     setSelectedTags(t.map((x) => x.tag_id ?? x.contact_tags?.id).filter(Boolean) as string[]);
-  }, [contactQ.data]);
+  }, [contactQ.isSuccess, contactQ.data]);
 
   const validTerms = /^\d+$/.test(terms) && Number(terms) <= 3650;
   const effectiveCurrency = (defaultCurrency || currency).toUpperCase();
@@ -389,6 +390,7 @@ function ContactDetail() {
   if (contactQ.isError) {
     return <QueryErrorState queries={[contactQ]} title="Could not load contact" />;
   }
+  if (!contactQ.isSuccess) return <LoadingState />;
   if (!c) {
     return (
       <EmptyState

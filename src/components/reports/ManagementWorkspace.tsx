@@ -196,6 +196,8 @@ export function ManagementWorkspace({
         <LoadingState />
       ) : q.isError ? (
         <QueryErrorState queries={[q]} title="Could not load management metrics" />
+      ) : !q.isSuccess ? (
+        <LoadingState />
       ) : (
         <>
           <p className="text-sm text-muted-foreground">

@@ -74,8 +74,8 @@ export function AdvisorsAdminClientsPage() {
   });
 
   useEffect(() => {
-    if (!form.id) return;
-    const match = query.data?.find((item) => item.id === form.id);
+    if (!form.id || !query.isSuccess || !query.data) return;
+    const match = query.data.find((item) => item.id === form.id);
     if (!match) return;
     setForm({
       id: match.id,
@@ -88,7 +88,7 @@ export function AdvisorsAdminClientsPage() {
       assignedAdvisorId: match.assignedAdvisorId ?? "",
       notes: match.notes,
     });
-  }, [form.id, query.data]);
+  }, [form.id, query.isSuccess, query.data]);
 
   const saveM = useMutation({
     mutationFn: () =>

@@ -123,6 +123,8 @@ export function ReportAccessDialog({
               <LoadingState />
             ) : q.isError ? (
               <QueryErrorState queries={[q]} title="Could not load sharing recipients" />
+            ) : !q.isSuccess ? (
+              <LoadingState />
             ) : (
               <div className="space-y-3">
                 <MultiLookupSelect

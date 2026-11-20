@@ -309,7 +309,7 @@ export function ExpenseManagementCashAdvancesPage() {
       {canManage ? (
         <section className="mb-6 grid max-w-md gap-2">
           <Label>Bank account for issuing / reclaim</Label>
-          {banksQ.isError && banksQ.data === undefined ? null : (
+          {banksQ.isError ? null : banksQ.isSuccess ? (
             <RecordLookupSelect value={bankGlAccountId} onValueChange={setBankGlAccountId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select bank / cash account" />
@@ -322,13 +322,17 @@ export function ExpenseManagementCashAdvancesPage() {
                 ))}
               </SelectContent>
             </RecordLookupSelect>
+          ) : (
+            <p className="text-sm text-muted-foreground">Loading bank accounts…</p>
           )}
         </section>
       ) : null}
 
       {advancesQ.isLoading ? (
         <LoadingState />
-      ) : advancesQ.isError ? null : (advancesQ.data ?? []).length === 0 ? (
+      ) : advancesQ.isError ? null : !advancesQ.isSuccess ? (
+        <LoadingState />
+      ) : (advancesQ.data ?? []).length === 0 ? (
         <EmptyState
           title="No cash advances yet"
           description="Save a draft request above, then an advance manager issues it from bank."
@@ -388,7 +392,10 @@ export function ExpenseManagementCashAdvancesPage() {
                       <Button
                         size="sm"
                         disabled={
-                          issueMut.isPending || !bankGlAccountId || !advanceAccountConfigured
+                          issueMut.isPending ||
+                          !bankGlAccountId ||
+                          !advanceAccountConfigured ||
+                          !banksQ.isSuccess
                         }
                         onClick={() => issueMut.mutate({ id: adv.id, version: adv.version })}
                       >
@@ -400,7 +407,10 @@ export function ExpenseManagementCashAdvancesPage() {
                         size="sm"
                         variant="secondary"
                         disabled={
-                          reclaimMut.isPending || !bankGlAccountId || !advanceAccountConfigured
+                          reclaimMut.isPending ||
+                          !bankGlAccountId ||
+                          !advanceAccountConfigured ||
+                          !banksQ.isSuccess
                         }
                         onClick={() => reclaimMut.mutate({ id: adv.id, version: adv.version })}
                       >

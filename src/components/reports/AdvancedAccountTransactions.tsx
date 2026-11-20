@@ -177,7 +177,7 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
           </div>
           {accountsQ.isError ? (
             <QueryErrorState queries={[accountsQ]} title="Could not load report accounts" />
-          ) : (
+          ) : accountsQ.isSuccess ? (
             <ReportAccountMultiSelect
               accounts={accounts}
               selected={accountId ? [accountId] : undefined}
@@ -190,11 +190,11 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
               }
               disabled={accountsQ.isPending}
             />
-          )}
+          ) : null}
         </>
       }
       getCsv={() => {
-        if (!data) return null;
+        if (!reportQ.isSuccess || !data) return null;
         const csvCell = (
           column: TransactionColumn,
           row: (typeof data.rows)[number],

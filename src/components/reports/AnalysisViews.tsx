@@ -434,7 +434,7 @@ export function GlSummaryView({ ctx }: { ctx: ReportCtx }) {
         <>
           {accountsQ.isError ? (
             <QueryErrorState queries={[accountsQ]} title="Could not load report accounts" />
-          ) : (
+          ) : accountsQ.isSuccess ? (
             <ReportAccountMultiSelect
               accounts={accountsQ.data ?? []}
               selected={selectedIds ?? undefined}
@@ -443,7 +443,7 @@ export function GlSummaryView({ ctx }: { ctx: ReportCtx }) {
               }
               disabled={accountsQ.isPending}
             />
-          )}
+          ) : null}
         </>
       }
       getCsv={() => (d ? csvFor(selectedRows, cols) : null)}

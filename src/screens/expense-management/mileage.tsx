@@ -241,7 +241,7 @@ export function ExpenseManagementMileagePage() {
             Creates a draft employee-paid claim with one mileage line. Submit and approve it through
             the normal claim workflow.
           </p>
-          {ratesQ.isError ? null : activeRatesForTrip.length === 0 ? (
+          {ratesQ.isError ? null : !ratesQ.isSuccess ? null : activeRatesForTrip.length === 0 ? (
             <EmptyState
               title="No effective mileage rates"
               description={
@@ -402,7 +402,8 @@ export function ExpenseManagementMileagePage() {
                 disabled={
                   saveRateMut.isPending ||
                   !rateAccountId ||
-                  (accountsQ.isError && accountsQ.data === undefined)
+                  !accountsQ.isSuccess ||
+                  accountsQ.isError
                 }
               >
                 {saveRateMut.isPending ? "Saving…" : "Save rate"}
@@ -416,7 +417,9 @@ export function ExpenseManagementMileagePage() {
         <h2 className="text-lg font-medium">Configured rates</h2>
         {ratesQ.isLoading ? (
           <LoadingState />
-        ) : ratesQ.isError ? null : (ratesQ.data ?? []).length === 0 ? (
+        ) : ratesQ.isError ? null : !ratesQ.isSuccess ? (
+          <LoadingState />
+        ) : (ratesQ.data ?? []).length === 0 ? (
           <EmptyState
             title="No mileage rates yet"
             description="Expense admins can add rates for vehicles and periods."

@@ -44,6 +44,8 @@ export function BankFeedsContent({ embedded = false }: { embedded?: boolean }) {
         <LoadingState />
       ) : accountsQ.isError ? (
         <QueryErrorState queries={[accountsQ]} title="Could not load bank connections" />
+      ) : !accountsQ.isSuccess ? (
+        <LoadingState />
       ) : !accountsQ.data?.length ? (
         <EmptyState
           title="No bank accounts yet"

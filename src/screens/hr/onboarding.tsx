@@ -220,6 +220,8 @@ export function HrOnboardingPage() {
           <LoadingState />
         ) : templatesQ.isError ? (
           <QueryErrorState queries={[templatesQ]} title="Could not load templates" />
+        ) : !templatesQ.isSuccess ? (
+          <LoadingState />
         ) : !templatesQ.data?.templates.length ? (
           <EmptyState
             title="No onboarding templates"
@@ -266,6 +268,8 @@ export function HrOnboardingPage() {
           <LoadingState />
         ) : casesQ.isError ? (
           <QueryErrorState queries={[casesQ]} title="Could not load onboarding cases" />
+        ) : !casesQ.isSuccess ? (
+          <LoadingState />
         ) : !casesQ.data?.items.length ? (
           <EmptyState
             title="No onboarding cases"

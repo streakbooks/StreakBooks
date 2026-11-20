@@ -112,6 +112,8 @@ export function HrEmployeesPage() {
         <LoadingState />
       ) : listQ.isError ? (
         <QueryErrorState queries={[listQ]} title="Could not load employees" />
+      ) : !listQ.isSuccess ? (
+        <LoadingState />
       ) : !listQ.data?.items.length ? (
         <EmptyState
           title="No employees found"

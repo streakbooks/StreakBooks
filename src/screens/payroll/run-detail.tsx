@@ -669,6 +669,8 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
             <LoadingState />
           ) : journalsQ.isError ? (
             <QueryErrorState queries={[journalsQ]} title="Could not load journals" />
+          ) : !journalsQ.isSuccess ? (
+            <LoadingState />
           ) : !journalsQ.data?.journals.length ? (
             <EmptyState
               title="No journals"

@@ -100,6 +100,8 @@ function SalesOverview() {
         <LoadingState />
       ) : overviewQ.isError ? (
         <QueryErrorState queries={[overviewQ]} title="Could not load overview" />
+      ) : !overviewQ.isSuccess ? (
+        <LoadingState />
       ) : (
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
@@ -206,6 +208,8 @@ function SalesOverview() {
         <LoadingState />
       ) : invoicesQ.isError ? (
         <QueryErrorState queries={[invoicesQ]} title="Could not load invoices" />
+      ) : !invoicesQ.isSuccess ? (
+        <LoadingState />
       ) : (invoicesQ.data?.rows ?? []).length === 0 ? (
         <EmptyState
           title="No invoices yet"

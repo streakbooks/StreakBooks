@@ -128,6 +128,8 @@ function ProjectsPage() {
         <LoadingState />
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load projects" />
+      ) : !query.isSuccess ? (
+        <LoadingState />
       ) : !query.data.available ? (
         <Alert className="mb-6">
           <AlertDescription>

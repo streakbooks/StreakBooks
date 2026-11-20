@@ -316,6 +316,8 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
           <LoadingState />
         ) : q.isError ? (
           <QueryErrorState queries={[q]} title="Could not load sales orders" />
+        ) : !q.isSuccess ? (
+          <LoadingState />
         ) : !q.data.total && !search && status === "all" ? (
           <EmptyState
             title="No sales orders"

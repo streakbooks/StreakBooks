@@ -1156,28 +1156,32 @@ export function AuditView({ ctx }: { ctx: ReportCtx }) {
         <>
           <div className="space-y-1">
             <Label htmlFor="audit-actor">User</Label>
-            <LookupSelect
-              id="audit-actor"
-              ariaLabel="User"
-              allowClear={false}
-              value={ctx.search.actor ?? "__everyone__"}
-              onChange={(id) =>
-                ctx.setSearch({
-                  actor: id === "__everyone__" ? undefined : id,
-                  page: undefined,
-                })
-              }
-              searchPlaceholder="Search user"
-              options={[
-                { id: "__everyone__", label: "Everyone" },
-                ...(optionsQ.data?.actors ?? []).map((a) => ({
-                  id: a.id,
-                  name: a.name,
-                  label: a.name,
-                  keywords: a.name,
-                })),
-              ]}
-            />
+            {optionsQ.isError ? (
+              <QueryErrorState queries={[optionsQ]} title="Could not load audit users" />
+            ) : (
+              <LookupSelect
+                id="audit-actor"
+                ariaLabel="User"
+                allowClear={false}
+                value={ctx.search.actor ?? "__everyone__"}
+                onChange={(id) =>
+                  ctx.setSearch({
+                    actor: id === "__everyone__" ? undefined : id,
+                    page: undefined,
+                  })
+                }
+                searchPlaceholder="Search user"
+                options={[
+                  { id: "__everyone__", label: "Everyone" },
+                  ...(optionsQ.isSuccess ? (optionsQ.data?.actors ?? []) : []).map((a) => ({
+                    id: a.id,
+                    name: a.name,
+                    label: a.name,
+                    keywords: a.name,
+                  })),
+                ]}
+              />
+            )}
           </div>
           <div className="space-y-1">
             <Label htmlFor="audit-entity">Entity</Label>

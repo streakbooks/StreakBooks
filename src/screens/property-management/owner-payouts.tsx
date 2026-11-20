@@ -242,7 +242,7 @@ export function PmOwnerPayoutsPage() {
           {distributions.isError ? (
             <QueryErrorState queries={[distributions]} title="Could not load payouts" />
           ) : null}
-          {!distributions.isError && distributions.data?.length === 0 ? (
+          {distributions.isSuccess && distributions.data?.length === 0 ? (
             <EmptyState
               title="No owner payouts"
               description="Create a draft payout after approving an owner statement."
@@ -255,7 +255,7 @@ export function PmOwnerPayoutsPage() {
               }
             />
           ) : null}
-          {distributions.data && distributions.data.length > 0 ? (
+          {distributions.isSuccess && distributions.data && distributions.data.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-border">
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/50 text-left">

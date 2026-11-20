@@ -196,7 +196,7 @@ export function PmTenantsPage() {
           {tenants.isError ? (
             <QueryErrorState queries={[tenants]} title="Could not load tenants" />
           ) : null}
-          {!tenants.isError && tenants.data?.length === 0 ? (
+          {tenants.isSuccess && tenants.data?.length === 0 ? (
             <EmptyState
               title="No tenants linked"
               description="Link a contact as a tenant."
@@ -209,7 +209,7 @@ export function PmTenantsPage() {
               }
             />
           ) : null}
-          {tenants.data && tenants.data.length > 0 ? (
+          {tenants.isSuccess && tenants.data && tenants.data.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-border">
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/50 text-left">

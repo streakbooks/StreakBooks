@@ -214,7 +214,7 @@ export function PmUnitsPage() {
           {units.isError ? (
             <QueryErrorState queries={[units]} title="Could not load units" />
           ) : null}
-          {!units.isError && units.data?.length === 0 ? (
+          {units.isSuccess && units.data?.length === 0 ? (
             <EmptyState
               title="No units yet"
               description="Create a unit under a property."
@@ -227,7 +227,7 @@ export function PmUnitsPage() {
               }
             />
           ) : null}
-          {units.data && units.data.length > 0 ? (
+          {units.isSuccess && units.data && units.data.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-border">
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/50 text-left">

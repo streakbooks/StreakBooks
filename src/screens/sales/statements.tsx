@@ -89,7 +89,7 @@ export function Statements() {
           <Button
             variant="outline"
             size="sm"
-            disabled={!contactId || !stmtQ.data}
+            disabled={!contactId || !stmtQ.isSuccess || !stmtQ.data}
             onClick={() => setEmailOpen(true)}
           >
             <Mail className="mr-1 size-4" /> Email…

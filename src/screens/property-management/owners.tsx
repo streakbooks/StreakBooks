@@ -223,7 +223,7 @@ export function PmOwnersPage() {
           {owners.isError ? (
             <QueryErrorState queries={[owners]} title="Could not load owners" />
           ) : null}
-          {!owners.isError && owners.data?.length === 0 ? (
+          {owners.isSuccess && owners.data?.length === 0 ? (
             <EmptyState
               title="No owners linked"
               description="Link a contact as an owner to assign ownership shares."
@@ -236,7 +236,7 @@ export function PmOwnersPage() {
               }
             />
           ) : null}
-          {owners.data && owners.data.length > 0 ? (
+          {owners.isSuccess && owners.data && owners.data.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-border">
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/50 text-left">

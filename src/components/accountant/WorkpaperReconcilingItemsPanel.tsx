@@ -203,16 +203,16 @@ export function WorkpaperReconcilingItemsPanel({
                       <p className="text-xs text-muted-foreground">Loading history…</p>
                     ) : history.isError ? (
                       <QueryErrorState queries={[history]} title="Could not load item history" />
-                    ) : (
+                    ) : history.isSuccess ? (
                       <ul className="mt-2 space-y-1 text-xs">
-                        {history.data?.map((event) => (
+                        {history.data.map((event) => (
                           <li key={event.id}>
                             {event.created_at} · {event.action} · {event.actor_id.slice(0, 8)}…{" "}
                             {event.reason}
                           </li>
                         ))}
                       </ul>
-                    )
+                    ) : null
                   ) : null}
                 </li>
               ))}

@@ -45,11 +45,16 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
     enabled: expanded && datesValid && journalIds.length > 0,
     queryFn: () => fetchReviews({ data: { companyId, journalIds } }),
   });
-  const reviewByKey = new Map((reviews.data ?? []).map((record) => [record.finding_key, record]));
-  const selectedFinding = query.data?.findings.find((finding) => finding.id === selectedFindingId);
+  const reviewByKey = new Map(
+    (reviews.isSuccess ? (reviews.data ?? []) : []).map((record) => [record.finding_key, record]),
+  );
+  const selectedFinding =
+    query.isSuccess && query.data
+      ? query.data.findings.find((finding) => finding.id === selectedFindingId)
+      : undefined;
 
   const exportCsv = () => {
-    if (!query.data) return;
+    if (!query.isSuccess || !query.data) return;
     const csv = toCsv(
       [
         "Journal",
@@ -137,7 +142,7 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
             <Button
               size="sm"
               variant="outline"
-              disabled={!query.data?.findings.length}
+              disabled={!query.isSuccess || !query.data?.findings.length}
               onClick={exportCsv}
             >
               Export findings CSV
@@ -151,7 +156,7 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
             <LoadingState />
           ) : query.isError ? (
             <QueryErrorState queries={[query]} title="Could not review manual journals" />
-          ) : query.data ? (
+          ) : query.isSuccess && query.data ? (
             <>
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <Badge variant="secondary">{query.data.scanned} journals examined</Badge>

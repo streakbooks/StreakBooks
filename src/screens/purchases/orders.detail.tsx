@@ -216,7 +216,7 @@ export function PurchaseOrderDetailScreen({
     onError: failure,
   });
   if (query.isPending) return <LoadingState />;
-  if (query.isError && query.data === undefined) {
+  if (query.isError) {
     return <QueryErrorState queries={[query]} title="Could not load purchase order" />;
   }
   const order = query.data;

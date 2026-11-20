@@ -310,9 +310,11 @@ export function CrmLeadsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Source</Label>
-                  {sources.isError && sources.data === undefined ? (
+                  {sources.isError ? (
                     <QueryErrorState queries={[sources]} title="Could not load lead sources" />
-                  ) : (
+                  ) : sources.isPending ? (
+                    <LoadingState />
+                  ) : sources.isSuccess ? (
                     <RecordLookupSelect
                       value={sourceId || "__none"}
                       onValueChange={(v) => setSourceId(v === "__none" ? "" : v)}
@@ -329,7 +331,7 @@ export function CrmLeadsPage() {
                         ))}
                       </SelectContent>
                     </RecordLookupSelect>
-                  )}
+                  ) : null}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lead-value">Estimated value ({company.base_currency})</Label>
@@ -408,7 +410,10 @@ export function CrmLeadsPage() {
                       createMutation.isPending ||
                       !validation.valid ||
                       !duplicateCheckReady ||
-                      (dupMatches.length > 0 && !ackDuplicates)
+                      (dupMatches.length > 0 && !ackDuplicates) ||
+                      !settings.isSuccess ||
+                      settings.isError ||
+                      (Boolean(sourceId) && (!sources.isSuccess || sources.isError))
                     }
                     onClick={() => createMutation.mutate()}
                   >

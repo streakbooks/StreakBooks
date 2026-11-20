@@ -543,7 +543,13 @@ function CatalogueCart({ companyId }: { companyId: string }) {
                         type="button"
                         variant="outline"
                         className="min-h-11"
-                        disabled={refundMutation.isPending}
+                        disabled={
+                          refundMutation.isPending ||
+                          !recentSales.isSuccess ||
+                          recentSales.isError ||
+                          !workspace.isSuccess ||
+                          workspace.isError
+                        }
                         aria-label={`Refund sale ${fromMinorUnits(BigInt(sale.totalMinor), displayCurrency)}`}
                         onClick={() => refundMutation.mutate(sale.id)}
                       >

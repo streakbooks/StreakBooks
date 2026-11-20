@@ -58,6 +58,8 @@ export function HrAuditPage() {
         <LoadingState />
       ) : auditQ.isError ? (
         <QueryErrorState queries={[auditQ]} title="Could not load audit trail" />
+      ) : !auditQ.isSuccess ? (
+        <LoadingState />
       ) : !auditQ.data?.items.length ? (
         <EmptyState
           title="No audit events yet"

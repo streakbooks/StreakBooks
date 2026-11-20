@@ -109,10 +109,10 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
   });
 
   useEffect(() => {
-    if (!pageQ.data) return;
+    if (!pageQ.isSuccess || !pageQ.data) return;
     setProfileDraft(employeeDraftFromRow(pageQ.data.employee));
     setPaymentDraft(emptyPaymentDetailsDraft());
-  }, [pageQ.data]);
+  }, [pageQ.isSuccess, pageQ.data]);
 
   const componentMap = useMemo(() => {
     const map = new Map<string, PayrollComponentTypeRow>();

@@ -87,6 +87,8 @@ function OrdersList() {
         <ListSkeleton />
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load orders" />
+      ) : !query.isSuccess ? (
+        <ListSkeleton />
       ) : !query.data?.total && !search && status === "all" ? (
         <EmptyState
           title="No purchase orders"

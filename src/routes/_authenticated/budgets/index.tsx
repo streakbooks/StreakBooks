@@ -318,6 +318,8 @@ function BudgetsPage() {
         <LoadingState />
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load budgets" />
+      ) : !query.isSuccess ? (
+        <LoadingState />
       ) : !query.data.available ? (
         <Alert>
           <AlertDescription>

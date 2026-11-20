@@ -236,6 +236,8 @@ export function HrRecruitmentPage() {
           <LoadingState />
         ) : reqsQ.isError ? (
           <QueryErrorState queries={[reqsQ]} title="Could not load requisitions" />
+        ) : !reqsQ.isSuccess ? (
+          <LoadingState />
         ) : !reqsQ.data?.items.length ? (
           <EmptyState
             title="No requisitions yet"
@@ -308,6 +310,8 @@ export function HrRecruitmentPage() {
           <LoadingState />
         ) : appsQ.isError ? (
           <QueryErrorState queries={[appsQ]} title="Could not load applications" />
+        ) : !appsQ.isSuccess ? (
+          <LoadingState />
         ) : !appsQ.data?.items.length ? (
           <EmptyState
             title="No applications yet"

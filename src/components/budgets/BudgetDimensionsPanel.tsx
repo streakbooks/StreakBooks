@@ -83,6 +83,8 @@ export function BudgetDimensionsPanel({
         <p className="text-sm text-muted-foreground">Loading budget dimensions…</p>
       ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load budget dimensions" />
+      ) : !query.isSuccess ? (
+        <p className="text-sm text-muted-foreground">Loading budget dimensions…</p>
       ) : !data?.available ? (
         <Alert>
           <AlertDescription>

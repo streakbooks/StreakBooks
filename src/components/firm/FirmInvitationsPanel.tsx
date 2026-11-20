@@ -149,6 +149,8 @@ export function FirmInvitationsPanel({
         <LoadingState rows={3} />
       ) : q.isError ? (
         <QueryErrorState queries={[q]} title="Could not load invitations" />
+      ) : !q.isSuccess ? (
+        <LoadingState rows={3} />
       ) : !q.data?.length ? (
         <EmptyState
           title="No invitations yet"

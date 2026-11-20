@@ -453,7 +453,7 @@ function ActionCenterPage() {
             </span>
           </div>
         )}
-        {validSelected.length > 0 && (
+        {inbox.isSuccess && validSelected.length > 0 && (
           <div
             role="status"
             className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm"
@@ -503,20 +503,18 @@ function ActionCenterPage() {
             )}
           </div>
         )}
-        {inbox.isError && inbox.data ? (
-          <QueryErrorState
-            queries={[inbox]}
-            title="Could not refresh notifications"
-            description="Displayed alerts may be outdated. Retry to load the latest inbox."
-          />
-        ) : null}
         {inbox.isPending ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
             Loading your actions…
           </p>
-        ) : inbox.isError && !inbox.data ? (
+        ) : inbox.isError ? (
           <QueryErrorState queries={[inbox]} title="Could not load Action Center" />
+        ) : !inbox.isSuccess ? (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
+            Loading your actions…
+          </p>
         ) : rows.length === 0 ? (
           <div className="rounded-lg border px-6 py-12 text-center text-muted-foreground">
             No matching notifications across your accessible history.

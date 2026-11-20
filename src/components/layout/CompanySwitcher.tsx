@@ -99,6 +99,8 @@ export function CompanySwitcher({ collapsed = false }: { collapsed?: boolean }) 
           variant="outline"
           size="sm"
           className="mx-3 mb-3 border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent"
+          aria-label="Could not load organisations. Retry"
+          title="Could not load organisations. Retry"
           onClick={() => void refetch()}
         >
           Retry

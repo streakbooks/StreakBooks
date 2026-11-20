@@ -36,7 +36,7 @@ export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const selectedIds = ctx.search.accountIds?.split(",") ?? null;
   const visible = selectedIds
     ? (d?.rows ?? []).filter((row) => selectedIds.includes(row.account_id))
@@ -71,7 +71,7 @@ export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
         ) : null
       }
       getCsv={() =>
-        d
+        q.isSuccess && d
           ? {
               headers: ["Code", "Account", "Debit", "Credit"],
               rows: [
@@ -183,6 +183,7 @@ function StatementAccessView({
   if (access.isPending) return <LoadingState />;
   if (access.isError)
     return <QueryErrorState queries={[access]} title="Could not verify report access" />;
+  if (!access.isSuccess) return <LoadingState />;
   if (access.data?.allowed) return <StandardStatementView ctx={ctx} report={report} />;
   if (ctx.search.settings)
     return (
@@ -214,7 +215,7 @@ export function CashFlowView({ ctx }: { ctx: ReportCtx }) {
     queryKey: ["report-cf", ctx.companyId, ctx.from, ctx.to],
     queryFn: () => fetchCf({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   return (
     <ReportShell
       title="Cash Flow"
@@ -222,7 +223,7 @@ export function CashFlowView({ ctx }: { ctx: ReportCtx }) {
       mode="range"
       basis="Bank ledger movements classified by the counterpart account"
       getCsv={() =>
-        d
+        q.isSuccess && d
           ? {
               headers: ["Section", "Line", "Amount"],
               rows: [
@@ -354,7 +355,7 @@ export function EquityView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   return (
     <ReportShell
       title="Statement of Changes in Equity"
@@ -362,7 +363,7 @@ export function EquityView({ ctx }: { ctx: ReportCtx }) {
       mode="range"
       basis={d?.basis}
       getCsv={() =>
-        d
+        q.isSuccess && d
           ? {
               headers: ["Account", "Opening", "Movement", "Closing"],
               rows: [

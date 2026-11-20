@@ -82,8 +82,9 @@ export function DocumentRecycleBin({
     retry: false,
   });
   useEffect(() => {
-    if (policy.data) setDaysInput(String(policy.data.retentionDays));
-  }, [policy.data]);
+    if (!policy.isSuccess || !policy.data) return;
+    setDaysInput(String(policy.data.retentionDays));
+  }, [policy.isSuccess, policy.data]);
   useEffect(() => {
     setPage(0);
     setCleanupPage(0);
@@ -209,7 +210,11 @@ export function DocumentRecycleBin({
               />
             </label>
             {canManageCompany ? (
-              <Button size="sm" type="submit" disabled={policyM.isPending}>
+              <Button
+                size="sm"
+                type="submit"
+                disabled={policyM.isPending || !policy.isSuccess || policy.isError}
+              >
                 Save policy
               </Button>
             ) : null}

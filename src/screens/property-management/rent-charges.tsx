@@ -251,7 +251,11 @@ export function PmRentChargesPage() {
                           <Button
                             type="button"
                             size="sm"
-                            disabled={postMutation.isPending}
+                            disabled={
+                              postMutation.isPending ||
+                              !charges.isSuccess ||
+                              charges.isError
+                            }
                             onClick={() => postMutation.mutate(charge.id)}
                           >
                             Post to ledger

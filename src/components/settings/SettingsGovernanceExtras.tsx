@@ -59,13 +59,13 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
   });
 
   useEffect(() => {
-    if (!q.data || dirty) return;
+    if (!q.isSuccess || !q.data || dirty) return;
     setSalesTerms(String(q.data.sales_default_payment_terms_days));
     setPurchTerms(String(q.data.purchases_default_payment_terms_days));
     setRequirePo(q.data.purchases_require_po);
     setRequireMemo(q.data.accounting_require_journal_memo);
     setCsvFmt(q.data.banking_csv_date_format);
-  }, [q.data, dirty]);
+  }, [q.isSuccess, q.data, dirty]);
 
   const parsedSalesTerms = parsePaymentTermsDays(salesTerms);
   const parsedPurchaseTerms = parsePaymentTermsDays(purchTerms);
@@ -230,7 +230,9 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
               !dirty ||
               saveM.isPending ||
               parsedSalesTerms === null ||
-              parsedPurchaseTerms === null
+              parsedPurchaseTerms === null ||
+              !q.isSuccess ||
+              q.isError
             }
             onClick={() => saveM.mutate()}
           >

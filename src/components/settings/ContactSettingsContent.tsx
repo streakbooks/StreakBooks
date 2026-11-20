@@ -83,6 +83,7 @@ export function ContactSettingsContent({
   const [baseline, setBaseline] = useState("");
 
   useEffect(() => {
+    if (!settingsQ.isSuccess || dirty) return;
     const s = settingsQ.data as
       | {
           default_kind?: unknown;
@@ -91,13 +92,13 @@ export function ContactSettingsContent({
           default_payment_terms_days?: unknown;
         }
       | undefined;
-    if (!s || dirty) return;
+    if (!s) return;
     setBaseline(JSON.stringify(s));
     setDefaultKind(String(s.default_kind ?? "customer"));
     setPrefix(String(s.account_number_prefix ?? "C"));
     setNextNum(String(s.next_account_number ?? 1001));
     setTerms(String(s.default_payment_terms_days ?? 30));
-  }, [settingsQ.data, dirty]);
+  }, [settingsQ.isSuccess, settingsQ.data, dirty]);
 
   const parsed = parseContactSettingsDraft({ defaultKind, prefix, nextNum, terms });
   const serverChanged = Boolean(
@@ -255,7 +256,15 @@ export function ContactSettingsContent({
         ) : null}
         <div className="flex flex-wrap items-center gap-3 border-t pt-3">
           <Button
-            disabled={!canManage || !dirty || !parsed.ok || serverChanged || saveM.isPending}
+            disabled={
+              !canManage ||
+              !dirty ||
+              !parsed.ok ||
+              serverChanged ||
+              saveM.isPending ||
+              !settingsQ.isSuccess ||
+              settingsQ.isError
+            }
             onClick={() => saveM.mutate()}
           >
             {saveM.isPending ? "Saving…" : "Save contact settings"}

@@ -93,6 +93,8 @@ export function NewTransfer({
   const toCurrency = toAcc?.currency_code ?? currency;
   const receivedMinor = moneyFieldMinor(received, toCurrency, { allowNegative: false });
   const canPost =
+    accountsQ.isSuccess &&
+    !accountsQ.isError &&
     Boolean(fromId && toId && fromId !== toId) &&
     amountMinor !== null &&
     amountMinor > 0n &&
@@ -142,11 +144,10 @@ export function NewTransfer({
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  if (accountsQ.isError && accountsQ.data === undefined)
-    return <QueryErrorState queries={[accountsQ]} title="Could not load bank accounts" />;
-
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (accountsQ.isPending) return <LoadingState />;
+  if (accountsQ.isError)
+    return <QueryErrorState queries={[accountsQ]} title="Could not load bank accounts" />;
 
   return (
     <TransactionWorkspace

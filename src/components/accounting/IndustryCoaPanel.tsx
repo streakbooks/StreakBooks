@@ -81,11 +81,17 @@ export function IndustryCoaPanel({ companyId }: Props) {
   });
 
   useEffect(() => {
-    if (settingsQ.data && selected.length === 0 && settingsQ.data.industryCodes.length > 0) {
-      setSelected(settingsQ.data.industryCodes);
-      setLevel(settingsQ.data.detailLevel);
+    if (
+      !settingsQ.isSuccess ||
+      !settingsQ.data ||
+      selected.length > 0 ||
+      settingsQ.data.industryCodes.length === 0
+    ) {
+      return;
     }
-  }, [settingsQ.data, selected.length]);
+    setSelected(settingsQ.data.industryCodes);
+    setLevel(settingsQ.data.detailLevel);
+  }, [settingsQ.isSuccess, settingsQ.data, selected.length]);
 
   const filteredIndustries = useMemo(() => {
     const q = industryQ.trim().toLowerCase();
@@ -158,7 +164,7 @@ export function IndustryCoaPanel({ companyId }: Props) {
   }
 
   const requiredQueries = [industriesQ, settingsQ, trackingQ, libraryQry];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined)) {
+  if (requiredQueries.some((query) => query.isError)) {
     return (
       <QueryErrorState
         queries={requiredQueries}

@@ -109,7 +109,7 @@ export function PayrollSalaryStructuresPage() {
   const components = settingsQ.data?.components.filter((c) => c.is_active) ?? [];
 
   useEffect(() => {
-    if (!listQ.data?.available) return;
+    if (!listQ.isSuccess || !listQ.data?.available) return;
     if (selectedId === "new") return;
     const structures = listQ.data.structures;
     const pick = selectedId ?? structures[0]?.id ?? null;
@@ -127,7 +127,7 @@ export function PayrollSalaryStructuresPage() {
       lines: linesForStructure(row.id, listQ.data.lines, currency),
     });
     setSelectedId(pick);
-  }, [listQ.data, selectedId, currency]);
+  }, [listQ.isSuccess, listQ.data, selectedId, currency]);
 
   const saveM = useMutation({
     mutationFn: (payload: SalaryStructureDraft) =>

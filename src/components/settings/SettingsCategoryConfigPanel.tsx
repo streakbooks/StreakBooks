@@ -101,6 +101,7 @@ export function SettingsCategoryConfigPanel({
   const defaults = useMemo(() => defaultDocumentFor(category), [category]);
 
   useEffect(() => {
+    if (!q.isSuccess) return;
     const data = q.data;
     if (!data || data.category !== category) return;
     setState((previous) => {
@@ -123,7 +124,7 @@ export function SettingsCategoryConfigPanel({
         version: data.version,
       };
     });
-  }, [q.data, category, scope]);
+  }, [q.isSuccess, q.data, category, scope]);
 
   const mut = useMutation({
     mutationFn: (input: { document: SettingsDocument; expectedVersion: number }) =>
@@ -210,7 +211,7 @@ export function SettingsCategoryConfigPanel({
 
   const hasEditor = Boolean(CATEGORY_SCHEMAS[category]);
   const draft = active?.draft ?? {};
-  const disabled = !canEdit || mut.isPending || !active;
+  const disabled = !canEdit || mut.isPending || !active || !q.isSuccess || q.isError;
   const saveError = mut.isError ? friendlyAuthError(mut.error) : null;
 
   return (

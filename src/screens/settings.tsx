@@ -317,8 +317,9 @@ export function SettingsForCompany({
   }, []);
 
   useEffect(() => {
+    if (!detailsQuery.isSuccess || detailsDirty) return;
     const d = detailsQuery.data;
-    if (!d || detailsDirty) return;
+    if (!d) return;
     setDetailsBaseline(JSON.stringify(d));
     setName(d.name);
     setLegalName(d.legal_name ?? "");
@@ -330,7 +331,7 @@ export function SettingsForCompany({
     setTaxRegime(d.tax?.tax_regime ?? "none");
     setRegNumber(d.tax?.registration_number ?? "");
     setPricesIncludeTax(Boolean(d.tax?.prices_include_tax));
-  }, [detailsQuery.data, detailsDirty]);
+  }, [detailsQuery.isSuccess, detailsQuery.data, detailsDirty]);
 
   useEffect(() => {
     if (!extendedQuery.isSuccess) return;
@@ -958,7 +959,7 @@ export function SettingsForCompany({
                         <SettingsSaveBar
                           label="Save organisation details"
                           dirty={detailsDirty}
-                          valid={detailsValid}
+                          valid={detailsValid && detailsQuery.isSuccess && !detailsQuery.isError}
                           canEdit={canEdit}
                           pending={saveMutation.isPending}
                           serverChanged={detailsServerChanged}

@@ -147,7 +147,7 @@ export function AdvisorsAdminAppointmentsPage() {
       </main>
     );
   }
-
+  if (!query.isSuccess || !query.data) return null;
   const appointments = query.data.appointments as AppointmentRow[];
   const validExceptionRange = Boolean(
     exceptionStart &&

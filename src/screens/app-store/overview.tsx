@@ -68,7 +68,7 @@ export function AppStoreOverviewPage() {
       <QueryErrorState queries={[catalogue]} title="Could not load App Store" />
     );
   }
-
+  if (!catalogue.isSuccess) return null;
   const apps = catalogue.data?.apps ?? [];
   const featured = apps.filter((a) => a.featured).slice(0, 6);
   const recommended = apps.filter((a) => a.recommended).slice(0, 6);

@@ -94,7 +94,7 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
       <QueryErrorState queries={[catalogue]} title="Could not load application" />
     );
   }
-
+  if (!catalogue.isSuccess) return null;
   const app = catalogue.data?.apps.find((a) => a.code === appCode);
   if (!app) {
     return (

@@ -81,7 +81,7 @@ export function AdvisorsAdminStaffPage() {
       </main>
     );
   }
-
+  if (!query.isSuccess || !query.data) return null;
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
       <ListWorkspace

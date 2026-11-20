@@ -179,7 +179,7 @@ export function AdvisorsAdminClientsPage() {
       </main>
     );
   }
-
+  if (!query.isSuccess || !staffQuery.isSuccess) return null;
   const staff = staffQuery.data ?? [];
   const selectedLinked = Boolean(
     form.id && query.data?.find((item) => item.id === form.id)?.linkedUserId,

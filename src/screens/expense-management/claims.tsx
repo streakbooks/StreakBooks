@@ -624,7 +624,7 @@ export function ExpenseManagementClaimsPage({
       </ListWorkspace>
     );
   }
-
+  if (!claimsQ.isSuccess) return null;
   const claims = claimsQ.data ?? [];
 
   const createLookupQueries = [

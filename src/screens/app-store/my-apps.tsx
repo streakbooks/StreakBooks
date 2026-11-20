@@ -68,7 +68,7 @@ export function AppStoreMyAppsPage() {
       <QueryErrorState queries={[catalogue]} title="Could not load My Apps" />
     );
   }
-
+  if (!catalogue.isSuccess) return null;
   const rows = (catalogue.data?.apps ?? []).filter(
     (app) => app.installStatus && app.installStatus !== "not_installed",
   );

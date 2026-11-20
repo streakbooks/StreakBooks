@@ -570,7 +570,7 @@ function ProductsWorkspace({
     return (
       <QueryErrorState queries={requiredQueries} title="Could not load item accounting options" />
     );
-
+  if (requiredQueries.some((query) => !query.isSuccess)) return null;
   const productFormFields = (
     <div className="grid max-w-3xl gap-3 py-2">
       <div className="grid gap-1">

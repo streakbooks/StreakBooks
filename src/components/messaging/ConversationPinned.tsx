@@ -23,6 +23,7 @@ export function ConversationPinned({
       <QueryErrorState queries={[query]} title="Could not load pinned messages" />
     );
   }
+  if (!query.isSuccess) return <LoadingState rows={2} />;
   if (!query.data?.length) {
     return (
       <EmptyState

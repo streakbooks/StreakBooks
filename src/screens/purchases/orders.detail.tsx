@@ -610,6 +610,8 @@ export function PurchaseOrderDetailScreen({
             <p className="text-sm text-muted-foreground">Loading activity…</p>
           ) : activity.isError ? (
             <QueryErrorState queries={[activity]} title="Could not load order activity" />
+          ) : !activity.isSuccess ? (
+            <p className="text-sm text-muted-foreground">Loading activity…</p>
           ) : (
             <>
               <h3 className="text-sm font-medium">Goods receipts</h3>

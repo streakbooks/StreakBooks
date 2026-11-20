@@ -40,6 +40,7 @@ export function DocumentThemes({
   };
   if (q.isPending) return <LoadingState />;
   if (q.isError) return <QueryErrorState queries={[q]} title="Could not load themes" />;
+  if (!q.isSuccess) return <LoadingState />;
   return (
     <DocumentThemeEditor
       themes={q.data.themes}

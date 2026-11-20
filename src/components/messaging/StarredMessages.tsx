@@ -25,6 +25,7 @@ export function StarredMessages({
       <QueryErrorState queries={[query]} title="Could not load starred messages" />
     );
   }
+  if (!query.isSuccess) return <LoadingState rows={3} />;
   if (!query.data?.length) {
     return (
       <EmptyState

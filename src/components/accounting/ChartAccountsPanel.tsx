@@ -352,6 +352,7 @@ export function ChartAccountsPanel({
   if (chartQuery.isError) {
     return <QueryErrorState queries={[chartQuery]} title="Could not load the chart" />;
   }
+  if (!chartQuery.isSuccess) return <LoadingState />;
 
   const review = chartQuery.data.review;
   const balanceLabel = chartQuery.data.balanceLabel;

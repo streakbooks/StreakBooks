@@ -157,7 +157,7 @@ export function FirmClientPortfolio({
   const savedViews =
     localViews?.firmId === firmId ? localViews.views : (cloudPreferencesQ.data?.views ?? []);
   useEffect(() => {
-    if (!cloudPreferencesQ.data) return;
+    if (!cloudPreferencesQ.isSuccess || !cloudPreferencesQ.data) return;
     if (cloudPreferencesQ.data.columns !== null) {
       setSavedColumns({
         firmId,
@@ -170,7 +170,7 @@ export function FirmClientPortfolio({
         views: normalizeFirmSavedViews(cloudPreferencesQ.data.views),
       });
     }
-  }, [firmId, cloudPreferencesQ.data]);
+  }, [firmId, cloudPreferencesQ.isSuccess, cloudPreferencesQ.data]);
 
   useEffect(() => {
     let saved: unknown = null;

@@ -132,7 +132,13 @@ export function ManagementWorkspace({
             onChange={(e) => setName(e.target.value)}
           />
           <Button
-            disabled={saving.isPending || !widgets.length || !name.trim()}
+            disabled={
+              saving.isPending ||
+              !widgets.length ||
+              !name.trim() ||
+              !q.isSuccess ||
+              q.isError
+            }
             onClick={() => saving.mutate()}
           >
             {activeModel ? "Update dashboard" : "Save dashboard"}
@@ -140,6 +146,7 @@ export function ManagementWorkspace({
           {activeModel && (
             <Button
               variant="outline"
+              disabled={!q.isSuccess || q.isError}
               onClick={() => {
                 setActiveModel(null);
                 setName(`${name.slice(0, 150)} (copy)`);
@@ -501,6 +508,7 @@ function ForecastWorkspace({
         {activeModel && (
           <Button
             variant="outline"
+            disabled={!preview.isSuccess || preview.isError}
             onClick={() => {
               setActiveModel(null);
               setName(`${name.slice(0, 150)} (copy)`);

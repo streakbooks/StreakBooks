@@ -81,7 +81,7 @@ export function EmployeeExpensesPage() {
   });
 
   const requiredQueries = [paymentAccountsQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return <QueryErrorState queries={requiredQueries} title="Could not load expense accounts" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
@@ -113,18 +113,22 @@ export function EmployeeExpensesPage() {
       {can("expenses.approve") ? (
         <div className="mb-4 max-w-sm space-y-2">
           <Label>Reimbursement payment account (for approvals)</Label>
-          <AccountLookup
-            ariaLabel="Reimbursement payment account"
-            purpose="bank"
-            accounts={
-              (paymentAccountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>
-            }
-            value={paymentAccountId}
-            onChange={setPaymentAccountId}
-            companyId={companyId}
-            placeholder="Bank or cash account"
-            allowClear={false}
-          />
+          {paymentAccountsQ.isPending ? (
+            <LoadingState />
+          ) : paymentAccountsQ.isSuccess ? (
+            <AccountLookup
+              ariaLabel="Reimbursement payment account"
+              purpose="bank"
+              accounts={
+                (paymentAccountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>
+              }
+              value={paymentAccountId}
+              onChange={setPaymentAccountId}
+              companyId={companyId}
+              placeholder="Bank or cash account"
+              allowClear={false}
+            />
+          ) : null}
         </div>
       ) : null}
 
@@ -201,7 +205,11 @@ export function EmployeeExpensesPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={approveMutation.isPending || !paymentAccountId}
+                        disabled={
+                          approveMutation.isPending ||
+                          !paymentAccountId ||
+                          !paymentAccountsQ.isSuccess
+                        }
                         onClick={() => approveMutation.mutate(c.id)}
                       >
                         {approveMutation.isPending ? (

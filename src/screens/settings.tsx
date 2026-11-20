@@ -411,6 +411,7 @@ export function SettingsForCompany({
   });
 
   const resetDetails = () => {
+    if (!detailsQuery.isSuccess) return;
     const d = detailsQuery.data;
     if (!d) return;
     setName(d.name);
@@ -607,6 +608,7 @@ export function SettingsForCompany({
       <QueryErrorState queries={[detailsQuery]} title="Could not load organisation settings" />
     );
   }
+  if (!detailsQuery.isSuccess || !detailsQuery.data) return <LoadingState />;
 
   const legacyTab = LEGACY_TAB_BY_SECTION[section];
   const sectionMeta = categoryMeta.find((c) => c.id === section);

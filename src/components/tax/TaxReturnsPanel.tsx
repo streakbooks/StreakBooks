@@ -216,8 +216,13 @@ export function TaxReturnsPanel({
   });
   const previewStale = isStaleTaxPreview(calc, { start, end, basis });
   const matchingReturns = useMemo(
-    () => filterSavedTaxReturns(list.data?.returns ?? [], returnSearch, returnFilter),
-    [list.data, returnSearch, returnFilter],
+    () =>
+      filterSavedTaxReturns(
+        list.isSuccess ? (list.data?.returns ?? []) : [],
+        returnSearch,
+        returnFilter,
+      ),
+    [list.isSuccess, list.data, returnSearch, returnFilter],
   );
   const detail = useQuery({
     queryKey: ["tax-return", companyId, openId],
@@ -324,8 +329,8 @@ export function TaxReturnsPanel({
     downloadCsv(csvFilename("tax-return", period), text);
   };
 
-  const d = detail.data;
-  const pv = preview.data;
+  const d = detail.isSuccess ? detail.data : undefined;
+  const pv = preview.isSuccess ? preview.data : undefined;
 
   return (
     <div className="space-y-6">
@@ -339,7 +344,7 @@ export function TaxReturnsPanel({
         </AlertDescription>
       </Alert>
 
-      {list.data && !list.data.available ? (
+      {list.isSuccess && list.data && !list.data.available ? (
         <Alert variant="destructive">
           <AlertTitle>Returns are not set up yet</AlertTitle>
           <AlertDescription>
@@ -450,7 +455,7 @@ export function TaxReturnsPanel({
                     saveDraft.isPending ||
                     !preview.isSuccess ||
                     preview.isError ||
-                    (list.data ? !list.data.available : false)
+                    (list.isSuccess && list.data ? !list.data.available : false)
                   }
                   onClick={() => saveDraft.mutate()}
                 >
@@ -506,7 +511,7 @@ export function TaxReturnsPanel({
                 <SelectItem value="settled">Settled</SelectItem>
               </SelectContent>
             </Select>
-            {!list.isPending && !list.isError ? (
+            {list.isSuccess ? (
               <span className="text-xs text-muted-foreground">
                 {matchingReturns.length} of {list.data?.returns.length ?? 0} saved returns
               </span>
@@ -516,6 +521,8 @@ export function TaxReturnsPanel({
             <LoadingState />
           ) : list.isError ? (
             <QueryErrorState queries={[list]} title="Could not load returns" />
+          ) : !list.isSuccess ? (
+            <LoadingState />
           ) : list.data.returns.length === 0 ? (
             <EmptyState
               title="No saved returns"
@@ -687,7 +694,9 @@ export function TaxReturnsPanel({
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
+                    disabled={!detail.isSuccess || !d}
                     onClick={() =>
+                      d &&
                       exportCsv(
                         d.lines,
                         d.currency,

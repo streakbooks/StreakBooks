@@ -36,7 +36,7 @@ export function AiWorkpaperEvidencePanel({
   });
 
   if (!permitted) return null;
-  const d = evidence.data;
+  const d = evidence.isSuccess ? evidence.data : undefined;
   return (
     <Card>
       <CardHeader>

@@ -90,6 +90,7 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
         <QueryErrorState queries={[q]} title="Could not load saved views" />
       </div>
     );
+  if (!q.isSuccess) return null;
   const views = ((q.data ?? []) as unknown as Saved[]).filter(
     (v) => !libraryMetadata(v.config).archived,
   );

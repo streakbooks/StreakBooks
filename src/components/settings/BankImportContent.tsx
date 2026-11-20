@@ -362,18 +362,26 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   });
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
-  if (accountsQ.isError && accountsQ.data === undefined) {
+  if (accountsQ.isError) {
     return <QueryErrorState queries={[accountsQ]} title="Could not load bank accounts" />;
   }
 
   const patch = (p: Partial<ImportMapping>) => setMapping((m) => (m ? { ...m, ...p } : m));
   const rowsToImport = mapped ? mapped.rows.length - (includeDuplicates ? 0 : dupRows.size) : 0;
   const canImport =
-    Boolean(bankAccountId && mapped && mapped.rows.length > 0 && dupQ.isSuccess && dupQ.data) &&
+    Boolean(
+      bankAccountId &&
+        mapped &&
+        mapped.rows.length > 0 &&
+        dupQ.isSuccess &&
+        dupQ.data &&
+        accountsQ.isSuccess,
+    ) &&
     !ofxCurrencyMismatch &&
     rowsToImport > 0 &&
     !mutation.isPending &&
-    !dupQ.isError;
+    !dupQ.isError &&
+    !accountsQ.isError;
 
   const workspace = (
     <>

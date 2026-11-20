@@ -75,15 +75,15 @@ export function PmTrustAccountingPage() {
         <QueryErrorState queries={[settings]} title="Could not load Property Management settings" />
       ) : settings.isLoading ? (
         <LoadingState />
-      ) : !settings.data?.enabled ? (
+      ) : settings.isSuccess && !settings.data?.enabled ? (
         <EmptyState title="Module disabled" description="Enable Property Management in Settings." />
-      ) : (
+      ) : settings.isSuccess && settings.data?.enabled ? (
         <>
           {trust.isLoading ? <LoadingState /> : null}
           {trust.isError ? (
             <QueryErrorState queries={[trust]} title="Could not load trust summary" />
           ) : null}
-          {summary ? (
+          {trust.isSuccess && summary ? (
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader>
@@ -118,7 +118,7 @@ export function PmTrustAccountingPage() {
             </div>
           ) : null}
         </>
-      )}
+      ) : null}
     </ListWorkspace>
   );
 }

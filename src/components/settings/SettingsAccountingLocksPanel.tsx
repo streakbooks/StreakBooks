@@ -297,7 +297,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
             <Switch
               id="settings-require-override-reason"
               checked={requireOverrideReason}
-              disabled={!canLock || !lockQ.data}
+              disabled={!canLock || !lockQ.isSuccess}
               onCheckedChange={(value) => {
                 setRequireOverrideReason(value);
                 setLockTouched(true);
@@ -331,7 +331,12 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
           <div className="flex flex-wrap items-center gap-2 border-t pt-4">
             <Button
               disabled={
-                !canLock || !lockTouched || !reason.trim() || lockMut.isPending || lockServerChanged
+                !canLock ||
+                !lockQ.isSuccess ||
+                !lockTouched ||
+                !reason.trim() ||
+                lockMut.isPending ||
+                lockServerChanged
               }
               onClick={() => lockMut.mutate()}
             >

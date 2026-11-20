@@ -976,7 +976,7 @@ export function SettingsForCompany({
                           <Label htmlFor="org-locale">Locale</Label>
                           <Select
                             value={locale}
-                            disabled={!canEdit || !extendedQuery.data}
+                            disabled={!canEdit || !extendedQuery.isSuccess}
                             onValueChange={(value) => {
                               setLocale(value);
                               setLocalizationDirty(true);
@@ -1000,7 +1000,7 @@ export function SettingsForCompany({
                           <Label htmlFor="org-date-format">Date format</Label>
                           <Select
                             value={dateFormat}
-                            disabled={!canEdit || !extendedQuery.data}
+                            disabled={!canEdit || !extendedQuery.isSuccess}
                             onValueChange={(value) => {
                               setDateFormat(value);
                               setLocalizationDirty(true);
@@ -1027,7 +1027,7 @@ export function SettingsForCompany({
                             value={themeColor}
                             aria-invalid={!isValidThemeColor(themeColor)}
                             aria-describedby="org-document-color-hint"
-                            disabled={!canEdit || !extendedQuery.data}
+                            disabled={!canEdit || !extendedQuery.isSuccess}
                             onChange={(e) => {
                               setThemeColor(e.target.value);
                               setLocalizationDirty(true);
@@ -1043,7 +1043,7 @@ export function SettingsForCompany({
                             id="org-invoice-footer"
                             value={invoiceFooter}
                             maxLength={2000}
-                            disabled={!canEdit || !extendedQuery.data}
+                            disabled={!canEdit || !extendedQuery.isSuccess}
                             onChange={(e) => {
                               setInvoiceFooter(e.target.value);
                               setLocalizationDirty(true);
@@ -1053,7 +1053,7 @@ export function SettingsForCompany({
                         <SettingsSaveBar
                           label="Save localisation"
                           dirty={localizationDirty}
-                          valid={localizationValid && Boolean(extendedQuery.data)}
+                          valid={localizationValid && extendedQuery.isSuccess}
                           canEdit={canEdit}
                           pending={localizationM.isPending}
                           serverChanged={localizationServerChanged}
@@ -1222,7 +1222,7 @@ export function SettingsForCompany({
                           <Input
                             id="org-trading-name"
                             value={tradingName}
-                            disabled={!canEdit || !extendedQuery.data}
+                            disabled={!canEdit || !extendedQuery.isSuccess}
                             onChange={(e) => {
                               setTradingName(e.target.value);
                               setBrandingDirty(true);
@@ -1234,7 +1234,7 @@ export function SettingsForCompany({
                           <Input
                             id="org-letterhead"
                             value={letterhead}
-                            disabled={!canEdit || !extendedQuery.data}
+                            disabled={!canEdit || !extendedQuery.isSuccess}
                             onChange={(e) => {
                               setLetterhead(e.target.value);
                               setBrandingDirty(true);
@@ -1249,7 +1249,7 @@ export function SettingsForCompany({
                             value={invoiceEmail}
                             aria-invalid={!isValidOptionalEmail(invoiceEmail)}
                             aria-describedby="org-invoice-email-hint"
-                            disabled={!canEdit || !extendedQuery.data}
+                            disabled={!canEdit || !extendedQuery.isSuccess}
                             onChange={(e) => {
                               setInvoiceEmail(e.target.value);
                               setBrandingDirty(true);
@@ -1264,7 +1264,7 @@ export function SettingsForCompany({
                           <Input
                             id="org-invoice-phone"
                             value={invoicePhone}
-                            disabled={!canEdit || !extendedQuery.data}
+                            disabled={!canEdit || !extendedQuery.isSuccess}
                             onChange={(e) => {
                               setInvoicePhone(e.target.value);
                               setBrandingDirty(true);
@@ -1281,7 +1281,7 @@ export function SettingsForCompany({
                               logoUrl.trim() && !/^https:\/\//i.test(logoUrl.trim()),
                             )}
                             aria-describedby="org-logo-url-hint"
-                            disabled={!canEdit || !extendedQuery.data}
+                            disabled={!canEdit || !extendedQuery.isSuccess}
                             onChange={(e) => {
                               setLogoUrl(e.target.value);
                               setBrandingDirty(true);
@@ -1296,7 +1296,7 @@ export function SettingsForCompany({
                         <SettingsSaveBar
                           label="Save branding"
                           dirty={brandingDirty}
-                          valid={brandingValid && Boolean(extendedQuery.data)}
+                          valid={brandingValid && extendedQuery.isSuccess}
                           canEdit={canEdit}
                           pending={brandingM.isPending}
                           serverChanged={brandingServerChanged}
@@ -1394,7 +1394,7 @@ export function SettingsForCompany({
                                 <input
                                   type="checkbox"
                                   checked={enabledFx.includes(c)}
-                                  disabled={!canEdit || !extendedQuery.data}
+                                  disabled={!canEdit || !extendedQuery.isSuccess}
                                   onChange={(e) => {
                                     setEnabledFx((prev) =>
                                       e.target.checked ? [...prev, c] : prev.filter((x) => x !== c),
@@ -1409,7 +1409,7 @@ export function SettingsForCompany({
                         <SettingsSaveBar
                           label="Save currencies"
                           dirty={currenciesDirty}
-                          valid={Boolean(extendedQuery.data)}
+                          valid={extendedQuery.isSuccess}
                           canEdit={canEdit}
                           pending={currenciesM.isPending}
                           serverChanged={currenciesServerChanged}

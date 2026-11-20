@@ -98,38 +98,40 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
     <div className="flex flex-wrap items-center gap-2 text-sm print:hidden">
       <Star className="size-4 text-muted-foreground" aria-hidden />
       <span className="text-muted-foreground">Saved views</span>
-      {access.data && !access.data.allowed && (
-        <span className="text-xs text-muted-foreground">
-          Saved views are read only: {access.data.reason} (source: {access.data.source}).
-        </span>
-      )}
       {access.isError ? (
         <QueryErrorState queries={[access]} title="Could not verify saved-view editing access" />
       ) : null}
-      {views.map((v) => (
-        <span key={v.id} className="inline-flex items-center rounded-full border pl-3">
-          <Link
-            to="/reports/$reportId"
-            params={{ reportId }}
-            search={parseReportSearch(v.config ?? {}) as never}
-            className="rounded-sm py-1 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            {v.name}
-          </Link>
-          <button
-            type="button"
-            aria-label={`Delete saved view ${v.name}`}
-            className="px-2 py-1 text-muted-foreground hover:text-foreground"
-            disabled={!canEdit || remove.isPending}
-            onClick={() => {
-              if (window.confirm(`Delete saved view “${v.name}”?`)) remove.mutate(v.id);
-            }}
-          >
-            <X className="size-3" />
-          </button>
+      {access.isSuccess && access.data && !access.data.allowed ? (
+        <span className="text-xs text-muted-foreground">
+          Saved views are read only: {access.data.reason} (source: {access.data.source}).
         </span>
-      ))}
-      {naming ? (
+      ) : null}
+      {access.isSuccess
+        ? views.map((v) => (
+            <span key={v.id} className="inline-flex items-center rounded-full border pl-3">
+              <Link
+                to="/reports/$reportId"
+                params={{ reportId }}
+                search={parseReportSearch(v.config ?? {}) as never}
+                className="rounded-sm py-1 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                {v.name}
+              </Link>
+              <button
+                type="button"
+                aria-label={`Delete saved view ${v.name}`}
+                className="px-2 py-1 text-muted-foreground hover:text-foreground"
+                disabled={!canEdit || !access.isSuccess || remove.isPending}
+                onClick={() => {
+                  if (window.confirm(`Delete saved view “${v.name}”?`)) remove.mutate(v.id);
+                }}
+              >
+                <X className="size-3" />
+              </button>
+            </span>
+          ))
+        : null}
+      {access.isSuccess && naming ? (
         <>
           <Input
             aria-label="Saved view name"
@@ -149,7 +151,7 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
           </label>
           <Button
             size="sm"
-            disabled={!canEdit || !name.trim() || save.isPending}
+            disabled={!canEdit || !access.isSuccess || !name.trim() || save.isPending}
             onClick={() => save.mutate()}
           >
             Save
@@ -158,11 +160,17 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
             Cancel
           </Button>
         </>
-      ) : (
-        <Button size="sm" variant="outline" disabled={!canEdit} onClick={() => setNaming(true)}>
+      ) : null}
+      {access.isSuccess && !naming ? (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!canEdit || !access.isSuccess}
+          onClick={() => setNaming(true)}
+        >
           Save this view
         </Button>
-      )}
+      ) : null}
     </div>
   );
 }

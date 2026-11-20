@@ -106,24 +106,28 @@ export function PmOwnershipPanel({
           <span className="tabular-nums font-medium text-foreground">{totalOpen.toFixed(2)}%</span>
         </p>
         {showForm && canManage ? (
-          owners.isError && owners.data === undefined ? (
+          owners.isError ? (
             <QueryErrorState queries={[owners]} title="Could not load owners" />
+          ) : owners.isPending ? (
+            <LoadingState />
           ) : (
           <div className="grid gap-4 rounded-xl border border-border/70 p-4 sm:grid-cols-2">
             <div className="grid gap-2 sm:col-span-2">
               <Label>Owner</Label>
-              <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select owner" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(owners.data ?? []).map((owner) => (
-                    <SelectItem key={owner.id} value={owner.id}>
-                      {owner.displayName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {owners.isSuccess ? (
+                <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select owner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(owners.data ?? []).map((owner) => (
+                      <SelectItem key={owner.id} value={owner.id}>
+                        {owner.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              ) : null}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="pm-own-pct">Ownership %</Label>
@@ -161,7 +165,7 @@ export function PmOwnershipPanel({
             <div className="flex items-end">
               <Button
                 type="button"
-                disabled={!ownerId || mutation.isPending}
+                disabled={!owners.isSuccess || !ownerId || mutation.isPending}
                 onClick={() => mutation.mutate()}
               >
                 {mutation.isPending ? "Saving…" : "Save share"}

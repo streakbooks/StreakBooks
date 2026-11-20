@@ -171,8 +171,10 @@ export function PmOwnerPayoutsPage() {
       ) : (
         <>
           {showForm && canPrepare ? (
-            owners.isError && owners.data === undefined ? (
+            owners.isError ? (
               <QueryErrorState queries={[owners]} title="Could not load owners" />
+            ) : owners.isPending ? (
+              <LoadingState />
             ) : (
             <Card className="mb-4">
               <CardHeader>
@@ -184,18 +186,20 @@ export function PmOwnerPayoutsPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Owner</Label>
-                  <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select owner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(owners.data ?? []).map((owner) => (
-                        <SelectItem key={owner.id} value={owner.id}>
-                          {owner.displayName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
+                  {owners.isSuccess ? (
+                    <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select owner" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(owners.data ?? []).map((owner) => (
+                          <SelectItem key={owner.id} value={owner.id}>
+                            {owner.displayName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  ) : null}
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pm-payout-amount">Amount</Label>
@@ -228,7 +232,9 @@ export function PmOwnerPayoutsPage() {
                 <div className="flex items-end">
                   <Button
                     type="button"
-                    disabled={!ownerId || !amount || createMutation.isPending}
+                    disabled={
+                      !owners.isSuccess || !ownerId || !amount || createMutation.isPending
+                    }
                     onClick={() => createMutation.mutate()}
                   >
                     {createMutation.isPending ? "Saving…" : "Create draft"}

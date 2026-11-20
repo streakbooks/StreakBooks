@@ -74,7 +74,7 @@ export function CrmImportsPage() {
           {policy.isError ? (
             <QueryErrorState queries={[policy]} title="Could not load import/export policy" />
           ) : null}
-          {policy.data ? (
+          {policy.isSuccess && policy.data ? (
             <>
               <Alert>
                 <AlertTitle>Data move status</AlertTitle>
@@ -83,7 +83,7 @@ export function CrmImportsPage() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
-                  disabled={!policy.data.canImport}
+                  disabled={!policy.isSuccess || !policy.data.canImport}
                   title={policy.data.canImport ? undefined : "Blocked until import backend exists"}
                 >
                   Import leads
@@ -91,7 +91,7 @@ export function CrmImportsPage() {
                 <Button
                   type="button"
                   variant="secondary"
-                  disabled={!policy.data.canExport}
+                  disabled={!policy.isSuccess || !policy.data.canExport}
                   title={policy.data.canExport ? undefined : "Blocked until export backend exists"}
                 >
                   Export opportunities

@@ -227,11 +227,11 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
   };
   const suggestions = suggestQ.data?.suggestions ?? [];
   const canSave =
-    form.name.trim() &&
-    form.pattern.trim() &&
-    form.accountId &&
+    Boolean(form.name.trim() && form.pattern.trim() && form.accountId) &&
     !amountsInvalid &&
-    !saveM.isPending;
+    !saveM.isPending &&
+    optionsQ.isSuccess &&
+    !optionsQ.isError;
 
   const workspace = (
     <>
@@ -241,7 +241,7 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
             <h2 className="font-semibold">Suggested codings</h2>
             <Button
               size="sm"
-              disabled={picked.size === 0 || applyM.isPending}
+              disabled={picked.size === 0 || applyM.isPending || !suggestQ.isSuccess}
               onClick={() =>
                 applyM.mutate(
                   suggestions
@@ -313,7 +313,7 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
                     <TableCell>
                       <Button
                         size="sm"
-                        disabled={applyM.isPending}
+                        disabled={applyM.isPending || !suggestQ.isSuccess}
                         onClick={() =>
                           applyM.mutate([
                             { bankTransactionId: s.bankTransactionId, ruleId: s.ruleId },

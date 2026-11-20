@@ -282,7 +282,7 @@ export function PmOwnerStatementsPage() {
             {statements.isError ? (
               <QueryErrorState queries={[statements]} title="Could not load statements" />
             ) : null}
-            {!statements.isError && statements.data?.length === 0 ? (
+            {statements.isSuccess && statements.data?.length === 0 ? (
               <EmptyState
                 title="No statements yet"
                 description="Generate a statement for an owner and period."
@@ -295,7 +295,7 @@ export function PmOwnerStatementsPage() {
                 }
               />
             ) : null}
-            {statements.data && statements.data.length > 0 ? (
+            {statements.isSuccess && statements.data && statements.data.length > 0 ? (
               <div className="overflow-x-auto rounded-xl border border-border">
                 <table className="min-w-full text-sm">
                   <thead className="bg-muted/50 text-left">

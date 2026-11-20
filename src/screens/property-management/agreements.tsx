@@ -263,7 +263,7 @@ export function PmAgreementsPage() {
           {agreements.isError ? (
             <QueryErrorState queries={[agreements]} title="Could not load agreements" />
           ) : null}
-          {!agreements.isError && agreements.data?.length === 0 ? (
+          {agreements.isSuccess && agreements.data?.length === 0 ? (
             <EmptyState
               title="No agreements yet"
               description="Create a draft or active management agreement for a property."
@@ -276,7 +276,7 @@ export function PmAgreementsPage() {
               }
             />
           ) : null}
-          {agreements.data && agreements.data.length > 0 ? (
+          {agreements.isSuccess && agreements.data && agreements.data.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-border">
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/50 text-left">

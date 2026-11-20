@@ -466,7 +466,13 @@ function ForecastWorkspace({
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              disabled={!canExport || !preview.data || exporting.isPending || !name.trim()}
+              disabled={
+                !canExport ||
+                !preview.isSuccess ||
+                !preview.data ||
+                exporting.isPending ||
+                !name.trim()
+              }
             >
               {exporting.isPending ? "Preparing forecast…" : "Download forecast"}
             </Button>
@@ -487,7 +493,7 @@ function ForecastWorkspace({
         </DropdownMenu>
         <Button
           variant="outline"
-          disabled={saving.isPending || !preview.data || !name.trim()}
+          disabled={saving.isPending || !preview.isSuccess || !preview.data || !name.trim()}
           onClick={() => saving.mutate()}
         >
           {activeModel ? "Update assumptions" : "Save assumptions"}

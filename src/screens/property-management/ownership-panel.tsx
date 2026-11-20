@@ -174,7 +174,7 @@ export function PmOwnershipPanel({
         {ownership.isError ? (
           <QueryErrorState queries={[ownership]} title="Could not load ownership" />
         ) : null}
-        {!ownership.isError && ownership.data?.length === 0 ? (
+        {ownership.isSuccess && ownership.data?.length === 0 ? (
           <EmptyState
             title="No ownership rows"
             description="Add at least one owner share before generating owner statements."
@@ -187,7 +187,7 @@ export function PmOwnershipPanel({
             }
           />
         ) : null}
-        {ownership.data && ownership.data.length > 0 ? (
+        {ownership.isSuccess && ownership.data && ownership.data.length > 0 ? (
           <div className="overflow-x-auto rounded-xl border border-border">
             <table className="min-w-full text-sm">
               <thead className="bg-muted/50 text-left">

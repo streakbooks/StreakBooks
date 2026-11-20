@@ -156,10 +156,12 @@ export function PmOverviewPage() {
         </div>
       )}
 
-      <p className="mt-6 text-sm text-muted-foreground">
-        {kpis.data?.currencyNote ??
-          "Count KPIs only — monetary totals require period, basis and currency once posting lands."}
-      </p>
+      {kpis.isSuccess ? (
+        <p className="mt-6 text-sm text-muted-foreground">
+          {kpis.data?.currencyNote ??
+            "Count KPIs only — monetary totals require period, basis and currency once posting lands."}
+        </p>
+      ) : null}
     </ListWorkspace>
   );
 }

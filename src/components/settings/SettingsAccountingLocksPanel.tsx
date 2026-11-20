@@ -380,7 +380,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
             <Switch
               id="settings-warn-duplicate"
               checked={warnDup}
-              disabled={!canEdit || !cfgQ.data}
+              disabled={!canEdit || !cfgQ.isSuccess}
               onCheckedChange={(value) => {
                 setWarnDup(value);
                 setCfgTouched(true);
@@ -392,7 +392,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
             <Switch
               id="settings-warn-control"
               checked={warnControl}
-              disabled={!canEdit || !cfgQ.data}
+              disabled={!canEdit || !cfgQ.isSuccess}
               onCheckedChange={(value) => {
                 setWarnControl(value);
                 setCfgTouched(true);
@@ -404,7 +404,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
             <Switch
               id="settings-warn-bank"
               checked={warnBank}
-              disabled={!canEdit || !cfgQ.data}
+              disabled={!canEdit || !cfgQ.isSuccess}
               onCheckedChange={(value) => {
                 setWarnBank(value);
                 setCfgTouched(true);
@@ -421,7 +421,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
               aria-describedby={
                 cfgErrors["warn_backdated_days"] ? "settings-backdated-error" : undefined
               }
-              disabled={!canEdit || !cfgQ.data}
+              disabled={!canEdit || !cfgQ.isSuccess}
               onChange={(e) => {
                 setBackdated(e.target.value);
                 setCfgTouched(true);
@@ -434,7 +434,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
             <Switch
               id="settings-auto-credits"
               checked={autoCredits}
-              disabled={!canEdit || !cfgQ.data}
+              disabled={!canEdit || !cfgQ.isSuccess}
               onCheckedChange={(value) => {
                 setAutoCredits(value);
                 setCfgTouched(true);
@@ -468,7 +468,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
           <div className="flex flex-wrap items-center gap-2 border-t pt-4">
             <Button
               disabled={
-                !canEdit || !cfgQ.data || !cfgTouched || cfgMut.isPending || cfgServerChanged
+                !canEdit || !cfgQ.isSuccess || !cfgTouched || cfgMut.isPending || cfgServerChanged
               }
               onClick={savePreferences}
             >

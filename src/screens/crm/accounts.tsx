@@ -159,7 +159,7 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
               }
             />
           ) : null}
-          {accounts.data && accounts.data.length > 0 ? (
+          {accounts.isSuccess && accounts.data && accounts.data.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>

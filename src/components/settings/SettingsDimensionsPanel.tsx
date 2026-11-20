@@ -326,7 +326,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
           {reportQ.isError ? (
             <QueryErrorState queries={[reportQ]} title="Could not load dimension P&L" />
           ) : null}
-          {reportQ.data ? (
+          {reportQ.isSuccess && reportQ.data ? (
             <Table>
               <TableHeader>
                 <TableRow>

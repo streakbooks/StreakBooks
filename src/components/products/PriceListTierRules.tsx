@@ -241,57 +241,59 @@ export function PriceListTierRules({
         {rulesQ.isError ? (
           <QueryErrorState queries={[rulesQ]} title="Could not load pricing tiers" />
         ) : null}
-        {!rulesQ.isError && rulesQ.data?.length === 0 ? (
+        {rulesQ.isSuccess && rulesQ.data.length === 0 ? (
           <p className="rounded-md border p-3 text-sm">
             No tier rules configured for this price list.
           </p>
         ) : null}
-        <div className="space-y-2">
-          {rulesQ.data?.map((rule) => (
-            <div
-              key={rule.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
-            >
-              <div className="min-w-0">
-                <p className="font-medium">
-                  {rule.product_code ? `${rule.product_code} — ` : ""}
-                  {rule.product_name}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Qty ≥ {rule.min_quantity} ·{" "}
-                  {fromMinorUnits(BigInt(rule.unit_price_minor), currency)} {currency} ·{" "}
-                  {rule.effective_from} to {rule.effective_to ?? "open ended"}
-                </p>
+        {rulesQ.isSuccess ? (
+          <div className="space-y-2">
+            {rulesQ.data.map((rule) => (
+              <div
+                key={rule.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    {rule.product_code ? `${rule.product_code} — ` : ""}
+                    {rule.product_name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Qty ≥ {rule.min_quantity} ·{" "}
+                    {fromMinorUnits(BigInt(rule.unit_price_minor), currency)} {currency} ·{" "}
+                    {rule.effective_from} to {rule.effective_to ?? "open ended"}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!canManage || !isActive}
+                    onClick={() => edit(rule)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!canManage || deleteMut.isPending}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `Remove tier for ${rule.product_name} at quantity ${rule.min_quantity}?`,
+                        )
+                      ) {
+                        deleteMut.mutate(rule.id);
+                      }
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!canManage || !isActive}
-                  onClick={() => edit(rule)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!canManage || deleteMut.isPending}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Remove tier for ${rule.product_name} at quantity ${rule.min_quantity}?`,
-                      )
-                    ) {
-                      deleteMut.mutate(rule.id);
-                    }
-                  }}
-                >
-                  Remove
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

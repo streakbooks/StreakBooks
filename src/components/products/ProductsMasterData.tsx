@@ -98,36 +98,38 @@ export function CategoriesWorkspace({ companyId }: WorkspaceProps) {
           {categoriesQ.isError ? (
             <QueryErrorState queries={[categoriesQ]} title="Could not load product categories" />
           ) : null}
-          {!categoriesQ.isError && categoriesQ.data?.length === 0 ? (
+          {categoriesQ.isSuccess && categoriesQ.data.length === 0 ? (
             <p className="rounded-md border p-3 text-sm">
               No categories yet. Create your first category.
             </p>
           ) : null}
-          {categoriesQ.data?.map((category) => (
-            <div
-              key={category.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/25"
-            >
-              <div className="min-w-0">
-                <p className="font-medium">{category.name}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <StatusBadge status={category.is_active ? "active" : "archived"} />
-                  {category.description ? (
-                    <p className="text-xs text-muted-foreground">{category.description}</p>
-                  ) : null}
+          {categoriesQ.isSuccess
+            ? categoriesQ.data.map((category) => (
+                <div
+                  key={category.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/25"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium">{category.name}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <StatusBadge status={category.is_active ? "active" : "archived"} />
+                      {category.description ? (
+                        <p className="text-xs text-muted-foreground">{category.description}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!canManage}
+                    onClick={() => edit(category)}
+                  >
+                    Edit
+                  </Button>
                 </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!canManage}
-                onClick={() => edit(category)}
-              >
-                Edit
-              </Button>
-            </div>
-          ))}
-          {(categoriesQ.data?.length ?? 0) >= 500 ? (
+              ))
+            : null}
+          {categoriesQ.isSuccess && categoriesQ.data.length >= 500 ? (
             <p className="text-sm text-muted-foreground">
               Showing the first 500 categories; consolidate categories before adding more.
             </p>
@@ -306,10 +308,11 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
             {listsQ.isError ? (
               <QueryErrorState queries={[listsQ]} title="Could not load price lists" />
             ) : null}
-            {!listsQ.isError && listsQ.data?.length === 0 ? (
+            {listsQ.isSuccess && listsQ.data.length === 0 ? (
               <p className="rounded-md border p-3 text-sm">No price lists yet.</p>
             ) : null}
-            {listsQ.data?.map((list) => (
+            {listsQ.isSuccess
+              ? listsQ.data.map((list) => (
               <div
                 key={list.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/25"
@@ -346,8 +349,9 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
                   </Button>
                 </div>
               </div>
-            ))}
-            {(listsQ.data?.length ?? 0) >= 500 ? (
+            ))
+              : null}
+            {listsQ.isSuccess && listsQ.data.length >= 500 ? (
               <p className="text-sm text-muted-foreground">Showing first 500 price lists.</p>
             ) : null}
           </CardContent>
@@ -479,11 +483,12 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
             {pricesQ.isError ? (
               <QueryErrorState queries={[pricesQ]} title="Could not load price overrides" />
             ) : null}
-            {!pricesQ.isError && pricesQ.data?.length === 0 ? (
+            {pricesQ.isSuccess && pricesQ.data.length === 0 ? (
               <p className="rounded-md border p-3 text-sm">No price overrides for this list.</p>
             ) : null}
+            {pricesQ.isSuccess ? (
             <div className="space-y-2">
-              {pricesQ.data?.map((item) => (
+              {pricesQ.data.map((item) => (
                 <div
                   key={item.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/25"
@@ -529,7 +534,8 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
                 </div>
               ))}
             </div>
-            {(pricesQ.data?.length ?? 0) >= 500 ? (
+            ) : null}
+            {pricesQ.isSuccess && pricesQ.data.length >= 500 ? (
               <p className="text-sm text-muted-foreground">
                 Showing the first 500 overrides; split large price lists before adding more.
               </p>

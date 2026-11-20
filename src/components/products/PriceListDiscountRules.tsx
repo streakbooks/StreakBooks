@@ -239,13 +239,14 @@ export function PriceListDiscountRules({
         {rulesQ.isError ? (
           <QueryErrorState queries={[rulesQ]} title="Could not load discount rules" />
         ) : null}
-        {!rulesQ.isError && rulesQ.data?.length === 0 ? (
+        {rulesQ.isSuccess && rulesQ.data.length === 0 ? (
           <p className="rounded-md border p-3 text-sm">
             No percentage discount rules have been configured for this price list.
           </p>
         ) : null}
+        {rulesQ.isSuccess ? (
         <div className="space-y-2">
-          {rulesQ.data?.map((rule) => (
+          {rulesQ.data.map((rule) => (
             <div
               key={rule.id}
               className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
@@ -289,7 +290,8 @@ export function PriceListDiscountRules({
             </div>
           ))}
         </div>
-        {(rulesQ.data?.length ?? 0) >= 500 ? (
+        ) : null}
+        {rulesQ.isSuccess && rulesQ.data.length >= 500 ? (
           <p className="text-xs text-muted-foreground">
             At the 500-rule limit. Paginated rule management is pending.
           </p>

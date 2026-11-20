@@ -225,7 +225,8 @@ export function FirmRecurringBillingPanel({
               {linksQ.isError ? (
                 <QueryErrorState queries={[linksQ]} title="Cannot load recurring links" />
               ) : null}
-              {(linksQ.data ?? []).map((item) => {
+              {linksQ.isSuccess
+                ? (linksQ.data ?? []).map((item) => {
                 const schedule = item.sales_recurring_invoices;
                 return (
                   <div
@@ -284,7 +285,8 @@ export function FirmRecurringBillingPanel({
                     ) : null}
                   </div>
                 );
-              })}
+              })
+                : null}
               {canManage && engagement && eligible.length ? (
                 <div className="flex flex-wrap items-end gap-3 rounded-lg border p-4">
                   <div className="min-w-64 flex-1 space-y-1">

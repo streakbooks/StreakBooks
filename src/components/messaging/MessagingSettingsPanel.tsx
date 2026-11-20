@@ -80,6 +80,7 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
       <QueryErrorState queries={[settings]} title="Messaging settings unavailable" />
     );
   }
+  if (!settings.isSuccess) return <LoadingState />;
 
   const enabled = settings.data?.enabled ?? false;
   const busy = enabledMutation.isPending || flagsMutation.isPending || retentionMutation.isPending;

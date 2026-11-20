@@ -158,11 +158,12 @@ export function AdvisorsBookingPage({
 
         <section className="space-y-4">
           <h2 className="text-lg font-semibold">Available times</h2>
-          {slotsQ.isLoading ? (
+          {slotsQ.isLoading || slotsQ.isPending ? (
             <p className="text-sm text-muted-foreground">Loading slots…</p>
-          ) : null}
-          {slotsQ.isError ? (
+          ) : slotsQ.isError ? (
             <QueryErrorState queries={[slotsQ]} title="Could not load available slots" />
+          ) : !slotsQ.isSuccess ? (
+            <p className="text-sm text-muted-foreground">Loading slots…</p>
           ) : (
             <>
               {slotsQ.data && !slotsQ.data.ready ? (
@@ -187,7 +188,7 @@ export function AdvisorsBookingPage({
             </>
           )}
 
-          {slotsQ.isError ? null : (
+          {slotsQ.isSuccess ? (
           <form
             className="grid gap-3 sm:grid-cols-2"
             onSubmit={(event) => {
@@ -249,7 +250,7 @@ export function AdvisorsBookingPage({
               </Button>
             </div>
           </form>
-          )}
+          ) : null}
         </section>
       </div>
     </main>

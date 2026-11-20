@@ -38,6 +38,7 @@ export function ConversationFiles({
       <QueryErrorState queries={[query]} title="Could not load shared files" />
     );
   }
+  if (!query.isSuccess) return <LoadingState rows={2} />;
   if (!query.data?.length) {
     return (
       <EmptyState

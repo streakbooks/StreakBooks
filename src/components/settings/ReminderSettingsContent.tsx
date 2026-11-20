@@ -60,8 +60,9 @@ export function ReminderSettingsContent({ embedded = false }: { embedded?: boole
   });
 
   useEffect(() => {
-    if (q.data && !settings) setSettings(q.data.settings);
-  }, [q.data, settings]);
+    if (!q.isSuccess || !q.data || settings) return;
+    setSettings(q.data.settings);
+  }, [q.isSuccess, q.data, settings]);
 
   const sendM = useMutation({
     mutationFn: (ids: string[]) => doSend({ data: { companyId: companyId!, invoiceIds: ids } }),
@@ -98,6 +99,7 @@ export function ReminderSettingsContent({ embedded = false }: { embedded?: boole
     return (
       <QueryErrorState queries={[q]} title="Could not load reminders" />
     );
+  if (!q.isSuccess || !q.data) return <LoadingState />;
 
   const data = q.data;
   const canSend = can("sales.draft") && data.emailConfigured && data.blockedReason === null;

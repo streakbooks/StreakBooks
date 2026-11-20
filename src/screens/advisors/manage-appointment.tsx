@@ -122,11 +122,12 @@ export function AdvisorsManageAppointmentPage({ manageToken }: { manageToken: st
               }}
               disabled={{ before: new Date() }}
             />
-            {slotsQ.isLoading ? (
+            {slotsQ.isLoading || slotsQ.isPending ? (
               <p className="text-sm text-muted-foreground">Loading slots…</p>
-            ) : null}
-            {slotsQ.isError ? (
+            ) : slotsQ.isError ? (
               <QueryErrorState queries={[slotsQ]} title="Could not load available slots" />
+            ) : !slotsQ.isSuccess ? (
+              <p className="text-sm text-muted-foreground">Loading slots…</p>
             ) : (
               <>
                 {slotsQ.data && !slotsQ.data.ready ? (
@@ -150,7 +151,7 @@ export function AdvisorsManageAppointmentPage({ manageToken }: { manageToken: st
                 ) : null}
               </>
             )}
-            {slotsQ.isError ? null : (
+            {slotsQ.isSuccess ? (
               <>
                 <div className="space-y-1">
                   <Label htmlFor="reschedule-slot">Selected slot (ISO)</Label>
@@ -169,7 +170,7 @@ export function AdvisorsManageAppointmentPage({ manageToken }: { manageToken: st
                   Confirm reschedule
                 </Button>
               </>
-            )}
+            ) : null}
           </section>
         </>
       ) : null}

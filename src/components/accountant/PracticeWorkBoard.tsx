@@ -59,6 +59,7 @@ export function PracticeWorkBoard({ companyId, firmId }: { companyId?: string; f
     return (
       <QueryErrorState queries={[workspace]} title="Could not load practice work" />
     );
+  if (!workspace.isSuccess) return <LoadingState />;
   return (
     <PracticeWorkBoardView
       key={`${firmId ?? companyId}:${page}`}

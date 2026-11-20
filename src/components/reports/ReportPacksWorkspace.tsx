@@ -383,6 +383,8 @@ export function ReportPacksWorkspace({
             <LoadingState />
           ) : selected.isError ? (
             <QueryErrorState queries={[selected]} title="Could not open pack" />
+          ) : !selected.isSuccess ? (
+            <LoadingState />
           ) : (
             selected.data && (
               <>

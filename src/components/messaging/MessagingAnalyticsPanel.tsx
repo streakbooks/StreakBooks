@@ -27,6 +27,7 @@ export function MessagingAnalyticsPanel({ companyId }: { companyId: string | nul
       <QueryErrorState queries={[query]} title="Could not load messaging analytics" />
     );
   }
+  if (!query.isSuccess) return <LoadingState rows={3} />;
 
   return (
     <div className="space-y-3 rounded-lg border bg-card p-4">

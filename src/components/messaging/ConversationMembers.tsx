@@ -62,6 +62,7 @@ export function ConversationMembers({
       <QueryErrorState queries={[query]} title="Could not load members" />
     );
   }
+  if (!query.isSuccess) return <LoadingState rows={2} />;
   if (!query.data?.length) {
     return <EmptyState title="No members" description="This conversation has no active members." />;
   }

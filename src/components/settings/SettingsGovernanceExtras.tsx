@@ -303,6 +303,8 @@ export function SettingsIntegrationsPanel({ companyId }: { companyId: string }) 
           <p role="status">Checking integration configuration…</p>
         ) : health.isError ? (
           <QueryErrorState queries={[health]} title="Could not check integration health" />
+        ) : !health.isSuccess ? (
+          <p role="status">Checking integration configuration…</p>
         ) : (
           health.data.map((integration) => (
             <IntegrationRow

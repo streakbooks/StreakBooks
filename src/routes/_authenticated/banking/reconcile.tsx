@@ -183,7 +183,7 @@ function Reconcile() {
   });
 
   const requiredQueries = [accountsQ, sessionsQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return (
       <QueryErrorState queries={requiredQueries} title="Could not load reconciliation options" />
     );
@@ -266,9 +266,11 @@ function Reconcile() {
         />
       ) : wsQ.isPending ? (
         <LoadingState />
-      ) : wsQ.isError && wsQ.data === undefined ? (
+      ) : wsQ.isError ? (
         <QueryErrorState queries={[wsQ]} title="Could not load reconciliation" />
-      ) : ws ? (
+      ) : !wsQ.isSuccess || !ws ? (
+        <LoadingState />
+      ) : (
         <>
           <div className="sticky top-0 z-10 mb-4 space-y-3 rounded-md border bg-background p-3 text-sm">
             <MeasuredProgress
@@ -521,7 +523,7 @@ function Reconcile() {
             ) : null}
           </div>
         </>
-      ) : null}
+      )}
 
       {bankAccountId ? (
         <section>

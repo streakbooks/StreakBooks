@@ -113,8 +113,10 @@ function QuotesList() {
       />
       {query.isPending ? (
         <ListSkeleton />
-      ) : query.isError && query.data === undefined ? (
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load quotes" />
+      ) : !query.isSuccess ? (
+        <ListSkeleton />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No quotes"

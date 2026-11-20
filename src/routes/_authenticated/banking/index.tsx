@@ -394,7 +394,7 @@ function BankingAccounts() {
       {glQ.isError ? (
         <QueryErrorState queries={[glQ]} title="Could not load GL accounts for banking" />
       ) : null}
-      {detailsQ.isError && detailsQ.data === undefined ? (
+      {detailsQ.isError ? (
         <QueryErrorState queries={[detailsQ]} title="Could not load bank account details" />
       ) : null}
 

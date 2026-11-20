@@ -131,8 +131,10 @@ function MoneyDocumentsInner() {
     >
       {docsQ.isPending ? (
         <LoadingState />
-      ) : docsQ.isError && docsQ.data === undefined ? (
+      ) : docsQ.isError ? (
         <QueryErrorState queries={[docsQ]} title="Could not load bank documents" />
+      ) : !docsQ.isSuccess ? (
+        <LoadingState />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No bank documents yet"

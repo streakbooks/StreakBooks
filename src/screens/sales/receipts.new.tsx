@@ -244,7 +244,7 @@ function ReceiptForm({
   });
 
   const requiredQueries = [customersQ, depositsQ, configQ, openQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return <QueryErrorState queries={requiredQueries} title="Could not load receipt options" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;

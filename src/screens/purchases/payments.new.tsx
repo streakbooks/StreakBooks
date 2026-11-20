@@ -196,7 +196,7 @@ export function NewPayment() {
   });
 
   const requiredQueries = [suppliersQ, billsQ, accountsQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return <QueryErrorState queries={requiredQueries} title="Could not load payment options" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;

@@ -676,7 +676,7 @@ function OpeningForm({
             Enter source tax details to support cash tax reporting. Net plus tax must equal the full
             document gross. Leaving this empty preserves an explicit tax exception.
           </p>
-          {codes.isError && codes.data === undefined ? (
+          {codes.isError ? (
             <QueryErrorState queries={[codes]} title="Could not load tax codes" />
           ) : null}
           {taxLines.map((line, index) => (

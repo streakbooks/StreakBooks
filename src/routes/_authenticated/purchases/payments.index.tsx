@@ -81,8 +81,10 @@ function PaymentsList() {
     >
       {query.isPending ? (
         <ListSkeleton />
-      ) : query.isError && query.data === undefined ? (
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load payments" />
+      ) : !query.isSuccess ? (
+        <ListSkeleton />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState
           title="No payments"

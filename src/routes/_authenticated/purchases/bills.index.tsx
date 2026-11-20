@@ -1082,8 +1082,10 @@ function BillsWorkspace() {
 
             {billsQ.isPending ? (
               <LoadingState />
-            ) : billsQ.isError && billsQ.data === undefined ? (
+            ) : billsQ.isError ? (
               <QueryErrorState queries={[billsQ]} title="Could not load bills" />
+            ) : !billsQ.isSuccess ? (
+              <LoadingState />
             ) : rows.length === 0 ? (
               <EmptyState
                 title="No bills in this view"

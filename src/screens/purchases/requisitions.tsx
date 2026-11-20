@@ -220,8 +220,10 @@ function RequisitionsWorkspace({
       </div>
       {query.isPending ? (
         <LoadingState />
-      ) : query.isError && query.data === undefined ? (
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load requisitions" />
+      ) : !query.isSuccess ? (
+        <LoadingState />
       ) : !query.data.rows.length ? (
         <EmptyState
           title={

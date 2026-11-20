@@ -75,7 +75,7 @@ export function Statements() {
       ?.name ?? "Customer";
 
   const requiredQueries = [customersQ, brandingQ, deliveryQ];
-  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+  if (requiredQueries.some((query) => query.isError))
     return <QueryErrorState queries={requiredQueries} title="Could not load statement options" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;

@@ -232,7 +232,7 @@ export function CrmPipelinesPage() {
       ) : settings.isLoading ? (
         <LoadingState />
       ) : null}
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"
           description="Enable CRM to seed the default Sales pipeline."
@@ -243,7 +243,7 @@ export function CrmPipelinesPage() {
         <QueryErrorState queries={[pipelines]} title="Could not load pipelines" />
       ) : null}
 
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <div className="space-y-4">
           <Alert>
             <AlertTitle>Admin boundary</AlertTitle>

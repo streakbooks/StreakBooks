@@ -188,56 +188,60 @@ export function PortalSettingsPanel({
       </div>
       <section className="space-y-2">
         <h2 className="font-semibold">Payment alerts</h2>
-        {alerts.isError ? (
+        {alerts.isPending ? (
+          <LoadingState />
+        ) : alerts.isError ? (
           <QueryErrorState queries={[alerts]} title="Could not load portal alerts" />
-        ) : (
-        <ul className="divide-y divide-border rounded-md border border-border text-sm">
-          {(alerts.data ?? []).map((alert) => (
-            <li
-              key={String(alert["id"])}
-              className="flex flex-wrap items-center justify-between gap-2 px-3 py-3"
-            >
-              <span>
-                {String(alert["message"])}{" "}
-                {alert["amount_minor"]
-                  ? `· ${formatMoney(Number(alert["amount_minor"]), String(alert["currency_code"] ?? "GBP"))}`
-                  : ""}
-              </span>
-              <span className="flex gap-2">
-                {alert["status"] === "captured_unposted" && alert["intent_id"] ? (
+        ) : alerts.isSuccess ? (
+          <ul className="divide-y divide-border rounded-md border border-border text-sm">
+            {(alerts.data ?? []).map((alert) => (
+              <li
+                key={String(alert["id"])}
+                className="flex flex-wrap items-center justify-between gap-2 px-3 py-3"
+              >
+                <span>
+                  {String(alert["message"])}{" "}
+                  {alert["amount_minor"]
+                    ? `· ${formatMoney(Number(alert["amount_minor"]), String(alert["currency_code"] ?? "GBP"))}`
+                    : ""}
+                </span>
+                <span className="flex gap-2">
+                  {alert["status"] === "captured_unposted" && alert["intent_id"] ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        void retry({ data: { companyId, intentId: String(alert["intent_id"]) } })
+                          .then(() =>
+                            qc.invalidateQueries({ queryKey: ["portal-alerts", companyId] }),
+                          )
+                          .catch((error) => toast.error(friendlyAuthError(error)));
+                      }}
+                    >
+                      Retry posting
+                    </Button>
+                  ) : null}
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => {
-                      void retry({ data: { companyId, intentId: String(alert["intent_id"]) } })
+                      void resolve({ data: { companyId, alertId: String(alert["id"]) } })
                         .then(() =>
                           qc.invalidateQueries({ queryKey: ["portal-alerts", companyId] }),
                         )
                         .catch((error) => toast.error(friendlyAuthError(error)));
                     }}
                   >
-                    Retry posting
+                    Resolve
                   </Button>
-                ) : null}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    void resolve({ data: { companyId, alertId: String(alert["id"]) } })
-                      .then(() => qc.invalidateQueries({ queryKey: ["portal-alerts", companyId] }))
-                      .catch((error) => toast.error(friendlyAuthError(error)));
-                  }}
-                >
-                  Resolve
-                </Button>
-              </span>
-            </li>
-          ))}
-          {(alerts.data ?? []).length === 0 && !alerts.isPending && !alerts.isError ? (
-            <li className="px-3 py-6 text-muted-foreground">No open payment alerts.</li>
-          ) : null}
-        </ul>
-        )}
+                </span>
+              </li>
+            ))}
+            {(alerts.data ?? []).length === 0 ? (
+              <li className="px-3 py-6 text-muted-foreground">No open payment alerts.</li>
+            ) : null}
+          </ul>
+        ) : null}
       </section>
     </div>
   );
@@ -336,73 +340,82 @@ export function ContactPortalPanel({
       {link ? (
         <p className="break-all rounded-md border border-border p-3 text-sm">Shown once: {link}</p>
       ) : null}
-      {access.isError ? (
+      {access.isPending ? (
+        <LoadingState />
+      ) : access.isError ? (
         <QueryErrorState queries={[access]} title="Could not load portal access" />
-      ) : (
-      <ul className="divide-y divide-border rounded-md border border-border text-sm">
-        {(access.data ?? []).map((row) => (
-          <li
-            key={String(row["membership_id"])}
-            className="flex flex-wrap items-center justify-between gap-2 px-3 py-3"
-          >
-            <span>
-              {String(row["email"])} · {String(row["role"])} · {String(row["status"])}
-            </span>
-            {row["status"] !== "revoked" ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  void revoke({ data: { companyId, membershipId: String(row["membership_id"]) } })
-                    .then(() =>
-                      qc.invalidateQueries({
-                        queryKey: ["portal-access-contact", companyId, contactId],
-                      }),
-                    )
-                    .catch((error) => toast.error(friendlyAuthError(error)));
-                }}
-              >
-                Revoke
-              </Button>
-            ) : null}
-          </li>
-        ))}
-        {(access.data ?? []).length === 0 && !access.isPending && !access.isError ? (
-          <li className="px-3 py-6 text-muted-foreground">No portal invitations.</li>
-        ) : null}
-      </ul>
-      )}
-      <section className="space-y-2">
-        <h2 className="font-semibold">Messages</h2>
-        {messages.isError ? (
-          <QueryErrorState queries={[messages]} title="Could not load portal messages" />
-        ) : (
-        <ul className="space-y-2 text-sm">
-          {(messages.data ?? []).map((row) => (
-            <li key={String(row["id"])} className="rounded-md border border-border px-3 py-2">
-              <p className="text-xs text-muted-foreground">{String(row["author_role"])}</p>
-              <p>{String(row["body"])}</p>
+      ) : access.isSuccess ? (
+        <ul className="divide-y divide-border rounded-md border border-border text-sm">
+          {(access.data ?? []).map((row) => (
+            <li
+              key={String(row["membership_id"])}
+              className="flex flex-wrap items-center justify-between gap-2 px-3 py-3"
+            >
+              <span>
+                {String(row["email"])} · {String(row["role"])} · {String(row["status"])}
+              </span>
+              {row["status"] !== "revoked" ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    void revoke({ data: { companyId, membershipId: String(row["membership_id"]) } })
+                      .then(() =>
+                        qc.invalidateQueries({
+                          queryKey: ["portal-access-contact", companyId, contactId],
+                        }),
+                      )
+                      .catch((error) => toast.error(friendlyAuthError(error)));
+                  }}
+                >
+                  Revoke
+                </Button>
+              ) : null}
             </li>
           ))}
+          {(access.data ?? []).length === 0 ? (
+            <li className="px-3 py-6 text-muted-foreground">No portal invitations.</li>
+          ) : null}
         </ul>
+      ) : null}
+      <section className="space-y-2">
+        <h2 className="font-semibold">Messages</h2>
+        {messages.isPending ? (
+          <LoadingState />
+        ) : messages.isError ? (
+          <QueryErrorState queries={[messages]} title="Could not load portal messages" />
+        ) : messages.isSuccess ? (
+          <ul className="space-y-2 text-sm">
+            {(messages.data ?? []).map((row) => (
+              <li key={String(row["id"])} className="rounded-md border border-border px-3 py-2">
+                <p className="text-xs text-muted-foreground">{String(row["author_role"])}</p>
+                <p>{String(row["body"])}</p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {messages.isError ? null : (
+          <form
+            className="space-y-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              message.mutate();
+            }}
+          >
+            <Label htmlFor="staff-portal-message">Reply</Label>
+            <Textarea
+              id="staff-portal-message"
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+            />
+            <Button
+              type="submit"
+              disabled={message.isPending || !body.trim() || !messages.isSuccess || messages.isError}
+            >
+              Send
+            </Button>
+          </form>
         )}
-        <form
-          className="space-y-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            message.mutate();
-          }}
-        >
-          <Label htmlFor="staff-portal-message">Reply</Label>
-          <Textarea
-            id="staff-portal-message"
-            value={body}
-            onChange={(event) => setBody(event.target.value)}
-          />
-          <Button type="submit" disabled={message.isPending || !body.trim()}>
-            Send
-          </Button>
-        </form>
       </section>
     </div>
   );
@@ -437,92 +450,99 @@ export function PortalInbox({ companyId }: { companyId: string }) {
           Approving a bill creates an awaiting-approval bill. Approving a credit note creates a
           draft. Neither is posted until the usual authorise step.
         </p>
-        {submissions.isError ? (
+        {submissions.isPending ? (
+          <LoadingState />
+        ) : submissions.isError ? (
           <QueryErrorState queries={[submissions]} title="Could not load submissions" />
-        ) : (
-        <ul className="space-y-3">
-          {(submissions.data ?? [])
-            .filter((row) => row["status"] === "submitted")
-            .map((row) => (
-              <li key={String(row["id"])} className="rounded-md border border-border p-3 text-sm">
-                <p className="font-medium">
-                  {String(row["contact_name"])} · {String(row["kind"])} ·{" "}
-                  {String(row["supplier_reference"])}
-                </p>
-                <p>
-                  {formatMoney(
-                    Number(row["total_minor"] ?? 0),
-                    String(row["currency_code"] ?? "GBP"),
-                  )}
-                </p>
-                {row["order_number"] ? <p>Purchase order {String(row["order_number"])}</p> : null}
-                {row["bill_id"] ? (
-                  <Link
-                    className="underline"
-                    to="/purchases/bills/$billId"
-                    params={{ billId: String(row["bill_id"]) }}
-                  >
-                    Open bill
-                  </Link>
-                ) : null}
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      void decide({
-                        data: { companyId, submissionId: String(row["id"]), decision: "approve" },
-                      })
-                        .then(refresh)
-                        .catch((error) => toast.error(friendlyAuthError(error)));
-                    }}
-                  >
-                    Accept into drafts
-                  </Button>
-                  <Input
-                    className="max-w-xs"
-                    placeholder="Rejection reason"
-                    value={reason[String(row["id"])] ?? ""}
-                    onChange={(event) =>
-                      setReason({ ...reason, [String(row["id"])]: event.target.value })
-                    }
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      void decide({
-                        data: {
-                          companyId,
-                          submissionId: String(row["id"]),
-                          decision: "reject",
-                          reason: reason[String(row["id"])] ?? "",
-                        },
-                      })
-                        .then(refresh)
-                        .catch((error) => toast.error(friendlyAuthError(error)));
-                    }}
-                  >
-                    Reject
-                  </Button>
-                </div>
-              </li>
-            ))}
-          {(submissions.data ?? []).filter((row) => row["status"] === "submitted").length === 0 &&
-          !submissions.isPending &&
-          !submissions.isError ? (
-            <li className="text-sm text-muted-foreground">No submissions are waiting.</li>
-          ) : null}
-        </ul>
-        )}
+        ) : submissions.isSuccess ? (
+          <ul className="space-y-3">
+            {(submissions.data ?? [])
+              .filter((row) => row["status"] === "submitted")
+              .map((row) => (
+                <li key={String(row["id"])} className="rounded-md border border-border p-3 text-sm">
+                  <p className="font-medium">
+                    {String(row["contact_name"])} · {String(row["kind"])} ·{" "}
+                    {String(row["supplier_reference"])}
+                  </p>
+                  <p>
+                    {formatMoney(
+                      Number(row["total_minor"] ?? 0),
+                      String(row["currency_code"] ?? "GBP"),
+                    )}
+                  </p>
+                  {row["order_number"] ? <p>Purchase order {String(row["order_number"])}</p> : null}
+                  {row["bill_id"] ? (
+                    <Link
+                      className="underline"
+                      to="/purchases/bills/$billId"
+                      params={{ billId: String(row["bill_id"]) }}
+                    >
+                      Open bill
+                    </Link>
+                  ) : null}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        void decide({
+                          data: {
+                            companyId,
+                            submissionId: String(row["id"]),
+                            decision: "approve",
+                          },
+                        })
+                          .then(refresh)
+                          .catch((error) => toast.error(friendlyAuthError(error)));
+                      }}
+                    >
+                      Accept into drafts
+                    </Button>
+                    <Input
+                      className="max-w-xs"
+                      placeholder="Rejection reason"
+                      value={reason[String(row["id"])] ?? ""}
+                      onChange={(event) =>
+                        setReason({ ...reason, [String(row["id"])]: event.target.value })
+                      }
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        void decide({
+                          data: {
+                            companyId,
+                            submissionId: String(row["id"]),
+                            decision: "reject",
+                            reason: reason[String(row["id"])] ?? "",
+                          },
+                        })
+                          .then(refresh)
+                          .catch((error) => toast.error(friendlyAuthError(error)));
+                      }}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            {(submissions.data ?? []).filter((row) => row["status"] === "submitted").length ===
+            0 ? (
+              <li className="text-sm text-muted-foreground">No submissions are waiting.</li>
+            ) : null}
+          </ul>
+        ) : null}
       </section>
       <section className="space-y-2">
         <h2 className="font-semibold">Bank-detail changes</h2>
         <p className="text-sm text-muted-foreground">
           Accepting stores the details on the supplier. It does not move money.
         </p>
-        {banks.isError ? (
+        {banks.isPending ? (
+          <LoadingState />
+        ) : banks.isError ? (
           <QueryErrorState queries={[banks]} title="Could not load bank accounts" />
-        ) : (
+        ) : banks.isSuccess ? (
           <ul className="space-y-3">
             {(banks.data ?? []).map((row) => (
               <li key={String(row["id"])} className="rounded-md border border-border p-3 text-sm">
@@ -565,8 +585,11 @@ export function PortalInbox({ companyId }: { companyId: string }) {
                 </div>
               </li>
             ))}
+            {(banks.data ?? []).length === 0 ? (
+              <li className="text-sm text-muted-foreground">No bank-detail changes waiting.</li>
+            ) : null}
           </ul>
-        )}
+        ) : null}
       </section>
     </div>
   );

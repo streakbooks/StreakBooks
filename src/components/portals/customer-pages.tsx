@@ -143,41 +143,43 @@ export function PortalInvoices() {
           <option value="void">Void</option>
         </select>
       </div>
-      {query.isPending ? <LoadingState /> : null}
-      {query.isError ? (
+      {query.isPending ? (
+        <LoadingState />
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} />
+      ) : query.isSuccess ? (
+        <ul className="divide-y divide-border rounded-md border border-border">
+          {rows.map((row) => (
+            <li
+              key={String(row["id"])}
+              className="flex flex-wrap items-center justify-between gap-2 px-3 py-3"
+            >
+              <div>
+                <Link
+                  className="font-medium underline"
+                  to="/portal/app/invoices/$invoiceId"
+                  params={{ invoiceId: String(row["id"]) }}
+                >
+                  {String(row["invoice_number"] ?? "Invoice")}
+                </Link>
+                <p className="text-sm text-muted-foreground">
+                  {dateOf(row["invoice_date"], current.locale, current.date_format)} · due{" "}
+                  {dateOf(row["due_date"], current.locale, current.date_format)}
+                </p>
+              </div>
+              <div className="text-right">
+                <Badge variant="outline">{String(row["status"])}</Badge>
+                <p className="text-sm">
+                  {money(row["due_minor"], row["currency_code"], current.locale)} due
+                </p>
+              </div>
+            </li>
+          ))}
+          {rows.length === 0 ? (
+            <li className="px-3 py-6 text-sm text-muted-foreground">No invoices match.</li>
+          ) : null}
+        </ul>
       ) : null}
-      <ul className="divide-y divide-border rounded-md border border-border">
-        {rows.map((row) => (
-          <li
-            key={String(row["id"])}
-            className="flex flex-wrap items-center justify-between gap-2 px-3 py-3"
-          >
-            <div>
-              <Link
-                className="font-medium underline"
-                to="/portal/app/invoices/$invoiceId"
-                params={{ invoiceId: String(row["id"]) }}
-              >
-                {String(row["invoice_number"] ?? "Invoice")}
-              </Link>
-              <p className="text-sm text-muted-foreground">
-                {dateOf(row["invoice_date"], current.locale, current.date_format)} · due{" "}
-                {dateOf(row["due_date"], current.locale, current.date_format)}
-              </p>
-            </div>
-            <div className="text-right">
-              <Badge variant="outline">{String(row["status"])}</Badge>
-              <p className="text-sm">
-                {money(row["due_minor"], row["currency_code"], current.locale)} due
-              </p>
-            </div>
-          </li>
-        ))}
-        {!query.isPending && !query.isError && rows.length === 0 ? (
-          <li className="px-3 py-6 text-sm text-muted-foreground">No invoices match.</li>
-        ) : null}
-      </ul>
     </div>
   );
 }
@@ -447,44 +449,47 @@ export function PortalStatement() {
           Print / Save as PDF
         </Button>
       </div>
-      {query.isPending ? <LoadingState /> : null}
-      {query.isError ? (
+      {query.isPending ? (
+        <LoadingState />
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} />
+      ) : query.isSuccess ? (
+        (query.data ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">No statement lines in this period.</p>
+        ) : (
+          (query.data ?? []).map((section) => (
+            <Card key={String(section["currency"])}>
+              <CardHeader>
+                <CardTitle className="text-base">{String(section["currency"])}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p>Opening {money(section["opening_minor"], section["currency"], current.locale)}</p>
+                <ul className="divide-y divide-border">
+                  {((section["rows"] as Row[]) ?? []).map((row, index) => (
+                    <li key={index} className="flex justify-between gap-2 py-2">
+                      <span>
+                        {dateOf(row["date"], current.locale, current.date_format)} ·{" "}
+                        {String(row["kind"])} {String(row["reference"] ?? "")}
+                      </span>
+                      <span>
+                        {Number(row["debit_minor"])
+                          ? money(row["debit_minor"], section["currency"], current.locale)
+                          : ""}
+                        {Number(row["credit_minor"])
+                          ? ` − ${money(row["credit_minor"], section["currency"], current.locale)}`
+                          : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="font-medium">
+                  Closing {money(section["closing_minor"], section["currency"], current.locale)}
+                </p>
+              </CardContent>
+            </Card>
+          ))
+        )
       ) : null}
-      {!query.isPending && !query.isError && (query.data ?? []).length === 0 ? (
-        <p className="text-sm text-muted-foreground">No statement lines in this period.</p>
-      ) : null}
-      {(query.data ?? []).map((section) => (
-        <Card key={String(section["currency"])}>
-          <CardHeader>
-            <CardTitle className="text-base">{String(section["currency"])}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p>Opening {money(section["opening_minor"], section["currency"], current.locale)}</p>
-            <ul className="divide-y divide-border">
-              {((section["rows"] as Row[]) ?? []).map((row, index) => (
-                <li key={index} className="flex justify-between gap-2 py-2">
-                  <span>
-                    {dateOf(row["date"], current.locale, current.date_format)} ·{" "}
-                    {String(row["kind"])} {String(row["reference"] ?? "")}
-                  </span>
-                  <span>
-                    {Number(row["debit_minor"])
-                      ? money(row["debit_minor"], section["currency"], current.locale)
-                      : ""}
-                    {Number(row["credit_minor"])
-                      ? ` − ${money(row["credit_minor"], section["currency"], current.locale)}`
-                      : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className="font-medium">
-              Closing {money(section["closing_minor"], section["currency"], current.locale)}
-            </p>
-          </CardContent>
-        </Card>
-      ))}
     </div>
   );
 }
@@ -511,39 +516,45 @@ export function PortalPayments() {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Payments and notices</h2>
-      {query.isError ? (
+      {query.isPending ? (
+        <LoadingState />
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} />
+      ) : query.isSuccess ? (
+        <ul className="divide-y divide-border rounded-md border border-border">
+          {(query.data ?? []).map((row) => (
+            <li key={String(row["id"])} className="px-3 py-3 text-sm">
+              <div className="flex justify-between gap-2">
+                <span>
+                  {dateOf(row["receipt_date"], current.locale, current.date_format)} ·{" "}
+                  {String(row["reference"] ?? "Receipt")} · {String(row["status"])}
+                </span>
+                <span>{money(row["amount_minor"], row["currency_code"], current.locale)}</span>
+              </div>
+            </li>
+          ))}
+          {(query.data ?? []).length === 0 ? (
+            <li className="px-3 py-6 text-sm text-muted-foreground">No receipts yet.</li>
+          ) : null}
+        </ul>
       ) : null}
-      <ul className="divide-y divide-border rounded-md border border-border">
-        {(query.data ?? []).map((row) => (
-          <li key={String(row["id"])} className="px-3 py-3 text-sm">
-            <div className="flex justify-between gap-2">
-              <span>
-                {dateOf(row["receipt_date"], current.locale, current.date_format)} ·{" "}
-                {String(row["reference"] ?? "Receipt")} · {String(row["status"])}
-              </span>
-              <span>{money(row["amount_minor"], row["currency_code"], current.locale)}</span>
-            </div>
-          </li>
-        ))}
-        {(query.data ?? []).length === 0 && !query.isPending && !query.isError ? (
-          <li className="px-3 py-6 text-sm text-muted-foreground">No receipts yet.</li>
-        ) : null}
-      </ul>
-      {notices.isError ? (
+      {notices.isPending ? (
+        <LoadingState />
+      ) : notices.isError ? (
         <QueryErrorState queries={[notices]} title="Could not load notices" />
+      ) : notices.isSuccess ? (
+        <ul className="space-y-2">
+          {(notices.data ?? []).map((notice) => (
+            <li
+              key={String(notice["id"])}
+              className="rounded-md border border-border px-3 py-2 text-sm"
+            >
+              <p className="font-medium">{String(notice["title"])}</p>
+              <p className="text-muted-foreground">{String(notice["body"])}</p>
+            </li>
+          ))}
+        </ul>
       ) : null}
-      <ul className="space-y-2">
-        {(notices.data ?? []).map((notice) => (
-          <li
-            key={String(notice["id"])}
-            className="rounded-md border border-border px-3 py-2 text-sm"
-          >
-            <p className="font-medium">{String(notice["title"])}</p>
-            <p className="text-muted-foreground">{String(notice["body"])}</p>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
@@ -607,41 +618,47 @@ export function PortalDocuments() {
           }}
         />
       </div>
-      {query.isError ? (
+      {query.isPending ? (
+        <LoadingState />
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} />
-      ) : null}
-      <ul className="divide-y divide-border rounded-md border border-border">
-        {(query.data ?? []).map((file) => (
-          <li
-            key={String(file["id"])}
-            className="flex items-center justify-between px-3 py-3 text-sm"
-          >
-            <span>
-              {String(file["file_name"])} · {String(file["category"])}
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                void download({
-                  data: { membershipId: current.membership_id, fileId: String(file["id"]) },
-                })
-                  .then((result) => {
-                    const fileResult = result as Row;
-                    saveBase64(
-                      String(fileResult["file_name"]),
-                      String(fileResult["mime_type"]),
-                      String(fileResult["content_base64"]),
-                    );
-                  })
-                  .catch((error) => toast.error(friendlyAuthError(error)));
-              }}
+      ) : query.isSuccess ? (
+        <ul className="divide-y divide-border rounded-md border border-border">
+          {(query.data ?? []).length === 0 ? (
+            <li className="px-3 py-6 text-sm text-muted-foreground">No documents yet.</li>
+          ) : null}
+          {(query.data ?? []).map((file) => (
+            <li
+              key={String(file["id"])}
+              className="flex items-center justify-between px-3 py-3 text-sm"
             >
-              Download
-            </Button>
-          </li>
-        ))}
-      </ul>
+              <span>
+                {String(file["file_name"])} · {String(file["category"])}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  void download({
+                    data: { membershipId: current.membership_id, fileId: String(file["id"]) },
+                  })
+                    .then((result) => {
+                      const fileResult = result as Row;
+                      saveBase64(
+                        String(fileResult["file_name"]),
+                        String(fileResult["mime_type"]),
+                        String(fileResult["content_base64"]),
+                      );
+                    })
+                    .catch((error) => toast.error(friendlyAuthError(error)));
+                }}
+              >
+                Download
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -689,37 +706,50 @@ export function PortalMessages({ conversationId }: { conversationId?: string }) 
           You are messaging about an authorised record. Internal staff notes are never shown here.
         </p>
       ) : null}
-      <ul className="space-y-2">
-        {(query.data ?? []).map((message) => (
-          <li
-            key={String(message["id"])}
-            className="rounded-md border border-border px-3 py-2 text-sm"
-          >
-            <p className="text-xs text-muted-foreground">{String(message["author_role"])}</p>
-            <p>{String(message["body"])}</p>
-          </li>
-        ))}
-      </ul>
-      {query.isError ? (
+      {query.isPending ? (
+        <LoadingState />
+      ) : query.isError ? (
         <QueryErrorState queries={[query]} />
+      ) : query.isSuccess ? (
+        <ul className="space-y-2">
+          {(query.data ?? []).length === 0 ? (
+            <li className="rounded-md border border-dashed border-border px-3 py-6 text-sm text-muted-foreground">
+              No messages yet.
+            </li>
+          ) : null}
+          {(query.data ?? []).map((message) => (
+            <li
+              key={String(message["id"])}
+              className="rounded-md border border-border px-3 py-2 text-sm"
+            >
+              <p className="text-xs text-muted-foreground">{String(message["author_role"])}</p>
+              <p>{String(message["body"])}</p>
+            </li>
+          ))}
+        </ul>
       ) : null}
-      <form
-        className="space-y-2"
-        onSubmit={(event) => {
-          event.preventDefault();
-          send.mutate();
-        }}
-      >
-        <Label htmlFor="portal-message">Message</Label>
-        <Textarea
-          id="portal-message"
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-        />
-        <Button type="submit" disabled={send.isPending || !body.trim()}>
-          {send.isPending ? "Sending…" : "Send"}
-        </Button>
-      </form>
+      {query.isError ? null : (
+        <form
+          className="space-y-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            send.mutate();
+          }}
+        >
+          <Label htmlFor="portal-message">Message</Label>
+          <Textarea
+            id="portal-message"
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+          />
+          <Button
+            type="submit"
+            disabled={send.isPending || !body.trim() || !query.isSuccess || query.isError}
+          >
+            {send.isPending ? "Sending…" : "Send"}
+          </Button>
+        </form>
+      )}
     </div>
   );
 }

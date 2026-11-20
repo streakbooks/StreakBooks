@@ -926,9 +926,7 @@ export function SalesDocumentEditor({
               {kind === "credit_note" ? (
                 <FormControlShell width="contact">
                   <Label>Credit against invoice (optional)</Label>
-                  {contactId &&
-                  customerInvoicesQ.isError &&
-                  customerInvoicesQ.data === undefined ? (
+                  {contactId && customerInvoicesQ.isError ? (
                     <QueryErrorState
                       queries={[customerInvoicesQ]}
                       title="Could not load invoices for this customer"
@@ -949,7 +947,12 @@ export function SalesDocumentEditor({
                       placeholder={
                         contactId ? "None — standalone credit" : "Choose a customer first"
                       }
-                      disabled={!contactId || customerInvoicesQ.isPending}
+                      disabled={
+                        !contactId ||
+                        customerInvoicesQ.isPending ||
+                        customerInvoicesQ.isError ||
+                        !customerInvoicesQ.isSuccess
+                      }
                     />
                   )}
                 </FormControlShell>

@@ -78,18 +78,18 @@ export function MessagesBell({ companyId }: { companyId: string | null }) {
               </Button>
             </div>
           ) : null}
-          {!settingsPending && !settingsFailed && !enabled ? (
+          {settings.isSuccess && !enabled ? (
             <p className="p-4 text-sm text-muted-foreground">
               Enable Messaging &amp; collaboration to start chatting with authorised colleagues.
             </p>
           ) : null}
-          {enabled && inbox.isPending && (
+          {enabled && inbox.isPending ? (
             <p className="flex items-center gap-2 p-4 text-sm">
               <Loader2 className="size-4 animate-spin" />
               Loading conversations…
             </p>
-          )}
-          {enabled && inbox.isError && (
+          ) : null}
+          {enabled && inbox.isError ? (
             <div role="alert" className="p-4 text-sm">
               Could not load conversations.
               <Button
@@ -101,43 +101,44 @@ export function MessagesBell({ companyId }: { companyId: string | null }) {
                 Retry
               </Button>
             </div>
-          )}
-          {enabled && !inbox.isPending && !inbox.isError && (inbox.data?.length ?? 0) === 0 && (
+          ) : null}
+          {enabled && inbox.isSuccess && (inbox.data?.length ?? 0) === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">No conversations yet</p>
-          )}
-          {enabled &&
-            inbox.data?.slice(0, 12).map((conversation) => (
-              <Link
-                key={conversation.id}
-                to="/messages"
-                search={{
-                  filter: "inbox",
-                  ...(conversation.id ? { conversation: conversation.id } : {}),
-                }}
-                className="block border-b px-4 py-3 transition-colors hover:bg-muted/50"
-                onClick={() => setOpen(false)}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">
-                      {conversation.title ||
-                        (conversation.conversation_type === "dm"
-                          ? "Direct message"
-                          : "Conversation")}
+          ) : null}
+          {enabled && inbox.isSuccess
+            ? inbox.data?.slice(0, 12).map((conversation) => (
+                <Link
+                  key={conversation.id}
+                  to="/messages"
+                  search={{
+                    filter: "inbox",
+                    ...(conversation.id ? { conversation: conversation.id } : {}),
+                  }}
+                  className="block border-b px-4 py-3 transition-colors hover:bg-muted/50"
+                  onClick={() => setOpen(false)}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">
+                        {conversation.title ||
+                          (conversation.conversation_type === "dm"
+                            ? "Direct message"
+                            : "Conversation")}
+                      </div>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {conversation.last_message_preview || "No messages yet"}
+                      </p>
                     </div>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {conversation.last_message_preview || "No messages yet"}
-                    </p>
+                    {conversation.unread && (
+                      <span
+                        className="mt-1 size-2 shrink-0 rounded-full bg-primary"
+                        aria-label="Unread"
+                      />
+                    )}
                   </div>
-                  {conversation.unread && (
-                    <span
-                      className="mt-1 size-2 shrink-0 rounded-full bg-primary"
-                      aria-label="Unread"
-                    />
-                  )}
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))
+            : null}
         </div>
         <div className="border-t p-3">
           <Button asChild className="w-full" onClick={() => setOpen(false)}>

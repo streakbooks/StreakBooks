@@ -195,7 +195,7 @@ export function TaxCodesPanel({
           </SelectContent>
         </Select>
         {!canTax ? <Badge variant="outline">View only</Badge> : null}
-        {!codesQ.isPending && !codesQ.isError ? (
+        {codesQ.isSuccess ? (
           <span className="text-xs text-muted-foreground">
             {visibleRows.length} of {rows.length} codes
           </span>
@@ -206,7 +206,7 @@ export function TaxCodesPanel({
         <LoadingState />
       ) : codesQ.isError ? (
         <QueryErrorState queries={[codesQ]} title="Could not load tax codes" />
-      ) : rows.length === 0 ? (
+      ) : !codesQ.isSuccess ? null : rows.length === 0 ? (
         <EmptyState title="No tax codes" description="Add a rate, then a code, or apply a pack." />
       ) : visibleRows.length === 0 ? (
         <EmptyState

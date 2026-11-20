@@ -74,13 +74,12 @@ export function NotificationBell({
           </div>
         </div>
         <div className="max-h-[min(65vh,520px)] overflow-y-auto">
-          {inbox.isPending && (
+          {inbox.isPending ? (
             <p className="flex items-center gap-2 p-4 text-sm">
               <Loader2 className="size-4 animate-spin" />
               Loading notifications…
             </p>
-          )}
-          {inbox.isError && (
+          ) : inbox.isError ? (
             <div role="alert" className="p-4 text-sm">
               Could not load notifications.
               <Button
@@ -92,62 +91,62 @@ export function NotificationBell({
                 Retry
               </Button>
             </div>
-          )}
-          {!inbox.isPending && !inbox.isError && visible.length === 0 && (
+          ) : inbox.isSuccess && visible.length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">
               No {filter} notifications
             </p>
-          )}
-          {visible.slice(0, 15).map((n) => (
-            <div key={n.id} className="border-b px-4 py-3 last:border-0">
-              <div className="flex items-start gap-2">
-                {!n.read_at && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />}
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="break-words text-sm font-medium">{n.title}</span>
-                    <span className="text-[10px] uppercase text-muted-foreground">
-                      {n.priority}
-                    </span>
-                  </div>
-                  {n.body && <p className="mt-1 text-xs text-muted-foreground">{n.body}</p>}
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    {new Date(n.created_at).toLocaleString()}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {safeNotificationPath(n.target_path) && (
-                      <Button asChild variant="outline" size="sm">
-                        <a href={safeNotificationPath(n.target_path)!}>
-                          Review <ExternalLink className="ml-1 size-3" />
-                        </a>
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={changeState.isPending}
-                      onClick={() => changeState.mutate({ id: n.id, read: !n.read_at })}
-                    >
-                      <Check className="mr-1 size-3" />
-                      {n.read_at ? "Unread" : "Read"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={changeState.isPending}
-                      onClick={() => changeState.mutate({ id: n.id, archive: !n.archived_at })}
-                    >
-                      {n.archived_at ? (
-                        <RotateCcw className="mr-1 size-3" />
-                      ) : (
-                        <Archive className="mr-1 size-3" />
+          ) : inbox.isSuccess ? (
+            visible.slice(0, 15).map((n) => (
+              <div key={n.id} className="border-b px-4 py-3 last:border-0">
+                <div className="flex items-start gap-2">
+                  {!n.read_at && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="break-words text-sm font-medium">{n.title}</span>
+                      <span className="text-[10px] uppercase text-muted-foreground">
+                        {n.priority}
+                      </span>
+                    </div>
+                    {n.body && <p className="mt-1 text-xs text-muted-foreground">{n.body}</p>}
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {new Date(n.created_at).toLocaleString()}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {safeNotificationPath(n.target_path) && (
+                        <Button asChild variant="outline" size="sm">
+                          <a href={safeNotificationPath(n.target_path)!}>
+                            Review <ExternalLink className="ml-1 size-3" />
+                          </a>
+                        </Button>
                       )}
-                      {n.archived_at ? "Restore" : "Archive"}
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={changeState.isPending}
+                        onClick={() => changeState.mutate({ id: n.id, read: !n.read_at })}
+                      >
+                        <Check className="mr-1 size-3" />
+                        {n.read_at ? "Unread" : "Read"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={changeState.isPending}
+                        onClick={() => changeState.mutate({ id: n.id, archive: !n.archived_at })}
+                      >
+                        {n.archived_at ? (
+                          <RotateCcw className="mr-1 size-3" />
+                        ) : (
+                          <Archive className="mr-1 size-3" />
+                        )}
+                        {n.archived_at ? "Restore" : "Archive"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : null}
         </div>
         <a
           href="/notifications"

@@ -231,6 +231,11 @@ export function PortalOrders() {
   });
   if (!current || current.role !== "supplier") return <LoadingState />;
   const orders = (query.data?.["orders"] as Row[] | undefined) ?? [];
+  if (query.isPending) return <LoadingState />;
+  if (query.isError) {
+    return <QueryErrorState queries={[query]} title="Could not load purchase orders" />;
+  }
+  if (!query.isSuccess) return null;
   return (
     <ul className="space-y-3">
       {orders.map((order) => (
@@ -270,12 +275,7 @@ export function PortalOrders() {
           </Button>
         </li>
       ))}
-      {query.isError ? (
-        <li>
-          <QueryErrorState queries={[query]} title="Could not load purchase orders" />
-        </li>
-      ) : null}
-      {orders.length === 0 && !query.isPending && !query.isError ? (
+      {orders.length === 0 ? (
         <li className="text-sm text-muted-foreground">No purchase orders have been sent.</li>
       ) : null}
     </ul>

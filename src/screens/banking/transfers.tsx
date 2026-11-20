@@ -148,6 +148,7 @@ export function NewTransfer({
   if (accountsQ.isPending) return <LoadingState />;
   if (accountsQ.isError)
     return <QueryErrorState queries={[accountsQ]} title="Could not load bank accounts" />;
+  if (!accountsQ.isSuccess || !accountsQ.data) return null;
 
   return (
     <TransactionWorkspace

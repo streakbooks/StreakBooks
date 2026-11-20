@@ -205,6 +205,9 @@ export function PayrollRunsPage({
       <QueryErrorState queries={[listQ]} title="Could not load runs" />,
     );
   }
+  if (!settingsQ.isSuccess || !listQ.isSuccess || !settingsQ.data || !listQ.data) {
+    return null;
+  }
 
   const settings = settingsQ.data;
   const list = listQ.data;

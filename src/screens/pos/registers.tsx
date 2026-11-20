@@ -81,9 +81,10 @@ function RegistersWorkspace({ companyId }: { companyId: string }) {
         shown for the session. A variance keeps the session open until an approved accounting
         adjustment is available.
       </p>
-      <QueryErrorState queries={[query]} />
       {query.isPending ? (
         <LoadingState />
+      ) : query.isError ? (
+        <QueryErrorState queries={[query]} title="Could not load registers" />
       ) : query.isSuccess ? (
         <RegisterContent companyId={companyId} workspace={query.data} />
       ) : null}

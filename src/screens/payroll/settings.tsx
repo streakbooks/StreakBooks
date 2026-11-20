@@ -312,6 +312,7 @@ export function PayrollSettingsPage() {
   if (page.isError) {
     return <QueryErrorState queries={[page]} title="Could not load payroll settings" />;
   }
+  if (!page.isSuccess || !page.data) return null;
 
   const data = page.data;
   const parsedSettings = parsePayrollSettingsDraft(draft);

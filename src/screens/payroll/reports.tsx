@@ -231,6 +231,7 @@ export function PayrollReportsPage() {
       </>
     );
   }
+  if (!catalogQ.isSuccess || !catalogQ.data) return null;
 
   const catalog = catalogQ.data;
   const selectedDef = catalog.reports.find((r) => r.id === reportId);

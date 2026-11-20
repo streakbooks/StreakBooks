@@ -194,6 +194,7 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
   if (pageQ.isError) {
     return <QueryErrorState queries={[pageQ]} title="Employee not found" />;
   }
+  if (!pageQ.isSuccess || !pageQ.data) return null;
 
   const data = pageQ.data;
   const emp = data.employee;

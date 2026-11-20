@@ -101,6 +101,7 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
   if (pageQ.isError) {
     return <QueryErrorState queries={[pageQ]} title="Could not load payslip" />;
   }
+  if (!pageQ.isSuccess || !pageQ.data) return null;
 
   const { payslip, run, employee } = pageQ.data;
   const snapshot = parseSnapshot(payslip.snapshot as PayslipSnapshot);

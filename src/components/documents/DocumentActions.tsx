@@ -100,6 +100,7 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
   const doc = docQ.data?.document;
   const delivery = deliveryQ.data;
   const sendable = Boolean(template) && doc?.mark !== "DRAFT" && doc?.mark !== "VOID";
+  const deliveryReady = docQ.isSuccess && deliveryQ.isSuccess;
   const canRemind =
     kind === "sales_invoice" && sendable && (doc?.totals.dueMinor ?? 0) > 0 && canSend;
   const templates: EmailTemplate[] = template
@@ -164,13 +165,15 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
             <Button
               variant="outline"
               size="sm"
-              disabled={!sendable || !docQ.data}
+              disabled={!sendable || !deliveryReady}
               title={
                 !sendable
                   ? doc?.mark === "DRAFT"
                     ? "Authorise the document before sending it."
                     : "A void document cannot be sent."
-                  : undefined
+                  : !deliveryReady
+                    ? "Send and share details are still loading or failed to load."
+                    : undefined
               }
               onClick={() => {
                 setReminder(false);
@@ -184,6 +187,7 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
             <Button
               variant="outline"
               size="sm"
+              disabled={!deliveryReady}
               onClick={() => {
                 setReminder(true);
                 setEmailOpen(true);
@@ -196,7 +200,7 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
             <Button
               variant="outline"
               size="sm"
-              disabled={linkM.isPending}
+              disabled={linkM.isPending || !deliveryReady}
               onClick={() => linkM.mutate()}
             >
               {linkM.isPending ? (
@@ -211,7 +215,7 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
             <Button
               variant="outline"
               size="sm"
-              disabled={portalM.isPending}
+              disabled={portalM.isPending || !deliveryReady}
               onClick={() => portalM.mutate()}
             >
               {portalM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}

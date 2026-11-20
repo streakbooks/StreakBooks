@@ -1016,13 +1016,14 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
       {requests.isPending && (
         <p className="text-sm text-muted-foreground">Loading document requests…</p>
       )}
+      {requests.isSuccess ? (
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Requests assigned to me ({incoming.length})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {requests.isSuccess && incoming.length === 0 ? (
+            {incoming.length === 0 ? (
               <p className="text-sm text-muted-foreground">No open requests assigned to you</p>
             ) : null}
             {incoming.map((r) => {
@@ -1081,7 +1082,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
             <CardTitle className="text-base">Requests I sent ({outgoing.length})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {requests.isSuccess && outgoing.length === 0 ? (
+            {outgoing.length === 0 ? (
               <p className="text-sm text-muted-foreground">No pending requests</p>
             ) : null}
             {outgoing.map((r) => (
@@ -1106,6 +1107,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
           </CardContent>
         </Card>
       </div>
+      ) : null}
     </section>
   );
 }

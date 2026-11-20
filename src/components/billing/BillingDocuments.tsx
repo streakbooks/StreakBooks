@@ -61,10 +61,10 @@ export function BillingDocuments({ companyId }: { companyId: string }) {
       ) : null}
       <TaxIdForm companyId={companyId} />
       {query.isLoading ? <p className="text-sm text-muted-foreground">Loading invoices…</p> : null}
-      {!query.isLoading && !query.isError && invoices.length === 0 ? (
+      {query.isSuccess && invoices.length === 0 ? (
         <p className="text-sm text-muted-foreground">Invoices appear here after each payment.</p>
       ) : null}
-      {invoices.length ? (
+      {query.isSuccess && invoices.length ? (
         <table className="w-full text-sm">
           <thead className="text-left text-muted-foreground">
             <tr>
@@ -116,7 +116,7 @@ export function BillingDocuments({ companyId }: { companyId: string }) {
           </tbody>
         </table>
       ) : null}
-      {creditNotes.length ? (
+      {query.isSuccess && creditNotes.length ? (
         <div className="space-y-1">
           <h3 className="text-sm font-medium">Credit notes</h3>
           <ul className="space-y-1 text-sm">

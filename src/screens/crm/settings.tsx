@@ -129,7 +129,7 @@ export function CrmSettingsPage() {
       actions={
         <Button
           type="button"
-          disabled={!current || mutation.isPending}
+          disabled={!settings.isSuccess || !current || mutation.isPending}
           onClick={() => mutation.mutate()}
         >
           {mutation.isPending ? "Saving…" : "Save settings"}
@@ -141,7 +141,7 @@ export function CrmSettingsPage() {
       {settings.isError ? (
         <QueryErrorState queries={[settings]} title="Could not load settings" />
       ) : null}
-      {current ? (
+      {settings.isSuccess && current ? (
         <div className="space-y-4">
           <Card>
             <CardHeader>

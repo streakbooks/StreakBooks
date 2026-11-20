@@ -290,7 +290,7 @@ function CatalogueCart({ companyId }: { companyId: string }) {
               Search
             </Button>
           </form>
-          <QueryErrorState queries={[products]} />
+          {products.isError ? <QueryErrorState queries={[products]} /> : null}
           {products.isPending ? <LoadingState /> : null}
           {products.isSuccess && products.data.length === 0 ? (
             <EmptyState
@@ -298,33 +298,35 @@ function CatalogueCart({ companyId }: { companyId: string }) {
               description="Try another name or SKU, or add an active item in Products & Services."
             />
           ) : null}
-          <ul className="space-y-2">
-            {products.data?.map((product) => (
-              <li
-                key={product.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
-              >
-                <span>
-                  {product.name}
-                  <span className="block text-sm text-muted-foreground">
-                    {product.code ?? "No SKU"} · {product.unit}
-                  </span>
-                </span>
-                <Button
-                  type="button"
-                  className="min-h-11"
-                  disabled={
-                    cart.length >= 100 && !cart.some((line) => line.productId === product.id)
-                  }
-                  aria-label={`Add ${product.name}`}
-                  onClick={() => add(product.id, product.name)}
+          {products.isSuccess ? (
+            <ul className="space-y-2">
+              {products.data.map((product) => (
+                <li
+                  key={product.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
                 >
-                  Add
-                </Button>
-              </li>
-            ))}
-          </ul>
-          {products.data?.length === 50 ? (
+                  <span>
+                    {product.name}
+                    <span className="block text-sm text-muted-foreground">
+                      {product.code ?? "No SKU"} · {product.unit}
+                    </span>
+                  </span>
+                  <Button
+                    type="button"
+                    className="min-h-11"
+                    disabled={
+                      cart.length >= 100 && !cart.some((line) => line.productId === product.id)
+                    }
+                    aria-label={`Add ${product.name}`}
+                    onClick={() => add(product.id, product.name)}
+                  >
+                    Add
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {products.isSuccess && products.data.length === 50 ? (
             <p className="text-sm text-muted-foreground">
               Showing up to 50 items. Search to narrow the catalogue.
             </p>

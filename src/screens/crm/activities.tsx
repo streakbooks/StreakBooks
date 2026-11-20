@@ -269,11 +269,11 @@ export function CrmActivitiesPage({
       ) : settings.isLoading ? (
         <LoadingState />
       ) : null}
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM to track activities." />
       ) : null}
 
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <div className="space-y-4">
           {sectionKey !== "calendar" ? (
             <div className="flex flex-wrap items-center gap-3">

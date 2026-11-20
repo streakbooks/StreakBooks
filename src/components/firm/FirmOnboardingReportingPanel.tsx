@@ -409,7 +409,7 @@ export function FirmOnboardingReportingPanel({
         {operationalReady && !filtered.length && (
           <p className="p-3 text-sm text-muted-foreground">No tasks match these filters.</p>
         )}
-        {filtered.length > 30 && (
+        {operationalReady && filtered.length > 30 && (
           <p className="p-2 text-xs text-muted-foreground">
             Showing the first 30 tasks; CSV includes every filtered task.
           </p>
@@ -421,6 +421,9 @@ export function FirmOnboardingReportingPanel({
           Based on the accessible client subset. Capacity is an advisory target.
         </p>
         <div className="max-h-44 space-y-2 overflow-y-auto">
+          {!operationalReady && (overviewQ.isPending || staffQ.isPending) ? (
+            <p className="text-sm text-muted-foreground">Loading staff workload…</p>
+          ) : null}
           {operationalReady && workloads.length ? (
             workloads.map((person) => (
               <div
@@ -437,9 +440,10 @@ export function FirmOnboardingReportingPanel({
                 </span>
               </div>
             ))
-          ) : (
+          ) : null}
+          {operationalReady && !workloads.length ? (
             <p className="text-sm text-muted-foreground">No staff workload comparison available.</p>
-          )}
+          ) : null}
         </div>
       </div>
       <div className="space-y-3 border-t pt-4">

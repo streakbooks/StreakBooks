@@ -369,10 +369,11 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   const patch = (p: Partial<ImportMapping>) => setMapping((m) => (m ? { ...m, ...p } : m));
   const rowsToImport = mapped ? mapped.rows.length - (includeDuplicates ? 0 : dupRows.size) : 0;
   const canImport =
-    Boolean(bankAccountId && mapped && mapped.rows.length > 0 && dupQ.data) &&
+    Boolean(bankAccountId && mapped && mapped.rows.length > 0 && dupQ.isSuccess && dupQ.data) &&
     !ofxCurrencyMismatch &&
     rowsToImport > 0 &&
-    !mutation.isPending;
+    !mutation.isPending &&
+    !dupQ.isError;
 
   const workspace = (
     <>

@@ -356,7 +356,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
               </TableBody>
             </Table>
           ) : null}
-          {reportQ.data?.method ? (
+          {reportQ.isSuccess && reportQ.data?.method ? (
             <p className="text-xs text-muted-foreground">{reportQ.data.method}</p>
           ) : null}
         </CardContent>

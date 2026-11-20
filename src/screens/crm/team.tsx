@@ -151,14 +151,14 @@ export function CrmTeamPage() {
       ) : settings.isLoading ? (
         <LoadingState />
       ) : null}
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"
           description="Enable CRM before reviewing team workload."
         />
       ) : null}
 
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <div className="space-y-4">
           <Alert>
             <AlertTitle>Territories</AlertTitle>

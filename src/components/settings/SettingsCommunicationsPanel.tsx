@@ -181,7 +181,7 @@ export function SettingsCommunicationsPanel({
       {status.isError ? (
         <QueryErrorState queries={[status]} title="Status check failed" />
       ) : null}
-      {status.data && (
+      {status.isSuccess && status.data && (
         <Alert variant={providerReady ? "default" : "destructive"}>
           {providerReady ? (
             <CheckCircle2 className="size-4" />

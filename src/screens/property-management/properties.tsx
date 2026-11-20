@@ -135,13 +135,13 @@ export function PmPropertiesPage() {
           description={`${friendlyAuthError(settings.error)} If this module was just deployed, apply migration 20261118150000 (and 20261118160000), then hard-refresh or sign out/in so permissions reload.`}
         />
       ) : null}
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <EmptyState
           title="Module disabled"
           description="Enable Property Management in Settings before creating properties."
         />
       ) : null}
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <>
           <div className="mb-4 flex flex-wrap gap-2">
             <Input

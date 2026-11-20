@@ -476,32 +476,34 @@ export function MessagesScreen({
               {globalHits.isSuccess && globalHits.data.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No message matches</p>
               ) : null}
-              <ul className="max-h-48 space-y-1 overflow-y-auto">
-                {globalHits.data?.map((hit) => (
-                  <li key={hit.id}>
-                    <button
-                      type="button"
-                      className="block w-full truncate rounded px-2 py-1 text-left text-xs hover:bg-muted/50"
-                      onClick={() => {
-                        setHighlightMessageId(hit.id);
-                        void navigate({
-                          to: "/messages",
-                          search: messagesSearch({
-                            filter: "search",
-                            q: searchQuery || search,
-                            conversation: hit.conversation_id,
-                          }),
-                        });
-                      }}
-                    >
-                      <span className="font-medium">
-                        {hit.conversation_title || hit.conversation_type}
-                      </span>{" "}
-                      · {hit.body}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              {globalHits.isSuccess ? (
+                <ul className="max-h-48 space-y-1 overflow-y-auto">
+                  {globalHits.data.map((hit) => (
+                    <li key={hit.id}>
+                      <button
+                        type="button"
+                        className="block w-full truncate rounded px-2 py-1 text-left text-xs hover:bg-muted/50"
+                        onClick={() => {
+                          setHighlightMessageId(hit.id);
+                          void navigate({
+                            to: "/messages",
+                            search: messagesSearch({
+                              filter: "search",
+                              q: searchQuery || search,
+                              conversation: hit.conversation_id,
+                            }),
+                          });
+                        }}
+                      >
+                        <span className="font-medium">
+                          {hit.conversation_title || hit.conversation_type}
+                        </span>{" "}
+                        · {hit.body}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           ) : null}
           {conversations.isPending && <LoadingState />}
@@ -940,7 +942,7 @@ export function MessagesScreen({
                 {messages.isError && (
                   <QueryErrorState queries={[messages]} title="Could not load messages" />
                 )}
-                {!messages.isPending && messages.hasMoreOlder ? (
+                {messages.isSuccess && !messages.isPending && messages.hasMoreOlder ? (
                   <div className="flex justify-center">
                     <Button
                       type="button"
@@ -973,7 +975,8 @@ export function MessagesScreen({
                     </Button>
                   </div>
                 ) : null}
-                {messages.data?.map((message) => (
+                {messages.isSuccess
+                  ? messages.data.map((message) => (
                   <article
                     key={message.id}
                     id={`msg-${message.id}`}
@@ -1032,10 +1035,11 @@ export function MessagesScreen({
                       </div>
                     ) : null}
                   </article>
-                ))}
-                {!messages.isPending && !messages.isError && (messages.data?.length ?? 0) === 0 && (
+                ))
+                  : null}
+                {messages.isSuccess && (messages.data?.length ?? 0) === 0 ? (
                   <p className="text-sm text-muted-foreground">No messages yet. Say hello.</p>
-                )}
+                ) : null}
               </div>
               <form
                 className={cn(

@@ -86,11 +86,11 @@ export function CrmReportsPage() {
       ) : settings.isLoading ? (
         <LoadingState />
       ) : null}
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before running reports." />
       ) : null}
 
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <div className="space-y-4">
           <Alert>
             <AlertTitle>Reporting boundary</AlertTitle>

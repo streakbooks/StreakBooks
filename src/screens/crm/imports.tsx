@@ -64,11 +64,11 @@ export function CrmImportsPage() {
       ) : settings.isLoading ? (
         <LoadingState />
       ) : null}
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before import/export." />
       ) : null}
 
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <div className="space-y-4">
           {policy.isLoading ? <LoadingState /> : null}
           {policy.isError ? (

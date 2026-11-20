@@ -132,13 +132,13 @@ export function PmOwnersPage() {
       ) : settings.isLoading ? (
         <LoadingState />
       ) : null}
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <EmptyState
           title="Module disabled"
           description="Enable Property Management in Settings first."
         />
       ) : null}
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <>
           <div className="mb-4 flex flex-wrap gap-2">
             <Input

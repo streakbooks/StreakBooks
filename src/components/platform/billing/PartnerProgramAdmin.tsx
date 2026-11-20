@@ -75,7 +75,7 @@ function ruleSummary(rule: CommissionRule): string {
 export function PartnerProgramAdmin({ canEdit, isOwner }: { canEdit: boolean; isOwner: boolean }) {
   const load = useServerFn(getPartnerProgramAdmin);
   const query = useQuery({ queryKey, queryFn: () => load(), retry: false });
-  const data = query.data;
+  const data = query.isSuccess ? query.data : undefined;
   return (
     <section className="space-y-5" aria-labelledby="partner-program-heading">
       <header className="space-y-1">
@@ -90,8 +90,9 @@ export function PartnerProgramAdmin({ canEdit, isOwner }: { canEdit: boolean; is
       </header>
       {query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load partner programme" />
-      ) : null}
-      {data ? (
+      ) : !query.isSuccess ? (
+        <p className="text-sm text-muted-foreground">Loading partner programme…</p>
+      ) : data ? (
         <>
           <ProgramSettings data={data} canEdit={canEdit} isOwner={isOwner} />
           <Partners data={data} canEdit={canEdit} />

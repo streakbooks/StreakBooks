@@ -47,6 +47,14 @@ function SharedInvoicePage() {
       </div>
     );
   }
+  if (!q.isSuccess) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <span className="sr-only">Loading invoice</span>
+      </div>
+    );
+  }
   if (!q.data) {
     return (
       <Message

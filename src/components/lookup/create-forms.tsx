@@ -31,18 +31,20 @@ import type { LookupOption } from "@/lib/lookup/types";
 
 function Actions({
   pending,
+  disabled = false,
   saveLabel,
   onSave,
   onCancel,
 }: {
   pending: boolean;
+  disabled?: boolean;
   saveLabel: string;
   onSave: () => void;
   onCancel: () => void;
 }) {
   return (
     <div className="flex flex-wrap gap-2 pt-2">
-      <Button type="button" size="sm" disabled={pending} onClick={onSave}>
+      <Button type="button" size="sm" disabled={pending || disabled} onClick={onSave}>
         {pending ? <Loader2 className="size-4 animate-spin" /> : null}
         {saveLabel}
       </Button>
@@ -329,7 +331,7 @@ export function TaxCodeCreateForm({
     queryFn: () => fetchRates({ data: { companyId } }),
   });
   const rates = (
-    (ratesQ.data ?? []) as Array<{
+    (ratesQ.isSuccess ? (ratesQ.data ?? []) : []) as Array<{
       id: string;
       name: string;
       code?: string | null;
@@ -346,6 +348,10 @@ export function TaxCodeCreateForm({
   const [pending, setPending] = useState(false);
 
   const onSave = async () => {
+    if (!useNewRate && (ratesQ.isError || !ratesQ.isSuccess)) {
+      toast.error("Tax rates could not be loaded. Retry before saving.");
+      return;
+    }
     if (!useNewRate && !rateId) {
       toast.error("Choose a tax rate");
       return;
@@ -462,6 +468,7 @@ export function TaxCodeCreateForm({
       ) : null}
       <Actions
         pending={pending}
+        disabled={!useNewRate && (ratesQ.isError || !ratesQ.isSuccess)}
         saveLabel="Create and select"
         onSave={() => void onSave()}
         onCancel={ctx.close}
@@ -567,6 +574,10 @@ export function BankAccountCreateForm({
   const [pending, setPending] = useState(false);
 
   const onSave = async () => {
+    if (accountsQ.isError || !accountsQ.isSuccess) {
+      toast.error("Ledger accounts could not be loaded. Retry before saving.");
+      return;
+    }
     if (!glAccountId) {
       toast.error("Choose the ledger account this bank uses");
       return;
@@ -611,7 +622,7 @@ export function BankAccountCreateForm({
         <Label>Ledger account</Label>
         <AccountLookup
           ariaLabel="Ledger account"
-          accounts={(accountsQ.data ?? []) as AccountLookupRecord[]}
+          accounts={(accountsQ.isSuccess ? (accountsQ.data ?? []) : []) as AccountLookupRecord[]}
           value={glAccountId}
           onChange={setGlAccountId}
           companyId={companyId}
@@ -626,6 +637,7 @@ export function BankAccountCreateForm({
       </div>
       <Actions
         pending={pending}
+        disabled={accountsQ.isError || !accountsQ.isSuccess}
         saveLabel="Create and select"
         onSave={() => void onSave()}
         onCancel={ctx.close}

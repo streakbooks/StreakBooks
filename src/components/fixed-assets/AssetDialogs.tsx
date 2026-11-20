@@ -893,8 +893,11 @@ export function AssetDialog({
       ) : null}
       {m.isError ? (
         <Alert variant="destructive">
-          <AlertDescription role="alert">
-            The asset could not be saved: {friendlyAuthError(m.error)}
+          <AlertDescription role="alert" className="space-y-2">
+            <p>The asset could not be saved: {friendlyAuthError(m.error)}</p>
+            <Button type="button" size="sm" variant="outline" onClick={() => m.reset()}>
+              Dismiss and try again
+            </Button>
           </AlertDescription>
         </Alert>
       ) : null}

@@ -127,7 +127,7 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
       }),
   });
   const q = cashBasis ? cashQ : accrualQ;
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   // Reorder account groups only; never recalculate transaction running balances.
   const orderedAccounts = [...(d?.accounts ?? [])].sort((a, b) => {
     if (accountGroup === "name")
@@ -442,7 +442,7 @@ export function JournalReportView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   return (
     <ReportShell
       title="Journal Report"
@@ -629,7 +629,7 @@ export function AgedView({ ctx, kind }: { ctx: ReportCtx; kind: "ar" | "ap" }) {
       };
     },
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const control = d?.controlMinor ?? 0;
   const title = kind === "ar" ? "Aged Receivables" : "Aged Payables";
   return (
@@ -777,7 +777,7 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const basis = d?.basis ?? basisChoice ?? "accrual";
   const accountIds = ctx.search.accountIds?.split(",") ?? null;
   const taxAccounts = [
@@ -1149,7 +1149,7 @@ export function AuditView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   return (
     <ReportShell
       title="Audit Trail"

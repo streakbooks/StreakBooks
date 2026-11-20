@@ -212,6 +212,7 @@ function FixedAssetsPage() {
   if (page.isError) {
     return <QueryErrorState queries={[page]} title="Could not load fixed assets" />;
   }
+  if (!page.isSuccess || !page.data) return <LoadingState />;
   const d = page.data;
   if (!d.available) {
     return (

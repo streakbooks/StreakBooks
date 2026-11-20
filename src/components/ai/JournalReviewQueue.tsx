@@ -402,7 +402,7 @@ export function AiJournalReviewQueue({
                         queries={[reviewersQ]}
                         title="Could not load eligible reviewers"
                       />
-                    ) : (
+                    ) : reviewersQ.isSuccess ? (
                       <RecordLookupSelect
                         id="ai-review-assignee"
                         className="flex h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
@@ -419,12 +419,19 @@ export function AiJournalReviewQueue({
                             </option>
                           ))}
                       </RecordLookupSelect>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Loading reviewers…</p>
                     )}
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      disabled={!assignee || mutate.isPending || reviewersQ.isError}
+                      disabled={
+                        !assignee ||
+                        mutate.isPending ||
+                        reviewersQ.isError ||
+                        !reviewersQ.isSuccess
+                      }
                       onClick={() => submit("assign")}
                     >
                       Assign reviewer

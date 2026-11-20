@@ -209,7 +209,7 @@ export function BillMakePaymentPanel({
               <Label>Paid from</Label>
               {accountsQ.isError ? (
                 <QueryErrorState queries={[accountsQ]} title="Could not load payment accounts" />
-              ) : (
+              ) : accountsQ.isSuccess ? (
                 <AccountLookup
                   ariaLabel="Paid from"
                   accounts={
@@ -223,6 +223,11 @@ export function BillMakePaymentPanel({
                   placeholder="Bank or cash account"
                   allowClear={false}
                 />
+              ) : (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  Loading payment accounts…
+                </p>
               )}
             </div>
             <div className="space-y-2 sm:col-span-2">
@@ -254,7 +259,7 @@ export function BillMakePaymentPanel({
                 payM.isPending ||
                 overpay ||
                 amountInvalid ||
-                accountsQ.isPending ||
+                !accountsQ.isSuccess ||
                 accountsQ.isError
               }
               onClick={() => payM.mutate()}

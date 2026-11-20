@@ -195,7 +195,7 @@ export function PmSettingsPage() {
     <div className="grid gap-2" key={key}>
       <Label>{label}</Label>
       <p className="text-sm text-muted-foreground">{hint}</p>
-      {accounts.isError ? null : (
+      {accounts.isError ? null : accounts.isSuccess ? (
         <RecordLookupSelect
           value={mappingValue(key)}
           onValueChange={(value) => setMapping(key, value)}
@@ -213,6 +213,8 @@ export function PmSettingsPage() {
             ))}
           </SelectContent>
         </RecordLookupSelect>
+      ) : (
+        <LoadingState />
       )}
     </div>
   );
@@ -228,7 +230,13 @@ export function PmSettingsPage() {
       actions={
         <Button
           type="button"
-          disabled={!settings.isSuccess || !current || mutation.isPending || accounts.isError}
+          disabled={
+            !settings.isSuccess ||
+            !current ||
+            mutation.isPending ||
+            accounts.isError ||
+            !accounts.isSuccess
+          }
           onClick={() => mutation.mutate()}
         >
           {mutation.isPending ? "Saving…" : "Save settings"}

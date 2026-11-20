@@ -144,7 +144,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
           </div>
           )}
 
-          {dimsQ.isError ? null : (
+          {dimsQ.isError ? null : dimsQ.isSuccess ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -192,9 +192,11 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
                 ))}
               </TableBody>
             </Table>
+          ) : (
+            <p className="text-sm text-muted-foreground">Loading dimensions…</p>
           )}
 
-          {dimsQ.isError ? null : (
+          {dimsQ.isError ? null : dimsQ.isSuccess ? (
           <div className="grid gap-2 border-t pt-4 sm:grid-cols-3">
             <div className="space-y-1">
               <Label>Dimension</Label>
@@ -267,9 +269,9 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
               </Button>
             </div>
           </div>
-          )}
+          ) : null}
 
-          {opts.length ? (
+          {opts.length && dimsQ.isSuccess ? (
             <ul className="max-h-48 space-y-1 overflow-auto text-sm">
               {opts.map((o) => (
                 <li key={o.id} className="flex items-center justify-between border-b py-1">

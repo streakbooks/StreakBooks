@@ -411,7 +411,7 @@ function BankingAccounts() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        {glQ.isError ? null : (
+        {glQ.isError ? null : glQ.isSuccess ? (
           <AccountLookup
             ariaLabel="GL account"
             accounts={glOptions}
@@ -421,6 +421,8 @@ function BankingAccounts() {
             placeholder="GL account"
             allowClear={false}
           />
+        ) : (
+          <LoadingState />
         )}
         <RecordLookupSelect value={currency ?? baseCurrency} onValueChange={setCurrency}>
           <SelectTrigger aria-label="Currency">

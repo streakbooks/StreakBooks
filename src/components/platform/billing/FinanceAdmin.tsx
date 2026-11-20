@@ -83,7 +83,7 @@ export function FinanceAdmin({ canEdit, isOwner }: { canEdit: boolean; isOwner: 
       {query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load finance settings" />
       ) : null}
-      {query.data ? (
+      {query.isSuccess && query.data ? (
         <>
           <Sellers data={query.data} canEdit={canEdit} isOwner={isOwner} reason={reason} />
           <Series data={query.data} canEdit={canEdit} reason={reason} />

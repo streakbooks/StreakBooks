@@ -59,7 +59,7 @@ export function PaymentOperationsAdmin({
       {query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load payment settings" />
       ) : null}
-      {query.data ? (
+      {query.isSuccess && query.data ? (
         <>
           <Routes data={query.data} canEdit={canEdit} />
           <Countries data={query.data} canEdit={canEdit && isOwner} />

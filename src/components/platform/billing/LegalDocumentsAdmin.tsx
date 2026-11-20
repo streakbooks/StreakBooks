@@ -49,7 +49,7 @@ export function LegalDocumentsAdmin({ canEdit, isOwner }: { canEdit: boolean; is
       {query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load legal documents" />
       ) : null}
-      {query.data ? (
+      {query.isSuccess && query.data ? (
         <DocumentList documents={query.data} canEdit={canEdit} isOwner={isOwner} />
       ) : null}
       {canEdit ? <DraftForm /> : null}

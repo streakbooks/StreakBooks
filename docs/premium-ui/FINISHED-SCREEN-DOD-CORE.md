@@ -172,6 +172,8 @@ Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails
 
 **Production honesty Batch 145:** Messages conversation list exclusive with QES; notifications document-request cards gated on success; supplier submissions exclusive with QES; customer price defaults Save fail-closed + assignment list exclusive; document files exclusive with QES; Send & share delivery actions fail-closed; CRM/PM settings form+Save gated on success; billing invoices/credit notes exclusive with QES. Staging/RBAC still **NOT VERIFIED**.
 
+**Production honesty Batch 146:** Product categories/price lists/overrides/tiers/discounts exclusive with QES; platform pending approvals, support, and billing admin bodies gated on isSuccess; firm recurring links exclusive; dimension P&L and correction approval queue exclusive with QES. Staging/RBAC still **NOT VERIFIED**.
+
 **Bank coding + record totals (Batch 75):** `BankCodingPanel` uses shared `EditableLineItemGrid` + `TotalsSummary`. Bill and invoice read-only records use `TotalsSummary`. `MoneyDocumentPanel` fails closed with `QueryErrorState` when options queries fail. Staging/RBAC still **NOT VERIFIED**.
 
 **Bills line grid ELG (Batch 74):** `PurchasesDocumentLines` composes shared `EditableLineItemGrid` (Sales parity). Drag reorder, tracking columns, tax modes, keyboard/paste, Add-lines Select, and TotalsSummary preserved. Staging/RBAC still **NOT VERIFIED**.

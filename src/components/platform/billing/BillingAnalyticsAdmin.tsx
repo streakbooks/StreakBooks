@@ -75,7 +75,7 @@ export function BillingAnalyticsAdmin() {
       {query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load billing analytics" />
       ) : null}
-      {query.data ? <AnalyticsBody data={query.data} /> : null}
+      {query.isSuccess && query.data ? <AnalyticsBody data={query.data} /> : null}
     </section>
   );
 }

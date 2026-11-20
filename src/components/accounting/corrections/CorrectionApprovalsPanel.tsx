@@ -166,17 +166,18 @@ export function CorrectionApprovalsPanel({
         <QueryErrorState queries={[rowsQ]} title="Could not load approval requests" />
       ) : null}
       {rowsQ.isPending ? <p>Loading approval queue…</p> : null}
-      {!rowsQ.isPending && !rowsQ.isError && all.length === 0 ? (
+      {rowsQ.isSuccess && all.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No approval requests on this page. Preview a correction, then submit it for review.
         </p>
       ) : null}
-      {all.length > 0 && shown.length === 0 ? (
+      {rowsQ.isSuccess && all.length > 0 && shown.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No loaded requests match this status; change the filter or browse another page.
         </p>
       ) : null}
-      {shown.map((request) => {
+      {rowsQ.isSuccess
+        ? shown.map((request) => {
         const isMaker = request.submitted_by === settings.user_id;
         const canDecide = settings.can_approve && !isMaker && request.status === "pending";
         const canComplete = isMaker && canPost && request.status === "approved";
@@ -323,7 +324,8 @@ export function CorrectionApprovalsPanel({
             </div>
           </details>
         );
-      })}
+      })
+        : null}
       <div className="flex gap-2">
         <Button
           variant="outline"

@@ -215,62 +215,64 @@ export function PlatformApprovals({
         {query.isSuccess && query.data.rows.length === 0 ? (
           <p className="mt-3 text-sm">No pending approvals.</p>
         ) : null}
-        <ul className="mt-4 space-y-3">
-          {(query.data?.rows ?? []).map((row) => (
-            <li key={String(row["id"])} className="rounded-lg border p-4 text-sm">
-              <p>
-                <strong>{String(row["kind"])}</strong> · {String(row["status"])}
-              </p>
-              <p className="text-muted-foreground">{String(row["reason"])}</p>
-              <p className="mt-1 text-muted-foreground">
-                Requested by {String(row["requester_id"])} · Expires{" "}
-                {platformDate(row["expires_at"])}
-              </p>
-              {row["impact"] && typeof row["impact"] === "object" ? (
-                <dl className="mt-2 grid gap-1">
-                  {Object.entries(row["impact"] as Row).map(([key, value]) => (
-                    <div key={key}>
-                      <dt className="inline font-medium">{key}: </dt>
-                      <dd className="inline">{String(value)}</dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : null}
-              {row["requester_id"] === userId && row["status"] === "pending" ? (
-                <p className="mt-2 text-muted-foreground">Waiting for a different approver.</p>
-              ) : null}
-              {canManage && row["requester_id"] !== userId && row["status"] === "pending" ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      submitDecision.mutate({ id: String(row["id"]), decision: "approved" })
-                    }
-                    disabled={
-                      decisionReason.trim().length < 3 ||
-                      submitDecision.isPending ||
-                      !["entitlement", "break_glass"].includes(String(row["kind"])) ||
-                      new Date(String(row["expires_at"])).getTime() <= Date.now()
-                    }
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      submitDecision.mutate({ id: String(row["id"]), decision: "rejected" })
-                    }
-                    disabled={decisionReason.trim().length < 3 || submitDecision.isPending}
-                  >
-                    Reject
-                  </Button>
-                </div>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-        {query.data && query.data.rows.some((row: Row) => row["status"] === "pending") ? (
+        {query.isSuccess ? (
+          <ul className="mt-4 space-y-3">
+            {query.data.rows.map((row) => (
+              <li key={String(row["id"])} className="rounded-lg border p-4 text-sm">
+                <p>
+                  <strong>{String(row["kind"])}</strong> · {String(row["status"])}
+                </p>
+                <p className="text-muted-foreground">{String(row["reason"])}</p>
+                <p className="mt-1 text-muted-foreground">
+                  Requested by {String(row["requester_id"])} · Expires{" "}
+                  {platformDate(row["expires_at"])}
+                </p>
+                {row["impact"] && typeof row["impact"] === "object" ? (
+                  <dl className="mt-2 grid gap-1">
+                    {Object.entries(row["impact"] as Row).map(([key, value]) => (
+                      <div key={key}>
+                        <dt className="inline font-medium">{key}: </dt>
+                        <dd className="inline">{String(value)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : null}
+                {row["requester_id"] === userId && row["status"] === "pending" ? (
+                  <p className="mt-2 text-muted-foreground">Waiting for a different approver.</p>
+                ) : null}
+                {canManage && row["requester_id"] !== userId && row["status"] === "pending" ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        submitDecision.mutate({ id: String(row["id"]), decision: "approved" })
+                      }
+                      disabled={
+                        decisionReason.trim().length < 3 ||
+                        submitDecision.isPending ||
+                        !["entitlement", "break_glass"].includes(String(row["kind"])) ||
+                        new Date(String(row["expires_at"])).getTime() <= Date.now()
+                      }
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        submitDecision.mutate({ id: String(row["id"]), decision: "rejected" })
+                      }
+                      disabled={decisionReason.trim().length < 3 || submitDecision.isPending}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {query.isSuccess && query.data.rows.some((row: Row) => row["status"] === "pending") ? (
           <label className="mt-4 block text-sm">
             Decision reason
             <Input

@@ -127,12 +127,12 @@ export function PlatformSupport({
       {query.isError ? (
         <QueryErrorState queries={[query]} title="Could not load support access requests" />
       ) : null}
-      {query.data?.ready === false ? (
+      {query.isSuccess && query.data.ready === false ? (
         <p role="status">
           Supervised support is unavailable until its reviewed database migration is applied.
         </p>
       ) : null}
-      {query.data?.ready ? (
+      {query.isSuccess && query.data.ready ? (
         <>
           <p className="text-sm text-muted-foreground">
             Open a business in Businesses to request access. A different person with approval

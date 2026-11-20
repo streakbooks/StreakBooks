@@ -51,10 +51,10 @@ function FirmInvitePage() {
         {query.isError ? (
           <QueryErrorState queries={[query]} title="Cannot open invitation" />
         ) : null}
-        {!query.isPending && !query.isError && !query.data ? (
+        {query.isSuccess && !query.data ? (
           <p>This invitation is invalid. Ask the firm administrator to send a new invitation.</p>
         ) : null}
-        {query.data?.status === "different_account" ? (
+        {query.isSuccess && query.data?.status === "different_account" ? (
           <Alert>
             <AlertTitle>Sign in with the invited account</AlertTitle>
             <AlertDescription>
@@ -63,7 +63,7 @@ function FirmInvitePage() {
             </AlertDescription>
           </Alert>
         ) : null}
-        {query.data && query.data.status !== "different_account" ? (
+        {query.isSuccess && query.data && query.data.status !== "different_account" ? (
           <>
             <p className="font-medium">{query.data.firmName}</p>
             <p className="text-sm">Firm role: {query.data.role}</p>

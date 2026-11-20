@@ -46,7 +46,7 @@ export function SettingsOverviewPanel({ companyId }: Props) {
   if (q.isError) {
     return <QueryErrorState queries={[q]} title="Could not load overview" />;
   }
-  if (!q.data) return null;
+  if (!q.isSuccess || !q.data) return null;
 
   const d = q.data;
   const counts = [

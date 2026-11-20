@@ -95,7 +95,7 @@ export function BrandingWorkspace({
   });
 
   useEffect(() => {
-    if (!q.data || loaded) return;
+    if (!q.isSuccess || !q.data || loaded) return;
     const d = q.data;
     setForm({
       tradingName: d.tradingName,
@@ -112,7 +112,7 @@ export function BrandingWorkspace({
     });
     setLogoPreview(d.logoPreviewUrl);
     setLoaded(true);
-  }, [q.data, loaded]);
+  }, [q.isSuccess, q.data, loaded]);
 
   useEffect(
     () => () => {
@@ -175,6 +175,7 @@ export function BrandingWorkspace({
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (q.isPending) return <LoadingState />;
   if (q.isError) return <QueryErrorState queries={[q]} title="Could not load branding" />;
+  if (!q.isSuccess || !q.data) return <LoadingState />;
 
   const brandingTitle =
     from === "purchases" ? "Purchase document themes & branding" : "Invoice themes & branding";
@@ -378,7 +379,10 @@ export function BrandingWorkspace({
                 </p>
               ) : null}
               {canEdit ? (
-                <Button disabled={saveM.isPending} onClick={() => saveM.mutate()}>
+                <Button
+                  disabled={saveM.isPending || !q.isSuccess || !loaded}
+                  onClick={() => saveM.mutate()}
+                >
                   {saveM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
                   Save branding
                 </Button>

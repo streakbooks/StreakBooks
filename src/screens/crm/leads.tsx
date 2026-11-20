@@ -234,7 +234,7 @@ export function CrmLeadsPage() {
       {settings.isError ? (
         <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
       ) : null}
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"
           description="Enable CRM in settings before creating leads."
@@ -250,7 +250,7 @@ export function CrmLeadsPage() {
         />
       ) : null}
 
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <div className="space-y-4">
           {showForm && canManage ? (
             <Card>

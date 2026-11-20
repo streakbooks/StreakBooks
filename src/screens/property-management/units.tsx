@@ -133,13 +133,13 @@ export function PmUnitsPage() {
       ) : settings.isLoading ? (
         <LoadingState />
       ) : null}
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <EmptyState
           title="Module disabled"
           description="Enable Property Management in Settings first."
         />
       ) : null}
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <>
           {properties.isError && properties.data === undefined ? (
             <QueryErrorState queries={[properties]} title="Could not load properties" />

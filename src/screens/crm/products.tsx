@@ -80,14 +80,14 @@ export function CrmProductsPage() {
       ) : settings.isLoading ? (
         <LoadingState />
       ) : null}
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"
           description="Enable CRM before browsing catalogue lines."
         />
       ) : null}
 
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <div className="space-y-4">
           <Alert>
             <AlertTitle>Shared catalogue</AlertTitle>

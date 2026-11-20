@@ -398,7 +398,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
           status={claim.rebillingStatus}
           label={`Rebilling: ${claim.rebillingStatus.replace(/[_-]/g, " ")}`}
         />
-        {riskQ.data ? (
+        {riskQ.isSuccess && riskQ.data ? (
           <Badge
             variant={
               riskScoreBand(riskQ.data.score) === "elevated"

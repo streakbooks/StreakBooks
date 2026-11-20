@@ -190,22 +190,26 @@ export function FirmRecurringBillingPanel({
             </div>
             <div className="space-y-1">
               <Label>Engagement</Label>
-              <RecordLookupSelect
-                required
-                value={currentEngagementId}
-                onValueChange={setEngagementId}
-              >
-                <SelectTrigger aria-label="Engagement for recurring billing">
-                  <SelectValue placeholder="Select engagement" />
-                </SelectTrigger>
-                <SelectContent>
-                  {engagements.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
+              {engagementsQ.isError ? (
+                <QueryErrorState queries={[engagementsQ]} title="Cannot load engagements" />
+              ) : (
+                <RecordLookupSelect
+                  required
+                  value={currentEngagementId}
+                  onValueChange={setEngagementId}
+                >
+                  <SelectTrigger aria-label="Engagement for recurring billing">
+                    <SelectValue placeholder="Select engagement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {engagements.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </RecordLookupSelect>
+              )}
             </div>
           </div>
           {!validBillingCompany ? (
@@ -309,7 +313,12 @@ export function FirmRecurringBillingPanel({
                     </RecordLookupSelect>
                   </div>
                   <Button
-                    disabled={linkM.isPending || !currentTemplateId}
+                    disabled={
+                      linkM.isPending ||
+                      !currentTemplateId ||
+                      !templatesQ.isSuccess ||
+                      !engagementsQ.isSuccess
+                    }
                     onClick={() => linkM.mutate()}
                   >
                     Link recurring template

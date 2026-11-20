@@ -120,10 +120,16 @@ export function HrReportsPage() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  const columns = useMemo(() => reportQ.data?.columns ?? [], [reportQ.data?.columns]);
-  const rows = useMemo(() => reportQ.data?.rows ?? [], [reportQ.data?.rows]);
+  const columns = useMemo(
+    () => (reportQ.isSuccess ? (reportQ.data?.columns ?? []) : []),
+    [reportQ.isSuccess, reportQ.data?.columns],
+  );
+  const rows = useMemo(
+    () => (reportQ.isSuccess ? (reportQ.data?.rows ?? []) : []),
+    [reportQ.isSuccess, reportQ.data?.rows],
+  );
   const reportCsv = useMemo(() => {
-    if (!company || columns.length === 0) return null;
+    if (!company || !reportQ.isSuccess || columns.length === 0) return null;
     return toCsv(
       {
         company: company.name || company.id,
@@ -134,7 +140,7 @@ export function HrReportsPage() {
       columns.map((c) => c.label),
       rows.map((r) => columns.map((c) => r[c.key] ?? "")),
     );
-  }, [company, columns, rows, reportId, dateFrom, dateTo]);
+  }, [company, columns, rows, reportId, dateFrom, dateTo, reportQ.isSuccess]);
 
   if (isPending) return <LoadingState />;
   if (!company)
@@ -169,7 +175,7 @@ export function HrReportsPage() {
           <Button
             type="button"
             variant="outline"
-            disabled={!reportCsv}
+            disabled={!reportCsv || !reportQ.isSuccess}
             onClick={() =>
               reportCsv && downloadCsv(csvFilename(`hr-${reportId}`, dateTo), reportCsv)
             }

@@ -517,7 +517,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   }, [companyId]);
 
   useEffect(() => {
-    if (!companyId || !cloudPreferencesQ.data) return;
+    if (!companyId || !cloudPreferencesQ.isSuccess || !cloudPreferencesQ.data) return;
     if (cloudPreferencesQ.data.columns !== null) {
       setColumnPreferences({
         companyId,
@@ -530,7 +530,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         views: normalizeContactSavedViews(cloudPreferencesQ.data.views),
       });
     }
-  }, [companyId, cloudPreferencesQ.data]);
+  }, [companyId, cloudPreferencesQ.isSuccess, cloudPreferencesQ.data]);
 
   const saveViewPreferences = (views: ContactSavedView[], confirmation: string) => {
     if (preferenceSyncBlocked) return;
@@ -870,7 +870,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
           <Button
             variant="outline"
             size="sm"
-            disabled={exportM.isPending}
+            disabled={exportM.isPending || !query.isSuccess || query.isError}
             onClick={() => exportM.mutate()}
           >
             <Download className="mr-1 size-4" /> Export

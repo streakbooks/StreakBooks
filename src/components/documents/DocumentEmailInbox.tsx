@@ -43,7 +43,9 @@ export function DocumentEmailInbox({
     queryKey: ["document-email-inbox", companyId],
     queryFn: () => loadSettings({ data: { companyId } }),
   });
-  const ready = Boolean(settings.data?.configured && settings.data?.enabled);
+  const ready = Boolean(
+    settings.isSuccess && settings.data?.configured && settings.data?.enabled,
+  );
   const emails = useQuery({
     queryKey: ["document-email-messages", companyId, cursor],
     enabled: ready,
@@ -165,7 +167,11 @@ export function DocumentEmailInbox({
                 </Button>
               ) : null}
               {!settings.data.address && canManage && settings.data.configured ? (
-                <Button size="sm" disabled={create.isPending} onClick={() => create.mutate()}>
+                <Button
+                  size="sm"
+                  disabled={create.isPending || !settings.isSuccess || settings.isError}
+                  onClick={() => create.mutate()}
+                >
                   Create inbox
                 </Button>
               ) : null}
@@ -173,7 +179,12 @@ export function DocumentEmailInbox({
                 <Button
                   size="sm"
                   variant={settings.data.enabled ? "outline" : "default"}
-                  disabled={toggle.isPending || !settings.data.configured}
+                  disabled={
+                    toggle.isPending ||
+                    !settings.data.configured ||
+                    !settings.isSuccess ||
+                    settings.isError
+                  }
                   onClick={() => toggle.mutate(!settings.data!.enabled)}
                 >
                   {settings.data.enabled ? "Pause inbox" : "Activate inbox"}
@@ -307,7 +318,13 @@ export function DocumentEmailInbox({
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={file.imported || importer.isPending || !canManage}
+                      disabled={
+                        file.imported ||
+                        importer.isPending ||
+                        !canManage ||
+                        !attachments.isSuccess ||
+                        attachments.isError
+                      }
                       onClick={() => importer.mutate(file.id)}
                     >
                       {importer.isPending ? (

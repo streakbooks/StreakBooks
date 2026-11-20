@@ -90,15 +90,15 @@ export function DocumentRecycleBin({
     setCleanupPage(0);
   }, [companyId]);
   useEffect(() => {
-    if (!trash.data) return;
+    if (!trash.isSuccess || !trash.data) return;
     const last = lastFilePage(trash.data.total, trash.data.pageSize);
     if (page > last) setPage(last);
-  }, [trash.data, page]);
+  }, [trash.isSuccess, trash.data, page]);
   useEffect(() => {
-    if (!cleanup.data) return;
+    if (!cleanup.isSuccess || !cleanup.data) return;
     const last = lastFilePage(cleanup.data.total, cleanup.data.pageSize);
     if (cleanupPage > last) setCleanupPage(last);
-  }, [cleanup.data, cleanupPage]);
+  }, [cleanup.isSuccess, cleanup.data, cleanupPage]);
   const refresh = async () =>
     Promise.all([
       client.invalidateQueries({ queryKey: ["recycle-bin-files", companyId] }),

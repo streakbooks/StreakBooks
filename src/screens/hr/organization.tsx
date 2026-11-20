@@ -248,9 +248,11 @@ export function HrOrganizationPage() {
             {kind === "department" ? (
               <div className="space-y-1">
                 <Label>Parent department</Label>
-                {orgQ.isError ? (
+                {orgQ.isPending ? (
+                  <LoadingState />
+                ) : orgQ.isError ? (
                   <QueryErrorState queries={[orgQ]} title="Could not load organisation" />
-                ) : (
+                ) : orgQ.isSuccess ? (
                   <RecordLookupSelect
                     value={parentId || "__none"}
                     onValueChange={(value) => setParentId(value === "__none" ? "" : value)}
@@ -267,15 +269,17 @@ export function HrOrganizationPage() {
                       ))}
                     </SelectContent>
                   </RecordLookupSelect>
-                )}
+                ) : null}
               </div>
             ) : null}
             {kind === "branch" ? (
               <div className="space-y-1">
                 <Label>Location</Label>
-                {orgQ.isError ? (
+                {orgQ.isPending ? (
+                  <LoadingState />
+                ) : orgQ.isError ? (
                   <QueryErrorState queries={[orgQ]} title="Could not load organisation" />
-                ) : (
+                ) : orgQ.isSuccess ? (
                   <RecordLookupSelect
                     value={locationId || "__none"}
                     onValueChange={(value) => setLocationId(value === "__none" ? "" : value)}
@@ -292,7 +296,7 @@ export function HrOrganizationPage() {
                       ))}
                     </SelectContent>
                   </RecordLookupSelect>
-                )}
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -303,7 +307,13 @@ export function HrOrganizationPage() {
             <Button
               type="button"
               onClick={() => saveMut.mutate()}
-              disabled={saveMut.isPending || !code.trim() || !name.trim()}
+              disabled={
+                saveMut.isPending ||
+                !code.trim() ||
+                !name.trim() ||
+                ((kind === "department" || kind === "branch") &&
+                  (!orgQ.isSuccess || orgQ.isError))
+              }
             >
               {saveMut.isPending ? "Saving…" : "Save"}
             </Button>

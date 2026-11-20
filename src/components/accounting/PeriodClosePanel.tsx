@@ -92,10 +92,10 @@ export function PeriodClosePanel({
     if (initialPeriodId) setPeriodId(initialPeriodId);
   }, [initialPeriodId]);
   useEffect(() => {
-    if (!periods.data) return;
+    if (!periods.isSuccess || !periods.data) return;
     if (openPeriods.some((row) => row.id === periodId)) return;
     setPeriodId(openPeriods[0]?.id ?? "");
-  }, [openPeriods, periodId, periods.data]);
+  }, [openPeriods, periodId, periods.isSuccess, periods.data]);
   const period = openPeriods.find((p) => p.id === periodId);
   const end = period?.end_date;
 

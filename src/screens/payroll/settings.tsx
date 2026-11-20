@@ -158,7 +158,7 @@ export function PayrollSettingsPage() {
   });
 
   useEffect(() => {
-    if (!page.data) return;
+    if (!page.isSuccess || !page.data) return;
     const settings = page.data.settings;
     const suggestions = page.data.accountSuggestions;
     const baseDraft = settings
@@ -198,7 +198,7 @@ export function PayrollSettingsPage() {
       payrollRunPadding: String(run?.padding ?? 4),
       payslipPadding: String(slip?.padding ?? 4),
     });
-  }, [page.data]);
+  }, [page.isSuccess, page.data]);
 
   const editingComponentIsSystem = useMemo(() => {
     if (!componentDraft.id || !page.data?.components) return false;
@@ -659,7 +659,13 @@ export function PayrollSettingsPage() {
                 ) : null}
                 <Button
                   type="button"
-                  disabled={!canEdit || !parsedSettings.ok || settingsMut.isPending}
+                  disabled={
+                    !canEdit ||
+                    !parsedSettings.ok ||
+                    settingsMut.isPending ||
+                    !page.isSuccess ||
+                    page.isError
+                  }
                   onClick={() => settingsMut.mutate()}
                 >
                   Save payroll settings
@@ -860,7 +866,12 @@ export function PayrollSettingsPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={!canEdit || sequenceMut.isPending}
+                  disabled={
+                    !canEdit ||
+                    sequenceMut.isPending ||
+                    !page.isSuccess ||
+                    page.isError
+                  }
                   onClick={() => sequenceMut.mutate()}
                 >
                   Save numbering
@@ -1010,7 +1021,12 @@ export function PayrollSettingsPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={!canEdit || componentMut.isPending}
+                  disabled={
+                    !canEdit ||
+                    componentMut.isPending ||
+                    !page.isSuccess ||
+                    page.isError
+                  }
                   onClick={() => componentMut.mutate()}
                 >
                   {componentDraft.id ? "Save component changes" : "Add custom component"}

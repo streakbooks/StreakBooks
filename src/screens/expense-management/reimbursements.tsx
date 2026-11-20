@@ -459,7 +459,12 @@ export function ExpenseManagementReimbursementsPage() {
                   <TableCell className="space-x-2 text-right">
                     <Button
                       size="sm"
-                      disabled={pay.isPending || !bankGlAccountId}
+                      disabled={
+                        pay.isPending ||
+                        !bankGlAccountId ||
+                        !banksQ.isSuccess ||
+                        banksQ.isError
+                      }
                       onClick={() =>
                         pay.mutate({
                           id: claim.id,
@@ -535,7 +540,13 @@ export function ExpenseManagementReimbursementsPage() {
                     <TableCell className="text-right">
                       <Button
                         size="sm"
-                        disabled={pay.isPending || !claim || !bank?.gl_account_id}
+                        disabled={
+                          pay.isPending ||
+                          !claim ||
+                          !bank?.gl_account_id ||
+                          !banksQ.isSuccess ||
+                          banksQ.isError
+                        }
                         onClick={() => {
                           if (!claim || !bank?.gl_account_id) return;
                           setBankGlAccountId(bank.gl_account_id);

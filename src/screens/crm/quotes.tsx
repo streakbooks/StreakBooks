@@ -173,7 +173,13 @@ export function CrmQuotesPage() {
                             type="button"
                             size="sm"
                             variant={opp.quoteId ? "secondary" : "default"}
-                            disabled={mutation.isPending || !opp.contactId || opp.amountMinor <= 0}
+                            disabled={
+                              mutation.isPending ||
+                              !opp.contactId ||
+                              opp.amountMinor <= 0 ||
+                              !opps.isSuccess ||
+                              opps.isError
+                            }
                             title={
                               !opp.contactId
                                 ? "Link a Contact first"

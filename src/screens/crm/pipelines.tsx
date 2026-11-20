@@ -243,7 +243,7 @@ export function CrmPipelinesPage() {
         <QueryErrorState queries={[pipelines]} title="Could not load pipelines" />
       ) : null}
 
-      {settings.isSuccess && settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled && pipelines.isSuccess ? (
         <div className="space-y-4">
           <Alert>
             <AlertTitle>Admin boundary</AlertTitle>
@@ -437,7 +437,11 @@ export function CrmPipelinesPage() {
                           <Button
                             type="button"
                             size="sm"
-                            disabled={stageMutation.isPending}
+                            disabled={
+                              stageMutation.isPending ||
+                              !pipelines.isSuccess ||
+                              pipelines.isError
+                            }
                             onClick={() => submitStage(pipeline.id)}
                           >
                             {stageMutation.isPending ? "Saving…" : "Save stage"}

@@ -222,7 +222,9 @@ export function AdvisorsAdminAppointmentsPage() {
                 saveM.isPending ||
                 exceptionM.isPending ||
                 statusM.isPending ||
-                reason.trim().length < 3
+                reason.trim().length < 3 ||
+                !query.isSuccess ||
+                query.isError
               }
               onClick={() => saveM.mutate()}
             >
@@ -274,7 +276,9 @@ export function AdvisorsAdminAppointmentsPage() {
               saveM.isPending ||
               statusM.isPending ||
               reason.trim().length < 3 ||
-              !validExceptionRange
+              !validExceptionRange ||
+              !query.isSuccess ||
+              query.isError
             }
             onClick={() => exceptionM.mutate()}
           >

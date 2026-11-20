@@ -381,7 +381,8 @@ export function PmSettingsPage() {
                   disabled={
                     mappingMutation.isPending ||
                     accounts.isLoading ||
-                    (accounts.isError && accounts.data === undefined)
+                    !accounts.isSuccess ||
+                    accounts.isError
                   }
                   onClick={() => mappingMutation.mutate()}
                 >

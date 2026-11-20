@@ -94,8 +94,8 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
   });
 
   useEffect(() => {
-    const profile = detailQ.data?.profile;
-    if (!detailQ.data) return;
+    if (!detailQ.isSuccess || !detailQ.data) return;
+    const profile = detailQ.data.profile;
     setDraft({
       preferredName: profile?.preferredName ?? "",
       legalMiddleName: profile?.legalMiddleName ?? "",
@@ -115,7 +115,7 @@ export function HrEmployeeDetailPage({ employeeId }: { employeeId: string }) {
       notes: profile?.notes ?? "",
       version: profile?.version ?? null,
     });
-  }, [detailQ.data]);
+  }, [detailQ.isSuccess, detailQ.data]);
 
   const saveMut = useMutation({
     mutationFn: () =>

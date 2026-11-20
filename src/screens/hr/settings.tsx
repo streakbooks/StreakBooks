@@ -42,14 +42,14 @@ export function HrSettingsPage() {
   });
 
   useEffect(() => {
-    if (!settingsQ.data) return;
+    if (!settingsQ.isSuccess || !settingsQ.data) return;
     setEnabled(settingsQ.data.enabled);
     setTimezone(settingsQ.data.defaultTimezone);
     setWeekStartsOn(settingsQ.data.weekStartsOn);
     setRequireManager(settingsQ.data.requireManagerForLeave);
     setDisclaimerAck(settingsQ.data.disclaimerAcknowledged);
     setVersion(settingsQ.data.version);
-  }, [settingsQ.data]);
+  }, [settingsQ.isSuccess, settingsQ.data]);
 
   const saveMut = useMutation({
     mutationFn: () =>

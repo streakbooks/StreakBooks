@@ -367,7 +367,13 @@ export function PeriodClosePanel({
                   </Label>
                 </div>
                 <Button
-                  disabled={!canPostClose || !confirmClose || close.isPending}
+                  disabled={
+                    !canPostClose ||
+                    !confirmClose ||
+                    close.isPending ||
+                    !preview.isSuccess ||
+                    preview.isError
+                  }
                   onClick={() => close.mutate()}
                 >
                   {close.isPending ? <Loader2 className="size-4 animate-spin" /> : null}

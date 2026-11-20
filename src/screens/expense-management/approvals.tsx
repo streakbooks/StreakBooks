@@ -302,10 +302,9 @@ export function ExpenseManagementApprovalsPage() {
   });
 
   useEffect(() => {
-    if (escalationsQ.data) {
-      setEscalationDaysDraft(String(escalationsQ.data.escalationDays));
-    }
-  }, [escalationsQ.data]);
+    if (!escalationsQ.isSuccess || !escalationsQ.data) return;
+    setEscalationDaysDraft(String(escalationsQ.data.escalationDays));
+  }, [escalationsQ.isSuccess, escalationsQ.data]);
 
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -459,7 +458,11 @@ export function ExpenseManagementApprovalsPage() {
                   </div>
                   <Button
                     size="sm"
-                    disabled={saveEscalationDaysMut.isPending}
+                    disabled={
+                      saveEscalationDaysMut.isPending ||
+                      !escalationsQ.isSuccess ||
+                      escalationsQ.isError
+                    }
                     onClick={() => saveEscalationDaysMut.mutate()}
                   >
                     {saveEscalationDaysMut.isPending ? "Saving…" : "Save threshold"}
@@ -832,7 +835,11 @@ export function ExpenseManagementApprovalsPage() {
                     <TableCell className="text-right">
                       <Button
                         size="sm"
-                        disabled={post.isPending}
+                        disabled={
+                          post.isPending ||
+                          !readyToPostQ.isSuccess ||
+                          readyToPostQ.isError
+                        }
                         onClick={() => post.mutate(claim)}
                       >
                         Post accrual

@@ -627,6 +627,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             {accountsQ.isError ? (
               <QueryErrorState queries={[accountsQ]} title="Could not load clearing accounts" />
             ) : null}
+            {settingsQ.isError || payslipsQ.isError || accountsQ.isError ? null : (
+            <>
             <div className="grid gap-2">
               <Label htmlFor="pr-pay-date">Payment date</Label>
               <Input
@@ -653,7 +655,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </div>
             <div className="grid gap-2">
               <Label>Clearing account</Label>
-              {accountsQ.isError ? null : accountsQ.isSuccess ? (
+              {accountsQ.isSuccess ? (
                 <>
                   {excludedClearingAccounts > 0 ? (
                     <p className="text-xs text-muted-foreground">
@@ -747,6 +749,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                 </ul>
               )}
             </div>
+            </>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -768,8 +772,12 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                 paymentSubmitLock.current ||
                 !clearingAccountId ||
                 !settingsReady ||
+                settingsQ.isError ||
+                !settingsQ.isSuccess ||
                 !payslipsQ.isSuccess ||
+                payslipsQ.isError ||
                 !accountsQ.isSuccess ||
+                accountsQ.isError ||
                 fxUnsupported
               }
               onClick={submitRecordPayment}

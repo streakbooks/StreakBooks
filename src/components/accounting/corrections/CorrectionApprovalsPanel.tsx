@@ -313,12 +313,14 @@ export function CorrectionApprovalsPanel({
                   {eventsQ.isError ? (
                     <QueryErrorState queries={[eventsQ]} title="Could not load approval events" />
                   ) : null}
-                  {eventsQ.data?.map((event) => (
-                    <p key={event.id}>
-                      {event.created_at} · {event.action} · {event.actor_id} · v{event.version}
-                      {event.note ? ` · ${event.note}` : ""}
-                    </p>
-                  ))}
+                  {eventsQ.isSuccess
+                    ? eventsQ.data.map((event) => (
+                        <p key={event.id}>
+                          {event.created_at} · {event.action} · {event.actor_id} · v{event.version}
+                          {event.note ? ` · ${event.note}` : ""}
+                        </p>
+                      ))
+                    : null}
                 </div>
               ) : null}
             </div>

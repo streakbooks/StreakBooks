@@ -95,13 +95,13 @@ export function CrmContactsPage() {
       {settings.isError ? (
         <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
       ) : null}
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"
           description="An administrator must enable CRM in settings."
         />
       ) : null}
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="crm-contact-person-search">Find a person</Label>

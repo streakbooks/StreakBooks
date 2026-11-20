@@ -235,10 +235,19 @@ export function AppStoreAdminPage() {
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Audit snapshot</h2>
-        <p className="text-sm text-muted-foreground">
-          Review count: {(reviews.data ?? []).length}. Catalogue apps:{" "}
-          {(catalogue.data?.apps ?? []).length}. Live third-party connectors completed: 0.
-        </p>
+        {reviews.isError || catalogue.isError ? (
+          <QueryErrorState
+            queries={[reviews, catalogue]}
+            title="Could not load audit snapshot counts"
+          />
+        ) : reviews.isSuccess && catalogue.isSuccess ? (
+          <p className="text-sm text-muted-foreground">
+            Review count: {reviews.data.length}. Catalogue apps: {catalogue.data.apps.length}. Live
+            third-party connectors completed: 0.
+          </p>
+        ) : reviews.isPending || catalogue.isPending ? (
+          <LoadingState />
+        ) : null}
       </section>
     </ListWorkspace>
   );

@@ -86,14 +86,14 @@ export function CrmRelationshipsPage() {
         />
       ) : null}
 
-      {settings.data?.enabled && !canSales ? (
+      {settings.isSuccess && settings.data?.enabled && !canSales ? (
         <EmptyState
           title="Sales view required"
           description="Payment status is gated by sales.view so CRM cannot leak AR without Sales permission."
         />
       ) : null}
 
-      {settings.data?.enabled && canSales ? (
+      {settings.isSuccess && settings.data?.enabled && canSales ? (
         <div className="space-y-4">
           <Alert>
             <AlertTitle>Accounting boundary</AlertTitle>

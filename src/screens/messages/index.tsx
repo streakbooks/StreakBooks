@@ -877,19 +877,21 @@ export function MessagesScreen({
                     {threadHits.isSuccess && threadHits.data.length === 0 ? (
                       <p className="text-muted-foreground">No matches</p>
                     ) : null}
-                    {threadHits.data?.map((hit) => (
-                      <button
-                        key={hit.id}
-                        type="button"
-                        className="block w-full truncate rounded px-2 py-1 text-left hover:bg-muted/50"
-                        onClick={() => {
-                          const el = document.getElementById(`msg-${hit.id}`);
-                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                        }}
-                      >
-                        <span className="font-medium">#{hit.seq}</span> {hit.body}
-                      </button>
-                    ))}
+                    {threadHits.isSuccess
+                      ? threadHits.data.map((hit) => (
+                          <button
+                            key={hit.id}
+                            type="button"
+                            className="block w-full truncate rounded px-2 py-1 text-left hover:bg-muted/50"
+                            onClick={() => {
+                              const el = document.getElementById(`msg-${hit.id}`);
+                              el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                            }}
+                          >
+                            <span className="font-medium">#{hit.seq}</span> {hit.body}
+                          </button>
+                        ))
+                      : null}
                   </div>
                 ) : null}
               </div>

@@ -112,7 +112,7 @@ export function CrmOverviewPage() {
         <QueryErrorState queries={[settings]} title="Could not load CRM settings" />
       ) : null}
 
-      {settings.data && !settings.data.enabled ? (
+      {settings.isSuccess && settings.data && !settings.data.enabled ? (
         <Alert>
           <AlertTitle>CRM is not enabled</AlertTitle>
           <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -131,7 +131,7 @@ export function CrmOverviewPage() {
         </Alert>
       ) : null}
 
-      {settings.data?.enabled ? (
+      {settings.isSuccess && settings.data?.enabled ? (
         <>
           {kpis.isLoading ? <LoadingState /> : null}
           {kpis.isError ? (

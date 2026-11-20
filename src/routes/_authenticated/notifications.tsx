@@ -945,18 +945,20 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
             >
               <div className="space-y-1">
                 <label className="text-sm font-medium">Team member</label>
-                <RecordLookupSelect value={recipient} onValueChange={setRecipient}>
-                  <SelectTrigger aria-label="Select document recipient">
-                    <SelectValue placeholder="Choose colleague" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(recipients.data ?? []).map((r) => (
-                      <SelectItem key={r.user_id} value={r.user_id}>
-                        {r.display_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </RecordLookupSelect>
+                {recipients.isError ? null : (
+                  <RecordLookupSelect value={recipient} onValueChange={setRecipient}>
+                    <SelectTrigger aria-label="Select document recipient">
+                      <SelectValue placeholder="Choose colleague" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(recipients.data ?? []).map((r) => (
+                        <SelectItem key={r.user_id} value={r.user_id}>
+                          {r.display_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </RecordLookupSelect>
+                )}
               </div>
               <div className="space-y-1">
                 <label htmlFor="doc-request-subject" className="text-sm font-medium">

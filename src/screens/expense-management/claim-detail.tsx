@@ -557,15 +557,19 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
               </p>
               <div className="grid max-w-md gap-2">
                 <Label>Customer</Label>
-                <ContactLookup
-                  ariaLabel="Rebilling customer"
-                  contacts={customers}
-                  value={customerContactId || claim.customerContactId || ""}
-                  onChange={(next) => setCustomerContactId(next ?? "")}
-                  companyId={company.id}
-                  placeholder="Select customer"
-                  allowClear
-                />
+                {contactsQ.isError && contactsQ.data === undefined ? (
+                  <QueryErrorState queries={[contactsQ]} title="Could not load customers" />
+                ) : (
+                  <ContactLookup
+                    ariaLabel="Rebilling customer"
+                    contacts={customers}
+                    value={customerContactId || claim.customerContactId || ""}
+                    onChange={(next) => setCustomerContactId(next ?? "")}
+                    companyId={company.id}
+                    placeholder="Select customer"
+                    allowClear
+                  />
+                )}
               </div>
               {!settingsQ.data?.rebillingIncomeAccountId ? (
                 <Alert>
@@ -578,7 +582,12 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
               ) : null}
               <Button
                 size="sm"
-                disabled={rebill.isPending || !canRebillNow}
+                disabled={
+                  rebill.isPending ||
+                  !canRebillNow ||
+                  contactsQ.isError ||
+                  !contactsQ.isSuccess
+                }
                 onClick={() => rebill.mutate()}
               >
                 {rebill.isPending ? "Creating invoice…" : "Create rebilling invoice"}

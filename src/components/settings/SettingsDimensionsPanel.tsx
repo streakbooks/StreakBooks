@@ -144,53 +144,55 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
           </div>
           )}
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Kind</TableHead>
-                <TableHead>Active</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {cats.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>{c.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{dimensionKindLabel(c.dimension_kind)}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={c.is_active}
-                      disabled={!canEdit}
-                      onCheckedChange={async (checked) => {
-                        try {
-                          await saveCat({
-                            data: {
-                              companyId,
-                              id: c.id,
-                              name: c.name,
-                              dimensionKind: c.dimension_kind,
-                              isActive: checked,
-                            },
-                          });
-                          await qc.invalidateQueries({
-                            queryKey: ["tracking-dimensions", companyId],
-                          });
-                        } catch (e) {
-                          toast.error(friendlyAuthError(e));
-                        }
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right text-xs text-muted-foreground">
-                    {opts.filter((o) => o.category_id === c.id).length} options
-                  </TableCell>
+          {dimsQ.isError ? null : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Kind</TableHead>
+                  <TableHead>Active</TableHead>
+                  <TableHead />
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {cats.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell>{c.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{dimensionKindLabel(c.dimension_kind)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={c.is_active}
+                        disabled={!canEdit}
+                        onCheckedChange={async (checked) => {
+                          try {
+                            await saveCat({
+                              data: {
+                                companyId,
+                                id: c.id,
+                                name: c.name,
+                                dimensionKind: c.dimension_kind,
+                                isActive: checked,
+                              },
+                            });
+                            await qc.invalidateQueries({
+                              queryKey: ["tracking-dimensions", companyId],
+                            });
+                          } catch (e) {
+                            toast.error(friendlyAuthError(e));
+                          }
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right text-xs text-muted-foreground">
+                      {opts.filter((o) => o.category_id === c.id).length} options
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
 
           {dimsQ.isError ? null : (
           <div className="grid gap-2 border-t pt-4 sm:grid-cols-3">

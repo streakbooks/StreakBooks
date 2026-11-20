@@ -163,19 +163,25 @@ export function ReportAccessDialog({
           {level === "firm" && (
             <div className="space-y-2">
               <Label htmlFor="report-share-firm">Accounting firm</Label>
-              <RecordLookupSelect
-                id="report-share-firm"
-                className="h-9 w-full rounded border bg-background"
-                value={firmId}
-                onValueChange={(e) => setFirmId(e)}
-              >
-                <option value="">Choose a firm</option>
-                {firms.data?.map((f) => (
-                  <option key={f.firmId} value={f.firmId}>
-                    {f.name}
-                  </option>
-                ))}
-              </RecordLookupSelect>
+              {firms.isPending ? (
+                <LoadingState />
+              ) : firms.isError ? (
+                <QueryErrorState queries={[firms]} title="Could not load accounting firms" />
+              ) : (
+                <RecordLookupSelect
+                  id="report-share-firm"
+                  className="h-9 w-full rounded border bg-background"
+                  value={firmId}
+                  onValueChange={(e) => setFirmId(e)}
+                >
+                  <option value="">Choose a firm</option>
+                  {firms.data?.map((f) => (
+                    <option key={f.firmId} value={f.firmId}>
+                      {f.name}
+                    </option>
+                  ))}
+                </RecordLookupSelect>
+              )}
               <p className="text-xs text-muted-foreground">
                 The firm must have an active relationship with this client company.
               </p>
@@ -190,7 +196,7 @@ export function ReportAccessDialog({
             disabled={
               mutation.isPending ||
               (level === "selected" && (q.isError || !Object.keys(grants).length)) ||
-              (level === "firm" && !firmId)
+              (level === "firm" && (!firmId || firms.isError || !firms.isSuccess))
             }
             onClick={() => mutation.mutate()}
           >

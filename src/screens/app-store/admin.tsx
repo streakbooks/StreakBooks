@@ -220,13 +220,17 @@ export function AppStoreAdminPage() {
             Suspend listing
           </Button>
         </div>
-        {suspended.length > 0 ? (
+        {catalogue.isError ? (
+          <QueryErrorState queries={[catalogue]} title="Could not load catalogue listings" />
+        ) : suspended.length > 0 ? (
           <p className="text-sm text-muted-foreground">
             Currently suspended in catalogue: {suspended.map((a) => a.code).join(", ")}
           </p>
-        ) : (
+        ) : catalogue.isSuccess ? (
           <p className="text-sm text-muted-foreground">No suspended catalogue listings.</p>
-        )}
+        ) : catalogue.isPending ? (
+          <LoadingState />
+        ) : null}
       </section>
 
       <section className="space-y-2">

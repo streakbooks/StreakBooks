@@ -61,12 +61,11 @@ export function AppStoreSyncActivityPage() {
         </AlertDescription>
       </Alert>
 
-      {jobs.isLoading ? <LoadingState /> : null}
-      {jobs.isError ? (
+      {jobs.isPending || jobs.isLoading ? (
+        <LoadingState />
+      ) : jobs.isError ? (
         <QueryErrorState queries={[jobs]} title="Could not load sync jobs" />
-      ) : null}
-
-      {!jobs.isLoading && !jobs.isError ? (
+      ) : jobs.isSuccess ? (
         (jobs.data?.length ?? 0) === 0 ? (
           <EmptyState
             title="No synchronization jobs"

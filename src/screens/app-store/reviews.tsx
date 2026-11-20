@@ -66,12 +66,11 @@ export function AppStoreReviewsPage() {
         </AlertDescription>
       </Alert>
 
-      {catalogue.isLoading ? <LoadingState /> : null}
-      {catalogue.isError ? (
+      {catalogue.isPending || catalogue.isLoading ? (
+        <LoadingState />
+      ) : catalogue.isError ? (
         <QueryErrorState queries={[catalogue]} title="Could not load listings" />
-      ) : null}
-
-      {!catalogue.isLoading && !catalogue.isError ? (
+      ) : catalogue.isSuccess ? (
         apps.length === 0 ? (
           <EmptyState
             title="No listings"

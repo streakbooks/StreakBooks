@@ -68,12 +68,11 @@ export function AppStoreExceptionsPage() {
         </AlertDescription>
       </Alert>
 
-      {jobs.isLoading ? <LoadingState /> : null}
-      {jobs.isError ? (
+      {jobs.isPending || jobs.isLoading ? (
+        <LoadingState />
+      ) : jobs.isError ? (
         <QueryErrorState queries={[jobs]} title="Could not load exceptions" />
-      ) : null}
-
-      {!jobs.isLoading && !jobs.isError ? (
+      ) : jobs.isSuccess ? (
         exceptions.length === 0 ? (
           <EmptyState
             title="No integration exceptions"

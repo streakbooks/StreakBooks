@@ -165,7 +165,7 @@ export function PriceListDiscountRules({
                   {productId && editing && !productsQ.data?.some((p) => p.id === productId) ? (
                     <SelectItem value={productId}>{editing.product_name}</SelectItem>
                   ) : null}
-                  {(productsQ.data ?? []).map((p) => (
+                  {(productsQ.isSuccess ? (productsQ.data ?? []) : []).map((p) => (
                     <SelectItem value={p.id} key={p.id}>
                       {p.code ? `${p.code} — ` : ""}
                       {p.name}

@@ -133,11 +133,11 @@ export function AppStoreAdminPage() {
 
       <section className="mb-8 space-y-3">
         <h2 className="text-lg font-semibold">Security approval queue</h2>
-        {reviews.isLoading ? <LoadingState /> : null}
-        {reviews.isError ? (
-          <QueryErrorState queries={[reviews]} title="Could not load reviews" />
-        ) : null}
-        {!reviews.isLoading && !reviews.isError ? (
+        {reviews.isPending || reviews.isLoading ? (
+        <LoadingState />
+      ) : reviews.isError ? (
+        <QueryErrorState queries={[reviews]} title="Could not load reviews" />
+      ) : reviews.isSuccess ? (
           pending.length === 0 ? (
             <EmptyState
               title="No pending reviews"

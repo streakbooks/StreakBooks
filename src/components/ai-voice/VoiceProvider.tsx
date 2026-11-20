@@ -24,7 +24,7 @@ export function VoiceProvider({ userId, children }: { userId: string; children: 
   });
   const permissions = company?.permissions ?? permissionsForRole(company?.role);
   const enabled =
-    !features.isError &&
+    features.isSuccess &&
     Boolean(
       features.data?.some((f) => f.key === "voice_commands" && f.state === "enabled_operational"),
     );

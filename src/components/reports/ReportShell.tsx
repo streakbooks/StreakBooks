@@ -321,7 +321,9 @@ export function ReportShell({
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={!canExport || fileExport.isPending}
+                  disabled={
+                    !canExport || fileExport.isPending || !(explorerActive ? explorerData : getCsv?.())
+                  }
                   aria-label="Download report"
                 >
                   <Download className="mr-2 size-4" aria-hidden="true" />

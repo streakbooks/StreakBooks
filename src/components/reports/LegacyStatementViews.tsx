@@ -138,7 +138,7 @@ export function LegacyProfitLossView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const rows = (d?.statement ?? []) as StatementRow[];
   const cols = d?.columns ?? [];
   return (
@@ -149,13 +149,17 @@ export function LegacyProfitLossView({ ctx }: { ctx: ReportCtx }) {
       showColumns="pl"
       basis={d?.basis}
       extraControls={
-        <StatementBasisSelect
-          basis={ctx.search.basis ?? "accrual"}
-          report="profit-and-loss"
-          onChange={(basis) => ctx.setSearch({ basis })}
-        />
+        q.isError ? null : (
+          <StatementBasisSelect
+            basis={ctx.search.basis ?? "accrual"}
+            report="profit-and-loss"
+            onChange={(basis) => ctx.setSearch({ basis })}
+          />
+        )
       }
-      getCsv={() => (d ? { ...statementCsv(rows, cols, ctx.currency), basis: d.basis } : null)}
+      getCsv={() =>
+        q.isSuccess && d ? { ...statementCsv(rows, cols, ctx.currency), basis: d.basis } : null
+      }
     >
       <ReportPane
         query={q}
@@ -200,7 +204,7 @@ export function LegacyBalanceSheetView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
-  const d = q.data;
+  const d = q.isSuccess ? q.data : undefined;
   const rows = (d?.statement ?? []) as StatementRow[];
   const cols = (d?.columns ?? []).map((c) => ({ label: fmt.date(c.label), to: c.asOf }));
   return (
@@ -211,13 +215,17 @@ export function LegacyBalanceSheetView({ ctx }: { ctx: ReportCtx }) {
       showColumns="bs"
       basis={d?.basis}
       extraControls={
-        <StatementBasisSelect
-          basis={ctx.search.basis ?? "accrual"}
-          report="profit-and-loss"
-          onChange={(basis) => ctx.setSearch({ basis })}
-        />
+        q.isError ? null : (
+          <StatementBasisSelect
+            basis={ctx.search.basis ?? "accrual"}
+            report="profit-and-loss"
+            onChange={(basis) => ctx.setSearch({ basis })}
+          />
+        )
       }
-      getCsv={() => (d ? { ...statementCsv(rows, cols, ctx.currency), basis: d.basis } : null)}
+      getCsv={() =>
+        q.isSuccess && d ? { ...statementCsv(rows, cols, ctx.currency), basis: d.basis } : null
+      }
     >
       <ReportPane
         query={q}

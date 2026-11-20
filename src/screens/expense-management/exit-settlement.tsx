@@ -203,10 +203,10 @@ export function ExpenseManagementExitSettlementPage() {
       description="Clear open advances, drafts and card lines when an employee leaves."
       subnav={<ExpenseManagementSubnav current="exit-settlement" />}
     >
-      {canManage && membersQ.isError && membersQ.data === undefined ? (
+      {canManage && membersQ.isError ? (
         <QueryErrorState queries={[membersQ]} title="Could not load company members" />
       ) : null}
-      {canManage && banksQ.isError && banksQ.data === undefined ? (
+      {canManage && banksQ.isError ? (
         <QueryErrorState queries={[banksQ]} title="Could not load bank accounts" />
       ) : null}
 
@@ -223,7 +223,7 @@ export function ExpenseManagementExitSettlementPage() {
                 </p>
               ) : membersQ.isPending ? (
                 <LoadingState />
-              ) : membersQ.isError && membersQ.data === undefined ? null : members.length > 0 ? (
+              ) : membersQ.isError ? null : membersQ.isSuccess && members.length > 0 ? (
                 <RecordLookupSelect value={employeeUserId} onValueChange={setEmployeeUserId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select member" />
@@ -236,13 +236,13 @@ export function ExpenseManagementExitSettlementPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
-              ) : (
+              ) : membersQ.isSuccess ? (
                 <p className="text-sm text-muted-foreground">No active members available.</p>
-              )}
+              ) : null}
             </div>
             <div className="grid gap-2">
               <Label>Bank account for advance reclaim</Label>
-              {banksQ.isError && banksQ.data === undefined ? null : (
+              {banksQ.isError ? null : banksQ.isSuccess ? (
                 <RecordLookupSelect value={bankAccountId} onValueChange={setBankAccountId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select bank" />
@@ -255,6 +255,8 @@ export function ExpenseManagementExitSettlementPage() {
                     ))}
                   </SelectContent>
                 </RecordLookupSelect>
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading bank accounts…</p>
               )}
             </div>
           </div>
@@ -265,9 +267,10 @@ export function ExpenseManagementExitSettlementPage() {
                 createMut.isPending ||
                 Boolean(draftForEmployee) ||
                 !canListMembers ||
-                membersQ.isPending ||
-                (membersQ.isError && membersQ.data === undefined) ||
-                (banksQ.isError && banksQ.data === undefined)
+                !membersQ.isSuccess ||
+                membersQ.isError ||
+                !banksQ.isSuccess ||
+                banksQ.isError
               }
               onClick={() => createMut.mutate()}
             >
@@ -276,7 +279,12 @@ export function ExpenseManagementExitSettlementPage() {
             {draftForEmployee ? (
               <Button
                 variant="secondary"
-                disabled={finalizeMut.isPending || !bankAccountId}
+                disabled={
+                  finalizeMut.isPending ||
+                  !bankAccountId ||
+                  !banksQ.isSuccess ||
+                  !membersQ.isSuccess
+                }
                 onClick={() =>
                   finalizeMut.mutate({
                     id: draftForEmployee.id,

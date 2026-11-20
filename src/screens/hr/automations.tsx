@@ -108,7 +108,11 @@ export function HrAutomationsPage() {
       description="Idempotent digests that refresh Action Center HR alerts. Daily cron runs when pg_cron is available."
       breadcrumbs={[{ label: "HR", to: "/hr" }, { label: "HR Automations" }]}
       actions={
-        <Button type="button" disabled={runM.isPending} onClick={() => runM.mutate(null)}>
+        <Button
+          type="button"
+          disabled={runM.isPending || !dataQ.isSuccess || dataQ.isError}
+          onClick={() => runM.mutate(null)}
+        >
           Run all now
         </Button>
       }
@@ -183,7 +187,9 @@ export function HrAutomationsPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Recent runs
         </h2>
-        {dataQ.isError ? null : runs.length === 0 ? (
+        {dataQ.isError ? null : !dataQ.isSuccess ? (
+          <LoadingState />
+        ) : runs.length === 0 ? (
           <EmptyState
             title="No runs yet"
             description="Run an automation to create a retry log entry."
@@ -191,7 +197,7 @@ export function HrAutomationsPage() {
               <Button
                 size="sm"
                 type="button"
-                disabled={runM.isPending}
+                disabled={runM.isPending || !dataQ.isSuccess}
                 onClick={() => runM.mutate(null)}
               >
                 Run all now

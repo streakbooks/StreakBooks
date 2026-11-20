@@ -450,33 +450,38 @@ export function ExpenseManagementReceiptsPage() {
                       </Button>
                       {claimsQ.isError ? (
                         <QueryErrorState queries={[claimsQ]} title="Could not load claims" />
-                      ) : (
-                      <RecordLookupSelect
-                        value={matchClaimByEntry[entry.id] ?? ""}
-                        onValueChange={(value) =>
-                          setMatchClaimByEntry((current) => ({ ...current, [entry.id]: value }))
-                        }
-                      >
-                        <SelectTrigger
-                          className="w-[220px]"
-                          aria-label={`Match claim for ${entry.fileName}`}
+                      ) : claimsQ.isSuccess ? (
+                        <RecordLookupSelect
+                          value={matchClaimByEntry[entry.id] ?? ""}
+                          onValueChange={(value) =>
+                            setMatchClaimByEntry((current) => ({ ...current, [entry.id]: value }))
+                          }
                         >
-                          <SelectValue placeholder="Select claim" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {draftClaims.map((claim) => (
-                            <SelectItem key={claim.id} value={claim.id}>
-                              {claim.claimNumber || "Draft"} · {claim.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </RecordLookupSelect>
+                          <SelectTrigger
+                            className="w-[220px]"
+                            aria-label={`Match claim for ${entry.fileName}`}
+                          >
+                            <SelectValue placeholder="Select claim" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {draftClaims.map((claim) => (
+                              <SelectItem key={claim.id} value={claim.id}>
+                                {claim.claimNumber || "Draft"} · {claim.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </RecordLookupSelect>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Loading claims…</p>
                       )}
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button
                           size="sm"
                           disabled={
-                            match.isPending || !matchClaimByEntry[entry.id] || claimsQ.isError
+                            match.isPending ||
+                            !matchClaimByEntry[entry.id] ||
+                            claimsQ.isError ||
+                            !claimsQ.isSuccess
                           }
                           onClick={() => match.mutate(entry.id)}
                         >

@@ -1282,32 +1282,34 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                     </Button>
                   </div>
                 ) : null}
-                <div className="space-y-1">
-                  <Label>Open saved view</Label>
-                  <RecordLookupSelect
-                    required
-                    value={selectedSavedViewId || "none"}
-                    onValueChange={(value) => {
-                      if (value === "none") {
-                        setSelectedSavedViewId("");
-                      } else {
-                        applySavedView(value);
-                      }
-                    }}
-                  >
-                    <SelectTrigger aria-label="Open a saved contact view">
-                      <SelectValue placeholder="Choose saved view" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Choose a view</SelectItem>
-                      {savedViews.map((saved) => (
-                        <SelectItem key={saved.id} value={saved.id}>
-                          {saved.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
-                </div>
+                {cloudPrefsReady ? (
+                  <div className="space-y-1">
+                    <Label>Open saved view</Label>
+                    <RecordLookupSelect
+                      required
+                      value={selectedSavedViewId || "none"}
+                      onValueChange={(value) => {
+                        if (value === "none") {
+                          setSelectedSavedViewId("");
+                        } else {
+                          applySavedView(value);
+                        }
+                      }}
+                    >
+                      <SelectTrigger aria-label="Open a saved contact view">
+                        <SelectValue placeholder="Choose saved view" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Choose a view</SelectItem>
+                        {savedViews.map((saved) => (
+                          <SelectItem key={saved.id} value={saved.id}>
+                            {saved.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  </div>
+                ) : null}
                 <div className="space-y-1">
                   <Label htmlFor="contact-save-view-name">Save current view as</Label>
                   <Input

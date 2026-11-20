@@ -152,7 +152,7 @@ export function PmReservationsPage() {
       ) : (
         <>
           {showForm && canManage ? (
-            properties.isError && properties.data === undefined ? (
+            properties.isError ? (
               <QueryErrorState queries={[properties]} title="Could not load properties" />
             ) : (
             <Card className="mb-4">
@@ -163,18 +163,22 @@ export function PmReservationsPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Property</Label>
-                  <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select property" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(properties.data ?? []).map((property) => (
-                        <SelectItem key={property.id} value={property.id}>
-                          {property.code} — {property.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
+                  {properties.isSuccess ? (
+                    <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select property" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(properties.data ?? []).map((property) => (
+                          <SelectItem key={property.id} value={property.id}>
+                            {property.code} — {property.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  ) : (
+                    <LoadingState />
+                  )}
                 </div>
                 <div className="grid gap-2">
                   <Label>Source</Label>
@@ -266,7 +270,12 @@ export function PmReservationsPage() {
                   <Button
                     type="button"
                     disabled={
-                      !propertyId || !guestName || !checkIn || !checkOut || mutation.isPending
+                      !propertyId ||
+                      !guestName ||
+                      !checkIn ||
+                      !checkOut ||
+                      mutation.isPending ||
+                      !properties.isSuccess
                     }
                     onClick={() => mutation.mutate()}
                   >

@@ -252,7 +252,12 @@ export function IndustryCoaPanel({ companyId }: Props) {
             <Button
               type="button"
               variant="secondary"
-              disabled={selected.length === 0 || previewMut.isPending}
+              disabled={
+                selected.length === 0 ||
+                previewMut.isPending ||
+                !industriesQ.isSuccess ||
+                industriesQ.isError
+              }
               onClick={() => previewMut.mutate()}
             >
               {previewMut.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -376,7 +381,12 @@ export function IndustryCoaPanel({ companyId }: Props) {
           </div>
           <Button
             type="button"
-            disabled={optionalKeys.length === 0 || optionalMut.isPending}
+            disabled={
+              optionalKeys.length === 0 ||
+              optionalMut.isPending ||
+              !libraryQry.isSuccess ||
+              libraryQry.isError
+            }
             onClick={() => optionalMut.mutate()}
           >
             {optionalMut.isPending ? <Loader2 className="size-4 animate-spin" /> : null}

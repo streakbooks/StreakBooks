@@ -152,7 +152,7 @@ export function PmAgreementsPage() {
       {settings.isSuccess && settings.data?.enabled ? (
         <>
           {showForm && canManage ? (
-            properties.isError && properties.data === undefined ? (
+            properties.isError ? (
               <QueryErrorState queries={[properties]} title="Could not load properties" />
             ) : (
             <Card className="mb-4">
@@ -166,18 +166,22 @@ export function PmAgreementsPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2 sm:col-span-2">
                   <Label>Property</Label>
-                  <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select property" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(properties.data ?? []).map((property) => (
-                        <SelectItem key={property.id} value={property.id}>
-                          {property.code} — {property.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
+                  {properties.isSuccess ? (
+                    <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select property" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(properties.data ?? []).map((property) => (
+                          <SelectItem key={property.id} value={property.id}>
+                            {property.code} — {property.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  ) : (
+                    <LoadingState />
+                  )}
                 </div>
                 <div className="grid gap-2">
                   <Label>Business model</Label>
@@ -249,7 +253,9 @@ export function PmAgreementsPage() {
                 <div className="flex items-end">
                   <Button
                     type="button"
-                    disabled={!propertyId || !startDate || mutation.isPending}
+                    disabled={
+                      !propertyId || !startDate || mutation.isPending || !properties.isSuccess
+                    }
                     onClick={() => mutation.mutate()}
                   >
                     {mutation.isPending ? "Saving…" : "Save agreement"}

@@ -289,6 +289,7 @@ export function FirmBulkClientActions({
               disabled ||
               mutation.isPending ||
               !selectedClients.length ||
+              (field === "service_line" && (!servicesQ.isSuccess || servicesQ.isError)) ||
               (field === "tags" &&
                 (tags.length > 12 ||
                   (tagOperation !== "replace" && !tags.length) ||
@@ -323,9 +324,16 @@ export function FirmBulkClientActions({
             <AlertDialogCancel disabled={mutation.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction asChild>
               <Button
-                disabled={disabled || mutation.isPending}
+                disabled={
+                  disabled ||
+                  mutation.isPending ||
+                  (field === "service_line" && (!servicesQ.isSuccess || servicesQ.isError))
+                }
                 onClick={(event) => {
                   event.preventDefault();
+                  if (field === "service_line" && (!servicesQ.isSuccess || servicesQ.isError)) {
+                    return;
+                  }
                   mutation.mutate();
                 }}
               >

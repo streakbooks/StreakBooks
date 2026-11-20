@@ -141,9 +141,9 @@ export function PmUnitsPage() {
       ) : null}
       {settings.isSuccess && settings.data?.enabled ? (
         <>
-          {properties.isError && properties.data === undefined ? (
+          {properties.isError ? (
             <QueryErrorState queries={[properties]} title="Could not load properties" />
-          ) : (
+          ) : properties.isSuccess ? (
             <div className="mb-4 max-w-sm">
               <Label className="mb-2 block">Filter by property</Label>
               <RecordLookupSelect
@@ -163,9 +163,13 @@ export function PmUnitsPage() {
                 </SelectContent>
               </RecordLookupSelect>
             </div>
+          ) : (
+            <div className="mb-4">
+              <LoadingState />
+            </div>
           )}
           {showForm && canManage ? (
-            properties.isError && properties.data === undefined ? (
+            properties.isError ? (
               <QueryErrorState queries={[properties]} title="Could not load properties for new unit" />
             ) : (
             <Card className="mb-4">
@@ -176,18 +180,22 @@ export function PmUnitsPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2 sm:col-span-2">
                   <Label>Property</Label>
-                  <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select property" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(properties.data ?? []).map((property) => (
-                        <SelectItem key={property.id} value={property.id}>
-                          {property.code} — {property.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
+                  {properties.isSuccess ? (
+                    <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select property" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(properties.data ?? []).map((property) => (
+                          <SelectItem key={property.id} value={property.id}>
+                            {property.code} — {property.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </RecordLookupSelect>
+                  ) : (
+                    <LoadingState />
+                  )}
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pm-unit-code">Code</Label>
@@ -200,7 +208,13 @@ export function PmUnitsPage() {
                 <div className="flex items-end">
                   <Button
                     type="button"
-                    disabled={!propertyId || !code.trim() || !name.trim() || mutation.isPending}
+                    disabled={
+                      !propertyId ||
+                      !code.trim() ||
+                      !name.trim() ||
+                      mutation.isPending ||
+                      !properties.isSuccess
+                    }
                     onClick={() => mutation.mutate()}
                   >
                     {mutation.isPending ? "Saving…" : "Save unit"}

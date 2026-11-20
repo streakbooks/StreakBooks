@@ -343,7 +343,7 @@ export function ExpenseManagementCorporateCardsPage() {
             </div>
             <div className="grid gap-2">
               <Label>Liability account</Label>
-              {accountsQ.isError && accountsQ.data === undefined ? null : (
+              {accountsQ.isError ? null : accountsQ.isSuccess ? (
                 <AccountLookup
                   companyId={company.id}
                   accounts={liabilityAccounts}
@@ -354,7 +354,7 @@ export function ExpenseManagementCorporateCardsPage() {
                   ariaLabel="Card liability account"
                   purpose="posting"
                 />
-              )}
+              ) : null}
             </div>
             <div>
               <Button
@@ -364,7 +364,8 @@ export function ExpenseManagementCorporateCardsPage() {
                   !label.trim() ||
                   last4.length !== 4 ||
                   !liabilityAccountId ||
-                  (accountsQ.isError && accountsQ.data === undefined)
+                  !accountsQ.isSuccess ||
+                  accountsQ.isError
                 }
               >
                 {createCardMut.isPending ? "Saving…" : "Save card"}

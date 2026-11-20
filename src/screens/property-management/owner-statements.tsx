@@ -211,8 +211,7 @@ export function PmOwnerStatementsPage() {
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           <div className="min-w-0 space-y-4">
             {showForm && canGenerate ? (
-              (owners.isError && owners.data === undefined) ||
-              (properties.isError && properties.data === undefined) ? (
+              owners.isError || properties.isError ? (
                 <QueryErrorState
                   queries={[owners, properties]}
                   title="Could not load statement generate options"
@@ -226,6 +225,8 @@ export function PmOwnerStatementsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
+                  {owners.isSuccess && properties.isSuccess ? (
+                    <>
                   <div className="grid gap-2">
                     <Label>Owner</Label>
                     <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
@@ -257,6 +258,10 @@ export function PmOwnerStatementsPage() {
                       </SelectContent>
                     </RecordLookupSelect>
                   </div>
+                    </>
+                  ) : (
+                    <LoadingState />
+                  )}
                   <div className="grid gap-2">
                     <Label htmlFor="pm-stmt-month">Period</Label>
                     <Input
@@ -268,7 +273,12 @@ export function PmOwnerStatementsPage() {
                   </div>
                   <Button
                     type="button"
-                    disabled={!ownerId || generateMutation.isPending}
+                    disabled={
+                      !ownerId ||
+                      generateMutation.isPending ||
+                      !owners.isSuccess ||
+                      !properties.isSuccess
+                    }
                     onClick={() => generateMutation.mutate()}
                   >
                     {generateMutation.isPending ? "Calculating…" : "Calculate statement"}

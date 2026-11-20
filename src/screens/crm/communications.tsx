@@ -72,7 +72,7 @@ export function CrmCommunicationsPage() {
           {policy.isError ? (
             <QueryErrorState queries={[policy]} title="Could not load communications policy" />
           ) : null}
-          {policy.data ? (
+          {policy.isSuccess && policy.data ? (
             <>
               <Alert>
                 <AlertTitle>Provider status: {policy.data.providerStatus}</AlertTitle>

@@ -491,7 +491,7 @@ export function CrmOpportunitiesPage() {
             />
           ) : null}
 
-          {view === "list" && filteredOpenDeals.length > 0 ? (
+          {opps.isSuccess && view === "list" && filteredOpenDeals.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
@@ -530,7 +530,7 @@ export function CrmOpportunitiesPage() {
             </div>
           ) : null}
 
-          {view === "kanban" && stages.length > 0 ? (
+          {opps.isSuccess && pipelines.isSuccess && view === "kanban" && stages.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2">
               {stages.map((stage) => {
                 const column = filteredOpenDeals.filter((opp) => opp.stageId === stage.id);

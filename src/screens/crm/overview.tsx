@@ -137,7 +137,7 @@ export function CrmOverviewPage() {
           {kpis.isError ? (
             <QueryErrorState queries={[kpis]} title="Could not load CRM dashboard" />
           ) : null}
-          {kpis.data ? (
+          {kpis.isSuccess ? (
             <div className="space-y-6">
               <Alert>
                 <AlertTitle>Forecast vs accounting</AlertTitle>

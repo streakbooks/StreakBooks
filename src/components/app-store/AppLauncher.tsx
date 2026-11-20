@@ -83,13 +83,13 @@ export function AppLauncher() {
           <div className="px-2 py-3 text-sm text-muted-foreground">
             Select an organisation to see installed apps.
           </div>
+        ) : catalogue.isPending || catalogue.isLoading ? (
+          <div className="px-2 py-3 text-sm text-muted-foreground">Loading apps…</div>
         ) : catalogue.isError ? (
           <div className="px-2 py-3">
             <QueryErrorState queries={[catalogue]} title="Could not load installed apps" />
           </div>
-        ) : catalogue.isLoading ? (
-          <div className="px-2 py-3 text-sm text-muted-foreground">Loading apps…</div>
-        ) : installed.length === 0 ? (
+        ) : !catalogue.isSuccess ? null : installed.length === 0 ? (
           <div className="space-y-2 px-2 py-3">
             <p className="text-sm text-muted-foreground">
               No installed or requested apps for this organisation yet.

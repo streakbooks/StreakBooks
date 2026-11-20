@@ -263,7 +263,7 @@ export function CrmTeamPage() {
                   }
                 />
               ) : null}
-              {territoryRows.length > 0 ? (
+              {territories.isSuccess && territoryRows.length > 0 ? (
                 <div className="overflow-x-auto rounded-lg border">
                   <Table>
                     <TableHeader>
@@ -317,7 +317,7 @@ export function CrmTeamPage() {
               }
             />
           ) : null}
-          {rows.length > 0 ? (
+          {team.isSuccess && rows.length > 0 ? (
             <Card>
               <CardHeader>
                 <CardTitle>Member workload</CardTitle>

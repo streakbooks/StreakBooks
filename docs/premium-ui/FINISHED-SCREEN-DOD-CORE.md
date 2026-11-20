@@ -220,6 +220,8 @@ Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails
 
 **Production honesty Batch 176:** App Store list screens convert soft `!isLoading && !isError` content shells to exclusive Loading/QES/isSuccess (including dual-query requests); Files workspace count/list/tag options require success; customer and price-list product pickers map options only after success. Staging/RBAC still **NOT VERIFIED**.
 
+**Production honesty Batch 177:** CRM KPI/policy/forecast/report bodies and list tables require `isSuccess` (no stale rows beside QES); Advisors landing catalogue exclusive Loading/QES/success; AppLauncher installed apps exclusive pending/error/success. Staging/RBAC still **NOT VERIFIED**.
+
 **Bank coding + record totals (Batch 75):** `BankCodingPanel` uses shared `EditableLineItemGrid` + `TotalsSummary`. Bill and invoice read-only records use `TotalsSummary`. `MoneyDocumentPanel` fails closed with `QueryErrorState` when options queries fail. Staging/RBAC still **NOT VERIFIED**.
 
 **Bills line grid ELG (Batch 74):** `PurchasesDocumentLines` composes shared `EditableLineItemGrid` (Sales parity). Drag reorder, tracking columns, tax modes, keyboard/paste, Add-lines Select, and TotalsSummary preserved. Staging/RBAC still **NOT VERIFIED**.

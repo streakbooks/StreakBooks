@@ -303,7 +303,7 @@ export function CrmCampaignsPage() {
               }
             />
           ) : null}
-          {campaignRows.length > 0 ? (
+          {campaigns.isSuccess && campaignRows.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
@@ -349,7 +349,7 @@ export function CrmCampaignsPage() {
               {sources.isError ? (
                 <QueryErrorState queries={[sources]} title="Could not load lead sources" />
               ) : null}
-              {sourceRows.length > 0 ? (
+              {sources.isSuccess && sourceRows.length > 0 ? (
                 <div className="overflow-x-auto rounded-lg border">
                   <Table>
                     <TableHeader>

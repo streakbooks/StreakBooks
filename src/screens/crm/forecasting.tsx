@@ -104,7 +104,7 @@ export function CrmForecastingPage() {
             <QueryErrorState queries={[forecast]} title="Could not load forecast" />
           ) : null}
 
-          {report ? (
+          {forecast.isSuccess && report ? (
             <>
               <div className="grid gap-4 sm:grid-cols-3">
                 <Card>

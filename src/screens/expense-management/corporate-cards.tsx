@@ -379,7 +379,9 @@ export function ExpenseManagementCorporateCardsPage() {
         <h2 className="text-lg font-medium">Cards</h2>
         {cardsQ.isLoading ? (
           <LoadingState />
-        ) : cardsQ.isError ? null : (cardsQ.data ?? []).length === 0 ? (
+        ) : cardsQ.isError ? null : !cardsQ.isSuccess ? (
+          <LoadingState />
+        ) : (cardsQ.data ?? []).length === 0 ? (
           <EmptyState
             title="No corporate cards"
             description="Register a card with its liability account to start matching spend."
@@ -492,9 +494,9 @@ export function ExpenseManagementCorporateCardsPage() {
 
           <section className="mb-6 grid max-w-lg gap-2">
             <Label>Claim for matching</Label>
-            {claimsQ.isError && claimsQ.data === undefined ? (
+            {claimsQ.isError ? (
               <QueryErrorState queries={[claimsQ]} title="Could not load card claims for matching" />
-            ) : (
+            ) : claimsQ.isSuccess ? (
               <RecordLookupSelect value={matchClaimId} onValueChange={setMatchClaimId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select corporate-card claim" />
@@ -507,6 +509,8 @@ export function ExpenseManagementCorporateCardsPage() {
                   ))}
                 </SelectContent>
               </RecordLookupSelect>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading claims…</p>
             )}
           </section>
 
@@ -516,6 +520,8 @@ export function ExpenseManagementCorporateCardsPage() {
               <LoadingState />
             ) : txQ.isError ? (
               <QueryErrorState queries={[txQ]} title="Could not load card transactions" />
+            ) : !txQ.isSuccess ? (
+              <LoadingState />
             ) : unmatchedTx.length === 0 ? (
               <EmptyState
                 title="No unmatched lines"
@@ -561,7 +567,11 @@ export function ExpenseManagementCorporateCardsPage() {
                           <Button
                             size="sm"
                             disabled={
-                              matchMut.isPending || !matchClaimId || !gate || gate.ok === false
+                              matchMut.isPending ||
+                              !matchClaimId ||
+                              !gate ||
+                              gate.ok === false ||
+                              !claimsQ.isSuccess
                             }
                             onClick={() => matchMut.mutate(tx.id)}
                           >

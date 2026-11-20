@@ -526,12 +526,12 @@ export function ExpenseManagementApprovalsPage() {
                 <div className="grid gap-2 md:col-span-2">
                   <Label>Delegate</Label>
                   {canListMembers ? (
-                    membersQ.isError && membersQ.data === undefined ? (
+                    membersQ.isError ? (
                       <QueryErrorState
                         queries={[membersQ]}
                         title="Could not load organisation members"
                       />
-                    ) : (
+                    ) : membersQ.isSuccess ? (
                       <RecordLookupSelect value={delegateUserId} onValueChange={setDelegateUserId}>
                         <SelectTrigger aria-label="Choose approval delegate">
                           <SelectValue placeholder="Select member" />
@@ -546,6 +546,8 @@ export function ExpenseManagementApprovalsPage() {
                             ))}
                         </SelectContent>
                       </RecordLookupSelect>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Loading members…</p>
                     )
                   ) : (
                     <p className="text-sm text-muted-foreground">
@@ -582,7 +584,12 @@ export function ExpenseManagementApprovalsPage() {
                 </div>
                 <div className="flex items-end">
                   <Button
-                    disabled={saveDelegationMut.isPending || !delegateUserId}
+                    disabled={
+                      saveDelegationMut.isPending ||
+                      !delegateUserId ||
+                      !membersQ.isSuccess ||
+                      membersQ.isError
+                    }
                     onClick={() => saveDelegationMut.mutate()}
                   >
                     {saveDelegationMut.isPending ? "Saving…" : "Save cover"}

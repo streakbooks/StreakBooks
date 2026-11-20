@@ -638,7 +638,8 @@ export function ExpenseManagementClaimsPage({
     mode === "my-expenses" &&
     canSubmit &&
     forceCreate &&
-    createLookupQueries.some((query) => query.isError && query.data === undefined);
+    createLookupQueries.some((query) => query.isError);
+  const createLookupsReady = createLookupQueries.every((query) => query.isSuccess);
 
   // List is list-only. Create opens only via ?create=true → TransactionWorkspace.
   const createForm =
@@ -825,7 +826,7 @@ export function ExpenseManagementClaimsPage({
           onAddRow={() => setLines((current) => [...current, emptyDraftLine(today)])}
           addRowLabel="Add line"
           footerStart={
-            <Button type="submit" size="sm" disabled={create.isPending}>
+            <Button type="submit" size="sm" disabled={create.isPending || !createLookupsReady}>
               {create.isPending ? "Saving…" : "Save draft"}
             </Button>
           }
@@ -889,16 +890,20 @@ export function ExpenseManagementClaimsPage({
                 />
               </TableCell>
               <TableCell className="align-middle p-0">
-                <AccountLookup
-                  ariaLabel={`Expense account for line ${index + 1}`}
-                  purpose="expense"
-                  accounts={expenseAccounts}
-                  value={line.accountId}
-                  onChange={(value) => updateLine(line.key, { accountId: value })}
-                  companyId={company.id}
-                  placeholder="Select expense account"
-                  allowClear={false}
-                />
+                {accountsQ.isSuccess ? (
+                  <AccountLookup
+                    ariaLabel={`Expense account for line ${index + 1}`}
+                    purpose="expense"
+                    accounts={expenseAccounts}
+                    value={line.accountId}
+                    onChange={(value) => updateLine(line.key, { accountId: value })}
+                    companyId={company.id}
+                    placeholder="Select expense account"
+                    allowClear={false}
+                  />
+                ) : (
+                  <p className="px-2 text-sm text-muted-foreground">Loading accounts…</p>
+                )}
               </TableCell>
               <TableCell className="align-top p-0">
                 <Input
@@ -959,29 +964,37 @@ export function ExpenseManagementClaimsPage({
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label>Account A</Label>
-                <AccountLookup
-                  ariaLabel="Split account A"
-                  purpose="expense"
-                  accounts={expenseAccounts}
-                  value={splitAccountA}
-                  onChange={setSplitAccountA}
-                  companyId={company.id}
-                  placeholder="Select account A"
-                  allowClear={false}
-                />
+                {accountsQ.isSuccess ? (
+                  <AccountLookup
+                    ariaLabel="Split account A"
+                    purpose="expense"
+                    accounts={expenseAccounts}
+                    value={splitAccountA}
+                    onChange={setSplitAccountA}
+                    companyId={company.id}
+                    placeholder="Select account A"
+                    allowClear={false}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">Loading accounts…</p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label>Account B</Label>
-                <AccountLookup
-                  ariaLabel="Split account B"
-                  purpose="expense"
-                  accounts={expenseAccounts}
-                  value={splitAccountB}
-                  onChange={setSplitAccountB}
-                  companyId={company.id}
-                  placeholder="Select account B"
-                  allowClear={false}
-                />
+                {accountsQ.isSuccess ? (
+                  <AccountLookup
+                    ariaLabel="Split account B"
+                    purpose="expense"
+                    accounts={expenseAccounts}
+                    value={splitAccountB}
+                    onChange={setSplitAccountB}
+                    companyId={company.id}
+                    placeholder="Select account B"
+                    allowClear={false}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">Loading accounts…</p>
+                )}
               </div>
             </div>
             <div className="flex gap-2">
@@ -1039,7 +1052,11 @@ export function ExpenseManagementClaimsPage({
                 Cancel
               </Link>
             </Button>
-            <Button size="sm" disabled={create.isPending} onClick={() => create.mutate()}>
+            <Button
+              size="sm"
+              disabled={create.isPending || !createLookupsReady}
+              onClick={() => create.mutate()}
+            >
               {create.isPending ? "Saving…" : "Save draft"}
             </Button>
           </div>

@@ -134,12 +134,12 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
                         <TableCell>
                           <div className="grid gap-1.5">
                             <Label className="sr-only">Component</Label>
-                            {componentsQ.isError && componentsQ.data === undefined ? (
+                            {componentsQ.isError ? (
                               <QueryErrorState
                                 queries={[componentsQ]}
                                 title="Could not load components"
                               />
-                            ) : (
+                            ) : componentsQ.isSuccess ? (
                               <RecordLookupSelect
                                 value={componentByChange[row.id] ?? ""}
                                 onValueChange={(v) =>
@@ -158,7 +158,7 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
                                   ))}
                                 </SelectContent>
                               </RecordLookupSelect>
-                            )}
+                            ) : null}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -168,6 +168,7 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
                             disabled={
                               !componentByChange[row.id] ||
                               applyCompM.isPending ||
+                              !componentsQ.isSuccess ||
                               componentsQ.isError ||
                               componentsQ.isPending
                             }

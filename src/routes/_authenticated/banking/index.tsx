@@ -391,7 +391,7 @@ function BankingAccounts() {
         </Button>
       ) : null}
 
-      {glQ.isError && glQ.data === undefined ? (
+      {glQ.isError ? (
         <QueryErrorState queries={[glQ]} title="Could not load GL accounts for banking" />
       ) : null}
       {detailsQ.isError && detailsQ.data === undefined ? (
@@ -411,7 +411,7 @@ function BankingAccounts() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        {glQ.isError && glQ.data === undefined ? null : (
+        {glQ.isError ? null : (
           <AccountLookup
             ariaLabel="GL account"
             accounts={glOptions}
@@ -447,7 +447,8 @@ function BankingAccounts() {
             createM.isPending ||
             !name.trim() ||
             !glAccountId ||
-            (glQ.isError && glQ.data === undefined)
+            !glQ.isSuccess ||
+            glQ.isError
           }
           onClick={() => createM.mutate()}
         >

@@ -834,6 +834,7 @@ function ImportCentre() {
                 preview.result.issues.length > 0 ||
                 preview.result.duplicates.length > 0 ||
                 budgetImport.isPending ||
+                !budgetsQ.isSuccess ||
                 budgetsQ.isError
               }
               onClick={() => {

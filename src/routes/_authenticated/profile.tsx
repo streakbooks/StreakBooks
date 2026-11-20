@@ -51,11 +51,10 @@ function ProfilePage() {
   const [jobTitle, setJobTitle] = useState("");
 
   useEffect(() => {
-    if (profileQuery.data) {
-      setFullName(profileQuery.data.full_name);
-      setJobTitle(profileQuery.data.job_title ?? "");
-    }
-  }, [profileQuery.data]);
+    if (!profileQuery.isSuccess || !profileQuery.data) return;
+    setFullName(profileQuery.data.full_name);
+    setJobTitle(profileQuery.data.job_title ?? "");
+  }, [profileQuery.isSuccess, profileQuery.data]);
 
   const profileDirty =
     !!profileQuery.data &&
@@ -79,6 +78,8 @@ function ProfilePage() {
         <LoadingState />
       ) : profileQuery.isError ? (
         <QueryErrorState queries={[profileQuery]} title="Could not load your profile" />
+      ) : !profileQuery.isSuccess ? (
+        <LoadingState />
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
@@ -120,7 +121,12 @@ function ProfilePage() {
                 </div>
                 <Button
                   type="submit"
-                  disabled={mutation.isPending || !profileDirty || !fullName.trim()}
+                  disabled={
+                    mutation.isPending ||
+                    !profileQuery.isSuccess ||
+                    !profileDirty ||
+                    !fullName.trim()
+                  }
                 >
                   {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                   {mutation.isPending ? "Saving…" : "Save changes"}

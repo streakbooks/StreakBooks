@@ -281,6 +281,8 @@ export function ReportLibrary({
         <LoadingState />
       ) : q.isError ? (
         <QueryErrorState queries={[q]} title="Could not load custom reports" />
+      ) : !q.isSuccess ? (
+        <LoadingState />
       ) : (
         <>
           {!q.data.rows.length ? (

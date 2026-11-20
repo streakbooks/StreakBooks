@@ -148,6 +148,8 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
           <LoadingState />
         ) : detail.isError ? (
           <QueryErrorState queries={[detail]} title="Could not load order" />
+        ) : !detail.isSuccess ? (
+          <LoadingState />
         ) : (
           <section className="mb-6 space-y-4 rounded-lg border p-4">
             <div className="flex flex-wrap items-center gap-3">

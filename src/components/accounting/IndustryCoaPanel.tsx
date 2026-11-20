@@ -154,6 +154,7 @@ export function IndustryCoaPanel({ companyId }: Props) {
 
   function toggleIndustry(code: string) {
     setSelected((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
+    previewMut.reset();
   }
 
   const requiredQueries = [industriesQ, settingsQ, trackingQ, libraryQry];
@@ -201,7 +202,13 @@ export function IndustryCoaPanel({ companyId }: Props) {
             </div>
             <div className="w-full space-y-2 sm:w-48">
               <Label>Detail level</Label>
-              <Select value={level} onValueChange={(v) => setLevel(v as DetailLevel)}>
+              <Select
+                value={level}
+                onValueChange={(v) => {
+                  setLevel(v as DetailLevel);
+                  previewMut.reset();
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -253,7 +260,12 @@ export function IndustryCoaPanel({ companyId }: Props) {
             </Button>
             <Button
               type="button"
-              disabled={!previewMut.data || applyMut.isPending}
+              disabled={
+                !previewMut.isSuccess ||
+                !previewMut.data ||
+                previewMut.isError ||
+                applyMut.isPending
+              }
               onClick={() => applyMut.mutate()}
             >
               {applyMut.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -261,7 +273,13 @@ export function IndustryCoaPanel({ companyId }: Props) {
             </Button>
           </div>
 
-          {previewMut.data ? (
+          {previewMut.isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {friendlyAuthError(previewMut.error)}
+            </p>
+          ) : null}
+
+          {previewMut.isSuccess && previewMut.data ? (
             <div className="space-y-3 rounded-md border p-4 text-sm">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">Create {previewMut.data.toCreate.length}</Badge>

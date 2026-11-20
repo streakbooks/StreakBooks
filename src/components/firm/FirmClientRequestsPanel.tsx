@@ -290,6 +290,7 @@ export function FirmClientRequestsPanel({
             className="space-y-4"
             onSubmit={(event) => {
               event.preventDefault();
+              if (!teamQ.isSuccess || teamQ.isError || saveM.isPending) return;
               saveM.mutate();
             }}
           >
@@ -369,9 +370,9 @@ export function FirmClientRequestsPanel({
               </div>
               <div className="space-y-1">
                 <Label>Responsible team member</Label>
-                {teamQ.isError && teamQ.data === undefined ? (
+                {teamQ.isError ? (
                   <QueryErrorState queries={[teamQ]} title="Could not load firm team" />
-                ) : (
+                ) : teamQ.isSuccess ? (
                   <RecordLookupSelect
                     value={draft.assigned_to ?? "unassigned"}
                     onValueChange={(value) =>
@@ -394,7 +395,7 @@ export function FirmClientRequestsPanel({
                       ))}
                     </SelectContent>
                   </RecordLookupSelect>
-                )}
+                ) : null}
               </div>
             </div>
             <div className="space-y-1">
@@ -430,7 +431,7 @@ export function FirmClientRequestsPanel({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={saveM.isPending}>
+              <Button type="submit" disabled={saveM.isPending || !teamQ.isSuccess || teamQ.isError}>
                 {saveM.isPending ? "Saving…" : "Save request"}
               </Button>
             </DialogFooter>

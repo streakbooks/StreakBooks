@@ -470,10 +470,11 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
     cloudPreferencesQ.isFetching ||
     saveCloudM.isPending ||
     importLegacyM.isPending;
+  const cloudPrefsReady = cloudPreferencesQ.isSuccess && !cloudPreferencesQ.isError;
+  const preferenceSyncBlocked = preferenceBusy || !cloudPrefsReady;
   const canImportBrowserPreferences =
     legacyPreferences.companyId === companyId &&
-    !cloudPreferencesQ.isPending &&
-    !cloudPreferencesQ.isError &&
+    cloudPrefsReady &&
     ((cloudPreferencesQ.data?.columns === null && legacyPreferences.columns !== null) ||
       (cloudPreferencesQ.data?.views === null && legacyPreferences.views !== null));
 
@@ -532,7 +533,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   }, [companyId, cloudPreferencesQ.data]);
 
   const saveViewPreferences = (views: ContactSavedView[], confirmation: string) => {
-    if (preferenceBusy) return;
+    if (preferenceSyncBlocked) return;
     const next = normalizeContactSavedViews(views);
     setSavedViewPreferences({ companyId, views: next });
     if (companyId) {
@@ -560,7 +561,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   };
 
   const saveCurrentView = () => {
-    if (preferenceBusy) return;
+    if (preferenceSyncBlocked) return;
     const name = savedViewName.trim().slice(0, 60);
     if (!name) return;
     const existing = savedViews.find((saved) => saved.name.toLowerCase() === name.toLowerCase());
@@ -600,7 +601,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   };
 
   const deleteSavedView = () => {
-    if (!selectedSavedViewId || preferenceBusy) return;
+    if (!selectedSavedViewId || preferenceSyncBlocked) return;
     saveViewPreferences(
       savedViews.filter((saved) => saved.id !== selectedSavedViewId),
       "Saved view removed from your account",
@@ -619,6 +620,8 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         toast.message("Columns changed for this session; browser storage is unavailable");
       }
     }
+    // Fail-closed: never push to account until cloud preferences loaded successfully.
+    if (!cloudPrefsReady) return;
     saveCloudM.mutate({ kind: "columns", value: next });
   };
   const kindForApi = useMemo(() => {
@@ -1079,11 +1082,13 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                     ? "Cloud unavailable — browser preferences only"
                     : preferenceBusy
                       ? "Loading or syncing preferences…"
-                      : "Column preferences sync to your account"}
+                      : !cloudPrefsReady
+                        ? "Waiting for account preferences…"
+                        : "Column preferences sync to your account"}
                 </DropdownMenuLabel>
                 {canImportBrowserPreferences ? (
                   <DropdownMenuItem
-                    disabled={preferenceBusy}
+                    disabled={preferenceSyncBlocked}
                     onSelect={() => importLegacyM.mutate()}
                   >
                     Import this browser's settings
@@ -1270,7 +1275,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={preferenceBusy}
+                      disabled={preferenceSyncBlocked}
                       onClick={() => importLegacyM.mutate()}
                     >
                       Import browser settings
@@ -1311,12 +1316,13 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                     value={savedViewName}
                     placeholder="e.g. UK suppliers, 30-day terms"
                     onChange={(event) => setSavedViewName(event.target.value)}
+                    disabled={!cloudPrefsReady}
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
-                    disabled={!savedViewName.trim() || preferenceBusy}
+                    disabled={!savedViewName.trim() || preferenceSyncBlocked}
                     onClick={saveCurrentView}
                   >
                     Save view
@@ -1324,7 +1330,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                   <Button
                     size="sm"
                     variant="outline"
-                    disabled={!selectedSavedViewId || preferenceBusy}
+                    disabled={!selectedSavedViewId || preferenceSyncBlocked}
                     onClick={deleteSavedView}
                   >
                     Delete selected

@@ -156,7 +156,7 @@ export function PayrollSalaryStructuresPage() {
   if (listQ.isError) {
     return <QueryErrorState queries={[listQ]} title="Could not load salary structures" />;
   }
-  if (settingsQ.isError && settingsQ.data === undefined) {
+  if (settingsQ.isError) {
     return (
       <QueryErrorState queries={[settingsQ]} title="Could not load payroll components" />
     );
@@ -315,29 +315,31 @@ export function PayrollSalaryStructuresPage() {
                           >
                             <div className="space-y-1 sm:col-span-2">
                               <Label>Component</Label>
-                              <RecordLookupSelect
-                                disabled={!canManage}
-                                value={line.componentTypeId || "none"}
-                                onValueChange={(v) => {
-                                  const lines = [...draft.lines];
-                                  lines[index] = {
-                                    ...line,
-                                    componentTypeId: v === "none" ? "" : v,
-                                  };
-                                  setDraft({ ...draft, lines });
-                                }}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Choose component" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {components.map((c) => (
-                                    <SelectItem key={c.id} value={c.id}>
-                                      {c.code} — {c.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </RecordLookupSelect>
+                              {settingsQ.isSuccess ? (
+                                <RecordLookupSelect
+                                  disabled={!canManage}
+                                  value={line.componentTypeId || "none"}
+                                  onValueChange={(v) => {
+                                    const lines = [...draft.lines];
+                                    lines[index] = {
+                                      ...line,
+                                      componentTypeId: v === "none" ? "" : v,
+                                    };
+                                    setDraft({ ...draft, lines });
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Choose component" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {components.map((c) => (
+                                      <SelectItem key={c.id} value={c.id}>
+                                        {c.code} — {c.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </RecordLookupSelect>
+                              ) : null}
                             </div>
                             <div className="space-y-1">
                               <Label>Fixed ({currency})</Label>
@@ -396,7 +398,7 @@ export function PayrollSalaryStructuresPage() {
                   {canManage ? (
                     <Button
                       size="sm"
-                      disabled={saveM.isPending}
+                      disabled={saveM.isPending || !settingsQ.isSuccess}
                       onClick={() => {
                         const parsed = parseSalaryStructureDraft(draft, currency);
                         if (!parsed.ok) {

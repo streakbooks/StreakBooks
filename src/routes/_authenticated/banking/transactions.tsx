@@ -746,6 +746,10 @@ function BankTransactions() {
       ) : null}
       {canCategorise && reviewing && uncategorisedRows.length > 0 ? (
         <div className="mb-3 space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
+          {optionsQ.isError ? (
+            <QueryErrorState queries={[optionsQ]} title="Could not load coding accounts" />
+          ) : (
+            <>
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">
               {selected.size > 0 ? `${selected.size} selected` : "Bulk coding"}
@@ -790,7 +794,12 @@ function BankTransactions() {
             />
             <Button
               size="sm"
-              disabled={selected.size === 0 || !bulkReady || bulkSelectedM.isPending}
+              disabled={
+                selected.size === 0 ||
+                !bulkReady ||
+                bulkSelectedM.isPending ||
+                !optionsQ.isSuccess
+              }
               onClick={() => bulkSelectedM.mutate()}
             >
               Code selected
@@ -808,7 +817,7 @@ function BankTransactions() {
                   bulkTaxCodeId === NONE ? "" : " and tax code"
                 }, one journal each. Lines that cannot be coded are skipped and reported.`}
                 confirmLabel={`Code all ${total}`}
-                disabled={!bulkReady || bulkAllM.isPending}
+                disabled={!bulkReady || bulkAllM.isPending || !optionsQ.isSuccess}
                 onConfirm={() => bulkAllM.mutate()}
               >
                 Code all {total} matching
@@ -819,6 +828,8 @@ function BankTransactions() {
             </div>
           ) : null}
           {bulkProgress ? <p className="text-xs text-muted-foreground">{bulkProgress}</p> : null}
+            </>
+          )}
         </div>
       ) : null}
 

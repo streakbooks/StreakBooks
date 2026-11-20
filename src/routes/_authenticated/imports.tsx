@@ -887,7 +887,8 @@ function ImportCentre() {
                 queries={[assetReadyQ]}
                 title="Cannot verify fixed-asset import availability"
               />
-            ) : null}
+            ) : (
+              <>
             <p className="text-sm">
               1. Download the sample CSV and field guide above. 2. Upload an asset register. 3.
               Match your columns and review every financial field. 4. Confirm to create register
@@ -1108,6 +1109,8 @@ function ImportCentre() {
                   </p>
                 ))}
               </div>
+            )}
+              </>
             )}
           </div>
         )}

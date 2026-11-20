@@ -297,23 +297,29 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid gap-2 sm:grid-cols-3">
-            <LookupSelect
-              ariaLabel="Report dimension"
-              allowClear={false}
-              value={reportCat}
-              onChange={setReportCat}
-              placeholder="Dimension…"
-              searchPlaceholder="Search dimension"
-              options={cats.map((c) => ({
-                id: c.id,
-                name: c.name,
-                label: c.name,
-                group: dimensionKindLabel(c.dimension_kind),
-                status: c.is_active ? null : "Inactive",
-                disabled: !c.is_active && c.id !== reportCat,
-                keywords: `${c.name} ${c.dimension_kind}`,
-              }))}
-            />
+            {dimsQ.isError ? (
+              <div className="sm:col-span-3">
+                <QueryErrorState queries={[dimsQ]} title="Could not load tracking dimensions" />
+              </div>
+            ) : (
+              <LookupSelect
+                ariaLabel="Report dimension"
+                allowClear={false}
+                value={reportCat}
+                onChange={setReportCat}
+                placeholder="Dimension…"
+                searchPlaceholder="Search dimension"
+                options={cats.map((c) => ({
+                  id: c.id,
+                  name: c.name,
+                  label: c.name,
+                  group: dimensionKindLabel(c.dimension_kind),
+                  status: c.is_active ? null : "Inactive",
+                  disabled: !c.is_active && c.id !== reportCat,
+                  keywords: `${c.name} ${c.dimension_kind}`,
+                }))}
+              />
+            )}
             <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
             <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </div>

@@ -190,7 +190,7 @@ export function PortalSettingsPanel({
         <h2 className="font-semibold">Payment alerts</h2>
         {alerts.isError ? (
           <QueryErrorState queries={[alerts]} title="Could not load portal alerts" />
-        ) : null}
+        ) : (
         <ul className="divide-y divide-border rounded-md border border-border text-sm">
           {(alerts.data ?? []).map((alert) => (
             <li
@@ -237,6 +237,7 @@ export function PortalSettingsPanel({
             <li className="px-3 py-6 text-muted-foreground">No open payment alerts.</li>
           ) : null}
         </ul>
+        )}
       </section>
     </div>
   );
@@ -337,7 +338,7 @@ export function ContactPortalPanel({
       ) : null}
       {access.isError ? (
         <QueryErrorState queries={[access]} title="Could not load portal access" />
-      ) : null}
+      ) : (
       <ul className="divide-y divide-border rounded-md border border-border text-sm">
         {(access.data ?? []).map((row) => (
           <li
@@ -370,11 +371,12 @@ export function ContactPortalPanel({
           <li className="px-3 py-6 text-muted-foreground">No portal invitations.</li>
         ) : null}
       </ul>
+      )}
       <section className="space-y-2">
         <h2 className="font-semibold">Messages</h2>
         {messages.isError ? (
           <QueryErrorState queries={[messages]} title="Could not load portal messages" />
-        ) : null}
+        ) : (
         <ul className="space-y-2 text-sm">
           {(messages.data ?? []).map((row) => (
             <li key={String(row["id"])} className="rounded-md border border-border px-3 py-2">
@@ -383,6 +385,7 @@ export function ContactPortalPanel({
             </li>
           ))}
         </ul>
+        )}
         <form
           className="space-y-2"
           onSubmit={(event) => {
@@ -436,7 +439,7 @@ export function PortalInbox({ companyId }: { companyId: string }) {
         </p>
         {submissions.isError ? (
           <QueryErrorState queries={[submissions]} title="Could not load submissions" />
-        ) : null}
+        ) : (
         <ul className="space-y-3">
           {(submissions.data ?? [])
             .filter((row) => row["status"] === "submitted")
@@ -510,6 +513,7 @@ export function PortalInbox({ companyId }: { companyId: string }) {
             <li className="text-sm text-muted-foreground">No submissions are waiting.</li>
           ) : null}
         </ul>
+        )}
       </section>
       <section className="space-y-2">
         <h2 className="font-semibold">Bank-detail changes</h2>

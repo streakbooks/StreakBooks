@@ -347,6 +347,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
       </RecordWorkspace>
     );
   }
+  if (!pageQ.isSuccess || !pageQ.data) return null;
 
   const { run, schedule, employees, lines, payments, net_outstanding_minor } =
     pageQ.data as PayrollRunPage;

@@ -151,6 +151,7 @@ export function PayrollPayslipsPage({
   if (listQ.isError) {
     return <QueryErrorState queries={[listQ]} title="Could not load payslips" />;
   }
+  if (!listQ.isSuccess || !listQ.data) return null;
 
   const list = listQ.data as PayrollPayslipsListPage;
 

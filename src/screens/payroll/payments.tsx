@@ -346,13 +346,14 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
     );
   }
 
-  const page = paymentsQ.data;
   if (paymentsQ.isPending) return renderPaymentState(<LoadingState />);
   if (paymentsQ.isError) {
     return renderPaymentState(
       <QueryErrorState queries={[paymentsQ]} title="Could not load payments" />,
     );
   }
+  if (!paymentsQ.isSuccess || !paymentsQ.data) return null;
+  const page = paymentsQ.data;
   if (page && !page.available) {
     return (
       <ListWorkspace title="Payroll payments">

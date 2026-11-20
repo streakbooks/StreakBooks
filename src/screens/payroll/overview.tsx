@@ -48,6 +48,7 @@ export function PayrollOverviewPage() {
   if (page.isError) {
     return <QueryErrorState queries={[page]} title="Could not load payroll" />;
   }
+  if (!page.isSuccess || !page.data) return null;
 
   const data = page.data;
   const enabled = Boolean(data.settings?.enabled);

@@ -161,6 +161,7 @@ export function PayrollSalaryStructuresPage() {
       <QueryErrorState queries={[settingsQ]} title="Could not load payroll components" />
     );
   }
+  if (!listQ.isSuccess || !settingsQ.isSuccess || !listQ.data) return null;
 
   const list = listQ.data;
 

@@ -195,9 +195,12 @@ export function HrSelfServicePage() {
       </ListWorkspace>
     );
   }
+  if (!contextQ.isSuccess || !contextQ.data) return null;
 
-  const ctx = contextQ.data!;
-  const types = typesQ.data?.items?.filter((t) => t.isActive) ?? [];
+  const ctx = contextQ.data;
+  const types = typesQ.isSuccess
+    ? (typesQ.data?.items?.filter((t) => t.isActive) ?? [])
+    : [];
 
   return (
     <ListWorkspace
@@ -322,7 +325,7 @@ export function HrSelfServicePage() {
               <LoadingState />
             ) : leaveQ.isError ? (
               <QueryErrorState queries={[leaveQ]} title="Could not load leave requests" />
-            ) : (leaveQ.data?.items.length ?? 0) === 0 ? (
+            ) : !leaveQ.isSuccess ? null : (leaveQ.data?.items.length ?? 0) === 0 ? (
               <EmptyState
                 title="No leave requests"
                 description="Submit a leave request when needed."
@@ -382,7 +385,7 @@ export function HrSelfServicePage() {
               <LoadingState />
             ) : attendanceQ.isError ? (
               <QueryErrorState queries={[attendanceQ]} title="Could not load attendance" />
-            ) : (attendanceQ.data?.items.length ?? 0) === 0 ? (
+            ) : !attendanceQ.isSuccess ? null : (attendanceQ.data?.items.length ?? 0) === 0 ? (
               <EmptyState
                 title="No attendance yet"
                 description="Use Check in / Check out above."

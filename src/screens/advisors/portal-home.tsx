@@ -29,6 +29,7 @@ export function AdvisorsPortalHomePage() {
       </main>
     );
   }
+  if (!query.isSuccess || !query.data) return null;
 
   const home = query.data;
   return (

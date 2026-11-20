@@ -429,7 +429,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
         </Alert>
       ) : null}
 
-      {riskQ.data && riskQ.data.flags.length > 0 ? (
+      {riskQ.isSuccess && riskQ.data && riskQ.data.flags.length > 0 ? (
         <section className="mb-6 space-y-2 rounded-lg border p-4">
           <h2 className="text-base font-semibold">Risk indicators</h2>
           <ul className="list-disc space-y-1 pl-5 text-sm">
@@ -443,7 +443,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
         </section>
       ) : null}
 
-      {duplicatesQ.data && duplicatesQ.data.length > 0 ? (
+      {duplicatesQ.isSuccess && duplicatesQ.data && duplicatesQ.data.length > 0 ? (
         <section className="mb-6 space-y-2 rounded-lg border p-4">
           <h2 className="text-base font-semibold">Possible duplicates</h2>
           <Table>

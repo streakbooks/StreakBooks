@@ -30,6 +30,7 @@ export function AdvisorsPortalTasksPage() {
       </main>
     );
   }
+  if (!query.isSuccess || !query.data) return null;
 
   const statuses = Array.from(new Set(query.data.map((item) => item.status))).sort();
   const visibleTasks = status ? query.data.filter((item) => item.status === status) : query.data;

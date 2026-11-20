@@ -689,7 +689,8 @@ export function ExpenseManagementApprovalsPage() {
         </section>
       ) : null}
 
-      {canActAsApprover && queue.length === 0 ? (
+      {canActAsApprover && (queueQ.isPending || queueQ.isLoading) ? <LoadingState /> : null}
+      {canActAsApprover && queueQ.isSuccess && queue.length === 0 ? (
         <EmptyState
           title="No claims waiting"
           description="Submitted and in-review claims appear here."
@@ -702,7 +703,7 @@ export function ExpenseManagementApprovalsPage() {
           }
         />
       ) : null}
-      {canActAsApprover && queue.length > 0 ? (
+      {canActAsApprover && queueQ.isSuccess && queue.length > 0 ? (
         <Table>
           <TableHeader>
             <TableRow>

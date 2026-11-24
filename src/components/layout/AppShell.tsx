@@ -132,13 +132,13 @@ function Brand({ collapsed }: { collapsed?: boolean }) {
       )}
     >
       <img
-        src="/brand/streakbooks-logo.png"
+        src={collapsed ? "/brand/streakbooks-mark.png" : "/brand/streakbooks-logo.png"}
         alt=""
-        width={collapsed ? 36 : 132}
-        height={collapsed ? 36 : 28}
+        width={collapsed ? 36 : 148}
+        height={collapsed ? 36 : 31}
         className={cn(
           "shrink-0 object-contain object-left",
-          collapsed ? "size-9" : "h-7 w-[8.25rem] max-w-[min(100%,8.25rem)]",
+          collapsed ? "size-9" : "h-8 w-[9.25rem] max-w-[min(100%,9.25rem)]",
         )}
       />
       {collapsed ? <span className="sr-only">StreakBooks</span> : null}

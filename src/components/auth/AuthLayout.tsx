@@ -25,26 +25,16 @@ const POINTS = [
 
 const TRUST = ["Encrypted in transit", "Row-level data isolation", "Two-step verification"];
 
-function Logo({ onDark }: { onDark?: boolean }) {
+function Logo(_props: { onDark?: boolean }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <div
-        className={
-          onDark
-            ? "grid size-9 place-items-center rounded-lg bg-white/10 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur"
-            : "grid size-9 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground"
-        }
-      >
-        LB
-      </div>
-      <div className="leading-tight">
-        <div className={onDark ? "text-sm font-semibold text-white" : "text-sm font-semibold"}>
-          StreakBooks
-        </div>
-        <div className={onDark ? "text-[11px] text-white/60" : "text-[11px] text-muted-foreground"}>
-          Cloud accounting
-        </div>
-      </div>
+    <div className="flex items-center">
+      <img
+        src="/brand/streakbooks-logo.png"
+        alt="StreakBooks"
+        width={168}
+        height={35}
+        className="h-9 w-auto max-w-[10.5rem] object-contain object-left"
+      />
     </div>
   );
 }

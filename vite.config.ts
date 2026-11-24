@@ -26,14 +26,20 @@ function releaseRevision(): Plugin {
   };
 }
 
+const nitroPreset =
+  process.env["NITRO_PRESET"] ??
+  (process.env["CF_PAGES"] === "1" || process.env["CLOUDFLARE"] === "1"
+    ? "cloudflare_pages"
+    : "vercel");
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  // Vercel deploy: Nitro preset overrides the default Cloudflare target.
+  // Default Vercel; set NITRO_PRESET=cloudflare_pages (or CF_PAGES=1) for Cloudflare Pages.
   vite: {
-    plugins: [releaseRevision(), nitro({ preset: "vercel" })],
+    plugins: [releaseRevision(), nitro({ preset: nitroPreset })],
   },
 });

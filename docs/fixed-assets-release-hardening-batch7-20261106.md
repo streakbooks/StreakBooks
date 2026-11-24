@@ -1,9 +1,9 @@
 # Fixed Assets — Batch 7: Release hardening and verification evidence
 
 Date: 2026-11-06
-Repository: `linkbusinessadvisory/LinkBooks`
+Repository: `streakbooks/StreakBooks`
 Working branch: `feature/fixed-assets-register-safety-ux-20261106`
-PR: https://github.com/linkbusinessadvisory/LinkBooks/pull/111 (draft)
+PR: https://github.com/streakbooks/StreakBooks/pull/111 (draft)
 **Release gate: not ready for merge or deployment.**
 
 ## Work completed in source
@@ -26,7 +26,7 @@ This isolated run does **not** replace the project's Vitest suite, `tsc --noEmit
 ## Remaining blockers
 
 - The private repository is not available as a complete checkout in the working container; no authenticated local/project-wide build is available in this chat.
-- The feature branch is significantly behind main because other LinkBooks modules are being merged concurrently. A clean GitHub mergeability indication is not equivalent to latest-main regression verification.
+- The feature branch is significantly behind main because other StreakBooks modules are being merged concurrently. A clean GitHub mergeability indication is not equivalent to latest-main regression verification.
 - The fixed-assets API and posted-ledger reconciliation need real company data, at least two isolated tenants, genuine FX purchase data, locked-period and duplicate-posting fixtures.
 - Browser accessibility, keyboard focus, mobile viewports, screen-reader labelling, form validation, Excel/CSV exports and multi-module navigation must be verified on the running app.
 - Browser-local saved filters are not cross-device sync and do not confer permissions; server-side paging for very large registers remains further work.
@@ -51,7 +51,7 @@ All items must be verified before calling this module production-ready:
 ## PowerShell local verification commands
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git fetch origin
 # Only switch when your working tree is safe: save or commit Cursor changes first.
@@ -109,7 +109,7 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 
 **Local release gate implemented:** `scripts/check-fixed-assets-release.mjs`.
 - Invoked with `node scripts/check-fixed-assets-release.mjs` from a local checkout.
-- Confirms the Git origin is the authorised `linkbusinessadvisory/LinkBooks` repository and does not echo credential-bearing remote URLs.
+- Confirms the Git origin is the authorised `streakbooks/StreakBooks` repository and does not echo credential-bearing remote URLs.
 - Reports current branch, commit and whether the working tree is dirty, without modifying files.
 - Runs existing `npm` scripts for TypeScript typecheck, ESLint, Fixed Assets Vitest, UI contracts, lookup contracts, navigation contracts and production build, then displays a per-check pass/fail summary and returns nonzero when any check fails.
 - Explicitly does **not** call GitHub Actions, merge, fetch/pull, push, apply SQL migrations or deploy.
@@ -239,7 +239,7 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 
 ## Post-merge Batch 7: local release-gate fail-closed hardening
 
-**Date:** 2026-11-06. The original [Fixed Assets PR #111](https://github.com/linkbusinessadvisory/LinkBooks/pull/111) **has merged** into `main` at merge commit `b7d67d321444d5b811ea9d64eb3e8d146de609f4`. The feature branch for that PR was deleted after merge. The original PR's code, including the precision guard, is present on main. The module is **not production-ready** without full QA and deployment verification.
+**Date:** 2026-11-06. The original [Fixed Assets PR #111](https://github.com/streakbooks/StreakBooks/pull/111) **has merged** into `main` at merge commit `b7d67d321444d5b811ea9d64eb3e8d146de609f4`. The feature branch for that PR was deleted after merge. The original PR's code, including the precision guard, is present on main. The module is **not production-ready** without full QA and deployment verification.
 
 **Separate tooling change:** `feature/fixed-assets-release-gate-main-hardening-20261106` (review and merge tracked separately from the already merged PR #111). Changes are **only** to the local release-check script and its regression suite; no accounting API, journal, SQL, RLS, browser runtime, or deployment source is changed.
 
@@ -247,7 +247,7 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 
 `scripts/check-fixed-assets-release.mjs` now requires the following preconditions **before it runs any test or build command**:
 
-1. Exact authorized Git origin `linkbusinessadvisory/LinkBooks` (it never prints a credential-bearing remote URL).
+1. Exact authorized Git origin `streakbooks/StreakBooks` (it never prints a credential-bearing remote URL).
 2. Git's top-level checkout directory exactly matches the script's project root.
 3. The current branch is `main`, not a feature branch or a detached HEAD.
 4. The Git worktree contains no modified or untracked files.
@@ -279,12 +279,12 @@ These tests prove preflight and orchestration behaviour in a **Linux** sandbox o
 - Actual nine-check project gate in a clean, recently fetched `main` checkout.
 - Authenticated two-tenant RLS/permissions, posting idempotency, locked-period, FX and disposal accounting verification, and browser/mobile/accessibility QA.
 - PR review and merge of the new release-gate-only change (separate from merged PR #111).
-- Deployment repository alignment: the connected Vercel `linkbooks` project's last observed deployment is tied to the **old** `rohitmehra86/LinkBooks` repository, not the authoritative `linkbusinessadvisory/LinkBooks` repository. Reconnect/verify the correct project before any deployment claim.
+- Deployment repository alignment: the connected Vercel `streakbooks` project's last observed deployment is tied to the **old** `streakbooks/StreakBooks` repository, not the authoritative `streakbooks/StreakBooks` repository. Reconnect/verify the correct project before any deployment claim.
 
 ### Recommended local commands
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 # Save or commit unfinished Cursor work before changing branches.
 git fetch origin --prune

@@ -1,4 +1,4 @@
-# LinkBooks — Accounting Posting Rules
+# StreakBooks — Accounting Posting Rules
 
 **Authority:** There is exactly one posting path — `PostingEngine`.  
 Sales, Purchases, Banking, Tax, Fixed Assets, and Manual Journals **must not** write posted ledger rows another way.

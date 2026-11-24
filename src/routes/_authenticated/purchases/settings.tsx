@@ -10,7 +10,7 @@ import { CompanyEmptyState } from "@/components/common/company-empty";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/purchases/settings")({
-  head: () => ({ meta: [{ title: "Purchases settings — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Purchases settings — StreakBooks" }] }),
   component: PurchasesSettingsPage,
 });
 

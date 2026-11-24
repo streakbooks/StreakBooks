@@ -11,7 +11,7 @@ async function signIn(page: Page, destination: string) {
   await page.waitForURL((url) => !url.pathname.startsWith("/auth"), { timeout: 20_000 });
 }
 
-test.describe("Native LinkBooks module section browsing", () => {
+test.describe("Native StreakBooks module section browsing", () => {
   test.beforeEach(() => {
     test.skip(!email || !password, "An authorised E2E test user is required");
   });

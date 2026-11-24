@@ -2,9 +2,9 @@
 
 ## Scope and evidence
 
-Reviewed the current `src/routes/_authenticated/files.tsx`, attachment server functions, folder functions, storage path validation, document migrations, existing parity audit and the supplied LinkBooks Files / Xero Documents screenshots. This is a **first implemented slice**, not a claim of full document-management parity.
+Reviewed the current `src/routes/_authenticated/files.tsx`, attachment server functions, folder functions, storage path validation, document migrations, existing parity audit and the supplied StreakBooks Files / Xero Documents screenshots. This is a **first implemented slice**, not a claim of full document-management parity.
 
-### Verified current LinkBooks foundation
+### Verified current StreakBooks foundation
 
 - Company-wide list, 25-row pages, filename search and entity filter with server-side RLS on attachments.
 - Private `company-documents` bucket, size/type validation, signed downloads, attachment links to transaction records, audit events for upload and delete.
@@ -16,7 +16,7 @@ Reviewed the current `src/routes/_authenticated/files.tsx`, attachment server fu
 
 | Product | Confirmed relevant workflow | Important distinction |
 | --- | --- | --- |
-| Xero | Inbox and Archive, upload/email intake, move into folders, attach to records, preview, rename and bulk file management. | A screenshot of an empty inbox is not evidence of full intake configuration in LinkBooks. |
+| Xero | Inbox and Archive, upload/email intake, move into folders, attach to records, preview, rename and bulk file management. | A screenshot of an empty inbox is not evidence of full intake configuration in StreakBooks. |
 | QuickBooks Online | Mobile/computer/email receipt capture, extraction, human review and matching/creating expense or bill transactions. | Plan-dependent functionality; accounting review remains necessary. |
 | Odoo Documents | Folders, tags, linked records, file requests, email aliases, PDF split/merge and cross-app flows. | Documents/accounting addons include Enterprise functionality; the public `odoo/odoo` repository alone does not expose every proprietary implementation. |
 

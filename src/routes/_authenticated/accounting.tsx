@@ -11,10 +11,10 @@ import { Accounting } from "@/screens/accounting";
 export const Route = createFileRoute("/_authenticated/accounting")({
   head: () => ({
     meta: [
-      { title: "Accounting — LinkBooks" },
+      { title: "Accounting — StreakBooks" },
       {
         name: "description",
-        content: "Chart of accounts, manual journals and the general ledger in LinkBooks.",
+        content: "Chart of accounts, manual journals and the general ledger in StreakBooks.",
       },
     ],
   }),

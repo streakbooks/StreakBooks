@@ -1,6 +1,6 @@
 # Expense Management — Standalone navigation decision
 
-**Approved:** Expense Management is a **top-level** LinkBooks sidebar module.
+**Approved:** Expense Management is a **top-level** StreakBooks sidebar module.
 
 ## Navigation
 

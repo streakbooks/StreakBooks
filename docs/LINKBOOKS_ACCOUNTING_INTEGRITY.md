@@ -1,10 +1,10 @@
-# LinkBooks — Accounting Integrity (Owner Audit)
+# StreakBooks — Accounting Integrity (Owner Audit)
 
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-10-19 |
 | **Scope** | Ledger correctness, immutability, demo parity, test evidence |
-| **Supersedes** | Informal “single engine” notes; partial tables in [LINKBOOKS_PRODUCTION_READINESS_REPORT.md](./LINKBOOKS_PRODUCTION_READINESS_REPORT.md) |
+| **Supersedes** | Informal “single engine” notes; partial tables in [STREAKBOOKS_PRODUCTION_READINESS_REPORT.md](./STREAKBOOKS_PRODUCTION_READINESS_REPORT.md) |
 
 ## Architecture (authoritative path)
 
@@ -125,7 +125,7 @@ Reports (TB, P&L, BS, GL, aging, tax summary) are implemented as **pure function
 
 ## Related documents
 
-- [LINKBOOKS_FEATURE_CATALOG.md](./LINKBOOKS_FEATURE_CATALOG.md)
-- [LINKBOOKS_GAP_REGISTER.md](./LINKBOOKS_GAP_REGISTER.md)
-- [LINKBOOKS_SECURITY_REVIEW.md](./LINKBOOKS_SECURITY_REVIEW.md)
+- [STREAKBOOKS_FEATURE_CATALOG.md](./STREAKBOOKS_FEATURE_CATALOG.md)
+- [STREAKBOOKS_GAP_REGISTER.md](./STREAKBOOKS_GAP_REGISTER.md)
+- [STREAKBOOKS_SECURITY_REVIEW.md](./STREAKBOOKS_SECURITY_REVIEW.md)
 - [ARCHITECTURE_MVP.md](./ARCHITECTURE_MVP.md)

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * LinkBooks Fixed Assets — local, non-CI release verification.
+ * StreakBooks Fixed Assets — local, non-CI release verification.
  *
  * Fail closed before running tests unless on a CLEAN authoritative main
  * checkout at exactly the locally fetched origin/main SHA. No network,
@@ -61,14 +61,14 @@ if (process.argv.length !== 2) {
   process.exit(2);
 }
 
-console.log("\nLinkBooks Fixed Assets — local non-CI release verification");
+console.log("\nStreakBooks Fixed Assets — local non-CI release verification");
 
 // Do not log the origin URL: it may contain a credential.
 const origin = git(["config", "--get", "remote.origin.url"]);
 const authoritative =
-  /^((https:\/\/|ssh:\/\/git@)github\.com\/|git@github\.com:|https:\/\/[^@]+@github\.com\/)(linkbusinessadvisory\/LinkBooks)(\.git)?\/?$/i;
+  /^((https:\/\/|ssh:\/\/git@)github\.com\/|git@github\.com:|https:\/\/[^@]+@github\.com\/)(linkbusinessadvisory\/StreakBooks)(\.git)?\/?$/i;
 if (origin === null || !authoritative.test(origin)) {
-  refuse("Git origin is not linkbusinessadvisory/LinkBooks.");
+  refuse("Git origin is not streakbooks/StreakBooks.");
 }
 
 const root = git(["rev-parse", "--show-toplevel"]);
@@ -95,7 +95,7 @@ if (sha !== trackedMain) {
   );
 }
 
-console.log("Repository: linkbusinessadvisory/LinkBooks (origin verified; URL hidden)");
+console.log("Repository: streakbooks/StreakBooks (origin verified; URL hidden)");
 console.log("Branch: main (verified clean)");
 console.log("Local HEAD: " + sha);
 console.log("Fetched origin/main: " + trackedMain);

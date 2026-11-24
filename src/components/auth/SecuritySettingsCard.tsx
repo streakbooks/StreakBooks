@@ -59,7 +59,7 @@ export function SecuritySettingsCard() {
       }
       const { data, error: enrollError } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        issuer: "LinkBooks",
+        issuer: "StreakBooks",
         friendlyName: `Authenticator ${new Date().toISOString().slice(0, 10)} ${Date.now() % 10000}`,
       });
       if (enrollError) throw enrollError;
@@ -286,7 +286,7 @@ export function SecuritySettingsCard() {
             variant="outline"
             disabled={signOutAllM.isPending}
             onClick={() => {
-              if (window.confirm("Sign out of LinkBooks on all devices?")) signOutAllM.mutate();
+              if (window.confirm("Sign out of StreakBooks on all devices?")) signOutAllM.mutate();
             }}
           >
             {signOutAllM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}

@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/banking/journal/$journalId
     );
     return returnContext ? { returnContext } : {};
   },
-  head: () => ({ meta: [{ title: "Journal — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Journal — StreakBooks" }] }),
   component: JournalDetail,
 });
 

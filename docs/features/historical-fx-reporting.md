@@ -15,4 +15,4 @@ The canonical ledger report converts posted lines from journal currency to compa
 The authorized user sees a clear error rather than wrong GBP/USD results for any foreign journal with missing FX provenance. Synthetic USD→GBP, JPY→USD, GBP base, unsafe JSON numbers and exact large numeric strings are verified in automated tests. Signed-in report and export review must independently confirm no data is silently truncated, and foreign journals that previously had missing rates need an approved **read-only** historical audit. Never backfill an exchange rate without accountant approval.
 
 ## Dependencies and clean room
-No new npm dependencies, third-party code, templates, artwork or schemas. Derived from the original LinkBooks `fx.ts` and existing accounting invariants. Requires exact-head CI and bank/accounting acceptance before considering this part of production FX certification.
+No new npm dependencies, third-party code, templates, artwork or schemas. Derived from the original StreakBooks `fx.ts` and existing accounting invariants. Requires exact-head CI and bank/accounting acceptance before considering this part of production FX certification.

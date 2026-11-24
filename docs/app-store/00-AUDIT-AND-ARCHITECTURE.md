@@ -1,12 +1,12 @@
-# LinkBooks App Store — Audit & Architecture (AS-01)
+# StreakBooks App Store — Audit & Architecture (AS-01)
 
-**Branch:** `feature/linkbooks-app-store`  
-**Worktree:** `D:\MyApp\LinkBooks-app-store`  
+**Branch:** `feature/streakbooks-app-store`  
+**Worktree:** `D:\MyApp\StreakBooks-app-store`  
 **Date:** 2026-11-07
 
 ## Product direction (confirmed)
 
-LinkBooks is an **open integration platform** with:
+StreakBooks is an **open integration platform** with:
 
 1. **Customer App Store** — discover, request/install, manage connections.
 2. **Secure public API + developer portal** — third parties (Hubdoc, Link My Books, others) integrate subject to API availability, cooperation and technical approvals.
@@ -23,7 +23,7 @@ LinkBooks is an **open integration platform** with:
 | Hubdoc / Link My Books partner API | Missing |
 | Public developer OAuth for partners | Missing |
 | Settings → Integrations & API | Honest health catalogue only (email / FX / bank / gateway) |
-| Stripe / Razorpay in repo | LinkBooks SaaS billing + portal checkout only — **not** merchant App Store connectors |
+| Stripe / Razorpay in repo | StreakBooks SaaS billing + portal checkout only — **not** merchant App Store connectors |
 | `organisation_secrets` | Digest-only placeholders; not a recoverable vault |
 | `bank_feed_connections` | Status stub; no live aggregator |
 
@@ -40,7 +40,7 @@ LinkBooks is an **open integration platform** with:
 - No E2E sync verified for any provider.
 - No production Install for native connectors.
 - Partner listings do not imply a working Hubdoc or Link My Books connection.
-- Marketplace billing is separate from LinkBooks SaaS billing (not activated in AS-01).
+- Marketplace billing is separate from StreakBooks SaaS billing (not activated in AS-01).
 
 ## Xero-parity addendum
 

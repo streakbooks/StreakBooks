@@ -1,4 +1,4 @@
-# LinkBooks design system
+# StreakBooks design system
 
 **Version:** 2026-11-18 Batch 33 (light premium palette + Batch 29 semantic system). Extends existing tokens — does not introduce a second design system.
 
@@ -56,6 +56,6 @@ Live demonstrations stay inside the product / developer sandbox — no separate 
 
 ## Themes
 
-Eight named palettes + custom; light/dark/system independent. Persistence is browser-local today (`linkbooks-theme*` keys); per-user/company sync remains a later verified batch. Theme changes must not alter semantic financial status colours.
+Eight named palettes + custom; light/dark/system independent. Persistence is browser-local today (`streakbooks-theme*` keys); per-user/company sync remains a later verified batch. Theme changes must not alter semantic financial status colours.
 
 **Light-mode default (Batch 33):** very light canvas (`#F7FAFC`), white cards, soft pastel primary blue (`#4F7DF3`), **light sidebar** with `#EEF4FF` selected states. Avoid dark-heavy navigator blocks in light mode. See [LIGHT_PREMIUM_PALETTE.md](./LIGHT_PREMIUM_PALETTE.md).

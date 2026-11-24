@@ -12,10 +12,10 @@ import { FEATURE_REGISTRY } from "@/lib/platform/feature-registry";
 export const Route = createFileRoute("/pricing_/builder")({
   head: () => ({
     meta: [
-      { title: "Plan builder — LinkBooks" },
+      { title: "Plan builder — StreakBooks" },
       {
         name: "description",
-        content: "Quote a LinkBooks plan and published add-ons. This page does not charge a card.",
+        content: "Quote a StreakBooks plan and published add-ons. This page does not charge a card.",
       },
     ],
   }),
@@ -57,7 +57,7 @@ function PlanBuilderPage() {
         <h1 className="text-3xl font-semibold">Plan builder</h1>
         <p className="text-sm text-muted-foreground">
           The quote uses the same published plan prices and live feature price book as the rest of
-          LinkBooks. Tax is the operator-set rate on each price, not a filing position. This page
+          StreakBooks. Tax is the operator-set rate on each price, not a filing position. This page
           does not charge a card or change a subscription.
         </p>
       </header>

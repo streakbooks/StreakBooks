@@ -51,12 +51,12 @@ DOCUMENT_OCR_JOB_SIGNING_KEY=<long-random-secret-at-least-32-characters>
 ## Required local verification — GitHub CI intentionally prohibited
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git fetch origin
 git worktree list
 # Only create the directory if it does NOT already exist:
-git worktree add --detach D:\MyApp\LinkBooks-Files-B6 origin/feature/files-workspace-ux-20261106
-cd D:\MyApp\LinkBooks-Files-B6
+git worktree add --detach D:\MyApp\StreakBooks-Files-B6 origin/feature/files-workspace-ux-20261106
+cd D:\MyApp\StreakBooks-Files-B6
 npm.cmd ci
 npm.cmd run typecheck
 npm.cmd run lint

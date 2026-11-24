@@ -16,7 +16,7 @@ export const Route = createFileRoute("/auth_/mfa")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string | undefined } => ({
     redirect: typeof search["redirect"] === "string" ? (search["redirect"] as string) : undefined,
   }),
-  head: () => ({ meta: [{ title: "Two-step verification — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Two-step verification — StreakBooks" }] }),
   component: MfaChallengePage,
 });
 
@@ -156,7 +156,7 @@ function MfaChallengePage() {
           {busy ? "Verifying…" : "Verify"}
         </Button>
         <p className="text-xs text-muted-foreground">
-          Lost access to your authenticator? Ask an organisation owner to contact LinkBooks support
+          Lost access to your authenticator? Ask an organisation owner to contact StreakBooks support
           to verify your identity and reset two-step verification.
         </p>
       </form>

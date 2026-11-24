@@ -1,9 +1,9 @@
-# LinkBooks — Competitive Benchmark (Owner Audit)
+# StreakBooks — Competitive Benchmark (Owner Audit)
 
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-10-19 |
-| **LinkBooks reference** | Friend demo deploy; ledger MVP per [LINKBOOKS_FEATURE_CATALOG.md](./LINKBOOKS_FEATURE_CATALOG.md) |
+| **StreakBooks reference** | Friend demo deploy; ledger MVP per [STREAKBOOKS_FEATURE_CATALOG.md](./STREAKBOOKS_FEATURE_CATALOG.md) |
 | **Method** | Capability matrix vs 20 products; official marketing/docs cited where used; **unverified** = not confirmed from primary source in this audit pass |
 
 ### Legend (cell values)
@@ -27,9 +27,9 @@ QuickBooks Online (QBO), Xero, Wave, Zoho Books, FreshBooks, Sage Accounting (cl
 
 ## Capability matrix (high-level)
 
-Rows reflect what SMB buyers typically compare. LinkBooks column is **evidence-based** from repo audit, not aspirations.
+Rows reflect what SMB buyers typically compare. StreakBooks column is **evidence-based** from repo audit, not aspirations.
 
-| Capability | LinkBooks | QBO | Xero | Wave | Zoho Books | FreshBooks | Sage Acct | FreeAgent | Kashoo | Akaunting | Odoo Acct | Manager.io | ERPNext | MYOB | TallyPrime | Clear Books | AccountEdge | NetSuite | Sage Intacct | Patriot | ZarMoney |
+| Capability | StreakBooks | QBO | Xero | Wave | Zoho Books | FreshBooks | Sage Acct | FreeAgent | Kashoo | Akaunting | Odoo Acct | Manager.io | ERPNext | MYOB | TallyPrime | Clear Books | AccountEdge | NetSuite | Sage Intacct | Patriot | ZarMoney |
 |------------|-----------|-----|------|------|------------|------------|-----------|-----------|--------|-----------|-----------|------------|---------|------|------------|-------------|-------------|-----------|----------|--------------|---------|----------|
 | Double-entry GL | N | N | N | N | N | P | N | N | N | N | N | N | N | N | N | N | N | N | N | N | N |
 | AR invoicing | N* | N | N | N | N | N | N | N | N | N | N | N | N | N | N | N | N | N | N | N | N |
@@ -47,7 +47,7 @@ Rows reflect what SMB buyers typically compare. LinkBooks column is **evidence-b
 | Mobile apps | — | N | N | N | N | N | N | N | ? | ? | N | N | ? | N | N | ? | ? | N | N | ? | ? |
 | AI-assisted bookkeeping | P§ | P/A | A | — | ? | ? | ? | ? | — | — | ? | — | — | ? | — | — | — | A | ? | — | — |
 
-\* LinkBooks: implemented but incompletely verified (no live E2E).  
+\* StreakBooks: implemented but incompletely verified (no live E2E).  
 † CSV/rules/reconcile; no live feeds.  
 ‡ Tax rates exist; document lines use bps not code picker (gap G-017).  
 § Optional key; suggestions only; no auto-post.
@@ -61,7 +61,7 @@ Cells marked **?** were not re-validated line-by-line against each vendor’s 20
 
 ---
 
-## LinkBooks vs market — honest position
+## StreakBooks vs market — honest position
 
 | Dimension | Assessment |
 |-----------|------------|
@@ -94,7 +94,7 @@ Hypotheses for positioning and product bets — **not claims of unique invention
 
 ---
 
-## When LinkBooks is **not** the right tool (today)
+## When StreakBooks is **not** the right tool (today)
 
 - Live bank feeds required day one  
 - Payroll, inventory, or fixed assets on critical path  
@@ -106,6 +106,6 @@ Hypotheses for positioning and product bets — **not claims of unique invention
 
 ## Related documents
 
-- [LINKBOOKS_FEATURE_CATALOG.md](./LINKBOOKS_FEATURE_CATALOG.md)
-- [LINKBOOKS_GAP_REGISTER.md](./LINKBOOKS_GAP_REGISTER.md)
-- [LINKBOOKS_PRODUCTION_READINESS.md](./LINKBOOKS_PRODUCTION_READINESS.md)
+- [STREAKBOOKS_FEATURE_CATALOG.md](./STREAKBOOKS_FEATURE_CATALOG.md)
+- [STREAKBOOKS_GAP_REGISTER.md](./STREAKBOOKS_GAP_REGISTER.md)
+- [STREAKBOOKS_PRODUCTION_READINESS.md](./STREAKBOOKS_PRODUCTION_READINESS.md)

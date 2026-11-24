@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_authenticated/payroll/employees/")({
     parseCreateSearchFlag(raw) ? { create: true } : {},
   head: () => ({
     meta: [
-      { title: "Payroll employees — LinkBooks" },
+      { title: "Payroll employees — StreakBooks" },
       {
         name: "description",
         content: "Manage payroll employees, payment details and salary assignments.",

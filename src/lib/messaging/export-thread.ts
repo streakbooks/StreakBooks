@@ -7,7 +7,7 @@ export function buildMessagingThreadExport(input: {
   messages: MessagingMessage[];
 }): string {
   const lines = [
-    `LinkBooks Messages export`,
+    `StreakBooks Messages export`,
     `Conversation: ${input.title}`,
     `Id: ${input.conversationId}`,
     `Exported at: ${new Date().toISOString()}`,

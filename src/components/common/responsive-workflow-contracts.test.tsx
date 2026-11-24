@@ -7,7 +7,7 @@ import { PageHeader, SectionHeader } from "./states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 
-describe("LinkBooks responsive workflow contract", () => {
+describe("StreakBooks responsive workflow contract", () => {
   it("keeps table search available with an accessible, keyboard-reachable field", () => {
     const markup = renderToStaticMarkup(
       <DataTableToolbar search="invoice" onSearchChange={() => {}} />,

@@ -1,6 +1,6 @@
-# LinkBooks CRM — UI/UX delivery and gap register (2026-11-09)
+# StreakBooks CRM — UI/UX delivery and gap register (2026-11-09)
 
-**Repository:** `linkbusinessadvisory/LinkBooks`  
+**Repository:** `streakbooks/StreakBooks`  
 **Feature branch:** `feature/crm-ui-ux-navigation-validation-20261109`  
 **Base:** `main` as inspected on 2026-11-09  
 **Scope:** all 20 existing CRM navigation sections; shared Contacts, Sales and Products remain authoritative.
@@ -18,7 +18,7 @@
 | ID | Deliverable | Branch code | Test / live QA | Acceptance |
 | --- | --- | --- | --- | --- |
 | UX-01 | Compact, responsive grouped CRM navigation across all 20 section links | Authored | Pending | Active group, keyboard focus, Ctrl/Cmd-click, browser back/forward, role filtering |
-| UX-02 | Shared semantic status badge using LinkBooks theme tokens | Authored | Pending | Won, lost, lead, task statuses readable on light/dark themes |
+| UX-02 | Shared semantic status badge using StreakBooks theme tokens | Authored | Pending | Won, lost, lead, task statuses readable on light/dark themes |
 | UX-03 | Lead form identity, email and precise monetary validation | Authored | Pending | Invalid input cannot be silently saved as zero |
 | UX-04 | Fail-closed lead duplicate-check error state and explicit acknowledgement | Authored | Pending | Failed or pending duplicate check cannot create the lead |
 | UX-05 | Lead search on loaded rows and linked lead names | Authored | Pending | Search matches number/name/email, clear loaded-only disclosure |
@@ -30,7 +30,7 @@
 | UX-11 | CRM quote navigation stays in-app and preserves browser history | Authored | Pending | Draft/reuse opens correct Sales quote, no duplicate |
 | UX-12 | CRM Contacts route has its own accurate title and scope description | Authored | Pending | Does not falsely imply full person directory exists |
 | UX-13 | CRM overview call to action describes its actual destination | Authored | Pending | "Manage leads" goes to lead workspace |
-| UX-14 | Unit-test source added for lead validation, deal validation, status semantics | Authored | **Not executed here** | Tests pass in actual LinkBooks workspace |
+| UX-14 | Unit-test source added for lead validation, deal validation, status semantics | Authored | **Not executed here** | Tests pass in actual StreakBooks workspace |
 
 **Branch code delivery:** 14/14 defined items authored. **Functional verification:** 0/14 proven by this remote GitHub-only review.  
 **GitHub PR/merge:** to be recorded separately when opened; **Supabase migration/deployment:** not part of this branch.

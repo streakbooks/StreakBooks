@@ -9,7 +9,7 @@ import {
 
 /** Persisted column visibility + density for one table (`storageKey` e.g. "invoices"). */
 export function useTablePrefs(storageKey: string, columnIds: string[]) {
-  const key = `linkbooks-table:${storageKey}`;
+  const key = `streakbooks-table:${storageKey}`;
   const [prefs, setPrefs] = useState<TablePrefs>(DEFAULT_TABLE_PREFS);
   const idsKey = columnIds.join("|");
 

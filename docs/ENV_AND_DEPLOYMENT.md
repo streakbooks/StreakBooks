@@ -1,4 +1,4 @@
-# LinkBooks — Environment variables & deployment safety
+# StreakBooks — Environment variables & deployment safety
 
 **Never paste secret values into chat, commits, or docs.** This file lists **names only**.
 
@@ -13,7 +13,7 @@
 | `SUPABASE_PUBLISHABLE_KEY` | Server auth middleware | Publishable only |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server admin client only | **Yes — never `VITE_*`** |
 | `SUPABASE_PROJECT_ID` | Tooling | No |
-| `LOVABLE_CRON_SECRET` | Cron auth (if used) | Yes — server only |
+| `STREAKBOOKS_CRON_SECRET` | Cron auth (if used) | Yes — server only |
 | `AI_API_KEY` / `OPENAI_API_KEY` | AI assistant provider | **Yes — never `VITE_*`** |
 | `AI_BASE_URL` | OpenAI-compatible base URL | No (default api.openai.com) |
 | `AI_MODEL` | Model id | No |

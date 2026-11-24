@@ -1,5 +1,5 @@
 -- Basic Global Payroll Batch 7: multi-tenant RLS and payment-detail boundary smoke.
--- Run against an isolated Postgres with LinkBooks migrations applied (not production).
+-- Run against an isolated Postgres with StreakBooks migrations applied (not production).
 \set ON_ERROR_STOP on
 
 BEGIN;

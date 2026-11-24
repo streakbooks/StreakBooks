@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import { validateStagingTarget } from "./staging-target.mjs";
 
 const staging = {
-  stagingUrl: "https://staging.linkbooks.example.com",
-  expectedHost: "staging.linkbooks.example.com",
-  productionUrl: "https://app.linkbooks.example.com",
+  stagingUrl: "https://staging.streakbooks.example.com",
+  expectedHost: "staging.streakbooks.example.com",
+  productionUrl: "https://app.streakbooks.example.com",
 };
 
 describe("staging E2E safety guard", () => {
   it("accepts only an explicit, distinct HTTPS staging origin", () => {
     expect(validateStagingTarget(staging)).toEqual({
-      origin: "https://staging.linkbooks.example.com",
-      hostname: "staging.linkbooks.example.com",
+      origin: "https://staging.streakbooks.example.com",
+      hostname: "staging.streakbooks.example.com",
     });
   });
 
@@ -20,7 +20,7 @@ describe("staging E2E safety guard", () => {
       validateStagingTarget({
         ...staging,
         stagingUrl: staging.productionUrl,
-        expectedHost: "app.linkbooks.example.com",
+        expectedHost: "app.streakbooks.example.com",
       }),
     ).toThrow(/production hostname/);
   });
@@ -36,12 +36,12 @@ describe("staging E2E safety guard", () => {
 
   it("rejects HTTP, embedded credentials, query strings, fragments and custom paths", () => {
     for (const url of [
-      "http://staging.linkbooks.example.com",
-      "https://user:pass@staging.linkbooks.example.com",
-      "https://staging.linkbooks.example.com/?token=x",
-      "https://staging.linkbooks.example.com/#password",
-      "https://staging.linkbooks.example.com/login",
-      "https://staging.linkbooks.example.com:9443",
+      "http://staging.streakbooks.example.com",
+      "https://user:pass@staging.streakbooks.example.com",
+      "https://staging.streakbooks.example.com/?token=x",
+      "https://staging.streakbooks.example.com/#password",
+      "https://staging.streakbooks.example.com/login",
+      "https://staging.streakbooks.example.com:9443",
     ]) {
       expect(() => validateStagingTarget({ ...staging, stagingUrl: url })).toThrow();
     }
@@ -51,7 +51,7 @@ describe("staging E2E safety guard", () => {
     expect(() => validateStagingTarget({ ...staging, productionUrl: "" })).toThrow();
     expect(() => validateStagingTarget({ ...staging, expectedHost: "" })).toThrow();
     expect(() =>
-      validateStagingTarget({ ...staging, expectedHost: "https://staging.linkbooks.example.com" }),
+      validateStagingTarget({ ...staging, expectedHost: "https://staging.streakbooks.example.com" }),
     ).toThrow();
   });
 

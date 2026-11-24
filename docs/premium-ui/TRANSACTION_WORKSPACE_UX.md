@@ -1,9 +1,9 @@
-# LinkBooks Transaction Workspace UX Contract
+# StreakBooks Transaction Workspace UX Contract
 
 **Version:** Batch 42 (2026-11-18)  
 **Originality:** See [ORIGINALITY_AND_REFERENCE_POLICY.md](./ORIGINALITY_AND_REFERENCE_POLICY.md). Competitor screens (invoice, quote, bill, PO, receive/spend money, journal) are **usability references only** — never visual templates.
 
-## LinkBooks composition (original)
+## StreakBooks composition (original)
 
 ```
 AppShell (navy sidebar) → ModuleSubnav → TransactionWorkspace
@@ -13,17 +13,17 @@ AppShell (navy sidebar) → ModuleSubnav → TransactionWorkspace
   [ EditableLineItemGrid — sticky header · Lucide row actions · Add line ]
   [ TotalsSummary bottom-right — engine values, tabular mono ]
   [ Support panels: Notes / History / Attachments / Related ]
-  [ Sticky action bar using LinkBooks primary/outline buttons ]
+  [ Sticky action bar using StreakBooks primary/outline buttons ]
 ```
 
 This composition is **sidebar-first**, token-driven, and distinct from top-nav / boxed-card competitor shells.
 
 ## Capability principles (not visual copying)
 
-| Principle | LinkBooks implementation |
+| Principle | StreakBooks implementation |
 | --- | --- |
 | Full-page entry | Authenticated routes + `TransactionWorkspace` |
-| Reachable actions while scrolling | `stickyActions` slot — LinkBooks Button / SplitButton only |
+| Reachable actions while scrolling | `stickyActions` slot — StreakBooks Button / SplitButton only |
 | Dense header fields | `FormGrid` + `FormControlShell` (`lb-field-contact` 280–420px, `lb-field-date` ≤180px, `lb-field-money`/`lb-field-currency`) + existing lookups |
 | Spreadsheet lines | `EditableLineItemGrid` + domain cell editors on **every New/+ transaction route** (sales, purchases, journals, credits, POs, claims); **2 default empty rows** (`DEFAULT_DOCUMENT_LINE_ROWS`) with Add line; **`width: 100%` + `table-layout: fixed`**; **one fluid column** (Description / Item) absorbs leftover width via `lineGridColumnStyle` — no abandoned right-side blank; fixed numeric/account columns stay compact; **resize handles**; **Columns** beside Add line; quiet cell chrome; **wrap text** on description cells (`lb-spreadsheet-wrap` / `VoiceTextarea`, compact `rows={1}`) |
 | Space utilisation | Unexplained gap between line table and its scroll container ≤ **24px** at ≥1280px (Playwright density fixture). Sticky save bar spans the content column (sidebar-aware), full-width, actions right-aligned. Compact price-list selector + disclosure help (no oversized instructional card). |
@@ -39,7 +39,7 @@ This composition is **sidebar-first**, token-driven, and distinct from top-nav /
 - No status “chevron ribbon” motifs from third-party ERPs
 - No field leading-icon clusters that reproduce a competitor form look
 - No boxed “floating card on grey canvas” as the only composition when AppShell already provides the workspace
-- Tracking / class / location columns use LinkBooks dimension labels — never mimic a third-party custom column brand name
+- Tracking / class / location columns use StreakBooks dimension labels — never mimic a third-party custom column brand name
 
 ## Component mapping
 

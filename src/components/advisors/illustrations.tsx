@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 type Props = SVGProps<SVGSVGElement> & { title?: string };
 
 export function WeDoYourBooksIllustration({ className, title, ...props }: Props) {
-  const label = title ?? "LinkBooks Advisors — We do your books";
+  const label = title ?? "StreakBooks Advisors — We do your books";
   return (
     <svg
       viewBox="0 0 640 420"
@@ -77,7 +77,7 @@ export function WeDoYourBooksIllustration({ className, title, ...props }: Props)
 }
 
 export function WeCoachYouIllustration({ className, title, ...props }: Props) {
-  const label = title ?? "LinkBooks Advisors — We coach you";
+  const label = title ?? "StreakBooks Advisors — We coach you";
   return (
     <svg
       viewBox="0 0 640 420"

@@ -68,7 +68,7 @@ Do not forward exports to recipients who lack client access.
 
 ## Local verification
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 if (git status --porcelain) { throw "Save or stash changes first." }
 git switch main

@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 export const Route = createFileRoute("/_authenticated/platform")({
   component: PlatformLayout,
-  head: () => ({ meta: [{ title: "Superadmin Control Centre — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Superadmin Control Centre — StreakBooks" }] }),
 });
 function PlatformLayout() {
   const load = useServerFn(getPlatformContext);
@@ -76,7 +76,7 @@ function PlatformLayout() {
             LB
           </span>
           <div>
-            <strong className="block text-sm">LinkBooks</strong>
+            <strong className="block text-sm">StreakBooks</strong>
             <span className="text-xs opacity-65">Superadmin Control Centre</span>
           </div>
         </div>

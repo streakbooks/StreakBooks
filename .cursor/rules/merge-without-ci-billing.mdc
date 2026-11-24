@@ -5,7 +5,7 @@ alwaysApply: true
 
 # CI billing failures vs real test failures
 
-Gulshan (Operations) standing guidance for LinkBooks (`linkbusinessadvisory/LinkBooks`):
+Gulshan (Operations) standing guidance for StreakBooks (`streakbooks/StreakBooks`):
 
 1. When GitHub Actions jobs fail because **org billing / spending limit** prevented jobs from starting (not because of real test failures), document that honestly — do **not** treat 0-step / ~1–2s empty jobs as real test failures.
 2. After **local quality gates** pass for the batch (relevant Vitest, `check:navigation`, `check:browsing-coverage`, and other batch-specific checks), the PR may be considered locally verified for review.

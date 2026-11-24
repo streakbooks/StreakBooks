@@ -1,4 +1,4 @@
-/** Theme-aware semantic CRM statuses; colors come from LinkBooks' design tokens. */
+/** Theme-aware semantic CRM statuses; colors come from StreakBooks' design tokens. */
 export const CRM_STATUS_VARIANTS = {
   new: "info",
   contacted: "info",

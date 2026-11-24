@@ -61,7 +61,7 @@ Signal’s identity uses three offset light fins with asymmetric heights and sla
 contours, drawn entirely in CSS. Indigo/cyan light and a restrained amber accent
 communicate activity and review. Motion changes amplitude/opacity rather than
 mimicking a proprietary orb, island, logo or animation. There are no imported
-reference-image assets. Existing licensed Lucide icons and LinkBooks design tokens
+reference-image assets. Existing licensed Lucide icons and StreakBooks design tokens
 provide the normal controls. Reduced-motion preferences disable animation.
 
 The compact control lives in the existing header; its optional details panel is

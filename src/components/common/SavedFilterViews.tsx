@@ -15,7 +15,7 @@ import {
   type ViewSnapshot,
 } from "@/lib/workspaces/saved-filter-views";
 
-const STORAGE_PREFIX = "linkbooks.workspace.filter-views.v1:";
+const STORAGE_PREFIX = "streakbooks.workspace.filter-views.v1:";
 
 function storeViews(key: string, views: SavedWorkspaceView[]): boolean {
   try {
@@ -28,7 +28,7 @@ function storeViews(key: string, views: SavedWorkspaceView[]): boolean {
 }
 
 /**
- * Original LinkBooks saved search workspace.
+ * Original StreakBooks saved search workspace.
  * The caller owns server-backed filters and permission checks; this control stores
  * only explicitly allowlisted filter settings, scoped by user, company and module.
  */

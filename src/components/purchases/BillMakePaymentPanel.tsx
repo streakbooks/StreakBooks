@@ -158,7 +158,7 @@ export function BillMakePaymentPanel({
               {fromMinorUnits(BigInt(Math.max(0, outstandingMinor)), currency)}
             </strong>
             . Recorded payments are listed in History and notes. This updates Accounts Payable and
-            the bank account in LinkBooks. It does not transmit funds to a bank.
+            the bank account in StreakBooks. It does not transmit funds to a bank.
           </p>
 
           {formError ? (

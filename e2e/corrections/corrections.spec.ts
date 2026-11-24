@@ -36,7 +36,7 @@ test("search, exclusions, preview invalidation, posting evidence, history and un
   const downloading = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download posting plan", exact: true }).click();
   const file = await downloading;
-  expect(file.suggestedFilename()).toBe("linkbooks-transaction-correction.csv");
+  expect(file.suggestedFilename()).toBe("streakbooks-transaction-correction.csv");
   const report = parseImportCsv(await readFile((await file.path())!, "utf8"));
   expect(report[1]).toHaveLength(report[0]!.length);
   expect(report[1]![report[0]!.indexOf("Currency")]).toBe("GBP");
@@ -167,7 +167,7 @@ test("search results export exact source and base amounts", async ({ page }) => 
   await page.getByRole("button", { name: "Export current results", exact: true }).click();
   const file = await downloading;
   const report = parseImportCsv(await readFile((await file.path())!, "utf8"));
-  expect(file.suggestedFilename()).toBe("linkbooks-transaction-search.csv");
+  expect(file.suggestedFilename()).toBe("streakbooks-transaction-search.csv");
   expect(report[2]![report[0]!.indexOf("Base amount")]).toBe("125.00");
   expect(report[2]![report[0]!.indexOf("Currency")]).toBe("USD");
   expect(report[2]![report[0]!.indexOf("Line amount (base currency)")]).toBe("125.00");
@@ -198,7 +198,7 @@ test("correction history filters, exports loaded evidence and links to source jo
   const downloading = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export loaded history CSV", exact: true }).click();
   const file = await downloading;
-  expect(file.suggestedFilename()).toBe("linkbooks-correction-batches-page-1.csv");
+  expect(file.suggestedFilename()).toBe("streakbooks-correction-batches-page-1.csv");
   const report = parseImportCsv(await readFile((await file.path())!, "utf8"));
   expect(report[0]).toContain("Batch ID");
   expect(report[0]).toContain("Correction journal IDs");

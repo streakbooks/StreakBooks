@@ -1,4 +1,4 @@
--- LinkBooks Budgets release gate (READ ONLY).
+-- StreakBooks Budgets release gate (READ ONLY).
 -- Run AFTER applying the six pending Budgets migrations to a disposable/staging DB.
 -- All statements inspect PostgreSQL catalogs only; no business data is changed.
 -- NOTE: PASS here does not replace authenticated two-tenant tests or browser QA.

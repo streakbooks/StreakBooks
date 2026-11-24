@@ -1,6 +1,6 @@
 # Batch 05 — scoped Coding Memory reset
 
-18 November 2026. Continuation of [draft PR #251](https://github.com/linkbusinessadvisory/LinkBooks/pull/251). This implements another part of CM-03 and strengthens CM-04; full programme acceptance and release readiness remain open.
+18 November 2026. Continuation of [draft PR #251](https://github.com/streakbooks/StreakBooks/pull/251). This implements another part of CM-03 and strengthens CM-04; full programme acceptance and release readiness remain open.
 
 ## Resulting behavior
 
@@ -16,15 +16,15 @@ The dialog uses the shared accessible alert dialog, restores focus on cancel, an
 
 ## Verification
 
-Final outcomes are recorded in [machine-readable evidence](BATCH-05-EVIDENCE.json). Runtime revision: [89f7078c](https://github.com/linkbusinessadvisory/LinkBooks/commit/89f7078cb1590de054b107afa600252f382fca70). The full unit, TypeScript, initial source-contract and Coding Memory fixture checks ran at [b267af8e](https://github.com/linkbusinessadvisory/LinkBooks/commit/b267af8e21c3ec2d81923f8a358c92d1274c6557); `src`, `e2e` and Coding Memory fixture sources are byte-identical at the final runtime. The later commit contains only the SQL scope-lock migration and its PostgreSQL runner coverage. Final database, shared-UI, real API/browser, lint, build, migration-identity and hygiene checks include that change.
+Final outcomes are recorded in [machine-readable evidence](BATCH-05-EVIDENCE.json). Runtime revision: [89f7078c](https://github.com/streakbooks/StreakBooks/commit/89f7078cb1590de054b107afa600252f382fca70). The full unit, TypeScript, initial source-contract and Coding Memory fixture checks ran at [b267af8e](https://github.com/streakbooks/StreakBooks/commit/b267af8e21c3ec2d81923f8a358c92d1274c6557); `src`, `e2e` and Coding Memory fixture sources are byte-identical at the final runtime. The later commit contains only the SQL scope-lock migration and its PostgreSQL runner coverage. Final database, shared-UI, real API/browser, lint, build, migration-identity and hygiene checks include that change.
 
 | Item                           | Actual result                                                                                                                                                                                             |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Task implementation            | Scoped reset and control hardening implemented; whole programme partial                                                                                                                                   |
-| Pull request                   | Draft [#251](https://github.com/linkbusinessadvisory/LinkBooks/pull/251), open                                                                                                                            |
+| Pull request                   | Draft [#251](https://github.com/streakbooks/StreakBooks/pull/251), open                                                                                                                            |
 | Merge into main                | Not performed                                                                                                                                                                                             |
-| Verified main snapshot         | [8c79ac08](https://github.com/linkbusinessadvisory/LinkBooks/commit/8c79ac08e1f21884395a6066a71267f04ffda6d5), fetched again on 18 November                                                               |
-| Pre-merge GitHub CI            | Failed before job steps; [runtime run](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44258135155); confirmed account restriction described below                                         |
+| Verified main snapshot         | [8c79ac08](https://github.com/streakbooks/StreakBooks/commit/8c79ac08e1f21884395a6066a71267f04ffda6d5), fetched again on 18 November                                                               |
+| Pre-merge GitHub CI            | Failed before job steps; [runtime run](https://github.com/streakbooks/StreakBooks/actions/runs/44258135155); confirmed account restriction described below                                         |
 | Unit tests                     | 591 files; 4,012 passed, 0 failed/skipped, at b267af8e                                                                                                                                                    |
 | Integration tests              | Disposable Banking PostgreSQL: 111 assertions, 0 failed; workflow and platform commands also exit 0; real local API: 28 setup + 4 reversal + 9 MFA assertions                                             |
 | Browser/E2E                    | Real localhost Auth/API: 8 passed; shared UI fixtures: 79 passed; Coding Memory fixtures: 7 passed; 0 final failures                                                                                      |
@@ -50,9 +50,9 @@ No hosted database change, main merge or deployment is performed here. Local sec
 
 ## Hosted CI blocker confirmed
 
-The user supplied all five job error annotations from [run 44256575474](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44256575474) at runtime `b267af8e`. Each says: “The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings”. This establishes a GitHub account billing/spending restriction; it does not distinguish a payment failure from a spending-limit issue.
+The user supplied all five job error annotations from [run 44256575474](https://github.com/streakbooks/StreakBooks/actions/runs/44256575474) at runtime `b267af8e`. Each says: “The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings”. This establishes a GitHub account billing/spending restriction; it does not distinguish a payment failure from a spending-limit issue.
 
-The later [runtime run 44258135155](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44258135155), for `89f7078c`, also has five failed jobs. The validate job returns an empty step list and its log download returns `NOT_FOUND`. The connector cannot read the annotation text itself. An account administrator must resolve the restriction in GitHub Billing & plans and rerun required checks. No payment, spending limit, runner, or branch-protection setting is changed here. The Ubuntu 26 migration notices are informational and are separate from the job-start errors.
+The later [runtime run 44258135155](https://github.com/streakbooks/StreakBooks/actions/runs/44258135155), for `89f7078c`, also has five failed jobs. The validate job returns an empty step list and its log download returns `NOT_FOUND`. The connector cannot read the annotation text itself. An account administrator must resolve the restriction in GitHub Billing & plans and rerun required checks. No payment, spending limit, runner, or branch-protection setting is changed here. The Ubuntu 26 migration notices are informational and are separate from the job-start errors.
 
 ## Manual review
 
@@ -62,16 +62,16 @@ Repeat on desktop, tablet and mobile with Tab/Shift+Tab, Enter, Escape, touch an
 
 ## Safe Windows review
 
-The cloud checkout does not modify `D:\MyApp\LinkBooks` or its untracked messaging files. Review in a separate worktree; preserve the original checkout:
+The cloud checkout does not modify `D:\MyApp\StreakBooks` or its untracked messaging files. Review in a separate worktree; preserve the original checkout:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
-git fetch https://github.com/linkbusinessadvisory/LinkBooks.git feature/financial-intelligence-readiness-20261117
+git fetch https://github.com/streakbooks/StreakBooks.git feature/financial-intelligence-readiness-20261117
 if ($LASTEXITCODE -ne 0) { throw "Fetch failed." }
-git worktree add --detach D:\MyApp\LinkBooks-review-251-b05 FETCH_HEAD
+git worktree add --detach D:\MyApp\StreakBooks-review-251-b05 FETCH_HEAD
 if ($LASTEXITCODE -ne 0) { throw "Worktree creation failed. Preserve existing work." }
-cd D:\MyApp\LinkBooks-review-251-b05
+cd D:\MyApp\StreakBooks-review-251-b05
 npm.cmd ci
 if ($LASTEXITCODE -ne 0) { throw "Installation failed." }
 $env:NODE_OPTIONS = "--max-old-space-size=6144"

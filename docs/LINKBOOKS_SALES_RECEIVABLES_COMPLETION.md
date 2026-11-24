@@ -1,8 +1,8 @@
-# LinkBooks — Sales & Receivables completion report
+# StreakBooks — Sales & Receivables completion report
 
 **Date:** 2026-10-20  
 **Scope:** Quotes, invoices, receipts, credit notes, recurring, statements, settings, shared pickers  
-**Repo:** LinkBooks (TanStack Start + Supabase + shared PostingEngine)
+**Repo:** StreakBooks (TanStack Start + Supabase + shared PostingEngine)
 
 ---
 
@@ -17,9 +17,9 @@
 
 ## 2. Ten-product benchmark matrix (public docs / product materials — not live-tested)
 
-Sources: Xero, QuickBooks Online, Zoho Books, Sage Accounting, FreshBooks, FreeAgent, Wave, Kashoo, Odoo Accounting, Sage Intacct product pages and feature docs (2025–2026). Capabilities marked **Verified competitor** are documented offerings (edition-dependent). LinkBooks columns are from this codebase audit + this increment.
+Sources: Xero, QuickBooks Online, Zoho Books, Sage Accounting, FreshBooks, FreeAgent, Wave, Kashoo, Odoo Accounting, Sage Intacct product pages and feature docs (2025–2026). Capabilities marked **Verified competitor** are documented offerings (edition-dependent). StreakBooks columns are from this codebase audit + this increment.
 
-| Capability | Competitors (typical) | LinkBooks before | LinkBooks after this increment | Status |
+| Capability | Competitors (typical) | StreakBooks before | StreakBooks after this increment | Status |
 |---|---|---|---|---|
 | Quotes / estimates | Verified (Xero, QBO, Zoho, Sage, FreshBooks, FreeAgent, Odoo) | Draft + convert | + detail, status (sent/accepted/declined), product lines, settings expiry | **IMPLEMENTED AND TESTED** (unit) / UI wired |
 | Invoice create / customise | Verified (all 10 at varying depth) | Draft + authorise + void | + product picker, draft edit, workflow defaults, searchable customer | **IMPLEMENTED AND TESTED** |

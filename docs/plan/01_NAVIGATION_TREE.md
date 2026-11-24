@@ -1,4 +1,4 @@
-# LinkBooks — Complete Product Navigation Tree
+# StreakBooks — Complete Product Navigation Tree
 
 **Legend**
 

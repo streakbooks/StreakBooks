@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/purchases/payments/batch")({
-  head: () => ({ meta: [{ title: "Batch payment — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Batch payment — StreakBooks" }] }),
   component: BatchPayment,
 });
 

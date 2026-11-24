@@ -61,7 +61,7 @@ export const listAdvisorAvailableSlots = createServerFn({ method: "GET" })
       return {
         ready: false as const,
         advisorId: null,
-        advisorName: "LinkBooks Advisors",
+        advisorName: "StreakBooks Advisors",
         timezone: "UTC",
         slots: [] as AvailableSlot[],
         reason: "Booking calendar requires a configured database.",
@@ -91,7 +91,7 @@ export const listAdvisorAvailableSlots = createServerFn({ method: "GET" })
     return {
       ready: true as const,
       advisorId: typeof row["advisorId"] === "string" ? row["advisorId"] : null,
-      advisorName: String(row["advisorName"] ?? "LinkBooks Advisors"),
+      advisorName: String(row["advisorName"] ?? "StreakBooks Advisors"),
       timezone: String(row["timezone"] ?? "UTC"),
       slots,
       reason: typeof row["reason"] === "string" ? row["reason"] : null,

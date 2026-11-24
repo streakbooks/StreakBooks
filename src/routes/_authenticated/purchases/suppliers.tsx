@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/purchases/suppliers")({
-  head: () => ({ meta: [{ title: "Suppliers — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Suppliers — StreakBooks" }] }),
   component: SuppliersPage,
 });
 

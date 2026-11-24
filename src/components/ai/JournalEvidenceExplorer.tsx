@@ -169,7 +169,7 @@ export function AiJournalEvidenceExplorer({
           <Badge variant="secondary">Posted ledger · read-only</Badge>
         </CardTitle>
         <CardDescription>
-          Investigate actual posted journals and account movements, trace them to LinkBooks records,
+          Investigate actual posted journals and account movements, trace them to StreakBooks records,
           and review deterministic integrity signals. Nothing is posted or changed.
         </CardDescription>
       </CardHeader>

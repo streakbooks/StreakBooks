@@ -46,7 +46,7 @@ describe("Stripe client", () => {
     expect(
       createStripeClient({
         STRIPE_SECRET_KEY: "sk_live_abc",
-        LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS: "true",
+        STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS: "true",
       }).mode,
     ).toBe("live");
   });

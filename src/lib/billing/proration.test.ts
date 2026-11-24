@@ -36,7 +36,7 @@ describe("mid-cycle proration", () => {
         daysInPeriod: 30,
         stripeSecret: "sk_live_abc",
       }),
-    ).toThrow(/LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/);
+    ).toThrow(/STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/);
   });
 
   it("keeps a test-secret change unsent", () => {

@@ -1,7 +1,7 @@
 # Settings Centre — design tokens & IA
 
 ## Direction
-Follow the existing LinkBooks app shell: restrained colour, clear hierarchy, spacious panels, Radix/shadcn primitives. No decorative controls.
+Follow the existing StreakBooks app shell: restrained colour, clear hierarchy, spacious panels, Radix/shadcn primitives. No decorative controls.
 
 ## Tokens (reuse app CSS variables)
 - Surface: `bg-background`, `bg-card`, `border-border`

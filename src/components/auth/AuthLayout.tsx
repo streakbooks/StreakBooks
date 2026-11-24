@@ -39,7 +39,7 @@ function Logo({ onDark }: { onDark?: boolean }) {
       </div>
       <div className="leading-tight">
         <div className={onDark ? "text-sm font-semibold text-white" : "text-sm font-semibold"}>
-          LinkBooks
+          StreakBooks
         </div>
         <div className={onDark ? "text-[11px] text-white/60" : "text-[11px] text-muted-foreground"}>
           Cloud accounting
@@ -106,7 +106,7 @@ export function AuthLayout({
   subtitle?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
-  /** Top-right switch, e.g. "New to LinkBooks? Create an account". */
+  /** Top-right switch, e.g. "New to StreakBooks? Create an account". */
   headerAction?: ReactNode;
 }) {
   return (
@@ -186,7 +186,7 @@ export function AuthLayout({
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} LinkBooks
+          © {new Date().getFullYear()} StreakBooks
         </p>
       </main>
     </div>

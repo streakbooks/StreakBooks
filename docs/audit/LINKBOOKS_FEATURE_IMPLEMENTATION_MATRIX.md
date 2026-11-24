@@ -1,4 +1,4 @@
-# LinkBooks — Feature Implementation Matrix
+# StreakBooks — Feature Implementation Matrix
 
 **Audit date:** 19 Oct 2026  
 **Classification rules:**
@@ -13,7 +13,7 @@
 
 **Global note:** There is **no** `test` / e2e script and no ledger tests. Therefore **no accounting feature** can be marked “Implemented and tested.” Auth and tenancy have code evidence only — classified as **Partially implemented** unless noted.
 
-**Requirements file** “LinkBooks — Full Product Scope and Implementation Standard.md” was **not found**. Matrix uses `roadmap.md`, `.lovable/plan.md`, and the audit brief module list.
+**Requirements file** “StreakBooks — Full Product Scope and Implementation Standard.md” was **not found**. Matrix uses `roadmap.md`, `.lovable/plan.md`, and the audit brief module list.
 
 ---
 
@@ -189,4 +189,4 @@
 | UI only | ~20+ |
 | Not implemented | Majority of accounting product |
 
-**Bottom line:** LinkBooks today is a **Lovable UI shell + Supabase Auth + Phase 2 company tenancy foundation**. It is **not** yet a production accounting platform.
+**Bottom line:** StreakBooks today is a **Lovable UI shell + Supabase Auth + Phase 2 company tenancy foundation**. It is **not** yet a production accounting platform.

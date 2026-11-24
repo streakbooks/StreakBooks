@@ -82,7 +82,7 @@ export async function renderBillingDocumentPdf(doc: BillingDocument): Promise<Ui
   const font = await pdf.embedFont(base64ToBytes(reportFontBase64), { subset: true });
   const title = doc.kind === "invoice" ? "Tax invoice" : "Credit note";
   pdf.setTitle(`${title} ${doc.number}`);
-  pdf.setAuthor(doc.seller.legalName ?? "LinkBooks");
+  pdf.setAuthor(doc.seller.legalName ?? "StreakBooks");
   const page = pdf.addPage([595, 842]);
   const ink = rgb(0.12, 0.17, 0.2);
   const muted = rgb(0.38, 0.43, 0.47);

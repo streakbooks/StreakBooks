@@ -33,7 +33,7 @@ type PaymentRow = {
 };
 
 export const Route = createFileRoute("/_authenticated/purchases/payments/")({
-  head: () => ({ meta: [{ title: "Supplier payments — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Supplier payments — StreakBooks" }] }),
   component: PaymentsList,
 });
 

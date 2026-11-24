@@ -1,4 +1,4 @@
-# LinkBooks financial intelligence programme — 17 November 2026
+# StreakBooks financial intelligence programme — 17 November 2026
 
 Latest continuation: [Batch 05 scoped Coding Memory reset](BATCH-05-SCOPED-MEMORY-RESET.md). The earlier audit matrices and batches are historical; use the latest evidence for current results. Full programme acceptance remains 0/53.
 
@@ -6,9 +6,9 @@ Latest continuation: [Batch 05 scoped Coding Memory reset](BATCH-05-SCOPED-MEMOR
 
 PARTIALLY COMPLETED. Phase 0 is a preliminary audit with unresolved gates; Phase 1 has a focused suggestion-safety batch. Phases 2–7 have not been implemented by this batch. No full feature acceptance or production-readiness claim is made.
 
-Authoritative repository: https://github.com/linkbusinessadvisory/LinkBooks. Main fetched and verified at `a2a8a79efbf8ad11b0aa64bd00a7e64095ba0484`. Implementation code revision: [`743c73fc`](https://github.com/linkbusinessadvisory/LinkBooks/commit/743c73fcddf9611657c8b0d3a2c0351bf3de4bc6), [draft PR #225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225) on `feature/financial-intelligence-foundation`. The initially supplied `/workspace/LinkBooks` checkout points to a different repository (`rohitmehra86/LinkBooks`, main `a4e6dfe0`); it was not used as the implementation baseline. A separate worktree preserves its work.
+Authoritative repository: https://github.com/streakbooks/StreakBooks. Main fetched and verified at `a2a8a79efbf8ad11b0aa64bd00a7e64095ba0484`. Implementation code revision: [`743c73fc`](https://github.com/streakbooks/StreakBooks/commit/743c73fcddf9611657c8b0d3a2c0351bf3de4bc6), [draft PR #225](https://github.com/streakbooks/StreakBooks/pull/225) on `feature/financial-intelligence-foundation`. The initially supplied `/workspace/StreakBooks` checkout points to a different repository (`streakbooks/StreakBooks`, main `a4e6dfe0`); it was not used as the implementation baseline. A separate worktree preserves its work.
 
-Open drafts inspected: [#224 messaging](https://github.com/linkbusinessadvisory/LinkBooks/pull/224), [#223 calculator](https://github.com/linkbusinessadvisory/LinkBooks/pull/223). Recent merged PRs reviewed through metadata include #222 HR and #221/#220 CRM. Branch inventory includes firm portfolio, workpaper period comparison, firm requests/analytics, premium browsing and messaging work; their unmerged diffs require deeper review before overlapping changes. No unrelated branches were changed.
+Open drafts inspected: [#224 messaging](https://github.com/streakbooks/StreakBooks/pull/224), [#223 calculator](https://github.com/streakbooks/StreakBooks/pull/223). Recent merged PRs reviewed through metadata include #222 HR and #221/#220 CRM. Branch inventory includes firm portfolio, workpaper period comparison, firm requests/analytics, premium browsing and messaging work; their unmerged diffs require deeper review before overlapping changes. No unrelated branches were changed.
 
 ## Current implementation matrix
 
@@ -24,13 +24,13 @@ Open drafts inspected: [#224 messaging](https://github.com/linkbusinessadvisory/
 
 ## Environment and migration evidence
 
-Supabase discovery returned one active LinkBooks project, `ipxflpzfcqwtenodbxwc` (`linkbook`), PostgreSQL 17.11, and inactive unrelated LeadOrbit. Prior merged PR metadata identifies the active project as production; treat it as production. Branch listing returned no development branches. All Supabase calls in this session were read-only.
+Supabase discovery returned one active StreakBooks project, `ipxflpzfcqwtenodbxwc` (`linkbook`), PostgreSQL 17.11, and inactive unrelated LeadOrbit. Prior merged PR metadata identifies the active project as production; treat it as production. Branch listing returned no development branches. All Supabase calls in this session were read-only.
 
 Read-only catalog inspection confirms RLS enabled on `bank_coding_history` (3 policies), `bank_rules` (5), `practice_tasks` (2), and reconciliation cases/events (1 each). This proves neither effective authorization nor cross-tenant safety; denial tests remain mandatory. Inspected live `bump_bank_coding_history`: SECURITY DEFINER, authentication/member/`banking.categorise` checks, account-company check and increment-on-conflict, without event deduplication. No credentials or customer accounting rows were exported.
 
 Migration comparison: 335 repository SQL files, 332 distinct versions, 362 remote entries; 43 repository-only and 73 remote-only versions. See [exact version differences](migration-drift-20261117.json). Version drift does not prove missing schema: objects can have been applied under other versions. Compare definitions and provenance before any repair, push, or rollout. No migrations were added or applied. Clean-install and current-schema upgrade checks remain unexecuted.
 
-Vercel read-only discovery: project `prj_jtVtlCzhUNfd7a3weiC8QIMDT3ah`, team `team_M5DS8zUvq8eVtkjKLAJFBLLP`; most recent returned production deployment `dpl_ArKGNHnzbx7bTFjJcaPbSLYUkrar`, READY, commit `64f6fe82a62f5f0aa06f12da5f74c12a456b7a3d`, URL https://linkbooks-j5g72qqty-link-business1.vercel.app. It predates fetched main. No deployment was initiated; READY metadata is not authenticated functional verification.
+Vercel read-only discovery: project `prj_jtVtlCzhUNfd7a3weiC8QIMDT3ah`, team `team_M5DS8zUvq8eVtkjKLAJFBLLP`; most recent returned production deployment `dpl_ArKGNHnzbx7bTFjJcaPbSLYUkrar`, READY, commit `64f6fe82a62f5f0aa06f12da5f74c12a456b7a3d`, URL https://streakbooks-j5g72qqty-link-business1.vercel.app. It predates fetched main. No deployment was initiated; READY metadata is not authenticated functional verification.
 
 ## Implemented batch
 

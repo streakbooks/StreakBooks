@@ -20,7 +20,7 @@ export type WakeSnapshot = {
 export class WakeController {
   private snapshot: WakeSnapshot = {
     available: false,
-    phrase: "Hey LinkBooks",
+    phrase: "Hey StreakBooks",
     enabled: false,
     armed: false,
     enrolled: false,
@@ -84,7 +84,7 @@ export class WakeController {
     this.listeners.forEach((f) => f());
   }
   private storageKey() {
-    return `linkbooks.personal-wake.v1:${this.scope}`;
+    return `streakbooks.personal-wake.v1:${this.scope}`;
   }
   private persist() {
     try {
@@ -110,7 +110,7 @@ export class WakeController {
     this.available = available;
     this.profile = null;
     this.recordings = [];
-    let phrase = "Hey LinkBooks",
+    let phrase = "Hey StreakBooks",
       enabled = false;
     if (available)
       try {
@@ -142,7 +142,7 @@ export class WakeController {
     if (!this.available) return;
     if (!validWakePhrase(phrase)) {
       this.set({
-        message: "Choose a phrase of 2 or more words, 5–60 characters, for example Hey LinkBooks.",
+        message: "Choose a phrase of 2 or more words, 5–60 characters, for example Hey StreakBooks.",
       });
       return;
     }

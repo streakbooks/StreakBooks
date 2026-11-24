@@ -204,7 +204,7 @@ SET ROLE authenticated;
 SELECT pg_temp.act('00000000-0000-0000-0000-0000000000d4', 'aal1');
 SELECT pg_temp.ok(jsonb_array_length(public.billing_documents('50000000-0000-0000-0000-000000000001')->'invoices') = 3,
   'The owner sees the organisation''s invoices');
-SELECT pg_temp.ok((public.billing_document('invoice', ((:'first'::jsonb)->>'invoiceId')::uuid)->'lines'->0->>'description') = 'LinkBooks Pro subscription',
+SELECT pg_temp.ok((public.billing_document('invoice', ((:'first'::jsonb)->>'invoiceId')::uuid)->'lines'->0->>'description') = 'StreakBooks Pro subscription',
   'The owner can open an invoice');
 SELECT pg_temp.act('00000000-0000-0000-0000-0000000000d5', 'aal1');
 SELECT pg_temp.expect_error($$SELECT public.billing_documents('50000000-0000-0000-0000-000000000001')$$, '42501', 'Staff cannot see invoices');

@@ -201,7 +201,7 @@ export function PayrollEmployeesPage({
   };
 
   const exportCsv = () => {
-    downloadCsv("linkbooks-payroll-employees.csv", payrollEmployeesToCsv(displayedEmployees));
+    downloadCsv("streakbooks-payroll-employees.csv", payrollEmployeesToCsv(displayedEmployees));
     toast.success(`Exported ${displayedEmployees.length} employees in displayed order`);
   };
 

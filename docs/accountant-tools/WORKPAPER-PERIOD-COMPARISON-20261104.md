@@ -1,7 +1,7 @@
 # Accountant workpapers — prior-period comparison increment
 
 **Date:** 4 November 2026  
-**Repository:** linkbusinessadvisory/LinkBooks  
+**Repository:** streakbooks/StreakBooks  
 **Scope:** Nonposting balance-sheet workpaper period-over-period review; no new database schema.
 
 ## Delivered

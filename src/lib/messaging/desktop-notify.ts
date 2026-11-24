@@ -58,7 +58,7 @@ export function showMessagingDesktopNotification(
   try {
     const notification = new Notification(input.title.slice(0, 80), {
       body: input.body.slice(0, 180),
-      tag: input.tag ?? "linkbooks-messaging",
+      tag: input.tag ?? "streakbooks-messaging",
       silent: false,
     });
     if (input.href) {

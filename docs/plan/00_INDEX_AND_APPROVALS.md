@@ -1,4 +1,4 @@
-# LinkBooks — Target Architecture & Implementation Plan
+# StreakBooks — Target Architecture & Implementation Plan
 
 **Status:** Planning only — **no application code changes** in this step.  
 **Date:** 19 Oct 2026  
@@ -6,7 +6,7 @@
 
 ## Requirements baseline note
 
-**"LinkBooks — Full Product Scope and Implementation Standard.md" was not found** on disk (repo, Desktop, Downloads, Documents, or agent stores).  
+**"StreakBooks — Full Product Scope and Implementation Standard.md" was not found** on disk (repo, Desktop, Downloads, Documents, or agent stores).  
 
 This plan treats the **user brief in the planning request** plus existing audit/Phase 2 docs as the working product baseline.  
 

@@ -24,7 +24,7 @@ import {
 } from "@/lib/billing/platform-mutations.functions";
 
 export const Route = createFileRoute("/_authenticated/platform/billing")({
-  head: () => ({ meta: [{ title: "Platform billing — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Platform billing — StreakBooks" }] }),
   component: PlatformBillingPage,
 });
 

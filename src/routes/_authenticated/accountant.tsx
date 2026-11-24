@@ -57,7 +57,7 @@ function parseChecklistDate(value: unknown): string | undefined {
 
 export const Route = createFileRoute("/_authenticated/accountant")({
   head: () => ({
-    meta: [{ title: "Accountant tools — LinkBooks" }],
+    meta: [{ title: "Accountant tools — StreakBooks" }],
   }),
   validateSearch: (
     raw: Record<string, unknown>,

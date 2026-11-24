@@ -28,11 +28,11 @@ const template = {
     Array.from({ length: 13 }, (_, k) => Math.sin(i + k)),
   ),
 };
-const profile = buildWakeProfile("Hey LinkBooks", [template, template, template]);
+const profile = buildWakeProfile("Hey StreakBooks", [template, template, template]);
 let storage: Map<string, string>, release: Mock<() => Promise<void>>;
 function setup() {
   storage.set(
-    "linkbooks.personal-wake.v1:user:company",
+    "streakbooks.personal-wake.v1:user:company",
     JSON.stringify({ phrase: profile.phrase, enabled: true, profile }),
   );
   const assistant = new AssistantController({
@@ -77,11 +77,11 @@ describe("wake/command microphone lifecycle (capture mocked; real DSP has separa
     expect(captureWakeAudio).not.toHaveBeenCalled();
     await s.wake.arm();
     expect(captureWakeAudio).toHaveBeenCalledOnce();
-    s.wake.configure("Hey LinkBooks", false);
+    s.wake.configure("Hey StreakBooks", false);
     expect(s.wake.getSnapshot().armed).toBe(false);
     expect(release).toHaveBeenCalledOnce();
     s.wake.forget();
-    expect(storage.has("linkbooks.personal-wake.v1:user:company")).toBe(false);
+    expect(storage.has("streakbooks.personal-wake.v1:user:company")).toBe(false);
     s.dispose();
   });
   it("releases wake capture before command recognition, then returns to wake after Stop listening", async () => {
@@ -111,7 +111,7 @@ describe("wake/command microphone lifecycle (capture mocked; real DSP has separa
     s.wake.environment(true);
     await vi.advanceTimersByTimeAsync(1);
     expect(captureWakeAudio).toHaveBeenCalledTimes(2);
-    s.wake.storageChanged("linkbooks.personal-wake.v1:user:company");
+    s.wake.storageChanged("streakbooks.personal-wake.v1:user:company");
     expect(s.wake.getSnapshot().armed).toBe(false);
     expect(s.wake.getSnapshot().enrolled).toBe(true);
     await s.wake.arm();
@@ -151,7 +151,7 @@ describe("wake/command microphone lifecycle (capture mocked; real DSP has separa
     expect(s.wake.getSnapshot().message).toContain("permission denied");
     await vi.advanceTimersByTimeAsync(60000);
     expect(captureWakeAudio).toHaveBeenCalledOnce();
-    s.wake.configure("Hello LinkBooks", true);
+    s.wake.configure("Hello StreakBooks", true);
     expect(s.wake.getSnapshot().enrolled).toBe(false);
     s.dispose();
   });

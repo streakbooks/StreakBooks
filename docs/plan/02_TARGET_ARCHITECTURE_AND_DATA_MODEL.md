@@ -1,4 +1,4 @@
-# LinkBooks — Target Architecture & Database Design
+# StreakBooks — Target Architecture & Database Design
 
 ## 1. Stack (preserve unless approved exception)
 

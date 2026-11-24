@@ -6,6 +6,6 @@ export const Route = createFileRoute("/_authenticated/banking/import")({
     typeof s["bankAccountId"] === "string" && s["bankAccountId"]
       ? { bankAccountId: s["bankAccountId"] }
       : {},
-  head: () => ({ meta: [{ title: "Import statement — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Import statement — StreakBooks" }] }),
   component: BankImportContent,
 });

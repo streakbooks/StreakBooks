@@ -15,10 +15,10 @@ export const Route = createFileRoute("/_authenticated/help")({
   }),
   head: () => ({
     meta: [
-      { title: "Help — LinkBooks" },
-      { name: "description", content: "Guides, answers and support for using LinkBooks." },
-      { property: "og:title", content: "Help — LinkBooks" },
-      { property: "og:description", content: "Guides, answers and support for using LinkBooks." },
+      { title: "Help — StreakBooks" },
+      { name: "description", content: "Guides, answers and support for using StreakBooks." },
+      { property: "og:title", content: "Help — StreakBooks" },
+      { property: "og:description", content: "Guides, answers and support for using StreakBooks." },
     ],
   }),
   component: Help,
@@ -41,10 +41,10 @@ function Help() {
   return (
     <ListWorkspace
       title="Help centre"
-      description="Step-by-step guides for the things you do most, written for what LinkBooks does today."
+      description="Step-by-step guides for the things you do most, written for what StreakBooks does today."
     >
       <section
-        aria-label="Search LinkBooks help"
+        aria-label="Search StreakBooks help"
         className="mb-7 max-w-2xl space-y-2 rounded-2xl border border-border/85 bg-gradient-to-r from-card to-accent/30 p-5 shadow-card"
       >
         <Label htmlFor="help-search">Search help</Label>
@@ -123,7 +123,7 @@ function Help() {
 
       <p className="mt-6 max-w-3xl text-sm text-muted-foreground">
         Need something that is not covered here? Ask your accountant, or the administrator of your
-        organisation. LinkBooks has no live chat; none is implied.
+        organisation. StreakBooks has no live chat; none is implied.
       </p>
       <p className="sr-only">{HELP_ARTICLES.length} articles</p>
     </ListWorkspace>

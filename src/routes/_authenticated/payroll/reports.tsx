@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/payroll/reports")({
   }),
   head: () => ({
     meta: [
-      { title: "Payroll reports — LinkBooks" },
+      { title: "Payroll reports — StreakBooks" },
       {
         name: "description",
         content: "Payroll summary, register, liabilities and payment reports.",

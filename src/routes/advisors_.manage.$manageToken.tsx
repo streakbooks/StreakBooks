@@ -3,7 +3,7 @@ import { AdvisorsManageAppointmentPage } from "@/screens/advisors/manage-appoint
 
 export const Route = createFileRoute("/advisors_/manage/$manageToken")({
   head: () => ({
-    meta: [{ title: "Manage consultation — LinkBooks Advisors" }],
+    meta: [{ title: "Manage consultation — StreakBooks Advisors" }],
   }),
   component: AdvisorsManageRoute,
 });

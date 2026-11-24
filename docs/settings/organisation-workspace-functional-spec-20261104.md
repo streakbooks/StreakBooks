@@ -1,11 +1,11 @@
-# LinkBooks Organisation Settings — functional specification & UI preview
+# StreakBooks Organisation Settings — functional specification & UI preview
 
 **Status:** implementation baseline for the legacy Settings Centre, not evidence of production deployment.
 **Route:** `/settings?section=organisation`. Related workspaces: `/settings?section=accounting`, `/settings?section=documents`, `/settings?section=currencies`.
 
 ## Purpose
 
-Let an authorised organisation administrator maintain company identity, local display preferences, document identity and financial defaults without affecting posted ledger history or other organisations. Show current values, clear editing intent, meaningful validation, server outcomes and recovery options. Use a responsive, accessible layout consistent with LinkBooks' own design system.
+Let an authorised organisation administrator maintain company identity, local display preferences, document identity and financial defaults without affecting posted ledger history or other organisations. Show current values, clear editing intent, meaningful validation, server outcomes and recovery options. Use a responsive, accessible layout consistent with StreakBooks' own design system.
 
 ## UI preview — desktop (responsive wireframe)
 
@@ -30,7 +30,7 @@ Let an authorised organisation administrator maintain company identity, local di
 └───────────────────────┴───────────────────────────────────────────────────────┘
 ```
 
-**Mobile preview:** replace the persistent sidebar with one accessible “Settings section” selector; render form fields in a single column; Save/Discard controls wrap without horizontal clipping. The production implementation uses the existing LinkBooks cards, tabs, switches, comboboxes and tokens rather than copying a competitor's visual styling.
+**Mobile preview:** replace the persistent sidebar with one accessible “Settings section” selector; render form fields in a single column; Save/Discard controls wrap without horizontal clipping. The production implementation uses the existing StreakBooks cards, tabs, switches, comboboxes and tokens rather than copying a competitor's visual styling.
 
 ## Existing editable fields & persistence
 
@@ -60,5 +60,5 @@ Let an authorised organisation administrator maintain company identity, local di
 - Database-enforced optimistic versions for legacy `companies`, `company_branding`, `company_currencies` and document sequences; frontend refresh comparisons alone cannot prevent a race between reads and writes.
 - Transactional replacement of `company_currencies` so a failed insert cannot leave an organisation's allowed currency set empty.
 - Authenticated mobile, desktop, assistive-technology and end-to-end network/save tests against a dedicated staging organisation.
-- Correct Vercel production project must be connected to `linkbusinessadvisory/LinkBooks` before deploying; the old `rohitmehra86/LinkBooks` project is not the deployment target.
+- Correct Vercel production project must be connected to `streakbooks/StreakBooks` before deploying; the old `streakbooks/StreakBooks` project is not the deployment target.
 - Optional future enhancements (not currently claimed delivered): address/contact people, custom fields, localisation beyond supported allowlist, multi-entity registration details, document logo uploads from storage, audit diff view, and account-specific risk confirmations.

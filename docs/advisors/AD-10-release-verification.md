@@ -5,7 +5,7 @@ Local-only. Do **not** run GitHub CI unless explicitly authorized.
 ## Automated local gate
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 npm.cmd run verify:advisors
 ```
 

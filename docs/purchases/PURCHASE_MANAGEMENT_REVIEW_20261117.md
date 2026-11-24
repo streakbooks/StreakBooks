@@ -106,11 +106,11 @@ Use a dedicated test organisation at http://localhost:8080.
 
 ## Safe Windows review
 
-This cloud checkout does not modify `D:\MyApp\LinkBooks`. Changes are unpublished;
+This cloud checkout does not modify `D:\MyApp\StreakBooks`. Changes are unpublished;
 pulling main does not retrieve this fix. After the reviewed patch is transferred:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git diff --check
 git diff -- src/lib/purchases/po-three-way-match.ts src/lib/purchases/po-three-way-match.test.ts

@@ -31,7 +31,7 @@ export type AdvisorChatState = {
 };
 
 const AI_DISCLOSURE =
-  "I am the LinkBooks Advisors AI assistant. I can help with qualification and plan guidance. I cannot give regulated tax, audit or legal advice, and I do not invent prices or advisor availability.";
+  "I am the StreakBooks Advisors AI assistant. I can help with qualification and plan guidance. I cannot give regulated tax, audit or legal advice, and I do not invent prices or advisor availability.";
 
 export function createInitialChatState(serviceCode: AdvisorServiceCode): AdvisorChatState {
   return {
@@ -102,7 +102,7 @@ export function recommendPlanCode(
 export function buildRecommendationMessage(service: AdvisorService, planCode: string): string {
   const plan = service.plans.find((item) => item.code === planCode) ?? service.plans[0];
   if (!plan) {
-    return "I can show the published plans on this page. Prices come only from the LinkBooks Advisors catalogue.";
+    return "I can show the published plans on this page. Prices come only from the StreakBooks Advisors catalogue.";
   }
   const siblings = service.plans
     .map((item) => `• ${item.name}: ${formatAdvisorPlanPrice(item)}`)
@@ -192,7 +192,7 @@ export function applyVisitorReply(
     case "recommend":
     case "handoff":
       replies.push(
-        "You can say “view plans”, “skip”, or “human advisor”. I only use published LinkBooks Advisors catalogue prices.",
+        "You can say “view plans”, “skip”, or “human advisor”. I only use published StreakBooks Advisors catalogue prices.",
       );
       return { state: next, replies };
   }

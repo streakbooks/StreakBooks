@@ -6,11 +6,11 @@ This continuation combines the Coding Memory event work with repository readines
 
 ## Delivery and integration
 
-- Authoritative repository: https://github.com/linkbusinessadvisory/LinkBooks.
-- Earlier draft work: [PR #225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225), [readiness PR #227](https://github.com/linkbusinessadvisory/LinkBooks/pull/227).
-- Current draft: [PR #251](https://github.com/linkbusinessadvisory/LinkBooks/pull/251).
+- Authoritative repository: https://github.com/streakbooks/StreakBooks.
+- Earlier draft work: [PR #225](https://github.com/streakbooks/StreakBooks/pull/225), [readiness PR #227](https://github.com/streakbooks/StreakBooks/pull/227).
+- Current draft: [PR #251](https://github.com/streakbooks/StreakBooks/pull/251).
 - Continuation branch: `feature/financial-intelligence-readiness-20261117`. The remote foundation branch advanced while this session paused. A rejected non-fast-forward push was not forced; that branch was preserved. This continuation includes its Coding Memory implementation; a source comparison found no difference in the event migration, memory controls, or memory fixtures.
-- Integrated GitHub main snapshot: [fa57d602e9552c92e6dc77914052df467b48285d](https://github.com/linkbusinessadvisory/LinkBooks/commit/fa57d602e9552c92e6dc77914052df467b48285d). Subsequent remote changes are outside this snapshot.
+- Integrated GitHub main snapshot: [fa57d602e9552c92e6dc77914052df467b48285d](https://github.com/streakbooks/StreakBooks/commit/fa57d602e9552c92e6dc77914052df467b48285d). Subsequent remote changes are outside this snapshot.
 - Concurrently merged purchase receipts, partial billing, supplier statements/void dates, customer/supplier credit gates, copying and reconciliation opening balance changes were retained. Overlapping TypeScript repairs from PR #228 retain equivalent validated contracts. A duplicate import, duplicate HTML property and unnecessarily narrowed onboarding helper type introduced by automatic merging were resolved. Digest HTML retains the existing escaping helper.
 - Mechanical formatting is isolated in commits `4a24c80c` and `d99bf1aa`; it touches hundreds of pre-existing files. Review functional commits separately. No published history was rewritten.
 
@@ -82,20 +82,20 @@ A production-ready label is not justified by the present evidence.
 
 ## GitHub CI
 
-[Actions run 44116032487](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44116032487), associated with runtime revision `d99bf1aa`, completed with **failure**. All three job summaries report failure. The API returned no step summaries; downloading the validate job log returned 404/BlobNotFound. The failure cause has therefore not been established. Do not infer a passing hosted check from local results.
+[Actions run 44116032487](https://github.com/streakbooks/StreakBooks/actions/runs/44116032487), associated with runtime revision `d99bf1aa`, completed with **failure**. All three job summaries report failure. The API returned no step summaries; downloading the validate job log returned 404/BlobNotFound. The failure cause has therefore not been established. Do not infer a passing hosted check from local results.
 
 ## Safe Windows review
 
-This cloud checkout does not change `D:\MyApp\LinkBooks`. Preserve the four untracked messaging files shown in the user's status. A separate detached worktree avoids switching or cleaning that checkout:
+This cloud checkout does not change `D:\MyApp\StreakBooks`. Preserve the four untracked messaging files shown in the user's status. A separate detached worktree avoids switching or cleaning that checkout:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
-git fetch https://github.com/linkbusinessadvisory/LinkBooks.git feature/financial-intelligence-readiness-20261117
+git fetch https://github.com/streakbooks/StreakBooks.git feature/financial-intelligence-readiness-20261117
 if ($LASTEXITCODE -ne 0) { throw "Fetch failed." }
-git worktree add --detach D:\MyApp\LinkBooks-readiness-251 FETCH_HEAD
+git worktree add --detach D:\MyApp\StreakBooks-readiness-251 FETCH_HEAD
 if ($LASTEXITCODE -ne 0) { throw "Worktree creation failed. Do not reset existing work." }
-cd D:\MyApp\LinkBooks-readiness-251
+cd D:\MyApp\StreakBooks-readiness-251
 npm.cmd ci
 if ($LASTEXITCODE -ne 0) { throw "Installation failed." }
 $env:NODE_OPTIONS = "--max-old-space-size=6144"
@@ -107,7 +107,7 @@ Before `npm.cmd run dev` at http://localhost:8080, explicitly configure a dedica
 
 ## Final local verification
 
-Runtime revision: [d99bf1aa152d196ad4b6771b9fe36d02f0dc4562](https://github.com/linkbusinessadvisory/LinkBooks/commit/d99bf1aa152d196ad4b6771b9fe36d02f0dc4562). See [sanitized machine-readable evidence](BATCH-03-EVIDENCE.json) and the [147 lookup violations](BATCH-03-LOOKUP-VIOLATIONS.txt). The real browser evidence predates the final main integration; the final static/unit/SQL/build checks below do not replace a final deployed browser pass.
+Runtime revision: [d99bf1aa152d196ad4b6771b9fe36d02f0dc4562](https://github.com/streakbooks/StreakBooks/commit/d99bf1aa152d196ad4b6771b9fe36d02f0dc4562). See [sanitized machine-readable evidence](BATCH-03-EVIDENCE.json) and the [147 lookup violations](BATCH-03-LOOKUP-VIOLATIONS.txt). The real browser evidence predates the final main integration; the final static/unit/SQL/build checks below do not replace a final deployed browser pass.
 
 | Item                                    | Result                                                                                                                         |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |

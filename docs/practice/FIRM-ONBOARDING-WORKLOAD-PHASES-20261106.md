@@ -37,7 +37,7 @@ Firm & Clients feature or the whole application's production readiness.
 ## Local review commands
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 if (git status --porcelain) { throw "Save or stash local changes first." }
 git switch main

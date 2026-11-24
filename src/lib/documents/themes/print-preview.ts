@@ -9,7 +9,7 @@ export async function printThemePreview(element: HTMLElement): Promise<void> {
     if (!target) throw new Error("Print preview is unavailable");
     target.open();
     target.write(
-      "<!doctype html><html><head><title>LinkBooks theme preview</title></head><body></body></html>",
+      "<!doctype html><html><head><title>StreakBooks theme preview</title></head><body></body></html>",
     );
     target.close();
     const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"],style')).map(

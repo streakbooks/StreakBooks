@@ -4,10 +4,10 @@ import { PayrollOverviewPage } from "@/screens/payroll/overview";
 export const Route = createFileRoute("/_authenticated/payroll/")({
   head: () => ({
     meta: [
-      { title: "Payroll — LinkBooks" },
+      { title: "Payroll — StreakBooks" },
       {
         name: "description",
-        content: "Basic Global Payroll overview for LinkBooks organisations.",
+        content: "Basic Global Payroll overview for StreakBooks organisations.",
       },
     ],
   }),

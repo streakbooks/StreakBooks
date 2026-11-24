@@ -1,7 +1,7 @@
 # Phase 0 — Existing-state audit
 
 **Audited:** 2026-11-18  
-**Baseline commit:** [`0ca84bef58d9783dd993c21eb72e145d979d1ab7`](https://github.com/linkbusinessadvisory/LinkBooks/commit/0ca84bef58d9783dd993c21eb72e145d979d1ab7)  
+**Baseline commit:** [`0ca84bef58d9783dd993c21eb72e145d979d1ab7`](https://github.com/streakbooks/StreakBooks/commit/0ca84bef58d9783dd993c21eb72e145d979d1ab7)  
 **Local HEAD:** matched `origin/main` at audit time  
 **Open PRs on authoritative repo:** none listed via `gh pr list` at audit time  
 **Local dirty tree at start:** `src/routeTree.gen.ts` line-ending noise only (restored before branch)
@@ -50,7 +50,7 @@ Nothing classified **Defective** or **Blocked** — absence, not broken PM code.
 | Routes | `src/routes/_authenticated/` + screens in `src/screens/` |
 | Scaffold | `npm run scaffold:module` |
 | DoD | `docs/engineering/NEW-MODULE-DEFINITION-OF-DONE.md` |
-| Design system | `docs/premium-ui/LINKBOOKS_DESIGN_SYSTEM.md` |
+| Design system | `docs/premium-ui/STREAKBOOKS_DESIGN_SYSTEM.md` |
 
 ## Concurrent development notes
 

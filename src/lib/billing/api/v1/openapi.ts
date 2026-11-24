@@ -110,7 +110,7 @@ export function buildOpenApiDocument(): JsonSchema {
   return {
     openapi: "3.1.0",
     info: {
-      title: "LinkBooks Billing API",
+      title: "StreakBooks Billing API",
       version: "1.0.0",
       description:
         "Billing, subscriptions, invoices and partners. Amounts are integer minor units. " +

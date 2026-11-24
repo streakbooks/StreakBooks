@@ -38,7 +38,7 @@ describe("OAuth PKCE and state validation", () => {
     const state = createOAuthState({
       companyId: "company-a",
       appCode: "shopify",
-      redirectUri: "https://linkbooks.app/oauth/callback",
+      redirectUri: "https://streakbooks.com/oauth/callback",
       codeChallenge: pkce.codeChallenge,
       nowMs: 1_000,
       ttlMs: 60_000,
@@ -49,7 +49,7 @@ describe("OAuth PKCE and state validation", () => {
       presentedState: state.state,
       companyId: "company-a",
       appCode: "shopify",
-      redirectUri: "https://linkbooks.app/oauth/callback",
+      redirectUri: "https://streakbooks.com/oauth/callback",
       nowMs: 2_000,
     });
     expect(ok.ok).toBe(true);
@@ -59,7 +59,7 @@ describe("OAuth PKCE and state validation", () => {
       presentedState: state.state,
       companyId: "company-b",
       appCode: "shopify",
-      redirectUri: "https://linkbooks.app/oauth/callback",
+      redirectUri: "https://streakbooks.com/oauth/callback",
       nowMs: 2_000,
     });
     expect(cross.ok).toBe(false);
@@ -71,7 +71,7 @@ describe("OAuth PKCE and state validation", () => {
       presentedState: state.state,
       companyId: "company-a",
       appCode: "shopify",
-      redirectUri: "https://linkbooks.app/oauth/callback",
+      redirectUri: "https://streakbooks.com/oauth/callback",
       nowMs: 2_000,
     });
     expect(replay.ok).toBe(false);

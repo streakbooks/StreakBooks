@@ -250,7 +250,7 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
                 "Install remains limited to interest registration until real sync is verified.")
               : null}
             {app.kind === "partner_api"
-              ? " Partner integrations require API availability, cooperation and technical approvals, then connect through the LinkBooks public API and developer portal."
+              ? " Partner integrations require API availability, cooperation and technical approvals, then connect through the StreakBooks public API and developer portal."
               : null}{" "}
             Security review: {app.securityReviewPassed ? "passed" : "pending"}. Real-data flag:{" "}
             {app.realCustomerDataEnabled ? "enabled" : "disabled"}.
@@ -286,7 +286,7 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
                 <p className="text-muted-foreground">{app.countries.join(", ") || "—"}</p>
               </div>
               <div>
-                <p className="font-medium">LinkBooks modules</p>
+                <p className="font-medium">StreakBooks modules</p>
                 <p className="text-muted-foreground">{app.modules.join(", ") || "—"}</p>
               </div>
               <div>

@@ -7,7 +7,7 @@ import { Button } from "./button";
 import { Card, CardContent, CardHeader, CardTitle } from "./card";
 import { Table, TableBody, TableCell, TableRow } from "./table";
 
-describe("LinkBooks shared premium form and data primitives", () => {
+describe("StreakBooks shared premium form and data primitives", () => {
   it("keeps a native and labelled input accessible when validation fails", () => {
     const markup = renderToStaticMarkup(
       <div>

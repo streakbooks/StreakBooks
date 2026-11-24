@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/contacts/import")({
-  head: () => ({ meta: [{ title: "Import contacts — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Import contacts — StreakBooks" }] }),
   component: ContactImportPage,
 });
 
@@ -109,7 +109,7 @@ function ContactImportPage() {
       }
     >
       <ol className="mb-6 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
-        <li>Download the LinkBooks template</li>
+        <li>Download the StreakBooks template</li>
         <li>Fill name (required), kind, email, phone, tax_number, payment_terms_days</li>
         <li>Upload and review results — retries skip already-created names when enabled</li>
       </ol>
@@ -131,7 +131,7 @@ function ContactImportPage() {
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
-              a.download = "linkbooks-contacts-template.csv";
+              a.download = "streakbooks-contacts-template.csv";
               a.click();
               URL.revokeObjectURL(url);
             } catch (e) {
@@ -198,7 +198,7 @@ function ContactImportPage() {
             <h2 className="font-medium">Review column mapping</h2>
             <p className="text-sm text-muted-foreground">
               {parsed.value.rows.length} contact rows detected. Select the corresponding CSV column
-              for each LinkBooks field, or leave an optional field unmapped.
+              for each StreakBooks field, or leave an optional field unmapped.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

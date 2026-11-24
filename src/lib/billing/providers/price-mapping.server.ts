@@ -19,7 +19,7 @@ export type SnapshotPrice = {
 
 /**
  * Provider price for a published snapshot, created once per provider and mode. The mapping is
- * stored in the database, so renewals and webhooks resolve the same LinkBooks price.
+ * stored in the database, so renewals and webhooks resolve the same StreakBooks price.
  */
 export async function ensureProviderPrice(
   provider: ProviderId,

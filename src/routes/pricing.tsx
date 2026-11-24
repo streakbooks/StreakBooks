@@ -18,11 +18,11 @@ import { ISO_COUNTRIES } from "@/lib/billing/reference/iso-reference-data";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — LinkBooks" },
+      { title: "Pricing — StreakBooks" },
       {
         name: "description",
         content:
-          "LinkBooks Standard, Pro and Business plans, priced for your country. Every plan runs on the same double-entry ledger, with a free trial and no card needed.",
+          "StreakBooks Standard, Pro and Business plans, priced for your country. Every plan runs on the same double-entry ledger, with a free trial and no card needed.",
       },
     ],
   }),

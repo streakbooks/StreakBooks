@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/portal/login")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Portal sign in — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Portal sign in — StreakBooks" }] }),
   component: PortalLogin,
 });
 
@@ -85,7 +85,7 @@ function PortalLogin() {
         if (!signInError) return;
         setMode("sign-in");
         setError(
-          "An account with this email already exists. Sign in with the password you already use for LinkBooks.",
+          "An account with this email already exists. Sign in with the password you already use for StreakBooks.",
         );
         return;
       }

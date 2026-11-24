@@ -1,4 +1,4 @@
-# LinkBooks audit — Purchases / AP, Contacts & Products, App shell & UX, blocked Create actions
+# StreakBooks audit — Purchases / AP, Contacts & Products, App shell & UX, blocked Create actions
 
 - Branch: `cto-master-programme`. Audit date: 23 Oct 2026. Read-only (code tracing + SELECT-only checks on Supabase project `ipxflpzfcqwtenodbxwc`).
 - Every finding below was verified in code (file:line) or by a read-only DB query (marked **DB**). Nothing is reported from guesswork.

@@ -1,6 +1,6 @@
-# LinkBooks accounting parity: implementation audit and backlog
+# StreakBooks accounting parity: implementation audit and backlog
 
-Date: 3 November 2026. Repository: `linkbusinessadvisory/LinkBooks`.
+Date: 3 November 2026. Repository: `streakbooks/StreakBooks`.
 
 Current follow-up: [workflow-depth delivery](ACCOUNTING_WORKFLOWS_DELIVERY_20261103.md) adds transactional/versioned purchase orders, sales orders, OFX/QFX intake and manual deferral schedules; its migration was applied after explicit owner approval. The broader backlog below remains open where noted.
 
@@ -18,7 +18,7 @@ References reviewed for workflow inspiration only:
 - [Odoo deferred revenue](https://www.odoo.com/documentation/18.0/applications/finance/accounting/customer_invoices/deferred_revenues.html).
 - [Xero accounting features](https://www.xero.com/accounting-software/): invoicing, purchase orders, reconciliation, expenses, projects, assets and reporting.
 
-Odoo 19 rendered accounting documentation timed out; official Odoo 18/17 search-indexed documentation informed the feature comparison. No competitor source code, assets, page layouts or documentation text was imported. All new implementation uses LinkBooks components and accounting calculations. This describes the implementation method, not a legal guarantee or a claim that every competitor plan has identical features.
+Odoo 19 rendered accounting documentation timed out; official Odoo 18/17 search-indexed documentation informed the feature comparison. No competitor source code, assets, page layouts or documentation text was imported. All new implementation uses StreakBooks components and accounting calculations. This describes the implementation method, not a legal guarantee or a claim that every competitor plan has identical features.
 
 ## Cross-navigation assessment
 

@@ -93,7 +93,7 @@ export function LedgerHealthPanel({ companyId }: { companyId: string }) {
     );
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `linkbooks-ledger-health-${companyId.slice(0, 8)}.csv`;
+    anchor.download = `streakbooks-ledger-health-${companyId.slice(0, 8)}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
   };

@@ -132,7 +132,7 @@ export function AdvisorsBookingPage({
     <main className="mx-auto max-w-5xl space-y-8 px-4 py-10">
       <header className="space-y-2">
         <p className="text-sm font-semibold tracking-[0.16em] text-primary uppercase">
-          LinkBooks Advisors
+          StreakBooks Advisors
         </p>
         <h1 className="text-3xl font-semibold tracking-tight">Book a free consultation</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">

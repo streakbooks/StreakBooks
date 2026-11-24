@@ -1,6 +1,6 @@
 # Batch 1 review — partially completed
 
-Draft [PR #238](https://github.com/linkbusinessadvisory/LinkBooks/pull/238). Real read-only `/pos` catalogue/cart preview; no sale/payment/stock/journal mutations. Scope and next dependencies are in [the tracker](tracker.md).
+Draft [PR #238](https://github.com/streakbooks/StreakBooks/pull/238). Real read-only `/pos` catalogue/cart preview; no sale/payment/stock/journal mutations. Scope and next dependencies are in [the tracker](tracker.md).
 
 | Verification                        | Actual evidence                                                                      |
 | ----------------------------------- | ------------------------------------------------------------------------------------ |
@@ -60,7 +60,7 @@ Last fetched main: `18cf5454`; audited base `ddaff917`. Purchasing PRs #230–23
 The cloud checkout does not modify the Windows project. Protect local changes before reviewing:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 if (git status --porcelain) { throw "Commit or stash changes first." }
 git fetch origin

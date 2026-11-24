@@ -7,7 +7,7 @@ import { generatePurchaseBillFromRecurring } from "@/lib/recurring/generate-purc
 import { authoriseBillInternal, validateBillLines } from "@/lib/purchases/purchases.functions";
 
 /**
- * Cron entry: secured by LOVABLE_CRON_SECRET Bearer token.
+ * Cron entry: secured by STREAKBOOKS_CRON_SECRET Bearer token.
  * Wire Vercel Cron or Supabase HTTP to POST this server function URL.
  */
 export const runRecurringScheduler = createServerFn({ method: "POST" }).handler(async () => {

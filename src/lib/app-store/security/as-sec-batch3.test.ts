@@ -76,7 +76,7 @@ describe("oauth state company isolation", () => {
     const state = createOAuthState({
       companyId: "company-a",
       appCode: "stripe_payments",
-      redirectUri: "https://linkbooks.app/oauth/callback",
+      redirectUri: "https://streakbooks.com/oauth/callback",
       codeChallenge: "x".repeat(43),
       nowMs: 1_000,
     });
@@ -85,7 +85,7 @@ describe("oauth state company isolation", () => {
       presentedState: state.state,
       companyId: "company-b",
       appCode: "stripe_payments",
-      redirectUri: "https://linkbooks.app/oauth/callback",
+      redirectUri: "https://streakbooks.com/oauth/callback",
       nowMs: 2_000,
     });
     expect(denied.ok).toBe(false);

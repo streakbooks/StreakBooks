@@ -8,7 +8,7 @@ Phase 5. Migration `20261105182042_billing_payment_pipeline.sql`; provider code 
 
 ## Principles
 
-- Test mode only unless `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true` (existing guard). Provider prices
+- Test mode only unless `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true` (existing guard). Provider prices
   are mapped per mode, so test and live never mix.
 - Paid access changes only from a verified provider event, or a provider response recorded by the
   service role. Browser redirects never activate anything.
@@ -72,17 +72,17 @@ subscription.
 
 ## Cancellation
 
-The customer confirms in LinkBooks (policy version recorded), the server cancels at the provider
+The customer confirms in StreakBooks (policy version recorded), the server cancels at the provider
 (Stripe `cancel_at_period_end`; Razorpay cancel at cycle end, or immediately before the first cycle),
 and the service role confirms the effective date. If the provider refuses, the request is marked
 failed and nothing changes. Stripe cancellations can be withdrawn before the date; Razorpay
-cancellations cannot be undone at the provider, so LinkBooks shows them as final. Changes made in the
+cancellations cannot be undone at the provider, so StreakBooks shows them as final. Changes made in the
 Stripe customer portal are recorded from webhooks.
 
 ## Configuration
 
 Server environment (never `VITE_`): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RAZORPAY_KEY_ID`,
-`RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `LOVABLE_CRON_SECRET`
+`RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `STREAKBOOKS_CRON_SECRET`
 (retry endpoint). Provider webhook endpoints should subscribe to: Stripe
 `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`,
 `invoice.payment_failed`, `customer.subscription.*` (including `pending_update_applied` and

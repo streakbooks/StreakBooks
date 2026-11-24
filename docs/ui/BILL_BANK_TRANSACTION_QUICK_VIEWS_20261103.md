@@ -1,9 +1,9 @@
-# LinkBooks — Bills and Banking record quick views / selection clarity
+# StreakBooks — Bills and Banking record quick views / selection clarity
 Date: 3 November 2026
 Branch: feature/record-quickviews-bulk-clarity-20261103
 
 ## Scope
-This is an original LinkBooks usability increment informed by the speed and clarity of leading Xero/Odoo accounting workspaces. It does **not** copy either vendor's source, visuals, CSS or assets.
+This is an original StreakBooks usability increment informed by the speed and clarity of leading Xero/Odoo accounting workspaces. It does **not** copy either vendor's source, visuals, CSS or assets.
 
 ## Implemented
 
@@ -30,13 +30,13 @@ This is an original LinkBooks usability increment informed by the speed and clar
 ## Explicit safety and product limits
 - Read-only previews show **current-page summaries**, not full document lines, bank statements or attachment contents. Full detail and editing remain on their existing routes.
 - No SQL, RLS, Supabase migrations, billing integration, tax logic or financial journals were modified.
-- Amount formatting reuses existing LinkBooks money formatting; currencies are never combined in a preview.
+- Amount formatting reuses existing StreakBooks money formatting; currencies are never combined in a preview.
 - The UI does not invent banking reference IDs, amounts, tax amounts or statuses.
 - Authenticated browser E2E scenarios are checked in, but cannot be marked as executed until a staging login is available.
 - GitHub CI checks TypeScript, changed-file ESLint, unit tests and production build. Full repository-wide lint debt remains a separate task.
 
 ## Manual acceptance at localhost
-1. Update: open PowerShell in D:\\MyApp\\LinkBooks and run `git status`, `git checkout main`, `git pull origin main` and `npm.cmd run dev`.
+1. Update: open PowerShell in D:\\MyApp\\StreakBooks and run `git status`, `git checkout main`, `git pull origin main` and `npm.cmd run dev`.
 2. Open http://localhost:8080 and sign in. Go to **Banking → All transactions**.
 3. If transactions are present, click the **eye icon** beside any transaction. Confirm a right-hand drawer with its actual date, description, amount, bank account and status.
 4. Inspect **Linked journals**. Follow a journal link if one exists, or confirm the empty state appears.

@@ -119,7 +119,7 @@ export function WorkpaperPeriodComparisonPanel({
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download =
-      "linkbooks-workpaper-period-variance-" + previousAsOf + "-to-" + asOf + ".csv";
+      "streakbooks-workpaper-period-variance-" + previousAsOf + "-to-" + asOf + ".csv";
     anchor.click();
     URL.revokeObjectURL(url);
   };

@@ -1,4 +1,4 @@
-# LinkBooks Signal
+# StreakBooks Signal
 
 Signal is a persistent browser voice assistant for the company workspace. Enable
 **Settings → Features → Voice commands**, then open the Signal control in the
@@ -15,7 +15,7 @@ without requiring microphone support.
 ## Custom wake phrases (Phase 15)
 
 In **Settings → Automation → Personal wake phrase**, choose a phrase such as “Hey
-LinkBooks”, “Hello LinkBooks” or “Hey Luna”, save it, then click **Enroll phrase**.
+StreakBooks”, “Hello StreakBooks” or “Hey Luna”, save it, then click **Enroll phrase**.
 Repeat the same phrase three times in a quiet room, pausing between repetitions.
 Enable the setting and click **Arm wake detection**. Enabling alone never starts
 capture; each new page/session requires an explicit Arm click. The assistant panel

@@ -175,7 +175,7 @@ export function FirmClientPortfolio({
   useEffect(() => {
     let saved: unknown = null;
     try {
-      const raw = window.localStorage.getItem("linkbooks:firm-client-columns:" + firmId);
+      const raw = window.localStorage.getItem("streakbooks:firm-client-columns:" + firmId);
       saved = raw ? JSON.parse(raw) : null;
     } catch {
       // Browser preferences are optional; never prevent access to the directory.
@@ -188,7 +188,7 @@ export function FirmClientPortfolio({
     const next = normalizeFirmClientColumns(columns);
     setSavedColumns({ firmId, columns: next });
     try {
-      window.localStorage.setItem("linkbooks:firm-client-columns:" + firmId, JSON.stringify(next));
+      window.localStorage.setItem("streakbooks:firm-client-columns:" + firmId, JSON.stringify(next));
     } catch {
       toast.message("Columns changed for this session; browser storage is unavailable");
     }

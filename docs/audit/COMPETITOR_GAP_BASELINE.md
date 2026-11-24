@@ -1,7 +1,7 @@
 # Competitor gap baseline (Phase One start)
 
 **Date:** 2026-10-23  
-**Sources:** Public product knowledge + existing `docs/LINKBOOKS_COMPETITIVE_BENCHMARK.md` + `docs/settings/02-GAP-ANALYSIS.md`. Mark uncertain items **verify**.
+**Sources:** Public product knowledge + existing `docs/STREAKBOOKS_COMPETITIVE_BENCHMARK.md` + `docs/settings/02-GAP-ANALYSIS.md`. Mark uncertain items **verify**.
 
 ## Priority gaps vs Xero/QBO/Zoho/FreshBooks/Wave/Akaunting
 

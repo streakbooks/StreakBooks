@@ -190,10 +190,10 @@ for (const mode of ["light", "dark"]) {
       await page.setViewportSize({ width: 375, height: 812 });
       await page.addInitScript(
         ({ mode, palette }) => {
-          localStorage.setItem("linkbooks-theme", mode);
-          localStorage.setItem("linkbooks-theme-palette", palette);
+          localStorage.setItem("streakbooks-theme", mode);
+          localStorage.setItem("streakbooks-theme-palette", palette);
           localStorage.setItem(
-            "linkbooks-theme-custom",
+            "streakbooks-theme-custom",
             JSON.stringify({
               primary: "#777777",
               sidebar: "#777777",
@@ -205,7 +205,7 @@ for (const mode of ["light", "dark"]) {
         { mode, palette },
       );
       await page.goto("/sales/invoices");
-      await expect(page.locator("html")).toHaveAttribute("data-linkbooks-palette", palette);
+      await expect(page.locator("html")).toHaveAttribute("data-streakbooks-palette", palette);
       expect(await page.locator("html").evaluate((el) => el.classList.contains("dark"))).toBe(
         mode === "dark",
       );
@@ -222,13 +222,13 @@ test("system appearance follows the browser and preserves palette across reload"
 }) => {
   await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
   await page.addInitScript(() => {
-    localStorage.setItem("linkbooks-theme", "system");
-    localStorage.setItem("linkbooks-theme-palette", "emerald");
+    localStorage.setItem("streakbooks-theme", "system");
+    localStorage.setItem("streakbooks-theme-palette", "emerald");
   });
   await page.goto("/sales/invoices");
   await expect(page.locator("html")).toHaveClass(/dark/);
   await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-linkbooks-palette", "emerald");
+  await expect(page.locator("html")).toHaveAttribute("data-streakbooks-palette", "emerald");
   await page.emulateMedia({ colorScheme: "light" });
   await expect(page.locator("html")).not.toHaveClass(/dark/);
 });

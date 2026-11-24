@@ -158,4 +158,4 @@ export type HrAuditEvent = {
 };
 
 export const HR_DISCLAIMER =
-  "LinkBooks HR Management supports configurable workforce processes. It is not advertised as legally compliant employment-law software for every jurisdiction until rule packs are verified.";
+  "StreakBooks HR Management supports configurable workforce processes. It is not advertised as legally compliant employment-law software for every jurisdiction until rule packs are verified.";

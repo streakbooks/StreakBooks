@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { StatusBadge, StatusIndicator, StatusTimeline } from "./StatusBadge";
 import { StatusBadge as ExistingStatusBadge } from "./stat-card";
 
-describe("Live LinkBooks semantic status visuals", () => {
+describe("Live StreakBooks semantic status visuals", () => {
   it("renders a backend paid state in the green payment tone", () => {
     const markup = renderToStaticMarkup(<StatusBadge status="paid" />);
     expect(markup).toContain('data-tone="success"');

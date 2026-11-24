@@ -5,7 +5,7 @@
 | Code (workspace architecture + route/insight adoption Batches 1–21) | Chrome inheritance largely complete; factual insight rails expanded; prod build unblocked |
 | Full route Section 14 finished-screen DoD | **not ready** — chrome PASS; staging/live RBAC/manual a11y still open |
 | Local contract tests (`check:modules` / `check:workspace` / `check:ui` / modules vitest) | passing on each merged batch |
-| Merge to authoritative `main` | Batches 1–21 merged through PR [#203](https://github.com/linkbusinessadvisory/LinkBooks/pull/203) → `e31e4f7f`; Batch 22 in progress |
+| Merge to authoritative `main` | Batches 1–21 merged through PR [#203](https://github.com/streakbooks/StreakBooks/pull/203) → `e31e4f7f`; Batch 22 in progress |
 | Supabase migrations (premium UI chrome) | none required for chrome batches |
 | Security / accounting integrity | local unit invariants available (`npm run test:accounting-invariants`); full two-tenant audit **not-yet-verified** |
 | Staging authenticated QA | **not executed** — dedicated `E2E_*` staging credentials are not configured on this workstation |
@@ -26,7 +26,7 @@
 
 Run `npm run check:section18` to execute the local module checks and report release gates. Add `--require-go-live` to require every gate to pass.
 
-Production URL: https://linkbooks-puce.vercel.app — presence of a URL is **not** Section 14/18 DONE evidence.
+Production URL: https://streakbooks-puce.vercel.app — presence of a URL is **not** Section 14/18 DONE evidence.
 
 ## Verify the deployed revision
 

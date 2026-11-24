@@ -201,7 +201,7 @@ export function SourceMigrationWizard({
               companyId,
               currency,
             ),
-            "linkbooks-migration-validation.csv",
+            "streakbooks-migration-validation.csv",
           )
         }
       >

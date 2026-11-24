@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
- * Legal documents. Wording is written and reviewed by people; LinkBooks only versions it, keeps
+ * Legal documents. Wording is written and reviewed by people; StreakBooks only versions it, keeps
  * reviewed text immutable and requires a second platform owner to approve it.
  */
 export const LEGAL_DOCUMENT_KINDS = [

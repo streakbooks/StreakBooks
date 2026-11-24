@@ -3,7 +3,7 @@
 **Method:** Principle-based usability benchmarks only. No competitor source, assets, trade dress or screen-for-screen layouts are copied.  
 **Labels:** `existing-working` | `partially-implemented` | `missing` | `not-applicable` | `not-yet-verified`.
 
-| Capability principle | LinkBooks today | Gap vs typical SaaS accounting UX | Original LinkBooks expression |
+| Capability principle | StreakBooks today | Gap vs typical SaaS accounting UX | Original StreakBooks expression |
 | -------------------- | --------------- | --------------------------------- | ----------------------------- |
 | Native open-in-new-tab navigation | existing-working (`ModuleSubnav`, checks) | Competitors often use SPA-only buttons | Keep native `<Link>` everywhere |
 | Semantic status ≠ health ≠ payment | existing-working (`StatusBadge`, status-badge map) | Often conflated colours | Distinct tones + labels + icons |

@@ -1,4 +1,4 @@
-# LinkBooks — Accounting rules (implemented)
+# StreakBooks — Accounting rules (implemented)
 
 **Authority:** Postgres RPC `post_journal` (+ TypeScript `postJournal` wrapper).  
 **Money:** integer **minor units** (`BIGINT`). No IEEE float for ledger totals.

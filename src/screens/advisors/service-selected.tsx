@@ -41,7 +41,7 @@ export function AdvisorsServiceSelectedPage({ serviceCode }: { serviceCode: stri
       <main className="mx-auto max-w-3xl px-4 py-16">
         <h1 className="text-2xl font-semibold">Service not found</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Choose one of the two LinkBooks Advisors services to continue.
+          Choose one of the two StreakBooks Advisors services to continue.
         </p>
         <Button asChild className="mt-6">
           <Link to="/advisors">Back to Advisors</Link>

@@ -1,4 +1,4 @@
-# LinkBooks — IP & dependency compliance register
+# StreakBooks — IP & dependency compliance register
 
 | Field       | Value                                                                                                                                                            |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -8,7 +8,7 @@
 
 ## Policy summary
 
-1. **Original product:** LinkBooks must remain independently developed and distinctly branded — not a clone of Odoo, Xero, QuickBooks Online, Zoho Books, Sage, MYOB, ERPNext or any other competitor.
+1. **Original product:** StreakBooks must remain independently developed and distinctly branded — not a clone of Odoo, Xero, QuickBooks Online, Zoho Books, Sage, MYOB, ERPNext or any other competitor.
 2. **Competitor use:** Public feature documentation may inform _what_ workflows accountants need. It must never be used as a source of code, layouts, CSS, icons, copy, field names or report artwork.
 3. **Odoo / copyleft:** Do not import Odoo source. Prefer independent implementation. Any proposed OSS reuse requires license review before merge.
 4. **Trademarks:** Competitor names may appear only in factual comparison docs; never in product UI in a way that implies affiliation or endorsement.
@@ -21,10 +21,10 @@
 | Check             | Required evidence                                                                  |
 | ----------------- | ---------------------------------------------------------------------------------- |
 | Clean-room note   | Concept references (URLs) + statement that no competitor source/assets were copied |
-| Design system     | Uses LinkBooks `ListWorkspace` / `RecordWorkspace` / tokens where applicable       |
-| Posting engine    | Reuses authoritative LinkBooks posting paths; no parallel ledger                   |
+| Design system     | Uses StreakBooks `ListWorkspace` / `RecordWorkspace` / tokens where applicable       |
+| Posting engine    | Reuses authoritative StreakBooks posting paths; no parallel ledger                   |
 | Dependencies      | No new packages, or packages listed in THIRD_PARTY.md with SPDX                    |
-| Similarity review | Author asserts original LinkBooks vocabulary and workflows                         |
+| Similarity review | Author asserts original StreakBooks vocabulary and workflows                         |
 | Gap register      | Status updated; not marked verified without acceptance evidence                    |
 
 ## Milestone log
@@ -32,7 +32,7 @@
 | Date       | Milestone                               | IP outcome                                                                                                                                          |
 | ---------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-11-04 | Accounting FX / reporting / QIF batches | No new deps; clean-room recorded in CLEAN_ROOM.md                                                                                                   |
-| 2026-11-17 | Historical Aged Payables (as-at)        | No new npm packages; original `ap-asat` maths mirroring LinkBooks AR as-at contract; competitors referenced only as public aged-payables capability |
+| 2026-11-17 | Historical Aged Payables (as-at)        | No new npm packages; original `ap-asat` maths mirroring StreakBooks AR as-at contract; competitors referenced only as public aged-payables capability |
 | 2026-11-17 | PO goods receipt foundation             | No new npm packages; original `po-receipt` maths + RPC; public PO receiving concepts only; no competitor UI/code                                    |
 | 2026-11-17 | PO three-way match                      | No new npm packages; original `po-three-way-match` maths; uses existing `purchases.three_way_matching` setting; public 3-way match concepts only    |
 | 2026-11-17 | Partial bill-from-received              | No new npm packages; original `po-partial-bill` maths; convert bills unbilled received qty only; no competitor code; no inventory valuation claim   |

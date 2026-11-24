@@ -124,7 +124,7 @@ export function FirmBillingPanel({
       <div>
         <h2 className="text-lg font-semibold">Engagement invoice references</h2>
         <p className="text-sm text-muted-foreground">
-          Reuse LinkBooks' existing Sales invoices in your practice billing company. Linking a
+          Reuse StreakBooks' existing Sales invoices in your practice billing company. Linking a
           reference does not create, post, send, void or modify an invoice. Never invoice practice
           fees from a client's accounting organisation.
         </p>
@@ -332,7 +332,7 @@ export function FirmAnalyticsPanel({ firmId }: { firmId: string }) {
       <div>
         <h2 className="text-lg font-semibold">Practice insights</h2>
         <p className="text-sm text-muted-foreground">
-          Accurate operational counts from authorised LinkBooks records, as of {item.asOfUtc} UTC.
+          Accurate operational counts from authorised StreakBooks records, as of {item.asOfUtc} UTC.
           Access-restricted records are excluded; no unverified financial totals are combined.
         </p>
       </div>

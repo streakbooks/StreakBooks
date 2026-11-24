@@ -7,8 +7,8 @@ export const Route = createFileRoute("/_authenticated/contacts/")({
   validateSearch: parseContactsDirectorySearch,
   head: () => ({
     meta: [
-      { title: "Contacts — LinkBooks" },
-      { name: "description", content: "LinkBooks contact directory for customers and suppliers." },
+      { title: "Contacts — StreakBooks" },
+      { name: "description", content: "StreakBooks contact directory for customers and suppliers." },
     ],
   }),
   component: ContactsPage,

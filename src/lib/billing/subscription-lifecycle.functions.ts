@@ -240,11 +240,11 @@ async function sendCancellationNotice(
   });
   const ended = result.status === "effective";
   const subject = ended
-    ? `Your LinkBooks subscription for ${name} has ended`
-    : `Your LinkBooks subscription for ${name} ends on ${date}`;
+    ? `Your StreakBooks subscription for ${name} has ended`
+    : `Your StreakBooks subscription for ${name} ends on ${date}`;
   const text = ended
-    ? `The LinkBooks subscription for ${name} has ended. Your records stay available to view and export. Choose a plan in Settings > Subscription to post again.`
-    : `The LinkBooks subscription for ${name} is set to end on ${date}. You can keep using LinkBooks until then, and you can withdraw the cancellation before that date in Settings > Subscription. Your records stay available after it ends.`;
+    ? `The StreakBooks subscription for ${name} has ended. Your records stay available to view and export. Choose a plan in Settings > Subscription to post again.`
+    : `The StreakBooks subscription for ${name} is set to end on ${date}. You can keep using StreakBooks until then, and you can withdraw the cancellation before that date in Settings > Subscription. Your records stay available after it ends.`;
   const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const sent = await sendViaResend(config, {
     to: [email],

@@ -770,14 +770,14 @@ export function PortalSecurity() {
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <p>
-          Optional until the organisation requires it. This uses your LinkBooks sign-in. Card
+          Optional until the organisation requires it. This uses your StreakBooks sign-in. Card
           numbers are never stored here.
         </p>
         <Button
           variant="outline"
           onClick={() => {
             void supabase.auth.mfa
-              .enroll({ factorType: "totp", friendlyName: "LinkBooks portal" })
+              .enroll({ factorType: "totp", friendlyName: "StreakBooks portal" })
               .then(({ data, error }) => {
                 if (error || !data) {
                   setMessage(friendlyAuthError(error ?? "An authenticator could not be started."));

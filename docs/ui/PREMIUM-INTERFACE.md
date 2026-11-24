@@ -1,6 +1,6 @@
 # Approved interface refinement
 
-Base: `linkbusinessadvisory/LinkBooks`, main `6eec8fa5fe20d15b86f839c780f2e21c37aed49c`.
+Base: `streakbooks/StreakBooks`, main `6eec8fa5fe20d15b86f839c780f2e21c37aed49c`.
 Initial branch: `ui/approved-premium-refinement`. Completion branch: `ui/complete-premium-interface`.
 The user subsequently authorized publication and merge into GitHub main. Deployment remains separate.
 

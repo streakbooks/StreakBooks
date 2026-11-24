@@ -46,17 +46,17 @@ export const Route = createFileRoute("/auth")({
       {
         title:
           match.search.mode === "signup"
-            ? "Create your account — LinkBooks"
-            : "Sign in — LinkBooks",
+            ? "Create your account — StreakBooks"
+            : "Sign in — StreakBooks",
       },
       {
         name: "description",
-        content: "Sign in to LinkBooks or create an account to manage your books securely.",
+        content: "Sign in to StreakBooks or create an account to manage your books securely.",
       },
-      { property: "og:title", content: "Sign in — LinkBooks" },
+      { property: "og:title", content: "Sign in — StreakBooks" },
       {
         property: "og:description",
-        content: "Sign in to LinkBooks or create an account to manage your books securely.",
+        content: "Sign in to StreakBooks or create an account to manage your books securely.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -115,12 +115,12 @@ function AuthPage() {
       title={mode === "signin" ? "Welcome back" : "Create your account"}
       subtitle={
         mode === "signin"
-          ? "Sign in to your LinkBooks account."
-          : "Set up LinkBooks for your business or practice in a few minutes."
+          ? "Sign in to your StreakBooks account."
+          : "Set up StreakBooks for your business or practice in a few minutes."
       }
       headerAction={
         <>
-          {mode === "signin" ? "New to LinkBooks? " : "Already have an account? "}
+          {mode === "signin" ? "New to StreakBooks? " : "Already have an account? "}
           <Link
             to="/auth"
             search={switchSearch}

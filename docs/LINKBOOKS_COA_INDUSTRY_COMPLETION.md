@@ -1,4 +1,4 @@
-# LinkBooks — Industry CoA library completion report
+# StreakBooks — Industry CoA library completion report
 
 **Date:** 20 Oct 2026  
 **Catalog version:** `2026.10.20.1`
@@ -11,8 +11,8 @@
 
 | # | Deliverable | Location / status |
 |---|-------------|-------------------|
-| 1 | 50-company benchmark | `docs/LINKBOOKS_COA_50_COMPANY_BENCHMARK.md` — **done** |
-| 2 | FS category → LinkBooks matrix | Same doc + `fs_line` on library accounts — **done** |
+| 1 | 50-company benchmark | `docs/STREAKBOOKS_COA_50_COMPANY_BENCHMARK.md` — **done** |
+| 2 | FS category → StreakBooks matrix | Same doc + `fs_line` on library accounts — **done** |
 | 3 | Industry catalogue | `src/lib/accounting/coa-library/catalog.ts` — **40 industries**, **15 families** |
 | 4 | Account counts | See `catalogStats()` — library ~55 accounts; industries reuse shared keys |
 | 5 | Migration | `supabase/migrations/20261020200000_industry_coa_library.sql` |

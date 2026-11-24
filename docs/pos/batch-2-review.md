@@ -1,14 +1,14 @@
 # Batch 2 — register/session foundation (partial implementation)
 
-Continuation of [POS PR #238](https://github.com/linkbusinessadvisory/LinkBooks/pull/238). Adds physical-location register setup, cashier location grants, dedicated POS role permissions, real opening/unchanged-float closing commands and closed-session history. There are no sale/payment/stock/journal mutations. This is not a production-ready POS release.
+Continuation of [POS PR #238](https://github.com/streakbooks/StreakBooks/pull/238). Adds physical-location register setup, cashier location grants, dedicated POS role permissions, real opening/unchanged-float closing commands and closed-session history. There are no sale/payment/stock/journal mutations. This is not a production-ready POS release.
 
 | Required verification           | Actual integrated review status                                                                                                                                      |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Task implementation             | Partial: configuration/session foundation implemented                                                                                                                |
-| PR                              | [#238](https://github.com/linkbusinessadvisory/LinkBooks/pull/238), draft; published integrated register/session foundation                                          |
+| PR                              | [#238](https://github.com/streakbooks/StreakBooks/pull/238), draft; published integrated register/session foundation                                          |
 | Merge into main                 | POS not merged; #241 audit repair and #246 regression repairs merged externally                                                                                      |
 | Main inspected                  | `98d937359b6f6546f3eccc19f8b2729b80b12ccb`; latest banking/sales work merged locally into this feature branch                                                        |
-| GitHub CI                       | Blocked before any steps by account billing/spending limit; [actual run](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44123447850)                 |
+| GitHub CI                       | Blocked before any steps by account billing/spending limit; [actual run](https://github.com/streakbooks/StreakBooks/actions/runs/44123447850)                 |
 | Unit tests                      | 4,075 passed / 0 failed / 0 skipped across 591 files on integrated source revision `bb50d250`                                                                        |
 | PostgreSQL integration/security | 45 POS assertions including 3 concurrency scenarios passed; broader workflow/platform suites and 59 banking PostgreSQL assertions also passed, all isolated fixtures |
 | Browser / E2E                   | 9 POS, 74 shared UI/accessibility and 5 banking fixtures passed; no authenticated live browser flow                                                                  |
@@ -72,20 +72,20 @@ Connected database audit was read-only: required master columns exist, latest mi
 
 ## Integrated release repairs
 
-This PR includes reviewable dependencies: [#246](https://github.com/linkbusinessadvisory/LinkBooks/pull/246) corrects stale accounting assertions, voice navigation and the missing payroll feature-catalogue seed (merged externally); [#252](https://github.com/linkbusinessadvisory/LinkBooks/pull/252) repairs repository lint debt using relevant existing #227 fixes; [#253](https://github.com/linkbusinessadvisory/LinkBooks/pull/253) migrates 147 dynamic record selectors in 66 files onto the shared searchable lookup. These branches are preserved, with overlap documented; no remote main merge or history rewrite occurred. The broad formatting changes are not POS business logic. I can inspect repository branches and commits, but cannot inspect unsaved changes in a separate Cursor session. Concurrent work is therefore reconciled through Git, not certified absent.
+This PR includes reviewable dependencies: [#246](https://github.com/streakbooks/StreakBooks/pull/246) corrects stale accounting assertions, voice navigation and the missing payroll feature-catalogue seed (merged externally); [#252](https://github.com/streakbooks/StreakBooks/pull/252) repairs repository lint debt using relevant existing #227 fixes; [#253](https://github.com/streakbooks/StreakBooks/pull/253) migrates 147 dynamic record selectors in 66 files onto the shared searchable lookup. These branches are preserved, with overlap documented; no remote main merge or history rewrite occurred. The broad formatting changes are not POS business logic. I can inspect repository branches and commits, but cannot inspect unsaved changes in a separate Cursor session. Concurrent work is therefore reconciled through Git, not certified absent.
 
 Integrated static gates passed: 707 TSX files / 189 routes with zero UI violations; all module/workspace, navigation and lookup checks passed. The quality workflow retains all prior checks and adds the disposable POS PostgreSQL job. Shared browser fixtures now explicitly isolate unused messaging mutations and throw if invoked without a configured fixture, rather than importing real server middleware.
 
 The broader workflow runner also needed two fixture repairs: a dedicated one-company test actor (the prior actor legitimately belonged to the supposed foreign company), and valid PostgreSQL `$$` delimiters in the concurrent-numbering assertion. Both suites now pass without changing production contact-numbering code.
 
-An initial integrated unit run passed 4,031 tests and timed out five PDF/export tests under simultaneous typecheck/browser/lint load. The quieter complete rerun passed all 4,075 tests; timeouts were not increased and tests were not disabled. Final results are recorded in the verification table. The full unit run tested application source [`bb50d250`](https://github.com/linkbusinessadvisory/LinkBooks/commit/bb50d2503739bac15bacf6cd690dbebfcc2dd547). Fixture-only cleanup [`e1222754`](https://github.com/linkbusinessadvisory/LinkBooks/commit/e122275452c462a94060db79c693cb4a8d375436) separates component/service exports without weakening lint; its five banking browser tests passed again. Application TypeScript, full lint and all static contracts also passed after integration. Subsequent commits update documentation only. Broader workflow fixture repairs isolate the tenant-denial actor and restore the concurrency assertion SQL delimiter. Build warnings remain for pre-existing deprecated TanStack inputValidator usage and Nitro configuration; they did not fail the build.
+An initial integrated unit run passed 4,031 tests and timed out five PDF/export tests under simultaneous typecheck/browser/lint load. The quieter complete rerun passed all 4,075 tests; timeouts were not increased and tests were not disabled. Final results are recorded in the verification table. The full unit run tested application source [`bb50d250`](https://github.com/streakbooks/StreakBooks/commit/bb50d2503739bac15bacf6cd690dbebfcc2dd547). Fixture-only cleanup [`e1222754`](https://github.com/streakbooks/StreakBooks/commit/e122275452c462a94060db79c693cb4a8d375436) separates component/service exports without weakening lint; its five banking browser tests passed again. Application TypeScript, full lint and all static contracts also passed after integration. Subsequent commits update documentation only. Broader workflow fixture repairs isolate the tenant-denial actor and restore the concurrency assertion SQL delimiter. Build warnings remain for pre-existing deprecated TanStack inputValidator usage and Nitro configuration; they did not fail the build.
 
 ## Safe Windows review
 
-The cloud checkout is separate from `D:\MyApp\LinkBooks`. Protect local edits, fetch, and check out the review branch after it is published:
+The cloud checkout is separate from `D:\MyApp\StreakBooks`. Protect local edits, fetch, and check out the review branch after it is published:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 if (git status --porcelain) { throw "Commit or stash changes first." }
 git fetch origin

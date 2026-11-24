@@ -10,7 +10,7 @@ test.describe("customer referral", () => {
     await expect(link).toBeDisabled();
     await page.getByText("Partner disclosure (version 1)").click();
     await expect(
-      page.getByText("Your adviser may be paid a commission by LinkBooks."),
+      page.getByText("Your adviser may be paid a commission by StreakBooks."),
     ).toBeVisible();
     await page.getByLabel(/I have read the partner disclosure/).check();
     await link.click();
@@ -22,7 +22,7 @@ test.describe("customer referral", () => {
   });
 
   test("prefills a code captured from a partner link", async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem("linkbooks.referralCode", "AB12CD34EF56"));
+    await page.addInitScript(() => localStorage.setItem("streakbooks.referralCode", "AB12CD34EF56"));
     await page.goto("/?view=referral");
     await expect(page.getByLabel("Referral code from your accountant")).toHaveValue("AB12CD34EF56");
   });
@@ -42,7 +42,7 @@ test.describe("partner portal", () => {
     await expect(apply).toBeDisabled();
     await page.getByLabel("I accept the partner terms on behalf of this firm.").check();
     await apply.click();
-    await expect(page.getByText("LinkBooks is verifying your application.")).toBeVisible();
+    await expect(page.getByText("StreakBooks is verifying your application.")).toBeVisible();
     await expect(page.getByRole("button", { name: "New referral code" })).toHaveCount(0);
   });
 

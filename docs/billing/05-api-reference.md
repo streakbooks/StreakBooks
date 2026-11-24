@@ -65,7 +65,7 @@ first is running is `409 idempotency_in_progress`; a server error releases the k
 | GET    | `/api/v1/pricing/quote`                | user      | `companyId`, `planCode`, `interval`, optional `coupon`                        |
 | GET    | `/api/v1/subscriptions/current`        | user      | State, eligibility and history                                                |
 | POST   | `/api/v1/subscriptions/trial`          | user      | Starts the trial                                                              |
-| POST   | `/api/v1/subscriptions/checkout`       | user      | Returns a provider-hosted checkout URL; no card data passes through LinkBooks |
+| POST   | `/api/v1/subscriptions/checkout`       | user      | Returns a provider-hosted checkout URL; no card data passes through StreakBooks |
 | POST   | `/api/v1/subscriptions/plan-change`    | user      | Upgrade after payment, downgrade at renewal                                   |
 | POST   | `/api/v1/subscriptions/cancel`         | user      | Needs `confirm: true` and the current policy ID                               |
 | POST   | `/api/v1/subscriptions/cancel/reverse` | user      | Where the provider allows it                                                  |

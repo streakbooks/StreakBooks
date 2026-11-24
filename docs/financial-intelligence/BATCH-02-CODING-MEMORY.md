@@ -1,6 +1,6 @@
 # Batch 02 — approved Coding Memory events and controls
 
-Result: PARTIALLY COMPLETED; development and isolated verification, not a production release. Continues [draft PR #225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225). Main remains `a2a8a79efbf8ad11b0aa64bd00a7e64095ba0484`; previous draft head was `7bf972cf`. Runtime event/UI implementation: `cb2789b7`, followed by the bank-currency/evidence correction recorded in the final validation section. No merge or production mutation is authorised by this report.
+Result: PARTIALLY COMPLETED; development and isolated verification, not a production release. Continues [draft PR #225](https://github.com/streakbooks/StreakBooks/pull/225). Main remains `a2a8a79efbf8ad11b0aa64bd00a7e64095ba0484`; previous draft head was `7bf972cf`. Runtime event/UI implementation: `cb2789b7`, followed by the bank-currency/evidence correction recorded in the final validation section. No merge or production mutation is authorised by this report.
 
 ## Delivered behavior
 
@@ -37,7 +37,7 @@ Applied only inside disposable, network-isolated PostgreSQL 17 fixture container
 
 ## Validation commands and evidence
 
-Cloud worktree `/workspace/work/linkbooks`; Node 24.19.0 and npm 11.9.0 with the authoritative lockfile installation. Tests execute real production domain code unless explicitly described as mocked/fixture.
+Cloud worktree `/workspace/work/streakbooks`; Node 24.19.0 and npm 11.9.0 with the authoritative lockfile installation. Tests execute real production domain code unless explicitly described as mocked/fixture.
 
 | Exact command                                                                                                                                                     | Executed result                                                                                         | Scope / limitations                                                                                                                                                                                        |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -90,13 +90,13 @@ The programme is still **0/53 full criteria acceptance-verified**. This batch ad
 Do not switch or clean the existing messaging checkout with its untracked work. Use a separate worktree; if the review branch/directory already exists, stop and inspect it rather than overwriting it.
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
-git fetch https://github.com/linkbusinessadvisory/LinkBooks.git feature/financial-intelligence-foundation
+git fetch https://github.com/streakbooks/StreakBooks.git feature/financial-intelligence-foundation
 if ($LASTEXITCODE -ne 0) { throw "Fetch failed." }
-git worktree add -b review/coding-memory-batch02 D:\MyApp\LinkBooks-memory-review FETCH_HEAD
+git worktree add -b review/coding-memory-batch02 D:\MyApp\StreakBooks-memory-review FETCH_HEAD
 if ($LASTEXITCODE -ne 0) { throw "Worktree creation failed; inspect existing work." }
-cd D:\MyApp\LinkBooks-memory-review
+cd D:\MyApp\StreakBooks-memory-review
 npm.cmd ci
 if ($LASTEXITCODE -ne 0) { throw "Installation failed." }
 npm.cmd test -- src/lib/banking src/lib/accounting/posting-engine.test.ts src/lib/accounting/period-close.test.ts src/lib/accounting/period-close.functions.test.ts
@@ -110,6 +110,6 @@ Manual review: Banking → Transactions → Code; select/reject and edit/post; o
 
 ## Final source validation
 
-Runtime TypeScript/React source `188bbc71e2dc6f1040f209bdd65beabe941f81dc`: local `npm run build` passed (exit 0); final full typecheck failed with exactly the same 107 diagnostic lines as detached main, zero introduced/removed. Latest schema/test compatibility commit is [`a83cc45b`](https://github.com/linkbusinessadvisory/LinkBooks/commit/a83cc45b22a0e80c95e178aee0b367f3454c0944); PostgreSQL passed 59 assertions against that final migration. Unit suite remains 208/208 and isolated browser suite 5/5. No release gate is waived.
+Runtime TypeScript/React source `188bbc71e2dc6f1040f209bdd65beabe941f81dc`: local `npm run build` passed (exit 0); final full typecheck failed with exactly the same 107 diagnostic lines as detached main, zero introduced/removed. Latest schema/test compatibility commit is [`a83cc45b`](https://github.com/streakbooks/StreakBooks/commit/a83cc45b22a0e80c95e178aee0b367f3454c0944); PostgreSQL passed 59 assertions against that final migration. Unit suite remains 208/208 and isolated browser suite 5/5. No release gate is waived.
 
 Machine-readable actual result summaries: [BATCH-02-EVIDENCE.json](BATCH-02-EVIDENCE.json). Final source file inventory above also includes this evidence file.

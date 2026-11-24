@@ -52,5 +52,5 @@ export function runMessagingAiAssist(request: MessagingAiRequest): MessagingAiRe
 }
 
 export function messagingAiDisclosure(): string {
-  return "LinkBooks AI suggestions are optional and may be wrong. They cannot approve payments, post journals or send external replies without your confirmation.";
+  return "StreakBooks AI suggestions are optional and may be wrong. They cannot approve payments, post journals or send external replies without your confirmation.";
 }

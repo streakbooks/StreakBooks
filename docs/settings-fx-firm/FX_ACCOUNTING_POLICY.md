@@ -1,4 +1,4 @@
-# Multi-currency accounting policy (LinkBooks)
+# Multi-currency accounting policy (StreakBooks)
 
 **Status:** Approved implementation policy for day-one multi-currency support.  
 **Scope:** Transaction currency, organisation base currency, recorded exchange rates, deterministic rounding, realised / unrealised FX treatment, and reporting in base currency.  

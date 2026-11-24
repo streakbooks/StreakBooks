@@ -1,4 +1,4 @@
-# LinkBooks — Security & Permissions Matrix
+# StreakBooks — Security & Permissions Matrix
 
 ## 1. Security layers
 

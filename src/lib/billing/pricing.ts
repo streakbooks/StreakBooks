@@ -1,5 +1,5 @@
 /**
- * LinkBooks plan maths. Amounts are minor units (pence, cents, paise).
+ * StreakBooks plan maths. Amounts are minor units (pence, cents, paise).
  *
  * Standing list prices (October 2026), per organisation per month:
  * Xero Early $27 / Growing $59 / Established $97
@@ -10,7 +10,7 @@
  * Sage Accounting Start about $20
  * Akaunting-style cloud $8 / $24 / $56 / $145
  *
- * LinkBooks sits under Xero and QuickBooks on every paid tier, and under
+ * StreakBooks sits under Xero and QuickBooks on every paid tier, and under
  * Zoho Professional / FreshBooks Plus on Standard. Starter is level with
  * Zoho Standard and Wave Pro. The ledger is the same engine on every plan;
  * limits are seats, document volume and multi-currency, not a weaker posting

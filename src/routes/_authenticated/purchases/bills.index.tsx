@@ -224,7 +224,7 @@ export const Route = createFileRoute("/_authenticated/purchases/bills/")({
     if (s["sortDir"] === "asc" || s["sortDir"] === "desc") out.sortDir = s["sortDir"];
     return out;
   },
-  head: () => ({ meta: [{ title: "Bills — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Bills — StreakBooks" }] }),
   component: BillsWorkspace,
 });
 

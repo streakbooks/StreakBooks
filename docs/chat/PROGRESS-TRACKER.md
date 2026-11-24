@@ -1,4 +1,4 @@
-# LinkBooks Chat Development Progress Tracker
+# StreakBooks Chat Development Progress Tracker
 
 **Branch:** `fix/messaging-production-ready`  
 **Updated:** 2026-11-17  
@@ -26,7 +26,7 @@
 
 | Item | Status |
 | ---- | ------ |
-| Main merge | PR [#224](https://github.com/linkbusinessadvisory/LinkBooks/pull/224) |
+| Main merge | PR [#224](https://github.com/streakbooks/StreakBooks/pull/224) |
 | Migrations | Applied through `20261117210000`; hardening `20261117220000` in this PR |
 | External portals | Kill-switched (`MESSAGING_EXTERNAL_PORTALS_ENABLED`) |
 | Live dual-browser E2E | Not yet executed |

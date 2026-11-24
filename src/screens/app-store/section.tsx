@@ -195,7 +195,7 @@ export function AppStoreSectionPage({ sectionKey }: { sectionKey: AppStoreSectio
   return (
     <ListWorkspace
       title={section.label}
-      description="Part of the LinkBooks App Store and open integration platform."
+      description="Part of the StreakBooks App Store and open integration platform."
       actions={
         <Button asChild variant="outline" size="sm">
           <Link to="/app-store">Back to overview</Link>

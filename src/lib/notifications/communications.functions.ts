@@ -173,8 +173,8 @@ export const sendCommunicationsTest = createServerFn({ method: "POST" })
     const saved = await loadCommunicationConfig(db, data.companyId);
     const sender = configuredSender(cfg.from, saved);
     await claimSend(db, data.companyId, "test_email");
-    const subject = `LinkBooks email configuration test — ${company.name}`;
-    const text = `This is a test of LinkBooks email delivery for ${company.name}. No financial records have been changed.`;
+    const subject = `StreakBooks email configuration test — ${company.name}`;
+    const text = `This is a test of StreakBooks email delivery for ${company.name}. No financial records have been changed.`;
     const html = `<p>${escapeHtml(text)}</p>`;
     const result = await sendViaResend(
       { ...cfg, from: sender.from },
@@ -230,7 +230,7 @@ export const sendCommunicationsDigest = createServerFn({ method: "POST" })
       throw new Error("There are no outstanding actionable notifications to send.");
     await claimSend(db, data.companyId, "digest_manual");
     const sender = configuredSender(cfg.from, saved);
-    const subject = `LinkBooks action summary — ${company.name} (${alerts.length} items)`;
+    const subject = `StreakBooks action summary — ${company.name} (${alerts.length} items)`;
     const list = alerts.map(
       (item, i) => `${i + 1}. [${item.priority.toUpperCase()}] ${item.title}\n${item.body}`,
     );
@@ -240,15 +240,15 @@ export const sendCommunicationsDigest = createServerFn({ method: "POST" })
       ? configuredBase.replace(/\/+$/, "")
       : null;
     const inboxLink = verifiedBase ? `${verifiedBase}/notifications` : null;
-    const text = `Outstanding LinkBooks actions for ${company.name}:\n\n${list.join("\n\n")}\n\n${inboxLink ? "Open the Action Center: " + inboxLink : "Sign in to LinkBooks to review or act."}\nFinancial actions are never performed by this email.`;
-    const html = `<h2>LinkBooks action summary — ${escapeHtml(company.name)}</h2><ol>${alerts
+    const text = `Outstanding StreakBooks actions for ${company.name}:\n\n${list.join("\n\n")}\n\n${inboxLink ? "Open the Action Center: " + inboxLink : "Sign in to StreakBooks to review or act."}\nFinancial actions are never performed by this email.`;
+    const html = `<h2>StreakBooks action summary — ${escapeHtml(company.name)}</h2><ol>${alerts
       .map(
         (a) =>
           `<li><strong>${escapeHtml(a.title)}</strong> (${escapeHtml(a.priority)})<p>${escapeHtml(a.body)}</p></li>`,
       )
       .join(
         "",
-      )}</ol><p>${inboxLink ? `<a href="${escapeHtml(inboxLink)}">Open your Action Center</a>` : "Sign in to LinkBooks to review or act."} This email never approves or posts financial documents.</p>`;
+      )}</ol><p>${inboxLink ? `<a href="${escapeHtml(inboxLink)}">Open your Action Center</a>` : "Sign in to StreakBooks to review or act."} This email never approves or posts financial documents.</p>`;
     const result = await sendViaResend(
       { ...cfg, from: sender.from },
       {

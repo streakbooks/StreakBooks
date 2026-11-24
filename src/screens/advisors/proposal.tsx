@@ -62,7 +62,7 @@ export function AdvisorsProposalPage({ token }: { token: string }) {
     <main className="mx-auto max-w-2xl space-y-6 p-6">
       <div>
         <p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
-          LinkBooks Advisors
+          StreakBooks Advisors
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">{proposal.title}</h1>
         <p className="mt-2 text-muted-foreground">

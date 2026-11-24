@@ -27,11 +27,11 @@ type RecoveryVariant = "reloading" | "recovering";
 const COPY: Record<RecoveryVariant, { title: string; body: string }> = {
   reloading: {
     title: "Updating to the latest version",
-    body: "LinkBooks was just updated. This page is reloading — it only takes a moment.",
+    body: "StreakBooks was just updated. This page is reloading — it only takes a moment.",
   },
   recovering: {
     title: "Loading the latest version",
-    body: "Almost there. LinkBooks is finishing the update.",
+    body: "Almost there. StreakBooks is finishing the update.",
   },
 };
 

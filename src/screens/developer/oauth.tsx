@@ -31,7 +31,7 @@ export function DeveloperOAuthPage() {
     <>
       <ListWorkspace
         title="OAuth Configuration"
-        description={`Authorization Code + PKCE for LinkBooks Public API ${PUBLIC_API_VERSION}.`}
+        description={`Authorization Code + PKCE for StreakBooks Public API ${PUBLIC_API_VERSION}.`}
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/developer/$section" params={{ section: "credentials" }}>

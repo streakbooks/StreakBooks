@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/sales/quotes/")({
-  head: () => ({ meta: [{ title: "Quotes — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Quotes — StreakBooks" }] }),
   component: QuotesList,
 });
 

@@ -42,12 +42,12 @@ Status: committed on a feature branch only. No GitHub Actions/CI, local TypeScri
 ## Local review, without disturbing Cursor
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git fetch origin
 git worktree list
 # Create a NEW review worktree only if the destination is not already present:
-git worktree add --detach D:\MyApp\LinkBooks-Files-B4 origin/feature/files-workspace-ux-20261106
-cd D:\MyApp\LinkBooks-Files-B4
+git worktree add --detach D:\MyApp\StreakBooks-Files-B4 origin/feature/files-workspace-ux-20261106
+cd D:\MyApp\StreakBooks-Files-B4
 npm.cmd ci
 npm.cmd run typecheck
 npm.cmd run lint

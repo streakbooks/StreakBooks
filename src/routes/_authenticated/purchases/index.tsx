@@ -17,7 +17,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authenticated/purchases/")({
-  head: () => ({ meta: [{ title: "Purchases — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Purchases — StreakBooks" }] }),
   component: PurchasesOverview,
 });
 

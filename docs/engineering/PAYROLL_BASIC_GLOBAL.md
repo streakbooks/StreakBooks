@@ -6,7 +6,7 @@
 | **Branch foundation** | `feature/basic-global-payroll-batch-1-foundation` |
 | **Batch 7 focus** | Security smoke tests, docs honesty, UX polish (setup checklist, empty states, Feature Manager readiness), unit test coverage |
 | **Production claim** | **Not production-ready** for live payroll until staging smoke passes (migrations alone are insufficient) |
-| **LinkBooks production DB** | Foundation + hours-adjust migrations applied **2026-11-05** on the linkbook Supabase project (`…180000` payments and `…181000` run hours adjust); `/payroll` is reachable — still verify on staging before claiming readiness |
+| **StreakBooks production DB** | Foundation + hours-adjust migrations applied **2026-11-05** on the linkbook Supabase project (`…180000` payments and `…181000` run hours adjust); `/payroll` is reachable — still verify on staging before claiming readiness |
 
 ## Scope (what ships in code)
 
@@ -67,7 +67,7 @@ Every settings page and overview surfaces this compliance notice from the server
 | SQL smoke (schema grants) | `tests/integration/basic-payroll-foundation-security.sql` |
 | SQL smoke (two-tenant RLS) | `tests/integration/basic-payroll-rls-security.sql` |
 
-Run SQL smokes only against an **isolated** Postgres instance with LinkBooks migrations applied (same pattern as `tests/integration/documents-review.sql`). Do not run against production.
+Run SQL smokes only against an **isolated** Postgres instance with StreakBooks migrations applied (same pattern as `tests/integration/documents-review.sql`). Do not run against production.
 
 ## Employee CSV import
 

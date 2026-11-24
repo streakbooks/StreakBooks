@@ -26,10 +26,10 @@ import {
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
     meta: [
-      { title: "Create organisation — LinkBooks" },
+      { title: "Create organisation — StreakBooks" },
       {
         name: "description",
-        content: "Create your LinkBooks organisation or open the Demo Company.",
+        content: "Create your StreakBooks organisation or open the Demo Company.",
       },
     ],
   }),

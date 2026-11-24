@@ -1,4 +1,4 @@
-# LinkBooks Fixed Assets — implementation and verification ledger
+# StreakBooks Fixed Assets — implementation and verification ledger
 
 This is an evidence-based engineering record, not a claim of production readiness.
 
@@ -40,4 +40,4 @@ This is an evidence-based engineering record, not a claim of production readines
 
 ## Design policy
 
-Research competitors for accounting requirements, not UI/code replication. Keep LinkBooks workflows original. Preserve existing features and data; no silent scope reduction. Preview substantial UI changes before implementation.
+Research competitors for accounting requirements, not UI/code replication. Keep StreakBooks workflows original. Preserve existing features and data; no silent scope reduction. Preview substantial UI changes before implementation.

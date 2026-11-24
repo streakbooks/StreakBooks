@@ -95,7 +95,7 @@ harness has a minimal synthetic baseline, not the complete hosted schema or Auth
 HTTP flow. Hosted checks inspected metadata and denied unauthenticated operations;
 this is not a real staff-session walkthrough or a load test.
 
-GitHub run [41583439318](https://github.com/rohitmehra86/LinkBooks/actions/runs/41583439318)
+GitHub run [41583439318](https://github.com/streakbooks/StreakBooks/actions/runs/41583439318)
 failed before steps/logs on both attempts. Detailed annotations cannot be retrieved
 through the connected tool; owner inspection was requested. Do not infer the cause
 or label remote CI green. No Vercel command, deployment or retry was performed.
@@ -125,7 +125,7 @@ performed that earlier restore.
 
 ## Originality, decisions and recovery
 
-Uses internal LinkBooks components and native router links. No competitor source,
+Uses internal StreakBooks components and native router links. No competitor source,
 logos, graphics or distinctive layouts were added. Public-product behavior research
 is recorded in the existing benchmark; it is not a claim to have accessed private
 competitor administration consoles.

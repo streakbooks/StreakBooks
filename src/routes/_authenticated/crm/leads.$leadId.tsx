@@ -3,7 +3,7 @@ import { CrmLeadDetailPage } from "@/screens/crm/lead-detail";
 
 export const Route = createFileRoute("/_authenticated/crm/leads/$leadId")({
   head: () => ({
-    meta: [{ title: "Lead — CRM — LinkBooks" }],
+    meta: [{ title: "Lead — CRM — StreakBooks" }],
   }),
   component: CrmLeadDetailRoute,
   staticData: {

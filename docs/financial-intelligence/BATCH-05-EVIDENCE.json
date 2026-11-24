@@ -5,7 +5,7 @@
   "frontend_unit_and_type_revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557",
   "frontend_sources_identical_between_revisions": true,
   "integrated_main_snapshot": "8c79ac08e1f21884395a6066a71267f04ffda6d5",
-  "pull_request": "https://github.com/linkbusinessadvisory/LinkBooks/pull/251",
+  "pull_request": "https://github.com/streakbooks/StreakBooks/pull/251",
   "typecheck": {
     "exit_code": 0,
     "revision": "b267af8e21c3ec2d81923f8a358c92d1274c6557",
@@ -238,7 +238,7 @@
   "github_ci": {
     "runtime_revision": "89f7078cb1590de054b107afa600252f382fca70",
     "run_id": 44258135155,
-    "url": "https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44258135155",
+    "url": "https://github.com/streakbooks/StreakBooks/actions/runs/44258135155",
     "conclusion": "failure",
     "failed_jobs": 5,
     "validate_steps": [],

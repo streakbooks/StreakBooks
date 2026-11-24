@@ -1,6 +1,6 @@
-# LinkBooks Premium Website-Like Browsing — Development Roadmap
+# StreakBooks Premium Website-Like Browsing — Development Roadmap
 
-**Repository:** `linkbusinessadvisory/LinkBooks`  
+**Repository:** `streakbooks/StreakBooks`  
 **ChatGPT development branch:** `feature/chatgpt-premium-browsing-20261107`  
 **Cursor development branch:** `main` (keep isolated)  
 **Status:** In progress; **not** production verified.
@@ -13,7 +13,7 @@ Run `npm run check:browsing-coverage` locally to flag routes or sidebar modules 
 
 ## Objective
 
-Deliver an original LinkBooks browsing experience comparable in workflow completeness and usability to mature SaaS accounting applications without copying their distinctive visual assets, code, colours, or layouts.
+Deliver an original StreakBooks browsing experience comparable in workflow completeness and usability to mature SaaS accounting applications without copying their distinctive visual assets, code, colours, or layouts.
 
 This includes native browser navigation, discoverable module sections, connected record workspaces, correct form behavior, context retention, semantic feedback, accessibility, responsive performance, and accounting/security integrity.
 
@@ -96,7 +96,7 @@ This includes native browser navigation, discoverable module sections, connected
 3. **List context:** Relevant search, filters, sorting, pagination, tab and scroll survive record open/return and browser navigation.
 4. **Details:** Source transactions link to relevant contacts, payments, journals and reports, without losing originating context.
 5. **Forms:** New/Edit Invoice, Bill, Contact, Product, Payment and other approved forms validate, save, recover errors and guard unsaved changes.
-6. **UI design:** Distinct LinkBooks token system, accessible semantic accounting states, consistent toolbars, menus, responsive layouts and useful feedback.
+6. **UI design:** Distinct StreakBooks token system, accessible semantic accounting states, consistent toolbars, menus, responsive layouts and useful feedback.
 7. **Security:** No navigation or UI workflow permits data access outside the current authorized organization or bypasses permissions/RLS.
 8. **Performance:** Establish measurable baseline and improvements for route transitions, searches, tables, mobile and keyboard use.
 9. **Automated checks:** Run local TypeScript, ESLint, unit, source navigation, UI contract, build, authenticated browser, accessibility and relevant accounting regression checks.
@@ -116,7 +116,7 @@ This includes native browser navigation, discoverable module sections, connected
 | 8 | Tax, country support, Budgets, Fixed Assets, related accounting/report drilldowns | Budgets list-to-detail return and Fixed Assets register URL filters coded; Tax and remaining workflows unverified |
 | 9 | Payroll and complete Expense Claims/Expense Management including approvals, reimbursements and payment integrations | Pending |
 | 10 | Firm, Advisors administration, Advisors customer portal, engagement and billing/document workflows | Pending |
-| 11 | AI Assistant/LinkBooks Signal, Settings, Platform/Superadmin, subscription billing, automation, integrations and localization | AI Assistant suggestion filters URL-backed; Signal, Settings, Superadmin and remaining workflows unverified |
+| 11 | AI Assistant/StreakBooks Signal, Settings, Platform/Superadmin, subscription billing, automation, integrations and localization | AI Assistant suggestion filters URL-backed; Signal, Settings, Superadmin and remaining workflows unverified |
 | 12 | Every route/module cross-cutting end-to-end browser, security/RLS, accounting, performance, accessibility and release verification | Pending |
 
 **Fully verified development batches: 0 / 12.** Work may be coded in several sub-batches; no full batch is complete until the entire scope is verified. All future modules must be added to the manifest, rather than excluded from these groups.
@@ -137,10 +137,10 @@ The denominator is provisional until the full feature inventory is reconciled. *
 ## Useful local verification commands (in an isolated worktree)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git fetch origin feature/chatgpt-premium-browsing-20261107
-git worktree add D:\MyApp\LinkBooks-ChatGPT origin/feature/chatgpt-premium-browsing-20261107
-cd D:\MyApp\LinkBooks-ChatGPT
+git worktree add D:\MyApp\StreakBooks-ChatGPT origin/feature/chatgpt-premium-browsing-20261107
+cd D:\MyApp\StreakBooks-ChatGPT
 npm.cmd ci
 npm.cmd run typecheck
 npm.cmd run lint

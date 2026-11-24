@@ -236,9 +236,9 @@ export function CheckoutForm({
             <h2 className="text-base font-semibold">Pay with</h2>
             <p className="text-sm text-muted-foreground">
               Payment methods depend on your billing country, the provider's capabilities and which
-              options are enabled for LinkBooks. Stripe selects eligible cards, wallets and local
+              options are enabled for StreakBooks. Stripe selects eligible cards, wallets and local
               payment methods on its hosted checkout. Indian UPI AutoPay and bank e-mandates use
-              Razorpay. LinkBooks never collects card numbers, UPI IDs or bank credentials.
+              Razorpay. StreakBooks never collects card numbers, UPI IDs or bank credentials.
             </p>
             {currency ? (
               <RadioGroup

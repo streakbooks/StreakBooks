@@ -1,5 +1,5 @@
 /**
- * Local-only LinkBooks Firm onboarding release gates.
+ * Local-only StreakBooks Firm onboarding release gates.
  * GitHub Actions CI is intentionally never invoked.
  */
 // Six tests in e2e/firm-onboarding-release.staging.spec.ts; an unexpectedly
@@ -79,7 +79,7 @@ export function stagingGateReady(env) {
 
 /**
  * A release check must run against an unmodified, up-to-date main checkout
- * of the authoritative LinkBooks repository. A dirty/detached checkout or
+ * of the authoritative StreakBooks repository. A dirty/detached checkout or
  * missing origin/main reference must never produce passing release evidence.
  */
 export function localReleasePreflight(git) {
@@ -91,7 +91,7 @@ export function localReleasePreflight(git) {
     blockers.push("Local branch must be main.");
   }
   if (!git.originMatchesRepo) {
-    blockers.push("Origin must be the authorized LinkBooks GitHub repository.");
+    blockers.push("Origin must be the authorized StreakBooks GitHub repository.");
   }
   if (!git.remoteRefFresh) {
     blockers.push(

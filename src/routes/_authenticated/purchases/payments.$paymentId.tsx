@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/purchases/payments/$paymentId")({
-  head: () => ({ meta: [{ title: "Supplier payment — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Supplier payment — StreakBooks" }] }),
   component: PaymentDocument,
 });
 
@@ -445,7 +445,7 @@ function PaymentDocument() {
             </Table>
           )}
           <p className="mt-3 text-xs text-muted-foreground">
-            This payment updated Accounts Payable and the bank account in LinkBooks. It did not
+            This payment updated Accounts Payable and the bank account in StreakBooks. It did not
             transmit funds to a bank.
           </p>
         </section>

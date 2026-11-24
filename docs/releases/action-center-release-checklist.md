@@ -1,4 +1,4 @@
-# LinkBooks Smart Action Center — final development-batch release gates
+# StreakBooks Smart Action Center — final development-batch release gates
 
 ## Decision and scope
 
@@ -7,8 +7,8 @@ backend notifications, server-filtered history, access-control integration, grou
 bulk-change recovery, search performance, cursor pagination, and release fixtures.
 **Committing a batch does not approve production release.**
 
-Authoritative repository: https://github.com/linkbusinessadvisory/LinkBooks.
-Do not use the retired `rohitmehra86/LinkBooks` repository for release verification.
+Authoritative repository: https://github.com/streakbooks/StreakBooks.
+Do not use the retired `streakbooks/StreakBooks` repository for release verification.
 
 ## Verified evidence (2026-11-06)
 
@@ -21,14 +21,14 @@ Do not use the retired `rohitmehra86/LinkBooks` repository for release verificat
   confirms PostgreSQL can select the index when sequential scans are disabled.
 - A synthetic 10,000-row, read-only SQL cursor test passes across a simulated
   insertion before the cursor. **This is not a load/latency benchmark**.
-- At inspection time, the connected Vercel `linkbooks` project's only READY
-  production deployment identified the former `rohitmehra86/LinkBooks` repository,
+- At inspection time, the connected Vercel `streakbooks` project's only READY
+  production deployment identified the former `streakbooks/StreakBooks` repository,
   source commit `36c52456966d0d041ba7abef60a2023004fe6ded`. It does
   **not** demonstrate deployment of the current repository.
 
 ## Required local and staging verification — not yet completed
 
-Run locally in PowerShell at `D:\MyApp\LinkBooks`, preserving uncommitted work:
+Run locally in PowerShell at `D:\MyApp\StreakBooks`, preserving uncommitted work:
 
 ```powershell
 git status
@@ -49,7 +49,7 @@ For authenticated browser verification, configure the following securely as
 environment variables; **never commit credentials or test user tokens**:
 
 - `E2E_STAGING_ENABLED=true`
-- `E2E_BASE_URL`: approved non-production LinkBooks staging URL
+- `E2E_BASE_URL`: approved non-production StreakBooks staging URL
 - `E2E_EXPECTED_STAGING_HOST`: exact staging hostname
 - `E2E_PRODUCTION_URL`: real production URL (staging target safety check)
 - `E2E_EMAIL` and `E2E_PASSWORD`: primary dedicated staging user
@@ -86,7 +86,7 @@ node scripts/check-action-center-release.mjs .\vercel-deployment.json <approved-
 ```
 
 The metadata guard fails closed when the record lacks Git metadata, targets
-the old `rohitmehra86/LinkBooks` repository, is not from `main`, identifies
+the old `streakbooks/StreakBooks` repository, is not from `main`, identifies
 a different commit, targets preview, or is not `READY`. It performs **no**
 deployment and requires no API credentials. A saved JSON file is not live
 evidence by itself: confirm its deployment ID, environment and commit directly
@@ -95,7 +95,7 @@ deployment records containing other confidential metadata.
 
 ## Required production deployment verification
 
-1. Confirm Vercel project Git source is `linkbusinessadvisory/LinkBooks` before any deployment.
+1. Confirm Vercel project Git source is `streakbooks/StreakBooks` before any deployment.
 2. Establish the exact candidate `main` commit and a passing full test/build report.
 3. Verify all committed Supabase migrations against the target staging and production schemas.
 4. Use an approved staging deployment first; test with real authenticated accounts.

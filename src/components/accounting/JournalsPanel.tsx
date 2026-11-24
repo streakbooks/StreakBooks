@@ -263,7 +263,7 @@ export function JournalsPanel({
     const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "linkbooks-journals-visible.csv";
+    anchor.download = "streakbooks-journals-visible.csv";
     anchor.click();
     URL.revokeObjectURL(url);
   };

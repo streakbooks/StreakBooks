@@ -45,7 +45,7 @@ describe("cancellationEligibility", () => {
     [{ status: "complimentary" }, "Demo and complimentary"],
     [{ status: "expired" }, "already ended"],
     [{ cancelAtPeriodEnd: true }, "already scheduled"],
-    [{ status: "paused" }, "LinkBooks support"],
+    [{ status: "paused" }, "StreakBooks support"],
     [{ provider: "stripe", status: "active" }, "Manage billing"],
     [{ provider: "razorpay" }, "Manage billing"],
   ] as const)("refuses %o", (patch, reason) => {

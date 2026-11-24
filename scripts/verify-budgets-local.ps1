@@ -1,4 +1,4 @@
-# LinkBooks Budgets — local release verification.
+# StreakBooks Budgets — local release verification.
 # No GitHub Actions, migrations, deployment, remote pushes, database writes,
 # package installation or dependency changes are performed.
 # Run from PowerShell: .\scripts\verify-budgets-local.ps1

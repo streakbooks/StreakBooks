@@ -6,7 +6,7 @@ export type CreatePrefs = {
 const EMPTY: CreatePrefs = { favourites: [], recent: [] };
 
 function key(userId: string) {
-  return `linkbooks.create-new.${userId}`;
+  return `streakbooks.create-new.${userId}`;
 }
 
 export function readCreatePrefs(storage: Pick<Storage, "getItem">, userId: string): CreatePrefs {

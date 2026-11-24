@@ -39,7 +39,7 @@ function PersonalWakeSettings({ wake }: { wake: WakeController }) {
         value={phrase}
         onChange={(e) => setPhrase(e.target.value)}
         maxLength={60}
-        placeholder="Hey LinkBooks"
+        placeholder="Hey StreakBooks"
       />
       <div className="flex flex-wrap items-center gap-2">
         <Button
@@ -116,7 +116,7 @@ function PersonalWakeSettings({ wake }: { wake: WakeController }) {
         Wake audio is processed locally and discarded. Only derived acoustic templates are retained
         in this browser until deleted; they are personal voice data. Templates are not synced or
         uploaded. Enabling the setting does not turn on the microphone: click Arm each time you open
-        or reload LinkBooks. Hidden tabs pause detection. Command recognition starts only after
+        or reload StreakBooks. Hidden tabs pause detection. Command recognition starts only after
         activation and may send audio to your browser’s provider and require internet access.
       </p>
     </section>

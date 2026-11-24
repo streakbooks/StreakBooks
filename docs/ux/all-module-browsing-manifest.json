@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "title": "LinkBooks — Mandatory all-module browsing coverage register",
+  "title": "StreakBooks — Mandatory all-module browsing coverage register",
   "source": {
-    "repository": "linkbusinessadvisory/LinkBooks",
+    "repository": "streakbooks/StreakBooks",
     "sourceBranch": "integration/all-pending-20261118",
     "routeInventoryCommit": "9263b0f6c0706727a9c67cd616979b16e90d291c",
     "navigationSource": "src/lib/nav.ts",
@@ -899,7 +899,7 @@
       "remaining": [
         "Run authenticated AI-enabled browser tests and full app TypeScript, build and unit checks",
         "Verify conversation, recommendations, journal evidence, reviewCase and security/approvals remain correct",
-        "Audit every AI Assistant subpanel and LinkBooks Signal/voice features for browsing and accessibility"
+        "Audit every AI Assistant subpanel and StreakBooks Signal/voice features for browsing and accessibility"
       ],
       "tests": "NOT RUN"
     },
@@ -1033,7 +1033,7 @@
       "fullyVerified": false
     },
     {
-      "area": "LinkBooks Signal / voice commands",
+      "area": "StreakBooks Signal / voice commands",
       "evidence": "Voice components and form adapters are internal, not standalone sidebar items",
       "status": "Full command and keyboard accessibility coverage pending",
       "fullyVerified": false

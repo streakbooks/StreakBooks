@@ -55,7 +55,7 @@ describe("payroll settings drafts", () => {
       roundingMode: "half_even",
       payslipShowEmployerCosts: true,
       payslipFooterNote: "Manual statutory amounts only",
-      payslipBrandingName: "LinkBooks Demo",
+      payslipBrandingName: "StreakBooks Demo",
       employeeNumberPrefix: "E-",
       disclaimerAcknowledged: true,
       version: 2,

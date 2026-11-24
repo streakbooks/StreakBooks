@@ -53,11 +53,11 @@ export function PortalShell() {
       <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-3 px-4">
         <h1 className="text-xl font-semibold">No portal access yet</h1>
         <p className="text-sm text-muted-foreground">
-          Ask the organisation to invite this email address. If you also work in LinkBooks, open the
+          Ask the organisation to invite this email address. If you also work in StreakBooks, open the
           main app.
         </p>
         <Button asChild variant="outline">
-          <Link to="/">Open LinkBooks</Link>
+          <Link to="/">Open StreakBooks</Link>
         </Button>
       </div>
     );
@@ -75,7 +75,7 @@ export function PortalShell() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              LinkBooks portal
+              StreakBooks portal
             </p>
             <p className="text-lg font-semibold">{current?.company_name}</p>
             <p className="text-sm text-muted-foreground">

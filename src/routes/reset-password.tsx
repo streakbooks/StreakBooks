@@ -14,15 +14,15 @@ export const Route = createFileRoute("/reset-password")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Choose a new password — LinkBooks" },
+      { title: "Choose a new password — StreakBooks" },
       {
         name: "description",
-        content: "Set a new password for your LinkBooks account using your secure reset link.",
+        content: "Set a new password for your StreakBooks account using your secure reset link.",
       },
-      { property: "og:title", content: "Choose a new password — LinkBooks" },
+      { property: "og:title", content: "Choose a new password — StreakBooks" },
       {
         property: "og:description",
-        content: "Set a new password for your LinkBooks account using your secure reset link.",
+        content: "Set a new password for your StreakBooks account using your secure reset link.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -126,7 +126,7 @@ function ResetPasswordPage() {
         </Alert>
       ) : done ? (
         <Alert role="status">
-          <AlertDescription>Password updated. Taking you to LinkBooks…</AlertDescription>
+          <AlertDescription>Password updated. Taking you to StreakBooks…</AlertDescription>
         </Alert>
       ) : (
         <form onSubmit={handleSubmit} noValidate className="space-y-4">

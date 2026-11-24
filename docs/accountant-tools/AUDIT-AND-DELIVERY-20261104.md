@@ -1,7 +1,7 @@
 # Accountant Tools — scoped audit, competitor mapping and delivery
 
 **Reviewed:** 4 November 2026
-**Repository:** linkbusinessadvisory/LinkBooks
+**Repository:** streakbooks/StreakBooks
 **Scope:** Authenticated Accountant workspace and its connected accounting, practice, banking, reporting and tax flows. This is a source and architecture review, not a full live multi-role certification.
 
 ## Verified code inventory

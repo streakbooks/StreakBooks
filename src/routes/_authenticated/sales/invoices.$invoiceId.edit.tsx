@@ -9,7 +9,7 @@ import { SalesDocumentEditor } from "@/components/sales/SalesDocumentEditor";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/sales/invoices/$invoiceId/edit")({
-  head: () => ({ meta: [{ title: "Edit invoice — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Edit invoice — StreakBooks" }] }),
   component: EditInvoice,
 });
 

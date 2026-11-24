@@ -5,7 +5,7 @@
  * This checks supplied API evidence; it does not fetch deployments or deploy.
  */
 export function validateActionCenterDeployment(deployment, approvedSha) {
-  const expectedRepo = "linkbusinessadvisory/LinkBooks";
+  const expectedRepo = "streakbooks/StreakBooks";
   if (!/^[a-f0-9]{40}$/i.test(approvedSha ?? "")) {
     throw new Error("A complete, approved 40-character main commit SHA is required.");
   }

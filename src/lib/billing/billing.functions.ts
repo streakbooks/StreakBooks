@@ -1071,7 +1071,7 @@ async function createStripeIntroCoupon(
   body.set("duration_in_months", String(months));
   body.set("amount_off", String(discount));
   body.set("currency", draft.currency.toLowerCase());
-  body.set("name", "LinkBooks intro offer");
+  body.set("name", "StreakBooks intro offer");
   const response = await fetch("https://api.stripe.com/v1/coupons", {
     method: "POST",
     headers: {

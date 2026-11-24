@@ -1,10 +1,10 @@
-# LinkBooks: Sales and Banking table appearance + invoice quick preview
+# StreakBooks: Sales and Banking table appearance + invoice quick preview
 Date: 3 November 2026.
 
 ## Why this batch
 - Builds on PR #2 (navigation and dashboard personalization) and PR #3 (saved filter views).
 - Purchases > Bills already contains server-backed list density, configurable columns and an existing bill preview. Reuse those patterns in Sales and Banking rather than replacing working accounting functionality.
-- The user experience is original LinkBooks UI; Odoo and Xero are capability benchmarks, not code, assets, CSS or copied designs.
+- The user experience is original StreakBooks UI; Odoo and Xero are capability benchmarks, not code, assets, CSS or copied designs.
 
 ## Functionality implemented
 
@@ -30,7 +30,7 @@ Date: 3 November 2026.
 The GitHub Actions quality gate must pass: locked dependency installation, TypeScript, changed-file ESLint, full unit tests and production build. Authenticated Playwright scenarios were added but require a staging test user to run and are not part of this default CI gate. Vercel deployment and real-device visual acceptance must be checked separately.
 
 ## How to check locally
-1. Open PowerShell in D:\\MyApp\\LinkBooks.
+1. Open PowerShell in D:\\MyApp\\StreakBooks.
 2. If local edits exist, commit/stash them safely before pulling: `git status`.
 3. Run `git checkout main`, `git pull origin main`, and `npm.cmd run dev`.
 4. Sign in at http://localhost:8080.

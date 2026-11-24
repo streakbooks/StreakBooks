@@ -1,10 +1,10 @@
-# LinkBooks — Production Readiness (Owner Gate)
+# StreakBooks — Production Readiness (Owner Gate)
 
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-10-19 |
 | **Auditor role** | Owner-level final gate |
-| **Supersedes** | [LINKBOOKS_PRODUCTION_READINESS_REPORT.md](./LINKBOOKS_PRODUCTION_READINESS_REPORT.md) for **go/no-go** (that report remains detailed command output); aligns with [LINKBOOKS_RELEASE_DECISION.md](./LINKBOOKS_RELEASE_DECISION.md) |
+| **Supersedes** | [STREAKBOOKS_PRODUCTION_READINESS_REPORT.md](./STREAKBOOKS_PRODUCTION_READINESS_REPORT.md) for **go/no-go** (that report remains detailed command output); aligns with [STREAKBOOKS_RELEASE_DECISION.md](./STREAKBOOKS_RELEASE_DECISION.md) |
 
 ---
 
@@ -18,13 +18,13 @@
 ### Friend-demo conditions (all required)
 
 1. **Demo Company only** for narrative — do not onboard real client books without re-gate.
-2. Host: https://linkbooks-navy.vercel.app — Supabase project `ipxflpzfcqwtenodbxwc` (migrations applied per owner).
+2. Host: https://streakbooks-navy.vercel.app — Supabase project `ipxflpzfcqwtenodbxwc` (migrations applied per owner).
 3. Disclose limitations: no bank feeds, no email, no attachments, CoA read-only, tax codes not on lines, no CI/monitoring/backup drill evidence.
 4. No marketing as “replacement for Xero/QBO.”
 5. Owner accepts risk of **unproven live RLS E2E** until G-001 executed (acceptable only for fictional demo data with informed users).
 6. Destructive ops (prod migration rollback, force data delete) require explicit owner approval.
 
-**Owner authorisation:** Friend-demo deploy authorised; **commercial No-Go unchanged** (see updated [LINKBOOKS_RELEASE_DECISION.md](./LINKBOOKS_RELEASE_DECISION.md)).
+**Owner authorisation:** Friend-demo deploy authorised; **commercial No-Go unchanged** (see updated [STREAKBOOKS_RELEASE_DECISION.md](./STREAKBOOKS_RELEASE_DECISION.md)).
 
 ---
 
@@ -55,7 +55,7 @@
 | Live demo TB after deploy | G-012 |
 | Auth redirect smoke on Vercel | G-014 |
 
-Full list: [LINKBOOKS_GAP_REGISTER.md](./LINKBOOKS_GAP_REGISTER.md).
+Full list: [STREAKBOOKS_GAP_REGISTER.md](./STREAKBOOKS_GAP_REGISTER.md).
 
 ---
 
@@ -92,14 +92,14 @@ Operational detail: [ENV_AND_DEPLOYMENT.md](./ENV_AND_DEPLOYMENT.md), [SECURITY_
 
 | Document | Purpose |
 |----------|---------|
-| [LINKBOOKS_FEATURE_CATALOG.md](./LINKBOOKS_FEATURE_CATALOG.md) | Module inventory |
-| [LINKBOOKS_COMPETITIVE_BENCHMARK.md](./LINKBOOKS_COMPETITIVE_BENCHMARK.md) | Market comparison |
-| [LINKBOOKS_GAP_REGISTER.md](./LINKBOOKS_GAP_REGISTER.md) | Remediation backlog |
-| [LINKBOOKS_ACCOUNTING_INTEGRITY.md](./LINKBOOKS_ACCOUNTING_INTEGRITY.md) | Ledger rules |
-| [LINKBOOKS_SECURITY_REVIEW.md](./LINKBOOKS_SECURITY_REVIEW.md) | RLS, auth, secrets |
-| [LINKBOOKS_PRODUCTION_READINESS_REPORT.md](./LINKBOOKS_PRODUCTION_READINESS_REPORT.md) | Command-level verification log |
+| [STREAKBOOKS_FEATURE_CATALOG.md](./STREAKBOOKS_FEATURE_CATALOG.md) | Module inventory |
+| [STREAKBOOKS_COMPETITIVE_BENCHMARK.md](./STREAKBOOKS_COMPETITIVE_BENCHMARK.md) | Market comparison |
+| [STREAKBOOKS_GAP_REGISTER.md](./STREAKBOOKS_GAP_REGISTER.md) | Remediation backlog |
+| [STREAKBOOKS_ACCOUNTING_INTEGRITY.md](./STREAKBOOKS_ACCOUNTING_INTEGRITY.md) | Ledger rules |
+| [STREAKBOOKS_SECURITY_REVIEW.md](./STREAKBOOKS_SECURITY_REVIEW.md) | RLS, auth, secrets |
+| [STREAKBOOKS_PRODUCTION_READINESS_REPORT.md](./STREAKBOOKS_PRODUCTION_READINESS_REPORT.md) | Command-level verification log |
 | [FOUNDATION_READINESS_REPORT.md](./FOUNDATION_READINESS_REPORT.md) | Earlier foundation pass |
-| [LINKBOOKS_RELEASE_DECISION.md](./LINKBOOKS_RELEASE_DECISION.md) | Formal decision record |
+| [STREAKBOOKS_RELEASE_DECISION.md](./STREAKBOOKS_RELEASE_DECISION.md) | Formal decision record |
 
 ---
 

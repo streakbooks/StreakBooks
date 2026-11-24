@@ -1,6 +1,6 @@
-# LinkBooks — mobile Banking review and keyboard navigation
+# StreakBooks — mobile Banking review and keyboard navigation
 
-Date: 3 November 2026. Scope: original LinkBooks UI, safe read-only review, no SQL/accounting changes.
+Date: 3 November 2026. Scope: original StreakBooks UI, safe read-only review, no SQL/accounting changes.
 
 ## Delivered
 
@@ -29,7 +29,7 @@ Date: 3 November 2026. Scope: original LinkBooks UI, safe read-only review, no S
 ## Local test steps
 
 In Cursor's PowerShell:
-    cd D:\MyApp\LinkBooks
+    cd D:\MyApp\StreakBooks
     git status
     git checkout main
     git pull origin main

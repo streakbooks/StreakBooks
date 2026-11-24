@@ -19,12 +19,12 @@
 ## Accounting and compliance boundaries
 - No posting, tax calculation, tax return formula, migration or RLS changes.
 - Previously posted documents remain unchanged.
-- A status of "filed" means recorded in LinkBooks, never electronically filed.
+- A status of "filed" means recorded in StreakBooks, never electronically filed.
 - Country pack configuration has not been independently verified against
   statutory sources; no statutory filing certification is claimed.
 
 ## Local verification required (CI intentionally not invoked)
-From D:\MyApp\LinkBooks after checking out this PR branch:
+From D:\MyApp\StreakBooks after checking out this PR branch:
 
     npm.cmd run typecheck
     npm.cmd run lint
@@ -294,7 +294,7 @@ are not verified. No GitHub CI, production merge or deployment was performed.
   intended treatment; the guard does not provide full historic reconstruction.
 - Tax review "Resolved" is an internal human status, not a certification or
   an authority submission.
-- This runtime has Node, but no Docker or psql and no full LinkBooks
+- This runtime has Node, but no Docker or psql and no full StreakBooks
   checkout. The tests have not been executed, and migration rollout has not
   occurred. GitHub CI remains disabled by instruction.
 
@@ -332,7 +332,7 @@ are not verified. No GitHub CI, production merge or deployment was performed.
 
 ### Local command (Docker Desktop required)
 ```powershell
-cd D:\MyApp\LinkBooks-Tax
+cd D:\MyApp\StreakBooks-Tax
 npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd test -- src/lib/tax

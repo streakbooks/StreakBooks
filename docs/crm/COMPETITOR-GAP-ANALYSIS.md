@@ -1,7 +1,7 @@
-# LinkBooks CRM — Competitor research & gap analysis (CRM-01)
+# StreakBooks CRM — Competitor research & gap analysis (CRM-01)
 
 **Status:** Verified research for architecture (CRM-01). Not a claim that CRM is production-complete.  
-**Originality:** Competitors are functional/usability benchmarks only. LinkBooks must not copy proprietary UI, branding, layouts, icons or source.
+**Originality:** Competitors are functional/usability benchmarks only. StreakBooks must not copy proprietary UI, branding, layouts, icons or source.
 
 ## Platforms reviewed
 
@@ -16,7 +16,7 @@
 
 ## Feature comparison (capability level)
 
-| Capability | SF | HubSpot | Zoho | Pipedrive | Odoo | Freshsales | D365 | monday | LinkBooks (pre-CRM) | Target |
+| Capability | SF | HubSpot | Zoho | Pipedrive | Odoo | Freshsales | D365 | monday | StreakBooks (pre-CRM) | Target |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Lead capture & stages | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | None | Yes |
 | Lead scoring / assignment | Yes | Yes | Yes | Partial | Partial | Yes | Yes | Partial | None | Yes |
@@ -33,7 +33,7 @@
 | App marketplace integrations | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | **App Store foundation** | CRM connectors |
 | Tenant isolation / RLS | Cloud tenancy | Cloud | Cloud | Cloud | DB | Cloud | Cloud | Cloud | **Supabase RLS + permissions** | Same pattern |
 
-## LinkBooks assets to reuse (do not rebuild)
+## StreakBooks assets to reuse (do not rebuild)
 
 | Asset | Path / area | CRM use |
 | --- | --- | --- |
@@ -60,7 +60,7 @@
 
 ## Design language stance
 
-Build an original LinkBooks CRM surface using `ListWorkspace` / `RecordWorkspace`, existing tokens/themes, and LinkBooks status semantics. Match or exceed competitor *task completion* (find lead, move deal, convert, quote) without cloning Salesforce Lightning, HubSpot orange chrome, Pipedrive pipeline chrome, or Odoo enterprise skins.
+Build an original StreakBooks CRM surface using `ListWorkspace` / `RecordWorkspace`, existing tokens/themes, and StreakBooks status semantics. Match or exceed competitor *task completion* (find lead, move deal, convert, quote) without cloning Salesforce Lightning, HubSpot orange chrome, Pipedrive pipeline chrome, or Odoo enterprise skins.
 
 ## Batch mapping
 

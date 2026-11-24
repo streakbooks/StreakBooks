@@ -89,7 +89,7 @@ export function PmOverviewPage() {
   return (
     <ListWorkspace
       title="Property Management"
-      description="Portfolio operations and owner settlement — posts through the LinkBooks ledger when COA mappings are configured."
+      description="Portfolio operations and owner settlement — posts through the StreakBooks ledger when COA mappings are configured."
       breadcrumbs={[{ label: "Property Management" }]}
       actions={
         can("property.manage" as Permission) ? (

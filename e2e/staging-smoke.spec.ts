@@ -5,7 +5,7 @@ const email = process.env.E2E_EMAIL;
 const password = process.env.E2E_PASSWORD;
 const stagingHost = process.env.E2E_EXPECTED_STAGING_HOST;
 
-test.describe("authenticated LinkBooks staging smoke", () => {
+test.describe("authenticated StreakBooks staging smoke", () => {
   test.beforeAll(() => {
     if (process.env.E2E_STAGING_ENABLED !== "true" || !email || !password) {
       throw new Error("Dedicated staging E2E credentials and explicit activation are required.");

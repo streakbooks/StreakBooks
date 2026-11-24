@@ -114,7 +114,7 @@ export function accountingReleasePreflight(git, migrations, testFilesPresent) {
     blockers.push("Local worktree not verified clean.");
   }
   if (git?.branch !== "main") blockers.push("Local checkout must be main.");
-  if (!git?.originMatchesRepo) blockers.push("Origin must be the authorised LinkBooks repository.");
+  if (!git?.originMatchesRepo) blockers.push("Origin must be the authorised StreakBooks repository.");
   if (!git?.remoteRefFresh) blockers.push("Cannot verify current origin/main by live fetch.");
   if (!git?.commit || !git?.originMainCommit || git.commit !== git.originMainCommit) {
     blockers.push("Local HEAD differs from fetched origin/main.");

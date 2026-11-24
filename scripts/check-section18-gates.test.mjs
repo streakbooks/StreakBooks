@@ -70,7 +70,7 @@ test("staging requires production separation and a configured account", () => {
 });
 
 test("failed local checks leave the Section 18 gate open", (t) => {
-  const cwd = mkdtempSync(join(tmpdir(), "linkbooks-section18-"));
+  const cwd = mkdtempSync(join(tmpdir(), "streakbooks-section18-"));
   t.after(() => rmSync(cwd, { recursive: true, force: true }));
   writeFileSync(
     join(cwd, "package.json"),

@@ -239,12 +239,12 @@ export const createAdvisorsPortalInvite = createServerFn({ method: "POST" })
     const config = readEmailConfig();
     let emailed = false;
     if (config.configured) {
-      const text = `You have been invited to the LinkBooks Advisors customer portal. Sign in with ${invite.email} and open: ${link}`;
+      const text = `You have been invited to the StreakBooks Advisors customer portal. Sign in with ${invite.email} and open: ${link}`;
       const result = await sendViaResend(config, {
         to: [invite.email],
-        subject: "Your LinkBooks Advisors portal invitation",
+        subject: "Your StreakBooks Advisors portal invitation",
         text,
-        html: `<p>You have been invited to the LinkBooks Advisors customer portal.</p><p>Sign in with <strong>${invite.email}</strong> and open this link:</p><p><a href="${link}">${link}</a></p>`,
+        html: `<p>You have been invited to the StreakBooks Advisors customer portal.</p><p>Sign in with <strong>${invite.email}</strong> and open this link:</p><p><a href="${link}">${link}</a></p>`,
       });
       emailed = result.ok;
     }
@@ -352,12 +352,12 @@ export const dispatchAdvisorsBookingReminders = createServerFn({ method: "POST" 
 
       const when = new Date(reminder.startsAt).toLocaleString();
       const manageUrl = `${appOrigin()}/advisors/manage/${reminder.manageToken}`;
-      const text = `Hi ${reminder.customerName}, this is a reminder of your LinkBooks Advisors appointment on ${when}${reminder.advisorName ? ` with ${reminder.advisorName}` : ""}. Manage it here: ${manageUrl}`;
+      const text = `Hi ${reminder.customerName}, this is a reminder of your StreakBooks Advisors appointment on ${when}${reminder.advisorName ? ` with ${reminder.advisorName}` : ""}. Manage it here: ${manageUrl}`;
       const sent = await sendViaResend(config, {
         to: [reminder.customerEmail],
-        subject: "Reminder: your LinkBooks Advisors appointment",
+        subject: "Reminder: your StreakBooks Advisors appointment",
         text,
-        html: `<p>Hi ${reminder.customerName},</p><p>This is a reminder of your LinkBooks Advisors appointment on <strong>${when}</strong>${reminder.advisorName ? ` with ${reminder.advisorName}` : ""}.</p><p><a href="${manageUrl}">Manage appointment</a></p>`,
+        html: `<p>Hi ${reminder.customerName},</p><p>This is a reminder of your StreakBooks Advisors appointment on <strong>${when}</strong>${reminder.advisorName ? ` with ${reminder.advisorName}` : ""}.</p><p><a href="${manageUrl}">Manage appointment</a></p>`,
         idempotencyKey: `advisors-reminder-${reminder.reminderId}`,
       });
 

@@ -1,4 +1,4 @@
-# LinkBooks — All-module navigation, submenu and functional acceptance register
+# StreakBooks — All-module navigation, submenu and functional acceptance register
 
 **Status as of 2026-11-07: NOT PRODUCTION-VERIFIED.**
 
@@ -11,7 +11,7 @@ register is a release gate, **not evidence that features are already implemented
 1. **Navigation:** sidebar and all visible submenus have real destinations, correct active
    state, browser Back/Forward, refresh/deep-link, Ctrl/Cmd-click/new tab, keyboard focus,
    breadcrumbs, and permission-aware visibility. No placeholder links or dead controls.
-2. **Visual:** independent LinkBooks design (competitors inform only requirements), responsive
+2. **Visual:** independent StreakBooks design (competitors inform only requirements), responsive
    mobile/tablet/desktop, readable tables and long text, consistent themes and status badges,
    keyboard and screen reader navigation, loading/empty/error/disabled states.
 3. **Functional:** every visible control runs the advertised operation with real server
@@ -62,7 +62,7 @@ module or introducing a second workspace requires an explicit route/product deci
 ## Evidence and audit commands
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git pull --ff-only origin main
 npm.cmd run check:navigation
 npm.cmd run check:ui

@@ -258,7 +258,7 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
-                    a.download = "linkbooks-dimensions.csv";
+                    a.download = "streakbooks-dimensions.csv";
                     a.click();
                     URL.revokeObjectURL(url);
                   } catch (e) {

@@ -18,7 +18,7 @@ This batch does **not** change SQL posting routines, journal entries, depreciati
 
 ## Mandatory manual/local verification before merge
 
-In PowerShell at D:\MyApp\LinkBooks, after fetching and switching to the PR branch:
+In PowerShell at D:\MyApp\StreakBooks, after fetching and switching to the PR branch:
 
 ```powershell
 npm.cmd run typecheck

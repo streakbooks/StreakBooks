@@ -6,7 +6,7 @@ import type {
 
 /**
  * In-memory mapping engine for unit tests and scaffolding.
- * Production uses durable DB tables + LinkBooks posting services.
+ * Production uses durable DB tables + StreakBooks posting services.
  */
 export function createMemoryMappingEngine(): AccountingMappingEngine {
   const links = new Map<string, ExternalRecordLink>();

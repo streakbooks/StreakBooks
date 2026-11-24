@@ -47,7 +47,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
 
 export const Route = createFileRoute("/_authenticated/purchases/credit-notes/$creditNoteId")({
-  head: () => ({ meta: [{ title: "Supplier credit — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Supplier credit — StreakBooks" }] }),
   component: CreditNoteDetail,
 });
 

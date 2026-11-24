@@ -75,11 +75,11 @@ async function launch(audio: string, storageState?: StorageState) {
   await page.getByText("Wake phrase settings", { exact: true }).click();
   return { browser, context, page };
 }
-async function enroll(audio = "enrollment", phrase = "Hey LinkBooks") {
+async function enroll(audio = "enrollment", phrase = "Hey StreakBooks") {
   const { browser, context, page } = await launch(audio);
   try {
     expect(await page.evaluate(() => window.wakeTest.requests)).toBe(0);
-    if (phrase !== "Hey LinkBooks") {
+    if (phrase !== "Hey StreakBooks") {
       await page.getByLabel("Activation phrase", { exact: true }).fill(phrase);
       await page.getByRole("button", { name: "Save phrase", exact: true }).click();
     }
@@ -108,7 +108,7 @@ test.beforeAll(async () => {
 
 test("real PCM enrollment and held-out wake activation precede persistent invoice commands", async () => {
   test.setTimeout(45000);
-  const { browser, page } = await launch("hey-linkbooks-heldout", profile);
+  const { browser, page } = await launch("hey-streakbooks-heldout", profile);
   try {
     expect(await page.evaluate(() => window.wakeTest.requests)).toBe(0); // persisted preference never auto-captures
     await page.getByRole("button", { name: "Arm wake detection", exact: true }).click();
@@ -177,7 +177,7 @@ for (const audio of ["open-invoices-heldout", "hey-link-cooks-heldout"])
     }
   });
 test("permission denial is visible and requires explicit retry", async () => {
-  const { browser, context, page } = await launch("hey-linkbooks-heldout", profile);
+  const { browser, context, page } = await launch("hey-streakbooks-heldout", profile);
   try {
     await context.clearPermissions();
     const cdp = await context.newCDPSession(page);
@@ -199,7 +199,7 @@ test("permission denial is visible and requires explicit retry", async () => {
 });
 
 for (const [audio, phrase] of [
-  ["hello-linkbooks", "Hello LinkBooks"],
+  ["hello-streakbooks", "Hello StreakBooks"],
   ["hey-luna", "Hey Luna"],
 ])
   test(`real PCM custom phrase: ${phrase}`, async () => {

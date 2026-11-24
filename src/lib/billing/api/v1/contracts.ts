@@ -182,7 +182,7 @@ export const API_ROUTES: ApiRoute[] = [
         planCode,
         interval,
         method: z.enum(["card", "upi", "emandate"]),
-        origin: z.string().url().describe("Return origin; must be an allowed LinkBooks origin"),
+        origin: z.string().url().describe("Return origin; must be an allowed StreakBooks origin"),
         offerCode: z.string().trim().max(40).optional(),
         billing: checkoutBilling.optional(),
       })

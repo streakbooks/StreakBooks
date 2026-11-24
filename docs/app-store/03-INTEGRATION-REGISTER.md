@@ -1,4 +1,4 @@
-# LinkBooks Integration Register
+# StreakBooks Integration Register
 
 **Rule:** Report completed integrations separately from planned.  
 **Install rule:** Never offer Install / Connected unless status is **Available** and E2E verified.

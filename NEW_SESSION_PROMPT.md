@@ -1,21 +1,21 @@
 # Paste this as the first message in a NEW Cursor chat
 
 ```text
-Open workspace folder: /Users/rohitm/paxaris-repos/LinkBooks
+Open workspace folder: /Users/rohitm/paxaris-repos/StreakBooks
 
-Git: push to **origin** = https://github.com/rohitmehra86/LinkBooks
-(Friend’s repo is **upstream** = linkbusinessadvisory/LinkBooks — PR when ready)
+Git: push to **origin** = https://github.com/streakbooks/StreakBooks
+(Friend’s repo is **upstream** = streakbooks/StreakBooks — PR when ready)
 
 Read and follow:
 - NEW_SESSION_PROMPT.md (this file)
 - docs/ARCHITECTURE_MVP.md
 - docs/SECURITY_CHECKLIST.md
-- .cursor/skills/linkbooks-mvp/SKILL.md
+- .cursor/skills/streakbooks-mvp/SKILL.md
 - roadmap.md
 - AGENTS.md
 
 Context:
-- Product: LinkBooks — Xero-like accounting for Link Business Advisory
+- Product: StreakBooks — Xero-like accounting for Link Business Advisory
 - Friend (domain expert, non-technical) vibe-coded this on Lovable + Supabase
 - Architect decision: KEEP Supabase (no Java rewrite, no Paxo auth for v1)
 - Harden for roles, multi-company, audit, security; finish Phase 2 roadmap

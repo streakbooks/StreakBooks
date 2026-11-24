@@ -1,6 +1,6 @@
-# LinkBooks Advisors — gap analysis
+# StreakBooks Advisors — gap analysis
 
-**Date:** 6 November 2026 · **Baseline:** `main` @ `5089800` · **Working branch:** `feature/advisors-ad-04-appointment-booking` · **Repo:** https://github.com/linkbusinessadvisory/LinkBooks
+**Date:** 6 November 2026 · **Baseline:** `main` @ `5089800` · **Working branch:** `feature/advisors-ad-04-appointment-booking` · **Repo:** https://github.com/streakbooks/StreakBooks
 
 ## Audit summary
 

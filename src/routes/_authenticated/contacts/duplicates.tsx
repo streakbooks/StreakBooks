@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/contacts/duplicates")({
-  head: () => ({ meta: [{ title: "Duplicate contacts — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Duplicate contacts — StreakBooks" }] }),
   component: DuplicatesPage,
 });
 

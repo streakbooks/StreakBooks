@@ -198,7 +198,7 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
     );
     const a = document.createElement("a");
     a.href = url;
-    a.download = "linkbooks-reconciliation-exceptions-" + companyId.slice(0, 8) + ".csv";
+    a.download = "streakbooks-reconciliation-exceptions-" + companyId.slice(0, 8) + ".csv";
     a.click();
     URL.revokeObjectURL(url);
   };

@@ -24,7 +24,7 @@
 | Auth | Supabase Auth (email/password) | via `@supabase/supabase-js` |
 | Server | TanStack `createServerFn` + Nitro (devDep) | nitro 3.0.260603-beta |
 | Tests | Vitest | ^3.2.4 |
-| Hosting | Vercel | production `linkbooks-navy.vercel.app` |
+| Hosting | Vercel | production `streakbooks-navy.vercel.app` |
 | Design tool sync | Lovable-connected git history | see `AGENTS.md` |
 
 **Not present:** Next.js, Spring Boot, separate Nest API, Redis, dedicated secrets vault product.
@@ -137,7 +137,7 @@ Tabs (from `src/routes/_authenticated/settings.tsx`):
 
 ## 6. New Bill workspace (preserve)
 
-Documented in `docs/LINKBOOKS_NEW_BILL_WORKSPACE.md` and code under `bills.new.tsx` + purchase components:
+Documented in `docs/STREAKBOOKS_NEW_BILL_WORKSPACE.md` and code under `bills.new.tsx` + purchase components:
 
 - Header: status, view modes (Basic / Professional / Custom), Save draft, Save & authorise, Cancel  
 - Supplier Intelligence Sidebar (collapse/close/resize; prefs in `user_ui_preferences`)  

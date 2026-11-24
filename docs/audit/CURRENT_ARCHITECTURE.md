@@ -14,7 +14,7 @@
 | Forms | React Hook Form 7.71 + Zod 3.25 |
 | Charts | Recharts 2.15 |
 | Backend | Supabase JS 2.117 → Postgres + Auth + RLS |
-| Hosting | Vercel (`linkbooks-navy.vercel.app`) |
+| Hosting | Vercel (`streakbooks-navy.vercel.app`) |
 | Tests | Vitest 3.2 (**236** passing after `npm install`) |
 | Edge functions | **None** in repo (`supabase/functions` absent) |
 

@@ -54,7 +54,7 @@ export const Route = createFileRoute("/_authenticated/reports/$reportId")({
     const report = getReportById(params.reportId);
     return {
       meta: [
-        { title: `${report?.title ?? "Report"} — LinkBooks` },
+        { title: `${report?.title ?? "Report"} — StreakBooks` },
         {
           name: "description",
           content: report?.description ?? "Financial report from the posted ledger.",

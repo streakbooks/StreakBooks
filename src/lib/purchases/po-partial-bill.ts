@@ -1,6 +1,6 @@
 /**
  * Partial bill-from-received maths for purchase orders.
- * Original LinkBooks rules: bill only unbilled received quantities at the ordered rate.
+ * Original StreakBooks rules: bill only unbilled received quantities at the ordered rate.
  * Non-posting until the resulting draft bill is authorised through the existing engine.
  */
 

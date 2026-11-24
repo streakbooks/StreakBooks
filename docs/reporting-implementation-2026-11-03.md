@@ -44,7 +44,7 @@ Read-only database evidence: 38 posted journals; zero unbalanced, zero fewer-tha
 
 ## 5. GitHub
 
-Repository: https://github.com/linkbusinessadvisory/LinkBooks . Branch: `feature/reporting-inclusive-ranges`. [Draft PR #12](https://github.com/linkbusinessadvisory/LinkBooks/pull/12).
+Repository: https://github.com/streakbooks/StreakBooks . Branch: `feature/reporting-inclusive-ranges`. [Draft PR #12](https://github.com/streakbooks/StreakBooks/pull/12).
 
 Relevant commits: `3f3e26e` range correctness; `c8bcf5c` catalogue discovery; `d2f4ce3` lint formatting; `57de205` integration of the current authoritative main; `6c83ff4` FX/ageing/cash-flow integrity; `2e842ce` export/provenance security; `63543da` forecast comparisons/downloads. Follow-up documentation commits may advance the branch. No published history was rewritten.
 

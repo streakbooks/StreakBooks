@@ -122,7 +122,7 @@ export function AssetCapitalisationReviewPanel({
     const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "linkbooks-capitalisation-review-" + asOf + ".csv";
+    anchor.download = "streakbooks-capitalisation-review-" + asOf + ".csv";
     anchor.click();
     URL.revokeObjectURL(url);
   };

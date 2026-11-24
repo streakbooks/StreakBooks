@@ -348,7 +348,7 @@ export function AdvisorsServicesPricingPage() {
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <ListWorkspace
           title="Services & Pricing"
-          description="Manage LinkBooks Advisors plans without a code deployment."
+          description="Manage StreakBooks Advisors plans without a code deployment."
         >
           <AdvisorsSubnav />
           <div role="alert">

@@ -162,7 +162,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
     );
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `linkbooks-fx-revaluation-preview-${asOf}.csv`;
+    anchor.download = `streakbooks-fx-revaluation-preview-${asOf}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
   };

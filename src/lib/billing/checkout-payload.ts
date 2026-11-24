@@ -166,7 +166,7 @@ export function stripeCheckoutBody(draft: CheckoutDraft): URLSearchParams {
     "line_items[0][price_data][recurring][interval]",
     draft.interval === "year" ? "year" : "month",
   );
-  body.set("line_items[0][price_data][product_data][name]", `LinkBooks ${draft.planName}`);
+  body.set("line_items[0][price_data][product_data][name]", `StreakBooks ${draft.planName}`);
   body.set("metadata[checkout_id]", draft.checkoutId);
   body.set("metadata[company_id]", draft.companyId);
   body.set("metadata[plan_code]", draft.planCode);
@@ -200,7 +200,7 @@ export function razorpayPlanBody(draft: CheckoutDraft): Record<string, unknown> 
     period: draft.interval === "year" ? "yearly" : "monthly",
     interval: 1,
     item: {
-      name: `LinkBooks ${draft.planName}`,
+      name: `StreakBooks ${draft.planName}`,
       amount: draft.unitAmountMinor,
       currency: draft.currency,
     },

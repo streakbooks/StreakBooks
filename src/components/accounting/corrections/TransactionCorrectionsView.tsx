@@ -243,7 +243,7 @@ export function TransactionCorrectionsView({
           plan.impact?.cross_statement_lines.toString() ?? "",
         ]),
       ),
-      "linkbooks-transaction-correction.csv",
+      "streakbooks-transaction-correction.csv",
     );
   }
   return (
@@ -487,7 +487,7 @@ export function TransactionCorrectionsView({
                   }),
                 ]),
               ),
-              "linkbooks-transaction-search.csv",
+              "streakbooks-transaction-search.csv",
             );
           }}
         >
@@ -922,7 +922,7 @@ export function TransactionCorrectionsView({
             onClick={() =>
               download(
                 correctionHistoryCsv(history.rows),
-                `linkbooks-correction-batches-page-${history.page + 1}.csv`,
+                `streakbooks-correction-batches-page-${history.page + 1}.csv`,
               )
             }
           >

@@ -44,12 +44,12 @@ Review and test the following with two authenticated company fixtures:
 ## Local review without GitHub Actions
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git fetch origin
 git worktree list
-# Create only if D:\MyApp\LinkBooks-Files-B7 does not already exist:
-git worktree add --detach D:\MyApp\LinkBooks-Files-B7 origin/feature/files-workspace-ux-20261106
-cd D:\MyApp\LinkBooks-Files-B7
+# Create only if D:\MyApp\StreakBooks-Files-B7 does not already exist:
+git worktree add --detach D:\MyApp\StreakBooks-Files-B7 origin/feature/files-workspace-ux-20261106
+cd D:\MyApp\StreakBooks-Files-B7
 npm.cmd ci
 npm.cmd run typecheck
 npm.cmd run lint

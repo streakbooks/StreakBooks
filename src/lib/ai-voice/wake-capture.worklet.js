@@ -18,4 +18,4 @@ class WakeCapture extends AudioWorkletProcessor {
     return true;
   }
 }
-registerProcessor("linkbooks-wake-capture", WakeCapture);
+registerProcessor("streakbooks-wake-capture", WakeCapture);

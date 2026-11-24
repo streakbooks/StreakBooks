@@ -13,10 +13,10 @@
 
 ## Server deployment configuration
 
-The existing LinkBooks email transport is **Resend**. Required server-only variables:
+The existing StreakBooks email transport is **Resend**. Required server-only variables:
 
 - `RESEND_API_KEY`: Resend API key, kept in the server environment.
-- `EMAIL_FROM`: a domain-verified sender mailbox, e.g. `LinkBooks <billing@your-verified-domain.example>`.
+- `EMAIL_FROM`: a domain-verified sender mailbox, e.g. `StreakBooks <billing@your-verified-domain.example>`.
 - `APP_BASE_URL`: optional canonical HTTPS application origin for clickable Action Center digest links.
 
 Never put credentials in `VITE_*` client variables, `organisation_config`, the repository, or screenshots. Verify the domain's DNS (including required SPF/DKIM records) using the provider's dashboard. If the API key lacks domain-read permissions, the verification state will show **unknown** instead of claiming verification.
@@ -49,14 +49,14 @@ User input cannot override the authenticated test recipient or Resend's verified
 The worker is implemented at `POST /api/communications/digest-cron` and is
 **not automatically scheduled** by merely deploying this code. Configure a
 trusted hourly scheduler in the hosting platform to POST with the header
-`Authorization: Bearer <LOVABLE_CRON_SECRET>`. The server validates this
+`Authorization: Bearer <STREAKBOOKS_CRON_SECRET>`. The server validates this
 secret in constant time and never exposes it to the browser. Set
-`LOVABLE_CRON_SECRET` (and optionally
-`LOVABLE_CRON_SECRET_PREVIOUS` during rotation) in server environment only.
+`STREAKBOOKS_CRON_SECRET` (and optionally
+`STREAKBOOKS_CRON_SECRET_PREVIOUS` during rotation) in server environment only.
 
 Required server environment variables:
 `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
-`RESEND_API_KEY`, `EMAIL_FROM`, and `LOVABLE_CRON_SECRET`.
+`RESEND_API_KEY`, `EMAIL_FROM`, and `STREAKBOOKS_CRON_SECRET`.
 Verify the sender domain with Resend DNS. Never place any of these secrets in
 `VITE_*` variables. Enable the scheduler only after the migrations
 `communication_delivery_audit` and `communication_scheduled_digests`

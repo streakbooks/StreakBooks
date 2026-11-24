@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/banking/reconciliation-report/$sessionId")({
-  head: () => ({ meta: [{ title: "Bank reconciliation report — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Bank reconciliation report — StreakBooks" }] }),
   component: ReconciliationReport,
 });
 

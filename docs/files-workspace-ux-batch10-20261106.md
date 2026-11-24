@@ -1,7 +1,7 @@
-# LinkBooks Files — Batch 10: security, scale, mobile UX and release gates
+# StreakBooks Files — Batch 10: security, scale, mobile UX and release gates
 
 Date: 2026-11-06
-Repository: `linkbusinessadvisory/LinkBooks`
+Repository: `streakbooks/StreakBooks`
 Feature branch: `feature/files-workspace-ux-20261106`
 Scope: Final **planned code-development batch** (10/10). **Production readiness is NOT verified.** No GitHub Actions/CI was manually triggered.
 
@@ -40,12 +40,12 @@ Scope: Final **planned code-development batch** (10/10). **Production readiness 
 ## Required local release verification (NO GitHub Actions)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git fetch origin
 git worktree list
 # Create only if the destination is not already present:
-git worktree add --detach D:\MyApp\LinkBooks-Files-B10 origin/feature/files-workspace-ux-20261106
-cd D:\MyApp\LinkBooks-Files-B10
+git worktree add --detach D:\MyApp\StreakBooks-Files-B10 origin/feature/files-workspace-ux-20261106
+cd D:\MyApp\StreakBooks-Files-B10
 npm.cmd ci
 npm.cmd run typecheck
 npm.cmd run lint

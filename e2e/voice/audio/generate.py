@@ -19,7 +19,7 @@ lib.flite_text_to_wave.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
 lib.cst_wave_save_riff.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
 lib.delete_wave.argtypes = [ctypes.c_void_p]
 phrases = {
-    "hey-linkbooks": "Hey link books", "hello-linkbooks": "Hello link books",
+    "hey-streakbooks": "Hey link books", "hello-streakbooks": "Hello link books",
     "hey-luna": "Hey Luna", "hey-link-cooks": "Hey link cooks",
     "open-invoices": "Open invoices", "unrelated": "The supplier invoice is due tomorrow",
     "hey-lincoln": "Hey Lincoln",
@@ -30,10 +30,10 @@ with tempfile.TemporaryDirectory() as directory:
         wave = lib.flite_text_to_wave(text.encode(), speaker)
         lib.cst_wave_save_riff(wave, str(raw).encode())
         lib.delete_wave(wave)
-        variants = [("enroll-1", 1), ("enroll-2", .96), ("enroll-3", 1.04), ("heldout", .90)] if name in ["hey-linkbooks", "hello-linkbooks", "hey-luna"] else [("heldout", 1)]
+        variants = [("enroll-1", 1), ("enroll-2", .96), ("enroll-3", 1.04), ("heldout", .90)] if name in ["hey-streakbooks", "hello-streakbooks", "hey-luna"] else [("heldout", 1)]
         for tag, speed in variants:
             subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(raw), "-af", f"atempo={speed},adelay=700,apad=pad_dur=1.2", "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", str(output / f"{name}-{tag}.wav")], check=True)
-    for name in ["hey-linkbooks", "hello-linkbooks", "hey-luna"]:
+    for name in ["hey-streakbooks", "hello-streakbooks", "hey-luna"]:
         manifest = Path(directory) / "concat.txt"
         manifest.write_text("".join(f"file '{output / f'{name}-enroll-{n}.wav'}'\n" for n in [1, 2, 3]))
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(manifest), "-c", "copy", str(output / ("enrollment.wav" if name == "hey-linkbooks" else f"{name}-enrollment.wav"))], check=True)
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(manifest), "-c", "copy", str(output / ("enrollment.wav" if name == "hey-streakbooks" else f"{name}-enrollment.wav"))], check=True)

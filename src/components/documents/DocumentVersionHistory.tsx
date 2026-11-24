@@ -136,7 +136,7 @@ export function DocumentVersionHistory({
         ) : null}
       </div>
       <p className="text-xs text-muted-foreground">
-        Replacements keep the same file extension and the existing LinkBooks document link. Previous
+        Replacements keep the same file extension and the existing StreakBooks document link. Previous
         versions are preserved in private Storage and cannot be edited. Maximum 50 versions per
         file.
       </p>

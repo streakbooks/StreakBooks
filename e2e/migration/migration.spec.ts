@@ -18,7 +18,7 @@ test("upload, date mapping, validation report, and invalid replacement", async (
   await expect(page.getByLabel("Validated payload")).toContainText("2026-02-01,2026-02-28");
   const waiting = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download validation report" }).click();
-  expect((await waiting).suggestedFilename()).toBe("linkbooks-migration-validation.csv");
+  expect((await waiting).suggestedFilename()).toBe("streakbooks-migration-validation.csv");
   await page.getByLabel("Map Customer", { exact: true }).selectOption("");
   await expect(page.getByRole("alert")).toContainText("Map required field: Customer");
   await expect(page.getByLabel("Validated payload")).toHaveText("");

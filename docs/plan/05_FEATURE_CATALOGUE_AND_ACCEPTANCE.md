@@ -1,4 +1,4 @@
-# LinkBooks — Feature Catalogue & Acceptance Criteria
+# StreakBooks — Feature Catalogue & Acceptance Criteria
 
 **How to read each feature**
 

@@ -2,7 +2,7 @@
 
 ## Verdict
 
-In-app EM batches **EM-01–EM-12** are closed for **LinkBooks-owned scope** (schema, RPCs, UI, unit tests, linked-project migrations, authenticated read/write smoke where exercised).
+In-app EM batches **EM-01–EM-12** are closed for **StreakBooks-owned scope** (schema, RPCs, UI, unit tests, linked-project migrations, authenticated read/write smoke where exercised).
 
 External **provider / ops** items remain available as configuration work and do **not** block batch closure when honesty stubs are shipped.
 
@@ -10,7 +10,7 @@ External **provider / ops** items remain available as configuration work and do 
 
 | Gate | Evidence |
 | --- | --- |
-| Code on GitHub main | Merged via [#156](https://github.com/linkbusinessadvisory/LinkBooks/pull/156) (`d837e23`) |
+| Code on GitHub main | Merged via [#156](https://github.com/streakbooks/StreakBooks/pull/156) (`d837e23`) |
 | Migrations | 27 files `20261107120000`–`20261107156000` applied + repaired on `ipxflpzfcqwtenodbxwc` |
 | Unit tests | 97 passed under `src/lib/expenses` |
 | UI contracts | `check:ui`, `check:navigation` passed |

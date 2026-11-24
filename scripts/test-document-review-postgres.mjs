@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const name = `linkbooks-document-review-${process.pid}`;
+const name = `streakbooks-document-review-${process.pid}`;
 const env = { ...process.env };
 for (const key of [
   "DOCKER_HOST",

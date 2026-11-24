@@ -1,6 +1,6 @@
 /**
  * Map dated AR/AP as-at report results into period-close control-tie facts.
- * Original LinkBooks adapter — keeps close checklist independent of report row shapes.
+ * Original StreakBooks adapter — keeps close checklist independent of report row shapes.
  */
 
 export type AsAtControlTieInput = {

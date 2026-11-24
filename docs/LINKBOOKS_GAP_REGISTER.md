@@ -1,10 +1,10 @@
-# LinkBooks — Gap Register (Owner Audit)
+# StreakBooks — Gap Register (Owner Audit)
 
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-10-19 |
 | **Owner** | Product / engineering audit |
-| **Supersedes** | Gap tables inside [LINKBOOKS_RELEASE_DECISION.md](./LINKBOOKS_RELEASE_DECISION.md) (retained for decision history) |
+| **Supersedes** | Gap tables inside [STREAKBOOKS_RELEASE_DECISION.md](./STREAKBOOKS_RELEASE_DECISION.md) (retained for decision history) |
 
 Severity: **Critical** = customer data / money / legal exposure; **High** = major product promise or ops; **Medium** = depth or UX debt; **Low** = polish or future scope.
 
@@ -21,7 +21,7 @@ Severity: **Critical** = customer data / money / legal exposure; **High** = majo
 | G-009 | High | Accounting | **Period lock** deny not live-proven | Post into locked period → expect SQL error | Staging |
 | G-010 | High | Accounting | Document lifecycle (void, reversal chains) not E2E-proven | DB-backed scenarios per doc type | G-002 |
 | G-011 | High | Reports | UI reports not tied to **SQL aggregates** on staging | Automated compare TB/P&L/BS | Staging data fixture |
-| G-012 | High | Demo | Live **demo reseed** vs `DEMO_EXPECTED` not evidenced post-deploy | Run reset on https://linkbooks-navy.vercel.app; snapshot TB | Friend-demo deploy |
+| G-012 | High | Demo | Live **demo reseed** vs `DEMO_EXPECTED` not evidenced post-deploy | Run reset on https://streakbooks-navy.vercel.app; snapshot TB | Friend-demo deploy |
 | G-013 | High | Settings | **Email invites** / member join incomplete | Transactional email provider + templates | Vendor + DNS |
 | G-014 | High | Auth | Supabase **Site URL / redirect** list not checklist-verified for Vercel host | Dashboard audit per [ENV_AND_DEPLOYMENT.md](./ENV_AND_DEPLOYMENT.md) | Deploy access |
 | G-015 | High | Banking | **Reconcile → ledger** not E2E-proven | Staging reconcile session test | G-002 |
@@ -53,6 +53,6 @@ Severity: **Critical** = customer data / money / legal exposure; **High** = majo
 
 ## Cross-links
 
-- [LINKBOOKS_SECURITY_REVIEW.md](./LINKBOOKS_SECURITY_REVIEW.md) — G-001, G-014
-- [LINKBOOKS_ACCOUNTING_INTEGRITY.md](./LINKBOOKS_ACCOUNTING_INTEGRITY.md) — G-008–G-010
-- [LINKBOOKS_PRODUCTION_READINESS.md](./LINKBOOKS_PRODUCTION_READINESS.md) — gate summary
+- [STREAKBOOKS_SECURITY_REVIEW.md](./STREAKBOOKS_SECURITY_REVIEW.md) — G-001, G-014
+- [STREAKBOOKS_ACCOUNTING_INTEGRITY.md](./STREAKBOOKS_ACCOUNTING_INTEGRITY.md) — G-008–G-010
+- [STREAKBOOKS_PRODUCTION_READINESS.md](./STREAKBOOKS_PRODUCTION_READINESS.md) — gate summary

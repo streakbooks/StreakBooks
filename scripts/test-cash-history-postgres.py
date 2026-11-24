@@ -1,7 +1,7 @@
 import subprocess, pathlib, os
 
 os.chdir(pathlib.Path(__file__).resolve().parent.parent)
-name = f"linkbooks-cash-history-test-{os.getpid()}"
+name = f"streakbooks-cash-history-test-{os.getpid()}"
 docker_env = os.environ.copy()
 for selector in ["DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH"]:
     docker_env.pop(selector, None)

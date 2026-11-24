@@ -20,7 +20,7 @@ GitHub quality gates cover TypeScript, changed-file linting, unit tests, isolate
 Local review after a verified merge:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status --short
 git switch main
 git pull --ff-only origin main
@@ -31,4 +31,4 @@ Then open `http://localhost:8080/settings` at desktop and narrow widths. Test Ov
 
 ## Still not asserted complete
 
-A fully connected production Vercel deployment of the authoritative `linkbusinessadvisory/LinkBooks` repository, authenticated staging evidence, provider deliveries and all missing functionality across the 26-category Settings registry are independently gated. A pass on code-based CI does not prove those flows are available in production.
+A fully connected production Vercel deployment of the authoritative `streakbooks/StreakBooks` repository, authenticated staging evidence, provider deliveries and all missing functionality across the 26-category Settings registry are independently gated. A pass on code-based CI does not prove those flows are available in production.

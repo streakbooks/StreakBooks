@@ -1,4 +1,4 @@
-# LinkBooks reporting benchmark — 2 November 2026
+# StreakBooks reporting benchmark — 2 November 2026
 
 This is a focused documentation discovery review, not hands-on product testing or an exhaustive capability certification. Official search excerpts and accessible documentation were reviewed. Features not described below remain **unverified**, including performance, precise subscription limits, formula safety and detailed permission semantics. These sources support architecture choices, not copied layouts or implementations.
 
@@ -25,7 +25,7 @@ This is a focused documentation discovery review, not hands-on product testing o
 | Jirav | Planning and reporting capabilities depend on subscription and enabled departments. | [Documentation](https://help.jirav.com/account-subscription-options) |
 | LivePlan | Dashboard separates accounting actuals from forecast values and supports comparisons. | [Documentation](https://help.liveplan.com/understanding-the-numbers/performance-tracking-dashboard-and-industry-data/financial-statements-available-in-the-dashboard) |
 
-## Decisions for LinkBooks
+## Decisions for StreakBooks
 
 1. Reuse the posted-ledger reporting engine and the existing saved-view table. A reusable configuration is distinct from a completed financial snapshot.
 2. Keep private report ownership and tenant membership checks until a separate sharing model has database-enforced authorization and revocation tests.

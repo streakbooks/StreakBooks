@@ -414,7 +414,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
     columns: ContactDirectoryColumnId[] | null;
     views: ContactSavedView[] | null;
   }>({ companyId: undefined, columns: null, views: null });
-  const preferenceKey = companyId ? `linkbooks:contact-columns:${companyId}` : "";
+  const preferenceKey = companyId ? `streakbooks:contact-columns:${companyId}` : "";
   const visibleColumns =
     columnPreferences.companyId === companyId
       ? columnPreferences.columns
@@ -482,7 +482,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
     if (!companyId) return;
     let stored: unknown = null;
     try {
-      const raw = window.localStorage.getItem(`linkbooks:contact-columns:${companyId}`);
+      const raw = window.localStorage.getItem(`streakbooks:contact-columns:${companyId}`);
       stored = raw ? JSON.parse(raw) : null;
     } catch {
       // Private browsing may disable storage: keep the standard columns available.
@@ -502,7 +502,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
     if (!companyId) return;
     let stored: unknown = null;
     try {
-      const raw = window.localStorage.getItem(`linkbooks:contact-saved-views:${companyId}`);
+      const raw = window.localStorage.getItem(`streakbooks:contact-saved-views:${companyId}`);
       stored = raw ? JSON.parse(raw) : null;
     } catch {
       // Stored views are optional; contacts remain fully usable without browser storage.
@@ -539,7 +539,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
     if (companyId) {
       try {
         window.localStorage.setItem(
-          `linkbooks:contact-saved-views:${companyId}`,
+          `streakbooks:contact-saved-views:${companyId}`,
           JSON.stringify(next),
         );
       } catch {
@@ -811,7 +811,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "linkbooks-selected-contacts.csv";
+    anchor.download = "streakbooks-selected-contacts.csv";
     anchor.click();
     URL.revokeObjectURL(url);
     toast.success(`Exported ${selectedRows.length} selected contacts`);
@@ -833,7 +833,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `linkbooks-contacts-${view}.csv`;
+      a.download = `streakbooks-contacts-${view}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success(`Exported ${res.count} contacts`);

@@ -110,7 +110,7 @@ export function DocumentEmailInbox({
             <Inbox className="size-5" /> Email-to-Inbox
           </h2>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Forward supplier invoices and receipts to a private LinkBooks receiving address. Review
+            Forward supplier invoices and receipts to a private StreakBooks receiving address. Review
             and import selected attachments manually. Imports do not create or post accounting
             entries.
           </p>

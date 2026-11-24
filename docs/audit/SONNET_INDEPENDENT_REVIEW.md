@@ -1,4 +1,4 @@
-# LinkBooks — Independent Second Review (Sonnet)
+# StreakBooks — Independent Second Review (Sonnet)
 
 - Date: 23 Oct 2026
 - Branch: `cto-master-programme`

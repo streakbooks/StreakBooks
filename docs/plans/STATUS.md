@@ -28,4 +28,4 @@
 ## Known limits (honest)
 - No live bank feeds, no online payment provider, no electronic tax filing, no server-side PDF generation.
 - Automatic schedulers (auto-reversals, recurring journals, reminders) are documented but not installed; they run on demand.
-- `ops_record_supplier_payment` leaves `linkbooks.fx_inline` on for the rest of the transaction after an idempotent replay (harmless today).
+- `ops_record_supplier_payment` leaves `streakbooks.fx_inline` on for the rest of the transaction after an idempotent replay (harmless today).

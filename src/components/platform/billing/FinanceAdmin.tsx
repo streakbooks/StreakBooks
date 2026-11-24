@@ -64,7 +64,7 @@ export function FinanceAdmin({ canEdit, isOwner }: { canEdit: boolean; isOwner: 
           Invoicing, tax and refunds
         </h2>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Tax rules record what an adviser has confirmed; LinkBooks does not decide tax treatment. A
+          Tax rules record what an adviser has confirmed; StreakBooks does not decide tax treatment. A
           rule, a seller and each refund need a second platform owner. Issued invoices and credit
           notes cannot change.
         </p>

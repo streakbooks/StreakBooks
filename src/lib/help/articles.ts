@@ -108,7 +108,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     topic: "Tax",
     title: "Tax rates, codes and returns",
     summary:
-      "LinkBooks calculates tax on documents and totals it for a return. It does not file for you.",
+      "StreakBooks calculates tax on documents and totals it for a return. It does not file for you.",
     steps: [
       "Set the tax regime and registration under Tax → Registration, then apply a country pack or add rates and codes yourself.",
       "Ended rates keep working on documents dated inside their dates; end-date a rate instead of deleting it.",

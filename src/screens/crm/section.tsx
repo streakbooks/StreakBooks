@@ -62,7 +62,7 @@ export function CrmSectionPage({ sectionKey }: { sectionKey: CrmSectionKey }) {
         title={`${section.label} arrives in ${section.batch}`}
         description={
           bridge
-            ? "Use the existing LinkBooks module for the shared master data. CRM-specific overlays will attach in the listed batch without duplicating customer records."
+            ? "Use the existing StreakBooks module for the shared master data. CRM-specific overlays will attach in the listed batch without duplicating customer records."
             : "This surface is registered for deep links and access control. Backend capabilities will ship in the listed batch with real authorization and persistence."
         }
         action={

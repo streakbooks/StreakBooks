@@ -1,4 +1,4 @@
-# LinkBooks Fixed Assets — Batch 2: General Ledger Reconciliation (2026-11-06)
+# StreakBooks Fixed Assets — Batch 2: General Ledger Reconciliation (2026-11-06)
 
 ## Change state
 
@@ -41,7 +41,7 @@ Source changes are committed to draft PR #111, **not merged into main and not te
 ## Release verification (local only — do not trigger GitHub Actions)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git fetch origin
 git switch feature/fixed-assets-register-safety-ux-20261106
 git pull --ff-only origin feature/fixed-assets-register-safety-ux-20261106

@@ -179,7 +179,7 @@ export function GettingStarted({ data }: { data: DashboardData }) {
   return (
     <Card className="border-primary/25 bg-info-soft/40">
       <CardHeader className="space-y-1 p-5 pb-3">
-        <CardTitle className="text-sm font-semibold">Get started with LinkBooks</CardTitle>
+        <CardTitle className="text-sm font-semibold">Get started with StreakBooks</CardTitle>
         <CardDescription className="text-xs">
           {done} of {items.length} steps done. Steps tick off when the records exist.
         </CardDescription>

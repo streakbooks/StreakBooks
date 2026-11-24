@@ -1,6 +1,6 @@
 # HR Management screens
 
-Premium LinkBooks HR module. Canonical workforce identity is `payroll_employees` (shared with Payroll).
+Premium StreakBooks HR module. Canonical workforce identity is `payroll_employees` (shared with Payroll).
 
 | Surface | Status |
 |---------|--------|

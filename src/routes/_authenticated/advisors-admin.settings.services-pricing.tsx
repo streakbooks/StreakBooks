@@ -4,11 +4,11 @@ import { AdvisorsServicesPricingPage } from "@/screens/advisors/settings-service
 export const Route = createFileRoute("/_authenticated/advisors-admin/settings/services-pricing")({
   head: () => ({
     meta: [
-      { title: "Services & Pricing — LinkBooks Advisors" },
+      { title: "Services & Pricing — StreakBooks Advisors" },
       {
         name: "description",
         content:
-          "Draft, preview, publish and restore LinkBooks Advisors services and plan pricing.",
+          "Draft, preview, publish and restore StreakBooks Advisors services and plan pricing.",
       },
     ],
   }),

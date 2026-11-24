@@ -1,4 +1,4 @@
-# LinkBooks — Production Readiness Verification Report
+# StreakBooks — Production Readiness Verification Report
 
 | Field | Value |
 |-------|-------|
@@ -18,7 +18,7 @@
 6. **Backup/restore drill not evidenced**; monitoring/error reporting not configured in-repo.
 7. **SECURITY_CHECKLIST.md** still lists unchecked go-live items (staging≠prod, invites, MFA, live RLS test, restore drill).
 
-This report does **not** declare LinkBooks production ready. Scope was not silently reduced to make the checklist pass.
+This report does **not** declare StreakBooks production ready. Scope was not silently reduced to make the checklist pass.
 
 ---
 
@@ -90,7 +90,7 @@ Legend: **Pass** = automated evidence in this run; **Partial** = unit/mock/SQL d
 | Criterion | Status | Evidence / command | Severity | Impact | Corrective action | Manual review? |
 |-----------|--------|-------------------|----------|--------|-------------------|----------------|
 | Production build & deploy config | **Partial** | `npm run build` emits `.vercel/output` (TanStack Start / Nitro). No `vercel.json` in repo; Lovable/Vercel project assumed external | Medium | Misconfigured routes/env | Document Vercel project settings; preview vs prod | Yes |
-| Required env var **names** (no values printed) | **Pass** | Documented in `docs/ENV_AND_DEPLOYMENT.md` / `.env.example`: `VITE_SUPABASE_*`, `SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `AI_API_KEY`, `LOVABLE_CRON_SECRET`, optional AI limits | Critical if wrong names | App/auth failure | Confirm set in Vercel Production + Preview | **Yes** |
+| Required env var **names** (no values printed) | **Pass** | Documented in `docs/ENV_AND_DEPLOYMENT.md` / `.env.example`: `VITE_SUPABASE_*`, `SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `AI_API_KEY`, `STREAKBOOKS_CRON_SECRET`, optional AI limits | Critical if wrong names | App/auth failure | Confirm set in Vercel Production + Preview | **Yes** |
 | Database migration sequence | **Partial** (in-repo) / **Blocked** (remote) | 12 files under `supabase/migrations/` ordered by timestamp through `20261019220000_*`. **Apply status on remote: unknown; not applied in this verification** | **Critical** | Schema drift / missing tables | Apply to **staging first** with approval; never prod without approval | **Yes** |
 | Backup & restore plan | **Fail** (not evidenced) | Docs mention PITR/forward-fix; `SECURITY_CHECKLIST` unchecked “restore drill” | **Critical** | Irrecoverable data loss | Enable PITR/backups; document + run one restore drill | **Yes** |
 | Monitoring & error reporting | **Fail** / **Not Tested** | No Sentry/Datadog/etc. wiring found in app | High | Blind outages | Add error tracking + uptime checks | Yes |
@@ -148,7 +148,7 @@ npm audit                                 # 3 vulns in vitest toolchain
 
 | Question | Answer |
 |----------|--------|
-| Is LinkBooks production ready for real customer money? | **No** |
+| Is StreakBooks production ready for real customer money? | **No** |
 | Can development / Demo exploration continue on staging? | **Yes**, after migrations are applied to an **isolated staging** project and Demo reseed verified |
 | Minimum before “accounting production” claim | Clear all **Critical** rows above: live RLS, staging E2E golden path, migrations applied+verified, backups+restore drill, auth URL smoke, CI green (at least tsc+test+build) |
 

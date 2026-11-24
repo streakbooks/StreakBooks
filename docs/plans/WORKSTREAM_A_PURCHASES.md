@@ -1,6 +1,6 @@
 # Workstream A — Purchases, Contacts, Products
 
-Branch: `workstream-a-purchases` (worktree `LinkBooks-wsA`, based on `ac71c4d`). Not pushed.
+Branch: `workstream-a-purchases` (worktree `StreakBooks-wsA`, based on `ac71c4d`). Not pushed.
 Source: `docs/audit/BUGS_PURCHASES_UX.md`.
 
 **Verification run:** `tsc --noEmit` clean, `vitest run` 50 files / 291 tests pass, eslint clean on touched files, `vite build` passes. No routes were added, so `routeTree.gen.ts` is unchanged.

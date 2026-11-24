@@ -5,7 +5,7 @@ export const Route = createFileRoute("/_authenticated/app-store/apps/$appCode")(
   head: ({ params }) => ({
     meta: [
       {
-        title: `${params.appCode} — App Store — LinkBooks`,
+        title: `${params.appCode} — App Store — StreakBooks`,
       },
     ],
   }),

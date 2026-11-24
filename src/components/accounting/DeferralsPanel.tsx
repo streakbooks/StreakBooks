@@ -153,7 +153,7 @@ export function DeferralsPanel({ companyId, currency }: { companyId: string; cur
     );
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `linkbooks-deferrals-page-${page}.csv`;
+    anchor.download = `streakbooks-deferrals-page-${page}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
   };

@@ -3,7 +3,7 @@ import { AdvisorsAdminConversationsPage } from "@/screens/advisors/admin-convers
 
 export const Route = createFileRoute("/_authenticated/advisors-admin/conversations")({
   head: () => ({
-    meta: [{ title: "Conversations — LinkBooks Advisors" }],
+    meta: [{ title: "Conversations — StreakBooks Advisors" }],
   }),
   component: AdvisorsAdminConversationsPage,
 });

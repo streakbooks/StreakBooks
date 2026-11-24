@@ -1,4 +1,4 @@
-# LinkBooks Accounting — Persistent Reconciliation Review Cases (Batch 4 / 6)
+# StreakBooks Accounting — Persistent Reconciliation Review Cases (Batch 4 / 6)
 
 ## Source implementation
 

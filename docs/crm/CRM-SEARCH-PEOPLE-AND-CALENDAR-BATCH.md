@@ -1,7 +1,7 @@
 # CRM — Contact people, server search and calendar coverage
 
 **Date:** 2026-11-09  
-**Scope:** LinkBooks CRM; company-specific Supabase data; no new database schema, migrations, service integrations or accounting postings.  
+**Scope:** StreakBooks CRM; company-specific Supabase data; no new database schema, migrations, service integrations or accounting postings.  
 **Source baseline:** `main` after PR #220 (`cbc1fead`).  
 **Goal:** Address UI-to-backend wiring gaps and remove misleading first-page-only search in core CRM lists.
 

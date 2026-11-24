@@ -1,6 +1,6 @@
 # Purchase requisitions
 
-Original LinkBooks implementation. This adds `/purchases/requisitions` beneath the
+Original StreakBooks implementation. This adds `/purchases/requisitions` beneath the
 existing Purchases module and uses its view/draft/authorise permission namespace.
 No journal is posted by requisitions or conversion to a draft purchase order.
 

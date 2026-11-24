@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_authenticated/banking/receive-money")({
     }
     return {};
   },
-  head: () => ({ meta: [{ title: "Receive money — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Receive money — StreakBooks" }] }),
   component: ReceiveMoneyRoute,
 });
 

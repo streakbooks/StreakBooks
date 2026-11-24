@@ -7,13 +7,13 @@ export const Route = createFileRoute("/advisors_/$serviceCode")({
       {
         title:
           params.serviceCode === "coaching"
-            ? "We coach you — LinkBooks Advisors"
-            : "We do your books — LinkBooks Advisors",
+            ? "We coach you — StreakBooks Advisors"
+            : "We do your books — StreakBooks Advisors",
       },
       {
         name: "description",
         content:
-          "Review LinkBooks Advisors plans and pricing after choosing bookkeeping or coaching support.",
+          "Review StreakBooks Advisors plans and pricing after choosing bookkeeping or coaching support.",
       },
     ],
   }),

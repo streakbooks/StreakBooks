@@ -56,7 +56,7 @@
   },
   "date": "2026-11-17",
   "status": "release_blocked",
-  "pull_request": "https://github.com/linkbusinessadvisory/LinkBooks/pull/251",
+  "pull_request": "https://github.com/streakbooks/StreakBooks/pull/251",
   "main_snapshot": "fa57d602e9552c92e6dc77914052df467b48285d",
   "unit": {
     "files_passed": 582,
@@ -121,7 +121,7 @@
   },
   "github_ci": {
     "run_id": 44116032487,
-    "url": "https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44116032487",
+    "url": "https://github.com/streakbooks/StreakBooks/actions/runs/44116032487",
     "conclusion": "failure",
     "job_step_summaries": 0,
     "job_log_download": "404 BlobNotFound",

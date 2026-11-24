@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_authenticated/hr/employees/$employeeId")
   },
   head: () => ({
     meta: [
-      { title: "HR employee — LinkBooks" },
+      { title: "HR employee — StreakBooks" },
       {
         name: "description",
         content: "HR employee profile, organisation assignment and position history.",

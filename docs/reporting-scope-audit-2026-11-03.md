@@ -1,6 +1,6 @@
 # Advanced reporting scope audit — 3 November 2026
 
-Authoritative repository: `linkbusinessadvisory/LinkBooks`. This is a source-level functional audit with unit/component-browser evidence and bounded read-only database checks. It does not certify signed-in acceptance, all report runners, legal/tax compliance, or completion of the master brief. Earlier documents referencing `rohitmehra86/LinkBooks` are historical evidence, not the target repository.
+Authoritative repository: `streakbooks/StreakBooks`. This is a source-level functional audit with unit/component-browser evidence and bounded read-only database checks. It does not certify signed-in acceptance, all report runners, legal/tax compliance, or completion of the master brief. Earlier documents referencing `streakbooks/StreakBooks` are historical evidence, not the target repository.
 
 ## Implemented in this branch
 

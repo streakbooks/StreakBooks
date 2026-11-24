@@ -20,7 +20,7 @@ export function fixedAssetSourceHeaders(text: string): string[] {
 }
 
 /**
- * Normalize legacy CSV columns to the published LinkBooks template before server submission.
+ * Normalize legacy CSV columns to the published StreakBooks template before server submission.
  * This is convenience only: the server independently validates financial data and permissions.
  * Unknown source columns are not imported. No values or monetary amounts are transformed.
  */

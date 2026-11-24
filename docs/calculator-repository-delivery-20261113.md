@@ -1,9 +1,9 @@
 # Calculator delivery and repository correction — 2026-11-13
 
-Authoritative repository: https://github.com/linkbusinessadvisory/LinkBooks.
-User workstation: `D:\MyApp\LinkBooks`; app: `http://localhost:8080`.
+Authoritative repository: https://github.com/streakbooks/StreakBooks.
+User workstation: `D:\MyApp\StreakBooks`; app: `http://localhost:8080`.
 
-The original cloud checkout pointed to `rohitmehra86/LinkBooks`. Calculator
+The original cloud checkout pointed to `streakbooks/StreakBooks`. Calculator
 implementation remained uncommitted in that checkout; no calculator changes
 were pushed there. The implementation was ported onto authoritative main
 `a2a8a79efbf8ad11b0aa64bd00a7e64095ba0484` and published on

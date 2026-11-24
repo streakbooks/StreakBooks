@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# LinkBooks macOS bootstrap readiness (run from repo root)
+# StreakBooks macOS bootstrap readiness (run from repo root)
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -8,7 +8,7 @@ ok() { printf '  ✓ %s\n' "$1"; }
 fail() { printf '  ✗ %s\n' "$1"; FAIL=1; }
 FAIL=0
 
-echo "LinkBooks bootstrap checks — $ROOT"
+echo "StreakBooks bootstrap checks — $ROOT"
 echo
 
 command -v node >/dev/null && ok "node $(node -v)" || fail "node missing"
@@ -40,7 +40,7 @@ fi
 
 if gh auth status >/dev/null 2>&1; then
   if git push --dry-run origin HEAD >/dev/null 2>&1; then
-    ok "git push to origin (rohitmehra86/LinkBooks)"
+    ok "git push to origin (streakbooks/StreakBooks)"
   else
     fail "gh logged in but push denied — use account rohitmehra86 (not org bot)"
   fi
@@ -53,10 +53,10 @@ export NPM_CONFIG_CACHE
 if npx vercel@65.1.0 whoami >/dev/null 2>&1; then
   ok "vercel CLI logged in"
 else
-  fail "NPM_CONFIG_CACHE=$ROOT/.npm-cache npx vercel login (team: paxaris, project: linkbooks)"
+  fail "NPM_CONFIG_CACHE=$ROOT/.npm-cache npx vercel login (team: paxaris, project: streakbooks)"
 fi
 
-if [[ -f .vercel/project.json ]]; then ok ".vercel project link"; else fail "vercel link (paxaris / linkbooks)"; fi
+if [[ -f .vercel/project.json ]]; then ok ".vercel project link"; else fail "vercel link (paxaris / streakbooks)"; fi
 
 echo
 if [[ "$FAIL" -eq 0 ]]; then

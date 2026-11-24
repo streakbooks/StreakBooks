@@ -20,15 +20,15 @@ import { SecuritySettingsCard } from "@/components/auth/SecuritySettingsCard";
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "Your profile — LinkBooks" },
+      { title: "Your profile — StreakBooks" },
       {
         name: "description",
-        content: "View and update your LinkBooks account details and password.",
+        content: "View and update your StreakBooks account details and password.",
       },
-      { property: "og:title", content: "Your profile — LinkBooks" },
+      { property: "og:title", content: "Your profile — StreakBooks" },
       {
         property: "og:description",
-        content: "View and update your LinkBooks account details and password.",
+        content: "View and update your StreakBooks account details and password.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

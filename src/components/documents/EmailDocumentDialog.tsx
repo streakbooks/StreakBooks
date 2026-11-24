@@ -132,7 +132,7 @@ export function EmailDocumentDialog(props: Props) {
 
         {sendingDisabledReason ? (
           <Alert>
-            <AlertTitle>Sending from LinkBooks is unavailable</AlertTitle>
+            <AlertTitle>Sending from StreakBooks is unavailable</AlertTitle>
             <AlertDescription>{sendingDisabledReason}</AlertDescription>
           </Alert>
         ) : null}

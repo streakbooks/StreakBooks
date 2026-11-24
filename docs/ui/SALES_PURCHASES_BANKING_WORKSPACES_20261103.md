@@ -1,4 +1,4 @@
-# LinkBooks — Sales, Purchases and Banking workspace upgrade
+# StreakBooks — Sales, Purchases and Banking workspace upgrade
 
 Date: 3 November 2026.
 
@@ -9,7 +9,7 @@ Date: 3 November 2026.
   - https://blog.xero.com/product-updates/quick-view-manage-bills/
 - Odoo supports saved search favourites, filters and groupings:
   - https://www.odoo.com/documentation/19.0/applications/general/search.html
-- All new LinkBooks components are original React/TypeScript. No competitor source, styles, images or logos were copied.
+- All new StreakBooks components are original React/TypeScript. No competitor source, styles, images or logos were copied.
 
 ## Working functionality added
 
@@ -42,7 +42,7 @@ Date: 3 November 2026.
 
 ## Local verification
 
-From PowerShell in D:\MyApp\LinkBooks:
+From PowerShell in D:\MyApp\StreakBooks:
 
     git checkout main
     git pull origin main

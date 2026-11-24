@@ -5,7 +5,7 @@ import { PortalInbox } from "@/components/portals/staff-panels";
 import { useActiveCompany } from "@/hooks/use-active-company";
 
 export const Route = createFileRoute("/_authenticated/purchases/portal-inbox")({
-  head: () => ({ meta: [{ title: "Portal inbox — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Portal inbox — StreakBooks" }] }),
   component: PortalInboxPage,
 });
 

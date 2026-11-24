@@ -9,7 +9,7 @@
  * asOf. Legacy voids without a recorded void date are treated as never having been outstanding.
  *
  * Unapplied supplier payments and purchase credits appear as negative lines (credit balances).
- * This module is original LinkBooks logic aligned to the existing AR as-at contract — not a
+ * This module is original StreakBooks logic aligned to the existing AR as-at contract — not a
  * port of any competitor report layout or source.
  */
 import { ageBucket, type AgingBucket } from "@/lib/accounting/reporting";

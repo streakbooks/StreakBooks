@@ -408,7 +408,7 @@ export function filterExceptionFindings(
         a.key.localeCompare(b.key),
     );
 }
-/** CSV is spreadsheet-formula-safe using the existing LinkBooks sales exporter. */
+/** CSV is spreadsheet-formula-safe using the existing StreakBooks sales exporter. */
 export function exceptionSnapshotCsv(
   snapshot: ExceptionSnapshot,
   reviewed: ReadonlySet<string>,

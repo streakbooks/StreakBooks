@@ -17,7 +17,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * LinkBooks design system.
+ * StreakBooks design system.
  * Restrained, professional finance UI: cool neutral surfaces, a deep navy sidebar and ONE brand
  * accent (royal plum) for actions, focus and selection. Money direction and document status use
  * dedicated semantic tokens (see "Semantic" below) so colour always carries the same meaning.
@@ -480,7 +480,7 @@
   }
 }
 
-/* Original LinkBooks status system. Semantic states do NOT depend on palette. */
+/* Original StreakBooks status system. Semantic states do NOT depend on palette. */
 .lb-status {
   vertical-align: middle;
   font-variant-numeric: tabular-nums;
@@ -740,7 +740,7 @@
 }
 
 /*
- * LinkBooks premium module navigator.
+ * StreakBooks premium module navigator.
  * Keep selection in one location: data-active is derived from the current URL
  * for desktop, collapsed and mobile navigation. No copied vendor UI assets.
  */
@@ -824,7 +824,7 @@
   }
 }
 
-/* LinkBooks visual identity — original paired-leaf ledger mark, drawn entirely in CSS. */
+/* StreakBooks visual identity — original paired-leaf ledger mark, drawn entirely in CSS. */
 .lb-brand-mark {
   position: relative;
   isolation: isolate;
@@ -934,7 +934,7 @@
 /* Every built-in palette owns its chart series, not just sidebar and buttons. 
  * Keep success, money and status colours semantic and independent of this selection.
  * Custom palettes receive coordinated chart tokens from computeCustomTokens(). */
-:root[data-linkbooks-palette]:not([data-linkbooks-palette="custom"]) {
+:root[data-streakbooks-palette]:not([data-streakbooks-palette="custom"]) {
   --chart-1: var(--primary);
   --chart-2: color-mix(in oklab, var(--primary) 50%, #078b94);
   --chart-3: color-mix(in oklab, var(--primary) 38%, #cb9152);
@@ -942,9 +942,9 @@
   --chart-5: color-mix(in oklab, var(--primary) 52%, #9b76b8);
 }
 
-/* Optional premium presets; Classic intentionally inherits the original LinkBooks theme. */
+/* Optional premium presets; Classic intentionally inherits the original StreakBooks theme. */
 /* sapphire — coherent light/dark surface, action and navigator palette. */
-:root[data-linkbooks-palette="sapphire"] {
+:root[data-streakbooks-palette="sapphire"] {
   --background: #fbf8fa;
   --primary: #6b4669;
   --card: #ffffff;
@@ -978,7 +978,7 @@
   --sidebar-active-border: #ddcbd5;
   --sidebar-active-indicator: #6b4669;
 }
-:root.dark[data-linkbooks-palette="sapphire"] {
+:root.dark[data-streakbooks-palette="sapphire"] {
   --background: #1c1720;
   --primary: #d9b8cf;
   --card: #2a222d;
@@ -1014,7 +1014,7 @@
 }
 
 /* rose — coherent light/dark surface, action and navigator palette. */
-:root[data-linkbooks-palette="rose"] {
+:root[data-streakbooks-palette="rose"] {
   --background: #fff6fa;
   --primary: #993b6e;
   --card: #fffafd;
@@ -1048,7 +1048,7 @@
   --sidebar-active-border: #f3d5e4;
   --sidebar-active-indicator: #993b6e;
 }
-:root.dark[data-linkbooks-palette="rose"] {
+:root.dark[data-streakbooks-palette="rose"] {
   --background: #201823;
   --primary: #f2a7cb;
   --card: #2b202c;
@@ -1084,7 +1084,7 @@
 }
 
 /* amethyst — coherent light/dark surface, action and navigator palette. */
-:root[data-linkbooks-palette="amethyst"] {
+:root[data-streakbooks-palette="amethyst"] {
   --background: #faf6ff;
   --primary: #7542a6;
   --card: #fefbff;
@@ -1118,7 +1118,7 @@
   --sidebar-active-border: #e0d2f2;
   --sidebar-active-indicator: #7542a6;
 }
-:root.dark[data-linkbooks-palette="amethyst"] {
+:root.dark[data-streakbooks-palette="amethyst"] {
   --background: #1d172b;
   --primary: #c4a4ef;
   --card: #2b213b;
@@ -1154,7 +1154,7 @@
 }
 
 /* emerald — coherent light/dark surface, action and navigator palette. */
-:root[data-linkbooks-palette="emerald"] {
+:root[data-streakbooks-palette="emerald"] {
   --background: #f3fbf6;
   --primary: #1b7458;
   --card: #fbfffc;
@@ -1188,7 +1188,7 @@
   --sidebar-active-border: #cfe9db;
   --sidebar-active-indicator: #1b7458;
 }
-:root.dark[data-linkbooks-palette="emerald"] {
+:root.dark[data-streakbooks-palette="emerald"] {
   --background: #12231e;
   --primary: #96dec0;
   --card: #1d302a;
@@ -1224,7 +1224,7 @@
 }
 
 /* teal — coherent light/dark surface, action and navigator palette. */
-:root[data-linkbooks-palette="teal"] {
+:root[data-streakbooks-palette="teal"] {
   --background: #f1fbfb;
   --primary: #126d79;
   --card: #fbffff;
@@ -1258,7 +1258,7 @@
   --sidebar-active-border: #c5e6e8;
   --sidebar-active-indicator: #126d79;
 }
-:root.dark[data-linkbooks-palette="teal"] {
+:root.dark[data-streakbooks-palette="teal"] {
   --background: #122229;
   --primary: #9bdce4;
   --card: #1d3037;
@@ -1294,7 +1294,7 @@
 }
 
 /* champagne — coherent light/dark surface, action and navigator palette. */
-:root[data-linkbooks-palette="champagne"] {
+:root[data-streakbooks-palette="champagne"] {
   --background: #fffbf3;
   --primary: #825d2b;
   --card: #fffefd;
@@ -1328,7 +1328,7 @@
   --sidebar-active-border: #ead9b8;
   --sidebar-active-indicator: #825d2b;
 }
-:root.dark[data-linkbooks-palette="champagne"] {
+:root.dark[data-streakbooks-palette="champagne"] {
   --background: #221d19;
   --primary: #ebc58a;
   --card: #2f2820;
@@ -1364,7 +1364,7 @@
 }
 
 /* graphite — coherent light/dark surface, action and navigator palette. */
-:root[data-linkbooks-palette="graphite"] {
+:root[data-streakbooks-palette="graphite"] {
   --background: #f5f7fa;
   --primary: #394e69;
   --card: #ffffff;
@@ -1398,7 +1398,7 @@
   --sidebar-active-border: #d3dae4;
   --sidebar-active-indicator: #394e69;
 }
-:root.dark[data-linkbooks-palette="graphite"] {
+:root.dark[data-streakbooks-palette="graphite"] {
   --background: #151920;
   --primary: #b9cce2;
   --card: #242b35;
@@ -1444,7 +1444,7 @@
 }
 
 /* The custom accent is preserved on buttons; links use separately contrast-tested ink. */
-[data-linkbooks-palette="custom"] .text-primary {
+[data-streakbooks-palette="custom"] .text-primary {
   color: var(--link-ink);
 }
 

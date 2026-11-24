@@ -21,9 +21,9 @@ In-app batches closed · Provider/ops deferred · Merged to main (#156+)
 
 | Area | Status |
 | --- | --- |
-| Code Development | 12 / 12 closed for LinkBooks-owned in-app scope |
+| Code Development | 12 / 12 closed for StreakBooks-owned in-app scope |
 | Local Testing | Unit 97; EXP-0001 full lifecycle (draft→submit→approve→post→paid); settings/approvals/reimburse/reports/mileage smoke |
-| GitHub Commit | On `main` via [#156](https://github.com/linkbusinessadvisory/LinkBooks/pull/156) |
+| GitHub Commit | On `main` via [#156](https://github.com/streakbooks/StreakBooks/pull/156) |
 | GitHub PR / Merge | Merged |
 | Database Migrations | Applied 2026-11-07 on linked project `ipxflpzfcqwtenodbxwc` (27 files) |
 | Application Deployment | Local Vite verified; Vercel not separately verified |

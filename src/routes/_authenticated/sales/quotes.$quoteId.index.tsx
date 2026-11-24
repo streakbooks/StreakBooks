@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/sales/quotes/$quoteId/")({
-  head: () => ({ meta: [{ title: "Quote — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Quote — StreakBooks" }] }),
   component: QuoteDetailPage,
 });
 

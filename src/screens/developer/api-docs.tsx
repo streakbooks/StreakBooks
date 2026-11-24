@@ -52,7 +52,7 @@ export function DeveloperApiDocsPage() {
     <>
       <ListWorkspace
         title="API Documentation"
-        description={`LinkBooks public API ${PUBLIC_API_VERSION} — scoped, versioned access for approved partners.`}
+        description={`StreakBooks public API ${PUBLIC_API_VERSION} — scoped, versioned access for approved partners.`}
         subnav={<DeveloperSubnav current="api-docs" />}
       >
         <Alert className="mb-6">

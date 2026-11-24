@@ -1,7 +1,7 @@
 ﻿# App Store security & data protection matrix
 
 **Status date:** 2026-11-07  
-**Workspace:** `D:\MyApp\LinkBooks` on `main`  
+**Workspace:** `D:\MyApp\StreakBooks` on `main`  
 **Principle:** FAIL CLOSED — no real customer data until authorization, isolation and security controls are verified.
 
 This document distinguishes **implemented**, **locally tested**, **failed**, and **pending** requirements. It does not claim production certification or live penetration-test completion.

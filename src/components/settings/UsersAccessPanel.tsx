@@ -543,7 +543,7 @@ function InvitationsCard({
         <CardDescription>
           A link expires in 7 days and works only for the invited email address. Creating another
           invitation for the same address replaces the pending one. Outbound email is not
-          configured, so LinkBooks does not claim the invitation was emailed.
+          configured, so StreakBooks does not claim the invitation was emailed.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

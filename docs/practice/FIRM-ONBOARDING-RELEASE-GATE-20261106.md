@@ -1,4 +1,4 @@
-# LinkBooks — Firm & Clients Onboarding Release Gate (Batch 4)
+# StreakBooks — Firm & Clients Onboarding Release Gate (Batch 4)
 
 ## Release decision (2026-11-06)
 **BLOCKED / not verified for production.** This batch prepares the release checks
@@ -38,7 +38,7 @@ after** the checks. If that fetch fails, or `main` changes during the run,
 release source acceptance is blocked. Git fetch does **not** run GitHub CI.
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 node --test scripts/lib/firm-onboarding-release-plan.test.mjs
 node scripts/verify-firm-onboarding-release.mjs
 
@@ -49,7 +49,7 @@ node scripts/verify-firm-onboarding-release.mjs
 
 The runner **refuses to run checks or issue passing source evidence** if
 the checkout is not clean `main`, the origin is not the authoritative
-`linkbusinessadvisory/LinkBooks` GitHub repository, or local HEAD does not
+`streakbooks/StreakBooks` GitHub repository, or local HEAD does not
 match the fetched `origin/main` commit. It rechecks the working tree after
 all test commands. Pull the latest main first (the script does not fetch).
 
@@ -78,7 +78,7 @@ Passing this runner does not by itself complete Batch 4.
 ## Local PowerShell release commands (manual execution)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 if (git status --porcelain) { throw "Save or stash local changes before pulling." }
 git switch main

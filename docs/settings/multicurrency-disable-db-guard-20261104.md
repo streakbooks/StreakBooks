@@ -30,7 +30,7 @@ Migration:
    `npm.cmd run test:workflows:postgres` and passes the new migration/fixture.
 2. Confirm TypeScript, ESLint, unit tests and production build pass on the
    exact PR head (not a previous commit).
-3. Apply the reviewed migration to the correct LinkBooks Supabase project only
+3. Apply the reviewed migration to the correct StreakBooks Supabase project only
    after the change is approved. Inspect `pg_trigger` for the two enabled
    triggers and `pg_proc` for invoker security and anonymous EXECUTE revocation.
 4. In authenticated staging, use two organisations: test direct RPC refusal,
@@ -39,7 +39,7 @@ Migration:
 5. Verify that no transaction history, general ledger balances or currency
    settings are silently removed on rejected saves.
 6. Ensure production Vercel is connected to
-   `linkbusinessadvisory/LinkBooks` before deploying the matching frontend.
+   `streakbooks/StreakBooks` before deploying the matching frontend.
    Do not deploy to the existing project while it references another repository.
 
 ## Important limits

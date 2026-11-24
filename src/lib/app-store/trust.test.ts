@@ -15,7 +15,7 @@ describe("marketplace trust", () => {
     }
   });
 
-  it("marks native LinkBooks publishers as verified without claiming certification", () => {
+  it("marks native StreakBooks publishers as verified without claiming certification", () => {
     const shopify = DEFAULT_MARKETPLACE_APPS.find((a) => a.code === "shopify");
     expect(shopify?.publisherVerified).toBe(true);
     expect(certificationLabel(shopify!.certificationStatus)).toBe("Not certified");

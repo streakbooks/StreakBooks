@@ -15,7 +15,7 @@ export function TrustBadges({ trust }: { trust: MarketplaceTrustFields }) {
         <Badge variant="secondary">Unverified publisher</Badge>
       )}
       {isCertified(trust.certificationStatus) ? (
-        <Badge>LinkBooks Certified</Badge>
+        <Badge>StreakBooks Certified</Badge>
       ) : (
         <Badge variant="secondary">{certificationLabel(trust.certificationStatus)}</Badge>
       )}

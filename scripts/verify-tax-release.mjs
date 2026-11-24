@@ -1,5 +1,5 @@
 /**
- * Local-only release gate for the LinkBooks Tax branch.
+ * Local-only release gate for the StreakBooks Tax branch.
  * This script never creates a GitHub Actions run, merges a PR, or touches
  * production Supabase. The default mode runs every locally reproducible gate.
  *

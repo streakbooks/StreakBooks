@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const name = "linkbooks-workpaper-items-" + process.pid;
+const name = "streakbooks-workpaper-items-" + process.pid;
 const env = { ...process.env };
 for (const key of [
   "DOCKER_HOST",

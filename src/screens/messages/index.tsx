@@ -341,7 +341,7 @@ export function MessagesScreen({
     return (
       <ListWorkspace
         title="Messages"
-        description="Secure collaboration for authorised LinkBooks participants"
+        description="Secure collaboration for authorised StreakBooks participants"
         breadcrumbs={[{ label: "Messages" }]}
       >
         <EmptyState

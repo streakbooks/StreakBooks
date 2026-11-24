@@ -1,23 +1,23 @@
-# LinkBooks modernization — implementation handover
+# StreakBooks modernization — implementation handover
 
-**Updated:** 4 November 2026 · **Verified source:** `linkbusinessadvisory/LinkBooks` · **Scope:** foundation, advanced reporting and the first three P0 accounting-integrity fixes. **Not a production compliance certification.**
+**Updated:** 4 November 2026 · **Verified source:** `streakbooks/StreakBooks` · **Scope:** foundation, advanced reporting and the first three P0 accounting-integrity fixes. **Not a production compliance certification.**
 
 ## Delivered to main and how to review
 
 | Feature | PR | Merge commit | What changed |
 |---|---|---|---|
-| Professional Account Transactions | [#17](https://github.com/linkbusinessadvisory/LinkBooks/pull/17) | `04f15ea1` | Searchable, sortable, configurable single-account ledger explorer, saved/visible screens |
-| Universal presentation explorer | [#18](https://github.com/linkbusinessadvisory/LinkBooks/pull/18) | `ef53489f` | Loaded-row customization, column choice, filters, grouping and URL/saved state across reporting catalogue |
-| Architecture, gap analysis and source hygiene | [#19](https://github.com/linkbusinessadvisory/LinkBooks/pull/19) | `f5c058e6` | Architecture/roadmap, clean-room IP policy, tracked-`.env` removal, repository gate, README |
-| Unified multi-account financial reporting | [#20](https://github.com/linkbusinessadvisory/LinkBooks/pull/20) | `5b1bab70` | Multi-account pickers and real company-scoped account-based GL and summaries, account scope and group choices |
-| Fail-closed ledger health | [#21](https://github.com/linkbusinessadvisory/LinkBooks/pull/21) | `65beabfb` | Eight required DB integrity checks, no silent pass on missing evidence, explicit `accounting.view`, tenant-scoped results |
-| Year-end/close exactness | [#22](https://github.com/linkbusinessadvisory/LinkBooks/pull/22) | `ac851d29` | Only active posted closing journals count; fail on DB errors; safe BigInt-to-number boundaries |
-| Accounting Ledger Health screen | [#23](https://github.com/linkbusinessadvisory/LinkBooks/pull/23) | `0679cd10` | New Accounting tab with on-demand checks, keyed per-company results, keyboard-friendly native URL and semantic heading |
+| Professional Account Transactions | [#17](https://github.com/streakbooks/StreakBooks/pull/17) | `04f15ea1` | Searchable, sortable, configurable single-account ledger explorer, saved/visible screens |
+| Universal presentation explorer | [#18](https://github.com/streakbooks/StreakBooks/pull/18) | `ef53489f` | Loaded-row customization, column choice, filters, grouping and URL/saved state across reporting catalogue |
+| Architecture, gap analysis and source hygiene | [#19](https://github.com/streakbooks/StreakBooks/pull/19) | `f5c058e6` | Architecture/roadmap, clean-room IP policy, tracked-`.env` removal, repository gate, README |
+| Unified multi-account financial reporting | [#20](https://github.com/streakbooks/StreakBooks/pull/20) | `5b1bab70` | Multi-account pickers and real company-scoped account-based GL and summaries, account scope and group choices |
+| Fail-closed ledger health | [#21](https://github.com/streakbooks/StreakBooks/pull/21) | `65beabfb` | Eight required DB integrity checks, no silent pass on missing evidence, explicit `accounting.view`, tenant-scoped results |
+| Year-end/close exactness | [#22](https://github.com/streakbooks/StreakBooks/pull/22) | `ac851d29` | Only active posted closing journals count; fail on DB errors; safe BigInt-to-number boundaries |
+| Accounting Ledger Health screen | [#23](https://github.com/streakbooks/StreakBooks/pull/23) | `0679cd10` | New Accounting tab with on-demand checks, keyed per-company results, keyboard-friendly native URL and semantic heading |
 
 ### Source-level / CI verification
-- [PR #21 exact-head CI](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41696750497) — green.
-- [PR #22 exact-head CI](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41697565330) — green.
-- [PR #23 exact-head CI](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41698757672) — **1,830 unit tests passed in 250 files**, 4 repository checks, TypeScript, changed-file ESLint, isolated PostgreSQL workflow/cash-history tests, navigation checks and production build all passed.
+- [PR #21 exact-head CI](https://github.com/streakbooks/StreakBooks/actions/runs/41696750497) — green.
+- [PR #22 exact-head CI](https://github.com/streakbooks/StreakBooks/actions/runs/41697565330) — green.
+- [PR #23 exact-head CI](https://github.com/streakbooks/StreakBooks/actions/runs/41698757672) — **1,830 unit tests passed in 250 files**, 4 repository checks, TypeScript, changed-file ESLint, isolated PostgreSQL workflow/cash-history tests, navigation checks and production build all passed.
 - The authenticated browser **staging** job was skipped. Playwright test discovery passed; that does **not** mean live signed-in journeys ran.
 - Each merge starts its own main-branch gate; verify the newest main run before deploying.
 - No production migration, package installation, tax filing submission or live journal posting was performed for PR #21–#23.
@@ -27,7 +27,7 @@
 **Environment:** Node.js 22 and npm, Git, valid *publishable* credentials for the authorized Supabase project. Never put service-role or `sb_secret_` credentials in `VITE_` variables.
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status --short
 # If generated src/routeTree.gen.ts has local modifications, back it up:
 git stash push -m "Local generated route tree before update" -- src/routeTree.gen.ts
@@ -46,7 +46,7 @@ npm run dev
 Open `http://localhost:8080`. A previously tracked `.env` is intentionally no longer version-controlled. If this is a fresh checkout, copy `.env.example` to `.env` and fill in valid project URL and publishable key for both browser and server configuration. Never commit that file.
 
 ### Seed data and logins
-Existing LinkBooks users sign in normally; **no new usernames, passwords or user accounts were created**. An existing **Demo Company** uses the real posting engine; do not reset or reseed live client companies. No new demo fixture was inserted into the connected project in this milestone. For fixtures, review `tests/fixtures/` and the existing demo initialization screens. Authenticated staging tests require separately provisioned *non-production* credentials via GitHub secrets; none are printed here.
+Existing StreakBooks users sign in normally; **no new usernames, passwords or user accounts were created**. An existing **Demo Company** uses the real posting engine; do not reset or reseed live client companies. No new demo fixture was inserted into the connected project in this milestone. For fixtures, review `tests/fixtures/` and the existing demo initialization screens. Authenticated staging tests require separately provisioned *non-production* credentials via GitHub secrets; none are printed here.
 
 ## Manual acceptance cases
 
@@ -88,12 +88,12 @@ Proceed from [ROADMAP.md](ROADMAP.md), starting with complete **authenticated ac
 
 | Area | PR | Merge checkpoint | Delivered and validated |
 |---|---|---|---|
-| Account-focused reports (concurrent independent work) | [#25](https://github.com/linkbusinessadvisory/LinkBooks/pull/25) | `6340e270` | Budget/asset/tax GL account focus. CI green; signed-in financial acceptance still required. |
-| QIF bank statements | [#26](https://github.com/linkbusinessadvisory/LinkBooks/pull/26) | `5b947a21` | New original Bank/CCard QIF parser, explicit date-order selection, normalized import preview, duplicate review, retained tenant-scoped server workflow. |
-| Bank import input integrity | [#27](https://github.com/linkbusinessadvisory/LinkBooks/pull/27) | `faa08c84` | Real date validation, no lossy minor-unit conversion, strict duplicate/row IDs and bounded request types for CSV, OFX/QFX and QIF. |
-| Tax input safety | [#28](https://github.com/linkbusinessadvisory/LinkBooks/pull/28) | `e1ae798b` | Reject invalid/unsafe monetary Numbers, unknown tax treatment and quantity precision beyond six decimals. Existing tax formulas remain unchanged. |
+| Account-focused reports (concurrent independent work) | [#25](https://github.com/streakbooks/StreakBooks/pull/25) | `6340e270` | Budget/asset/tax GL account focus. CI green; signed-in financial acceptance still required. |
+| QIF bank statements | [#26](https://github.com/streakbooks/StreakBooks/pull/26) | `5b947a21` | New original Bank/CCard QIF parser, explicit date-order selection, normalized import preview, duplicate review, retained tenant-scoped server workflow. |
+| Bank import input integrity | [#27](https://github.com/streakbooks/StreakBooks/pull/27) | `faa08c84` | Real date validation, no lossy minor-unit conversion, strict duplicate/row IDs and bounded request types for CSV, OFX/QFX and QIF. |
+| Tax input safety | [#28](https://github.com/streakbooks/StreakBooks/pull/28) | `e1ae798b` | Reject invalid/unsafe monetary Numbers, unknown tax treatment and quantity precision beyond six decimals. Existing tax formulas remain unchanged. |
 
-**CI:** [PR #26](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41756745252), [PR #27](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41757833009) and [PR #28](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41758651721) all passed exact-head full quality gates. The latest PR #28 head had **1,881 passing unit tests across 253 files**, 4 repository-hygiene tests, TypeScript, changed-file ESLint, isolated PostgreSQL checks, navigation discovery and production build. Post-merge `main` CI must also be checked for the latest merge and this documentation update. Authenticated staging browser checks remain **skipped**.
+**CI:** [PR #26](https://github.com/streakbooks/StreakBooks/actions/runs/41756745252), [PR #27](https://github.com/streakbooks/StreakBooks/actions/runs/41757833009) and [PR #28](https://github.com/streakbooks/StreakBooks/actions/runs/41758651721) all passed exact-head full quality gates. The latest PR #28 head had **1,881 passing unit tests across 253 files**, 4 repository-hygiene tests, TypeScript, changed-file ESLint, isolated PostgreSQL checks, navigation discovery and production build. Post-merge `main` CI must also be checked for the latest merge and this documentation update. Authenticated staging browser checks remain **skipped**.
 
 ### Local manual review — QIF
 1. Update local `main` following the PowerShell commands in this guide. Keep your existing `.env` and use an authorized login.
@@ -122,12 +122,12 @@ This checkpoint includes two operationally important *limits*: QIF imports lack 
 
 | Milestone | Pull request | Merge commit | Scope and status |
 |---|---|---|---|
-| Cash-basis Account Transactions and General Ledger | [#30](https://github.com/linkbusinessadvisory/LinkBooks/pull/30) | `4244b949` | Source-backed recognition ledger and fail-closed account filter, still bounded by data/recognition limits. |
-| Cash General Ledger paging | [#31](https://github.com/linkbusinessadvisory/LinkBooks/pull/31) | `396fe6a9` | Page-scoped cash ledger retrieval with full prior running balance; page exports remain page-scoped, NOT all history. |
-| Journal posting FX, dates, and exact amount integrity | [#32](https://github.com/linkbusinessadvisory/LinkBooks/pull/32) | `b91f3e06` | No silent 1:1 when an explicit currency's lookup is missing/invalid; exact minor units and genuine dates required before posting. |
-| Historical FX report rate provenance | [#33](https://github.com/linkbusinessadvisory/LinkBooks/pull/33) | `5a95e52c` | Known foreign-currency journals without their posted rate fail instead of displaying unconverted amounts; unsafe numeric JSON amounts rejected, exact integer text preserved. |
+| Cash-basis Account Transactions and General Ledger | [#30](https://github.com/streakbooks/StreakBooks/pull/30) | `4244b949` | Source-backed recognition ledger and fail-closed account filter, still bounded by data/recognition limits. |
+| Cash General Ledger paging | [#31](https://github.com/streakbooks/StreakBooks/pull/31) | `396fe6a9` | Page-scoped cash ledger retrieval with full prior running balance; page exports remain page-scoped, NOT all history. |
+| Journal posting FX, dates, and exact amount integrity | [#32](https://github.com/streakbooks/StreakBooks/pull/32) | `b91f3e06` | No silent 1:1 when an explicit currency's lookup is missing/invalid; exact minor units and genuine dates required before posting. |
+| Historical FX report rate provenance | [#33](https://github.com/streakbooks/StreakBooks/pull/33) | `5a95e52c` | Known foreign-currency journals without their posted rate fail instead of displaying unconverted amounts; unsafe numeric JSON amounts rejected, exact integer text preserved. |
 
-**Feature-head CI:** [PR #32](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41761885315) and [PR #33](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41762615240) completed successfully with typecheck, lint, all unit tests, isolated PostgreSQL, navigation and production build. PR #31 main-branch CI also passed. The latest combined main run and this documentation PR should be verified independently before deployment. Authenticated staging browser jobs were **skipped**, not passed.
+**Feature-head CI:** [PR #32](https://github.com/streakbooks/StreakBooks/actions/runs/41761885315) and [PR #33](https://github.com/streakbooks/StreakBooks/actions/runs/41762615240) completed successfully with typecheck, lint, all unit tests, isolated PostgreSQL, navigation and production build. PR #31 main-branch CI also passed. The latest combined main run and this documentation PR should be verified independently before deployment. Authenticated staging browser jobs were **skipped**, not passed.
 
 ### Source-backed integrity check (read-only)
 On 4 November 2026 the connected Supabase project had 38 posted journals, **zero journals in a currency different from the company's base**, and therefore **zero foreign journals missing a posted FX snapshot** in that sample. This is not evidence that currency conversion works in production: use the synthetic staging matrix below.

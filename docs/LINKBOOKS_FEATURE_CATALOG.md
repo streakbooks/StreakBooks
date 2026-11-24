@@ -1,4 +1,4 @@
-# LinkBooks — Feature Catalog (Owner Audit)
+# StreakBooks — Feature Catalog (Owner Audit)
 
 | Field | Value |
 |-------|-------|
@@ -6,7 +6,7 @@
 | **Supersedes** | Ad-hoc nav/route notes; informal “done” claims in chat |
 | **Evidence** | Repo `src/`, `supabase/migrations/`, `npx vitest run` (124 passed), 54 files under `src/routes/_authenticated/` |
 | **Remote DB** | Supabase project `ipxflpzfcqwtenodbxwc` — eight `20261019*` migrations **applied** (owner-verified; not re-run in this doc pass) |
-| **Deploy** | Friend demo: https://linkbooks-navy.vercel.app (Demo Company only; not commercial production) |
+| **Deploy** | Friend demo: https://streakbooks-navy.vercel.app (Demo Company only; not commercial production) |
 
 ## Status legend
 
@@ -226,7 +226,7 @@
 
 ## Related documents
 
-- [LINKBOOKS_GAP_REGISTER.md](./LINKBOOKS_GAP_REGISTER.md)
-- [LINKBOOKS_ACCOUNTING_INTEGRITY.md](./LINKBOOKS_ACCOUNTING_INTEGRITY.md)
-- [LINKBOOKS_PRODUCTION_READINESS.md](./LINKBOOKS_PRODUCTION_READINESS.md)
-- [LINKBOOKS_RELEASE_DECISION.md](./LINKBOOKS_RELEASE_DECISION.md)
+- [STREAKBOOKS_GAP_REGISTER.md](./STREAKBOOKS_GAP_REGISTER.md)
+- [STREAKBOOKS_ACCOUNTING_INTEGRITY.md](./STREAKBOOKS_ACCOUNTING_INTEGRITY.md)
+- [STREAKBOOKS_PRODUCTION_READINESS.md](./STREAKBOOKS_PRODUCTION_READINESS.md)
+- [STREAKBOOKS_RELEASE_DECISION.md](./STREAKBOOKS_RELEASE_DECISION.md)

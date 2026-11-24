@@ -1,10 +1,10 @@
 # Competitor capability matrix & gap analysis
 
 **Purpose:** Capability benchmarking only (not UI/layout cloning).  
-**Sources:** Public product knowledge of Xero, QuickBooks Online (QBO), Zoho Books, FreshBooks, Wave, Akaunting + verified LinkBooks repo state (2026-10-22).  
+**Sources:** Public product knowledge of Xero, QuickBooks Online (QBO), Zoho Books, FreshBooks, Wave, Akaunting + verified StreakBooks repo state (2026-10-22).  
 **Legend:** Y = generally available · P = partial / limited · N = no / not typical · U = uncertain (verify) · — = N/A  
 
-**LinkBooks columns:**  
+**StreakBooks columns:**  
 - **Today** = shipped in this repo (honest)  
 - **Target** = Settings Centre programme target (may be *Unavailable* until built)
 
@@ -59,7 +59,7 @@
 
 ---
 
-## LinkBooks-today vs 24 categories
+## StreakBooks-today vs 24 categories
 
 | # | Category | Today | Notes |
 |---|----------|-------|-------|

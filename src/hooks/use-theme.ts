@@ -70,7 +70,7 @@ function applyAppearance() {
   const dark = resolveTheme(readPreference(), systemPrefersDark()) === "dark";
   root.classList.toggle("dark", dark);
   const palette = readPalette();
-  root.setAttribute("data-linkbooks-palette", palette);
+  root.setAttribute("data-streakbooks-palette", palette);
   for (const name of CUSTOM_THEME_VARIABLES) root.style.removeProperty(name);
   if (palette === "custom") {
     const tokens = computeCustomTokens(readCustom(), dark);

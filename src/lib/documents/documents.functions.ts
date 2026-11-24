@@ -573,7 +573,7 @@ export const sendDocumentEmail = createServerFn({ method: "POST" })
                 input.template === defaultTemplateFor(kind as DocumentKind))
             ? input.template
             : defaultTemplateFor(kind as DocumentKind);
-      if (!template) throw new Error("This document type is not sent to anyone from LinkBooks.");
+      if (!template) throw new Error("This document type is not sent to anyone from StreakBooks.");
       const { valid, invalid } = parseRecipients(input.to ?? "");
       if (invalid.length) throw new Error(`Invalid email address: ${invalid.join(", ")}`);
       if (valid.length > 5) throw new Error("Send to at most 5 recipients at a time.");

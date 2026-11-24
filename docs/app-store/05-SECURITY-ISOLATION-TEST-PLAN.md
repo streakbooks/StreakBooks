@@ -1,7 +1,7 @@
 ﻿# App Store two-company isolation test plan
 
 **Status:** documented fixture plan — **not executed** against live Supabase in this batch.  
-**Workspace:** `D:\MyApp\LinkBooks` on `main`.  
+**Workspace:** `D:\MyApp\StreakBooks` on `main`.  
 **Principle:** FAIL CLOSED. Do not enable `real_customer_data_enabled` to run these tests.
 
 ## Prerequisites

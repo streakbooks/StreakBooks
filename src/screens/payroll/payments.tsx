@@ -439,7 +439,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
         <Alert className="mb-4">
           <AlertDescription>
             Generic bank CSV is a non bank-specific export for manual review only. Downloading it
-            does not mark payslips as paid or record a payment in LinkBooks.
+            does not mark payslips as paid or record a payment in StreakBooks.
           </AlertDescription>
         </Alert>
       ) : null}

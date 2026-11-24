@@ -26,7 +26,7 @@ describe("attachQuote", () => {
   });
 
   it("refuses a live secret and keeps the feature ungranted", () => {
-    expect(() => attachQuote(quote, "sk_live_abc")).toThrow(/LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/);
+    expect(() => attachQuote(quote, "sk_live_abc")).toThrow(/STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/);
   });
 
   it("returns a ready instruction for a test secret without granting a feature", () => {

@@ -38,7 +38,7 @@ import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 export const Route = createFileRoute("/_authenticated/reports/builder/$viewId")({
   component: BuilderPage,
   validateSearch: parseReportSearch,
-  head: () => ({ meta: [{ title: "Report builder — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Report builder — StreakBooks" }] }),
 });
 function BuilderPage() {
   const { company, isPending } = useActiveCompany();

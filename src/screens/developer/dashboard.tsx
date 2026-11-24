@@ -31,7 +31,7 @@ export function DeveloperDashboardPage() {
       <>
         <ListWorkspace
           title="Developer portal"
-          description="Build partner integrations on the LinkBooks public API."
+          description="Build partner integrations on the StreakBooks public API."
         >
           <EmptyState
             title="No developer access"

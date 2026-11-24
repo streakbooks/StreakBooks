@@ -3,7 +3,7 @@ import { assertRealDataAccessAllowed } from "@/lib/app-store/security/activation
 
 /**
  * Native merchant Stripe connector scaffold.
- * Separate from LinkBooks SaaS billing Stripe integration.
+ * Separate from StreakBooks SaaS billing Stripe integration.
  * Not E2E verified for merchant payout reconciliation. Fail closed.
  */
 export const stripePaymentsAdapter: ProviderAdapter = {

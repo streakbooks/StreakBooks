@@ -29,14 +29,14 @@ function fixture(name: string): AcousticTemplate {
   return acousticTemplate(phrases[0]!, rate);
 }
 describe("on-device personal wake phrase acoustic matcher", () => {
-  const templates = [1, 2, 3].map((n) => fixture(`hey-linkbooks-enroll-${n}`));
-  const profile = buildWakeProfile("Hey LinkBooks", templates);
+  const templates = [1, 2, 3].map((n) => fixture(`hey-streakbooks-enroll-${n}`));
+  const profile = buildWakeProfile("Hey StreakBooks", templates);
   it("enrolls three consistent acoustic templates and accepts a held-out slower utterance", () => {
     expect(validWakeProfile(profile)).toBe(true);
-    expect(detectsWake(fixture("hey-linkbooks-heldout"), profile)).toBe(true);
+    expect(detectsWake(fixture("hey-streakbooks-heldout"), profile)).toBe(true);
   });
   for (const phrase of [
-    "hello-linkbooks",
+    "hello-streakbooks",
     "hey-luna",
     "hey-link-cooks",
     "open-invoices",
@@ -48,7 +48,7 @@ describe("on-device personal wake phrase acoustic matcher", () => {
       expect(detectsWake(sample, profile)).toBe(false);
     });
   for (const [name, phrase] of [
-    ["hello-linkbooks", "Hello LinkBooks"],
+    ["hello-streakbooks", "Hello StreakBooks"],
     ["hey-luna", "Hey Luna"],
   ])
     it(`enrolls and detects custom phrase ${phrase}`, () => {
@@ -64,7 +64,7 @@ describe("on-device personal wake phrase acoustic matcher", () => {
     expect(validWakeProfile({ ...profile, threshold: 5 })).toBe(false);
     expect(() => buildWakeProfile("hey", templates)).toThrow();
     expect(() =>
-      buildWakeProfile("Hey LinkBooks", [
+      buildWakeProfile("Hey StreakBooks", [
         templates[0]!,
         fixture("hey-luna-heldout"),
         fixture("unrelated-heldout"),

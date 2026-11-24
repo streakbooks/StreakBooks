@@ -1,11 +1,11 @@
-# LinkBooks Firm & Clients: remaining delivery controls
+# StreakBooks Firm & Clients: remaining delivery controls
 
 **Scope:** staff invitations and recurring practice billing added without replacing Supabase Auth, company membership, existing Sales document posting, or Resend.
 
 ## Staff invitation workflow
 
 1. Firm owner/admin opens **Firm & Clients → Staff invitations** and provides a verified recipient email. Only owners may invite another administrator. No owner role can be issued by invitation.
-2. LinkBooks stores only the SHA-256 hash of a cryptographically random 32-byte bearer token in a private-schema table. Pending tokens expire after 7 days; re-inviting invalidates the prior pending token.
+2. StreakBooks stores only the SHA-256 hash of a cryptographically random 32-byte bearer token in a private-schema table. Pending tokens expire after 7 days; re-inviting invalidates the prior pending token.
 3. Delivery uses the existing server-side Resend transport **only** if `APP_BASE_URL` is a valid HTTPS origin (or localhost for development), `RESEND_API_KEY`/`EMAIL_FROM` are configured, and the sender domain verifies. Otherwise the creating administrator can securely copy the one-time link. Do not represent provider API acceptance as confirmed inbox delivery.
 4. Recipient signs in or registers, verifies the exact invited email and accepts once. Acceptance adds firm membership only, never automatic client-company access or a managed grant. A firm administrator must arrange company access separately under existing controls.
 5. Invite list shows expiration, status and provider-acceptance status. Revoke invalidates a pending link without removing memberships from already accepted invites.
@@ -17,7 +17,7 @@
 1. Firm owner/admin creates an **active engagement** under a client. The fee and currency are practice references, not tax-inclusive financial postings.
 2. Switch to a **separate practice billing company** and create a matching **Sales → Recurring** invoice template using the existing sales document workflow. Select the customer/contact, revenue account, tax code, lines, currency, payment terms, and monthly/quarterly/annual frequency.
 3. In **Firm & Clients → Practice billing**, select the engagement and an eligible active, draft-only recurring template. Link it to the engagement. One recurring template may belong to one engagement; the link cannot reparent a client or billing company.
-4. On the due date the firm administrator can explicitly **Generate due draft**. This delegates to LinkBooks' original idempotent sales recurring generator, then links the resulting practice invoice reference back to the engagement. A failure to link the reference reports that the invoice already exists and must not be blindly retried.
+4. On the due date the firm administrator can explicitly **Generate due draft**. This delegates to StreakBooks' original idempotent sales recurring generator, then links the resulting practice invoice reference back to the engagement. A failure to link the reference reports that the invoice already exists and must not be blindly retried.
 5. Automatic posting/authorisation is deliberately **not enabled** through this firm workflow. Existing recurring scheduler settings and deployment cron determine whether scheduled generation runs without a manual click. Confirm the scheduled worker independently before claiming automation is enabled.
 
 ## Manual QA in local application

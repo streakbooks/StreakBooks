@@ -119,7 +119,7 @@ export function AiJournalReviewQueue({
       );
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = "linkbooks-ai-journal-review-" + result.review.id.slice(0, 8) + ".csv";
+      anchor.download = "streakbooks-ai-journal-review-" + result.review.id.slice(0, 8) + ".csv";
       anchor.click();
       URL.revokeObjectURL(url);
       toast.success("Complete AI review history exported; no accounting records were changed.");

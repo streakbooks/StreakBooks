@@ -120,7 +120,7 @@ export const Route = createFileRoute("/_authenticated/banking/transactions")({
     if ([25, 50, 100, 200].includes(pageSize) && pageSize !== 50) out.pageSize = pageSize;
     return out;
   },
-  head: () => ({ meta: [{ title: "Bank transactions — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Bank transactions — StreakBooks" }] }),
   component: BankTransactions,
 });
 

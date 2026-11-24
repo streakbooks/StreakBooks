@@ -92,7 +92,7 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
         <h3 className="text-base font-semibold">Messaging &amp; collaboration</h3>
         <p className="text-sm text-muted-foreground">
           Controls organisation messaging. Chat never posts journals, pays bills or approves payroll
-          by itself. Formal approvals use existing LinkBooks engines.
+          by itself. Formal approvals use existing StreakBooks engines.
         </p>
       </div>
       <div className="flex items-center justify-between gap-4">

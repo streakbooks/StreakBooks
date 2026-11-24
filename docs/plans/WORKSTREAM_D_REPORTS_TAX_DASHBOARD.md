@@ -117,7 +117,7 @@ Apply the three migrations to a staging database first.
 
 ## Known limitations
 
-- Returns are internal records. LinkBooks does not submit to HMRC (MTD), BAS, GSTN, IRS or any other authority.
+- Returns are internal records. StreakBooks does not submit to HMRC (MTD), BAS, GSTN, IRS or any other authority.
 - Reverse-charge VAT on supplier bills is calculated into boxes 1 and 4 (wave 2 E). Reverse charge on supplier credit notes and bank-coded spend is not. Boxes 2, 8 and 9 (EU acquisitions and dispatches) are always 0.
 - Credit notes and expenses use their own date even on the cash basis.
 - Sales credit note lines have no tax code, so they are classified by amounts. The return warns about uncoded lines.

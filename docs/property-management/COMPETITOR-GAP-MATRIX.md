@@ -1,13 +1,13 @@
 # Phase 1 — Competitor gap matrix
 
 **Method:** Official product documentation only (help centres / vendor guides). Competitors are functional references — do not copy proprietary UI, branding or assets.  
-**LinkBooks baseline:** No PM module on `0ca84bef…`; generic GL/banking/sales/purchases/contacts/reports exist.
+**StreakBooks baseline:** No PM module on `0ca84bef…`; generic GL/banking/sales/purchases/contacts/reports exist.
 
 Priority: **P0** owner statements, commissions, payouts, trust, lease/rent, STR reservation accounting · **P1** portals, reserves, templates · **P2** polish / optional integrations.
 
 ## Matrix (verified capabilities)
 
-| Competitor | Feature | Source | LinkBooks equivalent | Gap | Priority | Proposed implementation | Acceptance criteria |
+| Competitor | Feature | Source | StreakBooks equivalent | Gap | Priority | Proposed implementation | Acceptance criteria |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Hostaway | Owner statements with reservation activity, expenses, owner vs manager payout; PDF/Excel | https://support.hostaway.com/hc/en-us/articles/36003559089947-Owner-Statements-Overview | Missing | No owner-period settlement | P0 | Native `pm_owner_statements` over remitted activity | Statement for owner+period; draft hidden until publish |
 | Hostaway | Configurable statement formulas / fee splits | https://support.hostaway.com/hc/en-us/articles/56120866085659-Owner-Statements-Common-Questions | Missing | No commission engine | P0 | Versioned fee rules on management agreements | 20% fee → documented owner net |
@@ -34,7 +34,7 @@ Priority: **P0** owner statements, commissions, payouts, trust, lease/rent, STR 
 | Propertyware | Portfolio owner statements by account type | https://support.propertyware.com/s/article/How-Account-Types-Affect-the-Owner-Statement | Missing | No typed GL owner statement | P0 | COA mapping drives sections | Escrow excluded from operating section |
 | Propertyware | Management fee calculator / passthrough | https://support.propertyware.com/s/article/How-To-Post-All-Management-Fees | Missing | No fee calculator | P0 | Fee run from commission rules | Passthrough hidden on owner statement |
 | QuickBooks Online | Class tracking by property | https://quickbooks.intuit.com/learn-support/en-us/help-article/class-list/create-manage-classes-quickbooks-online/L1QzEOUxM_US_en_US | Partial (tracking) | No PM settlement product | P1 | Optional Property tracking + native statements | P&L by property matches tags |
-| Xero | Client-money guide: liabilities, tracking, owner statements, three-way recon | https://www.xero.com/uk/guides/property-management-accounting/ | Partial (GL/banking) | No client-money product | P0 | Trust model + statements on LinkBooks GL | Bank = Σ liabilities = Σ landlord balances |
+| Xero | Client-money guide: liabilities, tracking, owner statements, three-way recon | https://www.xero.com/uk/guides/property-management-accounting/ | Partial (GL/banking) | No client-money product | P0 | Trust model + statements on StreakBooks GL | Bank = Σ liabilities = Σ landlord balances |
 
 ### Useful adjacent products
 
@@ -45,7 +45,7 @@ Priority: **P0** owner statements, commissions, payouts, trust, lease/rent, STR 
 | Stessa | Landlord self-mgmt / Schedule E — not PMC trust | P1 landlord mode |
 | Odoo | Lease billing patterns; not trust settlement | P2 |
 
-## Top P0 gaps for LinkBooks
+## Top P0 gaps for StreakBooks
 
 1. Owner statement + settlement lifecycle (entitlement ≠ cash movement)  
 2. Commission / revenue-share engine with effective-dated rules  
@@ -56,4 +56,4 @@ Priority: **P0** owner statements, commissions, payouts, trust, lease/rent, STR 
 
 ## Originality
 
-Build a LinkBooks-native experience using LinkBooks design system tokens and workspace components. Competitors inform acceptance criteria only.
+Build a StreakBooks-native experience using StreakBooks design system tokens and workspace components. Competitors inform acceptance criteria only.

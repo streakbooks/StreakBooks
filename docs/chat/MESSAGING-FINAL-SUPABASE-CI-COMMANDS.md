@@ -9,7 +9,7 @@ Linked project: `ipxflpzfcqwtenodbxwc` (linkbook / production).
 Hardening follow-up: also apply `20261117220000_messaging_realtime_and_external_lock.sql`.
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 $env:SUPABASE_YES = "1"
 
 Get-ChildItem supabase\migrations\20261117*_messaging_*.sql |
@@ -27,7 +27,7 @@ Get-ChildItem supabase\migrations\20261117*_messaging_*.sql |
 ## CI / verification (read-only)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 $env:SUPABASE_YES = "1"
 
 npx.cmd supabase migration list --remote
@@ -44,7 +44,7 @@ Verified after apply: tables present, `messaging_ensure_settings` / `messaging_s
 ## App gates (local)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 npx.cmd vitest run src/lib/messaging src/hooks/use-messaging-connection.test.ts
 npm.cmd run check:modules
 npm.cmd run check:ui

@@ -7,7 +7,7 @@
  *  - amounts are never summed across currencies;
  *  - deleted allocations archived in cash_allocation_history are restored when still active at asOf.
  *
- * Original LinkBooks implementation; competitor products were used only as functional references.
+ * Original StreakBooks implementation; competitor products were used only as functional references.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";

@@ -9,11 +9,11 @@ import {
 
 describe("communication sender identity", () => {
   it("keeps the server-verified sender address while using a safe display name", () => {
-    expect(emailWithVerifiedSender("LinkBooks <verified@linkbooks.com>", "Accounts Team")).toBe(
-      "Accounts Team <verified@linkbooks.com>",
+    expect(emailWithVerifiedSender("StreakBooks <verified@streakbooks.com>", "Accounts Team")).toBe(
+      "Accounts Team <verified@streakbooks.com>",
     );
-    expect(emailWithVerifiedSender("verified@linkbooks.com", "Ops")).toBe(
-      "Ops <verified@linkbooks.com>",
+    expect(emailWithVerifiedSender("verified@streakbooks.com", "Ops")).toBe(
+      "Ops <verified@streakbooks.com>",
     );
   });
   it("rejects invalid server sender values and strips header injection from names", () => {

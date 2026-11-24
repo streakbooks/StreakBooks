@@ -178,7 +178,7 @@ export async function runMessagingDigests(now = new Date()): Promise<{
           preview.omittedSensitive
             ? `${preview.omittedSensitive} sensitive or private conversation(s) were omitted.`
             : "",
-          "Sign in to LinkBooks Messages to review. This email never posts, pays or approves.",
+          "Sign in to StreakBooks Messages to review. This email never posts, pays or approves.",
         ]
           .filter(Boolean)
           .join("\n");

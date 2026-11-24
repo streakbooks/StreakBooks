@@ -34,7 +34,7 @@ function tokenLuminances(token: string): number[] {
   });
 }
 
-describe("Original LinkBooks cross-theme completion states", () => {
+describe("Original StreakBooks cross-theme completion states", () => {
   it("keeps teal completion separate from green payment and brand colour", () => {
     expect(css).toContain("--color-complete-soft: var(--complete-soft)");
     expect(css).toContain("--color-complete-ink: var(--complete-ink)");
@@ -58,7 +58,7 @@ describe("Original LinkBooks cross-theme completion states", () => {
 
   it("never overrides the completion semantics in preset themes", () => {
     expect(css.match(/--complete-soft:/g)).toHaveLength(2);
-    expect(css).toContain(':root[data-linkbooks-palette="rose"]');
-    expect(css).toContain(':root[data-linkbooks-palette="graphite"]');
+    expect(css).toContain(':root[data-streakbooks-palette="rose"]');
+    expect(css).toContain(':root[data-streakbooks-palette="graphite"]');
   });
 });

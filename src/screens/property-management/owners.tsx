@@ -113,7 +113,7 @@ export function PmOwnersPage() {
   return (
     <ListWorkspace
       title="Owners"
-      description="Owners are overlays on LinkBooks Contacts — no duplicate identity records."
+      description="Owners are overlays on StreakBooks Contacts — no duplicate identity records."
       breadcrumbs={[
         { label: "Property Management", to: "/property-management" },
         { label: "Owners" },

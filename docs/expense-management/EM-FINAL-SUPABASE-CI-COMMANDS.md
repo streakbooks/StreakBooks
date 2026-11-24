@@ -7,7 +7,7 @@ Linked project: `ipxflpzfcqwtenodbxwc` (linkbook / production).
 ## Apply new EM SQL (already done 2026-11-07 for `20261107120000`–`20261107156000`)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 $env:SUPABASE_YES = "1"
 
 Get-ChildItem supabase\migrations\20261107*.sql |
@@ -25,7 +25,7 @@ Get-ChildItem supabase\migrations\20261107*.sql |
 ## CI / verification (read-only)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 $env:SUPABASE_YES = "1"
 
 # History: every EM version should show local + remote
@@ -46,7 +46,7 @@ SELECT to_regclass('public.expense_claims') AS expense_claims,
 ## App gates (local)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 npm.cmd run test -- --run src/lib/expenses
 npm.cmd run check:ui
 npm.cmd run check:navigation

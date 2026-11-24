@@ -1,6 +1,6 @@
 /**
  * Appearance is two independent choices:
- * - Light / Dark / System: the original LinkBooks mode setting (unchanged key).
+ * - Light / Dark / System: the original StreakBooks mode setting (unchanged key).
  * - A colour palette, including user-defined colours. Local to this browser.
  * Colour changes never affect transaction, status or reporting semantics.
  */
@@ -25,9 +25,9 @@ export type CustomPalette = {
   darkBackground: string;
 };
 
-export const THEME_STORAGE_KEY = "linkbooks-theme";
-export const PALETTE_STORAGE_KEY = "linkbooks-theme-palette";
-export const CUSTOM_PALETTE_STORAGE_KEY = "linkbooks-theme-custom";
+export const THEME_STORAGE_KEY = "streakbooks-theme";
+export const PALETTE_STORAGE_KEY = "streakbooks-theme-palette";
+export const CUSTOM_PALETTE_STORAGE_KEY = "streakbooks-theme-custom";
 
 export const DEFAULT_CUSTOM_PALETTE: CustomPalette = {
   primary: "#563d57",
@@ -47,7 +47,7 @@ export const PALETTE_OPTIONS: readonly {
 }[] = [
   {
     id: "classic",
-    name: "LinkBooks Signature",
+    name: "StreakBooks Signature",
     description: "Royal plum and soft ivory",
     primary: "#563d57",
     sidebar: "#ffffff",
@@ -124,7 +124,7 @@ export function isHexColor(v: unknown): v is string {
 }
 
 /**
- * Earlier LinkBooks builds saved these default blue primaries as custom colours.
+ * Earlier StreakBooks builds saved these default blue primaries as custom colours.
  * Upgrade only those exact legacy defaults; preserve all other user-picked colours.
  */
 export const LEGACY_BLUE_PRIMARIES = ["#4f7df3", "#3866db", "#3b6de0"] as const;
@@ -319,7 +319,7 @@ export const THEME_INIT_SCRIPT =
   "var allowed=" +
   JSON.stringify([...PALETTE_OPTIONS.map((v) => v.id), "custom"]) +
   ";" +
-  "if(allowed.indexOf(p)<0)p='classic';el.setAttribute('data-linkbooks-palette',p);" +
+  "if(allowed.indexOf(p)<0)p='classic';el.setAttribute('data-streakbooks-palette',p);" +
   "if(p==='custom'){" +
   "var saved;try{saved=JSON.parse(localStorage.getItem(" +
   JSON.stringify(CUSTOM_PALETTE_STORAGE_KEY) +

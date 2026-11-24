@@ -105,7 +105,7 @@ export function PmTenantsPage() {
   return (
     <ListWorkspace
       title="Tenants & Guests"
-      description="Tenants reuse LinkBooks Contacts — no duplicate identity store."
+      description="Tenants reuse StreakBooks Contacts — no duplicate identity store."
       breadcrumbs={[
         { label: "Property Management", to: "/property-management" },
         { label: "Tenants & Guests" },

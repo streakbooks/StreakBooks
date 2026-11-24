@@ -2,7 +2,7 @@
 
 ## Intent
 
-Give Advisors customers a secure portal on existing LinkBooks auth:
+Give Advisors customers a secure portal on existing StreakBooks auth:
 
 - Plan + inclusions
 - Appointments (native AD-04 booking)

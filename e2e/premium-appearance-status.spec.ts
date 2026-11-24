@@ -11,7 +11,7 @@ async function signIn(page: Page) {
   await page.waitForURL((url) => !url.pathname.startsWith("/auth"), { timeout: 20_000 });
 }
 
-test.describe("LinkBooks premium appearance: authenticated application shell", () => {
+test.describe("StreakBooks premium appearance: authenticated application shell", () => {
   test.beforeEach(() => {
     test.skip(!email || !password, "Requires an authorised E2E organisation");
   });
@@ -22,7 +22,7 @@ test.describe("LinkBooks premium appearance: authenticated application shell", (
     await appearance.click();
 
     const presets = [
-      ["classic", "LinkBooks Signature"],
+      ["classic", "StreakBooks Signature"],
       ["graphite", "Executive Slate"],
       ["emerald", "Emerald Professional"],
       ["amethyst", "Royal Indigo"],
@@ -32,7 +32,7 @@ test.describe("LinkBooks premium appearance: authenticated application shell", (
     ] as const;
     for (const [id, name] of presets) {
       await page.getByRole("menuitem", { name: new RegExp(name) }).click();
-      await expect(page.locator("html")).toHaveAttribute("data-linkbooks-palette", id);
+      await expect(page.locator("html")).toHaveAttribute("data-streakbooks-palette", id);
       const theme = await page.evaluate(() => {
         const css = getComputedStyle(document.documentElement);
         return {
@@ -46,7 +46,7 @@ test.describe("LinkBooks premium appearance: authenticated application shell", (
       expect(theme.completion).toBeTruthy();
     }
     await page.reload();
-    await expect(page.locator("html")).toHaveAttribute("data-linkbooks-palette", "champagne");
+    await expect(page.locator("html")).toHaveAttribute("data-streakbooks-palette", "champagne");
   });
 
   test("appearance persists across connected workspaces without recolouring statuses", async ({
@@ -60,7 +60,7 @@ test.describe("LinkBooks premium appearance: authenticated application shell", (
     );
     for (const route of ["/", "/banking", "/sales", "/purchases", "/accounting", "/reports"]) {
       await page.goto(route);
-      await expect(page.locator("html")).toHaveAttribute("data-linkbooks-palette", "rose");
+      await expect(page.locator("html")).toHaveAttribute("data-streakbooks-palette", "rose");
       const completion = await page.evaluate(() =>
         getComputedStyle(document.documentElement).getPropertyValue("--complete-ink").trim(),
       );
@@ -72,7 +72,7 @@ test.describe("LinkBooks premium appearance: authenticated application shell", (
     await signIn(page);
     await page.getByRole("button", { name: "Appearance and colour themes" }).click();
     await page.getByRole("menuitem", { name: /Create your own palette/ }).click();
-    const dialog = page.getByRole("dialog", { name: "Personalise LinkBooks" });
+    const dialog = page.getByRole("dialog", { name: "Personalise StreakBooks" });
     await expect(dialog.getByLabel("Primary colour")).toBeVisible();
     await expect(dialog.getByLabel("Accent colour")).toBeVisible();
     await expect(dialog.getByLabel("Live palette preview")).toBeVisible();

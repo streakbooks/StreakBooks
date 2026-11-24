@@ -1,4 +1,4 @@
-# LinkBooks — Import Readiness Audit
+# StreakBooks — Import Readiness Audit
 **Snapshot:** 2026-10-30  
 **Release disposition:** **NOT PRODUCTION-CERTIFIED** for all import workflows.
 
@@ -55,4 +55,4 @@ GitHub CI `npm ci` reported **5 dependency vulnerabilities** (1 moderate, 2 high
 
 **Do not test financial postings on the live organisation.** Isolated Supabase staging currently requires a separate environment: the Supabase branch creation flow asked for explicit hourly-cost approval (previously quoted USD 0.01344/hour). Do not incur branch charges without the user's specific approval. A self-hosted local Supabase test database with migration reconciliation is an alternative if available. Vercel verification is explicitly excluded until account access is available.
 
-**Decision:** LinkBooks import modules are actively being implemented, but **all-module production readiness is FAIL** until every listed accounting, security, migration and staging test gate has evidence.
+**Decision:** StreakBooks import modules are actively being implemented, but **all-module production readiness is FAIL** until every listed accounting, security, migration and staging test gate has evidence.

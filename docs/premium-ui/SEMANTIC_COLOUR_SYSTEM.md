@@ -1,4 +1,4 @@
-# LinkBooks semantic colour system
+# StreakBooks semantic colour system
 
 **Version:** Batch 33 (2026-11-18) — light premium surfaces + Batch 29 semantic map  
 **Extends:** existing tokens in `src/styles.css` — does not invent a second palette system.  

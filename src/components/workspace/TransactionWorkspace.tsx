@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 /**
  * Shared premium transaction entry shell.
  *
- * Layout contract (LinkBooks original expression of mature accounting UX):
+ * Layout contract (StreakBooks original expression of mature accounting UX):
  * header (title/status/actions) → details FormGrid → line editor → sticky
  * totals/actions → optional support tabs and insight rail.
  *

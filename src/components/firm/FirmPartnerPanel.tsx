@@ -107,7 +107,7 @@ function ApplyForm({ firmId }: { firmId: string }) {
       });
     },
     onSuccess: () => {
-      toast.success("Application sent. LinkBooks will verify your details.");
+      toast.success("Application sent. StreakBooks will verify your details.");
       void queryClient.invalidateQueries({ queryKey });
     },
     onError: (error) => toast.error(errorText(error, "The application could not be sent.")),
@@ -202,7 +202,7 @@ function PartnerDetails({ partner }: { partner: PartnerPortal["partners"][number
         <Badge variant={partner.status === "approved" ? "success" : "secondary"}>
           {partner.status}
         </Badge>
-        {partner.status === "pending" ? "LinkBooks is verifying your application." : null}
+        {partner.status === "pending" ? "StreakBooks is verifying your application." : null}
         {partner.status === "suspended" ? "New commission is paused." : null}
       </p>
       {partner.status === "approved" ? (

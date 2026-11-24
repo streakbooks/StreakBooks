@@ -1,11 +1,11 @@
-# LinkBooks CRM — Technical architecture (CRM-01 / CRM-02)
+# StreakBooks CRM — Technical architecture (CRM-01 / CRM-02)
 
 ## Stack
 
 - Frontend: React, TypeScript, TanStack Router/Query/Start, Vite  
 - Backend: Supabase PostgreSQL, Auth, RLS, SECURITY DEFINER RPCs  
 - AuthZ: `requireSupabaseAuth` server functions + `assertCompanyPermission` + RLS  
-- UI: `ListWorkspace` / `RecordWorkspace`, module registry, LinkBooks themes  
+- UI: `ListWorkspace` / `RecordWorkspace`, module registry, StreakBooks themes  
 
 ## Module layout
 

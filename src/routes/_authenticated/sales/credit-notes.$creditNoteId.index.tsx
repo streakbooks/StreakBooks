@@ -55,7 +55,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/sales/credit-notes/$creditNoteId/")({
-  head: () => ({ meta: [{ title: "Credit note — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Credit note — StreakBooks" }] }),
   component: CreditNoteDetail,
 });
 

@@ -23,4 +23,4 @@ Accept `.qif`, require user to explicitly choose **day-first** or **month-first*
 - Sample QIF test data is synthetic; no live bank data, credentials or third-party code were imported.
 
 ## Known limitations
-QIF does not contain FITID, balance or currency. Duplicate matching is heuristic and must be reviewed; transfer/category metadata is not auto-posted. Complex split statements and multiple-account exports require separate future workflow. Two-digit years follow LinkBooks' existing <70 => 2000+, >=70 => 1900+ policy; display normalized dates for confirmation.
+QIF does not contain FITID, balance or currency. Duplicate matching is heuristic and must be reviewed; transfer/category metadata is not auto-posted. Complex split statements and multiple-account exports require separate future workflow. Two-digit years follow StreakBooks' existing <70 => 2000+, >=70 => 1900+ policy; display normalized dates for confirmation.

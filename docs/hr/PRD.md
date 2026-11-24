@@ -1,4 +1,4 @@
-# LinkBooks HR Management — Product Requirements Document
+# StreakBooks HR Management — Product Requirements Document
 
 | Field | Value |
 |-------|-------|
@@ -6,12 +6,12 @@
 | Route | `/hr` (authenticated, top-level sidebar) |
 | Status | In implementation — not production-ready |
 | Canonical employee identity | `public.payroll_employees.id` (shared with Payroll; no duplicate person master) |
-| Design policy | Originality-first LinkBooks Design Language; competitor functionality only |
+| Design policy | Originality-first StreakBooks Design Language; competitor functionality only |
 | Target markets | US, UK, AU, NZ, CA, IN (jurisdiction rule packs versioned; no compliance advertising until verified) |
 
 ## 1. Problem
 
-LinkBooks has Basic Global Payroll with employee pay records, but no HR lifecycle module. Customers need recruiting, onboarding, organisation structure, attendance, leave, performance, documents, assets, transfers, and offboarding — integrated with Payroll without conflicting masters.
+StreakBooks has Basic Global Payroll with employee pay records, but no HR lifecycle module. Customers need recruiting, onboarding, organisation structure, attendance, leave, performance, documents, assets, transfers, and offboarding — integrated with Payroll without conflicting masters.
 
 ## 2. Goals
 
@@ -69,7 +69,7 @@ HR-00 … HR-15 per the execution directive. Each batch must leave the module ho
 
 ## 10. Originality
 
-Visual design uses LinkBooks tokens (`docs/premium-ui/LINKBOOKS_DESIGN_SYSTEM.md`). Competitor products are capability references only — no trade dress, layout clones, or protected assets.
+Visual design uses StreakBooks tokens (`docs/premium-ui/STREAKBOOKS_DESIGN_SYSTEM.md`). Competitor products are capability references only — no trade dress, layout clones, or protected assets.
 
 ---
 
@@ -79,11 +79,11 @@ Implement the complete HR Management module based on the approved interactive Lo
 
 Reproduce its navigation hierarchy, dashboard structure, screen organization, interactive behavior, forms, field groupings, workflow transitions, validations, role-based access, and contextual actions.
 
-Maintain a consistent premium LinkBooks visual design across all screens and submenus. Every action must be fully functional and connected to the real Supabase backend.
+Maintain a consistent premium StreakBooks visual design across all screens and submenus. Every action must be fully functional and connected to the real Supabase backend.
 
 Use the LLM as a functional and structural specification, not as production-ready source code. Do not introduce placeholder buttons or simulated records into production.
 
-Apply the LinkBooks Originality-First Design Policy throughout.
+Apply the StreakBooks Originality-First Design Policy throughout.
 
 Verify the implemented screens against the approved LLM and document any differences or missing functionality before marking a batch complete.
 

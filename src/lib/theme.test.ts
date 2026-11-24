@@ -181,7 +181,7 @@ describe("appearance modes and palettes", () => {
 
   it("exposes the requested professional palette labels without changing persisted IDs", () => {
     for (const name of [
-      "LinkBooks Signature",
+      "StreakBooks Signature",
       "Royal Mulberry",
       "Executive Slate",
       "Emerald Professional",
@@ -252,7 +252,7 @@ describe("appearance modes and palettes", () => {
       window: { matchMedia: () => ({ matches: false }) },
     });
     expect(classes["dark"]).toBe(true);
-    expect(attrs["data-linkbooks-palette"]).toBe("custom");
+    expect(attrs["data-streakbooks-palette"]).toBe("custom");
     expect(styles["--primary"]).toBe("#c24174");
     expect(styles["--chart-2"]).toBe("#387f85");
     expect(styles["--background"]).toBe("#241a29");
@@ -273,6 +273,6 @@ describe("appearance modes and palettes", () => {
       localStorage: { getItem: (key: string) => (key === PALETTE_STORAGE_KEY ? "invalid" : null) },
       window: { matchMedia: () => ({ matches: false }) },
     });
-    expect(attrs["data-linkbooks-palette"]).toBe("classic");
+    expect(attrs["data-streakbooks-palette"]).toBe("classic");
   });
 });

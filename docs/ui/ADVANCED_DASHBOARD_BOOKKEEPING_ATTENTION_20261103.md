@@ -1,6 +1,6 @@
-# LinkBooks Development #11 — complete Dashboard and Bookkeeping Attention Centre
+# StreakBooks Development #11 — complete Dashboard and Bookkeeping Attention Centre
 
-Date: 3 November 2026. Original LinkBooks implementation, informed by public Xero homepage customisation and Odoo accounting dashboard workflow concepts. No third-party source, protected assets or CSS copied.
+Date: 3 November 2026. Original StreakBooks implementation, informed by public Xero homepage customisation and Odoo accounting dashboard workflow concepts. No third-party source, protected assets or CSS copied.
 
 ## Deliverables — all eight requested items
 
@@ -27,7 +27,7 @@ Date: 3 November 2026. Original LinkBooks implementation, informed by public Xer
 First save/commit or stash any uncommitted local work. Then:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git checkout main
 git pull origin main

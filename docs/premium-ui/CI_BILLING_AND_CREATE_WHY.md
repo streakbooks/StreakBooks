@@ -10,7 +10,7 @@ Jobs complete in ~2 seconds with annotation:
 
 > The job was not started because recent account payments have failed or your spending limit needs to be increased.
 
-**Root cause:** GitHub Actions billing for the organisation — not LinkBooks test failures. Runners never execute `validate` / postgres / browser-fixtures.
+**Root cause:** GitHub Actions billing for the organisation — not StreakBooks test failures. Runners never execute `validate` / postgres / browser-fixtures.
 
 **What we do:** After local gates PASS, merge with `--admin`. Do not wait for billing restoration. Do not treat real red tests as billing.
 

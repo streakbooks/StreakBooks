@@ -1,4 +1,4 @@
-# LinkBooks — Dependency Map & Phased Backlog
+# StreakBooks — Dependency Map & Phased Backlog
 
 ## 1. Dependency map
 

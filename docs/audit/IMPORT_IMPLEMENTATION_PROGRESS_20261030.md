@@ -1,4 +1,4 @@
-# LinkBooks import implementation audit — 30 October 2026
+# StreakBooks import implementation audit — 30 October 2026
 
 This is an evidence-based progress snapshot, **not** a completion certificate. UI-only buttons, schema definitions and CSV previews are not counted as working domain imports.
 

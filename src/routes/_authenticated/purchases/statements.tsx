@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/purchases/statements")({
-  head: () => ({ meta: [{ title: "Supplier statements — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Supplier statements — StreakBooks" }] }),
   component: Statements,
 });
 

@@ -1,4 +1,4 @@
-# LinkBooks — Architecture and Accounting Risks
+# StreakBooks — Architecture and Accounting Risks
 
 **Audit date:** 19 Oct 2026  
 **Mode:** Evidence-based risk register from repository inspection only.
@@ -30,7 +30,7 @@
 | S4 | **Invitation / role escalation** | Invite acceptance / role changes need careful RLS | `company_invitations`, `role_permissions` present | Complete invite flow with policies review |
 | S5 | **Historical secret exposure** | `.env` was tracked upstream historically | Prior session gitignore/untrack | Rotate Supabase keys if ever public |
 | S6 | **Missing storage policies** | Future file uploads (receipts) easy to misconfigure | No buckets in migrations | Bucket-per-company + RLS before uploads |
-| S7 | **Cron secret surface** | Misconfigured cron could call privileged paths | `cron-auth.ts` / `LOVABLE_CRON_SECRET` | Keep cron routes narrow; no finance mutations without auth |
+| S7 | **Cron secret surface** | Misconfigured cron could call privileged paths | `cron-auth.ts` / `STREAKBOOKS_CRON_SECRET` | Keep cron routes narrow; no finance mutations without auth |
 
 ---
 
@@ -87,4 +87,4 @@ Postgres (Supabase)
 4. **D4** — Import full product scope standard.  
 5. **D6–D7** — Staging + Auth/env ops for real users.
 
-Any “go live” marketing of LinkBooks as bookkeeping software before A1–A5 is a **data-integrity and trust failure**, not a cosmetic gap.
+Any “go live” marketing of StreakBooks as bookkeeping software before A1–A5 is a **data-integrity and trust failure**, not a cosmetic gap.

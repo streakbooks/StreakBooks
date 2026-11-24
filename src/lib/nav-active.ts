@@ -25,5 +25,5 @@ export function activeNavItem(pathname: string, brandingOrigin?: unknown): NavIt
 
 /** Sidebar selection and narrow-screen title always derive from the same route. */
 export function activeNavLabel(pathname: string, brandingOrigin?: unknown): string {
-  return activeNavItem(pathname, brandingOrigin)?.label ?? "LinkBooks";
+  return activeNavItem(pathname, brandingOrigin)?.label ?? "StreakBooks";
 }

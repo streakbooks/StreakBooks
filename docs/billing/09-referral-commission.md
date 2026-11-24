@@ -64,7 +64,7 @@ Payouts require all of: the programme flag (changed only by a second owner, with
 review reference), `PARTNER_PAYOUTS_ENABLED=true` on the server, an approved partner, an available
 balance at or above the current rule's minimum in that currency, a request by platform staff who
 are not partner members, approval by a different platform owner, and a manual bank transfer
-reference to mark it paid. LinkBooks never transfers money automatically.
+reference to mark it paid. StreakBooks never transfers money automatically.
 
 ## Entitlements
 

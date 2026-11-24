@@ -23,9 +23,9 @@ export default defineConfig({
     timeout: 120_000,
     // These are nonfunctional public placeholders. No account or live database is used.
     env: {
-      VITE_SUPABASE_URL: "https://linkbooks-public-ui.invalid",
+      VITE_SUPABASE_URL: "https://streakbooks-public-ui.invalid",
       VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_public_ui_fixture_only",
-      SUPABASE_URL: "https://linkbooks-public-ui.invalid",
+      SUPABASE_URL: "https://streakbooks-public-ui.invalid",
       SUPABASE_PUBLISHABLE_KEY: "sb_publishable_public_ui_fixture_only",
       VITE_CAPTCHA_PROVIDER: "",
       VITE_CAPTCHA_SITE_KEY: "",

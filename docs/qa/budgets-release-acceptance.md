@@ -1,4 +1,4 @@
-# LinkBooks Budgets — Batch 10 Release Acceptance Plan
+# StreakBooks Budgets — Batch 10 Release Acceptance Plan
 
 **Scope:** Budgets editor, duplication, locking, revisions, approval,
 atomic saving, Class/Department/Location allocations, dimension actuals,
@@ -10,8 +10,8 @@ Do not manually launch GitHub Actions CI unless approved.
 
 ## Source of truth
 
-- Repository: `linkbusinessadvisory/LinkBooks`, branch `main`
-- Database: connected LinkBooks Supabase project
+- Repository: `streakbooks/StreakBooks`, branch `main`
+- Database: connected StreakBooks Supabase project
 - Run tests on a **disposable/local or approved staging database**, not the
   connected production project.
 - Creating a new hosted Supabase development branch may incur charges and must
@@ -41,7 +41,7 @@ malformed dollar-quote delimiter; the checked-in correction is required.
 On a **clean** checked-out `main`:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git pull --ff-only origin main
 npm.cmd ci

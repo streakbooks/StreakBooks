@@ -13,7 +13,7 @@ for (const key of [
   "DOCKER_CERT_PATH",
 ])
   delete env[key];
-const name = `linkbooks-platform-test-${process.pid}`;
+const name = `streakbooks-platform-test-${process.pid}`;
 const docker = (args, input) =>
   execFileSync("docker", ["--host=unix:///var/run/docker.sock", ...args], {
     env,

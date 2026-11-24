@@ -1,4 +1,4 @@
-# LinkBooks Expense Management — Master PRD (navigation amendment)
+# StreakBooks Expense Management — Master PRD (navigation amendment)
 
 **Version:** 2.1 — Standalone navigation  
 **Supersedes navigation placement in Master Command v2.0**  
@@ -6,7 +6,7 @@
 
 ## Product placement
 
-Expense Management is a **separate, top-level** LinkBooks main navigation module at `/expense-management`.
+Expense Management is a **separate, top-level** StreakBooks main navigation module at `/expense-management`.
 
 It sits in the primary sidebar Money group alongside Banking, Sales, Purchases, Accounting and Payroll. It is **not** nested under Purchases.
 

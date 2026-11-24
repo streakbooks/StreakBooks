@@ -76,7 +76,7 @@ export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
           undefined
         : undefined,
   }),
-  head: () => ({ meta: [{ title: "Contact — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Contact — StreakBooks" }] }),
   component: ContactDetail,
 });
 

@@ -1,5 +1,5 @@
 /**
- * Authoritative money helpers for LinkBooks.
+ * Authoritative money helpers for StreakBooks.
  * Ledger amounts are integer minor units (e.g. cents). Never use IEEE float for totals.
  */
 

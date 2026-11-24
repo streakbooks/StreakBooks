@@ -47,12 +47,12 @@ Status: source changes committed on feature branch only. No local TypeScript/lin
 ## Local verification — no GitHub Actions
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git fetch origin
 git worktree list
 # Only create if the destination does not already exist:
-git worktree add --detach D:\MyApp\LinkBooks-Files-B8 origin/feature/files-workspace-ux-20261106
-cd D:\MyApp\LinkBooks-Files-B8
+git worktree add --detach D:\MyApp\StreakBooks-Files-B8 origin/feature/files-workspace-ux-20261106
+cd D:\MyApp\StreakBooks-Files-B8
 npm.cmd ci
 npm.cmd run typecheck
 npm.cmd run lint

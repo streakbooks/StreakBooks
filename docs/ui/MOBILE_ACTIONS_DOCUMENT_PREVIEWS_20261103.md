@@ -1,4 +1,4 @@
-# LinkBooks: mobile row actions and richer Sales/Purchases document previews
+# StreakBooks: mobile row actions and richer Sales/Purchases document previews
 
 Date: 3 November 2026. Feature branch: feature/mobile-row-actions-document-previews-20261103.
 
@@ -26,13 +26,13 @@ Date: 3 November 2026. Feature branch: feature/mobile-row-actions-document-previ
 ## Safety and architecture
 - New document preview data comes from existing authenticated Supabase-backed GET server functions and company-scoped queries. Attachment download uses existing signed URL / inline download checks.
 - No newly privileged API, SQL migration, RLS adjustment, posting logic or bank mutation implementation.
-- UI and interaction are independently written LinkBooks components; Odoo/Xero are capability references, not copied source or assets.
+- UI and interaction are independently written StreakBooks components; Odoo/Xero are capability references, not copied source or assets.
 - No invoice/bill full-page editor changes. Preview fields are read-only.
 
 ## Manual verification
 
 In PowerShell:
-    cd D:\MyApp\LinkBooks
+    cd D:\MyApp\StreakBooks
     git status
     git checkout main
     git pull origin main

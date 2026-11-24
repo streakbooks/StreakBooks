@@ -1,10 +1,10 @@
-# LinkBooks — Security Review (Owner Audit)
+# StreakBooks — Security Review (Owner Audit)
 
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-10-19 |
 | **Verdict** | **Design adequate for MVP**; **live tenant isolation unproven** — not cleared for unrestricted commercial production |
-| **Supersedes** | Phase 3 tables in [LINKBOOKS_PRODUCTION_READINESS_REPORT.md](./LINKBOOKS_PRODUCTION_READINESS_REPORT.md) |
+| **Supersedes** | Phase 3 tables in [STREAKBOOKS_PRODUCTION_READINESS_REPORT.md](./STREAKBOOKS_PRODUCTION_READINESS_REPORT.md) |
 
 ## Threat model (summary)
 
@@ -26,7 +26,7 @@
 | Public auth routes | `/auth`, `/forgot-password`, `/reset-password` | Standard Supabase Auth |
 | MFA | — | **Not implemented** |
 
-**Gap (G-014):** Production Site URL and redirect allow-list for https://linkbooks-navy.vercel.app not attached as signed evidence.
+**Gap (G-014):** Production Site URL and redirect allow-list for https://streakbooks-navy.vercel.app not attached as signed evidence.
 
 ---
 
@@ -72,7 +72,7 @@
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser | OK |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only; never `VITE_*` | `client.server.ts`, `env-safety.test.ts` |
 | `AI_API_KEY` / `OPENAI_API_KEY` | Server only | `ai.functions.ts` |
-| `LOVABLE_CRON_SECRET` | Cron endpoints if used | Documented in ENV doc |
+| `STREAKBOOKS_CRON_SECRET` | Cron endpoints if used | Documented in ENV doc |
 
 **Deploy verification required:** Confirm Vercel Production env has no `VITE_` prefix on service or AI secrets.
 
@@ -138,6 +138,6 @@ Treat AI output as **untrusted**; journals still pass `post_journal` rules.
 ## Related documents
 
 - [SECURITY_CHECKLIST.md](./SECURITY_CHECKLIST.md)
-- [LINKBOOKS_GAP_REGISTER.md](./LINKBOOKS_GAP_REGISTER.md)
+- [STREAKBOOKS_GAP_REGISTER.md](./STREAKBOOKS_GAP_REGISTER.md)
 - [ENV_AND_DEPLOYMENT.md](./ENV_AND_DEPLOYMENT.md)
-- [LINKBOOKS_PRODUCTION_READINESS.md](./LINKBOOKS_PRODUCTION_READINESS.md)
+- [STREAKBOOKS_PRODUCTION_READINESS.md](./STREAKBOOKS_PRODUCTION_READINESS.md)

@@ -3,7 +3,7 @@
 **Updated:** 2026-11-18  
 **Current branch:** `feature/pm-production-posting-payouts-portals`  
 **Current phase:** PM-05 / PM-09 / PM-10 posting, payouts, portals  
-**Authoritative repo:** https://github.com/linkbusinessadvisory/LinkBooks
+**Authoritative repo:** https://github.com/streakbooks/StreakBooks
 
 ## Overall progress
 

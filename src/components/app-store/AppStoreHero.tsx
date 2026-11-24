@@ -2,11 +2,11 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Marketplace hero surface — uses LinkBooks design tokens (navy/blue), not a new theme.
+ * Marketplace hero surface — uses StreakBooks design tokens (navy/blue), not a new theme.
  * One composition: brand + headline + support + CTAs.
  */
 export function AppStoreHero({
-  brand = "LinkBooks App Store",
+  brand = "StreakBooks App Store",
   title,
   description,
   actions,

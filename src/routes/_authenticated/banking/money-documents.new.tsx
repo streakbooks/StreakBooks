@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/banking/money-documents/ne
     }
   },
   head: ({ match }) => ({
-    meta: [{ title: `New ${match.search.kind.replace(/_/g, " ")} — LinkBooks` }],
+    meta: [{ title: `New ${match.search.kind.replace(/_/g, " ")} — StreakBooks` }],
   }),
   component: MoneyDocumentNewRoute,
 });

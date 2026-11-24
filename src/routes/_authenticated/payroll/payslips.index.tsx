@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/payroll/payslips/")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Payslips — LinkBooks" },
+      { title: "Payslips — StreakBooks" },
       { name: "description", content: "View issued employee payslips." },
     ],
   }),

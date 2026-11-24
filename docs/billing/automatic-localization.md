@@ -1,4 +1,4 @@
-# Automatic subscription localization (LinkBooks)
+# Automatic subscription localization (StreakBooks)
 
 - Public pricing: trusted Vercel `x-vercel-ip-country` header resolves region.
   No country/currency selector. Show an explicit USD fallback if geo is missing.

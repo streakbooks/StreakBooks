@@ -22,7 +22,7 @@ for (const mode of ["light", "dark"]) {
         }
         return request.continue();
       });
-      await page.addInitScript((theme) => localStorage.setItem("linkbooks-theme", theme), mode);
+      await page.addInitScript((theme) => localStorage.setItem("streakbooks-theme", theme), mode);
       const response = await page.goto(route!, { waitUntil: "domcontentloaded", timeout: 90_000 });
       expect(response?.status()).toBe(200);
       await expect(page.getByRole("heading", { name: heading!, exact: true })).toBeVisible({

@@ -1,4 +1,4 @@
-# LinkBooks — MVP architecture (decision)
+# StreakBooks — MVP architecture (decision)
 
 ## Decision
 

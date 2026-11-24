@@ -6,7 +6,7 @@ import subprocess
 import time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-NAME = f"linkbooks-classification-{os.getpid()}"
+NAME = f"streakbooks-classification-{os.getpid()}"
 ENV = os.environ.copy()
 for key in ["DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH"]:
     ENV.pop(key, None)

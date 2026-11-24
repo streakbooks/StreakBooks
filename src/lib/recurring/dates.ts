@@ -1,4 +1,4 @@
-/** Calendar dates as YYYY-MM-DD in UTC (matches existing LinkBooks date handling). */
+/** Calendar dates as YYYY-MM-DD in UTC (matches existing StreakBooks date handling). */
 
 export function parseUtcDate(isoDate: string): Date {
   const d = new Date(`${isoDate}T00:00:00.000Z`);

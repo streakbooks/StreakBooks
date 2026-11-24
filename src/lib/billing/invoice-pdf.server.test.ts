@@ -29,7 +29,7 @@ const invoice: BillingDocument = {
   periodEnd: "2026-12-05T00:00:00.000Z",
   lines: [
     {
-      description: "LinkBooks Pro subscription",
+      description: "StreakBooks Pro subscription",
       quantity: 1,
       netMinor: 84661,
       taxMinor: 15239,

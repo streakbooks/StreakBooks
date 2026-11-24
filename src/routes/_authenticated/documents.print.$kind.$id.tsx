@@ -13,7 +13,7 @@ import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/documents/print/$kind/$id")({
-  head: () => ({ meta: [{ title: "Print document — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Print document — StreakBooks" }] }),
   component: PrintDocumentPage,
 });
 

@@ -1,4 +1,4 @@
-/** Deterministic LinkBooks CRM lead score (mirrors score_crm_lead SQL). Max 100. */
+/** Deterministic StreakBooks CRM lead score (mirrors score_crm_lead SQL). Max 100. */
 export type LeadScoreInput = {
   email?: string | null;
   phone?: string | null;

@@ -169,7 +169,7 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
   {
     code: "csv_sales_import",
     name: "CSV Sales Import",
-    publisher: "LinkBooks",
+    publisher: "StreakBooks",
     kind: "csv_fallback",
     categoryGroups: ["Invoicing and Job Management", "Data Migration"],
     registerStatus: "Available",
@@ -186,7 +186,7 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
   {
     code: "csv_purchases_import",
     name: "CSV Purchases Import",
-    publisher: "LinkBooks",
+    publisher: "StreakBooks",
     kind: "csv_fallback",
     categoryGroups: ["Bills, Expenses and Approvals", "Data Migration"],
     registerStatus: "Available",
@@ -203,7 +203,7 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
   {
     code: "csv_contacts_products_import",
     name: "CSV Contacts & Products Import",
-    publisher: "LinkBooks",
+    publisher: "StreakBooks",
     kind: "csv_fallback",
     categoryGroups: ["CRM and Marketing", "Data Migration"],
     registerStatus: "Available",
@@ -220,7 +220,7 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
   {
     code: "bank_csv_import",
     name: "Bank Statement CSV Import",
-    publisher: "LinkBooks",
+    publisher: "StreakBooks",
     kind: "csv_fallback",
     categoryGroups: ["Payments and Banking", "Data Migration"],
     registerStatus: "Available",
@@ -237,7 +237,7 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
   {
     code: "xero_migration",
     name: "Xero Migration (CSV)",
-    publisher: "LinkBooks",
+    publisher: "StreakBooks",
     kind: "csv_fallback",
     categoryGroups: ["Data Migration"],
     registerStatus: "Available",
@@ -254,7 +254,7 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
   {
     code: "quickbooks_migration",
     name: "QuickBooks Migration (CSV)",
-    publisher: "LinkBooks",
+    publisher: "StreakBooks",
     kind: "csv_fallback",
     categoryGroups: ["Data Migration"],
     registerStatus: "Available",

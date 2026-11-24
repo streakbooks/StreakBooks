@@ -35,7 +35,7 @@ const input = {
   assumptions: FORECAST_PRESETS.base,
 };
 
-describe("LinkBooks forecast", () => {
+describe("StreakBooks forecast", () => {
   it("accepts historical P&L actuals while excluding balance-sheet ledger activity", () => {
     const historical = [
       ...accounts,

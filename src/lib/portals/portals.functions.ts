@@ -174,7 +174,7 @@ export const startPortalPayment = createServerFn({ method: "POST" })
       invoiceNumber: created.invoice_number ?? invoice.invoice?.invoice_number ?? null,
       amountMinor: Number(created.amount_minor),
       currency: created.currency,
-      companyName: created.company_name ?? invoice.company_name ?? "LinkBooks",
+      companyName: created.company_name ?? invoice.company_name ?? "StreakBooks",
     });
     await rpc(context.supabase, "portal_attach_provider", {
       membership_id: data.membershipId,
@@ -539,7 +539,7 @@ export const invitePortalUser = createServerFn({ method: "POST" })
       companyId: data.companyId,
       isDemo: invited.is_demo,
       to: invited.email,
-      subject: "Your LinkBooks portal invitation",
+      subject: "Your StreakBooks portal invitation",
       text: `You have been invited to the ${invited.role} portal. Open this link to accept: ${link}`,
       entityType: "contact",
       entityId: data.contactId,

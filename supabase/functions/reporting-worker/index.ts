@@ -60,7 +60,7 @@ Deno.serve(async (request) => {
         text: job.message,
         html: `<p>${escape(job.message).replace(/\n/g, "<br>")}</p>`,
         attachments: [{ filename, content: bytesToBase64(pdf) }],
-        idempotencyKey: `linkbooks-report-${job.id}`,
+        idempotencyKey: `streakbooks-report-${job.id}`,
       });
       if (result.ok && result.messageId) {
         providerId = result.messageId;

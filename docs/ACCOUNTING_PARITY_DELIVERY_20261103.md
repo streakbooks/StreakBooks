@@ -7,7 +7,7 @@ Implemented:
 - Up to 200 lines with independent descriptions, accounts, quantities, unit prices, discounts and percentage tax. Add, duplicate, reorder and remove lines; supplier instructions/memo; exact subtotal/tax/total preview.
 - Server validation for tenant IDs, active supplier, active/postable accounts, real calendar dates, quantity precision, non-negative safe-integer money, discount limits, tax precision, line count and total limits.
 - Dedicated `/purchases/orders/:orderId` detail route; supplier/date/status, sorted line details, discounts, totals, memo and linked draft bill.
-- Reused LinkBooks print/PDF, existing provider-dependent email controls, notes, files and activity panel. Purchase-order links from documents/files now open the actual record.
+- Reused StreakBooks print/PDF, existing provider-dependent email controls, notes, files and activity panel. Purchase-order links from documents/files now open the actual record.
 - Manual Mark as sent and confirmed cancellation, authenticated permission checks, tenant filters and previous-state conditions. Mark as sent explicitly does not claim an email was sent; partially received/billed/cancelled orders cannot be cancelled through this action.
 - Order-number search/display, status filter, true document currencies and currency column in CSV. Search and export apply to the loaded latest 100 orders, explicitly labelled. Full server pagination/search remains pending.
 - Conversion checks the previous order state before linking its provisional draft bill. A concurrent cancellation/state change is not overwritten; the losing conversion cleans up its draft bill.

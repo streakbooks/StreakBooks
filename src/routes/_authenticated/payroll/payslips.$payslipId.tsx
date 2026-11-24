@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_authenticated/payroll/payslips/$payslipI
     requireRouteUuid(params.payslipId);
   },
   head: () => ({
-    meta: [{ title: "Payslip — LinkBooks" }],
+    meta: [{ title: "Payslip — StreakBooks" }],
   }),
   component: function PayrollPayslipDetailRoute() {
     const { payslipId } = Route.useParams();

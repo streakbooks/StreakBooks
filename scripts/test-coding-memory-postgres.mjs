@@ -14,7 +14,7 @@ for (const key of [
 ])
   delete env[key];
 const prefix = ["--host=unix:///var/run/docker.sock"];
-const container = `linkbooks-memory-${process.pid}`;
+const container = `streakbooks-memory-${process.pid}`;
 const docker = (args, input) =>
   execFileSync("docker", [...prefix, ...args], {
     env,

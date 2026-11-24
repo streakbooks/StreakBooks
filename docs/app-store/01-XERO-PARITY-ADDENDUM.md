@@ -1,12 +1,12 @@
-# LinkBooks App Store — Xero-Parity Addendum
+# StreakBooks App Store — Xero-Parity Addendum
 
 **Status:** Integrated into roadmap (AS-XP-01 … AS-XP-10)  
-**Design policy:** Functional completeness benchmarked against Xero; **original LinkBooks UX only**.  
+**Design policy:** Functional completeness benchmarked against Xero; **original StreakBooks UX only**.  
 **Parity rule:** Do **not** declare Xero-level feature parity until each capability is implemented **and** independently verified. External API access, partnerships and marketplace adoption remain separate.
 
 ## Capability map
 
-| ID | Capability | Gap vs current LinkBooks | Target batch | Verification bar |
+| ID | Capability | Gap vs current StreakBooks | Target batch | Verification bar |
 |---|---|---|---|---|
 | XP-01 | Universal App Launcher | Missing global launcher | AS-XP-01 / AS-02 | Org-aware list of installs + connection status from anywhere |
 | XP-02 | Accountant App Advisory | Missing firm→client app recommend/monitor | AS-XP-02 / AS-05 | Firm can recommend, request approval, monitor authorized clients only |
@@ -34,12 +34,12 @@
 | AC-XP-09 | Incompatible app versions show warnings; deprecation dates are visible |
 | AC-XP-10 | Trust indicators (verified publisher, certified, suspended) render on listings |
 | AC-XP-11 | Xero parity **not** claimed until AC-XP-01…10 independently verified |
-| AC-XP-12 | Original LinkBooks design language preserved (no competitor UI reproduction) |
+| AC-XP-12 | Original StreakBooks design language preserved (no competitor UI reproduction) |
 
 ## Non-duplication notes
 
 - Reuse App Store catalogue, installations, connections, developer publishers/OAuth, public API scopes.
-- Do not overload LinkBooks SaaS `billing_*` for marketplace usage — bridge later like Advisors if needed.
+- Do not overload StreakBooks SaaS `billing_*` for marketplace usage — bridge later like Advisors if needed.
 - Firm advisory uses practice client authorization patterns; do not invent a second firm model.
 - Stripe merchant connector remains distinct from platform billing Stripe.
 

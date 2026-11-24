@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * LinkBooks Accounting Reconciliation release verification: LOCAL ONLY.
+ * StreakBooks Accounting Reconciliation release verification: LOCAL ONLY.
  * Never starts GitHub Actions / CI, changes Supabase, or deploys Vercel.
  * A source-complete branch and passing npm checks are NOT production approval.
  */
@@ -64,7 +64,7 @@ function gitInfo(fresh) {
     // Never record remote URL: URLs can embed credentials.
     originMatchesRepo:
       typeof remote === "string" &&
-      /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)linkbusinessadvisory\/LinkBooks(?:\.git)?\/?$/i.test(
+      /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)linkbusinessadvisory\/StreakBooks(?:\.git)?\/?$/i.test(
         remote,
       ),
   };
@@ -172,7 +172,7 @@ async function main({ dryRun, install }) {
     migration.testsPresent,
   );
   const results = [];
-  console.log("LinkBooks Accounting reconciliation local verification (no GitHub CI)");
+  console.log("StreakBooks Accounting reconciliation local verification (no GitHub CI)");
   if (!preflight.passed) {
     console.error("Preflight blockers:", preflight.blockers.join(" | "));
   }
@@ -208,7 +208,7 @@ async function main({ dryRun, install }) {
   const report = {
     workstream: "Accounting Reconciliation — Fixed Assets + persistent reviews",
     generatedAt: new Date().toISOString(),
-    repository: "linkbusinessadvisory/LinkBooks",
+    repository: "streakbooks/StreakBooks",
     git: gitInfo(finalFresh),
     preflight,
     postflight,

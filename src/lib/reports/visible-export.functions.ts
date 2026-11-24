@@ -67,7 +67,7 @@ export const exportVisibleReport = createServerFn({ method: "POST" })
       capturedAt,
       subtitle: data.basis,
       header: "",
-      footer: "LinkBooks · Screen export",
+      footer: "StreakBooks · Screen export",
       notes:
         "Contains the rows loaded in the report at the time of export. A paginated report may contain only the visible page. For certified financial statements, use the standard report export.",
       orientation: data.headers.length > 4 ? "landscape" : "portrait",

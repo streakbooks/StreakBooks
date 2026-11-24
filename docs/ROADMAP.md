@@ -1,4 +1,4 @@
-# LinkBooks evidence-driven modernization roadmap
+# StreakBooks evidence-driven modernization roadmap
 **Date:** 3 November 2026 · [Gap inventory](GAP_ANALYSIS.md) · [Architecture](ARCHITECTURE.md)
 
 ## Working rules
@@ -49,7 +49,7 @@ Ledger and period-lock **signed-in acceptance matrix** (Order 1). Do not add a s
 
 This section records **evidence**, not blanket completion of acceptance criteria.
 
-- **Milestone 0 foundation:** completed via [PR #19](https://github.com/linkbusinessadvisory/LinkBooks/pull/19). `.env` untracked, CI guard, README and documentation.
+- **Milestone 0 foundation:** completed via [PR #19](https://github.com/streakbooks/StreakBooks/pull/19). `.env` untracked, CI guard, README and documentation.
 - **Advanced reporting incremental:** PR #17, #18 and #20 merged; multi-account selectors and loaded-row customization exist. Full server-side ledger pagination and all-matching exports remain open under item 6/13.
 - **Milestone 1 accounting integrity — PARTIAL:** PR #21 rejects incomplete/mismatched ledger-health responses and enforces `accounting.view`; PR #22 guards year-end close evidence and exact amount conversion; PR #23 exposes read-only integrity checks at `/accounting?tab=health`. No new database posting engine was created. Staging negative authorization tests, all posting pathways and accountant sign-off still required.
 - **Milestone 2 permissions/security — INVESTIGATING:** read-only project metadata checked for RLS and public callable functions; no privilege grants/revocations applied. Validate policies with distinct real user roles and all SECURITY DEFINER routines.
@@ -58,8 +58,8 @@ This section records **evidence**, not blanket completion of acceptance criteria
 See the up-to-date [REVIEW_GUIDE](REVIEW_GUIDE.md) for exact commit hashes, manual acceptance and limitations.
 
 ## 4 November 2026 banking and tax progress
-- **Banking import, milestone 5 (partial):** [PR #26](https://github.com/linkbusinessadvisory/LinkBooks/pull/26) adds independent QIF intake for single-account bank/credit-card statements with explicit date-order review; [PR #27](https://github.com/linkbusinessadvisory/LinkBooks/pull/27) hardens the shared server-side date, numeric, ID and row validation for CSV/OFX/QFX/QIF. Bank-feed providers, transaction matching, posted-GL reconciliation, FX and negative multi-tenant staging acceptance remain unfinished.
-- **Tax computation, milestone 3 (partial):** [PR #28](https://github.com/linkbusinessadvisory/LinkBooks/pull/28) prevents silent unsafe numeric conversion and excess quantity precision. Country-specific US/UK/AU/NZ tax source truth tables, return reconciliation, professional sign-off, filing regulators and genuine integration receipts remain unfinished.
+- **Banking import, milestone 5 (partial):** [PR #26](https://github.com/streakbooks/StreakBooks/pull/26) adds independent QIF intake for single-account bank/credit-card statements with explicit date-order review; [PR #27](https://github.com/streakbooks/StreakBooks/pull/27) hardens the shared server-side date, numeric, ID and row validation for CSV/OFX/QFX/QIF. Bank-feed providers, transaction matching, posted-GL reconciliation, FX and negative multi-tenant staging acceptance remain unfinished.
+- **Tax computation, milestone 3 (partial):** [PR #28](https://github.com/streakbooks/StreakBooks/pull/28) prevents silent unsafe numeric conversion and excess quantity precision. Country-specific US/UK/AU/NZ tax source truth tables, return reconciliation, professional sign-off, filing regulators and genuine integration receipts remain unfinished.
 - **Security, milestone 2 (partial):** read-only checks under the PostgreSQL `anon` role and a simulated JWT for an outsider with no company membership showed zero visible rows for five selected financial/membership tables. See [SECURITY_REVIEW_20261104](SECURITY_REVIEW_20261104.md) for boundaries and advisor triage. **This is not a signed-in browser authorization certification.**
 - **Broader reporting:** independent PR #25 extended account-focused selections to budget, asset and tax ledger reports, and passed main CI. Full server-side report-history pagination and immutable all-matching export are still pending.
 
@@ -67,9 +67,9 @@ See [REVIEW_GUIDE](REVIEW_GUIDE.md) for exact merge commits and manual acceptanc
 
 ## 4 November 2026 — FX P0 integrity and report paging
 
-- **Milestone 1 (partial, posting controls):** [PR #32](https://github.com/linkbusinessadvisory/LinkBooks/pull/32) makes the existing posting service reject invalid actual posting/reversal dates, unsafe minor amounts and unverifiable FX rates. The `post_journal` RPC remains the only posting authority, and period permissions and locks continue to be enforced by SQL.
-- **Milestone 6 (partial, cash pagination):** independent [PR #30](https://github.com/linkbusinessadvisory/LinkBooks/pull/30) introduced source-recognized cash-basis Account Transactions, and [PR #31](https://github.com/linkbusinessadvisory/LinkBooks/pull/31) added cash-ledger page navigation with intact opening/running balance and explicit page export scope. Server-side pagination and complete exports for **all** reports remain pending.
-- **Milestone 8 (partial, FX history):** [PR #33](https://github.com/linkbusinessadvisory/LinkBooks/pull/33) rejects absent known-foreign journal FX snapshots and lossy numeric minor-unit conversions in canonical ledger report adapters. It does not yet certify realized/unrealized revaluations, settlement reversals or cross-entity translation.
+- **Milestone 1 (partial, posting controls):** [PR #32](https://github.com/streakbooks/StreakBooks/pull/32) makes the existing posting service reject invalid actual posting/reversal dates, unsafe minor amounts and unverifiable FX rates. The `post_journal` RPC remains the only posting authority, and period permissions and locks continue to be enforced by SQL.
+- **Milestone 6 (partial, cash pagination):** independent [PR #30](https://github.com/streakbooks/StreakBooks/pull/30) introduced source-recognized cash-basis Account Transactions, and [PR #31](https://github.com/streakbooks/StreakBooks/pull/31) added cash-ledger page navigation with intact opening/running balance and explicit page export scope. Server-side pagination and complete exports for **all** reports remain pending.
+- **Milestone 8 (partial, FX history):** [PR #33](https://github.com/streakbooks/StreakBooks/pull/33) rejects absent known-foreign journal FX snapshots and lossy numeric minor-unit conversions in canonical ledger report adapters. It does not yet certify realized/unrealized revaluations, settlement reversals or cross-entity translation.
 - **Database evidence (read-only):** 38 posted journals were inspected; zero were foreign currency, so no actual foreign-history acceptance is claimed. The deployed FX rate lookup already checks membership; neither production rates nor grants were changed.
 - **Next P0 dependencies:** authenticated multi-company accounting acceptance, SQL function permissions, full historical AR/AP and GL reconciliation, server-backed all-matching exports, verified tax return math and per-country regulator integrations.
 

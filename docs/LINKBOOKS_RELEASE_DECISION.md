@@ -1,14 +1,14 @@
-# LinkBooks — Independent Release Decision
+# StreakBooks — Independent Release Decision
 
 | Field | Value |
 |-------|-------|
 | **Role** | Final independent release reviewer |
 | **Date (UTC)** | 2026-10-19 |
 | **Re-verified** | 2026-10-19T13:48Z — same decision after independent re-check |
-| **Inputs** | (1) Full Product Scope MD — **not found on disk**; (2) approved plan `docs/plan/*`; (3) `docs/LINKBOOKS_PRODUCTION_READINESS_REPORT.md`; (4) current repo + re-verified tests |
+| **Inputs** | (1) Full Product Scope MD — **not found on disk**; (2) approved plan `docs/plan/*`; (3) `docs/STREAKBOOKS_PRODUCTION_READINESS_REPORT.md`; (4) current repo + re-verified tests |
 | **Evidence refresh** | `npx vitest run` → 124 passed; `npx tsc --noEmit` → 0; no `.github/workflows`; branch `feature/foundational-production-readiness` with large uncommitted surface; Full Product Scope file still absent |
-| **Production deploy** | **Friend demo authorised** → https://linkbooks-navy.vercel.app (Demo Company). **Commercial production not authorised.** |
-| **Owner audit pack** | 2026-10-19: [LINKBOOKS_PRODUCTION_READINESS.md](./LINKBOOKS_PRODUCTION_READINESS.md), [LINKBOOKS_FEATURE_CATALOG.md](./LINKBOOKS_FEATURE_CATALOG.md), [LINKBOOKS_GAP_REGISTER.md](./LINKBOOKS_GAP_REGISTER.md), [LINKBOOKS_ACCOUNTING_INTEGRITY.md](./LINKBOOKS_ACCOUNTING_INTEGRITY.md), [LINKBOOKS_SECURITY_REVIEW.md](./LINKBOOKS_SECURITY_REVIEW.md), [LINKBOOKS_COMPETITIVE_BENCHMARK.md](./LINKBOOKS_COMPETITIVE_BENCHMARK.md) |
+| **Production deploy** | **Friend demo authorised** → https://streakbooks-navy.vercel.app (Demo Company). **Commercial production not authorised.** |
+| **Owner audit pack** | 2026-10-19: [STREAKBOOKS_PRODUCTION_READINESS.md](./STREAKBOOKS_PRODUCTION_READINESS.md), [STREAKBOOKS_FEATURE_CATALOG.md](./STREAKBOOKS_FEATURE_CATALOG.md), [STREAKBOOKS_GAP_REGISTER.md](./STREAKBOOKS_GAP_REGISTER.md), [STREAKBOOKS_ACCOUNTING_INTEGRITY.md](./STREAKBOOKS_ACCOUNTING_INTEGRITY.md), [STREAKBOOKS_SECURITY_REVIEW.md](./STREAKBOOKS_SECURITY_REVIEW.md), [STREAKBOOKS_COMPETITIVE_BENCHMARK.md](./STREAKBOOKS_COMPETITIVE_BENCHMARK.md) |
 
 ---
 
@@ -16,13 +16,13 @@
 
 # **A. No-go — critical blockers remain** (commercial / unrestricted production)
 
-**Addendum (2026-10-19, owner):** **Conditional friend-demo deploy is authorised** on https://linkbooks-navy.vercel.app using Demo Company and the same ledger engine, subject to conditions in [LINKBOOKS_PRODUCTION_READINESS.md](./LINKBOOKS_PRODUCTION_READINESS.md). This does **not** change the commercial **No-go**.
+**Addendum (2026-10-19, owner):** **Conditional friend-demo deploy is authorised** on https://streakbooks-navy.vercel.app using Demo Company and the same ledger engine, subject to conditions in [STREAKBOOKS_PRODUCTION_READINESS.md](./STREAKBOOKS_PRODUCTION_READINESS.md). This does **not** change the commercial **No-go**.
 
 This is **not** a Conditional go and **not** a Go **for paying customers or real client books**.
 
 **Rationale (evidence-based):**
 
-1. The named scope file **"LinkBooks — Full Product Scope and Implementation Standard.md" is still absent**. The plan (`00_INDEX_AND_APPROVALS.md`) treated an interim SSR and left P0 decisions (markets, money type, AI, staging, email, assets) **unresolved**. A release against an unratified full-product standard cannot be approved.
+1. The named scope file **"StreakBooks — Full Product Scope and Implementation Standard.md" is still absent**. The plan (`00_INDEX_AND_APPROVALS.md`) treated an interim SSR and left P0 decisions (markets, money type, AI, staging, email, assets) **unresolved**. A release against an unratified full-product standard cannot be approved.
 2. The plan’s own bar for paying SMB customers requires **P1–P5 complete with automated tests green, staging + backup restore proven**. P1 items (CI, backup drill, auth URL verification, live isolation) and live P3–P5 accounting proof are **not met**.
 3. The latest production-readiness report concludes **NOT PRODUCTION READY**, listing critical blockers (live RLS, E2E, migration apply unknown, no CI, no backup drill, no monitoring, no deploy smoke). Independent re-check confirms those blockers still stand.
 4. Navigation and route shells exist for a full product vision; **that is not functional completeness**. Multiple CORE/LATER items remain shells, partial, or unit-tested only without ledger-proven staging evidence.
@@ -175,4 +175,4 @@ Critical blockers remain in security evidence, migration/ops readiness, E2E acco
 
 **No unrestricted commercial production deployment or onboarding of real client books is authorised by this review.**
 
-Friend-demo deployment on the named Vercel host is **authorised by the owner** under the conditions in [LINKBOOKS_PRODUCTION_READINESS.md](./LINKBOOKS_PRODUCTION_READINESS.md). Further production expansion requires clearing G-001–G-007 and explicit written re-approval.
+Friend-demo deployment on the named Vercel host is **authorised by the owner** under the conditions in [STREAKBOOKS_PRODUCTION_READINESS.md](./STREAKBOOKS_PRODUCTION_READINESS.md). Further production expansion requires clearing G-001–G-007 and explicit written re-approval.

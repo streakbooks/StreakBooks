@@ -391,7 +391,7 @@ export function NewContact({
                 {selector("purchaseTaxInclusive", "Purchase amounts entered as")}
               </div>
               <p className="text-sm text-muted-foreground">
-                Existing LinkBooks contacts use one shared payment-terms value. Separate sales and
+                Existing StreakBooks contacts use one shared payment-terms value. Separate sales and
                 purchase terms need a schema and document-workflow upgrade.
               </p>
             </>

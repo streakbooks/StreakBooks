@@ -1,4 +1,4 @@
-# LinkBooks — Banking module upgrade completion
+# StreakBooks — Banking module upgrade completion
 
 **Date:** 20 Oct 2026
 

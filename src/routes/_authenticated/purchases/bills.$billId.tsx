@@ -106,7 +106,7 @@ export const Route = createFileRoute("/_authenticated/purchases/bills/$billId")(
       out.returnContext = s["returnContext"];
     return out;
   },
-  head: () => ({ meta: [{ title: "Bill — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Bill — StreakBooks" }] }),
   component: BillDocumentWorkspace,
 });
 

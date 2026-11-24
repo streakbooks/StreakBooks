@@ -29,15 +29,15 @@ export const Route = createFileRoute("/_authenticated/")({
   validateSearch: parseDashboardSearch,
   head: () => ({
     meta: [
-      { title: "Dashboard — LinkBooks" },
+      { title: "Dashboard — StreakBooks" },
       {
         name: "description",
-        content: "Cash position, receivables, payables and recent activity in LinkBooks.",
+        content: "Cash position, receivables, payables and recent activity in StreakBooks.",
       },
-      { property: "og:title", content: "Dashboard — LinkBooks" },
+      { property: "og:title", content: "Dashboard — StreakBooks" },
       {
         property: "og:description",
-        content: "Cash position, receivables, payables and recent activity in LinkBooks.",
+        content: "Cash position, receivables, payables and recent activity in StreakBooks.",
       },
     ],
   }),

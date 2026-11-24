@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/banking/transfers/")({
       out.bankTransactionId = s["bankTransactionId"];
     return out;
   },
-  head: () => ({ meta: [{ title: "Transfers — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Transfers — StreakBooks" }] }),
   component: TransfersRoute,
 });
 

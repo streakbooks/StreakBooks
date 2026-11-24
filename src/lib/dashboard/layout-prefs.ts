@@ -151,5 +151,5 @@ export function saveDashboardLayout(
 }
 
 export function dashboardLayoutStorageKey(userId: string, companyId: string): string {
-  return "linkbooks.dashboard.layout.v2." + userId + "." + companyId;
+  return "streakbooks.dashboard.layout.v2." + userId + "." + companyId;
 }

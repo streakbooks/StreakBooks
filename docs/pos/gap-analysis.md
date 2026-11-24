@@ -33,4 +33,4 @@ Physical locations are authoritative in `hr_locations`; reporting locations in `
 
 Read-only connected-database inspection confirmed required columns on HR locations, accounts, company members and profiles, latest recorded migration `20261117220000`, and absence of the pending POS tables. Hosted security advisor summary: 92 INFO (RLS without policies), 21 mutable-search-path warnings, 26 anonymous-definer-execution warnings, 726 authenticated-definer-execution warnings and one leaked-password-protection warning. Some may be intentional guarded or deny-all designs; review them individually. No hosted schema/data changes were made.
 
-Eight-vendor research now has official source evidence; Lightspeed/Clover retrieval gaps were resolved through current vendor documentation. No interface was copied and no device/provider support was inferred for LinkBooks.
+Eight-vendor research now has official source evidence; Lightspeed/Clover retrieval gaps were resolved through current vendor documentation. No interface was copied and no device/provider support was inferred for StreakBooks.

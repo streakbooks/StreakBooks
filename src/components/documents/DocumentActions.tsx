@@ -304,7 +304,7 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
           </div>
         ) : delivery ? (
           <p className="text-xs text-muted-foreground">
-            Nothing has been emailed from LinkBooks yet.
+            Nothing has been emailed from StreakBooks yet.
           </p>
         ) : null}
       </CardContent>

@@ -1,4 +1,4 @@
-# LinkBooks pricing strategy
+# StreakBooks pricing strategy
 
 Reviewed 30 October 2026. List prices are stored in the database and can be changed by platform staff. This note records why the seed was chosen. It is not a price lock.
 
@@ -11,7 +11,7 @@ Reviewed 30 October 2026. List prices are stored in the database and can be chan
 - Zoho Books US (https://www.zoho.com/us/books/pricing/, 30 Oct 2026): Free, Standard shown as $15 a year in the fetched page, Premium $60. Invoice caps are yearly. Professional, Elite and Ultimate dollar amounts were not in that page.
 - FreshBooks (https://www.freshbooks.com/pricing, 30 Oct 2026): Lite $23, Plus $43, Premium $70, with an introductory discount. 30-day trial, no card.
 - Wave (https://www.waveapps.com/pricing, 30 Oct 2026): Starter $0, Pro $19 a month or $190 a year.
-- Akaunting (https://akaunting.com/pricing, 30 Oct 2026): yearly prices shown as $8, $24, $56 and $145 a month. Standard does not include double-entry. LinkBooks keeps double-entry on every paid plan.
+- Akaunting (https://akaunting.com/pricing, 30 Oct 2026): yearly prices shown as $8, $24, $56 and $145 a month. Standard does not include double-entry. StreakBooks keeps double-entry on every paid plan.
 - Sage US (https://www.sage.com/en-us/sage-business-cloud/accounting/pricing/, 30 Oct 2026): no public list price.
 - Xero New Zealand and Zoho India were not fetched. Do not treat a figure for those pages as confirmed.
 

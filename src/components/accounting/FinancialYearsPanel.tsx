@@ -81,7 +81,7 @@ export function FinancialYearsPanel({ companyId }: { companyId: string }) {
     );
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "linkbooks-financial-years.csv";
+    anchor.download = "streakbooks-financial-years.csv";
     anchor.click();
     URL.revokeObjectURL(url);
   };

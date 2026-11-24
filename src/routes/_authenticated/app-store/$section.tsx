@@ -6,7 +6,7 @@ export const Route = createFileRoute("/_authenticated/app-store/$section")({
   head: ({ params }) => ({
     meta: [
       {
-        title: `${formatSectionTitle(params.section)} — App Store — LinkBooks`,
+        title: `${formatSectionTitle(params.section)} — App Store — StreakBooks`,
       },
     ],
   }),

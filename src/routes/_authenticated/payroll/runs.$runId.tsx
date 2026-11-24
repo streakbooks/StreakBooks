@@ -37,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/payroll/runs/$runId")({
         : "payment-newest",
   }),
   head: () => ({
-    meta: [{ title: "Payroll run — LinkBooks" }],
+    meta: [{ title: "Payroll run — StreakBooks" }],
   }),
   component: function PayrollRunDetailRoute() {
     const { runId } = Route.useParams();

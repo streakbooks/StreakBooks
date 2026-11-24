@@ -1,6 +1,6 @@
 /**
  * Purchase-order goods receipt maths (non-posting).
- * Original LinkBooks rules: receiving updates quantities and operational status only.
+ * Original StreakBooks rules: receiving updates quantities and operational status only.
  * No journal is created — bills still post through the existing conversion/authorise path.
  */
 

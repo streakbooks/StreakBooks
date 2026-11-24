@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Apply LinkBooks Supabase Auth settings through the Management API.
+# Apply StreakBooks Supabase Auth settings through the Management API.
 #
 # Always applies: site URL, redirect allow-list, password policy, email sign-in code template.
 # Optional blocks apply only when their credentials are present in the providers file
-# (default ~/.config/linkbooks/auth-providers.env — keep it outside the repo):
+# (default ~/.config/streakbooks/auth-providers.env — keep it outside the repo):
 #
 #   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
 #   AZURE_CLIENT_ID / AZURE_CLIENT_SECRET [/ AZURE_URL=https://login.microsoftonline.com/<tenant>]
@@ -26,9 +26,9 @@
 set -euo pipefail
 
 PROJECT_REF="${SUPABASE_PROJECT_REF:-ipxflpzfcqwtenodbxwc}"
-APP_URL="${LINKBOOKS_APP_URL:-https://linkbooks-navy.vercel.app}"
-CLI_ENV="${LINKBOOKS_CLI_ENV:-$HOME/.config/linkbooks/cli.env}"
-PROVIDERS_ENV="${LINKBOOKS_AUTH_ENV:-$HOME/.config/linkbooks/auth-providers.env}"
+APP_URL="${STREAKBOOKS_APP_URL:-https://streakbooks-navy.vercel.app}"
+CLI_ENV="${STREAKBOOKS_CLI_ENV:-$HOME/.config/streakbooks/cli.env}"
+PROVIDERS_ENV="${STREAKBOOKS_AUTH_ENV:-$HOME/.config/streakbooks/auth-providers.env}"
 DRY_RUN="${1:-}"
 
 [[ -f "$CLI_ENV" ]] && set -a && source "$CLI_ENV" && set +a
@@ -95,7 +95,7 @@ elif e("TWILIO_ACCOUNT_SID") and e("TWILIO_AUTH_TOKEN") and e("TWILIO_MESSAGE_SE
         "sms_twilio_account_sid": e("TWILIO_ACCOUNT_SID"),
         "sms_twilio_auth_token": e("TWILIO_AUTH_TOKEN"),
         "sms_twilio_message_service_sid": e("TWILIO_MESSAGE_SERVICE_SID"),
-        "sms_template": "Your LinkBooks code is {{ .Code }}",
+        "sms_template": "Your StreakBooks code is {{ .Code }}",
     })
 
 if all(e(k) for k in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_SENDER_EMAIL")):
@@ -105,14 +105,14 @@ if all(e(k) for k in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_
         "smtp_user": e("SMTP_USER"),
         "smtp_pass": e("SMTP_PASS"),
         "smtp_admin_email": e("SMTP_SENDER_EMAIL"),
-        "smtp_sender_name": e("SMTP_SENDER_NAME") or "LinkBooks",
+        "smtp_sender_name": e("SMTP_SENDER_NAME") or "StreakBooks",
         "rate_limit_email_sent": 100,
         # Templates are editable only with custom SMTP on the free plan.
         # Pair with VITE_AUTH_EMAIL_OTP_LENGTH=6 so the app asks for the emailed code.
         "mailer_otp_length": 6,
-        "mailer_subjects_magic_link": "Your LinkBooks sign-in code",
+        "mailer_subjects_magic_link": "Your StreakBooks sign-in code",
         "mailer_templates_magic_link_content": (
-            "<h2>Sign in to LinkBooks</h2>"
+            "<h2>Sign in to StreakBooks</h2>"
             "<p>Your sign-in code is:</p>"
             "<p style=\"font-size:24px;font-weight:600;letter-spacing:4px\">{{ .Token }}</p>"
             "<p>Or <a href=\"{{ .ConfirmationURL }}\">click here to sign in</a>.</p>"
@@ -140,16 +140,16 @@ if [[ "$DRY_RUN" == "--dry-run" ]]; then
   exit 0
 fi
 
-STATUS="$(curl -sS -o /tmp/linkbooks-auth-config.json -w '%{http_code}' -X PATCH \
+STATUS="$(curl -sS -o /tmp/streakbooks-auth-config.json -w '%{http_code}' -X PATCH \
   -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
   -d "$PAYLOAD")"
 if [[ "$STATUS" != "200" ]]; then
   echo "Supabase rejected the update (HTTP $STATUS):" >&2
-  cat /tmp/linkbooks-auth-config.json >&2
-  rm -f /tmp/linkbooks-auth-config.json
+  cat /tmp/streakbooks-auth-config.json >&2
+  rm -f /tmp/streakbooks-auth-config.json
   exit 1
 fi
-rm -f /tmp/linkbooks-auth-config.json
+rm -f /tmp/streakbooks-auth-config.json
 echo "Applied."

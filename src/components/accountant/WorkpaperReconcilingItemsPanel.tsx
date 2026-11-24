@@ -130,7 +130,7 @@ export function WorkpaperReconcilingItemsPanel({
     const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = "linkbooks-workpaper-reconciling-items.csv";
+    a.download = "streakbooks-workpaper-reconciling-items.csv";
     a.click();
     URL.revokeObjectURL(url);
   };

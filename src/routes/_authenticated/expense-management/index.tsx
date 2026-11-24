@@ -4,10 +4,10 @@ import { ExpenseManagementOverviewPage } from "@/screens/expense-management/over
 export const Route = createFileRoute("/_authenticated/expense-management/")({
   head: () => ({
     meta: [
-      { title: "Expenses — LinkBooks" },
+      { title: "Expenses — StreakBooks" },
       {
         name: "description",
-        content: "Expenses overview for LinkBooks organisations.",
+        content: "Expenses overview for StreakBooks organisations.",
       },
     ],
   }),

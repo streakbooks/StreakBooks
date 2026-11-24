@@ -176,7 +176,7 @@ export function FirmRequestsPanel({
       <div>
         <h2 className="text-lg font-semibold">Client document requests</h2>
         <p className="text-sm text-muted-foreground">
-          The existing LinkBooks secure document-request workflow handles permissions, file
+          The existing StreakBooks secure document-request workflow handles permissions, file
           provenance, completion and audit notifications. Requests shown are those visible to your
           signed-in account. Automated reminders appear in the recipient's notification centre; no
           emails are sent.

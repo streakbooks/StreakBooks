@@ -1,5 +1,5 @@
 /**
- * Entitlement resolution for LinkBooks.
+ * Entitlement resolution for StreakBooks.
  *
  * The database function public.winning_entitlements is the enforcement copy.
  * Ranks below must stay in the same order as

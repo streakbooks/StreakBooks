@@ -78,7 +78,7 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
     const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "linkbooks-manual-journal-quality.csv";
+    anchor.download = "streakbooks-manual-journal-quality.csv";
     anchor.click();
     URL.revokeObjectURL(url);
   };

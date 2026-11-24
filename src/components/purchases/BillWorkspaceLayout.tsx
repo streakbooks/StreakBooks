@@ -39,8 +39,8 @@ type Props = {
 };
 
 /**
- * LinkBooks original three-pane New Bill shell: header + expanding main workspace + supplier
- * insight sidebar. Uses AppShell density tokens and LinkBooks surfaces — not a competitor layout.
+ * StreakBooks original three-pane New Bill shell: header + expanding main workspace + supplier
+ * insight sidebar. Uses AppShell density tokens and StreakBooks surfaces — not a competitor layout.
  * Closing/collapsing the sidebar expands the main form without remounting children.
  */
 export function BillWorkspaceLayout({

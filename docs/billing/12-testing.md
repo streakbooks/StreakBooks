@@ -1,7 +1,7 @@
 # Billing platform — testing
 
 Automated tests never call payment providers and never use live keys. Server code refuses live
-Stripe and Razorpay keys unless `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`.
+Stripe and Razorpay keys unless `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`.
 
 ## Layers
 

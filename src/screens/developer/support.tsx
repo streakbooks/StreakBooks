@@ -6,7 +6,7 @@ export function DeveloperSupportPage() {
   return (
     <DeveloperPortalSectionShell
       sectionKey="support"
-      description="Support channels for publishers integrating with the LinkBooks public API."
+      description="Support channels for publishers integrating with the StreakBooks public API."
       alertTitle="Support without credential exposure"
       alertBody="Never send service-role keys or customer tokens through support channels. Use hashed client identifiers only."
       badges={["Secrets: never share", "Docs first"]}

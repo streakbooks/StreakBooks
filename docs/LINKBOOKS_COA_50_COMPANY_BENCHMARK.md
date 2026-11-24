@@ -1,10 +1,10 @@
-# LinkBooks — 50-company financial statement benchmark (CoA design evidence)
+# StreakBooks — 50-company financial statement benchmark (CoA design evidence)
 
 **Date checked:** 20 Oct 2026  
 **Method:** Public annual reports / 10-K / investor presentations and official IR pages.  
 **Limitation:** Published statements show aggregated FS lines, **not** each company’s internal general ledger. Used to identify relevant **categories**, industry revenue/cost patterns, and Balance Sheet / P&L presentation — not to copy enterprise GL depth into small-business defaults.
 
-| # | Company | Industry family | Jurisdiction | Period / source (primary) | Observed FS categories informing LinkBooks |
+| # | Company | Industry family | Jurisdiction | Period / source (primary) | Observed FS categories informing StreakBooks |
 |---|---------|-----------------|--------------|---------------------------|--------------------------------------------|
 | 1 | Accenture | Professional services | IE / US listing | FY2025 10-K / IR | Consulting revenue, subcontract costs, wages, deferred revenue |
 | 2 | Deloitte (global network) | Accounting / advisory | Multi | Transparency reports | Professional fees, partner equity (entity-specific) |
@@ -57,7 +57,7 @@
 | 49 | World Vision International | Non-profit | Multi | Audited FS / accountability | Contributions, restricted funds, programme expense |
 | 50 | The Church Pension Fund / related published FS samples | Religious / benefits | US | Public Form 990 / annual reports (where available) | Contributions, restricted net assets, programme / admin |
 
-## Category → LinkBooks mapping (summary)
+## Category → StreakBooks mapping (summary)
 
 | Observed category | Canonical `fs_line` | Example catalogue keys | Core / recommended / optional |
 |-------------------|---------------------|------------------------|-------------------------------|

@@ -108,7 +108,7 @@ export const startAdvisorChat = createServerFn({ method: "POST" })
       state,
       messages,
       aiDisclosure:
-        "This assistant is AI-powered guidance for LinkBooks Advisors. It is not a human advisor and does not provide regulated professional advice.",
+        "This assistant is AI-powered guidance for StreakBooks Advisors. It is not a human advisor and does not provide regulated professional advice.",
       source: token ? ("database" as const) : ("local" as const),
     };
   });

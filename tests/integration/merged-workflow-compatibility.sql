@@ -29,7 +29,7 @@ values(current_setting('merge.fixture_attachment')::uuid,current_setting('merge.
   'isolated-merge-reset.pdf','company-documents',current_setting('merge.fixture_company')||'/company/'||current_setting('merge.fixture_company')||'/isolated-reset.pdf');
 set local role authenticated;
 -- Even a spoofed reset GUC does not authorise a direct authenticated DELETE.
-select set_config('linkbooks.demo_reset_company',current_setting('merge.fixture_company'),true);
+select set_config('streakbooks.demo_reset_company',current_setting('merge.fixture_company'),true);
 do $$ begin
   begin
     delete from public.document_attachments where id=current_setting('merge.fixture_attachment')::uuid;

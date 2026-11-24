@@ -1,4 +1,4 @@
-const PREFIX = "linkbooks.messaging.draft:";
+const PREFIX = "streakbooks.messaging.draft:";
 
 export function messagingDraftKey(companyId: string, conversationId: string): string {
   return `${PREFIX}${companyId}:${conversationId}`;

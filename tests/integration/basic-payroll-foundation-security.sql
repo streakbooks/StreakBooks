@@ -1,5 +1,5 @@
 -- Basic Global Payroll Batch 1: foundation security smoke checks.
--- Run against an isolated Postgres with LinkBooks migrations applied.
+-- Run against an isolated Postgres with StreakBooks migrations applied.
 -- Expects helper roles/fixtures from the standard workflow harness when available.
 
 BEGIN;

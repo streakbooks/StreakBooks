@@ -1,10 +1,10 @@
-# LinkBooks workspace-navigation upgrade — 3 November 2026
+# StreakBooks workspace-navigation upgrade — 3 November 2026
 
 ## Independent product reference review
 
 - **Xero**: its navigation/homepage improvements prioritise simpler labels, clearer grouping, a customizable homepage and actionable tasks. See https://www.xero.com/au/campaign/new-homepage-navigation/ and https://blog.xero.com/product-updates/xerocon-2025-new-features-announcement/.
 - **Odoo**: filter/group/favourite workflows reduce time spent finding records. See https://www.odoo.com/documentation/19.0/applications/general/search.html. These are behavioural references only, **not code or visual assets copied from Odoo**.
-- **LinkBooks**: existing AppShell, module nav, command palette, company switcher and contextual settings provide a sound basis. We retain TanStack links, accounting services, route structure, and per-company authorization.
+- **StreakBooks**: existing AppShell, module nav, command palette, company switcher and contextual settings provide a sound basis. We retain TanStack links, accounting services, route structure, and per-company authorization.
 
 ## Dashboard personalization (additional delivered feature)
 
@@ -59,7 +59,7 @@ The authenticated browser test requires a dedicated authorized test user and wor
 10. Switch companies and verify each company remembers independent widget selections.
 11. Check critical invoice and bank pages for unchanged accounting totals and posting actions.
 
-## Follow-on Xero/Odoo-inspired, LinkBooks-original UI roadmap
+## Follow-on Xero/Odoo-inspired, StreakBooks-original UI roadmap
 
 - **Next**: richer dashboard personalization including card ordering, multiple saved views, responsive presets and attention-based highlights. The initial show/hide personalization is already implemented with real ledger-backed data.
 - **Then**: reusable record list workspace with saved filters, sort, group, column visibility, pagination and bulk action permissions.

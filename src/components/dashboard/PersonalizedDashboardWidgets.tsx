@@ -46,7 +46,7 @@ function readLayout(key: string, companyId: string): DashboardLayoutPrefs {
     const saved = window.localStorage.getItem(key);
     if (saved !== null) return readDashboardLayout(saved);
     // Preserve the existing company's widget visibility on first v2 use.
-    const old = window.localStorage.getItem("linkbooks.dashboard.widgets.v1." + companyId);
+    const old = window.localStorage.getItem("streakbooks.dashboard.widgets.v1." + companyId);
     if (old !== null) {
       const selection: unknown = JSON.parse(old);
       return { ...defaultDashboardLayout(), widgets: sanitiseWidgetIds(selection) };

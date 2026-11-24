@@ -1,4 +1,4 @@
-# LinkBooks Chat & Collaboration
+# StreakBooks Chat & Collaboration
 
 Unified messaging platform for internal members, employees, customers, vendors, accountants and advisors.
 

@@ -68,7 +68,7 @@ export const Route = createFileRoute("/_authenticated/budgets/$budgetId")({
     );
     return returnContext ? { returnContext } : {};
   },
-  head: () => ({ meta: [{ title: "Budget — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Budget — StreakBooks" }] }),
   component: BudgetEditorPage,
 });
 

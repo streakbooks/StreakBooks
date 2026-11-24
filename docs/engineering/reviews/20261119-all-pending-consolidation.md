@@ -4,9 +4,9 @@ Status: source consolidation and local verification complete. GitHub PR #295 and
 
 ## Scope and preserved history
 
-Canonical repository: https://github.com/linkbusinessadvisory/LinkBooks.
-Consolidation PR: https://github.com/linkbusinessadvisory/LinkBooks/pull/295.
-Touch-accessibility PR included: https://github.com/linkbusinessadvisory/LinkBooks/pull/333.
+Canonical repository: https://github.com/streakbooks/StreakBooks.
+Consolidation PR: https://github.com/streakbooks/StreakBooks/pull/295.
+Touch-accessibility PR included: https://github.com/streakbooks/StreakBooks/pull/333.
 
 All recorded branch references listed in the JSON audit are ancestors of the
 integration history. Existing published
@@ -95,7 +95,7 @@ full reload. After read-only popup prewarming and fresh isolated fixtures, the s
 unmodified assertions passed. This does not waive a failed browser assertion.
 
 Latest pre-merge Actions run:
-https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44451090993 — failed
+https://github.com/streakbooks/StreakBooks/actions/runs/44451090993 — failed
 before any of its six jobs executed steps; logs and step arrays are absent.
 The billing reason is evidenced by the earlier user-supplied annotations below;
 this newer run exposes no annotation text through the connected tools.
@@ -115,7 +115,7 @@ No health-check timeout is reported as a passing CLI run.
 ## CI billing exception
 
 The user supplied the account-payment/spending-limit annotations from
-https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44256575474:
+https://github.com/streakbooks/StreakBooks/actions/runs/44256575474:
 all jobs were prevented from starting. The standing repository instruction in
 `.cursor/rules/merge-without-ci-billing.mdc` authorises merging after local gates pass
 when that is the sole Actions blocker. A billing-blocked run is not a passed test.
@@ -127,17 +127,17 @@ not establish the state of any separate Lovable or other hosting deployment.
 
 ## Safe Windows review
 
-The cloud checkout does not modify `D:\MyApp\LinkBooks`. The original Windows
+The cloud checkout does not modify `D:\MyApp\StreakBooks`. The original Windows
 checkout has untracked messaging files; preserve it by opening a separate worktree:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
-git fetch https://github.com/linkbusinessadvisory/LinkBooks.git main
+git fetch https://github.com/streakbooks/StreakBooks.git main
 if ($LASTEXITCODE -ne 0) { throw "Fetch failed." }
-git worktree add --detach D:\MyApp\LinkBooks-main-review-20261119 FETCH_HEAD
+git worktree add --detach D:\MyApp\StreakBooks-main-review-20261119 FETCH_HEAD
 if ($LASTEXITCODE -ne 0) { throw "Worktree creation failed; preserve existing work." }
-cd D:\MyApp\LinkBooks-main-review-20261119
+cd D:\MyApp\StreakBooks-main-review-20261119
 npm.cmd ci
 if ($LASTEXITCODE -ne 0) { throw "Installation failed." }
 # Configure this worktree for an isolated test project; do not copy production service keys into browser variables.

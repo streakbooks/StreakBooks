@@ -1,7 +1,7 @@
 /**
  * Reusable integration engine contracts.
  * Connectors plug in without changing the core accounting engine.
- * Financial posting must go through existing LinkBooks posting services.
+ * Financial posting must go through existing StreakBooks posting services.
  */
 
 export type SyncDirection = "inbound" | "outbound" | "bidirectional";
@@ -67,7 +67,7 @@ export type IdempotencyDecision =
   { action: "process"; reason: "new" } | { action: "skip"; reason: "duplicate" | "already_posted" };
 
 /**
- * Mapping engine interface — implementations call LinkBooks accounting services.
+ * Mapping engine interface — implementations call StreakBooks accounting services.
  * Never create a separate general ledger inside the App Store.
  */
 export type AccountingMappingEngine = {

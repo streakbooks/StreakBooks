@@ -1,10 +1,10 @@
-# LinkBooks — responsive Sales and Purchases workspaces
+# StreakBooks — responsive Sales and Purchases workspaces
 
 Date: 3 November 2026
 
 ## Scope
 
-This is a new, original LinkBooks implementation of accessible mobile accounting lists. It follows the same progressive disclosure used by our Banking cards. It does not copy Xero/Odoo source or visual assets.
+This is a new, original StreakBooks implementation of accessible mobile accounting lists. It follows the same progressive disclosure used by our Banking cards. It does not copy Xero/Odoo source or visual assets.
 
 ## Working functionality
 
@@ -25,7 +25,7 @@ The GitHub Actions workflow should pass TypeScript, changed-file ESLint, unit te
 1. Preserve any uncommitted files. In Cursor PowerShell run:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git checkout main
 git pull origin main

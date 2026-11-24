@@ -1,4 +1,4 @@
-# LinkBooks — Full-coverage gap register
+# StreakBooks — Full-coverage gap register
 
 | Field              | Value                                                                                                 |
 | ------------------ | ----------------------------------------------------------------------------------------------------- |
@@ -74,14 +74,14 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Priority**              | P0                                                                                                                                   |
 | **Complexity**            | M                                                                                                                                    |
 | **Dependencies**          | `allocated_on` columns; `cash_allocation_history` for deleted rows                                                                   |
-| **Proposed architecture** | Original LinkBooks pure `ap-asat` maths + server loader (parallel to AR as-at)                                                       |
+| **Proposed architecture** | Original StreakBooks pure `ap-asat` maths + server loader (parallel to AR as-at)                                                       |
 | **Backend**               | `getAgedPayablesAsAt`                                                                                                                |
 | **Database**              | No new migration (reuse existing dated columns + archive)                                                                            |
 | **Frontend**              | Reports `AgedView` uses as-at path; basis copy updated                                                                               |
 | **Tests**                 | `ap-asat.test.ts`, updated `payables-integrity.test.ts`                                                                              |
 | **Acceptance**            | Past as-of includes bills paid after that date; unapplied payments/credits as negatives; currencies separate; future dates rejected  |
 | **Development status**    | Implemented on branch `feature/ap-asat-historical-aged-payables` (`467b33e9`+); period-close as-at follow-up in same PR              |
-| **PR reference**          | https://github.com/linkbusinessadvisory/LinkBooks/pull/229                                                                           |
+| **PR reference**          | https://github.com/streakbooks/StreakBooks/pull/229                                                                           |
 | **Release verification**  | Open — unit/module/`tsc` green locally; GitHub Actions fail with 0 jobs (commented `quality.yml`; restore via #227); staging not run |
 
 ## Detailed finding — Period close as-at (B1.1)
@@ -93,8 +93,8 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Missing/incomplete** | Period close called legacy aged AR/AP; after B1, AP rejected non-today `asOf`, so period-end lock checks broke |
 | **Priority**           | P0                                                                                                             |
 | **Development status** | Implemented on #229 branch (`period-close-subledger` + PeriodClosePanel)                                       |
-| **PR reference**       | https://github.com/linkbusinessadvisory/LinkBooks/pull/229                                                     |
-| **Originality**        | Adapter reuses LinkBooks as-at contracts; no competitor UI/code                                                |
+| **PR reference**       | https://github.com/streakbooks/StreakBooks/pull/229                                                     |
+| **Originality**        | Adapter reuses StreakBooks as-at contracts; no competitor UI/code                                                |
 
 ## Detailed finding — PO goods receipt (B2)
 
@@ -113,7 +113,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Frontend**             | Received/outstanding columns; Receive remaining goods                                                           |
 | **Tests**                | `po-receipt.test.ts`                                                                                            |
 | **Development status**   | Implemented on `feature/po-goods-receipt-foundation-20261117`                                                   |
-| **PR reference**         | https://github.com/linkbusinessadvisory/LinkBooks/pull/230                                                      |
+| **PR reference**         | https://github.com/streakbooks/StreakBooks/pull/230                                                      |
 | **Release verification** | Open — migration not applied to staging/prod in this session                                                    |
 
 ## Detailed finding — PO three-way match (B3)
@@ -126,7 +126,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Competitor reference** | Public three-way matching capability (order/receipt/invoice) — concepts only                                |
 | **Priority**             | P0                                                                                                          |
 | **Development status**   | Implemented on `feature/po-three-way-match-20261117` (stacked on #230)                                      |
-| **PR reference**         | https://github.com/linkbusinessadvisory/LinkBooks/pull/231                                                  |
+| **PR reference**         | https://github.com/streakbooks/StreakBooks/pull/231                                                  |
 | **Originality**          | Independent `po-three-way-match` maths; existing Settings registry key; no competitor UI/code               |
 | **Release verification** | Open — depends on #230 migration for receipt quantities; fail-closed when required and receipt data missing |
 
@@ -139,7 +139,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Missing/incomplete**   | Convert billed full ordered qty regardless of receipt; no `quantity_billed`; blocked further receive after first bill |
 | **Priority**             | P0                                                                                                                    |
 | **Development status**   | Implemented on `feature/po-partial-bill-from-received-20261117`                                                       |
-| **PR reference**         | https://github.com/linkbusinessadvisory/LinkBooks/pull/232                                                            |
+| **PR reference**         | https://github.com/streakbooks/StreakBooks/pull/232                                                            |
 | **Originality**          | Independent `po-partial-bill` maths; reuses existing convert RPC + bill authorise posting path                        |
 | **Honesty**              | No inventory/COGS valuation claimed; ledger posts only via bill authorisation                                         |
 | **Release verification** | Open — migrations #230/#B4 not applied live in this session                                                           |
@@ -153,8 +153,8 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Missing/incomplete**   | `voidBill` reversed journals but did not store `void_date`/`void_reason`; `purchase_bills` lacked columns (sales invoices already have void_date) |
 | **Priority**             | P0 (historical AP as-at honesty)                                                                                                                  |
 | **Development status**   | Implemented on `feature/bill-void-date-20261117`                                                                                                  |
-| **PR reference**         | https://github.com/linkbusinessadvisory/LinkBooks/pull/233                                                                                        |
-| **Originality**          | Reuses LinkBooks `ReasonDialog` + sales void dating pattern; independent purchases helper                                                         |
+| **PR reference**         | https://github.com/streakbooks/StreakBooks/pull/233                                                                                        |
+| **Originality**          | Reuses StreakBooks `ReasonDialog` + sales void dating pattern; independent purchases helper                                                         |
 | **Release verification** | Open — migration not applied live                                                                                                                 |
 
 ## Detailed finding — Supplier credit void_date (B6)
@@ -166,7 +166,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Missing/incomplete**   | `voidPurchaseCreditNote` reversed journals but did not require/store `void_date`/`void_reason` |
 | **Priority**             | P0 (historical AP as-at honesty)                                                               |
 | **Development status**   | Implemented on `feature/supplier-credit-void-date-20261117`                                    |
-| **PR reference**         | https://github.com/linkbusinessadvisory/LinkBooks/pull/234                                     |
+| **PR reference**         | https://github.com/streakbooks/StreakBooks/pull/234                                     |
 | **Originality**          | Shared `assertPurchaseDocVoidDate` with B5; ReasonDialog reuse; no competitor code             |
 | **Release verification** | Open — migration not applied live                                                              |
 
@@ -179,8 +179,8 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Missing/incomplete**   | Opening balance existed but voids excluded; not shared with AR statement engine; no BBF line |
 | **Priority**             | P0                                                                                           |
 | **Development status**   | Implemented on `feature/supplier-statement-opening-20261117`                                 |
-| **PR reference**         | https://github.com/linkbusinessadvisory/LinkBooks/pull/235                                   |
-| **Originality**          | Reuses LinkBooks AR `buildCustomerStatement` with supplier nouns; no competitor code         |
+| **PR reference**         | https://github.com/streakbooks/StreakBooks/pull/235                                   |
+| **Originality**          | Reuses StreakBooks AR `buildCustomerStatement` with supplier nouns; no competitor code         |
 | **Release verification** | Open — unit tests; void_date columns improve void honesty when #233/#234 applied             |
 
 ## Detailed finding — Supplier payment void_date + reason (B8)

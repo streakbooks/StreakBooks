@@ -1,6 +1,6 @@
 # Property Management — Supabase CI commands and migration
 
-Linked project: `ipxflpzfcqwtenodbxwc` (LinkBooks production / linked remote).
+Linked project: `ipxflpzfcqwtenodbxwc` (StreakBooks production / linked remote).
 
 **Do not** run blind `supabase db push` on this project — remote history has versions with no local file (see `docs/decisions/006-main-and-migrations.md`).
 
@@ -18,7 +18,7 @@ Verified after foundation+ops apply: `pm_properties` / `pm_tenants` / `pm_leases
 ## Apply (approved method)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 $env:SUPABASE_YES = "1"
 
 $path = "supabase\migrations\20261118170000_pm_posting_payouts_portals.sql"

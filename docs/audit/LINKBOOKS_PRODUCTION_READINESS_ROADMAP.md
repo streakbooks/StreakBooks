@@ -1,4 +1,4 @@
-# LinkBooks — Production Readiness Roadmap
+# StreakBooks — Production Readiness Roadmap
 
 **Audit date:** 19 Oct 2026  
 **Constraint:** This document proposes order of work only. **No fixes were implemented** in the audit.
@@ -9,7 +9,7 @@
 
 ## Verdict
 
-LinkBooks is **not production-ready** as an accounting SaaS. It is a **UI shell + Auth + company tenancy foundation**. Ship a production *accounting* product only after Phase 3+ below.
+StreakBooks is **not production-ready** as an accounting SaaS. It is a **UI shell + Auth + company tenancy foundation**. Ship a production *accounting* product only after Phase 3+ below.
 
 ---
 
@@ -193,9 +193,9 @@ Phase 0 Scope
 
 | Deliverable | Path |
 |-------------|------|
-| Current state | `docs/audit/LINKBOOKS_CURRENT_STATE_AUDIT.md` |
-| Feature matrix | `docs/audit/LINKBOOKS_FEATURE_IMPLEMENTATION_MATRIX.md` |
-| Risks | `docs/audit/LINKBOOKS_ARCHITECTURE_AND_ACCOUNTING_RISKS.md` |
-| This roadmap | `docs/audit/LINKBOOKS_PRODUCTION_READINESS_ROADMAP.md` |
+| Current state | `docs/audit/STREAKBOOKS_CURRENT_STATE_AUDIT.md` |
+| Feature matrix | `docs/audit/STREAKBOOKS_FEATURE_IMPLEMENTATION_MATRIX.md` |
+| Risks | `docs/audit/STREAKBOOKS_ARCHITECTURE_AND_ACCOUNTING_RISKS.md` |
+| This roadmap | `docs/audit/STREAKBOOKS_PRODUCTION_READINESS_ROADMAP.md` |
 
 **No application code, schemas, or deployments were modified to produce these documents.**

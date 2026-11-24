@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/portal/invite/$token")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Accept portal invitation — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Accept portal invitation — StreakBooks" }] }),
   component: AcceptInvite,
 });
 

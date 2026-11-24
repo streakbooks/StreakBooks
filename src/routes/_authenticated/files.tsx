@@ -124,7 +124,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/files")({
   validateSearch: parseFilesListSearch,
-  head: () => ({ meta: [{ title: "Files — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Files — StreakBooks" }] }),
   component: FilesPage,
 });
 
@@ -618,7 +618,7 @@ function FilesPage() {
   const copyInternalFileLink = async (attachmentId: string) => {
     try {
       await navigator.clipboard.writeText(internalFileUrl(window.location.origin, attachmentId));
-      toast.success("Private LinkBooks file link copied");
+      toast.success("Private StreakBooks file link copied");
     } catch {
       toast.error("Could not copy the link. Your browser may block clipboard access.");
     }
@@ -1489,7 +1489,7 @@ function FilesPage() {
             ) : null}
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Copied links open inside LinkBooks. The recipient must sign in and already have
+            Copied links open inside StreakBooks. The recipient must sign in and already have
             permission to access this file; this does not create a public share.
           </p>
           {showRenameFile && canManage(selected.entity_type) ? (

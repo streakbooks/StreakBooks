@@ -1,5 +1,5 @@
 {
-  // LinkBooks project Auto-review guidance (Cursor Run Mode).
+  // StreakBooks project Auto-review guidance (Cursor Run Mode).
   // Intentionally omits terminalAllowlist and mcpAllowlist so IDE / user allowlists
   // are preserved. autoRun only steers the Auto-review classifier — not a security boundary.
   // Effective when Settings → Agents → Approvals & Execution is Auto-review.

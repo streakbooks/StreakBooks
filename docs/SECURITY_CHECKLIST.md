@@ -1,4 +1,4 @@
-# LinkBooks — security checklist (MVP)
+# StreakBooks — security checklist (MVP)
 
 ## Must have before real client data
 

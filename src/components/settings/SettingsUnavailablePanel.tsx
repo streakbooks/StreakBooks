@@ -14,7 +14,7 @@ export function SettingsUnavailablePanel({ meta }: { meta: CategoryMeta }) {
             ? "Manage your assets and depreciation in the Fixed assets workspace. Additional configuration is not available here yet."
             : meta.id === "payroll"
               ? "Configure Basic Global Payroll in the Payroll workspace. Statutory tax engines are not included."
-              : `${meta.label} cannot be configured in this version of LinkBooks.`}
+              : `${meta.label} cannot be configured in this version of StreakBooks.`}
         </AlertDescription>
       </Alert>
       <Card>

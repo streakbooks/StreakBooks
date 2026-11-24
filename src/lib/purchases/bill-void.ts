@@ -1,5 +1,5 @@
 /**
- * Purchase document void dating rules (original LinkBooks).
+ * Purchase document void dating rules (original StreakBooks).
  * A recorded void_date is required for honest historical AP as-at (bills and supplier credits).
  */
 

@@ -52,7 +52,7 @@ export function AppStoreBillingPage() {
   return (
     <ListWorkspace
       title="App Billing"
-      description="Marketplace pricing models for catalogue apps. Separate from LinkBooks SaaS and Advisors billing. No charges are collected here."
+      description="Marketplace pricing models for catalogue apps. Separate from StreakBooks SaaS and Advisors billing. No charges are collected here."
       subnav={<AppStoreSubnav current="billing" />}
     >
       <Alert className="mb-6">
@@ -101,7 +101,7 @@ export function AppStoreBillingPage() {
                     <TableCell>{app.installStatus ?? "not_installed"}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {app.pricingModel === "free" || app.pricingModel === "external_billed"
-                        ? "No LinkBooks marketplace charge"
+                        ? "No StreakBooks marketplace charge"
                         : "Not activated — no charge"}
                     </TableCell>
                   </TableRow>

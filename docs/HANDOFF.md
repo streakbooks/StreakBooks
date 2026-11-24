@@ -100,7 +100,7 @@ SQL/rollback checks. See the current final report for exact scope and limitation
 BACKUP CONFIRMED. Before any hosted change, a logical backup of project
 `ipxflpzfcqwtenodbxwc` was taken with `supabase db dump --linked` (roles, public/private
 schema, auth+storage schema, all data incl. 26 auth tables) and kept off-repo on the
-owner's machine (`~/LinkBooks-backups/20261102-2121-pre-superadmin/`, SHA256SUMS
+owner's machine (`~/StreakBooks-backups/20261102-2121-pre-superadmin/`, SHA256SUMS
 alongside). It was restored into a disposable `supabase/postgres:17.11.0.003` container:
 222/222 tables, storage policies 9/9, and every user/app table row count matched live
 (only `auth.schema_migrations`/`storage.migrations` bookkeeping is excluded by the dump,
@@ -177,10 +177,10 @@ is claimed. Rollback SQL: `superadmin/rollbacks/disable-supervised-support.sql`.
 Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, all passed. Production build exit 0. Playwright had no seeded platform_owner: `e2e/superadmin-journeys.spec.ts` 2 passed and 2 skipped. Migration history is BLOCKED: Docker is not installed, and the only other Supabase project is LeadOrbit. READY-TO-APPLY and not applied: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, `20261102210000`, `20261102220000`, `20261102230000`, `20261102240000`, `20261102250000`, `20261102260000`, `20261102270000`, `20261102280000`, `20261102290000`, `20261102300000`, `20261102310000`, `20261102320000`, `20261102330000`, `20261102340000`, `20261102350000`, `20261102360000`, `20261102370000`, `20261102380000`, `20261102390000`, `20261102400000`, `20261102410000`, `20261102420000`, `20261102430000`, `20261102440000`, `20261102450000`, `20261102460000`, `20261102470000`, `20261102480000`, `20261102490000`, `20261102500000`, `20261102510000`, `20261102520000`, `20261102530000`, `20261102540000`, `20261102550000`, `20261102560000`, `20261102570000`, `20261102580000`, `20261102590000`, `20261102600000`, `20261102610000`, and the start-month backfill in `docs/superadmin/start-month-backfill.md`.
 
 - P0.1: typecheck exit 0, lint 0 errors and 23 warnings, 1279 unit tests passed, production build exit 0.
-- P0.2: `sk_live_` and `rzp_live_` are refused unless `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`. 15 provider-key tests passed.
+- P0.2: `sk_live_` and `rzp_live_` are refused unless `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`. 15 provider-key tests passed.
 - P0.3 BLOCKED: Playwright Chromium installed; public quote tests passed 2, grant/revoke skipped. Need Docker Desktop or Podman on PATH to seed a local platform_owner.
 - P0.4: definer audit written. `20261102180000` and `20261102180100` are READY-TO-APPLY and were not applied. Definer audit test passed.
-- P0.5 BLOCKED: no Docker and no LinkBooks staging project. Do not use LeadOrbit. Create an empty staging project or install Docker Desktop or Podman.
+- P0.5 BLOCKED: no Docker and no StreakBooks staging project. Do not use LeadOrbit. Create an empty staging project or install Docker Desktop or Podman.
 - P0.6: pull request 65 merged at `9fc4429` after verify and voice-browser succeeded.
 - Batch A: `attachQuote` tests passed, 4. A quote is not attached or granted without a Stripe test secret. No subscription row was written.
 - Batch A: second-approver decision tests passed, 3. Live walkthrough BLOCKED until a second platform user with approvals.manage exists.
@@ -249,7 +249,7 @@ Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, a
 - Write `BACKUP CONFIRMED` here before any hosted migration is applied.
 - Put a test-mode `STRIPE_SECRET_KEY` or Razorpay test keys in `.env.local` before provider calls.
 - Add a second platform user with `approvals.manage` for the kill-switch walkthrough.
-- Install Docker Desktop or Podman on PATH, or create an empty LinkBooks staging Supabase project. Do not use LeadOrbit.
+- Install Docker Desktop or Podman on PATH, or create an empty StreakBooks staging Supabase project. Do not use LeadOrbit.
 
 Date: 2 November 2026. `origin/main` is `9fc4429`. Further work goes through pull request 66. Do not push `main` directly.
 
@@ -283,13 +283,13 @@ Before applying a migration to project `ipxflpzfcqwtenodbxwc`: confirm a restore
 
 ## This follow-up
 
-- CI for `53cc3ec`: GitHub Actions run "LinkBooks verification" completed success. Checks `verify` and `voice-browser` completed success. `main` reports `protected=false`, and the branch-protection endpoint returned 404. The push was a direct fast-forward because the branch is not protected.
+- CI for `53cc3ec`: GitHub Actions run "StreakBooks verification" completed success. Checks `verify` and `voice-browser` completed success. `main` reports `protected=false`, and the branch-protection endpoint returned 404. The push was a direct fast-forward because the branch is not protected.
 - Pull request 62 is closed and GitHub marks it merged. A comment points at `3964c4b` and `53cc3ec`.
 - Migration history: `docs/superadmin/migration-history.md`. Remote data was not changed. Docker is not available here, so `supabase db reset` and a schema diff were not run.
 - `feature_dependencies` has row-level security, a SELECT grant to `authenticated`, and no policy. `supabase/migrations/20261102170000_feature_dependency_read.sql` adds that policy and is not applied.
 - Start-month backfill is a proposal only: `docs/superadmin/start-month-backfill.md`. It was not applied.
 - Playwright journeys: `e2e/superadmin-journeys.spec.ts`. Grant and revoke stay skipped unless `E2E_PLATFORM_STORAGE_STATE` and `E2E_PLATFORM_TEST_BUSINESS_ID` are set. The public quote tests did not run: the Playwright Chromium binary is not installed. The same quote was checked in the Cursor browser.
-- Deployed app `https://linkbooks-navy.vercel.app`: the sign-in page renders. `/pricing`, `/pricing/builder` and `/platform` return 404, and the deployed bundle does not contain the plan builder. A Vercel comment on pull request 62 says the GitHub account is not a member of the paxaris team, so `53cc3ec` was not deployed. No sign-in was attempted on that site.
+- Deployed app `https://streakbooks-navy.vercel.app`: the sign-in page renders. `/pricing`, `/pricing/builder` and `/platform` return 404, and the deployed bundle does not contain the plan builder. A Vercel comment on pull request 62 says the GitHub account is not a member of the paxaris team, so `53cc3ec` was not deployed. No sign-in was attempted on that site.
 - Local process environment has no `STRIPE_SECRET_KEY`, `RAZORPAY_KEY_ID` or `RAZORPAY_KEY_SECRET`. `.env` is absent. `.env.local` has no Stripe or Razorpay lines. The quote page says no test-mode payment provider is connected. `assertStripeTestKey` still accepts a `sk_live_` prefix; no such key is configured in this checkout.
 
 ## Outstanding

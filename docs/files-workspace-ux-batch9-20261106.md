@@ -47,12 +47,12 @@ Status: **source code committed**. No local TypeScript/lint/unit/build execution
 ## Local PowerShell verification — no manual GitHub Actions
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git fetch origin
 git worktree list
 # Create only if the destination does not already exist:
-git worktree add --detach D:\MyApp\LinkBooks-Files-B9 origin/feature/files-workspace-ux-20261106
-cd D:\MyApp\LinkBooks-Files-B9
+git worktree add --detach D:\MyApp\StreakBooks-Files-B9 origin/feature/files-workspace-ux-20261106
+cd D:\MyApp\StreakBooks-Files-B9
 npm.cmd ci
 npm.cmd run typecheck
 npm.cmd run lint

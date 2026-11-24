@@ -77,18 +77,18 @@ function downloadImportCsv(content: string, filename: string) {
 function downloadBankTemplate() {
   downloadImportCsv(
     importTemplateCsv(getImportDefinition("banking", "Bank transactions")),
-    "linkbooks-bank-transactions-template.csv",
+    "streakbooks-bank-transactions-template.csv",
   );
 }
 function downloadBankDictionary() {
   downloadImportCsv(
     importFieldDictionaryCsv(getImportDefinition("banking", "Bank transactions")),
-    "linkbooks-bank-import-field-guide.csv",
+    "streakbooks-bank-import-field-guide.csv",
   );
 }
 
 const storageKey = (companyId: string, bankAccountId: string) =>
-  `linkbooks.bankImportMapping.${companyId}.${bankAccountId}`;
+  `streakbooks.bankImportMapping.${companyId}.${bankAccountId}`;
 
 function readLocalMapping(companyId: string, bankAccountId: string): ImportMapping | null {
   try {
@@ -399,7 +399,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
         <div className="space-y-2">
           <h2 className="font-semibold">Prepare your bank statement</h2>
           <p className="text-sm text-muted-foreground">
-            Export CSV, OFX, QFX or QIF from your bank, or use the LinkBooks CSV template. Import
+            Export CSV, OFX, QFX or QIF from your bank, or use the StreakBooks CSV template. Import
             one bank account at a time. Positive amounts are money received and negative amounts are
             money spent.
           </p>

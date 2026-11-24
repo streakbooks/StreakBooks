@@ -27,7 +27,7 @@ Keep `allow_customer` / `allow_vendor` off until portal isolation passes.
 ## Manual staging checklist
 
 1. Enable messaging for a test org; confirm `/messages` loads.  
-2. Two browsers: DM send appears for peer within 30s (`LINKBOOKS_E2E_MESSAGING=1`).  
+2. Two browsers: DM send appears for peer within 30s (`STREAKBOOKS_E2E_MESSAGING=1`).  
 3. Portal customer: Message Business on invoice; another customer cannot open it.  
 4. Firm user: accountant chat under client A is absent under client B.  
 5. Mute 8h / archive / unarchive / rename group / remove member.  

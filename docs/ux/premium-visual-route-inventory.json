@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "title": "LinkBooks premium visual redesign \u2014 route-level acceptance inventory",
-  "repository": "linkbusinessadvisory/LinkBooks",
+  "title": "StreakBooks premium visual redesign \u2014 route-level acceptance inventory",
+  "repository": "streakbooks/StreakBooks",
   "branch": "integration/all-pending-20261118",
   "baseRevision": "48421b1c710f7e4f3dd50e4a496e4fe4c3723ed9",
   "scopeStatement": "No authenticated, support, public, forms, overlays, workflow screens or future module is excluded. An inventory entry is not a test result.",
@@ -996,7 +996,7 @@
       "requiredAction": "Review App Store UI and security, reconcile separate branches in an isolated checkout, then theme and visually verify full marketplace routes; do not copy/overwrite Cursor work"
     },
     {
-      "name": "LinkBooks Signal",
+      "name": "StreakBooks Signal",
       "status": "Internal voice components; no single dedicated route",
       "requiredAction": "Audit command and voice overlays, focus, contrast, palette behaviour"
     },

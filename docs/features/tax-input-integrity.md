@@ -3,7 +3,7 @@
 **P0 financial integrity** · 4 November 2026 · **No tax-rate, filing, schema or dependency changes.**
 
 ## Existing behavior
-The LinkBooks tax calculation already uses BigInt for line totals and applies an existing half-up rule for the tax component. It accepts quantity as a JS number and multiplies by a one-million scale. Before this change, `BigInt(number)` could receive an unsafe rounded monetary Number, quantities with more than six decimals were rounded silently, and an unknown runtime tax treatment was treated as tax-inclusive.
+The StreakBooks tax calculation already uses BigInt for line totals and applies an existing half-up rule for the tax component. It accepts quantity as a JS number and multiplies by a one-million scale. Before this change, `BigInt(number)` could receive an unsafe rounded monetary Number, quantities with more than six decimals were rounded silently, and an unknown runtime tax treatment was treated as tax-inclusive.
 
 ## Independent implementation
 - Reject non-safe-integer numeric minor units; require `bigint` for values beyond the JavaScript safe integer range.
@@ -15,4 +15,4 @@ The LinkBooks tax calculation already uses BigInt for line totals and applies an
 Vitest tests for unsafe price/discount numbers, minuscule and fractional quantities, invalid treatment, six-place quantities, exact BigInt amounts and unchanged half-up tax calculations. Require exact-head GitHub TypeScript, ESLint, unit, isolated PostgreSQL and production build. Authenticated tax-report fixtures, country-specific tax control reconciliation, HMRC MTD, ATO BAS, IRD filing and US state filing integrations remain separate regulatory work.
 
 ## Clean-room and licensing
-Derived solely from LinkBooks accounting invariants and numeric safety, not Odoo/Xero code, templates or layouts. No npm dependencies, migrations or live Supabase writes.
+Derived solely from StreakBooks accounting invariants and numeric safety, not Odoo/Xero code, templates or layouts. No npm dependencies, migrations or live Supabase writes.

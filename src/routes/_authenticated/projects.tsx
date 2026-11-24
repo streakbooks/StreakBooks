@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/projects")({
       raw["create"] === 1;
     return create ? { create: true } : {};
   },
-  head: () => ({ meta: [{ title: "Projects — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Projects — StreakBooks" }] }),
   component: ProjectsPage,
 });
 

@@ -19,7 +19,7 @@ const COMMON = [
   "monkey",
   "dragon",
   "football",
-  "linkbooks",
+  "streakbooks",
   "123456",
   "abc123",
 ];

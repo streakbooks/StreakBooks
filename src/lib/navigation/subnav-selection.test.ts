@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { activeSubnavIndex } from "./subnav-selection";
 
-describe("shared LinkBooks submenu active selection", () => {
+describe("shared StreakBooks submenu active selection", () => {
   const tabs = [
     { to: "/sales", label: "Overview", exact: true },
     { to: "/sales/invoices", label: "Invoices" },

@@ -44,7 +44,7 @@ const GROUPS: Array<{ label: string; ids: SettingsCategory[] }> = [
   { label: "Firm & plan", ids: ["accountant", "subscription", "demo"] },
 ];
 
-const NAV_KEY = "linkbooks.settings.nav.open";
+const NAV_KEY = "streakbooks.settings.nav.open";
 
 type Props = {
   section: string;

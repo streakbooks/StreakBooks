@@ -9,7 +9,7 @@ Property managers, landlords and accountants need STR + LTR operations with owne
 ## Goals
 
 1. Operate hybrid portfolios (STR, LTR, mixed) in one company.  
-2. Reuse LinkBooks accounting — never a second GL.  
+2. Reuse StreakBooks accounting — never a second GL.  
 3. Produce explainable, reproducible owner statements.  
 4. Calculate commissions, reserves and eligible payouts safely.  
 5. Provide secure owner and tenant portals.  

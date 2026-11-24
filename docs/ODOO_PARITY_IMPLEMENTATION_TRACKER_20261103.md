@@ -1,6 +1,6 @@
 # Odoo accounting parity — staged implementation register (2026-11-03)
 
-Authoritative repository: linkbusinessadvisory/LinkBooks. Keep independent LinkBooks UI and source code. The owner requested all P0–P3 functionality. An unchecked item is NOT completed merely because a route, test, or plan exists.
+Authoritative repository: streakbooks/StreakBooks. Keep independent StreakBooks UI and source code. The owner requested all P0–P3 functionality. An unchecked item is NOT completed merely because a route, test, or plan exists.
 
 ## Delivery policy
 

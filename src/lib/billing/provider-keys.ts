@@ -1,5 +1,5 @@
 /** Live provider keys stay off unless this exact value is set. */
-export const LIVE_PAYMENT_KEYS_FLAG = "LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS";
+export const LIVE_PAYMENT_KEYS_FLAG = "STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS";
 
 type Env = Record<string, string | undefined>;
 
@@ -12,7 +12,7 @@ export function assertStripeTestKey(secret: string, env: Env = process.env): voi
   if (secret.startsWith("sk_test_")) return;
   if (secret.startsWith("sk_live_") && livePaymentKeysAllowed(env)) return;
   if (secret.startsWith("sk_live_")) {
-    throw new Error("Stripe live keys are refused unless LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true.");
+    throw new Error("Stripe live keys are refused unless STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true.");
   }
   throw new Error("Stripe secret must start with sk_test_.");
 }
@@ -23,7 +23,7 @@ export function assertRazorpayTestKey(keyId: string, env: Env = process.env): vo
   if (keyId.startsWith("rzp_live_") && livePaymentKeysAllowed(env)) return;
   if (keyId.startsWith("rzp_live_")) {
     throw new Error(
-      "Razorpay live keys are refused unless LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true.",
+      "Razorpay live keys are refused unless STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true.",
     );
   }
   throw new Error("Razorpay key must start with rzp_test_.");

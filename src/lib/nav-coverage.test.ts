@@ -35,7 +35,7 @@ const REQUIRED_MODULES = [
   ["Help", "/help"],
 ] as const;
 
-describe("Full LinkBooks top-level navigation coverage", () => {
+describe("Full StreakBooks top-level navigation coverage", () => {
   it("registers every required navigation exactly once", () => {
     expect(navItems).toHaveLength(REQUIRED_MODULES.length);
     expect(new Set(navItems.map((item) => item.to)).size).toBe(navItems.length);

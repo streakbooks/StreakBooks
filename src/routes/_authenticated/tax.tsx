@@ -54,7 +54,7 @@ export const Route = createFileRoute("/_authenticated/tax")({
   }),
   head: () => ({
     meta: [
-      { title: "Tax configuration — LinkBooks" },
+      { title: "Tax configuration — StreakBooks" },
       {
         name: "description",
         content: "Organisation tax rates, codes and account mappings.",
@@ -268,7 +268,7 @@ function TaxConfigPage() {
       <Alert className="mb-6">
         <AlertTitle>Calculation &amp; reporting, not e-filing</AlertTitle>
         <AlertDescription>
-          LinkBooks calculates tax on documents and reports control-account movements. It does not
+          StreakBooks calculates tax on documents and reports control-account movements. It does not
           claim MTD, BAS, GSTN, IRS, or electronic filing. Country packs are configuration scaffolds
           — verify rates against official sources. Changing settings never rewrites posted journals.
         </AlertDescription>

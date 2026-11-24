@@ -52,7 +52,7 @@ export function PaymentOperationsAdmin({
         <p className="max-w-3xl text-sm text-muted-foreground">
           Providers run in test mode unless the server allows live keys. A country takes paid
           checkouts only after it is opened here, once provider eligibility and tax registration are
-          confirmed outside LinkBooks.
+          confirmed outside StreakBooks.
         </p>
       </header>
       {query.isLoading ? <p className="text-sm">Loading payment settings…</p> : null}

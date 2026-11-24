@@ -32,7 +32,7 @@ test("create deadlines, protect self review and read-only work, export evidence 
   await expect(page.getByRole("row").filter({ hasText: "Reconcile October bank" })).toHaveCount(0);
   const downloading = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export work CSV" }).click();
-  expect((await downloading).suggestedFilename()).toBe("linkbooks-practice-work.csv");
+  expect((await downloading).suggestedFilename()).toBe("streakbooks-practice-work.csv");
   await page.getByLabel("Accounting month", { exact: true }).fill("2026-10");
   await page.getByLabel("Month-end deadline", { exact: true }).fill("2026-11-07");
   await page.getByRole("button", { name: "Generate month-end work", exact: true }).click();

@@ -116,10 +116,10 @@ for (const mode of ["light", "dark"]) {
       await page.setViewportSize({ width: 375, height: 812 });
       await page.addInitScript(
         ({ mode, palette }) => {
-          localStorage.setItem("linkbooks-theme", mode);
-          localStorage.setItem("linkbooks-theme-palette", palette);
+          localStorage.setItem("streakbooks-theme", mode);
+          localStorage.setItem("streakbooks-theme-palette", palette);
           localStorage.setItem(
-            "linkbooks-theme-custom",
+            "streakbooks-theme-custom",
             JSON.stringify({
               primary: "#ffffff",
               sidebar: "#ffffff",
@@ -131,7 +131,7 @@ for (const mode of ["light", "dark"]) {
         { mode, palette },
       );
       await page.goto("/?flow=accessibility");
-      await expect(page.locator("html")).toHaveAttribute("data-linkbooks-palette", palette);
+      await expect(page.locator("html")).toHaveAttribute("data-streakbooks-palette", palette);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

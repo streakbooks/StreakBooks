@@ -5,7 +5,7 @@ Compare implemented product against `LLM-DESIGN-REFERENCE.md`.
 
 | LLM surface | Implemented | Backend | Diff / gap | Batch |
 |-------------|-------------|---------|------------|-------|
-| Navigation hierarchy (24 sections) | Yes — `HR_SECTIONS` | Route registry | Labels match LLM; groups are LinkBooks IA (Workspace/People/Time/Talent/Lifecycle/Insights/Admin) | HR-02 |
+| Navigation hierarchy (24 sections) | Yes — `HR_SECTIONS` | Route registry | Labels match LLM; groups are StreakBooks IA (Workspace/People/Time/Talent/Lifecycle/Insights/Admin) | HR-02 |
 | HR Overview KPIs | Yes | `get_hr_dashboard_kpis` | Pending approvals now include attendance corrections + leave requests (after HR-05/06 migrations); expiring documents still 0 until HR-08 | HR-02 |
 | Employees directory + profile | Yes | list/get/upsert profile RPCs | Create employee still via Payroll (by design — shared identity) | HR-02 |
 | Organization CRUD + hierarchy | Yes | org unit RPCs | Interactive graphical org chart not yet; hierarchy list present | HR-03 |
@@ -26,7 +26,7 @@ Compare implemented product against `LLM-DESIGN-REFERENCE.md`.
 ## Accepted differences (originality / architecture)
 
 1. Shared employee master lives in Payroll tables — LLM “Employees” UI is HR-owned presentation.
-2. Visual composition follows LinkBooks premium shell, not a competitor mock.
+2. Visual composition follows StreakBooks premium shell, not a competitor mock.
 3. Fail-closed later-batch screens remain registered (deep links) without fake data.
 4. Attendance correction submit allows `hr.attendance.manage` or `hr.manager`; employee self-service punch/request scope is HR-07.
 5. Leave upsert allows draft/submitted/cancelled; approve/reject goes through `decide_hr_leave_request` with balance mutation.

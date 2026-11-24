@@ -142,7 +142,7 @@ export function TaxOverviewPanel({
               <Badge variant="secondary">Storage unavailable</Badge>
             )}
             <p className="text-xs text-muted-foreground">
-              Recorded as filed in LinkBooks, not submitted electronically.
+              Recorded as filed in StreakBooks, not submitted electronically.
             </p>
             <div>
               <Shortcut tab="returns">Review returns</Shortcut>
@@ -184,7 +184,7 @@ export function TaxOverviewPanel({
         <AlertTitle>Tax reporting scope</AlertTitle>
         <AlertDescription>
           Tax configuration and return calculations depend on posted documents and organisation
-          settings. LinkBooks does not submit returns to authorities, verify local tax rates or
+          settings. StreakBooks does not submit returns to authorities, verify local tax rates or
           certify statutory compliance.
         </AlertDescription>
       </Alert>

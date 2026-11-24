@@ -24,7 +24,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 export const Route = createFileRoute("/_authenticated/sales/")({
   head: () => ({
     meta: [
-      { title: "Sales — LinkBooks" },
+      { title: "Sales — StreakBooks" },
       { name: "description", content: "Customer invoices, receipts and credit notes." },
     ],
   }),

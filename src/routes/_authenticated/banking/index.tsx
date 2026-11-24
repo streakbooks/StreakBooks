@@ -41,7 +41,7 @@ import {
 export const Route = createFileRoute("/_authenticated/banking/")({
   head: () => ({
     meta: [
-      { title: "Banking — LinkBooks" },
+      { title: "Banking — StreakBooks" },
       { name: "description", content: "Bank and cash accounts, CSV import and reconciliation." },
     ],
   }),

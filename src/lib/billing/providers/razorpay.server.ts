@@ -5,7 +5,7 @@ import {
   type PaymentMode,
 } from "@/lib/billing/providers/normalise";
 
-/** Server-only Razorpay client. Test keys unless LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true. */
+/** Server-only Razorpay client. Test keys unless STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true. */
 export type RazorpayClient = {
   mode: PaymentMode;
   request: (
@@ -76,7 +76,7 @@ export async function createRazorpayPlan(
     period: input.interval === "year" ? "yearly" : "monthly",
     interval: 1,
     item: {
-      name: `LinkBooks ${input.planName}`,
+      name: `StreakBooks ${input.planName}`,
       amount: input.amountMinor,
       currency: input.currency,
     },

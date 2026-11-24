@@ -1,13 +1,13 @@
-# LinkBooks — Current State Audit
+# StreakBooks — Current State Audit
 
 **Audit date:** 19 Oct 2026  
-**Scope:** Repository `/Users/rohitm/paxaris-repos/LinkBooks` (fork `rohitmehra86/LinkBooks`)  
+**Scope:** Repository `/Users/rohitm/paxaris-repos/StreakBooks` (fork `streakbooks/StreakBooks`)  
 **Mode:** Read-only inspection. No application, schema, or deployment changes made during this audit.  
 **Tests run:** `npx tsc --noEmit`, `npm run lint` (evidence below). No E2E or accounting tests exist or were executed.
 
 ## Requirements baseline note
 
-The file **"LinkBooks — Full Product Scope and Implementation Standard.md"** was **not found** in the repository, Desktop, Downloads, or a shallow home search.  
+The file **"StreakBooks — Full Product Scope and Implementation Standard.md"** was **not found** in the repository, Desktop, Downloads, or a shallow home search.  
 
 **Proxies used as product baseline:**
 
@@ -125,7 +125,7 @@ Documented and present in migrations: `is_company_member`, role checks, create-c
 
 - No `supabase/functions/` directory
 - No storage bucket migrations found
-- `src/integrations/supabase/cron-auth.ts` references `LOVABLE_CRON_SECRET` — Lovable cron auth helper; no scheduled jobs defined in-repo
+- `src/integrations/supabase/cron-auth.ts` references `STREAKBOOKS_CRON_SECRET` — Lovable cron auth helper; no scheduled jobs defined in-repo
 
 ### Key / secret risks
 
@@ -154,7 +154,7 @@ Documented and present in migrations: `is_company_member`, role checks, create-c
 
 ## D. Modules (summary)
 
-See `LINKBOOKS_FEATURE_IMPLEMENTATION_MATRIX.md` for full classification.
+See `STREAKBOOKS_FEATURE_IMPLEMENTATION_MATRIX.md` for full classification.
 
 **Headline:** Most product modules are **UI shells / empty states**. Company multi-tenancy is **backend partial**. Auth is **working (UI + Supabase Auth)**. Accounting engine is **absent**.
 
@@ -164,7 +164,7 @@ See `LINKBOOKS_FEATURE_IMPLEMENTATION_MATRIX.md` for full classification.
 
 | Item | Finding |
 |------|---------|
-| Host | Vercel project `paxaris/linkbooks`; production URL documented in `docs/VERCEL.md` as `https://linkbooks-navy.vercel.app` |
+| Host | Vercel project `paxaris/streakbooks`; production URL documented in `docs/VERCEL.md` as `https://streakbooks-navy.vercel.app` |
 | Config | No `vercel.json`; Nitro `preset: "vercel"` in `vite.config.ts` |
 | Env separation | Local `.env` + Vercel Production/Preview env vars (set in prior session); no formal staging Supabase project documented |
 | Migrations workflow | SQL files in repo; applied manually via dashboard for new project; CLI link/login incomplete historically |

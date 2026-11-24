@@ -29,7 +29,7 @@ import {
 export const Route = createFileRoute("/_authenticated/reports/")({
   head: () => ({
     meta: [
-      { title: "Reports Centre — LinkBooks" },
+      { title: "Reports Centre — StreakBooks" },
       {
         name: "description",
         content:

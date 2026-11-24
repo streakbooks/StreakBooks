@@ -1,12 +1,12 @@
-# LinkBooks Fixed Assets — Competitive Benchmark and Engineering Acceptance
+# StreakBooks Fixed Assets — Competitive Benchmark and Engineering Acceptance
 
 Review date: **2026-10-30**. This is a scope/feature comparison of **16** relevant accounting products, not a claim that every feature has been verified in the latest edition of every product. Sources and limits are explicit.
 
-## Benchmark: lessons for LinkBooks
+## Benchmark: lessons for StreakBooks
 
-| Platform | Evidence-based observation or review focus | LinkBooks implementation implication |
+| Platform | Evidence-based observation or review focus | StreakBooks implementation implication |
 |---|---|---|
-| Xero | Fixed asset CSV import creates draft assets, then bulk registration with user-role control. [Xero import](https://central.xero.com/0/article/Import-fixed-assets-UK), [Xero register](https://central.xero.com/0/article/Register-fixed-assets) | Validate then approve/register; protect posting roles. Current LinkBooks CSV creates active records; draft/approval remains a **gap**. |
+| Xero | Fixed asset CSV import creates draft assets, then bulk registration with user-role control. [Xero import](https://central.xero.com/0/article/Import-fixed-assets-UK), [Xero register](https://central.xero.com/0/article/Register-fixed-assets) | Validate then approve/register; protect posting roles. Current StreakBooks CSV creates active records; draft/approval remains a **gap**. |
 | QuickBooks Online Advanced | Fixed Asset Manager supports importing assets and reviewing asset drafts. [Intuit](https://quickbooks.intuit.com/learn-support/en-ca/help-article/fixed-assets/add-manage-fixed-assets-quickbooks-online-advanced/L19788yU0_CA_en_CA) | Keep imported assets linked to supporting documents with review states. |
 | Zoho Books | Import flow includes template, field mapping, field mapping reuse and preview; depreciation history/forecast. [Zoho](https://www.zoho.com/us/books/help/accountant/fixed-assets.html) | CSV mapping and validated preview in PR #31; saved mappings and forecast enhancements remain backlog. |
 | Sage Intacct | Fixed asset workflow includes multi-entity controls, GL dimensions, depreciation schedules and asset life-cycle management. [Sage](https://www.sage.com/en-us/sage-business-cloud/intacct/product-capabilities/extended-capabilities/fixed-assets/) | Plan dimensional allocations, multiple entities/books, capital work in progress and full lifecycle audit. |
@@ -17,7 +17,7 @@ Review date: **2026-10-30**. This is a scope/feature comparison of **16** releva
 | SAP Business One | Fiscal-year-targeted import of fixed asset master data from Excel with reusable field mappings. [SAP Help](https://help.sap.com/docs/sap_business_one/68a2e87fb29941b5bf959a184d9c6727/380dfb8b857841538a98593002d74493.html) | Preserve cutover fiscal dates and reusable mapping; current PR provides mapping but not persistent templates. |
 | MYOB (Business/Practice) | MYOB Fixed Assets workpaper imports cost and accumulated depreciation with account-code mapping; product variations differ. [MYOB](https://www.myob.com/au/support/myob-practice/client-accounting/using-client-accounting/importing-assets-data-into-fixed-assets-workpaper) | Reconcile fixed assets to ledger and avoid assuming all MYOB tiers provide native FA CSV imports. |
 | Sage Accounting | Depreciation can be posted via regular journals; capabilities differ from Sage Intacct and Sage 50. [Sage](https://gb-kb.sage.com/portal/app/portlets/results/viewsolution.jsp?solutionid=222001000100814) | Keep separate ledger posting engines and control account validation. |
-| Wave | Depreciation documented through manual depreciation journals. [Wave](https://support.waveapps.com/hc/en-us/articles/208623506-Depreciation-in-Wave) | LinkBooks should offer scheduled depreciation and audit beyond basic journals. |
+| Wave | Depreciation documented through manual depreciation journals. [Wave](https://support.waveapps.com/hc/en-us/articles/208623506-Depreciation-in-Wave) | StreakBooks should offer scheduled depreciation and audit beyond basic journals. |
 | FreshBooks | Manual journals for fixed assets and depreciation are available with the appropriate accounting access. [FreshBooks](https://support.freshbooks.com/hc/en-us/articles/360001212251-What-are-journal-entries) | A full asset register and controlled amortization should exceed journal-only workflows. |
 | Manager.io | Batch Create/Update processes in many modules; asset records and depreciation journal options. [Manager batch](https://www2.manager.io/guides/9572) | Bulk data import, idempotent updates and correction controls. |
 | Akaunting | General-purpose open-source modular accounting platform; **a native full fixed asset CSV import is not verified from a primary source in this review**. | Benchmark modular extensibility but do not assume feature parity. |

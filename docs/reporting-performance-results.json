@@ -1,7 +1,7 @@
 {
   "environment": {
     "database": "PostgreSQL 17 Docker",
-    "container": "linkbooks-reporting-qa",
+    "container": "streakbooks-reporting-qa",
     "cpus": 2,
     "memoryMiB": 768,
     "transport": "local docker exec / psql, includes process overhead",

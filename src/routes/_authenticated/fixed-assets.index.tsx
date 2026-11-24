@@ -96,7 +96,7 @@ export const Route = createFileRoute("/_authenticated/fixed-assets/")({
     ...parseFixedAssetRegisterSearch(raw),
     ...(parseCreateSearchFlag(raw) ? { create: true } : {}),
   }),
-  head: () => ({ meta: [{ title: "Fixed assets — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Fixed assets — StreakBooks" }] }),
   component: FixedAssetsPage,
 });
 
@@ -816,7 +816,7 @@ function exportAssetRegisterCsv(
     );
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "linkbooks-fixed-assets-" + asOf + ".csv";
+    anchor.download = "streakbooks-fixed-assets-" + asOf + ".csv";
     anchor.click();
     URL.revokeObjectURL(url);
   } catch (error) {

@@ -39,11 +39,11 @@ export const htmlDigest = (
   alerts: Array<{ title: string; body: string; priority: string }>,
   escapeHtml: (s: string) => string,
 ): string =>
-  `<h2>LinkBooks action summary — ${escapeHtml(name)}</h2><ol>${alerts
+  `<h2>StreakBooks action summary — ${escapeHtml(name)}</h2><ol>${alerts
     .map(
       (a) =>
         `<li><strong>${escapeHtml(a.title)}</strong> (${escapeHtml(a.priority)})<p>${escapeHtml(a.body)}</p></li>`,
     )
     .join(
       "",
-    )}</ol><p>Sign in to LinkBooks to review these items. This email cannot approve, reconcile, or post financial records.</p>`;
+    )}</ol><p>Sign in to StreakBooks to review these items. This email cannot approve, reconcile, or post financial records.</p>`;

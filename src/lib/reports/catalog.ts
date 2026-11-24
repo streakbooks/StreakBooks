@@ -1,4 +1,4 @@
-/** LinkBooks Reports Centre catalogue — only list reports that are operational or transparently blocked. */
+/** StreakBooks Reports Centre catalogue — only list reports that are operational or transparently blocked. */
 
 export type ReportStatus = "ready" | "depends";
 

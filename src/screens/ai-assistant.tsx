@@ -128,7 +128,7 @@ const STARTERS: Array<{ intent: AiIntent; label: string; prompt: string }> = [
   {
     intent: "navigate",
     label: "Where do I reconcile?",
-    prompt: "Where can I reconcile a bank account in LinkBooks?",
+    prompt: "Where can I reconcile a bank account in StreakBooks?",
   },
   {
     intent: "explain",
@@ -394,7 +394,7 @@ function AiAssistantWorkspace({
         <ShieldCheck className="size-4" />
         <AlertTitle>Human-reviewed accounting assistance</AlertTitle>
         <AlertDescription>
-          Calculated results are based on limited LinkBooks samples; model responses may be
+          Calculated results are based on limited StreakBooks samples; model responses may be
           inaccurate. Only validated journal drafts can be posted after a separate review. Access
           controls and posting checks remain authoritative.
         </AlertDescription>

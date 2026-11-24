@@ -9,7 +9,7 @@ const record = {
   target: "production",
   meta: {
     githubOrg: "linkbusinessadvisory",
-    githubRepo: "LinkBooks",
+    githubRepo: "StreakBooks",
     githubCommitRef: "main",
     githubCommitSha: sha,
   },
@@ -18,7 +18,7 @@ const record = {
 test("approves matching production deployment evidence", () => {
   assert.deepEqual(validateActionCenterDeployment(record, sha), {
     deploymentId: "dpl_test123",
-    repository: "linkbusinessadvisory/LinkBooks",
+    repository: "streakbooks/StreakBooks",
     approvedCommit: sha,
     branch: "main",
     target: "production",

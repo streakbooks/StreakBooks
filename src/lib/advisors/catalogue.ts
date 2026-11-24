@@ -1,5 +1,5 @@
 /**
- * LinkBooks Advisors public catalogue defaults.
+ * StreakBooks Advisors public catalogue defaults.
  * Database-published rows override these when the Advisors migration is applied.
  * Prices are proposed defaults only — administrators change them in later batches.
  */
@@ -62,7 +62,7 @@ export const ADVISORS_EXCLUSIONS = [
 ] as const;
 
 export const ADVISORS_LANDING = {
-  brandTitle: "LinkBooks Advisors",
+  brandTitle: "StreakBooks Advisors",
   heading: "Your business deserves better financial clarity.",
   supporting: "Choose expert bookkeeping support or learn to manage your books with confidence.",
 } as const;

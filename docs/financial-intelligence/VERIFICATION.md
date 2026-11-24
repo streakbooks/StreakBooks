@@ -2,9 +2,9 @@
 
 Current continuation: [Batch 05 scoped Coding Memory reset](BATCH-05-SCOPED-MEMORY-RESET.md). Earlier counts and failed baseline gates below are historical; use the latest batch evidence for current status.
 
-Result: PARTIALLY COMPLETED. [Draft PR #225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225) is open; no merge requested or performed. [Main baseline](https://github.com/linkbusinessadvisory/LinkBooks/commit/a2a8a79efbf8ad11b0aa64bd00a7e64095ba0484). [Code commit](https://github.com/linkbusinessadvisory/LinkBooks/commit/743c73fcddf9611657c8b0d3a2c0351bf3de4bc6). Documentation-only follow-up does not alter tested runtime source.
+Result: PARTIALLY COMPLETED. [Draft PR #225](https://github.com/streakbooks/StreakBooks/pull/225) is open; no merge requested or performed. [Main baseline](https://github.com/streakbooks/StreakBooks/commit/a2a8a79efbf8ad11b0aa64bd00a7e64095ba0484). [Code commit](https://github.com/streakbooks/StreakBooks/commit/743c73fcddf9611657c8b0d3a2c0351bf3de4bc6). Documentation-only follow-up does not alter tested runtime source.
 
-Environment: isolated Linux cloud worktree `/workspace/work/linkbooks`, Node 24.19.0, npm 11.9.0. `npm ci` succeeded using the authoritative repository lockfile (646 packages). Initial borrowed dependencies lacked a font required by authoritative main; that preliminary build failed, then was superseded by a clean installation and successful build. No dependency manifests were changed. Initial typecheck detected one new test index-signature diagnostic; it was fixed before the code commit. Full final status is recorded below.
+Environment: isolated Linux cloud worktree `/workspace/work/streakbooks`, Node 24.19.0, npm 11.9.0. `npm ci` succeeded using the authoritative repository lockfile (646 packages). Initial borrowed dependencies lacked a font required by authoritative main; that preliminary build failed, then was superseded by a clean installation and successful build. No dependency manifests were changed. Initial typecheck detected one new test index-signature diagnostic; it was fixed before the code commit. Full final status is recorded below.
 
 | Check / exact command                                                                                                                                                                                                 | Result / scope                                                                                                                                                                                                                                                                                                                                         | Revision                           |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
@@ -25,15 +25,15 @@ Environment: isolated Linux cloud worktree `/workspace/work/linkbooks`, Node 24.
 
 ## Local PowerShell review
 
-The cloud checkout does not modify `D:\MyApp\LinkBooks`. Pulling main does not retrieve draft work. Inspect and protect existing changes before switching. Use a dedicated test organisation for any accounting mutations.
+The cloud checkout does not modify `D:\MyApp\StreakBooks`. Pulling main does not retrieve draft work. Inspect and protect existing changes before switching. Use a dedicated test organisation for any accounting mutations.
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 if (git status --porcelain) { throw "Commit or stash your changes before continuing." }
 git remote -v
 # Fetch the authoritative repository explicitly; preserve existing remotes.
-git fetch https://github.com/linkbusinessadvisory/LinkBooks.git feature/financial-intelligence-foundation
+git fetch https://github.com/streakbooks/StreakBooks.git feature/financial-intelligence-foundation
 if ($LASTEXITCODE -ne 0) { throw "Fetch failed." }
 git switch -c review/financial-intelligence-225 FETCH_HEAD
 if ($LASTEXITCODE -ne 0) { throw "Branch switch failed; do not reset local work." }

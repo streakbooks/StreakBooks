@@ -19,4 +19,4 @@ Migration `20261106140000_advisors_chat_leads.sql` stores conversations, message
 
 ## AI security
 
-Uses LinkBooks deterministic catalogue guidance by default. Existing `src/lib/ai` secrets are not exposed to the browser. Public chats do not read tenant accounting records.
+Uses StreakBooks deterministic catalogue guidance by default. Existing `src/lib/ai` secrets are not exposed to the browser. Public chats do not read tenant accounting records.

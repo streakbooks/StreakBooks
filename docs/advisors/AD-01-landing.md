@@ -2,7 +2,7 @@
 
 ## Intent
 
-Ship a public LinkBooks Advisors entry point with exactly two services, original illustrations, persisted catalogue defaults, and selection that never opens a chatbot.
+Ship a public StreakBooks Advisors entry point with exactly two services, original illustrations, persisted catalogue defaults, and selection that never opens a chatbot.
 
 ## Surface
 

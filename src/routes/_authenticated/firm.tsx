@@ -70,7 +70,7 @@ export const Route = createFileRoute("/_authenticated/firm")({
       ? String(raw["tab"])
       : undefined,
   }),
-  head: () => ({ meta: [{ title: "Firm — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Firm — StreakBooks" }] }),
   component: FirmPage,
 });
 

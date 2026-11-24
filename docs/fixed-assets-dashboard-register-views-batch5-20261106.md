@@ -1,5 +1,5 @@
 # Fixed Assets — Batch 5: Portfolio dashboard, register columns and saved filters
-Date: 2026-11-06. Authoritative repository: `linkbusinessadvisory/LinkBooks`.
+Date: 2026-11-06. Authoritative repository: `streakbooks/StreakBooks`.
 Source branch: `feature/fixed-assets-register-safety-ux-20261106`. Draft PR #111; **not merged or deployed**.
 
 ## Delivered in source
@@ -55,7 +55,7 @@ Source branch: `feature/fixed-assets-register-safety-ux-20261106`. Draft PR #111
 Before switching branches, preserve all unfinished local Cursor files and inspect `git status`.
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git fetch origin
 git switch feature/fixed-assets-register-safety-ux-20261106

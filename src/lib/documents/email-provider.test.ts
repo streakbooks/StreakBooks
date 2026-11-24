@@ -23,11 +23,11 @@ describe("email provider config", () => {
 
   it("is configured with both values", () => {
     expect(
-      readEmailConfig({ RESEND_API_KEY: "k", EMAIL_FROM: "LinkBooks <a@b.co>" }),
+      readEmailConfig({ RESEND_API_KEY: "k", EMAIL_FROM: "StreakBooks <a@b.co>" }),
     ).toMatchObject({
       configured: true,
       provider: "resend",
-      from: "LinkBooks <a@b.co>",
+      from: "StreakBooks <a@b.co>",
     });
   });
 });

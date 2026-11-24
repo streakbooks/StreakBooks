@@ -43,7 +43,7 @@ export function certificationLabel(status: CertificationStatus): string {
     case "candidate":
       return "Certification candidate";
     case "certified":
-      return "LinkBooks Certified";
+      return "StreakBooks Certified";
     case "recertification_due":
       return "Recertification due";
     case "revoked":

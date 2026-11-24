@@ -49,7 +49,7 @@ These figures are synthetic automated-test examples, not demo balances inserted 
 In PowerShell, preserve uncommitted changes before changing branches:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git fetch origin
 # Before merge:

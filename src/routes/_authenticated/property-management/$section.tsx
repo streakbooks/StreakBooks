@@ -6,7 +6,7 @@ export const Route = createFileRoute("/_authenticated/property-management/$secti
   head: ({ params }) => ({
     meta: [
       {
-        title: `${formatSectionTitle(params.section)} — Property Management — LinkBooks`,
+        title: `${formatSectionTitle(params.section)} — Property Management — StreakBooks`,
       },
     ],
   }),

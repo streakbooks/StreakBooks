@@ -53,7 +53,7 @@ export const Route = createFileRoute("/_authenticated/budgets/")({
     ...parseBudgetListSearch(raw),
     ...(parseCreateSearchFlag(raw) ? { create: true } : {}),
   }),
-  head: () => ({ meta: [{ title: "Budgets — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Budgets — StreakBooks" }] }),
   component: BudgetsPage,
 });
 

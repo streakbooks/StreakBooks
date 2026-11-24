@@ -1,6 +1,6 @@
 # Batch 04 — shared lookup migration and verification
 
-Updated: 18 November 2026; work began on 17 November. This is a continuation of [draft PR #251](https://github.com/linkbusinessadvisory/LinkBooks/pull/251), not a production release.
+Updated: 18 November 2026; work began on 17 November. This is a continuation of [draft PR #251](https://github.com/streakbooks/StreakBooks/pull/251), not a production release.
 
 ## Implementation
 
@@ -58,16 +58,16 @@ GitHub main's tracker reports immediate Actions failures with empty step lists a
 
 ## Safe Windows review and manual acceptance
 
-The cloud work does not alter `D:\MyApp\LinkBooks` or its untracked messaging files. Review in a separate directory; do not reset or clean the original checkout:
+The cloud work does not alter `D:\MyApp\StreakBooks` or its untracked messaging files. Review in a separate directory; do not reset or clean the original checkout:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
-git fetch https://github.com/linkbusinessadvisory/LinkBooks.git feature/financial-intelligence-readiness-20261117
+git fetch https://github.com/streakbooks/StreakBooks.git feature/financial-intelligence-readiness-20261117
 if ($LASTEXITCODE -ne 0) { throw "Fetch failed." }
-git worktree add --detach D:\MyApp\LinkBooks-readiness-251-20261118 FETCH_HEAD
+git worktree add --detach D:\MyApp\StreakBooks-readiness-251-20261118 FETCH_HEAD
 if ($LASTEXITCODE -ne 0) { throw "Worktree creation failed. Preserve existing work." }
-cd D:\MyApp\LinkBooks-readiness-251-20261118
+cd D:\MyApp\StreakBooks-readiness-251-20261118
 npm.cmd ci
 if ($LASTEXITCODE -ne 0) { throw "Installation failed." }
 $env:NODE_OPTIONS = "--max-old-space-size=6144"
@@ -83,7 +83,7 @@ Remaining programme work includes Coding Memory reset and tax/contact/split-awar
 
 ## Final verified result
 
-All corrective local checks below passed at [runtime revision 1b3d12ee](https://github.com/linkbusinessadvisory/LinkBooks/commit/1b3d12eeba5e00feb2adfd92fdcb90324cb04453), including the integrated main snapshot. Subsequent report changes do not alter runtime code. [Machine-readable evidence](BATCH-04-EVIDENCE.json) records the exact scope and command exit codes. Raw CLI status, Auth state, startup logs and credentials are not committed.
+All corrective local checks below passed at [runtime revision 1b3d12ee](https://github.com/streakbooks/StreakBooks/commit/1b3d12eeba5e00feb2adfd92fdcb90324cb04453), including the integrated main snapshot. Subsequent report changes do not alter runtime code. [Machine-readable evidence](BATCH-04-EVIDENCE.json) records the exact scope and command exit codes. Raw CLI status, Auth state, startup logs and credentials are not committed.
 
 | Item                          | Actual result                                                                                                                                                                                                                                                                                              |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -91,7 +91,7 @@ All corrective local checks below passed at [runtime revision 1b3d12ee](https://
 | Pull request                  | Draft #251; builds on independently merged #225 and includes earlier readiness work                                                                                                                                                                                                                        |
 | Main merge                    | Not performed by this continuation                                                                                                                                                                                                                                                                         |
 | Integrated main               | 8c79ac08e1f21884395a6066a71267f04ffda6d5; no later main snapshot is certified                                                                                                                                                                                                                              |
-| GitHub CI                     | [Run 44220265623](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44220265623) failed: five jobs, two annotations each, no validate steps. Log retrieval returned 404/BlobNotFound; connector does not support reading annotations. Cause remains unestablished; annotation text requested. |
+| GitHub CI                     | [Run 44220265623](https://github.com/streakbooks/StreakBooks/actions/runs/44220265623) failed: five jobs, two annotations each, no validate steps. Log retrieval returned 404/BlobNotFound; connector does not support reading annotations. Cause remains unestablished; annotation text requested. |
 | Unit tests                    | **591 files; 4,010 passed, 0 failed, 0 skipped**                                                                                                                                                                                                                                                           |
 | Integration                   | All **8 isolated PostgreSQL suite commands** passed: Banking, workflows, documents, accountant exceptions, correction approvals, workpaper items, platform and billing. Banking has **59 assertions**. An additional read-only smoke test exercises **19 search-path helpers**.                            |
 | Real localhost API/Auth       | **23 API assertions, 8 MFA assertions and 3 reversal assertions passed**, with real Auth and RLS                                                                                                                                                                                                           |

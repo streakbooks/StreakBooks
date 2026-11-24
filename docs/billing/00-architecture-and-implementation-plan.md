@@ -1,4 +1,4 @@
-# LinkBooks Subscription & Billing Platform — Architecture and Implementation Plan
+# StreakBooks Subscription & Billing Platform — Architecture and Implementation Plan
 
 Status: **Approved 5 November 2026. Phases 1 to 10 implemented** (see
 [01-requirements.md](01-requirements.md)); merged to `main` and applied to the production database
@@ -42,7 +42,7 @@ Decision record `docs/decisions/001-extend-existing-billing.md` already forbids 
 | Subscriptions          | `company_subscriptions` (PK `company_id`), statuses trialing/active/past_due/cancelled/expired/complimentary/paused, provider refs, price version, scheduled plan, grandfathering                                                                       | Company-only; no B2C                                                                                                                            |
 | Trials                 | `start_company_trial`; `billing_settings.trial_days = 14`, single global trial plan (`growth`), card not required                                                                                                                                       | Must become 30 days, per plan, with eligibility rules                                                                                           |
 | Coupons                | `billing_offers` (percent/amount/extra trial days/free months/price lock), global redemption counter                                                                                                                                                    | No per-account redemption record or stacking rules                                                                                              |
-| Checkout               | `createBillingCheckout` → Stripe Checkout / Razorpay Subscriptions via direct REST `fetch`; live keys blocked unless `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`                                                                                           | Razorpay creates an ad-hoc plan per checkout; Stripe offered in India too                                                                       |
+| Checkout               | `createBillingCheckout` → Stripe Checkout / Razorpay Subscriptions via direct REST `fetch`; live keys blocked unless `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`                                                                                           | Razorpay creates an ad-hoc plan per checkout; Stripe offered in India too                                                                       |
 | Plan change            | `changeOrganisationPlan`: Stripe-only upgrade, scheduled downgrades                                                                                                                                                                                     | Razorpay plan change missing; upgrade activates without verified payment                                                                        |
 | Webhooks               | `POST /api/billing/stripe                                                                                                                                                                                                                               | razorpay`, signature verified, dedupe by `billing_events(provider,event_id)`, processed synchronously; failed events deleted for provider retry | Not durable; no payload stored, no retry/dead-letter, no payments/invoices recorded |
 | Refunds                | `refundBillingPayment` (Stripe only, idempotency key)                                                                                                                                                                                                   | Bypasses the approval workflow                                                                                                                  |
@@ -301,7 +301,7 @@ interface PaymentProvider {
   env kill switches. The initial routes are IN → Razorpay and all others → Stripe, subject to account
   eligibility and currency support (`supports()`).
 - Live mode requires credentials, an approved tax configuration for the jurisdiction, and the existing
-  `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS` gate.
+  `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS` gate.
 - Provider-specific behaviour such as proration and mandate types (Razorpay UPI AutoPay/e-mandate/cards;
   Stripe subscriptions with pending updates) will be **confirmed against current official docs during
   Phase 5** before coding. Where a provider cannot express a requirement, the plan records the
@@ -330,7 +330,7 @@ state. Stale events are recorded and skipped. Frontend redirects never activate 
 
 ### 2.8 Invoices, tax and accounting
 
-- **Platform seller entity** (`billing_seller_entities`): LinkBooks' legal entity per jurisdiction, with
+- **Platform seller entity** (`billing_seller_entities`): StreakBooks' legal entity per jurisdiction, with
   tax registrations and invoice series. Invoices use **gapless numbering per series** (locked counter in
   the same transaction).
 - Invoices are **immutable once issued**. Corrections use credit notes, and refunds link to payments.
@@ -631,7 +631,7 @@ STRIPE_WEBHOOK_SECRET=
 FX_PROVIDER_API_KEY=
 RESEND_API_KEY=
 EMAIL_FROM=
-LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=false
+STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=false
 # Feature flags (env kill switches; business switches also live in DB settings)
 BILLING_RAZORPAY_ENABLED=false
 BILLING_STRIPE_ENABLED=false

@@ -1,4 +1,4 @@
-# LinkBooks Fixed Assets — Batch 3: Posted Bill Capitalisation Review
+# StreakBooks Fixed Assets — Batch 3: Posted Bill Capitalisation Review
 Date: 2026-11-06. Source branch: `feature/fixed-assets-register-safety-ux-20261106`. PR #111 is a draft.
 
 ## User workflow implemented (source only)
@@ -37,7 +37,7 @@ No automatic journal, depreciation, tax, reclassification, reversal, audit appro
 ## Local verification — no GitHub Actions
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git fetch origin
 git switch feature/fixed-assets-register-safety-ux-20261106

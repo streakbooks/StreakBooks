@@ -1,4 +1,4 @@
-# LinkBooks — Reports Centre & accounting integrity completion
+# StreakBooks — Reports Centre & accounting integrity completion
 
 **Date:** 20 Oct 2026
 

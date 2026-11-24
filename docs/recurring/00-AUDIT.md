@@ -1,4 +1,4 @@
-# LinkBooks — Recurring Transactions Engine V2  
+# StreakBooks — Recurring Transactions Engine V2  
 ## Stage 0: Repository & architecture audit (read-only)
 
 | Field | Value |
@@ -78,7 +78,7 @@
 
 | Question | Finding |
 |----------|---------|
-| **Cron / pg_cron / queue?** | **None in repo.** `src/integrations/supabase/cron-auth.ts` validates `LOVABLE_CRON_SECRET` for hypothetical cron HTTP calls — **no scheduled job definitions**, edge functions, or Vercel crons wired to recurring generation. |
+| **Cron / pg_cron / queue?** | **None in repo.** `src/integrations/supabase/cron-auth.ts` validates `STREAKBOOKS_CRON_SECRET` for hypothetical cron HTTP calls — **no scheduled job definitions**, edge functions, or Vercel crons wired to recurring generation. |
 | **Who runs generation?** | **Authenticated user** calling `generateRecurringBill` / `generateRecurringInvoice` from UI (or future API). |
 | **Date math** | **Hand-rolled** in TS: `Date` UTC add 7 days / 1 month / 3 months / 1 year (`purchases.functions.ts`, `nextDate()` in sales). **No anchor-based month-end rules**, no business-day adjustment, no DST/org-TZ policy. |
 | **Concurrency** | Application check: `last_generated_on === next_due_date` → error. **No row locking**, no materialised occurrence row, no `FOR UPDATE SKIP LOCKED` worker. Race: two parallel “Generate” clicks can still double-insert bills before `last_generated_on` updates (TOCTOU). |
@@ -88,7 +88,7 @@
 
 - **`src/lib/purchases/posting.test.ts`:** policy assertion only (`auto_authorise: false`) — **not** an integration test of generation.
 - **No dedicated recurring schedule tests**, no concurrency tests, no recurrence date tests.
-- Sales/purchases completion docs explicitly note: **“no cron auto-run”** (`LINKBOOKS_SALES_RECEIVABLES_COMPLETION.md`).
+- Sales/purchases completion docs explicitly note: **“no cron auto-run”** (`STREAKBOOKS_SALES_RECEIVABLES_COMPLETION.md`).
 
 ### 2.6 Migration compatibility requirement (V2)
 
@@ -103,7 +103,7 @@ Existing rows in `recurring_bills` / `sales_recurring_invoices` must remain vali
 
 ### 3.1 New Bill (`/purchases/bills/new`)
 
-Documented in `docs/LINKBOOKS_NEW_BILL_COMPLETION.md`. Full workspace includes:
+Documented in `docs/STREAKBOOKS_NEW_BILL_COMPLETION.md`. Full workspace includes:
 
 - Supplier search/quick-add, header (dates, terms, supplier invoice #, currency, tax mode exclusive/inclusive/none), duplicate soft-check, rich line grid (product, account, tax codes, **class/location/project**, billable, drag reorder), attachments (`document_attachments`), internal notes, audit via `record_audit_event`, FX display, Save draft / Save & authorise / Make recurring dialog.
 
@@ -117,7 +117,7 @@ Sales module supports invoices, quotes, credit notes with shared line helpers (`
 
 ### 3.3 Other document families (existence)
 
-| Family | Status in LinkBooks | Recurring today |
+| Family | Status in StreakBooks | Recurring today |
 |--------|---------------------|-----------------|
 | Purchase bills | Yes | Partial (purchases recurring) |
 | Sales invoices | Yes | Partial (sales recurring) |
@@ -169,7 +169,7 @@ Sales module supports invoices, quotes, credit notes with shared line helpers (`
 ### 4.8 Audit & notifications
 
 - `record_audit_event` RPC used on bill lifecycle; **no audit** on recurring template CRUD/generation today (except bill history after generation).
-- **Email:** honestly **unavailable** in settings (`LINKBOOKS_SETTINGS_GOVERNANCE_COMPLETION.md`) — approve-and-email recurring delivery **blocked** until provider exists.
+- **Email:** honestly **unavailable** in settings (`STREAKBOOKS_SETTINGS_GOVERNANCE_COMPLETION.md`) — approve-and-email recurring delivery **blocked** until provider exists.
 
 ### 4.9 Attachments
 
@@ -179,7 +179,7 @@ Sales module supports invoices, quotes, credit notes with shared line helpers (`
 
 ## 5. Authoritative posting engine & accounting invariants
 
-**Path (documented in `docs/LINKBOOKS_ACCOUNTING_INTEGRITY.md`):**
+**Path (documented in `docs/STREAKBOOKS_ACCOUNTING_INTEGRITY.md`):**
 
 1. Client/service: `postJournal()` — `src/lib/accounting/posting-engine.ts`
 2. Database: `post_journal(payload JSONB)` — `20261019140000_accounting_engine.sql`
@@ -216,15 +216,15 @@ Sales module supports invoices, quotes, credit notes with shared line helpers (`
 
 - **23** timestamped SQL migrations under `supabase/migrations/` (company tenancy, engine, purchases, sales, banking, tax, settings, bills workspace).
 - **No** `pg_cron` extension migration, **no** Supabase Edge Function sources in repo for recurring.
-- **Vercel:** serverless Nitro output; long-running scheduler **cannot** rely on browser; needs **Supabase cron → HTTP** (with `LOVABLE_CRON_SECRET`), **pg_cron + SQL worker**, or external queue — **must be designed in Stage 1** and documented for ops.
+- **Vercel:** serverless Nitro output; long-running scheduler **cannot** rely on browser; needs **Supabase cron → HTTP** (with `STREAKBOOKS_CRON_SECRET`), **pg_cron + SQL worker**, or external queue — **must be designed in Stage 1** and documented for ops.
 
-**Environment names** (no values): see `docs/ENV_AND_DEPLOYMENT.md` — `LOVABLE_CRON_SECRET` reserved for cron auth.
+**Environment names** (no values): see `docs/ENV_AND_DEPLOYMENT.md` — `STREAKBOOKS_CRON_SECRET` reserved for cron auth.
 
 ---
 
 ## 8. Settings Centre relationship
 
-Route: `/settings` — tabs Organisation, Financial, Dimensions, Documents, Currencies, Users, Automation, Integrations, Audit, Demo (`LINKBOOKS_SETTINGS_GOVERNANCE_COMPLETION.md`).
+Route: `/settings` — tabs Organisation, Financial, Dimensions, Documents, Currencies, Users, Automation, Integrations, Audit, Demo (`STREAKBOOKS_SETTINGS_GOVERNANCE_COMPLETION.md`).
 
 | Setting area | Recurring V2 must consume |
 |--------------|---------------------------|
@@ -263,7 +263,7 @@ Priorities for Stage 1+ planning:
 1. **Product owner approves** P0/P1 ordering in `docs/recurring/02-GAP-ANALYSIS.md`.
 2. **Stage 1 technical spike decisions** (record in Stage 1 design note before coding):
    - Target schema names (`recurring_templates`, `recurring_schedules`, `recurring_occurrences`, …) vs extend legacy tables.
-   - Scheduler deployment choice (Supabase scheduled function vs Vercel cron invoking Start route with `LOVABLE_CRON_SECRET`).
+   - Scheduler deployment choice (Supabase scheduled function vs Vercel cron invoking Start route with `STREAKBOOKS_CRON_SECRET`).
    - RRULE library selection (e.g. `rrule` npm + wrapper for business-day extension).
 3. **Do not start UI overlay** until Stage 1 occurrence + recurrence tests pass (including property-based dates).
 
@@ -280,7 +280,7 @@ Priorities for Stage 1+ planning:
 | Schema | `supabase/migrations/20261019160000_purchases_module.sql`, `20261019180000_sales_banking_contacts.sql` |
 | Posting | `src/lib/accounting/posting-engine.ts`, `20261019140000_accounting_engine.sql` |
 | Cron auth stub | `src/integrations/supabase/cron-auth.ts` |
-| Integrity doc | `docs/LINKBOOKS_ACCOUNTING_INTEGRITY.md` |
+| Integrity doc | `docs/STREAKBOOKS_ACCOUNTING_INTEGRITY.md` |
 
 ---
 

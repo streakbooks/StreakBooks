@@ -1,20 +1,20 @@
-# LinkBooks CRM — Design originality review checklist
+# StreakBooks CRM — Design originality review checklist
 
 **Policy:** Competitors are functional/usability benchmarks only. Do not copy proprietary UI, branding, layouts, illustrations, icons, distinctive interactions or source.
 
-**Design system of record:** `docs/premium-ui/LINKBOOKS_DESIGN_SYSTEM.md`  
+**Design system of record:** `docs/premium-ui/STREAKBOOKS_DESIGN_SYSTEM.md`  
 **Chrome:** `ListWorkspace` / `RecordWorkspace` / `PageHeader` / existing theme tokens (8+ presets).
 
 ## Per-screen checklist (required before enabling a CRM surface)
 
 | # | Check | Result |
 | - | ----- | ------ |
-| 1 | Visual design developed from LinkBooks tokens/workspaces, not a competitor skin | |
+| 1 | Visual design developed from StreakBooks tokens/workspaces, not a competitor skin | |
 | 2 | No distinctive Salesforce Lightning / HubSpot / Pipedrive / Odoo / Dynamics chrome copied | |
-| 3 | Typography, spacing, status colours follow LinkBooks semantic tokens | |
+| 3 | Typography, spacing, status colours follow StreakBooks semantic tokens | |
 | 4 | Icons from approved licensed set (Lucide in-repo) | |
-| 5 | Fonts remain LinkBooks stack (Inter UI, IBM Plex Mono tabular) | |
-| 6 | Kanban/tables use LinkBooks borders/surfaces — not competitor pipeline chrome | |
+| 5 | Fonts remain StreakBooks stack (Inter UI, IBM Plex Mono tabular) | |
+| 6 | Kanban/tables use StreakBooks borders/surfaces — not competitor pipeline chrome | |
 | 7 | Animations honor `prefers-reduced-motion` | |
 | 8 | Asset/dependency licenses reviewed for new packages | |
 | 9 | Future CRM screens inherit MODULE_REGISTRY experience contract | |
@@ -24,16 +24,16 @@
 
 | Screen | Originality |
 | --- | --- |
-| Overview KPI grid | LinkBooks cards + alerts; forecast disclaimer |
+| Overview KPI grid | StreakBooks cards + alerts; forecast disclaimer |
 | Leads list/form | ListWorkspace + shared table/inputs |
 | Lead detail | RecordWorkspace |
-| Opportunities board | LinkBooks muted columns + Select move (not DnD clone) |
+| Opportunities board | StreakBooks muted columns + Select move (not DnD clone) |
 | Pipelines | Card stage lists |
 | Activities | Shared table/forms |
 | Settings | Switch + fields in Card |
 | Deferred sections | Honest EmptyState |
 
-**Verdict:** Reviewed for originality against LinkBooks design language. **Not** a substitute for formal legal review.
+**Verdict:** Reviewed for originality against StreakBooks design language. **Not** a substitute for formal legal review.
 
 ## Sign-off
 

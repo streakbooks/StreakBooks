@@ -12,7 +12,7 @@ Linked project: `ipxflpzfcqwtenodbxwc` (linkbook / production).
 | `20261118140000` | `pos_cash_sale_expected_cash.sql` | Applied via `db query` + `migration repair` |
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 $env:SUPABASE_YES = "1"
 
 $files = @(

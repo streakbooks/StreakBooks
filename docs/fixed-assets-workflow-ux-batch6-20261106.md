@@ -1,6 +1,6 @@
 # Fixed Assets — Batch 6: Depreciation, GL reconciliation and capital-purchase review UX
 
-Date: 2026-11-06. Authoritative repository: `linkbusinessadvisory/LinkBooks`.
+Date: 2026-11-06. Authoritative repository: `streakbooks/StreakBooks`.
 Source branch: `feature/fixed-assets-register-safety-ux-20261106`.
 Draft PR: #111. **Source committed only; no CI, local test execution, merge or deployment.**
 
@@ -58,7 +58,7 @@ Tests extended: `src/lib/fixed-assets/capitalisation-review.test.ts` (action eli
 Safeguard your work in Cursor before switching branches:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git fetch origin
 git switch feature/fixed-assets-register-safety-ux-20261106

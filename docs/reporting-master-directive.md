@@ -1,8 +1,8 @@
-# LINKBOOKS — MASTER PRODUCT ENGINEERING & IMPLEMENTATION DIRECTIVE
+# STREAKBOOKS — MASTER PRODUCT ENGINEERING & IMPLEMENTATION DIRECTIVE
 ## Complete Reporting Ecosystem + Permanent Global LookupSelect Architecture
 
 **Priority:** Critical  
-**Scope:** Entire LinkBooks Application  
+**Scope:** Entire StreakBooks Application  
 **Implementation:** End-to-End, Production Quality  
 **Objective:** Industry-Leading Functionality, Original Product Design, Complete Testing and Independent Final Review
 
@@ -10,7 +10,7 @@
 
 # PART A — EXECUTIVE MANDATE
 
-Act as the CTO, Principal Software Architect, Lead Full-Stack Engineer, Database Architect, Accounting Systems Specialist, CFO, Chartered Accountant, CPA and Enterprise Cloud Accounting Software Consultant responsible for LinkBooks.
+Act as the CTO, Principal Software Architect, Lead Full-Stack Engineer, Database Architect, Accounting Systems Specialist, CFO, Chartered Accountant, CPA and Enterprise Cloud Accounting Software Consultant responsible for StreakBooks.
 
 Your responsibility is to deliver a comprehensive, secure, scalable and genuinely functional cloud accounting platform.
 
@@ -52,9 +52,9 @@ Achieve functional parity where appropriate, not visual or proprietary design pa
 
 Do not copy competitor source code, protected assets, distinctive screen compositions, branding, documentation, proprietary workflows or other protected product expression.
 
-Develop LinkBooks independently, using its own architecture, design system, visual identity, information architecture and implementation.
+Develop StreakBooks independently, using its own architecture, design system, visual identity, information architecture and implementation.
 
-Do not sacrifice useful functionality merely to make LinkBooks look different.
+Do not sacrifice useful functionality merely to make StreakBooks look different.
 
 ---
 
@@ -100,7 +100,7 @@ Continue from the actual repository state.
 
 ## 1. Reporting Centre
 
-Develop a comprehensive LinkBooks Reporting Centre with an original, intuitive information architecture.
+Develop a comprehensive StreakBooks Reporting Centre with an original, intuitive information architecture.
 
 Include the following functional areas:
 
@@ -115,7 +115,7 @@ Include the following functional areas:
 - Scheduled Reports.
 - Report Templates.
 
-You may organise or rename these categories to create a better LinkBooks experience.
+You may organise or rename these categories to create a better StreakBooks experience.
 
 Do not reproduce another platform's navigation hierarchy or screen design simply because it is familiar.
 
@@ -689,7 +689,7 @@ Do not claim delivery testing passed until actual delivery is verified.
 
 ## 21. Universal LookupSelect Standard
 
-Implement a reusable, production-ready LookupSelect architecture across the entire LinkBooks application.
+Implement a reusable, production-ready LookupSelect architecture across the entire StreakBooks application.
 
 Every field selecting records from a dynamic dataset must use the shared LookupSelect component or an approved specialised variant.
 
@@ -738,7 +738,7 @@ Implement:
 14. Tab and accessible keyboard interaction.
 15. Click-outside dismissal.
 16. Clear selection where allowed.
-17. Consistent LinkBooks design tokens.
+17. Consistent StreakBooks design tokens.
 18. White input background.
 19. Subtle borders.
 20. Dark navy selection highlight.
@@ -764,7 +764,7 @@ Implement:
 
 Clicking Create New must:
 
-- Open the appropriate complete creation form in a LinkBooks flyover.
+- Open the appropriate complete creation form in a StreakBooks flyover.
 - Preserve the originating form.
 - Preserve unsaved data.
 - Preserve search context.
@@ -877,7 +877,7 @@ Preserve existing functionality, validation, data bindings and accounting behavi
 
 Create or update:
 
-`.cursor/rules/linkbooks-lookup-select.mdc`
+`.cursor/rules/streakbooks-lookup-select.mdc`
 
 Use valid Cursor rule metadata with:
 
@@ -930,7 +930,7 @@ Do not introduce duplicate accounting calculation engines.
 
 Implement complete functionality across frontend, backend, database and APIs.
 
-Use existing LinkBooks architecture and conventions wherever possible.
+Use existing StreakBooks architecture and conventions wherever possible.
 
 Ensure:
 
@@ -1126,7 +1126,7 @@ Do not suppress issues or report unverified fixes as complete.
 
 ## 34. Originality Review
 
-Confirm LinkBooks has its own:
+Confirm StreakBooks has its own:
 
 - Product identity.
 - Navigation architecture.
@@ -1150,7 +1150,7 @@ Identify and redesign any distinctive presentation that creates avoidable copyin
 
 ## 35. Regression Protection
 
-Preserve existing LinkBooks modules and working functionality.
+Preserve existing StreakBooks modules and working functionality.
 
 In particular, do not break:
 
@@ -1275,7 +1275,7 @@ Do not restart the project when continuing.
 
 ## FINAL SUCCESS DEFINITION
 
-LinkBooks must deliver a complete, independently designed, secure and scalable accounting and reporting platform.
+StreakBooks must deliver a complete, independently designed, secure and scalable accounting and reporting platform.
 
 Its functionality should meet the expectations of businesses, bookkeepers, accountants, CFOs and CPA/CA firms using leading cloud accounting and management reporting software.
 
@@ -1287,4 +1287,4 @@ Every delivered feature must be tested.
 
 Every significant issue must be identified, fixed or transparently documented.
 
-The result must be a genuinely functional LinkBooks product, not a visual imitation or a collection of unfinished features.
+The result must be a genuinely functional StreakBooks product, not a visual imitation or a collection of unfinished features.

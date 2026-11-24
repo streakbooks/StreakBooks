@@ -1,4 +1,4 @@
-# LinkBooks CRM — Verified gap analysis (post CRM-01/02 foundation)
+# StreakBooks CRM — Verified gap analysis (post CRM-01/02 foundation)
 
 **Revision:** 2026-11-09  
 **Code base:** `feature/crm-batch01-02-foundation` @ PR #208  
@@ -102,8 +102,8 @@
 
 | Item | Status |
 | --- | --- |
-| Uses LinkBooks ListWorkspace/tokens/themes | Implemented |
-| Competitor visual cloning | Avoided — LinkBooks shell |
+| Uses StreakBooks ListWorkspace/tokens/themes | Implemented |
+| Competitor visual cloning | Avoided — StreakBooks shell |
 | Formal originality checklist | Added `ORIGINALITY-CHECKLIST.md` |
 | Legal IP review | **Not claimed; Pending legal** |
 

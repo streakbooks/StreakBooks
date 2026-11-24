@@ -1,6 +1,6 @@
-# Mandatory LinkBooks final status and verification report
+# Mandatory StreakBooks final status and verification report
 
-Use this format at the completion of every LinkBooks development task, fix, review, PR,
+Use this format at the completion of every StreakBooks development task, fix, review, PR,
 merge, deployment or command-execution task. Do not require the user to repeat it.
 
 ## Final result — [Successfully merged into main / Partially completed / Failed / Pending verification]
@@ -31,12 +31,12 @@ URLs to unpublished local commits or claim a skipped CI job passed.
 
 ## Local PowerShell review
 
-User workstation: `D:\MyApp\LinkBooks`. Development URL: `http://localhost:8080`.
+User workstation: `D:\MyApp\StreakBooks`. Development URL: `http://localhost:8080`.
 The cloud executor's checkout is separate; never claim it changed this Windows directory.
 Before switching branches or pulling, inspect and protect uncommitted work. A safe review sequence:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 if (git status --porcelain) { throw "Commit or stash your changes before continuing." }
 git switch main
@@ -64,7 +64,7 @@ Disclose incomplete work, bugs, failed/skipped/unexecuted tests, migration/deplo
 missing integrations or access, accounting/security/performance verification limits and manual
 intervention. Never describe partially completed work as fully delivered.
 
-Authoritative repository: https://github.com/linkbusinessadvisory/LinkBooks.
+Authoritative repository: https://github.com/streakbooks/StreakBooks.
 Review and test before merging; verify the actual GitHub main commit and Actions results.
 Publishing/merging requires session authorization; deployment and live migration execution are
 separate actions. Preserve the user's uncommitted work and published history.

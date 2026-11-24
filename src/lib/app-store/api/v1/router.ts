@@ -1,5 +1,5 @@
 /**
- * LinkBooks Public API v1 — versioned surface for authorized third-party developers.
+ * StreakBooks Public API v1 — versioned surface for authorized third-party developers.
  * Partners never receive service-role or unrestricted database access.
  * Runtime HTTP mounting continues after OAuth token issuance is production-ready.
  * FAIL CLOSED: production data routes stay gated until OAuth vault + security review.

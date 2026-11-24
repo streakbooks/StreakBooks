@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * LinkBooks new-module scaffold (Section 20.2).
+ * StreakBooks new-module scaffold (Section 20.2).
  * Generates route + screen stubs that use shared workspace chrome and fail-closed actions.
  *
  * Usage:
@@ -84,7 +84,7 @@ export function ${pascal}Screen() {
   const body = (
     <EmptyState
       title="Backend not connected"
-      description="This scaffold inherits LinkBooks premium shell, themes and navigation. Wire a fail-closed service before enabling create/post/pay actions."
+      description="This scaffold inherits StreakBooks premium shell, themes and navigation. Wire a fail-closed service before enabling create/post/pay actions."
       action={
         <Button type="button" disabled title="Blocked until authorisation and persistence exist">
           Create (unavailable)

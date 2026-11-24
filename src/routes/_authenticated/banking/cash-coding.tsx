@@ -57,7 +57,7 @@ export const Route = createFileRoute("/_authenticated/banking/cash-coding")({
   },
   head: () => ({
     meta: [
-      { title: "Cash coding — LinkBooks" },
+      { title: "Cash coding — StreakBooks" },
       { name: "description", content: "Bulk-code uncategorised bank statement lines." },
     ],
   }),

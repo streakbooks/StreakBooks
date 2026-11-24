@@ -1,6 +1,6 @@
 # HR Management — Interactive LLM design reference (structural)
 
-**Status:** Approved structural Low-Level Model (LLM) for LinkBooks HR.  
+**Status:** Approved structural Low-Level Model (LLM) for StreakBooks HR.  
 **Source:** Final production-grade HR execution directive (navigation, lifecycle, RBAC, workflows).  
 **Note:** No separate interactive preview package was found in the repository at implementation time. This document is the in-repo functional/structural specification. External Lovable/Figma previews, if later attached, supersede visual composition details only when originality review passes.
 
@@ -75,4 +75,4 @@ Permissions `hr.*` as seeded in foundation migration. Self-service and manager s
 
 ## 7. Originality
 
-LinkBooks tokens, navy/blue shell language, Lucide icons. Do not reproduce competitor trade dress.
+StreakBooks tokens, navy/blue shell language, Lucide icons. Do not reproduce competitor trade dress.

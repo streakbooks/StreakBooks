@@ -338,7 +338,7 @@ export function TaxReturnsPanel({
         <AlertTitle>Calculated from your documents</AlertTitle>
         <AlertDescription>
           Boxes are totalled from the tax on each invoice, bill, credit note and expense, grouped by
-          tax code. Tax settlement and adjustment journals are never counted. LinkBooks does not
+          tax code. Tax settlement and adjustment journals are never counted. StreakBooks does not
           submit returns to a tax authority: copy the figures to your filing service, then mark the
           return as filed here to lock them.
         </AlertDescription>

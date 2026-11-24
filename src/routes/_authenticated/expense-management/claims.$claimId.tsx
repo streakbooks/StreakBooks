@@ -3,7 +3,7 @@ import { ExpenseManagementClaimDetailPage } from "@/screens/expense-management/c
 
 export const Route = createFileRoute("/_authenticated/expense-management/claims/$claimId")({
   head: () => ({
-    meta: [{ title: "Expense claim — LinkBooks" }],
+    meta: [{ title: "Expense claim — StreakBooks" }],
   }),
   component: ExpenseManagementClaimDetailRoute,
 });

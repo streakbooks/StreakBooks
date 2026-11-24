@@ -63,7 +63,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { PlatformAnnouncements } from "@/components/platform/PlatformAnnouncements";
 
-const COLLAPSE_KEY = "linkbooks-sidebar-collapsed";
+const COLLAPSE_KEY = "streakbooks-sidebar-collapsed";
 const InPlaceSettingsPanel = lazy(() =>
   import("@/components/settings/InPlaceSettingsPanel").then((module) => ({
     default: module.InPlaceSettingsPanel,
@@ -125,30 +125,28 @@ function Brand({ collapsed }: { collapsed?: boolean }) {
   return (
     <Link
       to="/"
-      aria-label="LinkBooks dashboard"
+      aria-label="StreakBooks dashboard"
       className={cn(
-        "flex items-center gap-3 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+        "flex items-center gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         collapsed ? "justify-center" : "px-1",
       )}
     >
-      <span className="lb-brand-mark" aria-hidden="true">
-        <span className="lb-brand-mark-spine" />
-        <span className="lb-brand-mark-page lb-brand-mark-page-left" />
-        <span className="lb-brand-mark-page lb-brand-mark-page-right" />
-      </span>
-      {collapsed ? null : (
-        <div className="leading-tight">
-          <div className="text-[15px] font-bold tracking-[-0.03em] text-sidebar-accent-foreground">
-            LinkBooks
-          </div>
-          <div className="text-[11px] text-sidebar-foreground/70">Cloud accounting</div>
-        </div>
-      )}
+      <img
+        src="/brand/streakbooks-logo.png"
+        alt=""
+        width={collapsed ? 36 : 132}
+        height={collapsed ? 36 : 28}
+        className={cn(
+          "shrink-0 object-contain object-left",
+          collapsed ? "size-9" : "h-7 w-[8.25rem] max-w-[min(100%,8.25rem)]",
+        )}
+      />
+      {collapsed ? <span className="sr-only">StreakBooks</span> : null}
     </Link>
   );
 }
 
-/** A distinct LinkBooks workspace navigator: searchable, pin-able and route-aware.
+/** A distinct StreakBooks workspace navigator: searchable, pin-able and route-aware.
  * All destinations remain native hyperlinks, including new-tab/middle-click support.
  */
 function NavLink({
@@ -229,7 +227,7 @@ function NavLink({
   );
 }
 
-const NAV_PINS_KEY = "linkbooks.workspace.pins.v1";
+const NAV_PINS_KEY = "streakbooks.workspace.pins.v1";
 const NAV_MAX_PINS = 8;
 
 function readWorkspacePaths(key: string, max: number): string[] {

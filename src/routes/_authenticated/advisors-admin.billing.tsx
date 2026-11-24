@@ -3,7 +3,7 @@ import { AdvisorsAdminBillingPage } from "@/screens/advisors/admin-billing";
 
 export const Route = createFileRoute("/_authenticated/advisors-admin/billing")({
   head: () => ({
-    meta: [{ title: "Billing — LinkBooks Advisors" }],
+    meta: [{ title: "Billing — StreakBooks Advisors" }],
   }),
   component: AdvisorsAdminBillingPage,
 });

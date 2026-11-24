@@ -13,16 +13,16 @@ export const CONNECTOR_IMPLEMENTATION_STATUSES = [
   "credentials_blocked",
   /** Some sandbox calls work; sync/posting not fully verified. */
   "sandbox_partial",
-  /** Real E2E sync verified (orders → LinkBooks → ledger) with evidence. */
+  /** Real E2E sync verified (orders → StreakBooks → ledger) with evidence. */
   "e2e_verified",
 ] as const;
 
 export type ConnectorImplementationStatus = (typeof CONNECTOR_IMPLEMENTATION_STATUSES)[number];
 
 export const CONNECTOR_KINDS = [
-  /** First-party LinkBooks adapter maintained in-repo. */
+  /** First-party StreakBooks adapter maintained in-repo. */
   "native",
-  /** Third party integrates via LinkBooks public API / OAuth. */
+  /** Third party integrates via StreakBooks public API / OAuth. */
   "partner_api",
   /** Hybrid: native sync plus partner-published listing. */
   "hybrid",

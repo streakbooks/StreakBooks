@@ -1,4 +1,4 @@
-# Easy Supabase workflow (LinkBooks + Cursor)
+# Easy Supabase workflow (StreakBooks + Cursor)
 
 ## One-time setup (this Mac)
 
@@ -13,7 +13,7 @@ Already installed via Homebrew if setup was run.
 
 ### C. Login + link this project
 ```bash
-cd /Users/rohitm/paxaris-repos/LinkBooks
+cd /Users/rohitm/paxaris-repos/StreakBooks
 supabase login          # opens browser — create/paste access token
 supabase link --project-ref ipxflpzfcqwtenodbxwc
 ```
@@ -37,9 +37,9 @@ No personal access token needed for normal use (OAuth login).
 2. Copy **Project URL** + **anon / publishable** key into local `.env` (see `.env.example`)
 3. Keys stay local — never commit `.env`
 
-### F. Load LinkBooks schema into the new empty project
+### F. Load StreakBooks schema into the new empty project
 ```bash
-cd /Users/rohitm/paxaris-repos/LinkBooks
+cd /Users/rohitm/paxaris-repos/StreakBooks
 supabase link --project-ref ipxflpzfcqwtenodbxwc
 supabase db push
 ```
@@ -61,7 +61,7 @@ This applies files under `supabase/migrations/` to your new project.
 ## Commands cheat sheet
 
 ```bash
-cd /Users/rohitm/paxaris-repos/LinkBooks
+cd /Users/rohitm/paxaris-repos/StreakBooks
 
 npm run dev                 # UI
 supabase projects list      # your cloud projects
@@ -73,4 +73,4 @@ supabase db pull            # pull remote schema into migrations (careful)
 
 - Don’t commit `.env` or **service role** keys  
 - Don’t push DB changes to friend’s upstream until reviewed  
-- Push code to **origin** = `rohitmehra86/LinkBooks`
+- Push code to **origin** = `streakbooks/StreakBooks`

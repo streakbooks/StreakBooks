@@ -1,5 +1,5 @@
 /**
- * Prevent new LinkBooks modules or authenticated routes from disappearing from
+ * Prevent new StreakBooks modules or authenticated routes from disappearing from
  * the premium browsing release inventory.
  *
  * Run locally: npm run check:browsing-coverage
@@ -302,7 +302,7 @@ if (!Array.isArray(manifest.acceptanceCriteria) || manifest.acceptanceCriteria.l
 
 const awaiting = manifest.modules.filter((m) => !m.fullyVerified);
 console.log(
-  "LinkBooks browsing inventory: " +
+  "StreakBooks browsing inventory: " +
     manifest.modules.length +
     " sidebar modules, " +
     actualRoutes.length +

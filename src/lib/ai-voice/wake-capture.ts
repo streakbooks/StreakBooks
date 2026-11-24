@@ -71,7 +71,7 @@ export async function captureWakeAudio(
     };
     worker.postMessage({ type: "init", rate: context.sampleRate, profile });
     stage = "audio processor setup";
-    node = new AudioWorkletNode(context, "linkbooks-wake-capture");
+    node = new AudioWorkletNode(context, "streakbooks-wake-capture");
     node.port.onmessage = (e) => worker?.postMessage({ type: "pcm", pcm: e.data as Float32Array });
     stage = "microphone connection";
     context.createMediaStreamSource(stream).connect(node);

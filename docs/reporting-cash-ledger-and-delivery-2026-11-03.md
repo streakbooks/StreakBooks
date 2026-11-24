@@ -1,6 +1,6 @@
 # Cash Balance Sheet, durable allocations and cash report delivery
 
-This extends the cash P&L implementation in PR #14. The repository is `linkbusinessadvisory/LinkBooks`.
+This extends the cash P&L implementation in PR #14. The repository is `streakbooks/StreakBooks`.
 
 ## Implemented
 
@@ -37,7 +37,7 @@ The archive starts when its migration is installed. It cannot recover allocation
 Preserve local edits, then run in Cursor PowerShell:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git switch main
 git pull origin main

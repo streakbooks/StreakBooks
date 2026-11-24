@@ -1,4 +1,4 @@
-# LinkBooks Accounting — Reconciliation Independent Review, Evidence & History (Batch 5 / 6)
+# StreakBooks Accounting — Reconciliation Independent Review, Evidence & History (Batch 5 / 6)
 
 ## Implementation
 

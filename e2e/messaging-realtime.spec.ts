@@ -2,19 +2,19 @@ import { expect, test } from "@playwright/test";
 
 /**
  * Two-browser realtime messaging acceptance.
- * Requires LINKBOOKS_E2E_MESSAGING=1 plus two authenticated storage states
+ * Requires STREAKBOOKS_E2E_MESSAGING=1 plus two authenticated storage states
  * (MESSAGING_USER_A_STATE / MESSAGING_USER_B_STATE) against a migrated staging app.
  * Skips cleanly when credentials are absent so CI remains honest.
  */
-const enabled = process.env["LINKBOOKS_E2E_MESSAGING"] === "1";
+const enabled = process.env["STREAKBOOKS_E2E_MESSAGING"] === "1";
 const stateA = process.env["MESSAGING_USER_A_STATE"];
 const stateB = process.env["MESSAGING_USER_B_STATE"];
 const baseURL = process.env["PLAYWRIGHT_BASE_URL"] ?? "http://localhost:8080";
-const portalEnabled = process.env["LINKBOOKS_E2E_MESSAGING_PORTAL"] === "1";
+const portalEnabled = process.env["STREAKBOOKS_E2E_MESSAGING_PORTAL"] === "1";
 const portalState = process.env["MESSAGING_PORTAL_STATE"];
 
 test.describe("messaging realtime (two browsers)", () => {
-  test.skip(!enabled || !stateA || !stateB, "Set LINKBOOKS_E2E_MESSAGING=1 and dual auth states");
+  test.skip(!enabled || !stateA || !stateB, "Set STREAKBOOKS_E2E_MESSAGING=1 and dual auth states");
 
   test("authorised peers exchange a durable DM", async ({ browser }) => {
     const contextA = await browser.newContext({
@@ -104,14 +104,14 @@ test.describe("messaging realtime (two browsers)", () => {
 });
 
 test.describe("firm multi-client isolation (gated)", () => {
-  const firmEnabled = process.env["LINKBOOKS_E2E_MESSAGING_FIRM"] === "1";
+  const firmEnabled = process.env["STREAKBOOKS_E2E_MESSAGING_FIRM"] === "1";
   const firmState = process.env["MESSAGING_FIRM_STATE"];
   const clientAPath = process.env["MESSAGING_FIRM_CLIENT_A_PATH"] ?? "/messages";
   const clientBPath = process.env["MESSAGING_FIRM_CLIENT_B_PATH"] ?? "/messages";
 
   test.skip(
     !firmEnabled || !firmState,
-    "Set LINKBOOKS_E2E_MESSAGING_FIRM=1 and MESSAGING_FIRM_STATE",
+    "Set STREAKBOOKS_E2E_MESSAGING_FIRM=1 and MESSAGING_FIRM_STATE",
   );
 
   test("accountant workspace does not leak client A thread into client B context", async ({
@@ -149,7 +149,7 @@ test.describe("firm multi-client isolation (gated)", () => {
 test.describe("portal messaging bridge", () => {
   test.skip(
     !portalEnabled || !portalState,
-    "Set LINKBOOKS_E2E_MESSAGING_PORTAL=1 and MESSAGING_PORTAL_STATE",
+    "Set STREAKBOOKS_E2E_MESSAGING_PORTAL=1 and MESSAGING_PORTAL_STATE",
   );
 
   test("customer portal Message Business control is reachable", async ({ browser }) => {

@@ -1,17 +1,17 @@
-# Property Management — LinkBooks
+# Property Management — StreakBooks
 
-Production-grade property accounting and owner settlement for LinkBooks.
+Production-grade property accounting and owner settlement for StreakBooks.
 
 **Baseline audit SHA:** `0ca84bef58d9783dd993c21eb72e145d979d1ab7` (GitHub `main`, 2026-11-18)  
-**Authoritative repo:** https://github.com/linkbusinessadvisory/LinkBooks  
-**Local workstation:** `D:\MyApp\LinkBooks`
+**Authoritative repo:** https://github.com/streakbooks/StreakBooks  
+**Local workstation:** `D:\MyApp\StreakBooks`
 
 ## Documents
 
 | Document | Purpose |
 | --- | --- |
 | [EXISTING-STATE-AUDIT.md](./EXISTING-STATE-AUDIT.md) | Phase 0 capability classification |
-| [DEPENDENCY-MAP.md](./DEPENDENCY-MAP.md) | Reuse of LinkBooks accounting/UI/platform |
+| [DEPENDENCY-MAP.md](./DEPENDENCY-MAP.md) | Reuse of StreakBooks accounting/UI/platform |
 | [MIGRATION-CONFLICT-REGISTER.md](./MIGRATION-CONFLICT-REGISTER.md) | Concurrent migration / branch risks |
 | [COMPETITOR-GAP-MATRIX.md](./COMPETITOR-GAP-MATRIX.md) | Phase 1 official-docs gap analysis |
 | [PRD.md](./PRD.md) | Product requirements and acceptance |

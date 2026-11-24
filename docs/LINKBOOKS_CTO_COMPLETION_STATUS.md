@@ -1,4 +1,4 @@
-# LinkBooks — CTO completion status (2026-10-19 evening)
+# StreakBooks — CTO completion status (2026-10-19 evening)
 
 ## Honest scope note
 

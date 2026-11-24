@@ -77,7 +77,7 @@ describe("marketplace fail-closed activation", () => {
     await expect(
       shopifyAdapter.beginAuthorization({
         companyId: "00000000-0000-0000-0000-000000000001",
-        redirectUri: "https://linkbooks.app/oauth/callback",
+        redirectUri: "https://streakbooks.com/oauth/callback",
       }),
     ).rejects.toThrow(/FAIL CLOSED/);
   });

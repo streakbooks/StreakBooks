@@ -1,13 +1,13 @@
 # HR Management — Competitor gap matrix
 
 **Method:** Public product documentation and industry capability reports (2024–2026). Functionality only — no visual copying.  
-**Labels for LinkBooks:** `missing` | `payroll-only` | `partial` | `implemented` | `verified`  
+**Labels for StreakBooks:** `missing` | `payroll-only` | `partial` | `implemented` | `verified`  
 **Priority:** P0 critical path · P1 strong SMB/mid-market · P2 enterprise differentiator · P3 defer  
 **Complexity:** S / M / L / XL
 
 Sources consulted include Odoo HR whitepaper, Ascend HCM vendor comparison, Nucleus Research Enterprise HCM matrix, vendor marketing for Workday, SAP SuccessFactors, Oracle Fusion HCM, UKG Pro, ADP Workforce Now, Rippling, BambooHR, HiBob, Zoho People, Darwinbox, Personio.
 
-| Capability | Competitors (verified pattern) | LinkBooks today | Gap | UX opportunity | Security / compliance | Priority | Complexity | Proposed improvement | Batch | Acceptance evidence |
+| Capability | Competitors (verified pattern) | StreakBooks today | Gap | UX opportunity | Security / compliance | Priority | Complexity | Proposed improvement | Batch | Acceptance evidence |
 |------------|--------------------------------|-----------------|-----|----------------|----------------------|----------|------------|----------------------|-------|---------------------|
 | Employee master / HRIS | All 12 | payroll-only (`payroll_employees`) | No HR profile, manager, org FKs, history UI in HR module | Premium directory + RecordWorkspace | Field-level sensitive + audit | P0 | M | Extend profiles on shared ID; HR directory | HR-01/02 | CRUD + RLS tests |
 | Org chart / departments | Odoo, Workday, BambooHR, HiBob, Darwinbox | missing (free-text dept on payroll) | Structured org + chart | Interactive org tree | Company-scoped | P0 | M | `hr_departments`, locations, designations | HR-03 | Org CRUD + chart |
@@ -37,10 +37,10 @@ Sources consulted include Odoo HR whitepaper, Ascend HCM vendor comparison, Nucl
 | IT provisioning (Rippling-like) | Rippling | missing | External adapters | Disabled until connected | Revocable scopes | P3 | L | Stub adapters | Future | Disabled state |
 | Biometrics / clocks | UKG, ADP | missing | Adapter interface | Consent UX | Local law limits | P3 | XL | Interface only | Future | Consent flags |
 
-## Prioritization for LinkBooks customers
+## Prioritization for StreakBooks customers
 
 Focus P0/P1 for SMB → mid-market with multi-location. Defer full enterprise succession, agentic AI HR ops, and deep benefits administration until core time/leave/lifecycle is verified.
 
 ## Originality note
 
-LinkBooks HR IA uses Workspace / People / Time / Talent / Lifecycle grouping and LinkBooks shell tokens. Do not mimic Odoo enterprise purple chrome, Workday card density, or BambooHR green marketing layouts.
+StreakBooks HR IA uses Workspace / People / Time / Talent / Lifecycle grouping and StreakBooks shell tokens. Do not mimic Odoo enterprise purple chrome, Workday card density, or BambooHR green marketing layouts.

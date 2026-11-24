@@ -262,7 +262,7 @@ export function computeFeatureState(
       state: "unavailable",
       enabled: false,
       implementation: def.implementation,
-      reason: "Not implemented in LinkBooks yet",
+      reason: "Not implemented in StreakBooks yet",
       consumerModules: def.consumerModules,
       preservesHistory: def.preservesHistory,
     };

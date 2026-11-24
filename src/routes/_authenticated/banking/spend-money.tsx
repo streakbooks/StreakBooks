@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/banking/spend-money")({
     if (typeof ret === "string" && ret.startsWith("/") && !ret.startsWith("//")) out.returnTo = ret;
     return out;
   },
-  head: () => ({ meta: [{ title: "Spend money — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Spend money — StreakBooks" }] }),
   component: SpendMoneyRoute,
 });
 

@@ -3,7 +3,7 @@
  * these mirrors only preview it and normalise customer input.
  */
 export const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{6,24}$/;
-export const REFERRAL_STORAGE_KEY = "linkbooks.referralCode";
+export const REFERRAL_STORAGE_KEY = "streakbooks.referralCode";
 
 export function normaliseReferralCode(input: string | null | undefined): string | null {
   const code = (input ?? "").trim().toUpperCase();

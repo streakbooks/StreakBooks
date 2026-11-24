@@ -1,10 +1,10 @@
-# LinkBooks accounting product gap analysis
+# StreakBooks accounting product gap analysis
 **Date:** 3 November 2026 · **Baseline:** main `ef53489f` · **Method:** official-product behavior + repository routes/functions/schema inventory, not copied competitor source.
 
 ## Evidence and labels
-Odoo and Xero columns describe **publicly documented capabilities**, not an assertion that every capability is in Odoo Community or every Xero subscription. Odoo bank synchronization, for example, explicitly requires Enterprise. LinkBooks: **Done** = evidenced implementation/entry points, **Partial** = implemented pieces but important behavior, accuracy, integration, live validation or localization remains, **Missing** = no verified complete mechanism in this targeted audit. None of these statuses is an external accounting or tax certification. Effort is a relative estimate: S (days), M (weeks), L (multi-week workstream).
+Odoo and Xero columns describe **publicly documented capabilities**, not an assertion that every capability is in Odoo Community or every Xero subscription. Odoo bank synchronization, for example, explicitly requires Enterprise. StreakBooks: **Done** = evidenced implementation/entry points, **Partial** = implemented pieces but important behavior, accuracy, integration, live validation or localization remains, **Missing** = no verified complete mechanism in this targeted audit. None of these statuses is an external accounting or tax certification. Effort is a relative estimate: S (days), M (weeks), L (multi-week workstream).
 
-| Feature | Odoo public capability | Xero public capability | LinkBooks status and code evidence | Priority | Effort |
+| Feature | Odoo public capability | Xero public capability | StreakBooks status and code evidence | Priority | Effort |
 |---|---|---|---|---|---|
 | Chart of accounts | Hierarchies, account grouping | Chart of accounts | **Done** — `accounts`, COA settings and account picker; country defaults need review | P0 | M |
 | Double-entry journal posting | Balanced posted entries | Double-entry ledger | **Done** — `journals` / `journal_lines` and posting services; independent matrix pending | P0 | M |

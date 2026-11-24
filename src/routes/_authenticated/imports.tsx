@@ -387,7 +387,7 @@ function ImportCentre() {
                   ]),
                 ],
               ),
-              "linkbooks-import-results.csv",
+              "streakbooks-import-results.csv",
             );
           }}
         >
@@ -634,7 +634,7 @@ function ImportCentre() {
         {definition.module === "sales" && definition.documentType === "Invoices" && (
           <div className="space-y-3 rounded-lg border p-3">
             <p className="text-sm">
-              Import invoice lines as real drafts through LinkBooks Sales services. Optionally
+              Import invoice lines as real drafts through StreakBooks Sales services. Optionally
               authorise and post AR journals after creating each draft. Existing non-void invoice
               numbers are not imported again. Import is per-invoice: failures can leave a saved
               draft requiring review. Receipts and credit notes are not included in this import.
@@ -900,14 +900,14 @@ function ImportCentre() {
             </p>
             <p className="text-sm">
               External asset references are retained in the audit mapping. Your registered assets
-              receive LinkBooks asset numbers. This batch does not change existing assets or create
+              receive StreakBooks asset numbers. This batch does not change existing assets or create
               accounting journals.
             </p>
             {csv && (
               <div className="space-y-3">
                 <h4 className="text-sm font-semibold">Match columns from your file</h4>
                 <p className="text-xs text-muted-foreground">
-                  Headers matching the LinkBooks template are selected automatically. For other
+                  Headers matching the StreakBooks template are selected automatically. For other
                   systems, choose the source column for each field. Every required field must be
                   mapped.
                 </p>

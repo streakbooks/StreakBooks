@@ -38,7 +38,7 @@ export function exportReportCsv(doc: ReportDocument): string {
 }
 export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = doc.header || "LinkBooks";
+  workbook.creator = doc.header || "StreakBooks";
   workbook.created = new Date(doc.capturedAt);
   doc.sections.forEach((section, index) => {
     const sheet = workbook.addWorksheet(

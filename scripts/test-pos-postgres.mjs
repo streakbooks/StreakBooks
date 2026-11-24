@@ -4,7 +4,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const name = `linkbooks-pos-${process.pid}`;
+const name = `streakbooks-pos-${process.pid}`;
 const docker = (args, input) =>
   execFileSync("docker", args, { input, encoding: "utf8", maxBuffer: 8 * 1024 * 1024 });
 const psql = [

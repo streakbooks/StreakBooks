@@ -150,7 +150,7 @@ function History({ state }: { state: SubscriptionState }) {
               {event.toPlan && event.fromPlan && event.toPlan !== event.fromPlan
                 ? ` · ${event.fromPlan} → ${event.toPlan}`
                 : ""}
-              {event.source === "platform" ? " · by LinkBooks" : ""}
+              {event.source === "platform" ? " · by StreakBooks" : ""}
             </span>
             <time className="text-muted-foreground" dateTime={event.occurredAt}>
               {new Date(event.occurredAt).toLocaleString()}

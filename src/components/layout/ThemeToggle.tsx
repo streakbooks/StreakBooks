@@ -76,7 +76,7 @@ export function ThemeToggle() {
               <DropdownMenuLabel className="p-0 text-sm font-semibold">
                 Your appearance
               </DropdownMenuLabel>
-              <p className="text-xs text-muted-foreground">Make LinkBooks feel like yours</p>
+              <p className="text-xs text-muted-foreground">Make StreakBooks feel like yours</p>
             </div>
           </div>
           <DropdownMenuSeparator />
@@ -193,7 +193,7 @@ export function ThemeToggle() {
         <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Palette className="size-5 text-primary" /> Personalise LinkBooks
+              <Palette className="size-5 text-primary" /> Personalise StreakBooks
             </DialogTitle>
             <DialogDescription>
               Choose an original primary, accent and workspace palette. Text contrast adapts;
@@ -216,7 +216,7 @@ export function ThemeToggle() {
                     color: preview["--sidebar-foreground"],
                   }}
                 >
-                  <div className="text-xs font-semibold">LinkBooks</div>
+                  <div className="text-xs font-semibold">StreakBooks</div>
                   <div
                     className="mt-4 rounded px-2 py-1 text-xs"
                     style={{

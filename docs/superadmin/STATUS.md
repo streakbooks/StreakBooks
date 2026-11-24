@@ -52,7 +52,7 @@ workspace the legacy suites used the installed browser via
 reported a missing bundled browser, then all six wake tests passed with that path.
 No test assertions were removed or skipped.
 
-[GitHub Actions run 41583439318](https://github.com/rohitmehra86/LinkBooks/actions/runs/41583439318)
+[GitHub Actions run 41583439318](https://github.com/streakbooks/StreakBooks/actions/runs/41583439318)
 for implementation commit `5f3b1f3` failed on both attempts before any steps ran
 in all four jobs. The owner supplied the annotations: recent account payments
 failed or the spending limit must be increased. The Ubuntu 26 runner notice is

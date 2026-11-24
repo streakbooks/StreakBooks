@@ -137,7 +137,7 @@ export function PlatformResource({
       );
       const a = document.createElement("a");
       a.href = url;
-      a.download = `linkbooks-${resource}-page-${page + 1}.csv`;
+      a.download = `streakbooks-${resource}-page-${page + 1}.csv`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {

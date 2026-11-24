@@ -270,7 +270,7 @@ export function SettingsCommunicationsPanel({
                   : undefined
               }
               disabled={savingBlocked}
-              placeholder="e.g. LinkBooks Accounts"
+              placeholder="e.g. StreakBooks Accounts"
               onChange={(e) => set("email_from_name", e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
@@ -297,7 +297,7 @@ export function SettingsCommunicationsPanel({
               onChange={(e) => set("reply_to", e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Replies to LinkBooks document emails and notification digests are directed here when
+              Replies to StreakBooks document emails and notification digests are directed here when
               set.
             </p>
             {validationErrors?.reply_to?.[0] ? (

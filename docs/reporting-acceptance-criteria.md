@@ -1,4 +1,4 @@
-# MEASURABLE ACCEPTANCE CRITERIA — LINKBOOKS REPORTING ECOSYSTEM
+# MEASURABLE ACCEPTANCE CRITERIA — STREAKBOOKS REPORTING ECOSYSTEM
 
 These acceptance criteria are mandatory. They define when the reporting implementation can be considered complete, validated, and ready for production.
 

@@ -6,7 +6,7 @@ import {
   type PaymentMode,
 } from "@/lib/billing/providers/normalise";
 
-/** Server-only Stripe client. Test keys unless LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true. */
+/** Server-only Stripe client. Test keys unless STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true. */
 export type StripeClient = {
   mode: PaymentMode;
   request: (
@@ -67,7 +67,7 @@ export async function createStripePrice(
   body.set("currency", input.currency.toLowerCase());
   body.set("unit_amount", String(input.amountMinor));
   body.set("recurring[interval]", input.interval);
-  body.set("product_data[name]", `LinkBooks ${input.planName}`);
+  body.set("product_data[name]", `StreakBooks ${input.planName}`);
   body.set("metadata[plan_price_id]", input.planPriceId);
   const price = await client.request(
     "POST",
@@ -228,7 +228,7 @@ export type CouponTerms = {
   durationMonths: number | null;
 };
 
-/** One Stripe coupon per LinkBooks code and currency (the database keeps the mapping). */
+/** One Stripe coupon per StreakBooks code and currency (the database keeps the mapping). */
 export async function createStripeCoupon(
   client: StripeClient,
   terms: CouponTerms,

@@ -1,6 +1,6 @@
 import type { ExpenseClaimDraftInput } from "@/lib/expenses/claims";
 
-const STORAGE_PREFIX = "linkbooks.expense-offline-drafts.";
+const STORAGE_PREFIX = "streakbooks.expense-offline-drafts.";
 
 /** In-memory fallback when localStorage is unavailable (SSR / some test runners). */
 const memoryStore = new Map<string, OfflineExpenseClaimDraft[]>();

@@ -87,7 +87,7 @@ export function useMessagingConversations(
           }
           showMessagingDesktopNotification(
             {
-              title: "New LinkBooks message",
+              title: "New StreakBooks message",
               body: "You have new activity in Messages.",
               tag: `messaging-${companyId}`,
               href: "/messages",

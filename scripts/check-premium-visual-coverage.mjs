@@ -1,5 +1,5 @@
 /**
- * Route-inventory completeness guard for the original LinkBooks visual redesign.
+ * Route-inventory completeness guard for the original StreakBooks visual redesign.
  * This checks that all screens are tracked, NOT that they look good or pass browser tests.
  *
  * Run locally: npm run check:visual-coverage

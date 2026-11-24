@@ -4,11 +4,11 @@ import { PmOverviewPage } from "@/screens/property-management/overview";
 export const Route = createFileRoute("/_authenticated/property-management/")({
   head: () => ({
     meta: [
-      { title: "Property Management — LinkBooks" },
+      { title: "Property Management — StreakBooks" },
       {
         name: "description",
         content:
-          "LinkBooks Property Management overview for portfolios, owners and settlement readiness.",
+          "StreakBooks Property Management overview for portfolios, owners and settlement readiness.",
       },
     ],
   }),

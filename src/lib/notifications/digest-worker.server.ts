@@ -1,6 +1,6 @@
 /**
  * Protected hourly digest worker. Invoked only by /api/communications/digest-cron
- * with the rotating LOVABLE_CRON_SECRET. Uses service credentials only server-side.
+ * with the rotating STREAKBOOKS_CRON_SECRET. Uses service credentials only server-side.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { readEmailConfig, sendViaResend } from "@/lib/documents/email-provider.server";
@@ -123,12 +123,12 @@ export async function runScheduledDigests(now = new Date()): Promise<{
         }
 
         const sender = configuredSender(provider.from, parsed.data);
-        const subject = `LinkBooks action summary — ${companyInfo.name} (${alerts.length} items)`;
-        const text = `Outstanding LinkBooks actions for ${companyInfo.name}:\n\n${alerts
+        const subject = `StreakBooks action summary — ${companyInfo.name} (${alerts.length} items)`;
+        const text = `Outstanding StreakBooks actions for ${companyInfo.name}:\n\n${alerts
           .map((a, i) => `${i + 1}. [${a.priority.toUpperCase()}] ${a.title}\n${a.body}`)
           .join(
             "\n\n",
-          )}\n\nSign in to LinkBooks to review. No accounting actions are performed by this email.`;
+          )}\n\nSign in to StreakBooks to review. No accounting actions are performed by this email.`;
         const response = await sendViaResend(
           { ...provider, from: sender.from },
           {

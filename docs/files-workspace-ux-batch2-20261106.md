@@ -29,10 +29,10 @@ Status: source changes committed; non-CI local checks and authenticated staging 
 ## Run non-CI local checks in a clean second worktree
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git fetch origin
-git worktree add -b review/files-ux D:\MyApp\LinkBooks-Files origin/feature/files-workspace-ux-20261106
-cd D:\MyApp\LinkBooks-Files
+git worktree add -b review/files-ux D:\MyApp\StreakBooks-Files origin/feature/files-workspace-ux-20261106
+cd D:\MyApp\StreakBooks-Files
 npm.cmd ci
 npm.cmd run typecheck
 npm.cmd run lint

@@ -1,6 +1,6 @@
 /**
  * Purchase-order three-way match (order × received × bill).
- * Original LinkBooks rules — public 3-way matching concepts only; no competitor code.
+ * Original StreakBooks rules — public 3-way matching concepts only; no competitor code.
  *
  * Matching is operational/control. Journals still post only through bill authorisation.
  * When the company enables purchases.three_way_matching, authorisation must fail closed

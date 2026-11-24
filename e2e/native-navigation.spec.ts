@@ -12,7 +12,7 @@ async function signIn(page: Page, destination: string) {
 }
 
 /** Native links preserve the source workspace on modifier-click and expose real href targets. */
-test.describe("Native browser navigation across LinkBooks", () => {
+test.describe("Native browser navigation across StreakBooks", () => {
   test.beforeEach(() => {
     test.skip(
       !email || !password,
@@ -99,7 +99,7 @@ test.describe("deep links in authenticated module workspaces", () => {
   test.beforeEach(() => {
     test.skip(
       !email || !password,
-      "Authorised test account required for live LinkBooks navigation.",
+      "Authorised test account required for live StreakBooks navigation.",
     );
   });
 

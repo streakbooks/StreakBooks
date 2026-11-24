@@ -4,7 +4,7 @@ import { parseOpsSearch } from "@/lib/platform/operations";
 export const Route = createFileRoute("/_authenticated/platform/operations")({
   validateSearch: parseOpsSearch,
   component: OperationsPage,
-  head: () => ({ meta: [{ title: "Operations — LinkBooks Superadmin" }] }),
+  head: () => ({ meta: [{ title: "Operations — StreakBooks Superadmin" }] }),
 });
 function OperationsPage() {
   const search = Route.useSearch();

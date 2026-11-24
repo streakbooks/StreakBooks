@@ -55,7 +55,7 @@ export function AdvisorsAgreementPage({ token }: { token: string }) {
     <main className="mx-auto max-w-2xl space-y-6 p-6">
       <div>
         <p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
-          LinkBooks Advisors
+          StreakBooks Advisors
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">{agreement.title}</h1>
         <p className="mt-2 text-muted-foreground">
@@ -109,7 +109,7 @@ export function AdvisorsAgreementPage({ token }: { token: string }) {
               onChange={(event) => setConsent(event.target.checked)}
             />
             <span>
-              I have read these terms and explicitly consent to LinkBooks Advisors beginning
+              I have read these terms and explicitly consent to StreakBooks Advisors beginning
               onboarding for the selected service. I understand this does not by itself start a paid
               subscription.
             </span>

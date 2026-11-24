@@ -8,7 +8,7 @@ import { usePortal } from "@/components/portals/use-portal";
 
 export const Route = createFileRoute("/portal/pay/$intentId")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Sandbox payment — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Sandbox payment — StreakBooks" }] }),
   component: SandboxPay,
 });
 

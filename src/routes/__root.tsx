@@ -13,7 +13,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportRuntimeError } from "../lib/runtime-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
@@ -55,7 +55,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   useEffect(() => {
     hideRecoveryStatus();
     if (isStaleChunkError(error) && reloadOnceForStaleChunk()) return;
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportRuntimeError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
   return (
@@ -94,24 +94,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "LinkBooks — Cloud Accounting" },
+      { title: "StreakBooks — Cloud Accounting" },
       {
         name: "description",
-        content: "LinkBooks is a cloud accounting platform for small businesses and accountants.",
+        content: "StreakBooks is a cloud accounting platform for small businesses and accountants.",
       },
-      { property: "og:title", content: "LinkBooks — Cloud Accounting" },
+      { property: "og:title", content: "StreakBooks — Cloud Accounting" },
       {
         property: "og:description",
-        content: "LinkBooks is a cloud accounting platform for small businesses and accountants.",
+        content: "StreakBooks is a cloud accounting platform for small businesses and accountants.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://streakbooks.com/" },
+      { property: "og:image", content: "https://streakbooks.com/og-image.png" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     // Apply the saved theme before first paint so dark mode never flashes light.
     scripts: [{ children: THEME_INIT_SCRIPT }],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/brand/streakbooks-logo.png" },
     ],
   }),
   shellComponent: RootShell,

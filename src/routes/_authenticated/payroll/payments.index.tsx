@@ -8,7 +8,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/payroll/payments/")({
   validateSearch: searchSchema,
-  head: () => ({ meta: [{ title: "Payroll payments — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Payroll payments — StreakBooks" }] }),
   component: function PayrollPaymentsRoute() {
     const { runId } = Route.useSearch();
     return <PayrollPaymentsPage runIdFilter={runId ?? null} />;

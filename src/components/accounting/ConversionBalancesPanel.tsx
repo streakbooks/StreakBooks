@@ -206,7 +206,7 @@ export function ConversionBalancesPanel({
       );
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `linkbooks-opening-balances-review-${conversionDate}.csv`;
+      anchor.download = `streakbooks-opening-balances-review-${conversionDate}.csv`;
       anchor.click();
       URL.revokeObjectURL(url);
     } catch (error) {
@@ -468,7 +468,7 @@ export function ConversionBalancesPanel({
       <Alert>
         <AlertTitle>How this works</AlertTitle>
         <AlertDescription>
-          Pick the day your books in LinkBooks start (the conversion date). Enter the closing trial
+          Pick the day your books in StreakBooks start (the conversion date). Enter the closing trial
           balance from your old system as at the day before, then the unpaid customer invoices and
           supplier bills. One balanced opening journal is posted via the posting engine; postings
           before the conversion date are then blocked.

@@ -1,4 +1,4 @@
-# LinkBooks Files — Batch 5: Company email-to-inbox receiving
+# StreakBooks Files — Batch 5: Company email-to-inbox receiving
 
 Date: 2026-11-06
 Status: committed source implementation. **Not deployed or production verified.**
@@ -58,12 +58,12 @@ Provider status, credentials, available domain aliases, and forwarding configura
 ## Required verification
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git fetch origin
 git worktree list
 # Create a new destination only if it does not already exist:
-git worktree add --detach D:\MyApp\LinkBooks-Files-B5 origin/feature/files-workspace-ux-20261106
-cd D:\MyApp\LinkBooks-Files-B5
+git worktree add --detach D:\MyApp\StreakBooks-Files-B5 origin/feature/files-workspace-ux-20261106
+cd D:\MyApp\StreakBooks-Files-B5
 npm.cmd ci
 npm.cmd run typecheck
 npm.cmd run lint

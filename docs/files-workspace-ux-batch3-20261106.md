@@ -32,12 +32,12 @@ Status: GitHub source changes committed only; local TypeScript/build/Vitest, aut
 Use a clean checkout/worktree separate from Cursor's active modifications:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git fetch origin
 git worktree list
-# Create a separate worktree only if D:\MyApp\LinkBooks-Files does not already exist:
-git worktree add --detach D:\MyApp\LinkBooks-Files origin/feature/files-workspace-ux-20261106
-cd D:\MyApp\LinkBooks-Files
+# Create a separate worktree only if D:\MyApp\StreakBooks-Files does not already exist:
+git worktree add --detach D:\MyApp\StreakBooks-Files origin/feature/files-workspace-ux-20261106
+cd D:\MyApp\StreakBooks-Files
 npm.cmd ci
 npm.cmd run typecheck
 npm.cmd run lint

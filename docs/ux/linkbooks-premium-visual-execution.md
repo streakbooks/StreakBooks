@@ -1,13 +1,13 @@
-# LinkBooks Premium Visual UI/UX Transformation — Implementation Log
+# StreakBooks Premium Visual UI/UX Transformation — Implementation Log
 
-**Repository:** linkbusinessadvisory/LinkBooks  
-**Feature branch:** \`feature/linkbooks-premium-visual-redesign\`  
+**Repository:** streakbooks/StreakBooks  
+**Feature branch:** \`feature/streakbooks-premium-visual-redesign\`  
 **Starting point:** \`48421b1c710f7e4f3dd50e4a496e4fe4c3723ed9\` (main)  
 **Git safety:** No writes to main, no forced pushes, no manual GitHub CI, no production deployments.
 
 ## Scope and original design policy
 
-All current and future LinkBooks modules, internal tabs, actions, accessible popovers, dialogs, sheets, forms, portals and public/admin pages remain in scope. Odoo, Xero and QBO are quality/usability benchmarks only. The LinkBooks presentation identity, type hierarchy, palette choices, status symbols and interactions must remain original.
+All current and future StreakBooks modules, internal tabs, actions, accessible popovers, dialogs, sheets, forms, portals and public/admin pages remain in scope. Odoo, Xero and QBO are quality/usability benchmarks only. The StreakBooks presentation identity, type hierarchy, palette choices, status symbols and interactions must remain original.
 
 Canonical machine-readable route register:
 \`docs/ux/premium-visual-route-inventory.json\`.
@@ -27,7 +27,7 @@ Gaps found and addressed in this implementation increment:
 - A distinct semantic **teal Paid/Completed/Reconciled** status tone was missing.
 - Existing status chips did not consistently include a non-colour indicator or use a shared event-backed timeline.
 - Expense Claims, Payroll Runs, Tax pack verification, Reimbursements and Accounting Journal lists showed several status fields as monochrome/plain badges.
-- Palette display names did not match the approved LinkBooks design-language naming.
+- Palette display names did not match the approved StreakBooks design-language naming.
 - Custom accent was not separate from primary; custom chart series were not fully derived from the theme.
 - Standard tables/cards/workspace headings needed modest density, hierarchy and focus polish.
 
@@ -40,8 +40,8 @@ Gaps found and addressed in this implementation increment:
    - \`StatusBadge\`, \`StatusIndicator\`, and \`StatusTimeline\` implemented in \`src/components/common/StatusBadge.tsx\`. History timeline displays ONLY supplied audit events and does not invent transitions.
 2. **Compatibility deployment:** Existing \`StatusBadge\` in \`src/components/common/stat-card.tsx\` delegates to the new semantic component. Existing Sales invoice, Purchases bill and Banking transaction screens benefit without account/business logic changes.
 3. **Direct live status screens:** Expense Claims list/detail/reimbursements, Payroll overview/runs/employees, Tax country packs, Accounting journal table, Fixed Asset register/details, Firm engagement/document requests, Advisors admin engagements/proposals, Advisors Portal tasks. Completed/cancelled Firm requests require recorded timestamps; overdue is a due-date warning.
-4. **Theme engine:** Eight stable saved palette IDs now use the names LinkBooks Signature, Sapphire Focus, Rose Professional, Royal Indigo, Emerald Professional, Modern Teal, Warm Sand and Executive Slate. \`CustomPalette\` additionally supports independently chosen primary and accent colours; live preview, local persistence and prepaint fallbacks preserved. Five chart-series tokens coordinate with each palette. Status colours do NOT depend on the selected palette.
-5. **Shared controls:** Cards, tables, button variants, page headers and empty/error states have an original LinkBooks design. This development pass added premium Input, Textarea, Label, Select, Dialog, Sheet, Tabs and TableCard styling, including invalid, disabled and keyboard states. The AppShell now uses an original CSS ledger mark, palette-aware sidebar, refined topbar and wider data workspaces. Shared styling applies where components are used but does **not** establish screen-by-screen acceptance.
+4. **Theme engine:** Eight stable saved palette IDs now use the names StreakBooks Signature, Sapphire Focus, Rose Professional, Royal Indigo, Emerald Professional, Modern Teal, Warm Sand and Executive Slate. \`CustomPalette\` additionally supports independently chosen primary and accent colours; live preview, local persistence and prepaint fallbacks preserved. Five chart-series tokens coordinate with each palette. Status colours do NOT depend on the selected palette.
+5. **Shared controls:** Cards, tables, button variants, page headers and empty/error states have an original StreakBooks design. This development pass added premium Input, Textarea, Label, Select, Dialog, Sheet, Tabs and TableCard styling, including invalid, disabled and keyboard states. The AppShell now uses an original CSS ledger mark, palette-aware sidebar, refined topbar and wider data workspaces. Shared styling applies where components are used but does **not** establish screen-by-screen acceptance.
 
 **Server accounting, journal posting, authorization/RLS and database schema have NOT been modified in this visual track.** Existing frontend mutation responses and query invalidations must still be tested to verify post-operation status updates.
 
@@ -59,7 +59,7 @@ Gaps found and addressed in this implementation increment:
 | 8 | Tax, Budgets, Fixed Assets, multi-currency and country-specific settings | Tax and Fixed Assets status visuals coded; Budgets, country settings and full workflows pending |
 | 9 | Payroll, employee claims, reimbursements, settings and payroll statements | Payroll overview/runs/employees and Reimbursements statuses coded; other screens and full verification pending |
 | 10 | Firm, Advisors, Advisors Portal, client workspaces, contracts and documents | Firm engagements/requests and Advisors tasks/engagements/proposals statuses coded; other screens pending |
-| 11 | AI Assistant, LinkBooks Signal, Settings Centre, billing, Superadmin, App Store/integrations | AI Assistant transcript/status and Settings overview partially styled; Signal, Superadmin and App Store scope pending |
+| 11 | AI Assistant, StreakBooks Signal, Settings Centre, billing, Superadmin, App Store/integrations | AI Assistant transcript/status and Settings overview partially styled; Signal, Superadmin and App Store scope pending |
 | 12 | Cross-module final acceptance: all 22+ modules, extra routes, 7 themes + custom, desktop/tablet/mobile, accessibility, permissions, regressions, deployment/recovery | Pending |
 
 The *batch count is not a percentage of code written.* A batch is fully verified only after the relevant automated tests and real authenticated screen/browser acceptance checks pass. **Fully verified visual batches: 0/12.**

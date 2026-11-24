@@ -1,4 +1,4 @@
-name: LinkBooks static and isolated quality gates
+name: StreakBooks static and isolated quality gates
 
 on:
   pull_request:

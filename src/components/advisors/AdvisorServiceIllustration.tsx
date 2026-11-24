@@ -10,11 +10,11 @@ type IllustrationKey = "we-do-your-books" | "we-coach-you";
 const RASTER: Record<IllustrationKey, { src: string; alt: string }> = {
   "we-do-your-books": {
     src: "/advisors/we-do-your-books.jpg",
-    alt: "Original LinkBooks illustration of organized ledgers representing managed bookkeeping",
+    alt: "Original StreakBooks illustration of organized ledgers representing managed bookkeeping",
   },
   "we-coach-you": {
     src: "/advisors/we-coach-you.jpg",
-    alt: "Original LinkBooks illustration of two people reviewing a financial chart during coaching",
+    alt: "Original StreakBooks illustration of two people reviewing a financial chart during coaching",
   },
 };
 

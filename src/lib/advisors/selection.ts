@@ -1,6 +1,6 @@
 import type { AdvisorServiceCode } from "@/lib/advisors/catalogue";
 
-export const ADVISORS_SELECTION_STORAGE_KEY = "linkbooks.advisors.selectedService";
+export const ADVISORS_SELECTION_STORAGE_KEY = "streakbooks.advisors.selectedService";
 
 export function rememberAdvisorServiceSelection(code: AdvisorServiceCode): void {
   try {

@@ -4,7 +4,7 @@ Status: automatic localization implemented in PR #34, **not certified for live p
 
 ## Scope
 
-- LinkBooks subscription payments **to the LinkBooks platform** (not a connected
+- StreakBooks subscription payments **to the StreakBooks platform** (not a connected
   organisation's sales-invoice collections, which require a separate provider integration).
 - Contact and billing address collected before checkout. The public pricing page uses
   trusted Vercel geolocation; the authenticated checkout uses organisation country.
@@ -42,7 +42,7 @@ Status: automatic localization implemented in PR #34, **not certified for live p
 | Stripe and Razorpay account onboarding, keys and webhook secrets | Merchant action pending |
 | 3DS/SCA, mandates, payment-failure and retry flows | Provider sandbox verification pending |
 | Automated tax collection / VAT / GST / sales tax treatment | **Not implemented**; tax/legal review mandatory |
-| Real invoice receipts, credit notes and adjustments for LinkBooks billing | Not verified |
+| Real invoice receipts, credit notes and adjustments for StreakBooks billing | Not verified |
 | Subscription plan changes across all provider and mandate types | Not fully verified |
 | Live refund, dispute and chargeback handling | Not fully verified |
 | Merchant payout reconciliation and revenue recognition | Not verified |

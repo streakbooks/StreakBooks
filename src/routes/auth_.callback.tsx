@@ -10,7 +10,7 @@ import { commitPendingMethod, needsMfaStepUp, takeNext } from "@/lib/auth-sessio
 /** Landing page for OAuth, SAML SSO, email confirmation and email sign-in links. */
 export const Route = createFileRoute("/auth_/callback")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Signing you in — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Signing you in — StreakBooks" }] }),
   component: AuthCallbackPage,
 });
 

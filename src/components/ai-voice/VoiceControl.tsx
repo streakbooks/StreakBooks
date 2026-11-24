@@ -130,7 +130,7 @@ export function VoiceControl({
       {expanded ? (
         <section
           id={panelId}
-          aria-label="LinkBooks Signal"
+          aria-label="StreakBooks Signal"
           className="voice-signal-panel"
           onKeyDown={(event) => {
             if (event.key === "Escape") {
@@ -141,7 +141,7 @@ export function VoiceControl({
         >
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold">LinkBooks Signal</h2>
+              <h2 className="font-semibold">StreakBooks Signal</h2>
               <p className="text-xs text-muted-foreground">
                 {state.active ? "Active until you stop" : "Your voice, your workspace"}
                 {state.form ? ` · ${state.form.replace("_", " ")}` : ""}

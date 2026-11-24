@@ -11,7 +11,7 @@
 ## Local Windows PowerShell
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status --short
 git branch --show-current
 git fetch origin main
@@ -25,7 +25,7 @@ npm run dev
 ```
 
 Before pulling, check for uncommitted changes and confirm the current branch is `main`.
-Do not run GitHub Actions or trigger CI. Supabase migrations are already applied to the connected LinkBooks project; do **not** reapply them manually.
+Do not run GitHub Actions or trigger CI. Supabase migrations are already applied to the connected StreakBooks project; do **not** reapply them manually.
 
 ## Verification matrix (fill in actual results, never assume)
 

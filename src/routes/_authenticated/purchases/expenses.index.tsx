@@ -31,7 +31,7 @@ type ExpenseRow = {
 };
 
 export const Route = createFileRoute("/_authenticated/purchases/expenses/")({
-  head: () => ({ meta: [{ title: "Expenses — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Expenses — StreakBooks" }] }),
   component: ExpensesList,
 });
 

@@ -45,7 +45,7 @@ export const Route = createFileRoute("/_authenticated/banking/reconcile")({
     typeof s["bankAccountId"] === "string" && s["bankAccountId"]
       ? { bankAccountId: s["bankAccountId"] }
       : {},
-  head: () => ({ meta: [{ title: "Reconcile — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Reconcile — StreakBooks" }] }),
   component: Reconcile,
 });
 

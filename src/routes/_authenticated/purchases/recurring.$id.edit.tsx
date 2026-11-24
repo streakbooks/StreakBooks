@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { NewBill, type RecurringBillSeed } from "@/screens/purchases/bills.new";
 
 export const Route = createFileRoute("/_authenticated/purchases/recurring/$id/edit")({
-  head: () => ({ meta: [{ title: "Edit recurring bill — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Edit recurring bill — StreakBooks" }] }),
   component: EditRecurringBillRoute,
 });
 

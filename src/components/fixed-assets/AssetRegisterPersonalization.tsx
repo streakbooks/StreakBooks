@@ -146,7 +146,7 @@ export function FixedAssetSavedFilterViews({
           setLoading(false);
           return;
         }
-        const key = "linkbooks-fixed-assets-views:v1:" + data.user.id + ":" + companyId;
+        const key = "streakbooks-fixed-assets-views:v1:" + data.user.id + ":" + companyId;
         try {
           setViews(parseSavedAssetFilterViews(window.localStorage.getItem(key)));
           setStorageKey(key);

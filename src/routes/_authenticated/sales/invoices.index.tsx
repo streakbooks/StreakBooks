@@ -50,7 +50,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/sales/invoices/")({
   validateSearch: parseInvoiceListSearch,
-  head: () => ({ meta: [{ title: "Invoices — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Invoices — StreakBooks" }] }),
   component: InvoicesList,
 });
 

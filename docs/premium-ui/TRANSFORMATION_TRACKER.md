@@ -1,7 +1,7 @@
 ﻿# Premium UI/UX Transformation Tracker
 
 **Single source of truth** for the application-wide premium UI programme.  
-**Authoritative repo:** https://github.com/linkbusinessadvisory/LinkBooks  
+**Authoritative repo:** https://github.com/streakbooks/StreakBooks  
 **Baseline main (Phase 0 audit):** `02397a65` (2026-11-18)  
 **Progress rule:** a module is COMPLETE only when finished-screen DoD gates pass with evidence. Chrome inheritance alone is not completion.
 
@@ -50,12 +50,12 @@
 | Sticky create honesty Batch 57 | Merged | main `5684bd7a` — budgets/payroll/requisitions sticky create; EM cancel |
 | Empty CTA honesty Batch 58 | Merged | PR #313 → `3060d166` — HR/CRM/PM empty New CTAs |
 | Empty CTA wave 2 Batch 59 | Merged | PR #315 → `5847e317` — remaining HR/PM/CRM empty New CTAs |
-| Empty CTA wave 3 Batch 60 | Done | [PR #317](https://github.com/linkbusinessadvisory/LinkBooks/pull/317) → `b52e1c88` |
-| Empty CTA wave 4 Batch 61 | Done | [PR #319](https://github.com/linkbusinessadvisory/LinkBooks/pull/319) → `b03a9fab` |
-| Empty CTA wave 5 Batch 62 | Done | [PR #321](https://github.com/linkbusinessadvisory/LinkBooks/pull/321) → `6ab92ab6` |
-| Empty CTA wave 6 Batch 63 | Done | [PR #324](https://github.com/linkbusinessadvisory/LinkBooks/pull/324) → `41468621` |
-| Empty CTA wave 7 Batch 64 | Done | [PR #328](https://github.com/linkbusinessadvisory/LinkBooks/pull/328) → `10876d52` |
-| Claims spreadsheet Batch 65 | Done | [PR #332](https://github.com/linkbusinessadvisory/LinkBooks/pull/332) → `e3a691de` |
+| Empty CTA wave 3 Batch 60 | Done | [PR #317](https://github.com/streakbooks/StreakBooks/pull/317) → `b52e1c88` |
+| Empty CTA wave 4 Batch 61 | Done | [PR #319](https://github.com/streakbooks/StreakBooks/pull/319) → `b03a9fab` |
+| Empty CTA wave 5 Batch 62 | Done | [PR #321](https://github.com/streakbooks/StreakBooks/pull/321) → `6ab92ab6` |
+| Empty CTA wave 6 Batch 63 | Done | [PR #324](https://github.com/streakbooks/StreakBooks/pull/324) → `41468621` |
+| Empty CTA wave 7 Batch 64 | Done | [PR #328](https://github.com/streakbooks/StreakBooks/pull/328) → `10876d52` |
+| Claims spreadsheet Batch 65 | Done | [PR #332](https://github.com/streakbooks/StreakBooks/pull/332) → `e3a691de` |
 | Claims totals + workspace Batch 66 | Done (via #338+) | TotalsSummary on claim create; check:workspace spend/claims |
 | Claim keyboard + receive-money Batch 67 | Superseded by Batch 68 | Keyboard/paste on claims; receive-money check:workspace |
 | Spend/PO/CN keyboard Batch 68 | Superseded by Batch 69 | Keyboard/paste on spend money, PO, purchase CN; workspace gates |
@@ -77,7 +77,7 @@
 
 ## Accounting and financial workspace release
 
-[PR #311](https://github.com/linkbusinessadvisory/LinkBooks/pull/311) combines the
+[PR #311](https://github.com/streakbooks/StreakBooks/pull/311) combines the
 compact Accounting workspace with the shared Create navigation and release-gate
 repairs. The release retains the newer creation workflows from main.
 
@@ -112,7 +112,7 @@ repairs. The release retains the newer creation workflows from main.
 
 ## DoD gates (every screen)
 
-1. Visual consistency (LinkBooks tokens)
+1. Visual consistency (StreakBooks tokens)
 2. Functional workflows (real backends)
 3. Browser-like navigation
 4. Responsive behaviour

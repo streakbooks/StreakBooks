@@ -5,7 +5,7 @@ Phase 6. Migration `20261105184413_billing_invoicing_and_tax.sql`; tax arithmeti
 `billing-documents.functions.ts` and `src/components/billing/BillingDocuments.tsx`; platform finance
 `finance-admin.functions.ts` and `src/components/platform/billing/FinanceAdmin.tsx`.
 
-LinkBooks does not decide tax treatment. Every rate, label, treatment and invoice note is entered by
+StreakBooks does not decide tax treatment. Every rate, label, treatment and invoice note is entered by
 platform staff from professional advice (the rule's "basis"), and applies only after a second
 platform owner approves it. Nothing is seeded. Decisions D8 (seller entities and registrations),
 D12 (Indian GST treatment) and D13 (India price display) remain open; India stays closed until its
@@ -57,6 +57,6 @@ The earlier one-person Stripe refund action has been removed.
 ## Not decided (not invented)
 
 Seller legal details and registrations (D8), GST treatment and place of supply (D12), tax-inclusive
-India display (D13), refund policy wording (D16). Accounting postings of LinkBooks' own revenue are
+India display (D13), refund policy wording (D16). Accounting postings of StreakBooks' own revenue are
 outside this module; invoices, payments, refunds and credit notes are exported from the platform
 finance panel data.

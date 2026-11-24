@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { readUiSource, resolveScreenSource } from "./ui-route-source.mjs";
-const rootDir = mkdtempSync(path.join(os.tmpdir(), "linkbooks-ui-source-"));
+const rootDir = mkdtempSync(path.join(os.tmpdir(), "streakbooks-ui-source-"));
 after(() => rmSync(rootDir, { recursive: true, force: true }));
 function write(file, text) {
   mkdirSync(path.dirname(path.join(rootDir, file)), { recursive: true });

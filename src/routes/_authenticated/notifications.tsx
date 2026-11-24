@@ -46,7 +46,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/notifications")({
   validateSearch: parseActionCenterSearch,
-  head: () => ({ meta: [{ title: "Action Center — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Action Center — StreakBooks" }] }),
   component: ActionCenterPage,
 });
 

@@ -1,8 +1,8 @@
 # Competitor comparison (features & workflows only)
 
-Original LinkBooks visual design is mandatory. Competitors are capability references.
+Original StreakBooks visual design is mandatory. Competitors are capability references.
 
-| Capability | Odoo Discuss/Chatter | Zoho Books/Cliq | QBO | Sage Intacct | Xero | Teams | Slack | Intercom | LinkBooks target |
+| Capability | Odoo Discuss/Chatter | Zoho Books/Cliq | QBO | Sage Intacct | Xero | Teams | Slack | Intercom | StreakBooks target |
 | ---------- | -------------------- | --------------- | --- | ------------ | ---- | ----- | ----- | -------- | ---------------- |
 | Direct messages | Yes | Yes (Cliq) | Limited | Limited | Limited | Yes | Yes | Agent-customer | Unified DM |
 | Groups/channels | Yes | Yes | No | Limited | No | Yes | Yes | Teams | Org/dept groups |
@@ -19,7 +19,7 @@ Original LinkBooks visual design is mandatory. Competitors are capability refere
 | Audit | Moderate | Moderate | Limited | Strong | Limited | Compliance | Enterprise | Moderate | messaging_audit_events |
 | AI assist | Growing | Zia | Intuit Assist | Limited | Limited | Copilot | AI | Fin AI | Opt-in, permission-aware |
 
-## LinkBooks original improvements
+## StreakBooks original improvements
 
 1. **Accounting-safe chat** — message text cannot post, pay or approve; formal actions only.  
 2. **Visibility modes** — internal vs external threads on the same record without accidental leak.  

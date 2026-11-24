@@ -4,10 +4,10 @@ import { CrmOverviewPage } from "@/screens/crm/overview";
 export const Route = createFileRoute("/_authenticated/crm/")({
   head: () => ({
     meta: [
-      { title: "CRM — LinkBooks" },
+      { title: "CRM — StreakBooks" },
       {
         name: "description",
-        content: "LinkBooks CRM overview for leads, pipelines and relationships.",
+        content: "StreakBooks CRM overview for leads, pipelines and relationships.",
       },
     ],
   }),

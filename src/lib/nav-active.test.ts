@@ -56,7 +56,7 @@ describe("sidebar selection from the URL", () => {
       "/platform",
     ]) {
       expect(activeNavItem(url)).toBeNull();
-      expect(activeNavLabel(url)).toBe("LinkBooks");
+      expect(activeNavLabel(url)).toBe("StreakBooks");
     }
     expect(activeNavLabel("/")).toBe("Dashboard");
     expect(activeNavLabel("/sales")).toBe("Sales");

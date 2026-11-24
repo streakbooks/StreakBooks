@@ -1,4 +1,4 @@
-# LinkBooks — authenticated staging-browser acceptance
+# StreakBooks — authenticated staging-browser acceptance
 
 Date: 3 November 2026.
 
@@ -8,14 +8,14 @@ The repository provides a real authenticated Playwright staging smoke suite and 
 
 ## Safe staging prerequisites
 
-1. Deploy an isolated LinkBooks staging site at a dedicated HTTPS hostname (for example `staging.<your-domain>`). It must not point at production. Configure the staging site's own Supabase Auth redirect allowlist.
+1. Deploy an isolated StreakBooks staging site at a dedicated HTTPS hostname (for example `staging.<your-domain>`). It must not point at production. Configure the staging site's own Supabase Auth redirect allowlist.
 2. Use an isolated non-production Supabase project or demonstrably disposable staging data. Create a dedicated non-admin test account with access to one company. The smoke tests only navigate and inspect; they do not approve, pay, code, match, or post.
 3. Ensure the staging site is accessible from GitHub Actions runners. If protected by an external preview password, configure access without exposing secrets in code or logs.
 4. Confirm that the staging deployment under test contains the PR commit being reviewed. A fixed staging URL running older `main` tests staging health, **not the PR code**; do not treat that as proof of PR UI behavior.
 
 ## GitHub repository settings
 
-In the `linkbusinessadvisory/LinkBooks` repository, open **Settings → Secrets and variables → Actions**.
+In the `streakbooks/StreakBooks` repository, open **Settings → Secrets and variables → Actions**.
 
 Under **Variables**, add:
 
@@ -42,7 +42,7 @@ Never put real credentials in Git commits, comments, issues or ChatGPT messages.
 - Before browser install/login, `node scripts/check-staging-target.mjs` requires HTTPS, the exact expected host, a different production host, and nonempty test credentials. It never logs secrets.
 - The staging job then installs Chromium and executes `e2e/staging-smoke.spec.ts` with actual authentication. No `test.skip` bypass exists in that suite. Login verifies the browser is still on the approved staging host **before entering credentials**.
 - Screenshots, video and trace recording are disabled for these staging smoke tests, because financial records may contain private information.
-- `workflow_dispatch` can manually verify staging. Click **Actions → LinkBooks quality gates → Run workflow** on a trusted branch. Staging is still opt-in through the variables and secrets above.
+- `workflow_dispatch` can manually verify staging. Click **Actions → StreakBooks quality gates → Run workflow** on a trusted branch. Staging is still opt-in through the variables and secrets above.
 - After a real green staging run, configure your repository's branch protection/ruleset to require both `validate` and `staging-browser` check results before merging. Do not enable `staging-browser` as required before configuration is validated.
 
 ## What the smoke suite actually checks
@@ -56,7 +56,7 @@ The existing broader `e2e/native-navigation.spec.ts` remains available for seede
 
 ## Manual Windows verification
 
-Open a PowerShell terminal in `D:\MyApp\LinkBooks` and preserve any uncommitted changes before pulling:
+Open a PowerShell terminal in `D:\MyApp\StreakBooks` and preserve any uncommitted changes before pulling:
 
 ```powershell
 git checkout main

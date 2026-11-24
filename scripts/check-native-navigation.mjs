@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readUiSource } from "./lib/ui-route-source.mjs";
 /**
- * Source audit for the actual LinkBooks app, complementary to Chromium fixture
+ * Source audit for the actual StreakBooks app, complementary to Chromium fixture
  * tests and authenticated Playwright journeys. False successes are not allowed.
  * Only treat an element as navigational when it leads to a distinct URL.
  */

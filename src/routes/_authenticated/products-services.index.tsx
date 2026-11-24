@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_authenticated/products-services/")({
   }),
   head: () => ({
     meta: [
-      { title: "Products & Services — LinkBooks" },
+      { title: "Products & Services — StreakBooks" },
       {
         name: "description",
         content: "Catalogue items with default accounts and tax for invoices and bills.",

@@ -11,10 +11,10 @@ export const Route = createFileRoute("/advisors_/book")({
   validateSearch: (search) => searchSchema.parse(search),
   head: () => ({
     meta: [
-      { title: "Book a consultation — LinkBooks Advisors" },
+      { title: "Book a consultation — StreakBooks Advisors" },
       {
         name: "description",
-        content: "Book a free LinkBooks Advisors consultation using real available time slots.",
+        content: "Book a free StreakBooks Advisors consultation using real available time slots.",
       },
     ],
   }),

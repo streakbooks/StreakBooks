@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/recurring-journals")({
-  head: () => ({ meta: [{ title: "Recurring journals — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Recurring journals — StreakBooks" }] }),
   component: RecurringJournalsPage,
 });
 

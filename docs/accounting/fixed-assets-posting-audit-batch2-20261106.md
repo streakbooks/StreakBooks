@@ -37,7 +37,7 @@ Only after review of open Fixed Assets PR #111 and Accounting Exception Centre c
 ## Local non-CI test commands
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status --short
 git switch main
 git pull --ff-only origin main

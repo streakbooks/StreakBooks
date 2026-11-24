@@ -266,7 +266,7 @@ export function SettingsForCompany({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `linkbooks-audit-${companyId.slice(0, 8)}-${auditOffset + 1}.csv`;
+    link.download = `streakbooks-audit-${companyId.slice(0, 8)}-${auditOffset + 1}.csv`;
     document.body.appendChild(link);
     link.click();
     link.remove();

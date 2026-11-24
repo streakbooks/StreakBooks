@@ -1,6 +1,6 @@
 # Messages module
 
-Unified LinkBooks collaboration workspace.
+Unified StreakBooks collaboration workspace.
 
 - Routes: `/messages`, `/messages/settings`
 - Server: `src/lib/messaging/messaging.functions.ts`

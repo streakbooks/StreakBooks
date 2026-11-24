@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_authenticated/developer/$section")({
   head: ({ params }) => ({
     meta: [
       {
-        title: `${formatSectionTitle(params.section)} — Developer — LinkBooks`,
+        title: `${formatSectionTitle(params.section)} — Developer — StreakBooks`,
       },
     ],
   }),

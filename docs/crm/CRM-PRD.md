@@ -1,8 +1,8 @@
-# LinkBooks CRM — Product requirements (CRM-01)
+# StreakBooks CRM — Product requirements (CRM-01)
 
 ## Vision
 
-Enterprise CRM inside LinkBooks that manages the customer lifecycle from first inquiry through qualification, pipeline, quotation, invoicing (via existing Sales), and ongoing relationships — without duplicating Contacts or the accounting engine.
+Enterprise CRM inside StreakBooks that manages the customer lifecycle from first inquiry through qualification, pipeline, quotation, invoicing (via existing Sales), and ongoing relationships — without duplicating Contacts or the accounting engine.
 
 ## Non-negotiables
 
@@ -11,7 +11,7 @@ Enterprise CRM inside LinkBooks that manages the customer lifecycle from first i
 3. CRM never posts journals; accounting only via authorised Sales/Purchases/Accounting paths.  
 4. Forecast / weighted pipeline metrics are labelled separately from realised revenue.  
 5. Fail closed: incomplete surfaces stay disabled or gated until backends + RLS exist.  
-6. Original LinkBooks UI; competitors are benchmarks only.  
+6. Original StreakBooks UI; competitors are benchmarks only.  
 7. Organisation isolation via RLS + `has_company_permission`.
 
 ## Personas & roles (mapped to permissions)

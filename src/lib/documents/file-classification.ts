@@ -68,7 +68,7 @@ export function suggestFileCategory(
     return {
       category: linked,
       source: "linked_record",
-      reason: "Suggested from the linked LinkBooks record type.",
+      reason: "Suggested from the linked StreakBooks record type.",
     };
   }
   const base = fileName

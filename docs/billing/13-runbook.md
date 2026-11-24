@@ -33,8 +33,8 @@ Server-only environment (never `VITE_`):
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Database access (service role only on the server)             |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`                            | Stripe (test keys until go-live)                              |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`     | Razorpay (test keys until go-live)                            |
-| `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS`                                     | Must be `true` before live keys are accepted; owner decision  |
-| `LOVABLE_CRON_SECRET` (and `_PREVIOUS` while rotating)                  | Authenticates `/api/billing/webhook-retry`                    |
+| `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS`                                     | Must be `true` before live keys are accepted; owner decision  |
+| `STREAKBOOKS_CRON_SECRET` (and `_PREVIOUS` while rotating)                  | Authenticates `/api/billing/webhook-retry`                    |
 | `APP_ORIGIN` or `SITE_URL`                                              | Allowed checkout return origin                                |
 | `BILLING_IP_HASH_SECRET`                                                | Keyed hash of client addresses on consents; unset stores none |
 | `RESEND_API_KEY`, `EMAIL_FROM`                                          | Cancellation notices                                          |
@@ -55,7 +55,7 @@ sweep runs inside the existing platform worker tick (`billing_lifecycle`, every 
 - [ ] Country prices drafted and published by two owners; provider routes per country.
 - [ ] Stripe and Razorpay test-mode runs: trial, checkout, renewal, failed payment, upgrade,
       downgrade, cancel and withdraw, refund with credit note, coupon.
-- [ ] Live keys installed and `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true` only after the owner says so.
+- [ ] Live keys installed and `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true` only after the owner says so.
 - [ ] Partner programme: stays closed (no attribution window) and payouts stay disabled until the
       commercial terms and the regulatory review (D14, D15) are decided.
 
@@ -66,7 +66,7 @@ sweep runs inside the existing platform worker tick (`billing_lifecycle`, every 
 | Webhook backlog or dead events (analytics, Operations) | Superadmin → Payment operations queue; `billing_events.last_error`                  | Fix the cause (secret, outage), then requeue dead events from the queue. Processing is idempotent and skips stale events. |
 | Signature failures                                     | Server logs (no payloads are stored for invalid signatures)                         | Rotate the webhook secret at the provider and on the server together                                                      |
 | Payment recorded but no invoice                        | Analytics "payments waiting for an invoice"; `billing.payments.invoice_issue_error` | Add the missing seller, series or tax rule; the next event or retry issues the invoice                                    |
-| Cancellation stuck "pending provider"                  | `billing.cancellation_requests.failure`                                             | Resolve at the provider; the customer can retry. Nothing changes in LinkBooks until the provider confirms                 |
+| Cancellation stuck "pending provider"                  | `billing.cancellation_requests.failure`                                             | Resolve at the provider; the customer can retry. Nothing changes in StreakBooks until the provider confirms                 |
 | Refund failed                                          | Finance → refunds, `failure`                                                        | Correct at the provider and record the outcome; credit notes are issued only for succeeded refunds                        |
 | Wrong price published                                  | Country pricing history                                                             | Publish a corrected version (two owners) or roll back to a previous price-book version; existing subscribers keep theirs  |
 | Suspected leaked API key                               | Billing API keys panel, `lastUsedAt`                                                | Rotate (issues a new key and retires the old one at once); review the platform audit                                      |

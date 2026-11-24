@@ -1,12 +1,12 @@
-# LinkBooks Superadmin implementation handoff
+# StreakBooks Superadmin implementation handoff
 
-Date: 30 October 2026. Repository: `/workspace/LinkBooks`. Entry point: `/platform`.
+Date: 30 October 2026. Repository: `/workspace/StreakBooks`. Entry point: `/platform`.
 
-This delivery implements a working administration control plane in the existing application. It does **not** complete every requirement in the supplied fifteen-phase specification. The database workflows below have been tested against the connected LinkBooks Supabase project. Frontend compilation, types and lint are checked separately; authenticated browser acceptance remains outstanding.
+This delivery implements a working administration control plane in the existing application. It does **not** complete every requirement in the supplied fifteen-phase specification. The database workflows below have been tested against the connected StreakBooks Supabase project. Frontend compilation, types and lint are checked separately; authenticated browser acceptance remains outstanding.
 
 ## Architecture and audit findings
 
-LinkBooks uses React 19, TanStack Start/Router, React Query, Tailwind, existing Radix/shadcn components, Recharts, Supabase Auth and PostgreSQL with RLS. Nitro/Vercel build configuration already exists. The repository contains established double-entry accounting, sales, purchases, banking, reconciliation, reports, tax, fixed assets, budgets, documents, firms, subscriptions, Stripe/Razorpay helpers and Resend transport. Their presence does not establish that external providers are configured or production-ready.
+StreakBooks uses React 19, TanStack Start/Router, React Query, Tailwind, existing Radix/shadcn components, Recharts, Supabase Auth and PostgreSQL with RLS. Nitro/Vercel build configuration already exists. The repository contains established double-entry accounting, sales, purchases, banking, reconciliation, reports, tax, fixed assets, budgets, documents, firms, subscriptions, Stripe/Razorpay helpers and Resend transport. Their presence does not establish that external providers are configured or production-ready.
 
 The audit inspected repository instructions, routes, server authentication, role helpers, accounting and firm access policies, subscription entitlements, billing mutations, integration configuration and migration history. It was a focused architecture and security audit, not an exhaustive penetration test of every accounting RPC or jurisdictional tax rule.
 

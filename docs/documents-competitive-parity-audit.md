@@ -1,4 +1,4 @@
-# LinkBooks — Documents competitive parity and differentiation audit
+# StreakBooks — Documents competitive parity and differentiation audit
 
 Status: REQUIREMENTS / NOT IMPLEMENTATION EVIDENCE. Owner-approved scope. No feature may be marked complete based on UI presence alone.
 

@@ -1,4 +1,4 @@
-# LinkBooks originality and reference policy
+# StreakBooks originality and reference policy
 
 **Effective:** 2026-11-18 (Batch 28)  
 **Owner:** Premium UI programme  
@@ -16,7 +16,7 @@ Extract **capability principles** only, for example:
 - Notes, history, and attachments as supporting sections
 - Native browser navigation (deep links, Back/Forward, new tab)
 
-Record those principles in LinkBooks-owned language in [TRANSACTION_WORKSPACE_UX.md](./TRANSACTION_WORKSPACE_UX.md).
+Record those principles in StreakBooks-owned language in [TRANSACTION_WORKSPACE_UX.md](./TRANSACTION_WORKSPACE_UX.md).
 
 ## Explicitly forbidden
 
@@ -29,24 +29,24 @@ Record those principles in LinkBooks-owned language in [TRANSACTION_WORKSPACE_UX
 | Committing competitor screenshots into the product, public docs, or marketing site | Copyright in the images themselves |
 | Porting competitor CSS, HTML, or component code | Copyright |
 
-## Mandatory LinkBooks visual identity
+## Mandatory StreakBooks visual identity
 
-| Element | LinkBooks expression |
+| Element | StreakBooks expression |
 | --- | --- |
 | Shell | Existing `AppShell` navy sidebar + cool neutral workspace |
-| Accent | Restrained LinkBooks primary blue from `theme.ts` / `styles.css` |
+| Accent | Restrained StreakBooks primary blue from `theme.ts` / `styles.css` |
 | Status | Semantic `StatusBadge` tones only (draft/posted/paid/overdue…) |
 | Typography | Inter + IBM Plex Mono for money |
 | Icons | Lucide only |
 | Surfaces | Soft borders, `--lb-*` density tokens, card/rail chrome already in workspace components |
-| Actions | Primary = LinkBooks `Button` default; secondary = outline/ghost — **do not** invent a green “Approve” brand colour to imitate references |
+| Actions | Primary = StreakBooks `Button` default; secondary = outline/ghost — **do not** invent a green “Approve” brand colour to imitate references |
 
 Theme presets (8 + custom) remain; palette changes must never rewrite semantic money/status colours.
 
 ## Engineering checklist (every visual PR)
 
 1. Reuse `TransactionWorkspace` / `ListWorkspace` / `RecordWorkspace` — no parallel look-alike library.
-2. Prefer LinkBooks tokens over hard-coded competitor-like greens/purples.
+2. Prefer StreakBooks tokens over hard-coded competitor-like greens/purples.
 3. Wire real backends only; fail closed if an action is not authorised.
 4. Update [COMPETITOR_GAP_AND_ORIGINALITY_MATRIX.md](./COMPETITOR_GAP_AND_ORIGINALITY_MATRIX.md) with principle gaps, not screenshot diffs.
 5. Do not store reference screenshot binaries in `src/` or published marketing assets.

@@ -1,6 +1,6 @@
 # AI Accounting Assistant — data-handling design
 
-**Status:** Implementation policy for LinkBooks AI.  
+**Status:** Implementation policy for StreakBooks AI.  
 **Provider decision:** Optional OpenAI-compatible HTTP API. Keys live in **server env only** (`AI_API_KEY`, never `VITE_*`). If unset, the product shows an honest “not configured” state — no simulated answers.
 
 ---
@@ -46,7 +46,7 @@ Same AI code path as live orgs. `is_demo` does not weaken permissions or skip va
 
 ## 6. Financial insights (read-only reporting)
 
-The AI Assistant's **Financial insights** panel reads LinkBooks' existing
+The AI Assistant's **Financial insights** panel reads StreakBooks' existing
 `getManagementMetrics` reporting API. It does not ask a model to invent or
 calculate ledger values. The server API independently enforces
 `reports.view`, while the panel also requires `ai.use`.

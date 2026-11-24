@@ -4,10 +4,10 @@ import { DeveloperDashboardPage } from "@/screens/developer/dashboard";
 export const Route = createFileRoute("/_authenticated/developer/")({
   head: () => ({
     meta: [
-      { title: "Developer — LinkBooks" },
+      { title: "Developer — StreakBooks" },
       {
         name: "description",
-        content: "LinkBooks public API and developer portal.",
+        content: "StreakBooks public API and developer portal.",
       },
     ],
   }),

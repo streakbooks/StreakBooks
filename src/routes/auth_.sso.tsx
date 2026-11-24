@@ -22,8 +22,8 @@ export const Route = createFileRoute("/auth_/sso")({
   }),
   head: () => ({
     meta: [
-      { title: "Single sign-on — LinkBooks" },
-      { name: "description", content: "Sign in to LinkBooks with your company identity provider." },
+      { title: "Single sign-on — StreakBooks" },
+      { name: "description", content: "Sign in to StreakBooks with your company identity provider." },
     ],
   }),
   component: SsoPage,
@@ -83,7 +83,7 @@ function SsoPage() {
       {!enabled ? (
         <Alert role="status">
           <AlertDescription>
-            Single sign-on isn&apos;t enabled for LinkBooks yet. Contact your administrator.
+            Single sign-on isn&apos;t enabled for StreakBooks yet. Contact your administrator.
           </AlertDescription>
         </Alert>
       ) : (

@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/expense-management/$sectio
   head: ({ params }) => ({
     meta: [
       {
-        title: `${formatSectionTitle(params.section)} — Expenses — LinkBooks`,
+        title: `${formatSectionTitle(params.section)} — Expenses — StreakBooks`,
       },
     ],
   }),

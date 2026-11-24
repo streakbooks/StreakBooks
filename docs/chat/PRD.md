@@ -1,8 +1,8 @@
-# LinkBooks Messaging — Product Requirements
+# StreakBooks Messaging — Product Requirements
 
 ## Vision
 
-One secure, multi-tenant collaboration platform inside LinkBooks. Familiar chat UX; enterprise authorization, auditability and accounting-safe workflows.
+One secure, multi-tenant collaboration platform inside StreakBooks. Familiar chat UX; enterprise authorization, auditability and accounting-safe workflows.
 
 ## Participants
 

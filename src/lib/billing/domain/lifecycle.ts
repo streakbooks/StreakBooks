@@ -48,7 +48,7 @@ export function cancellationEligibility(
   if (sub.cancelAtPeriodEnd)
     return { allowed: false, reason: "Cancellation is already scheduled." };
   if (sub.status === "paused") {
-    return { allowed: false, reason: "A paused subscription is managed by LinkBooks support." };
+    return { allowed: false, reason: "A paused subscription is managed by StreakBooks support." };
   }
   if (sub.provider === "stripe" || sub.provider === "razorpay") {
     return {
@@ -74,8 +74,8 @@ const EVENT_LABELS: Record<string, string> = {
   cancellation_scheduled: "Cancellation scheduled",
   cancellation_reversed: "Cancellation withdrawn",
   cancelled: "Subscription ended",
-  paused: "Paused by LinkBooks",
-  resumed: "Resumed by LinkBooks",
+  paused: "Paused by StreakBooks",
+  resumed: "Resumed by StreakBooks",
   downgrade_applied: "Plan change applied",
   past_due_alert: "Payment overdue",
 };

@@ -41,6 +41,6 @@ Verified the discovery defects against the route's local state and query-derived
 
 ## GitHub and next development
 
-Authoritative repository: https://github.com/linkbusinessadvisory/LinkBooks . Branch: `feature/reporting-inclusive-ranges`, based on its current main. No main merge, deployment or production migration is performed. GitHub PR creation through the configured API previously returned Forbidden; branch publication and PR status must be reported separately.
+Authoritative repository: https://github.com/streakbooks/StreakBooks . Branch: `feature/reporting-inclusive-ranges`, based on its current main. No main merge, deployment or production migration is performed. GitHub PR creation through the configured API previously returned Forbidden; branch publication and PR status must be reported separately.
 
 Next priorities: complete the runner-by-runner reporting audit on this authoritative base, establish authenticated ledger/export acceptance, and continue the highest-value verified report defects and customization gaps. Repository-wide document-posting formatting errors and GitHub API access are separate release blockers.

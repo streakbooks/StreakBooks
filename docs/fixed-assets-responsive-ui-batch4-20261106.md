@@ -34,7 +34,7 @@ Status: **source committed to draft PR #111; unmerged, not deployed and unverifi
 No GitHub Actions or CI should be triggered by this work. After safeguarding any unfinished local Cursor edits:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git fetch origin
 git switch feature/fixed-assets-register-safety-ux-20261106

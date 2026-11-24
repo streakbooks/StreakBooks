@@ -60,7 +60,7 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 /**
- * LinkBooks related-files layover: list attachments and inline PDF preview.
+ * StreakBooks related-files layover: list attachments and inline PDF preview.
  * Independent layout — not a copy of any competitor files panel.
  */
 export function BillRelatedFilesOverlay({

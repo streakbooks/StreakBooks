@@ -3,7 +3,7 @@
   "status": "local corrective gates passed; full programme and hosted release remain blocked",
   "runtime_revision": "1b3d12eeba5e00feb2adfd92fdcb90324cb04453",
   "integrated_main_snapshot": "8c79ac08e1f21884395a6066a71267f04ffda6d5",
-  "pull_request": "https://github.com/linkbusinessadvisory/LinkBooks/pull/251",
+  "pull_request": "https://github.com/streakbooks/StreakBooks/pull/251",
   "static": {
     "revision": "1b3d12eeba5e00feb2adfd92fdcb90324cb04453",
     "checks": {
@@ -229,7 +229,7 @@
   "github_ci": {
     "source_revision": "1b3d12eeba5e00feb2adfd92fdcb90324cb04453",
     "run_id": 44220265623,
-    "url": "https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/44220265623",
+    "url": "https://github.com/streakbooks/StreakBooks/actions/runs/44220265623",
     "conclusion": "failure",
     "failed_job_count": 5,
     "annotations_per_job": 2,

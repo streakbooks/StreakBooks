@@ -41,7 +41,7 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
   pdf.registerFontkit(fontkit);
   const font = await pdf.embedFont(base64ToBytes(reportFontBase64), { subset: true });
   pdf.setTitle(doc.title);
-  pdf.setAuthor(doc.header || "LinkBooks");
+  pdf.setAuthor(doc.header || "StreakBooks");
   pdf.setSubject(`${doc.company}: ${doc.from} – ${doc.to}`);
   const landscape = doc.orientation === "landscape";
   const size: [number, number] = landscape ? [842, 595] : [595, 842];
@@ -210,7 +210,7 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
   }
   const pages = pdf.getPages();
   pages.forEach((p, i) => {
-    const foot = `${doc.footer || "LinkBooks"}  •  Page ${i + 1} of ${pages.length}`;
+    const foot = `${doc.footer || "StreakBooks"}  •  Page ${i + 1} of ${pages.length}`;
     const footerWidth = font.widthOfTextAtSize(foot, 7);
     const footerAlign = doc.presentation?.footerAlignment ?? "left";
     const footerX =

@@ -1,7 +1,7 @@
 # Purchase order implementation — 18 November 2026
 
 Status: implemented locally, pending release verification. This is an original
-LinkBooks implementation. It uses the existing accounting engine, access model and
+StreakBooks implementation. It uses the existing accounting engine, access model and
 document services; no third-party purchasing source or assets were copied.
 
 ## Delivered workflow
@@ -84,7 +84,7 @@ fixture, rather than the entire application migration history.
 
 Authenticated staging credentials/URL were not configured. No PR, GitHub merge,
 live migration, deployment, live supplier message or production verification is
-implied by this implementation. Windows `D:\MyApp\LinkBooks` remains separate from
+implied by this implementation. Windows `D:\MyApp\StreakBooks` remains separate from
 this cloud checkout.
 
 The current scope does not add vendor quote comparison/RFQ bidding, blanket purchase
@@ -124,7 +124,7 @@ These changes are unpublished; pulling main does not retrieve them. Preserve loc
 work before transferring a reviewed patch or feature branch. After transfer:
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 git status
 git diff --check
 npm.cmd test -- src/lib/purchases src/lib/documents/purchase-order-mapper.test.ts

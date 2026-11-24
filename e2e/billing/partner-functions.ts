@@ -7,7 +7,7 @@ const OTHER = "00000000-0000-4000-8000-000000000002";
 const DISCLOSURE = {
   id: "50000000-0000-4000-8000-000000000002",
   title: "Partner disclosure",
-  body: "Your adviser may be paid a commission by LinkBooks.",
+  body: "Your adviser may be paid a commission by StreakBooks.",
   version: 1,
 };
 

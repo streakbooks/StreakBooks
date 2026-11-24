@@ -8,6 +8,6 @@ export const Route = createFileRoute("/_authenticated/purchases/expenses/new")({
   beforeLoad: () => {
     throw redirect({ to: "/banking/spend-money" });
   },
-  head: () => ({ meta: [{ title: "Spend money — LinkBooks" }] }),
+  head: () => ({ meta: [{ title: "Spend money — StreakBooks" }] }),
   component: () => null,
 });

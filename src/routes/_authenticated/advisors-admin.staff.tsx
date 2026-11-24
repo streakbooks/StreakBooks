@@ -3,7 +3,7 @@ import { AdvisorsAdminStaffPage } from "@/screens/advisors/admin-staff";
 
 export const Route = createFileRoute("/_authenticated/advisors-admin/staff")({
   head: () => ({
-    meta: [{ title: "Advisors — LinkBooks Advisors" }],
+    meta: [{ title: "Advisors — StreakBooks Advisors" }],
   }),
   component: AdvisorsAdminStaffPage,
 });

@@ -1,4 +1,4 @@
-# LinkBooks architecture and engineering baseline
+# StreakBooks architecture and engineering baseline
 **Audited checkpoint:** main `ef53489f3118a55d66a7252454ee8d7e340ac335` · 3 November 2026
 
 ## Verification boundary
@@ -23,8 +23,8 @@ This is a repository-wide **file inventory and targeted source/configuration aud
 | Browser test files | 69 | `e2e/` |
 | Documentation files | 183 | `docs/` |
 | CI workflows | 1 | `.github/workflows/quality.yml` |
-| Public database tables (read-only metadata) | 211 | Connected LinkBooks Supabase project |
-| Applied migration records (read-only metadata) | 212 | Connected LinkBooks Supabase project |
+| Public database tables (read-only metadata) | 211 | Connected StreakBooks Supabase project |
+| Applied migration records (read-only metadata) | 212 | Connected StreakBooks Supabase project |
 
 Repository migration file count and database migration record count are **not directly comparable**; reconcile chronological IDs, history and drift before generating or applying new schema changes.
 

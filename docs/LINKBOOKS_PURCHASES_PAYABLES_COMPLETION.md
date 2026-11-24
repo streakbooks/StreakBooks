@@ -1,7 +1,7 @@
-# LinkBooks — Purchases & Payables completion report
+# StreakBooks — Purchases & Payables completion report
 
 **Date:** 2026-10-20  
-**App:** https://linkbooks-navy.vercel.app/purchases  
+**App:** https://streakbooks-navy.vercel.app/purchases  
 **Architecture:** Shared PostingEngine · contacts · tax · permissions (no second ledger)
 
 ---

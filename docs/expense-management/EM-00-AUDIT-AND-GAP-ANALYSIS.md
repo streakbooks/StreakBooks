@@ -1,8 +1,8 @@
 # Expense Management — Repository Audit and Gap Analysis
 
 **Batch:** EM-01 foundation (audit portion)  
-**Verified against local tree:** `D:\MyApp\LinkBooks` on branch `main` at `fb33b80`  
-**Authoritative remote:** https://github.com/linkbusinessadvisory/LinkBooks  
+**Verified against local tree:** `D:\MyApp\StreakBooks` on branch `main` at `fb33b80`  
+**Authoritative remote:** https://github.com/streakbooks/StreakBooks  
 **Date:** 2026-11-07
 
 This document is an evidence-based inventory. Presence of screens or tables is not production readiness.

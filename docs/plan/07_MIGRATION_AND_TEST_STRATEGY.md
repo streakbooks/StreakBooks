@@ -1,4 +1,4 @@
-# LinkBooks — Migration & Test Strategy
+# StreakBooks — Migration & Test Strategy
 
 ## 1. Migration strategy
 

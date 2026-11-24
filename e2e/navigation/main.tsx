@@ -46,7 +46,7 @@ const root = createRootRoute({
 const home = createRoute({
   getParentRoute: () => root,
   path: "/",
-  component: () => <h1>LinkBooks navigation fixture</h1>,
+  component: () => <h1>StreakBooks navigation fixture</h1>,
 });
 const sales = createRoute({
   getParentRoute: () => root,

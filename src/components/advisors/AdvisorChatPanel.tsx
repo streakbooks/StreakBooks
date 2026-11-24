@@ -91,7 +91,7 @@ export function AdvisorChatPanel({ serviceCode, enabled }: Props) {
         <div className="flex items-start gap-3">
           <MessageCircle className="mt-0.5 size-5 text-primary" aria-hidden="true" />
           <div className="space-y-1">
-            <p className="font-semibold">LinkBooks Advisors AI</p>
+            <p className="font-semibold">StreakBooks Advisors AI</p>
             <p className="text-sm text-muted-foreground">
               Optional qualification chat for your selected service. It never opens before you
               choose a service.
@@ -105,7 +105,7 @@ export function AdvisorChatPanel({ serviceCode, enabled }: Props) {
             onCheckedChange={(value) => setConsent(value === true)}
           />
           <Label htmlFor={consentId} className="text-sm leading-snug font-normal">
-            I agree that LinkBooks may collect and retain this chat to qualify my enquiry and follow
+            I agree that StreakBooks may collect and retain this chat to qualify my enquiry and follow
             up about Advisors services.
           </Label>
         </div>
@@ -139,7 +139,7 @@ export function AdvisorChatPanel({ serviceCode, enabled }: Props) {
 
   return (
     <section
-      aria-label="LinkBooks Advisors AI chat"
+      aria-label="StreakBooks Advisors AI chat"
       className="fixed right-4 bottom-4 z-40 flex h-[min(70vh,34rem)] w-[min(100%-2rem,24rem)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-raised"
     >
       <header className="flex items-center justify-between gap-2 border-b px-3 py-2">

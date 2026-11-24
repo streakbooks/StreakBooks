@@ -1,4 +1,4 @@
--- HR foundation security smoke (run only on isolated Postgres with LinkBooks migrations).
+-- HR foundation security smoke (run only on isolated Postgres with StreakBooks migrations).
 -- Does not target production.
 
 DO $$

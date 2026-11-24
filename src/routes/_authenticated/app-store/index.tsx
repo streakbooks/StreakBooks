@@ -4,10 +4,10 @@ import { AppStoreOverviewPage } from "@/screens/app-store/overview";
 export const Route = createFileRoute("/_authenticated/app-store/")({
   head: () => ({
     meta: [
-      { title: "App Store — LinkBooks" },
+      { title: "App Store — StreakBooks" },
       {
         name: "description",
-        content: "LinkBooks App Store and open integrations marketplace.",
+        content: "StreakBooks App Store and open integrations marketplace.",
       },
     ],
   }),

@@ -4,7 +4,7 @@ Date: 2 November 2026.
 
 ## Context
 
-LinkBooks already has `billing_plans`, `plan_versions`, `plan_prices`, `billing_features`, `plan_version_limits`, `billing_addons`, `company_subscriptions`, `get_entitlements`, and the `/platform` control plane. A second catalogue would split enforcement.
+StreakBooks already has `billing_plans`, `plan_versions`, `plan_prices`, `billing_features`, `plan_version_limits`, `billing_addons`, `company_subscriptions`, `get_entitlements`, and the `/platform` control plane. A second catalogue would split enforcement.
 
 ## Options
 

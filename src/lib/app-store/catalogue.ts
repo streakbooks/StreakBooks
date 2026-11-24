@@ -26,7 +26,7 @@ export type SyncCapability =
   | "historical_import"
   | "incremental";
 
-export type LinkBooksModuleCapability =
+export type StreakBooksModuleCapability =
   | "sales"
   | "purchases"
   | "banking"
@@ -56,7 +56,7 @@ export type MarketplaceAppDefinition = {
   pricingModel: MarketplacePricingModel;
   categoryCodes: AppCategoryCode[];
   countries: MarketplaceCountry[];
-  modules: LinkBooksModuleCapability[];
+  modules: StreakBooksModuleCapability[];
   syncCapabilities: SyncCapability[];
   authMethods: ("oauth2" | "api_key" | "partner_oauth" | "none")[];
   featured: boolean;
@@ -91,11 +91,11 @@ const MARKETPLACE_APP_SEED: readonly MarketplaceAppSeed[] = [
   {
     code: "shopify",
     name: "Shopify",
-    headline: "Sync Shopify orders, refunds and payouts into LinkBooks.",
+    headline: "Sync Shopify orders, refunds and payouts into StreakBooks.",
     description:
       "Native e-commerce connector for Shopify stores. Imports orders, customers, products, refunds, fees and settlement payouts into Sales, Products, Banking and Accounting — subject to Shopify API access and verified end-to-end synchronization.",
-    publisherName: "LinkBooks",
-    publisherWebsite: "https://linkbooks.app",
+    publisherName: "StreakBooks",
+    publisherWebsite: "https://streakbooks.com",
     kind: "native",
     nativePriority: 1,
     implementationStatus: "adapter_scaffolded",
@@ -127,9 +127,9 @@ const MARKETPLACE_APP_SEED: readonly MarketplaceAppSeed[] = [
     name: "Amazon Seller Central",
     headline: "Import Amazon marketplace sales and settlements.",
     description:
-      "Native Amazon Selling Partner API connector for Seller Central. Targets order, fee, refund and settlement workflows into LinkBooks accounting — not complete until E2E sync is verified.",
-    publisherName: "LinkBooks",
-    publisherWebsite: "https://linkbooks.app",
+      "Native Amazon Selling Partner API connector for Seller Central. Targets order, fee, refund and settlement workflows into StreakBooks accounting — not complete until E2E sync is verified.",
+    publisherName: "StreakBooks",
+    publisherWebsite: "https://streakbooks.com",
     kind: "native",
     nativePriority: 2,
     implementationStatus: "credentials_blocked",
@@ -155,14 +155,14 @@ const MARKETPLACE_APP_SEED: readonly MarketplaceAppSeed[] = [
     name: "Stripe",
     headline: "Reconcile Stripe charges, fees, refunds and payouts.",
     description:
-      "Native Stripe Connect/Payments connector for merchant charge and payout reconciliation into Banking and Accounting. Separate from LinkBooks SaaS billing Stripe usage. Not marked complete until E2E payout sync is verified.",
-    publisherName: "LinkBooks",
-    publisherWebsite: "https://linkbooks.app",
+      "Native Stripe Connect/Payments connector for merchant charge and payout reconciliation into Banking and Accounting. Separate from StreakBooks SaaS billing Stripe usage. Not marked complete until E2E payout sync is verified.",
+    publisherName: "StreakBooks",
+    publisherWebsite: "https://streakbooks.com",
     kind: "native",
     nativePriority: 3,
     implementationStatus: "adapter_scaffolded",
     blockerNotes:
-      "Distinct from LinkBooks platform billing. Merchant Stripe Connect OAuth and settlement posting must pass E2E verification before production Install.",
+      "Distinct from StreakBooks platform billing. Merchant Stripe Connect OAuth and settlement posting must pass E2E verification before production Install.",
     pricingModel: "free",
     categoryCodes: ["payment_gateways", "subscriptions_billing"],
     countries: ["US", "UK", "AU", "NZ", "CA", "IN"],
@@ -181,11 +181,11 @@ const MARKETPLACE_APP_SEED: readonly MarketplaceAppSeed[] = [
   {
     code: "woocommerce",
     name: "WooCommerce",
-    headline: "Connect WooCommerce stores to LinkBooks sales and inventory.",
+    headline: "Connect WooCommerce stores to StreakBooks sales and inventory.",
     description:
       "Native WooCommerce REST connector for order and product import. Requires store URL and API keys; E2E sync not yet verified.",
-    publisherName: "LinkBooks",
-    publisherWebsite: "https://linkbooks.app",
+    publisherName: "StreakBooks",
+    publisherWebsite: "https://streakbooks.com",
     kind: "native",
     nativePriority: 4,
     implementationStatus: "catalogue_only",
@@ -211,8 +211,8 @@ const MARKETPLACE_APP_SEED: readonly MarketplaceAppSeed[] = [
     headline: "Import PayPal transactions and payouts.",
     description:
       "Native PayPal REST connector for payment and payout reconciliation. Awaiting credentials and E2E verification.",
-    publisherName: "LinkBooks",
-    publisherWebsite: "https://linkbooks.app",
+    publisherName: "StreakBooks",
+    publisherWebsite: "https://streakbooks.com",
     kind: "native",
     nativePriority: 5,
     implementationStatus: "catalogue_only",
@@ -237,8 +237,8 @@ const MARKETPLACE_APP_SEED: readonly MarketplaceAppSeed[] = [
     name: "Square",
     headline: "Sync Square POS and online payments.",
     description: "Native Square connector for payments and catalog. Not E2E verified.",
-    publisherName: "LinkBooks",
-    publisherWebsite: "https://linkbooks.app",
+    publisherName: "StreakBooks",
+    publisherWebsite: "https://streakbooks.com",
     kind: "native",
     nativePriority: 6,
     implementationStatus: "catalogue_only",
@@ -261,9 +261,9 @@ const MARKETPLACE_APP_SEED: readonly MarketplaceAppSeed[] = [
   {
     code: "hubdoc",
     name: "Hubdoc",
-    headline: "Partner document capture into LinkBooks purchases and files.",
+    headline: "Partner document capture into StreakBooks purchases and files.",
     description:
-      "Third-party document capture platform. Integration depends on Hubdoc API availability, commercial cooperation and technical approval. Partners connect through the LinkBooks public API and OAuth developer portal — not a fabricated sync.",
+      "Third-party document capture platform. Integration depends on Hubdoc API availability, commercial cooperation and technical approval. Partners connect through the StreakBooks public API and OAuth developer portal — not a fabricated sync.",
     publisherName: "Hubdoc (third party)",
     publisherWebsite: null,
     kind: "partner_api",
@@ -289,9 +289,9 @@ const MARKETPLACE_APP_SEED: readonly MarketplaceAppSeed[] = [
   {
     code: "link_my_books",
     name: "Link My Books",
-    headline: "Partner e-commerce bookkeeping automation via the LinkBooks API.",
+    headline: "Partner e-commerce bookkeeping automation via the StreakBooks API.",
     description:
-      "Third-party e-commerce accounting specialist. May integrate with LinkBooks when their API/product cooperation and technical approvals allow. Uses the LinkBooks public developer platform rather than a native connector until a partnership is confirmed.",
+      "Third-party e-commerce accounting specialist. May integrate with StreakBooks when their API/product cooperation and technical approvals allow. Uses the StreakBooks public developer platform rather than a native connector until a partnership is confirmed.",
     publisherName: "Link My Books (third party)",
     publisherWebsite: null,
     kind: "partner_api",
@@ -354,8 +354,8 @@ const MARKETPLACE_APP_SEED: readonly MarketplaceAppSeed[] = [
     headline: "CRM contacts and deals — partner or native adapter roadmap.",
     description:
       "CRM integration target. May ship as native OAuth or partner API depending on HubSpot app review. Not E2E verified.",
-    publisherName: "LinkBooks",
-    publisherWebsite: "https://linkbooks.app",
+    publisherName: "StreakBooks",
+    publisherWebsite: "https://streakbooks.com",
     kind: "hybrid",
     nativePriority: 20,
     implementationStatus: "catalogue_only",
@@ -378,9 +378,9 @@ const MARKETPLACE_APP_SEED: readonly MarketplaceAppSeed[] = [
 ];
 
 function withTrustDefaults(app: MarketplaceAppSeed): MarketplaceAppDefinition {
-  const nativeFirstParty = app.kind === "native" && app.publisherName === "LinkBooks";
+  const nativeFirstParty = app.kind === "native" && app.publisherName === "StreakBooks";
   const defaultDisclosure = nativeFirstParty
-    ? "LinkBooks first-party connector. External provider terms also apply. Not certified until formal reviews pass."
+    ? "StreakBooks first-party connector. External provider terms also apply. Not certified until formal reviews pass."
     : null;
   return {
     ...DEFAULT_TRUST_FIELDS,
@@ -458,7 +458,7 @@ export function normalizeMarketplaceApps(raw: unknown): MarketplaceAppDefinition
         "free",
       categoryCodes: arrayOfStrings(r["categoryCodes"] ?? r["category_codes"]) as AppCategoryCode[],
       countries: arrayOfStrings(r["countries"]) as MarketplaceCountry[],
-      modules: arrayOfStrings(r["modules"]) as LinkBooksModuleCapability[],
+      modules: arrayOfStrings(r["modules"]) as StreakBooksModuleCapability[],
       syncCapabilities: arrayOfStrings(
         r["syncCapabilities"] ?? r["sync_capabilities"],
       ) as SyncCapability[],

@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/_authenticated/firm-invite/$token")({
   head: () => ({
     meta: [
-      { title: "Firm staff invitation — LinkBooks" },
+      { title: "Firm staff invitation — StreakBooks" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

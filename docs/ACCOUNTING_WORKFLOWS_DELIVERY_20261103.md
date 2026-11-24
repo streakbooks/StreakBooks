@@ -12,7 +12,7 @@ Base: main `a30d55b` (PR #13). Branch: `feature/accounting-workflows`. Concurren
 | Accounting | Prepaid-expense and deferred-income monthly schedules, exact final-period rounding, explicit recognition/catch-up dates, posted-journal links, lock enforcement and idempotent posting | Accounting → Prepayments & deferred income |
 | Discovery/operations | Sales subnavigation, command-palette entries, Sales orders feature status and a repeatable isolated PostgreSQL CI step | Module navigation, command palette, Settings → Features and GitHub quality gates |
 
-The implementation reuses LinkBooks components, sales/purchasing arithmetic, permissions, document numbering, audit and the existing `post_journal` engine. No competitor source or assets were imported.
+The implementation reuses StreakBooks components, sales/purchasing arithmetic, permissions, document numbering, audit and the existing `post_journal` engine. No competitor source or assets were imported.
 
 ## Database and release state
 

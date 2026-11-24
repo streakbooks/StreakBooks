@@ -1,6 +1,6 @@
 # New Module Definition of Done
 
-All newly added routes/modules are subject to the LinkBooks premium design and functional acceptance contract (master prompt Section 20). Copy this checklist into every feature PR that adds a module, submenu, nested route, portal page, settings panel, dialog, drawer, wizard or report screen.
+All newly added routes/modules are subject to the StreakBooks premium design and functional acceptance contract (master prompt Section 20). Copy this checklist into every feature PR that adds a module, submenu, nested route, portal page, settings panel, dialog, drawer, wizard or report screen.
 
 | # | Gate | Result (PASS / N/A + reason / BLOCKED) |
 | - | ---- | ---------------------------------------- |

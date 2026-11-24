@@ -103,7 +103,7 @@ export function AiFinancialInsights({
         </CardTitle>
         <CardDescription>
           Verified revenue, profit, cash and liquidity metrics from the same report facts used by
-          LinkBooks management reporting. No generated numbers, automated journal entries or
+          StreakBooks management reporting. No generated numbers, automated journal entries or
           payments. Open the source reports to inspect the underlying accounts.
         </CardDescription>
       </CardHeader>

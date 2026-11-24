@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "LinkBooks Billing API",
+    "title": "StreakBooks Billing API",
     "version": "1.0.0",
     "description": "Billing, subscriptions, invoices and partners. Amounts are integer minor units. Users authenticate with their Supabase access token; external systems use a platform API key with scopes. The database enforces every permission."
   },
@@ -1013,7 +1013,7 @@
                   "origin": {
                     "type": "string",
                     "format": "uri",
-                    "description": "Return origin; must be an allowed LinkBooks origin"
+                    "description": "Return origin; must be an allowed StreakBooks origin"
                   },
                   "offerCode": {
                     "type": "string",

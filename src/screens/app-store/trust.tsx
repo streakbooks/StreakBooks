@@ -154,7 +154,7 @@ export function AppStoreTrustPage() {
       <Alert className="mb-6">
         <AlertTitle>Certification is earned, not claimed</AlertTitle>
         <AlertDescription>
-          LinkBooks Certified requires formal security, accounting, API, performance, accessibility
+          StreakBooks Certified requires formal security, accounting, API, performance, accessibility
           and reliability reviews with periodic reassessment. Approving a security review never
           enables real customer data by itself (fail closed). Native apps may show verified
           publisher status before certification completes.

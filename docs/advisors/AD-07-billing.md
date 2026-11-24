@@ -2,7 +2,7 @@
 
 ## Principle
 
-Reuse the existing LinkBooks billing engine (`billing_plans`, `billing_checkouts`, provider webhooks, `company_subscriptions`, invoices). Do **not** invent a second payment processor or treat proposal/agreement acceptance as payment success.
+Reuse the existing StreakBooks billing engine (`billing_plans`, `billing_checkouts`, provider webhooks, `company_subscriptions`, invoices). Do **not** invent a second payment processor or treat proposal/agreement acceptance as payment success.
 
 ## Flow
 

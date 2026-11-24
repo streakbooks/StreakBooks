@@ -1,4 +1,4 @@
-# LinkBooks — Complete All-Module Premium Browsing Coverage
+# StreakBooks — Complete All-Module Premium Browsing Coverage
 
 ### Files Proxy descriptor-safe URL restoration (2026-11-19)
 
@@ -527,7 +527,7 @@
 
 
 **This is the master coverage scope, not an assertion of implementation completion.**  
-**Authoritative repository:** `linkbusinessadvisory/LinkBooks`  
+**Authoritative repository:** `streakbooks/StreakBooks`  
 **ChatGPT-only development branch:** `feature/chatgpt-premium-browsing-20261107`  
 **Source audited:** `src/lib/nav.ts` and the authenticated route tree at `8935c7bd180d94d8539f75460f8542dffd648b5b`.
 
@@ -619,7 +619,7 @@
 
 ## Policy: no module, route, screen or functional workflow may be omitted
 
-The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.
+The website-like browsing initiative applies to **every** existing and future StreakBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.
 
 The register below was derived from actual repository navigation and routes. These route file counts are **not** a percentage of feature completion: individual route files may contain many tabs and workflows, and some internal workspaces have no separate route. A module with a single route can still require extensive development.
 
@@ -859,7 +859,7 @@ These include documents/printing, invitations, onboarding, import centre, platfo
 |---|---|---|
 | Expense Management and Employee Claims | Purchases employee expenses route; requested separate standalone module | Navigation/product scope reconciliation required |
 | Smart Action Center | Action Center sidebar maps to /notifications | Full approvals, alerts and actions unverified |
-| LinkBooks Signal / voice commands | Voice components and form adapters are internal, not standalone sidebar items | Full command and keyboard accessibility coverage pending |
+| StreakBooks Signal / voice commands | Voice components and form adapters are internal, not standalone sidebar items | Full command and keyboard accessibility coverage pending |
 | Files and Documents | Files sidebar and supporting document printing/branding routes | Folder/inbox/attachments/print workflows unverified |
 | Import Centre and Migration | imports.tsx and Contacts/Purchases/Banking import routes | All import types and errors unverified |
 | Recurring journals and schedules | recurring-journals.tsx, Sales/Purchases recurring | Creation, scheduling, posting and notifications unverified |
@@ -881,7 +881,7 @@ Other global capabilities to validate with each applicable module include: organ
 4. **Context retention:** Preserve the relevant view, filters, search, sorting, pagination, scroll, selection and unsaved draft as appropriate, without exposing private data or unsafe redirects.
 5. **Forms:** New/Edit/Detail routes, drawers and dialogs have complete validated fields, keyboard flows, feedback, warnings, permission checks and real persistence.
 6. **Data-rich UX:** Practical information-density, tables, mobile cards, pagination/grouping/bulk actions, real drill-downs and accessible status.
-7. **Original design:** Distinct LinkBooks light/dark tokens, colour schemes, typography, responsive spacing, focus states, predictable controls, no competitor copying.
+7. **Original design:** Distinct StreakBooks light/dark tokens, colour schemes, typography, responsive spacing, focus states, predictable controls, no competitor copying.
 8. **Feedback and resilience:** Loading/skeleton, empty states, errors, retries, optimistic state only when safe, confirmations and idempotency.
 9. **Security:** Authentication, organization isolation, roles, no stale cross-tenant data, RLS and permissions on every feature.
 10. **Accounting integrity:** Accurate double-entry, AR/AP links, immutable posted records, tax/FX/rounding, reversals and locked periods where relevant.
@@ -895,7 +895,7 @@ Other global capabilities to validate with each applicable module include: organ
 | Batch | Full scope (nested screens included) |
 |---:|---|
 | 1 | Repository-wide route and feature inventory; PRD, HLD/LLD, design decisions, gap evidence. **Inventory is started, not fully verified.** |
-| 2 | Original LinkBooks design system, theme/colour schemes, shared shell, side/top/context navigation, keyboard, global search/Create New. |
+| 2 | Original StreakBooks design system, theme/colour schemes, shared shell, side/top/context navigation, keyboard, global search/Create New. |
 | 3 | Dashboard, Action Center/Notifications, Help, Profile, onboarding, workspace entry and permission-sensitive entry flows. |
 | 4 | Sales (invoices, quotes, orders, receipts, credit notes, recurring, statements, customers, reminders, settings) plus Purchases (bills, expenses, PO, payments, credit notes, employee expenses, recurring, suppliers, statements, inbox, settings). |
 | 5 | Banking (accounts, feeds, imports, transfers, rules, transactions, cash coding, reconciliation, money documents, adjustments and reconciliation reports). |
@@ -904,7 +904,7 @@ Other global capabilities to validate with each applicable module include: organ
 | 8 | Tax, regional packs, Budgets, Fixed Assets, performance/FX and accounting-linked drill-down experiences. |
 | 9 | Payroll, Employee Expense Claims/Expense Management, connected reimbursements, payment exports and approval flows. |
 | 10 | Firm, client/practice navigation, Advisors administration and full Advisors customer portal workflows. |
-| 11 | AI Assistant/LinkBooks Signal, Settings Centre, billing/subscription, platform/Superadmin, automation, integrations, localization and every cross-cutting service. |
+| 11 | AI Assistant/StreakBooks Signal, Settings Centre, billing/subscription, platform/Superadmin, automation, integrations, localization and every cross-cutting service. |
 | 12 | All-module final gap audit: security, accounting integrity, permissions/RLS, desktop/mobile/keyboard/voice, performance, full automated and authenticated acceptance tests; deployment/recovery verification. |
 
 Every batch may require multiple small implementation increments; do not rush a whole batch or mark it complete merely because initial code is committed. New modules and internal views discovered during audit must be added to the manifest rather than omitted.

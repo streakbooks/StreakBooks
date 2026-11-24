@@ -157,7 +157,7 @@ export function FirmRecurringBillingPanel({
       <p className="text-sm text-muted-foreground">
         Connect an active engagement to an existing Sales recurring invoice template in your
         practice billing company. All amounts, tax codes and invoice generation remain with
-        LinkBooks' existing Sales engine. Automatic authorization is blocked in this workflow.
+        StreakBooks' existing Sales engine. Automatic authorization is blocked in this workflow.
       </p>
       <Link to="/sales/recurring" className="text-sm underline">
         Configure recurring Sales invoices

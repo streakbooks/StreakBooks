@@ -2,7 +2,7 @@
 
 The AST inventory records every shared lookup declaration in the current source, including existing domain variants and migrated fields. It is a source inventory, not proof that every application workflow has been exercised with a signed-in production user. Native short fixed enums remain native with reviewed annotations; record identifiers use the shared lookup. Search/keyboard/create/cancel coverage is in `e2e/reporting/reporting.spec.ts`; accounting correction, document theme, practice, voice and wake regressions also passed.
 
-The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply: true`). Its full contents are maintained there. Enforcement is `scripts/check-lookup-architecture.mjs`, run locally and in CI with `npm run check:lookups`. The guard catches mapped option declarations; it does not prove that every custom widget elsewhere represents a record field correctly.
+The permanent rule is `.cursor/rules/streakbooks-lookup-select.mdc` (`alwaysApply: true`). Its full contents are maintained there. Enforcement is `scripts/check-lookup-architecture.mjs`, run locally and in CI with `npm run check:lookups`. The guard catches mapped option declarations; it does not prove that every custom widget elsewhere represents a record field correctly.
 
 `RecordLookupSelect` converts legacy declarative option JSX into typed options and renders the original shared `LookupSelect`. `MultiLookupSelect` composes the same component with selected record chips. `useLookupQuery` ignores aborted success, includes page size in cache keys, bounds the cache and deduplicates paginated cached results. Existing domain eligibility and backend posting checks remain authoritative. New create actions are offered only where a real form/save path exists.
 

@@ -1,6 +1,6 @@
 # Superadmin benchmark
 
-Fetched 2 November 2026. Prices and capabilities below are only what those pages showed. Cells marked “not verified” were not fetched. Nothing here is copied layout or marketing text for LinkBooks to ship.
+Fetched 2 November 2026. Prices and capabilities below are only what those pages showed. Cells marked “not verified” were not fetched. Nothing here is copied layout or marketing text for StreakBooks to ship.
 
 ## Products
 
@@ -22,17 +22,17 @@ Fetched 2 November 2026. Prices and capabilities below are only what those pages
 | Chargebee | https://www.chargebee.com/docs/billing/2.0/product-catalog/product-catalog | Product families, plans, addons, charges, price points per currency and interval. Entitlements map a feature level onto a catalogue item. Grandfathering exists as an early-access flag and is off by default, so a catalogue edit can affect existing subscriptions unless that flag is set. |
 | LaunchDarkly | https://launchdarkly.com/docs/home/releases/percentage-rollouts | Percentage rollouts hash context key and kind into stable buckets. Raising the percentage adds buckets. Kill-switch flags are permanent booleans that serve the off variation without a deploy. |
 
-Sage Accounting, Reckon and Akaunting public workflow sources are reviewed in [the continuation benchmark](benchmark-follow-up-20261102.md), bringing the accounting inventory to 15 products. Their prices are not stated. The old LinkBooks assessment below is historical; current capability evidence is in [RESUMPTION-20261102.md](RESUMPTION-20261102.md).
+Sage Accounting, Reckon and Akaunting public workflow sources are reviewed in [the continuation benchmark](benchmark-follow-up-20261102.md), bringing the accounting inventory to 15 products. Their prices are not stated. The old StreakBooks assessment below is historical; current capability evidence is in [RESUMPTION-20261102.md](RESUMPTION-20261102.md).
 
-## What LinkBooks should copy in behaviour, not in presentation
+## What StreakBooks should copy in behaviour, not in presentation
 
 - A plan plus separately priced add-ons (Xero payroll, Zoho users, FreshBooks team members, Stripe prices).
-- Versioned prices and an explicit grandfathering switch (Chargebee’s default is the opposite of LinkBooks: LinkBooks keeps the subscriber’s price version).
+- Versioned prices and an explicit grandfathering switch (Chargebee’s default is the opposite of StreakBooks: StreakBooks keeps the subscriber’s price version).
 - Stable percentage buckets and a kill switch that does not need a deploy (LaunchDarkly).
 - Entitlement changes driven by the billing record, with the application reading one decision (Stripe).
 - Quote-only enterprise plans where a public price would be misleading (Sage Intacct, NetSuite).
 
-## LinkBooks assessment
+## StreakBooks assessment
 
 | Area | Assessment |
 | --- | --- |
@@ -60,11 +60,11 @@ Sage Accounting, Reckon and Akaunting public workflow sources are reviewed in [t
 | Support access expiry already exists; extend the same pattern rather than impersonation | Security | High |
 | Integration health that is measured, not inferred from env vars | Architectural | Advanced |
 | Status page, SMS, e-signature, BI warehouse | Functional | Future, integrate |
-| Public price for a NetSuite-class enterprise plan | Billing | Not applicable until LinkBooks sells that motion |
+| Public price for a NetSuite-class enterprise plan | Billing | Not applicable until StreakBooks sells that motion |
 
 ## Risks
 
-- Chargebee-style edits that change existing subscribers without a grandfather flag. LinkBooks must keep the current version unless a noticed migration runs.
+- Chargebee-style edits that change existing subscribers without a grandfather flag. StreakBooks must keep the current version unless a noticed migration runs.
 - Treating a fetched introductory price as the ongoing price. Xero, QuickBooks, FreshBooks, FreeAgent and MYOB all show a lower first period.
 - Building a status page or help desk with no vendor account.
 - Platform staff gaining ledger access in order to debug billing.

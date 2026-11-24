@@ -21,7 +21,7 @@ This unlocks `appstore.view` (and related marketplace permissions) in `role_perm
 ## Apply App Store SQL
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 $env:SUPABASE_YES = "1"
 
 $files = @(
@@ -48,7 +48,7 @@ foreach ($name in $files) {
 ## CI / verification (read-only)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 $env:SUPABASE_YES = "1"
 
 npx.cmd supabase migration list --remote
@@ -74,7 +74,7 @@ After apply: hard-refresh the browser (or sign out/in) so the session permission
 ## App gates (local — do not start GitHub Actions)
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 npm.cmd exec -- vitest run src/lib/app-store
 # optional: npm.cmd run check:ui
 # optional: npm.cmd run check:navigation

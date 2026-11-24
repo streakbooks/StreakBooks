@@ -2,7 +2,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { performance } from "node:perf_hooks";
-const container = "linkbooks-reporting-qa";
+const container = "streakbooks-reporting-qa";
 const env = { ...process.env };
 for (const key of [
   "DOCKER_HOST",

@@ -3,7 +3,7 @@ import { AdvisorsAgreementPage } from "@/screens/advisors/agreement";
 
 export const Route = createFileRoute("/advisors_/agreement/$token")({
   head: () => ({
-    meta: [{ title: "Agreement — LinkBooks Advisors" }],
+    meta: [{ title: "Agreement — StreakBooks Advisors" }],
   }),
   component: AdvisorsAgreementRoute,
 });

@@ -7,12 +7,12 @@ export const Route = createFileRoute("/_authenticated/ai-assistant")({
   validateSearch: parseAiAssistantSearch,
   head: () => ({
     meta: [
-      { title: "AI Assistant — LinkBooks" },
+      { title: "AI Assistant — StreakBooks" },
       {
         name: "description",
         content: "Accounting guidance and review suggestions, always subject to user approval.",
       },
-      { property: "og:title", content: "AI Assistant — LinkBooks" },
+      { property: "og:title", content: "AI Assistant — StreakBooks" },
       {
         property: "og:description",
         content: "Accounting guidance and review suggestions, always subject to user approval.",

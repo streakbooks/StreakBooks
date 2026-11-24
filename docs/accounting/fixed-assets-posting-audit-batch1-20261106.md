@@ -1,6 +1,6 @@
 # Fixed Assets posting and reconciliation: Accounting Batch 1 audit
 
-Date: 2026-11-06. Repository: linkbusinessadvisory/LinkBooks.
+Date: 2026-11-06. Repository: streakbooks/StreakBooks.
 Status: Source audit and pure regression contracts committed; no local repository test, live database test, GitHub Actions or deployment run.
 
 ## Existing implementation reviewed

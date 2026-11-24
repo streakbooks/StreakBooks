@@ -2,7 +2,7 @@
 
 ## Reference review
 
-Reviewed the supplied QBO/Xero screenshots and publicly documented report controls. This was a public documentation review, not access to every tab of a signed-in paid product. LinkBooks uses its own components, layout and accounting engine.
+Reviewed the supplied QBO/Xero screenshots and publicly documented report controls. This was a public documentation review, not access to every tab of a signed-in paid product. StreakBooks uses its own components, layout and accounting engine.
 
 Primary references:
 
@@ -12,7 +12,7 @@ Primary references:
 
 ## Implemented controls
 
-| Control | LinkBooks behavior |
+| Control | StreakBooks behavior |
 |---|---|
 | Reporting period | Custom dates and eleven calendar/fiscal presets; the actual company's year end is used. |
 | Columns | Selected total, clipped calendar months, quarters or years; optional P&L total. Requests exceeding 24 period columns fail explicitly. |

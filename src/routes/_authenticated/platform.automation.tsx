@@ -4,7 +4,7 @@ import { parseAutomationSearch } from "@/lib/platform/automation";
 export const Route = createFileRoute("/_authenticated/platform/automation")({
   validateSearch: parseAutomationSearch,
   component: AutomationPage,
-  head: () => ({ meta: [{ title: "Jobs and alerts — LinkBooks Superadmin" }] }),
+  head: () => ({ meta: [{ title: "Jobs and alerts — StreakBooks Superadmin" }] }),
 });
 function AutomationPage() {
   const search = Route.useSearch();

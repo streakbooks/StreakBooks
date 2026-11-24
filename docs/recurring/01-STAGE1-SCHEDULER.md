@@ -14,10 +14,10 @@
 `runRecurringScheduler` requires:
 
 ```http
-Authorization: Bearer <LOVABLE_CRON_SECRET>
+Authorization: Bearer <STREAKBOOKS_CRON_SECRET>
 ```
 
-Set `LOVABLE_CRON_SECRET` on Vercel (Production + Preview). Without it, cron auth returns **500** (misconfiguration).
+Set `STREAKBOOKS_CRON_SECRET` on Vercel (Production + Preview). Without it, cron auth returns **500** (misconfiguration).
 
 ## Suggested wiring (Vercel Cron)
 
@@ -29,8 +29,8 @@ Exact server-fn URL depends on TanStack Start routing; verify in devtools Networ
 ## Suggested wiring (manual / ops)
 
 ```bash
-source ~/.config/linkbooks/cli.env
-cd /Users/m5/Projects/LinkBooks
+source ~/.config/streakbooks/cli.env
+cd /Users/m5/Projects/StreakBooks
 supabase db push   # apply Stage 1 migration if not applied
 # Invoke server fn via your deployed cron URL or local dev with secret header
 ```

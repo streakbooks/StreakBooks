@@ -13,7 +13,7 @@
 ## How to run automated contracts
 
 ```powershell
-cd D:\MyApp\LinkBooks
+cd D:\MyApp\StreakBooks
 npx vitest run src/lib/crm/e2e-pack.test.ts
 ```
 

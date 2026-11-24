@@ -22,15 +22,15 @@ import {
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
     meta: [
-      { title: "Reset your password — LinkBooks" },
+      { title: "Reset your password — StreakBooks" },
       {
         name: "description",
-        content: "Request a secure link or code to reset the password on your LinkBooks account.",
+        content: "Request a secure link or code to reset the password on your StreakBooks account.",
       },
-      { property: "og:title", content: "Reset your password — LinkBooks" },
+      { property: "og:title", content: "Reset your password — StreakBooks" },
       {
         property: "og:description",
-        content: "Request a secure link or code to reset the password on your LinkBooks account.",
+        content: "Request a secure link or code to reset the password on your StreakBooks account.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

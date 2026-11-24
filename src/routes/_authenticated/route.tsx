@@ -17,7 +17,7 @@ import { needsMfaStepUp } from "@/lib/auth-session";
 import { listPortalAccess } from "@/lib/portals/portals.functions";
 
 /**
- * Every LinkBooks application page lives under this gate. The session lives in
+ * Every StreakBooks application page lives under this gate. The session lives in
  * browser storage, so this subtree opts out of server rendering and checks the
  * session on the client before any child route renders.
  *
@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated")({
   pendingComponent: () => (
     <div className="grid min-h-screen place-items-center bg-background">
       <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      <span className="sr-only">Loading LinkBooks</span>
+      <span className="sr-only">Loading StreakBooks</span>
     </div>
   ),
   component: AuthenticatedLayout,

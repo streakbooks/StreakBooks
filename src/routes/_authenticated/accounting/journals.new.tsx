@@ -10,8 +10,8 @@ export const Route = createFileRoute("/_authenticated/accounting/journals/new")(
       {
         title:
           match.search.mode === "template"
-            ? "New recurring journal — LinkBooks"
-            : "New manual journal — LinkBooks",
+            ? "New recurring journal — StreakBooks"
+            : "New manual journal — StreakBooks",
       },
     ],
   }),

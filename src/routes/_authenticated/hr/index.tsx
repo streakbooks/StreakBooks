@@ -4,10 +4,10 @@ import { HrOverviewPage } from "@/screens/hr/overview";
 export const Route = createFileRoute("/_authenticated/hr/")({
   head: () => ({
     meta: [
-      { title: "HR — LinkBooks" },
+      { title: "HR — StreakBooks" },
       {
         name: "description",
-        content: "LinkBooks HR overview for workforce, organisation and employee lifecycle.",
+        content: "StreakBooks HR overview for workforce, organisation and employee lifecycle.",
       },
     ],
   }),

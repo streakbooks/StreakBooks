@@ -56,7 +56,7 @@ export function AppStoreOverviewPage() {
     return (
       <ListWorkspace
         title="App Store"
-        description="Connect third-party software to LinkBooks through a secure open platform."
+        description="Connect third-party software to StreakBooks through a secure open platform."
         subnav={<AppStoreSubnav current="overview" />}
       >
         <LoadingState />
@@ -81,7 +81,7 @@ export function AppStoreOverviewPage() {
   return (
     <>
       <AppStoreHero
-        title="Connect your stack to LinkBooks"
+        title="Connect your stack to StreakBooks"
         description={`Native Amazon, Shopify and Stripe first — partners like Hubdoc and Link My Books via the public API. ${verifiedCount} of ${roadmap.length || 0} native adapters are E2E verified. Real customer data stays locked until security gates pass.`}
         actions={
           <>

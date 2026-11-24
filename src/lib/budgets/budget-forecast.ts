@@ -1,5 +1,5 @@
 /**
- * LinkBooks Budgets: deterministic accrual forecast.
+ * StreakBooks Budgets: deterministic accrual forecast.
  * Actuals are posted base-currency amounts, financial months are complete only.
  * Future months use adjusted budget OR the trailing up-to-three-completed-month run rate.
  * No journal records, base budgets, approvals or allocations are changed.

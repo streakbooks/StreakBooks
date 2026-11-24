@@ -1,4 +1,4 @@
-# LinkBooks POS implementation
+# StreakBooks POS implementation
 
 Audit baseline: `ddaff91753976f641a9848c6823cc05d45d99ec2` (fetched main, 2026-11-17).
 This folder records implementation evidence, not a production-readiness claim.

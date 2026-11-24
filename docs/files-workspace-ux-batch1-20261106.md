@@ -26,7 +26,7 @@ GitHub CI and Actions were intentionally not requested or run. This batch was co
 
 ## Manual acceptance checklist
 
-1. From `D:\MyApp\LinkBooks`, keep uncommitted Cursor changes safe before switching branches. Run `git status --short` and, when appropriate, `git stash push -u -m "Save Cursor work before Files review"`.
+1. From `D:\MyApp\StreakBooks`, keep uncommitted Cursor changes safe before switching branches. Run `git status --short` and, when appropriate, `git stash push -u -m "Save Cursor work before Files review"`.
 2. Run `git fetch origin`, `git switch feature/files-workspace-ux-20261106`, and `git pull --ff-only origin feature/files-workspace-ux-20261106`.
 3. Run `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test -- src/lib/documents/file-workspace.test.ts src/lib/documents/folder-tree.test.ts`, and `npm.cmd run build` (local only; no CI).
 4. Open Files for a permitted company. Test a file detail link to an item on a different page, then open it with another company and a read-only account. The unauthorized file must not be shown.

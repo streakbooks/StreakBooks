@@ -3,7 +3,7 @@ import { AdvisorsAdminAppointmentsPage } from "@/screens/advisors/admin-appointm
 
 export const Route = createFileRoute("/_authenticated/advisors-admin/appointments")({
   head: () => ({
-    meta: [{ title: "Appointments — LinkBooks Advisors" }],
+    meta: [{ title: "Appointments — StreakBooks Advisors" }],
   }),
   component: AdvisorsAdminAppointmentsPage,
 });

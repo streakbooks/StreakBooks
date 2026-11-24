@@ -1,11 +1,11 @@
 ---
-description: LinkBooks autonomous agent execution — feature-branch workflow without unauthorised merges
+description: StreakBooks autonomous agent execution — feature-branch workflow without unauthorised merges
 alwaysApply: true
 ---
 
-# Autonomous execution (LinkBooks)
+# Autonomous execution (StreakBooks)
 
-Gulshan (Operations) authorised routine autonomous development for `linkbusinessadvisory/LinkBooks`, with hard limits below.
+Gulshan (Operations) authorised routine autonomous development for `streakbooks/StreakBooks`, with hard limits below.
 
 ## May run without re-asking
 

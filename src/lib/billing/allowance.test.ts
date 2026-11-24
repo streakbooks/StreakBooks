@@ -31,21 +31,21 @@ describe("platform access", () => {
 });
 
 describe("provider keys", () => {
-  const live = { LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS: "true" };
+  const live = { STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS: "true" };
 
   it("accepts test keys and refuses live keys unless the production flag is exactly true", () => {
     expect(() => assertStripeTestKey("sk_test_abc", {})).not.toThrow();
     expect(() => assertStripeTestKey("sk_live_abc", {})).toThrow(
-      /LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/,
+      /STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/,
     );
     expect(() =>
-      assertStripeTestKey("sk_live_abc", { LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS: "1" }),
-    ).toThrow(/LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/);
+      assertStripeTestKey("sk_live_abc", { STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS: "1" }),
+    ).toThrow(/STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/);
     expect(() => assertStripeTestKey("sk_live_abc", live)).not.toThrow();
     expect(() => assertStripeTestKey("pk_test_abc", live)).toThrow(/sk_test_/);
     expect(() => assertRazorpayTestKey("rzp_test_abc", {})).not.toThrow();
     expect(() => assertRazorpayTestKey("rzp_live_abc", {})).toThrow(
-      /LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/,
+      /STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/,
     );
     expect(() => assertRazorpayTestKey("rzp_live_abc", live)).not.toThrow();
   });

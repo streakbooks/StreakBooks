@@ -1,6 +1,6 @@
 {
   "recordedAt": "2026-11-19",
-  "repository": "linkbusinessadvisory/LinkBooks",
+  "repository": "streakbooks/StreakBooks",
   "sourceCommit": "6ee171111d3758ed84ca8b714fa68d20c0adb432",
   "sourceTree": "5ad658ff4108dcdaadfee6d9e1c0eb114c7c21d0",
   "branches": [
@@ -45,12 +45,12 @@
       "included": true
     },
     {
-      "branch": "feature/linkbooks-app-store",
+      "branch": "feature/streakbooks-app-store",
       "sha": "ba89052b5a57571a2f36bdd8df1d62c33054067a",
       "included": true
     },
     {
-      "branch": "feature/linkbooks-premium-visual-redesign",
+      "branch": "feature/streakbooks-premium-visual-redesign",
       "sha": "41ac9c181ae01495efd9277ea24c874a40c98e4b",
       "included": true
     },
@@ -335,7 +335,7 @@
       "included": true
     },
     {
-      "branch": "feature/linkbooks-premium-visual-redesign",
+      "branch": "feature/streakbooks-premium-visual-redesign",
       "sha": "41ac9c181ae01495efd9277ea24c874a40c98e4b",
       "included": true
     },

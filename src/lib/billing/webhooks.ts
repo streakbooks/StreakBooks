@@ -346,7 +346,7 @@ async function notifyPaymentFailed(): Promise<void> {
   const { sendBillingNotice } = await import("@/lib/billing/notices");
   await sendBillingNotice({
     to: null,
-    subject: "LinkBooks payment failed",
+    subject: "StreakBooks payment failed",
     text: "A subscription payment failed. The organisation keeps access during the grace period. Existing reports stay available.",
   }).catch(() => undefined);
 }

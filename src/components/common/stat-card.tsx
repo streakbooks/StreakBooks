@@ -119,8 +119,8 @@ export function StatCard({
 }
 
 /**
- * Existing public StatusBadge import remains compatible in every LinkBooks module.
- * All status visuals now share the original LinkBooks semantic palette and labels.
+ * Existing public StatusBadge import remains compatible in every StreakBooks module.
+ * All status visuals now share the original StreakBooks semantic palette and labels.
  */
 export function StatusBadge({
   status,

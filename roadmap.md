@@ -1,4 +1,4 @@
-# LinkBooks roadmap
+# StreakBooks roadmap
 
 ## Architecture review (requested 4 Oct)
 - [x] Full inspection + structured assessment (A–R) delivered

@@ -19,7 +19,7 @@ describe("advisors catalogue", () => {
   });
 
   it("keeps approved landing copy", () => {
-    expect(ADVISORS_LANDING.brandTitle).toBe("LinkBooks Advisors");
+    expect(ADVISORS_LANDING.brandTitle).toBe("StreakBooks Advisors");
     expect(ADVISORS_LANDING.heading).toBe("Your business deserves better financial clarity.");
     expect(DEFAULT_ADVISOR_SERVICES[0]?.ctaLabel).toBe("Choose this service");
     expect(DEFAULT_ADVISOR_SERVICES[0]?.startingLabel).toBe("Starting from $199/month");

@@ -1,4 +1,4 @@
--- LinkBooks Accounting reconciliation schema proof — READ ONLY.
+-- StreakBooks Accounting reconciliation schema proof — READ ONLY.
 -- Run on a DEDICATED STAGING database after applying Batches 4 and 5.
 -- It makes no changes; an object existing does NOT prove authenticated RLS.
 -- Do not use this as approval for production release.

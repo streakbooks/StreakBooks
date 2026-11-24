@@ -70,7 +70,7 @@ export function ApiKeysAdmin({ isOwner }: { isOwner: boolean }) {
         </h2>
         <p className="max-w-3xl text-sm text-muted-foreground">
           Keys call the admin endpoints of the REST API (/api/v1/admin/billing) with the scopes
-          granted here. The key is shown once; LinkBooks stores only its hash.
+          granted here. The key is shown once; StreakBooks stores only its hash.
         </p>
       </header>
       {query.isError ? (

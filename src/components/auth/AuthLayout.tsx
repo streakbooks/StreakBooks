@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { CheckCircle2, Landmark, LockKeyhole, Scale, ShieldCheck } from "lucide-react";
+import { StreakBooksBrand } from "@/components/brand/StreakBooksBrand";
 
 /**
  * Brand panel copy must stay verifiable in the product: no customer counts,
@@ -24,20 +25,6 @@ const POINTS = [
 ];
 
 const TRUST = ["Encrypted in transit", "Row-level data isolation", "Two-step verification"];
-
-function Logo(_props: { onDark?: boolean }) {
-  return (
-    <div className="flex items-center">
-      <img
-        src="/brand/streakbooks-logo.png"
-        alt="StreakBooks"
-        width={168}
-        height={35}
-        className="h-9 w-auto max-w-[10.5rem] object-contain object-left"
-      />
-    </div>
-  );
-}
 
 /** Illustrative only: shows the product's balancing rule, not customer data. */
 function LedgerPreview() {
@@ -113,7 +100,7 @@ export function AuthLayout({
         />
 
         <div className="relative">
-          <Logo onDark />
+          <StreakBooksBrand showTagline />
         </div>
 
         <div className="relative mx-auto w-full max-w-md space-y-10">
@@ -159,7 +146,7 @@ export function AuthLayout({
       <main className="flex min-h-screen flex-col px-5 py-6 sm:px-10">
         <div className="flex items-center justify-between gap-4">
           <div className="lg:invisible">
-            <Logo />
+            <StreakBooksBrand showTagline />
           </div>
           {headerAction ? (
             <div className="text-sm text-muted-foreground">{headerAction}</div>

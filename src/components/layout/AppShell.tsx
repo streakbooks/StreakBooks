@@ -62,6 +62,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { PlatformAnnouncements } from "@/components/platform/PlatformAnnouncements";
+import { StreakBooksBrand } from "@/components/brand/StreakBooksBrand";
 
 const COLLAPSE_KEY = "streakbooks-sidebar-collapsed";
 const InPlaceSettingsPanel = lazy(() =>
@@ -118,31 +119,6 @@ function UserMenu() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-}
-
-function Brand({ collapsed }: { collapsed?: boolean }) {
-  return (
-    <Link
-      to="/"
-      aria-label="StreakBooks dashboard"
-      className={cn(
-        "flex items-center gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-        collapsed ? "justify-center" : "px-1",
-      )}
-    >
-      <img
-        src={collapsed ? "/brand/streakbooks-mark.png" : "/brand/streakbooks-logo.png"}
-        alt=""
-        width={collapsed ? 36 : 148}
-        height={collapsed ? 36 : 31}
-        className={cn(
-          "shrink-0 object-contain object-left",
-          collapsed ? "size-9" : "h-8 w-[9.25rem] max-w-[min(100%,9.25rem)]",
-        )}
-      />
-      {collapsed ? <span className="sr-only">StreakBooks</span> : null}
-    </Link>
   );
 }
 
@@ -550,7 +526,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
             collapsed ? "flex-col justify-center gap-0.5" : "justify-between",
           )}
         >
-          <Brand collapsed={collapsed} />
+          <StreakBooksBrand collapsed={collapsed} toHome className={collapsed ? "mx-auto" : undefined} />
           <Button
             variant="ghost"
             size="icon"
@@ -601,7 +577,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <div className="flex h-full flex-col">
                 <div className="flex h-[var(--lb-brand-bar-height)] shrink-0 items-center px-4">
-                  <Brand />
+                  <StreakBooksBrand toHome />
                 </div>
                 <CompanySwitcher />
                 <NavList onNavigate={() => setOpen(false)} />

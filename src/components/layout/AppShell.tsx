@@ -526,7 +526,11 @@ function AppShellLayout({ children }: { children: ReactNode }) {
             collapsed ? "flex-col justify-center gap-0.5" : "justify-between",
           )}
         >
-          <StreakBooksBrand collapsed={collapsed} toHome className={collapsed ? "mx-auto" : undefined} />
+          <StreakBooksBrand
+            collapsed={collapsed}
+            toHome
+            {...(collapsed ? { className: "mx-auto" } : {})}
+          />
           <Button
             variant="ghost"
             size="icon"

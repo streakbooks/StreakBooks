@@ -9,7 +9,33 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getAdvisorsPortalHome } from "@/lib/advisors/portal.functions";
 import { formatMinorAmount } from "@/lib/advisors/portal";
-import { friendlyAuthError } from "@/lib/auth-helpers";
+
+const PORTAL_ACTIONS = [
+  {
+    key: "tasks",
+    label: "Tasks from your advisor",
+    description: "See next steps and due dates for your service.",
+    href: "/advisors-portal/tasks" as const,
+    count: (home: { openTasks: number }) => home.openTasks,
+    action: "Review tasks",
+  },
+  {
+    key: "documents",
+    label: "Files to send",
+    description: "Review requested information and confirm when you have shared it.",
+    href: "/advisors-portal/documents" as const,
+    count: (home: { openDocuments: number }) => home.openDocuments,
+    action: "Review requests",
+  },
+  {
+    key: "updates",
+    label: "Unread updates",
+    description: "Read notices about your advisor service.",
+    href: "/advisors-portal/account" as const,
+    count: (home: { unreadNotifications: number }) => home.unreadNotifications,
+    action: "View updates",
+  },
+] as const;
 
 export function AdvisorsPortalHomePage() {
   const homeFn = useServerFn(getAdvisorsPortalHome);
@@ -19,11 +45,28 @@ export function AdvisorsPortalHomePage() {
     retry: false,
   });
 
-  if (query.isPending) return <LoadingState />;
+  if (query.isPending)
+    return (
+      <main className="mx-auto max-w-5xl space-y-6 p-6">
+        <ListWorkspace
+          title="Your advisor service"
+          description="Your Link Business Advisory plan, next steps and appointments."
+        >
+          <AdvisorsPortalSubnav />
+          <div role="status" aria-live="polite">
+            <LoadingState />
+          </div>
+        </ListWorkspace>
+      </main>
+    );
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
-        <ListWorkspace title="Advisors portal" description="Your Advisors service account.">
+        <ListWorkspace
+          title="Your advisor service"
+          description="Your Link Business Advisory plan, next steps and appointments."
+        >
+          <AdvisorsPortalSubnav />
           <QueryErrorState queries={[query]} title="Portal unavailable" />
         </ListWorkspace>
       </main>
@@ -35,29 +78,48 @@ export function AdvisorsPortalHomePage() {
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-6">
       <ListWorkspace
-        title={`Hello, ${home.client.name || home.client.email}`}
-        description="Plan, appointments, documents and messages for your Advisors engagement."
+        title="Your advisor service"
+        description={`Hello ${home.client.name || home.client.email}. Track your Link Business Advisory plan, next steps and appointments here.`}
         subnav={<AdvisorsPortalSubnav />}
       >
-        <section className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-border p-4">
-            <p className="text-sm text-muted-foreground">Open tasks</p>
-            <p className="text-2xl font-semibold">{home.openTasks}</p>
+        <section aria-labelledby="portal-next-steps" className="space-y-3">
+          <div>
+            <h2 id="portal-next-steps" className="text-lg font-semibold">
+              What needs your attention
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Start here to keep your advisor work moving.
+            </p>
           </div>
-          <div className="rounded-lg border border-border p-4">
-            <p className="text-sm text-muted-foreground">Document requests</p>
-            <p className="text-2xl font-semibold">{home.openDocuments}</p>
-          </div>
-          <div className="rounded-lg border border-border p-4">
-            <p className="text-sm text-muted-foreground">Unread notices</p>
-            <p className="text-2xl font-semibold">{home.unreadNotifications}</p>
+          <div className="grid gap-3 md:grid-cols-3">
+            {PORTAL_ACTIONS.map((item) => {
+              const count = item.count(home);
+              return (
+                <Link
+                  key={item.key}
+                  to={item.href}
+                  className="group rounded-xl border border-border/70 bg-card p-4 transition hover:border-primary/40 hover:bg-muted/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h3 className="font-medium">{item.label}</h3>
+                    <span className="text-2xl font-semibold tabular-nums">{count}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+                  <p className="mt-3 text-sm font-medium text-primary">
+                    {count > 0 ? item.action : "You’re all caught up"}
+                  </p>
+                </Link>
+              );
+            })}
           </div>
         </section>
 
-        <section className="space-y-3 rounded-lg border border-border p-4">
+        <section className="space-y-3 rounded-xl border border-border/70 bg-card p-5">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-medium">Your plan</h2>
-            {home.engagement ? <Badge variant="secondary">{home.engagement.status}</Badge> : null}
+            <h2 className="text-lg font-semibold">Your service plan</h2>
+            {home.engagement ? (
+              <Badge variant="secondary">{home.engagement.status.replaceAll("_", " ")}</Badge>
+            ) : null}
           </div>
           {home.plan ? (
             <>
@@ -79,6 +141,9 @@ export function AdvisorsPortalHomePage() {
                   {home.plan.sessionsIncluded} included
                 </p>
               ) : null}
+              {home.engagement?.scopeSummary ? (
+                <p className="text-sm text-muted-foreground">{home.engagement.scopeSummary}</p>
+              ) : null}
             </>
           ) : (
             <EmptyState
@@ -93,10 +158,13 @@ export function AdvisorsPortalHomePage() {
           )}
           {home.subscription ? (
             <p className="text-sm text-muted-foreground">
-              Billing status: {home.subscription.status}
+              Payment status: {home.subscription.status.replaceAll("_", " ")}
               {home.subscription.billingPlanCode ? ` · ${home.subscription.billingPlanCode}` : ""}
             </p>
           ) : null}
+          <Button asChild size="sm" variant="outline">
+            <Link to="/advisors-portal/account">Ask about your plan or billing</Link>
+          </Button>
         </section>
 
         <section className="space-y-3">

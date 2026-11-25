@@ -25,4 +25,3 @@ function AdvisorsCheckoutRoute() {
   const search = Route.useSearch();
   return <AdvisorsCheckoutPage serviceCode={search.service ?? ""} planCode={search.plan ?? ""} />;
 }
-

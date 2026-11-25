@@ -115,4 +115,3 @@ function CompanyLayout() {
     </AppShell>
   );
 }
-

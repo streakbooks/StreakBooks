@@ -398,4 +398,3 @@ async function notifyPaymentFailed(): Promise<void> {
     text: "A subscription payment failed. The organisation keeps access during the grace period. Existing reports stay available.",
   }).catch(() => undefined);
 }
-

@@ -269,4 +269,3 @@ GRANT EXECUTE ON FUNCTION public.advisors_public_checkout_verify(uuid, text) TO 
 GRANT EXECUTE ON FUNCTION public.advisors_public_checkout_get(uuid) TO service_role;
 GRANT EXECUTE ON FUNCTION public.advisors_public_checkout_webhook(uuid, text, text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.platform_advisors_list_public_purchases() TO authenticated, service_role;
-

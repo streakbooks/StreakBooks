@@ -37,4 +37,3 @@ The currently implemented public payment provider is Razorpay. Supporting Stripe
 requires a separate Link Business Advisory Stripe account, dedicated server credentials, and its
 own checkout/webhook flow; the existing StreakBooks Stripe integration must not be reused for
 these purchases.
-

@@ -15,6 +15,7 @@ import { FinanceAdmin } from "@/components/platform/billing/FinanceAdmin";
 import { LegalDocumentsAdmin } from "@/components/platform/billing/LegalDocumentsAdmin";
 import { PartnerProgramAdmin } from "@/components/platform/billing/PartnerProgramAdmin";
 import { PaymentOperationsAdmin } from "@/components/platform/billing/PaymentOperationsAdmin";
+import { RazorpayStandardCheckout } from "@/components/platform/billing/RazorpayStandardCheckout";
 import { formatMinorAmount } from "@/lib/billing/domain/money";
 import { getPlatformBilling } from "@/lib/billing/platform.functions";
 import {
@@ -90,6 +91,7 @@ function PlatformBillingPage() {
       </p>
       <BillingAnalyticsAdmin />
       <PaymentOperationsAdmin canEdit={editor} isOwner={owner} />
+      {editor ? <RazorpayStandardCheckout /> : null}
       <FinanceAdmin canEdit={editor} isOwner={owner} />
       <CouponsAdmin canEdit={editor} />
       <PartnerProgramAdmin canEdit={editor} isOwner={owner} />
@@ -222,9 +224,7 @@ function PlatformBillingPage() {
                         );
                         void query.refetch();
                       })
-                      .catch((error: unknown) =>
-                        toast.error(friendlyAuthError(error)),
-                      )
+                      .catch((error: unknown) => toast.error(friendlyAuthError(error)))
                   }
                 >
                   Publish
@@ -241,9 +241,7 @@ function PlatformBillingPage() {
                         toast.success("The previous version is published again.");
                         void query.refetch();
                       })
-                      .catch((error: unknown) =>
-                        toast.error(friendlyAuthError(error)),
-                      )
+                      .catch((error: unknown) => toast.error(friendlyAuthError(error)))
                   }
                 >
                   Roll back

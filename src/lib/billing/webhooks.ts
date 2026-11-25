@@ -83,8 +83,15 @@ function receiveRazorpay(
   raw: string,
   header: string | null,
   eventIdHeader: string | null,
+  account: "streakbooks" | "advisors" = "streakbooks",
 ): Received {
-  verifyRazorpaySignature(raw, header, process.env["RAZORPAY_WEBHOOK_SECRET"] ?? "");
+  const keyId =
+    process.env[account === "advisors" ? "ADVISORS_RAZORPAY_KEY_ID" : "RAZORPAY_KEY_ID"] ?? "";
+  const webhookSecret =
+    process.env[
+      account === "advisors" ? "ADVISORS_RAZORPAY_WEBHOOK_SECRET" : "RAZORPAY_WEBHOOK_SECRET"
+    ] ?? "";
+  verifyRazorpaySignature(raw, header, webhookSecret);
   const event = JSON.parse(raw) as Record<string, unknown>;
   const eventType = str(event["event"]);
   if (!eventType) throw new Error("Razorpay event is malformed.");
@@ -98,7 +105,7 @@ function receiveRazorpay(
     eventType,
     payload: event,
     createdAt: unixToIso(event["created_at"]),
-    mode: modeFromRazorpayKey(process.env["RAZORPAY_KEY_ID"] ?? ""),
+    mode: modeFromRazorpayKey(keyId),
   };
 }
 
@@ -109,6 +116,13 @@ export async function handleBillingWebhook(request: Request): Promise<Response> 
   try {
     if (url.pathname === "/api/billing/stripe" || url.pathname === "/api/v1/webhooks/stripe") {
       received = receiveStripe(raw, request.headers.get("stripe-signature"));
+    } else if (url.pathname === "/api/advisors/razorpay-webhook") {
+      received = receiveRazorpay(
+        raw,
+        request.headers.get("x-razorpay-signature"),
+        request.headers.get("x-razorpay-event-id"),
+        "advisors",
+      );
     } else if (
       url.pathname === "/api/billing/razorpay" ||
       url.pathname === "/api/v1/webhooks/razorpay"
@@ -172,6 +186,26 @@ export async function processStoredEvent(
   const claimed = await rpc<Claimed | null>(client, "billing_webhook_claim", { _id: id });
   if (!claimed) return "busy";
   try {
+    const advisorPurchaseId = razorpayAdvisorPurchaseId(claimed);
+    if (advisorPurchaseId) {
+      const subscription = obj(obj(claimed.payload["payload"])["subscription"]);
+      const entity = obj(subscription["entity"]);
+      const subscriptionId = str(entity["id"]);
+      if (!subscriptionId) throw new Error("Advisor subscription webhook has no subscription ID.");
+      const result = await rpc<{ applied: boolean }>(client, "advisors_public_checkout_webhook", {
+        _purchase_id: advisorPurchaseId,
+        _subscription_id: subscriptionId,
+        _event_type: claimed.eventType,
+      });
+      const status = result.applied ? "processed" : "skipped";
+      await rpc(client, "billing_webhook_finish", {
+        _id: id,
+        _status: status,
+        _error: null,
+        _result: [{ result: status }],
+      });
+      return status;
+    }
     const events =
       claimed.provider === "stripe"
         ? await stripeToEvents(claimed)
@@ -238,6 +272,20 @@ export async function processStoredEvent(
     });
     return "failed";
   }
+}
+
+function razorpayAdvisorPurchaseId(claimed: Claimed): string | null {
+  if (claimed.provider !== "razorpay" || !claimed.eventType.startsWith("subscription.")) {
+    return null;
+  }
+  const subscription = obj(obj(claimed.payload["payload"])["subscription"]);
+  const entity = obj(subscription["entity"]);
+  const notes = obj(entity["notes"]);
+  const purchaseId = str(notes["advisors_purchase_id"]) ?? "";
+  return notes["purpose"] === "advisors_service_subscription" &&
+    /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(purchaseId)
+    ? purchaseId
+    : null;
 }
 
 /** Retries due events; called by the authenticated retry endpoint. */
@@ -350,3 +398,4 @@ async function notifyPaymentFailed(): Promise<void> {
     text: "A subscription payment failed. The organisation keeps access during the grace period. Existing reports stay available.",
   }).catch(() => undefined);
 }
+

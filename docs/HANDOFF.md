@@ -424,3 +424,9 @@ Before applying a migration to project `ipxflpzfcqwtenodbxwc`: confirm a restore
 ## Next action
 
 Review `docs/superadmin/start-month-backfill.md` before any start-month update. Continue batches E–H only with a working RPC, an authorisation check and a test. Do not add placeholder buttons.
+
+# Settings overhaul — Sales invoice and quote dates, 26 November 2026
+
+Implemented the existing Sales default payment terms in invoice due-date calculation and corrected quote creation/date edits to consume the saved quote-validity setting instead of hardcoding 30 days. Customer-specific invoice terms remain higher priority. Added `salesDocumentEndDate` with consumer tests, field-specific settings permission/persistence tests, registry/coverage entries, and review steps. Local validation passed: 640 test files / 4,368 tests; TypeScript, full ESLint, production build, module/UI/navigation/lookup/migration contracts and client bundle check passed. The isolated network-disabled workflow PostgreSQL suite passed with typed audit, RLS, tenant-isolation, redaction, nullable-default and rollback checks.
+
+The previous pushed commit `55b719cfcfb5a2ce66220c790a655173a9afb283` passed Actions run [#45849928949](https://github.com/streakbooks/StreakBooks/actions/runs/45849928949), including all 97 UI fixtures and six PostgreSQL jobs; this Sales diff requires its own fresh run. PR #92 remains open/draft. Hosted Supabase and deployment were not touched. Continue Sales/Purchases work; Settings batches 4–9 and authenticated browser review remain incomplete.

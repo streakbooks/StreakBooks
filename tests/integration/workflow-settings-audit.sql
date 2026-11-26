@@ -53,6 +53,7 @@ VALUES (
 
 UPDATE public.company_workflow_settings
 SET accounting_require_journal_memo = false,
+    sales_default_payment_terms_days = 45,
     sales_default_notes = 'Updated private note',
     updated_by = '70000000-0000-4000-8000-000000000010'
 WHERE company_id = '10000000-0000-4000-8000-000000000010';
@@ -87,6 +88,15 @@ BEGIN
       AND old_value = 'true'::jsonb
       AND new_value = 'false'::jsonb
   ) THEN RAISE EXCEPTION 'Workflow setting update is missing before/after audit evidence'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.settings_change_log
+    WHERE company_id = '10000000-0000-4000-8000-000000000010'
+      AND category = 'workflow'
+      AND setting_key = 'sales_default_payment_terms_days'
+      AND old_value = '30'::jsonb
+      AND new_value = '45'::jsonb
+  ) THEN RAISE EXCEPTION 'Sales payment term update is missing typed before/after audit evidence'; END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM public.settings_change_log

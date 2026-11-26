@@ -38,6 +38,14 @@ describe("Settings capability coverage registry", () => {
     }
   });
 
+  it("keeps regional tax settings partial until their source of truth and effects are tested", () => {
+    expect(SETTINGS_GAPS.find((gap) => gap.key === "tax.regional_configuration")).toMatchObject({
+      moduleId: "tax",
+      status: "partial",
+      route: "/settings/tax/overview",
+    });
+  });
+
   it("accounts for typed fields and marks unproven controls partial", () => {
     expect(SETTING_FIELD_COVERAGE.length).toBeGreaterThan(0);
     expect(

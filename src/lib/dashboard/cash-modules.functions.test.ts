@@ -9,10 +9,6 @@ vi.mock("@tanstack/react-start", () => ({
         validate = fn;
         return chain;
       },
-      validator(fn: typeof validate) {
-        validate = fn;
-        return chain;
-      },
       handler:
         (fn: (args: { data: unknown; context: unknown }) => Promise<unknown>) =>
         (args: { data: unknown; context: unknown }) =>

@@ -101,6 +101,17 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     note: "Stored warning and auto-credit values are visible but read-only until the related transaction workflows enforce them.",
   },
   {
+    key: "tax.regional_configuration",
+    moduleId: "tax",
+    status: "partial",
+    route: "/settings/tax/overview",
+    missingEvidence: [
+      "authoritative tax-regime and tax-code ownership",
+      "effective-date, jurisdiction and reporting-consumer behavior tests",
+    ],
+    note: "Tax controls remain in the Tax module; do not add duplicate organisation-level rate or regime fields until their transaction and reporting effects are proven.",
+  },
+  {
     key: "sales.typed_configuration",
     moduleId: "sales",
     status: "partial",

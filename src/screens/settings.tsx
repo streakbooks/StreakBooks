@@ -518,10 +518,24 @@ export function SettingsForCompany({
   const baseCurrency = detailsQuery.data?.base_currency ?? "GBP";
 
   const saveMutation = useMutation({
-    mutationFn: () =>
-      saveCompany({
+    mutationFn: () => {
+      const current = detailsQuery.data;
+      if (!current) throw new Error("Reload organisation settings before saving.");
+      return saveCompany({
         data: {
           companyId,
+          expected: {
+            name: current.name,
+            legal_name: current.legal_name,
+            country_code: current.country_code,
+            base_currency: current.base_currency,
+            fiscal_year_end_month: current.fiscal_year_end_month,
+            fiscal_year_end_day: current.fiscal_year_end_day,
+            timezone: current.timezone,
+            tax_regime: current.tax?.tax_regime ?? "none",
+            registration_number: current.tax?.registration_number ?? null,
+            prices_include_tax: Boolean(current.tax?.prices_include_tax),
+          },
           name,
           legal_name: legalName,
           country_code: countryCode,
@@ -533,7 +547,8 @@ export function SettingsForCompany({
           registration_number: regNumber,
           prices_include_tax: pricesIncludeTax,
         },
-      }),
+      });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["company-details", companyId] });
       await queryClient.invalidateQueries({ queryKey: companyContextKey });

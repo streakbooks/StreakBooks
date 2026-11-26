@@ -3,6 +3,37 @@
 - Configure a dedicated non-production authenticated browser-test account through `E2E_EMAIL` and `E2E_PASSWORD` when available; do not commit or paste credentials.
 - Review deployment-provider account constraints before enabling deploy checks: the PR currently reports Vercel Hobby/private-organization restrictions and a failed Cloudflare Workers build check. No plan change or production deploy was made.
 
+# Settings overhaul — Batch 2 continuation, 26 November 2026
+
+The organisation identity and legacy tax-summary editor now calls
+`save_company_identity_and_tax`, an additive transactional RPC with permission
+validation, stale-snapshot rejection, and a before/after audit in the same
+transaction. The migration is `20261126150000_settings_company_identity_atomic.sql`;
+its drop-only rollback is in `supabase/rollback/`. An isolated PostgreSQL test covers
+successful two-table persistence, audit evidence, stale and invalid input, denied
+tenant access, and rollback after an audit failure.
+
+Verification status: TypeScript passed, all 633 unit-test files / 4,349 tests passed,
+the 27-file / 225-test focused set passed, full repository ESLint passed, production
+build passed, and navigation, UI, module, bundle, browsing-inventory and migration
+identity checks passed. The Docker PostgreSQL harness could not start because Docker
+is unavailable; `psql` and the Supabase CLI are absent. The isolated SQL test remains
+unexecuted. PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) run
+[#38](https://github.com/streakbooks/StreakBooks/actions/runs/45801553959) started and
+failed `check:lookups` on four mapped option lists. Those source violations are fixed
+and pass locally, but the fix is not yet pushed or checked by GitHub. Vercel reports
+private-organization restrictions on its Hobby plan; Cloudflare Workers also reports
+a failed external build. No migration was applied to hosted Supabase, no deploy
+occurred, and PR #92 remains open/draft. The
+configured project is `qugoaaizclvkzesptovm`; only target-specific confirmed backup
+evidence authorizes any hosted migration.
+
+Gulshan's standing StreakBooks delivery instruction is recorded in
+`.cursor/rules/merge-without-ci-billing.mdc`: merge completed work to `main` after
+local gates pass without waiting for GitHub Actions when jobs never started solely
+because of org billing/spending limits. This does not waive real failures, unfinished
+work, or the required hosted migration safety check.
+
 # Settings overhaul — continuation, 26 November 2026
 
 Continued `feat/settings-module-overhaul` / PR #92. Fixed the repository-wide Prettier lint failure without disabling lint rules, and corrected the browsing inventory so the public `/advisors` storefront is tracked separately from authenticated routes. Current local verification: 633 Vitest files / 4,349 tests, TypeScript, full ESLint with zero warnings, production build, navigation/UI/module/bundle checks and all-module browsing inventory pass. Browser E2E is still unverified because the in-app browser cannot reach the workspace-local Vite listener; three authenticated Playwright cases remain skipped without a test account. The coverage inventory correctly reports 0/30 modules as fully verified.

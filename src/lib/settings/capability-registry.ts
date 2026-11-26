@@ -87,8 +87,8 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "settings",
     status: "partial",
     route: "/settings/organisation/overview",
-    missingEvidence: ["atomic before/after audit proof", "field-level consumer tests"],
-    note: "Company and tax values are persisted, but updateCompany currently has no explicit settings audit call.",
+    missingEvidence: ["field-level consumer tests"],
+    note: "Organisation and legacy tax summary now save atomically with a before/after audit and stale-snapshot rejection; downstream field effects still need field-specific tests.",
   },
   {
     key: "sales.typed_configuration",

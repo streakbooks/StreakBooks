@@ -197,6 +197,7 @@ export const updateCompany = createServerFn({ method: "POST" })
     (
       input: CreateCompanyInput & {
         companyId: string;
+        expected: CompanyIdentitySnapshot;
         tax_regime: string;
         registration_number: string;
         prices_include_tax: boolean;
@@ -206,6 +207,7 @@ export const updateCompany = createServerFn({ method: "POST" })
       return {
         ...base,
         companyId: assertUuid(input.companyId),
+        expected: validateCompanyIdentitySnapshot(input.expected),
         tax_regime: validateTaxRegime(input.tax_regime),
         registration_number: (input.registration_number ?? "").trim().slice(0, 60),
         prices_include_tax: Boolean(input.prices_include_tax),
@@ -213,37 +215,63 @@ export const updateCompany = createServerFn({ method: "POST" })
     },
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    await assertCompanyPermission(supabase, data.companyId, "company.settings.edit");
-    const { data: updated, error } = await supabase
-      .from("companies")
-      .update({
-        name: data.name,
-        legal_name: data.legal_name || null,
-        country_code: data.country_code,
-        base_currency: data.base_currency,
-        fiscal_year_end_month: data.fiscal_year_end_month,
-        fiscal_year_end_day: data.fiscal_year_end_day,
-        timezone: data.timezone,
-      })
-      .eq("id", data.companyId)
-      .select("id");
+    await assertCompanyPermission(context.supabase, data.companyId, "company.settings.edit");
+    const desired = {
+      name: data.name,
+      legal_name: data.legal_name || null,
+      country_code: data.country_code,
+      base_currency: data.base_currency,
+      fiscal_year_end_month: data.fiscal_year_end_month,
+      fiscal_year_end_day: data.fiscal_year_end_day,
+      timezone: data.timezone,
+      tax_regime: data.tax_regime,
+      registration_number: data.registration_number || null,
+      prices_include_tax: data.prices_include_tax,
+    };
+    const { error } = await context.supabase.rpc(
+      "save_company_identity_and_tax" as never,
+      {
+        _company_id: data.companyId,
+        _expected: data.expected,
+        _desired: desired,
+      } as never,
+    );
     if (error) throw new Error(error.message);
-    if (!updated || updated.length === 0) {
-      throw new Error("Only owners and administrators can change company settings.");
-    }
-
-    const { error: taxError } = await supabase
-      .from("company_tax_settings")
-      .update({
-        tax_regime: data.tax_regime,
-        registration_number: data.registration_number || null,
-        prices_include_tax: data.prices_include_tax,
-      })
-      .eq("company_id", data.companyId);
-    if (taxError) throw new Error(taxError.message);
     return { ok: true };
   });
+
+export type CompanyIdentitySnapshot = {
+  name: string;
+  legal_name: string | null;
+  country_code: string;
+  base_currency: string;
+  fiscal_year_end_month: number;
+  fiscal_year_end_day: number;
+  timezone: string;
+  tax_regime: string;
+  registration_number: string | null;
+  prices_include_tax: boolean;
+};
+
+function validateCompanyIdentitySnapshot(value: CompanyIdentitySnapshot): CompanyIdentitySnapshot {
+  if (!value || typeof value !== "object")
+    throw new Error("Reload organisation settings before saving.");
+  const company = validateCompanyInput({ ...value, legal_name: value.legal_name ?? "" });
+  const tax_regime = validateTaxRegime(value.tax_regime);
+  if (typeof value.prices_include_tax !== "boolean") {
+    throw new Error("Reload organisation settings before saving.");
+  }
+  return {
+    ...company,
+    legal_name: company.legal_name || null,
+    tax_regime,
+    registration_number:
+      typeof value.registration_number === "string"
+        ? value.registration_number.trim().slice(0, 60) || null
+        : null,
+    prices_include_tax: value.prices_include_tax,
+  };
+}
 
 export type CompanyMember = {
   user_id: string;

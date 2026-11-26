@@ -26,6 +26,7 @@ export function SettingsMobileNav({ section, showDemo, onSection }: Props) {
         Settings section
       </Label>
       <Select value={section} onValueChange={(value) => onSection(value as SettingsCategory)}>
+        {/* lookup-fixed-enum: Settings navigation entries are a fixed route enumeration. */}
         <SelectTrigger id="mobile-settings-section" aria-label="Choose settings section">
           <SelectValue placeholder="Choose a settings section" />
         </SelectTrigger>

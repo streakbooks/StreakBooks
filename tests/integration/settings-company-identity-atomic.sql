@@ -1,0 +1,95 @@
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-000000000001"}', false);
+
+DO $$
+DECLARE
+  c uuid := '10000000-0000-4000-8000-000000000011';
+  other_c uuid := '10000000-0000-4000-8000-000000000012';
+  expected jsonb := '{"name":"Company Identity Fixture","legal_name":"Fixture Legal Entity","country_code":"GB","base_currency":"GBP","fiscal_year_end_month":3,"fiscal_year_end_day":31,"timezone":"Europe/London","tax_regime":"vat","registration_number":"GB123456789","prices_include_tax":false}'::jsonb;
+  desired jsonb := '{"name":"Updated Fixture","legal_name":"Updated Legal Entity","country_code":"IN","base_currency":"INR","fiscal_year_end_month":3,"fiscal_year_end_day":31,"timezone":"Asia/Kolkata","tax_regime":"gst","registration_number":"GSTIN123","prices_include_tax":true}'::jsonb;
+  audit_row public.audit_events%ROWTYPE;
+  audit_before integer;
+BEGIN
+  SELECT count(*) INTO audit_before FROM public.audit_events WHERE company_id=c;
+
+  -- One successful save updates both tables and records the same transaction's before/after.
+  PERFORM public.save_company_identity_and_tax(c, expected, desired);
+  IF (SELECT name FROM public.companies WHERE id=c) <> 'Updated Fixture'
+     OR (SELECT tax_regime FROM public.company_tax_settings WHERE company_id=c) <> 'gst'
+     OR NOT (SELECT prices_include_tax FROM public.company_tax_settings WHERE company_id=c) THEN
+    RAISE EXCEPTION 'Organisation identity and tax settings were not saved together';
+  END IF;
+  SELECT * INTO audit_row FROM public.audit_events
+   WHERE company_id=c AND action='settings.organization_identity'
+   ORDER BY id DESC LIMIT 1;
+  IF audit_row.id IS NULL
+     OR audit_row.details->'before' IS DISTINCT FROM expected
+     OR audit_row.details->'after' IS DISTINCT FROM desired THEN
+    RAISE EXCEPTION 'Organisation save did not record exact before/after audit evidence';
+  END IF;
+
+  -- Stale callers cannot overwrite another editor's settings or create audit noise.
+  BEGIN
+    PERFORM public.save_company_identity_and_tax(c, expected, expected);
+    RAISE EXCEPTION 'Stale organisation snapshot was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%changed in another session%' THEN RAISE; END IF;
+  END;
+  IF (SELECT name FROM public.companies WHERE id=c) <> 'Updated Fixture' THEN
+    RAISE EXCEPTION 'Stale organisation save changed the company';
+  END IF;
+
+  -- Invalid calendar dates fail before either table changes.
+  BEGIN
+    PERFORM public.save_company_identity_and_tax(
+      c, desired,
+      jsonb_set(desired, '{fiscal_year_end_day}', '30'::jsonb)
+    );
+    RAISE EXCEPTION 'Invalid February year end was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%financial year end date%' THEN RAISE; END IF;
+  END;
+  IF (SELECT fiscal_year_end_day FROM public.companies WHERE id=c) <> 31 THEN
+    RAISE EXCEPTION 'Invalid date partially changed company settings';
+  END IF;
+
+  -- Audit failure aborts the company and tax writes as one transaction.
+  PERFORM set_config('test.fail_audit','on',true);
+  BEGIN
+    PERFORM public.save_company_identity_and_tax(
+      c, desired, jsonb_set(desired, '{name}', '"Must Roll Back"'::jsonb)
+    );
+    RAISE EXCEPTION 'Injected audit failure was not propagated';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%Injected audit failure%' THEN RAISE; END IF;
+  END;
+  PERFORM set_config('test.fail_audit','off',true);
+  IF (SELECT name FROM public.companies WHERE id=c) <> 'Updated Fixture'
+     OR (SELECT tax_regime FROM public.company_tax_settings WHERE company_id=c) <> 'gst' THEN
+    RAISE EXCEPTION 'Audit failure did not roll back company and tax rows';
+  END IF;
+
+  -- Membership alone is insufficient; only the explicitly granted settings editor may save.
+  BEGIN
+    PERFORM public.save_company_identity_and_tax(other_c, expected, desired);
+    RAISE EXCEPTION 'Cross-company settings save was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%Permission denied%' THEN RAISE; END IF;
+  END;
+  IF (SELECT count(*) FROM public.audit_events WHERE company_id=c) <> audit_before + 1 THEN
+    RAISE EXCEPTION 'Rejected organisation saves wrote audit records';
+  END IF;
+END $$;
+RESET ROLE;
+
+DO $$
+BEGIN
+  IF has_function_privilege(
+    'anon', 'public.save_company_identity_and_tax(uuid,jsonb,jsonb)', 'EXECUTE'
+  ) THEN
+    RAISE EXCEPTION 'Anonymous access to organisation settings save was granted';
+  END IF;
+END $$;
+
+SELECT 'PASS: atomic organisation/tax save, optimistic snapshot, audit rollback and permission checks' AS result;

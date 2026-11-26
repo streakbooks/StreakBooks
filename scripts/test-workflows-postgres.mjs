@@ -106,6 +106,9 @@ try {
   sql(read("tests/fixtures/workflows/settings-legacy-cas-baseline.sql"));
   sql(read("supabase/migrations/20261104165209_legacy_settings_cas.sql"));
   sql(read("tests/integration/settings-legacy-cas.sql"));
+  sql(read("tests/fixtures/workflows/settings-company-identity-baseline.sql"));
+  sql(read("supabase/migrations/20261126150000_settings_company_identity_atomic.sql"));
+  sql(read("tests/integration/settings-company-identity-atomic.sql"));
   sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
   sql(
     fn(

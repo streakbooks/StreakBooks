@@ -115,8 +115,14 @@ function BatchPayment() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   const requiredQueries = [billsQ, accountsQ];
-  if (requiredQueries.some((query) => query.isError))
-    return <QueryErrorState queries={requiredQueries} title="Could not load batch payment options" />;
+  if (billsQ.isError && accountsQ.isError)
+    return (
+      <QueryErrorState queries={requiredQueries} title="Could not load batch payment options" />
+    );
+  if (billsQ.isError)
+    return <QueryErrorState queries={[billsQ]} title="Could not load bills to pay" />;
+  if (accountsQ.isError)
+    return <QueryErrorState queries={[accountsQ]} title="Could not load payment accounts" />;
   if (billsQ.isPending || accountsQ.isPending) return <LoadingState />;
 
   return (

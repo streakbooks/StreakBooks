@@ -30,7 +30,7 @@ Date: 3 November 2026.
 The GitHub Actions quality gate must pass: locked dependency installation, TypeScript, changed-file ESLint, full unit tests and production build. Authenticated Playwright scenarios were added but require a staging test user to run and are not part of this default CI gate. Vercel deployment and real-device visual acceptance must be checked separately.
 
 ## How to check locally
-1. Open PowerShell in D:\\MyApp\\StreakBooks.
+1. Open PowerShell in D:\\StreakBooks.
 2. If local edits exist, commit/stash them safely before pulling: `git status`.
 3. Run `git checkout main`, `git pull origin main`, and `npm.cmd run dev`.
 4. Sign in at http://localhost:8080.

@@ -61,7 +61,7 @@ function gitInfo() {
   // Never put a remote URL into the JSON report: it could contain credentials.
   const originMatchesRepo =
     typeof remoteUrl === "string" &&
-    /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)linkbusinessadvisory\/StreakBooks(?:\.git)?\/?$/i.test(
+    /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)streakbooks\/StreakBooks(?:\.git)?\/?$/i.test(
       remoteUrl,
     );
   return {

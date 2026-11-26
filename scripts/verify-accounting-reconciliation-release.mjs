@@ -64,7 +64,7 @@ function gitInfo(fresh) {
     // Never record remote URL: URLs can embed credentials.
     originMatchesRepo:
       typeof remote === "string" &&
-      /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)linkbusinessadvisory\/StreakBooks(?:\.git)?\/?$/i.test(
+      /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)streakbooks\/StreakBooks(?:\.git)?\/?$/i.test(
         remote,
       ),
   };

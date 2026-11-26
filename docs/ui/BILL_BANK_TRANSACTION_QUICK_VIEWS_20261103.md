@@ -36,7 +36,7 @@ This is an original StreakBooks usability increment informed by the speed and cl
 - GitHub CI checks TypeScript, changed-file ESLint, unit tests and production build. Full repository-wide lint debt remains a separate task.
 
 ## Manual acceptance at localhost
-1. Update: open PowerShell in D:\\MyApp\\StreakBooks and run `git status`, `git checkout main`, `git pull origin main` and `npm.cmd run dev`.
+1. Update: open PowerShell in D:\\StreakBooks and run `git status`, `git checkout main`, `git pull origin main` and `npm.cmd run dev`.
 2. Open http://localhost:8080 and sign in. Go to **Banking → All transactions**.
 3. If transactions are present, click the **eye icon** beside any transaction. Confirm a right-hand drawer with its actual date, description, amount, bank account and status.
 4. Inspect **Linked journals**. Follow a journal link if one exists, or confirm the empty state appears.

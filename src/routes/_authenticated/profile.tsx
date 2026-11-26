@@ -72,7 +72,12 @@ function ProfilePage() {
   return (
     <ListWorkspace
       title="Your profile"
-      description="Your personal account details. Organisation settings arrive in a later phase."
+      description="Your personal account details, sign-in security and account preferences."
+      breadcrumbs={[
+        { label: "Settings", to: "/settings" },
+        { label: "Personal preferences", to: "/settings/personal/overview" },
+        { label: "Profile" },
+      ]}
     >
       {profileQuery.isPending ? (
         <LoadingState />

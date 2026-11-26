@@ -6,7 +6,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - [x] Phase 1 — official public benchmark, clean-room IA, decision and originality record (`benchmark.md`, `ia-design.md`, `docs/decisions/011-settings-information-architecture.md`, `docs/compliance/originality-log.md`).
 - [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. The three evidence-backed capabilities are complete; remaining typed fields stay partial and are read-only.
 - [ ] Phase 3 / Batch 1 — canonical nested routes, universal breadcrumbs, legacy route compatibility and validated return-to-module are implemented. Authenticated browser E2E is pending because this workspace has no `E2E_EMAIL`/`E2E_PASSWORD` account, and the local `/settings` browser visit showed an application error.
-- [ ] Phase 3 / Batch 2 — organisation identity and tax summary now use a transactional, stale-snapshot-guarded RPC with before/after audit; add consumer tests for each field and complete personal settings.
+- [ ] Phase 3 / Batch 2 — organisation identity and tax summary use a transactional, stale-snapshot-guarded RPC with before/after audit; its isolated SQL regression passes CI. Personal account settings remain partial (Profile/security exist; profile breadcrumbs and a complete preference surface are in progress).
 - [ ] Phase 3 / Batch 3 — accounting and tax settings; prove safety and effective-date/audit requirements.
 - [ ] Phase 3 / Batch 4 — sales and purchases settings; prove document workflow effects.
 - [ ] Phase 3 / Batch 5 — banking, inventory, assets, expenses, payroll and projects; preserve existing module owners.

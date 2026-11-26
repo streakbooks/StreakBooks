@@ -1,8 +1,8 @@
 # Settings overhaul test report
 
 **Date:** 2026-11-26
-**Validated code revision:** uncommitted local continuation on `feat/settings-module-overhaul`; not yet pushed.
-**Pull request:** [#92](https://github.com/streakbooks/StreakBooks/pull/92), draft; last published head is `32b39ffb`. Current source fixes are uncommitted and not yet checked by GitHub.
+**Validated code revision:** `b2c1ce871a3f56f0d34b118f9fdea286f1c2d0b6` on `feat/settings-module-overhaul`; the follow-on Profile breadcrumb edit passes changed-file ESLint and the focused settings test set.
+**Pull request:** [#92](https://github.com/streakbooks/StreakBooks/pull/92), draft; published head `b2c1ce871a3f56f0d34b118f9fdea286f1c2d0b6`.
 **Scope:** Settings route, field coverage/search, and the Batch 2 organisation identity/tax transactional save.
 
 ## Results
@@ -23,9 +23,9 @@
 | Production build                 | **Pass**                   | `npm.cmd run build` exited 0 and generated `.vercel/output/nitro.json`. Nitro emitted deprecated `inputValidator` notices and Windows symlink warnings during dependency tracing.                                   |
 | Settings Playwright              | **Skipped**                | Three tests exist in `e2e/settings-navigation.spec.ts`; all were skipped because `E2E_EMAIL` and `E2E_PASSWORD` are not configured.                                                                                |
 | Browser review                   | **Blocked / unverified**   | The IAB could not connect to `http://localhost:8080`; the browser showed connection refused. No app runtime exception was confirmed.                                                                                |
-| Database integration / migration | **Pending locally**        | Added an isolated SQL regression and additive RPC migration with rollback file. `npm.cmd run test:workflows:postgres` could not start because Docker is unavailable; `psql` and Supabase CLI are also unavailable. Migration is unapplied. |
+| Database integration / migration | **CI passed; hosted pending** | The isolated PostgreSQL workflow suite passed on head `b2c1ce871a3f56f0d34b118f9fdea286f1c2d0b6`, including the atomic identity/tax regression. Local Docker/psql/Supabase CLI are unavailable. Migration is unapplied to hosted Supabase. |
 | Deployment / production          | **Not performed**          | No Vercel deployment, authenticated staging verification, or production verification.                                                                                                                              |
-| GitHub PR checks                 | **Failed on published head** | [Run #38](https://github.com/streakbooks/StreakBooks/actions/runs/45801553959) at `32b39ffb` failed `check:lookups` for four mapped option lists. All other executed validation and PostgreSQL jobs passed; the local fixes are awaiting push/recheck. |
+| GitHub PR checks                 | **Partial / in progress** | [Run #45807731340](https://github.com/streakbooks/StreakBooks/actions/runs/45807731340): all five PostgreSQL jobs and browser fixtures passed; validate was still running at last check. Cloudflare Workers failed externally and Vercel checks report the private-organization Hobby-plan restriction. Supabase Preview was skipped because no Supabase branch is associated with the PR. |
 
 ## Corrections made to enable deterministic tests
 
@@ -35,8 +35,8 @@
 
 ## Required follow-up
 
-1. Run `npm.cmd run test:workflows:postgres` in a Docker-enabled environment and verify the new identity/tax atomic-save fixture before considering its migration deployable.
+1. The new identity/tax atomic-save SQL regression passed in GitHub's isolated PostgreSQL job. Local rerun remains unavailable because Docker is absent.
 2. Re-run the Settings Playwright cases with a dedicated authenticated test organisation and diagnose the local `/settings` runtime error.
 3. Complete unchecked batches in `TASKS.md`; the current coverage matrix deliberately leaves unproven fields partial and read-only.
-4. Review the PR's actual GitHub Actions results for the new head. Do not merge unless all Settings batches and task-specific release gates are met. The standing billing exception applies only when billing prevented jobs from starting; it does not waive real failures or unfinished work.
+4. Finish the remaining Settings batches and review all checks on the newest head. Do not merge while implementation batches, authenticated browser verification, or real release failures remain. The standing billing exception applies only when billing prevented jobs from starting; it does not waive real failures or unfinished work.
 5. Apply the migration only after target-specific backup evidence is confirmed for configured project `qugoaaizclvkzesptovm`; no hosted migration was applied.

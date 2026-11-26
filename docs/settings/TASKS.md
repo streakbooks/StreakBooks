@@ -160,3 +160,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Added Settings capability entries for outgoing sender name, reply-to and organisation quiet-hours start/end/enabled. These use the existing authenticated, version-checked `organisation_config.notifications` writer and its transaction audit; sender identity remains bound to the server-verified email address.
 - Added tests for saved notification loading/defaults, malformed configuration rejection, configured sender/reply-to behavior and digest quiet-hour timing. Existing manual and scheduled digest paths honor the configured organisation timezone.
 - Focused tests passed (4 files / 21 tests) and typecheck passed. Changed-file lint and the existing Actions workflow were still pending at this doc update. No schema, hosted Supabase or deployment changes were made. Provider delivery verification remains incomplete.
+
+## 2026-11-26 Organisation settings RPC security regression
+
+- Added the generic `upsert_organisation_config` RPC to the network-disabled PostgreSQL harness and tested authorised insert/update, optimistic version conflicts, RLS tenant reads, audit permission visibility, denied unauthorised writes, direct table-write denial, audit-failure rollback and anonymous execute denial.
+- The harness reuses the production function definition with isolated synthetic companies/users and cleans up its container; hosted Supabase was not contacted. `npm.cmd run test:workflows:postgres` passed after the new audit-log visibility assertion, and changed-harness ESLint plus `git diff --check` passed.
+- This strengthens the shared persistence boundary used by Settings Centre; authenticated browser review, staging and production remain unverified.

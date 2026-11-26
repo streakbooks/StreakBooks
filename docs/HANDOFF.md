@@ -455,7 +455,11 @@ Connected the saved Accounting backdate threshold to a non-blocking notice on th
 
 # Settings overhaul — notification sender and digest quiet-hours coverage, 26 November 2026
 
-Registered the existing organisation notification sender name, reply-to and quiet-hours fields as complete after tests verified their saved configuration, sender construction, timezone scheduling and defaults. The sender name cannot replace the verified FROM address. Focused tests passed (4 files / 21 tests) and typecheck passed. Lint and the current GitHub Actions run are still in progress; provider delivery and deployment remain unverified. No hosted Supabase, migration or production changes were made.
+Registered the existing organisation notification sender name, reply-to and quiet-hours fields as complete after tests verified their saved configuration, sender construction, timezone scheduling and defaults. The sender name cannot replace the verified FROM address. Focused tests passed (4 files / 21 tests), typecheck and changed-file lint passed. Commit `71b16b9648ff07c7bdb7d8d907afdad4ea3f4c33` passed GitHub Actions run [#45874577603](https://github.com/streakbooks/StreakBooks/actions/runs/45874577603), including browser fixtures and isolated PostgreSQL suites. Provider delivery and deployment remain unverified. No hosted Supabase, migration or production changes were made.
+
+# Settings overhaul — organisation config RPC security regression, 26 November 2026
+
+Added an isolated PostgreSQL test for the shared `upsert_organisation_config` Settings Centre RPC, using its production function definition with synthetic tenant fixtures. It verifies authenticated setting writes, optimistic version conflicts, config and audit RLS, permission-denied writes, no direct table mutation, audit-failure rollback and no anonymous execution. The network-disabled workflow harness passed after adding the test; harness ESLint and diff checks passed. The test makes no hosted database calls. Authenticated staging and production remain unverified.
 
 # Settings overhaul — purchase-order preference behavior, 26 November 2026
 

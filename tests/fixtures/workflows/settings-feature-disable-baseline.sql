@@ -10,7 +10,7 @@ CREATE TABLE public.organisation_features (
   PRIMARY KEY (company_id, feature_key)
 );
 
-CREATE TABLE public.settings_change_log (
+CREATE TABLE IF NOT EXISTS public.settings_change_log (
   company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   actor_user_id uuid,
   category text NOT NULL,
@@ -32,6 +32,7 @@ GRANT SELECT ON public.organisation_features TO authenticated;
 
 -- Mirror the production audit-view rule for regression assertions.
 ALTER TABLE public.settings_change_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Settings audit viewers read" ON public.settings_change_log;
 CREATE POLICY "Settings audit viewers read" ON public.settings_change_log
   FOR SELECT TO authenticated
   USING (public.has_company_permission(company_id, 'audit.view'));

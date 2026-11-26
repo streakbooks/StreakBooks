@@ -118,6 +118,18 @@ try {
     throw new Error("Expected exactly one accounting workflow migration");
   sql(read(`supabase/migrations/${migrations[0]}`));
   sql(read("tests/integration/accounting-workflows.sql"));
+  sql(read("tests/fixtures/workflows/organisation-config-baseline.sql"));
+  sql(
+    fn(
+      "supabase/migrations/20261022125237_settings_centre_foundation.sql",
+      "public.upsert_organisation_config",
+    ),
+  );
+  sql(
+    "REVOKE ALL ON FUNCTION public.upsert_organisation_config(uuid,text,jsonb,integer,text,text,text) FROM PUBLIC, anon; " +
+      "GRANT EXECUTE ON FUNCTION public.upsert_organisation_config(uuid,text,jsonb,integer,text,text,text) TO authenticated;",
+  );
+  sql(read("tests/integration/organisation-config-rpc-security.sql"));
   sql(read("tests/fixtures/workflows/settings-currencies-baseline.sql"));
   sql(read("supabase/migrations/20261104115821_settings_currencies_atomic.sql"));
   sql(read("tests/integration/settings-currencies-atomic.sql"));

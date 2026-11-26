@@ -34,6 +34,22 @@ CREATE POLICY workflow_settings_write ON public.company_workflow_settings FOR AL
  USING(public.has_company_permission(company_id,'company.settings.edit') OR public.has_company_permission(company_id,'accounts.manage'))
  WITH CHECK(public.has_company_permission(company_id,'company.settings.edit') OR public.has_company_permission(company_id,'accounts.manage'));
 GRANT SELECT,INSERT,UPDATE ON public.company_workflow_settings TO authenticated;
+CREATE TABLE public.company_reminder_settings(
+ company_id uuid PRIMARY KEY REFERENCES public.companies(id) ON DELETE CASCADE,
+ first_after_days integer NOT NULL DEFAULT 7 CHECK(first_after_days BETWEEN 0 AND 365),
+ repeat_every_days integer NOT NULL DEFAULT 14 CHECK(repeat_every_days BETWEEN 1 AND 365),
+ max_reminders integer NOT NULL DEFAULT 3 CHECK(max_reminders BETWEEN 1 AND 12),
+ include_bank_details boolean NOT NULL DEFAULT true,
+ updated_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+ updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.company_reminder_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY reminder_settings_select ON public.company_reminder_settings FOR SELECT TO authenticated
+ USING(public.is_company_member(company_id));
+CREATE POLICY reminder_settings_write ON public.company_reminder_settings FOR ALL TO authenticated
+ USING(public.has_company_permission(company_id,'company.settings.edit'))
+ WITH CHECK(public.has_company_permission(company_id,'company.settings.edit'));
+GRANT SELECT,INSERT,UPDATE ON public.company_reminder_settings TO authenticated;
 CREATE TABLE public.document_sequences(company_id uuid,document_type text,prefix text,next_number bigint,padding integer,UNIQUE(company_id,document_type));
 CREATE TABLE public.audit_events(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),company_id uuid,actor_user_id uuid,action text,entity_type text,entity_id uuid,details jsonb);
 CREATE FUNCTION public.test_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF current_setting('test.fail_audit',true)='on' THEN RAISE EXCEPTION 'Injected audit failure'; END IF; RETURN NEW; END $$;

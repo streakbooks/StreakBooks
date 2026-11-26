@@ -152,6 +152,23 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/documents/sales-document-defaults.test.ts, src/lib/settings/workflow-settings.functions.test.ts, and tests/integration/workflow-settings-audit.sql",
   },
   {
+    key: "sales.payment_reminders",
+    label: "Payment reminder schedule",
+    moduleId: "sales",
+    route: "/settings/sales/reminders",
+    scope: "company",
+    defaultValue: "First reminder after 7 days; repeat every 14 days; maximum 3",
+    validation:
+      "Server normalizes first delay, repeat interval, maximum count and bank-detail flag",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "company_reminder_settings",
+    audit: "Same-transaction typed before/after values in settings_change_log",
+    consumer:
+      "Invoice reminders use the configured due-date schedule, stop at the configured maximum and include bank details only when enabled; delivery remains manual",
+    test: "src/lib/documents/comms.test.ts, tests/integration/reminder-settings-audit.sql and manual reminder send regression",
+  },
+  {
     key: "sales.quote_validity",
     label: "Default quote validity",
     moduleId: "sales",

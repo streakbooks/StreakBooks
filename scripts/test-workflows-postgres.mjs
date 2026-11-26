@@ -142,6 +142,8 @@ try {
   sql(read("tests/integration/settings-feature-disable-guard.sql"));
   sql(read("supabase/migrations/20261126180000_workflow_settings_audit.sql"));
   sql(read("tests/integration/workflow-settings-audit.sql"));
+  sql(read("supabase/migrations/20261126200000_reminder_settings_audit.sql"));
+  sql(read("tests/integration/reminder-settings-audit.sql"));
   sql(read("tests/fixtures/workflows/settings-lock-policy-cas-baseline.sql"));
   sql(
     fn(
@@ -199,7 +201,7 @@ try {
   );
   console.log("Four concurrent contact creates received C1005–C1008, no duplicates or gaps.");
   console.log(
-    "Workflow migration compiled. Atomic rollback, permissions, two-tenant RLS, PO edit/conversion, sales lifecycle, deferrals and real shared posting-engine balance/lock scenarios passed.",
+    "Workflow and reminder audit migrations compiled. Atomic rollback, typed audit, permissions, two-tenant RLS, PO edit/conversion, sales lifecycle, deferrals and real shared posting-engine balance/lock scenarios passed.",
   );
   const race = async () =>
     promisify(execFile)(

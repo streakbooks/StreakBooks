@@ -17,7 +17,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - [x] Final documentation artifacts — `REVIEW_GUIDE.md`, `coverage-matrix.md`, refreshed `05-TEST-REPORT.md`, and `defect-register.md` are present. The defect register explicitly states that its review is self-review, not an independent external audit.
 - [x] Validation remediation — formatted the existing linted TS/TSX/MJS tree without weakening lint rules; aligned the browsing inventory guard with public Advisor storefront routes as well as authenticated modules. Full lint and browsing inventory checks now pass locally.
 - [ ] Final deliverables — complete all remaining implementation batches and their verification; then update this task list and final report.
-- [ ] Delivery — implementation commits are on `feat/settings-module-overhaul`; draft PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) is open. Latest published commit `1892178817d98e69c7c3923fdcd7bbe95f5405a1` passed Actions run [#45856529957](https://github.com/streakbooks/StreakBooks/actions/runs/45856529957). Merge remains pending because Settings batches 3–9 and authenticated browser verification are incomplete. Hosted Supabase remains untouched; do not run blind migration sync.
+- [ ] Delivery — implementation commits are on `feat/settings-module-overhaul`; draft PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) is open. Latest published commit `52aadac1953ccfa7e24955f9970691f2cb14aa4a` has Actions run [#45860832213](https://github.com/streakbooks/StreakBooks/actions/runs/45860832213) in progress. Merge remains pending because Settings batches 3–9 and authenticated browser verification are incomplete. Hosted Supabase remains untouched; do not run blind migration sync.
 
 ## 2026-11-26 continuation
 
@@ -117,4 +117,10 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 ## 2026-11-26 Tax treatment setting ownership
 
 - Removed the duplicate tax-inclusive pricing switch and write path from Sales workflow defaults. The organisation Tax settings screen is now the single configuration owner, avoiding independent saves that could leave preview and posting treatment inconsistent.
-- Focused draft, patch, workflow-function and UI checks for this change remain pending. The legacy database column is retained for compatibility and is no longer read or written by application code. No migration or hosted database change was made.
+- Focused draft, patch and workflow-function tests passed (3 files / 31 tests), lint and typecheck passed. The legacy database column is retained for compatibility and is no longer read or written by application code. No migration or hosted database change was made.
+
+## 2026-11-26 Payment reminder audit
+
+- Added additive migration `20261126200000_reminder_settings_audit.sql` and drop-only rollback for typed before/after audit of the manual invoice reminder schedule. No-op and metadata-only updates are ignored; RLS still scopes edits to the organisation; audit insertion failure rolls back the schedule change.
+- Added an isolated PostgreSQL regression to the network-disabled workflow harness and registered the existing reminder capability. The manual reminders remain user-triggered; no background sender was introduced.
+- Focused tests passed (5 files / 52 tests), migration identity checks passed (382 unique versions / 8 history checks), and `npm run test:workflows:postgres` passed in a network-disabled PostgreSQL 17 container. The regression proves typed create/update history, no-op suppression, tenant isolation, private function permissions and transaction rollback on audit failure. Full suite/build and new head Actions remain pending. The migration is not applied to hosted Supabase; matching restore-point evidence is still unavailable.

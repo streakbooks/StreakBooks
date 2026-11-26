@@ -380,6 +380,19 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     premiumStatus: "partial",
   },
   {
+    id: "advisors-marketplace",
+    label: "Find an advisor",
+    description: "Browse support plans and book an advisor consultation",
+    path: "/advisors",
+    group: "practice",
+    inSidebar: true,
+    pageKind: "public",
+    screenRoot: "src/screens/advisors",
+    experience: DEFAULT_PUBLIC_EXPERIENCE,
+    premiumStatus: "partial",
+    notes: "Authenticated clients can discover the existing public catalogue and checkout here.",
+  },
+  {
     id: "accountant",
     label: "Accountant",
     description: "Period-end checklist and review",
@@ -414,7 +427,7 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
   },
   {
     id: "advisors-admin",
-    label: "Advisors",
+    label: "Advisors admin",
     description: "Advisors inquiries, clients and delivery",
     path: "/advisors-admin",
     group: "practice",

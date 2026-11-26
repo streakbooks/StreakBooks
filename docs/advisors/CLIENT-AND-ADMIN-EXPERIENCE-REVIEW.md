@@ -11,6 +11,8 @@ The Advisors service is operated by Link Business Advisory and sits alongside St
 | Authenticated `/advisors-admin`      | Link Business Advisory staff and authorised StreakBooks platform administrators | Inquiry triage, assignment, client records, proposals and agreements, onboarding, staff, service delivery, document-request review, appointments, Advisors billing, and catalogue administration. |
 | StreakBooks company workspace        | The client and their authorised accounting team                                 | Books, banking, transaction posting, invoices, reports, payroll, tax records, and the company Files repository. Advisors must not create a second ledger or second file store.                    |
 
+Authenticated company users discover the public service catalogue from **Practice → Find an advisor**. This opens the existing `/advisors` page, where they can compare services, view plans, and book or purchase support. **Advisors admin** remains the Link Business Advisory operations workspace; **Advisor portal** is for clients who already have an Advisors service relationship.
+
 Payment operations in the Advisors admin belong to Link Business Advisory. They must remain separate from a StreakBooks company software subscription. Any customer-facing account view should only show the client's own service and its billing status; firm-wide revenue and other clients' billing stay internal.
 
 ## Review findings and adjustments

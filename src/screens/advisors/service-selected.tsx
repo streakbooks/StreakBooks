@@ -121,8 +121,9 @@ export function AdvisorsServiceSelectedPage({ serviceCode }: { serviceCode: stri
               Plans and pricing
             </h2>
             <p className="max-w-2xl text-sm text-muted-foreground">
-              Proposed defaults shown in {service.currency}. Applicable taxes appear before
-              purchase. Choosing a plan does not start a paid subscription by itself.
+              Prices are shown in {service.currency}. Choose a plan to review your details and
+              continue to secure Razorpay checkout. Advisors billing is separate from your
+              StreakBooks software subscription.
             </p>
           </div>
           <div className="grid gap-4 lg:grid-cols-3">
@@ -147,6 +148,11 @@ export function AdvisorsServiceSelectedPage({ serviceCode }: { serviceCode: stri
                     </li>
                   ))}
                 </ul>
+                <Button asChild className="mt-auto w-full">
+                  <Link to="/advisors/checkout" search={{ service: code, plan: plan.code }}>
+                    {plan.cadence === "month" ? "Subscribe monthly" : "Buy this session"}
+                  </Link>
+                </Button>
               </article>
             ))}
           </div>

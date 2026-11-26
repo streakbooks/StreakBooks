@@ -39,6 +39,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTaxRouteImport } from './routes/_authenticated/tax'
 import { Route as AdvisorsServiceCodeRouteImport } from './routes/advisors_.$serviceCode'
 import { Route as AdvisorsBookRouteImport } from './routes/advisors_.book'
+import { Route as AdvisorsCheckoutRouteImport } from './routes/advisors_.checkout'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as AuthMfaRouteImport } from './routes/auth_.mfa'
 import { Route as AuthSsoRouteImport } from './routes/auth_.sso'
@@ -367,6 +368,11 @@ const AdvisorsServiceCodeRoute = AdvisorsServiceCodeRouteImport.update({
 const AdvisorsBookRoute = AdvisorsBookRouteImport.update({
   id: '/advisors_/book',
   path: '/advisors/book',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdvisorsCheckoutRoute = AdvisorsCheckoutRouteImport.update({
+  id: '/advisors_/checkout',
+  path: '/advisors/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
@@ -1409,6 +1415,7 @@ export interface FileRoutesByFullPath {
   '/tax': typeof AuthenticatedTaxRoute
   '/advisors/$serviceCode': typeof AdvisorsServiceCodeRoute
   '/advisors/book': typeof AdvisorsBookRoute
+  '/advisors/checkout': typeof AdvisorsCheckoutRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
@@ -1604,6 +1611,7 @@ export interface FileRoutesByTo {
   '/tax': typeof AuthenticatedTaxRoute
   '/advisors/$serviceCode': typeof AdvisorsServiceCodeRoute
   '/advisors/book': typeof AdvisorsBookRoute
+  '/advisors/checkout': typeof AdvisorsCheckoutRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
@@ -1807,6 +1815,7 @@ export interface FileRoutesById {
   '/_authenticated/tax': typeof AuthenticatedTaxRoute
   '/advisors_/$serviceCode': typeof AdvisorsServiceCodeRoute
   '/advisors_/book': typeof AdvisorsBookRoute
+  '/advisors_/checkout': typeof AdvisorsCheckoutRoute
   '/auth_/callback': typeof AuthCallbackRoute
   '/auth_/mfa': typeof AuthMfaRoute
   '/auth_/sso': typeof AuthSsoRoute
@@ -2014,6 +2023,7 @@ export interface FileRouteTypes {
     | '/tax'
     | '/advisors/$serviceCode'
     | '/advisors/book'
+    | '/advisors/checkout'
     | '/auth/callback'
     | '/auth/mfa'
     | '/auth/sso'
@@ -2209,6 +2219,7 @@ export interface FileRouteTypes {
     | '/tax'
     | '/advisors/$serviceCode'
     | '/advisors/book'
+    | '/advisors/checkout'
     | '/auth/callback'
     | '/auth/mfa'
     | '/auth/sso'
@@ -2411,6 +2422,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tax'
     | '/advisors_/$serviceCode'
     | '/advisors_/book'
+    | '/advisors_/checkout'
     | '/auth_/callback'
     | '/auth_/mfa'
     | '/auth_/sso'
@@ -2596,6 +2608,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdvisorsServiceCodeRoute: typeof AdvisorsServiceCodeRoute
   AdvisorsBookRoute: typeof AdvisorsBookRoute
+  AdvisorsCheckoutRoute: typeof AdvisorsCheckoutRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthMfaRoute: typeof AuthMfaRoute
   AuthSsoRoute: typeof AuthSsoRoute
@@ -2817,6 +2830,13 @@ declare module '@tanstack/react-router' {
       path: '/advisors/book'
       fullPath: '/advisors/book'
       preLoaderRoute: typeof AdvisorsBookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/advisors_/checkout': {
+      id: '/advisors_/checkout'
+      path: '/advisors/checkout'
+      fullPath: '/advisors/checkout'
+      preLoaderRoute: typeof AdvisorsCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth_/callback': {
@@ -4672,6 +4692,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   AdvisorsServiceCodeRoute: AdvisorsServiceCodeRoute,
   AdvisorsBookRoute: AdvisorsBookRoute,
+  AdvisorsCheckoutRoute: AdvisorsCheckoutRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthMfaRoute: AuthMfaRoute,
   AuthSsoRoute: AuthSsoRoute,

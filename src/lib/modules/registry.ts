@@ -51,12 +51,12 @@ const advisorsAdminSubnav: ModuleSubnavItem[] = [
 ];
 
 const advisorsPortalSubnav: ModuleSubnavItem[] = [
-  { to: "/advisors-portal", label: "Home", exact: true },
+  { to: "/advisors-portal", label: "Overview", exact: true },
   { to: "/advisors-portal/appointments", label: "Appointments" },
-  { to: "/advisors-portal/documents", label: "Documents" },
-  { to: "/advisors-portal/tasks", label: "Tasks" },
+  { to: "/advisors-portal/tasks", label: "My tasks" },
+  { to: "/advisors-portal/documents", label: "Files to send" },
   { to: "/advisors-portal/messages", label: "Messages" },
-  { to: "/advisors-portal/account", label: "Account" },
+  { to: "/advisors-portal/account", label: "Account & requests" },
 ];
 
 function sectionsToSubnav(
@@ -427,8 +427,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
   },
   {
     id: "advisors-portal",
-    label: "Advisors portal",
-    description: "Customer Advisors plan, appointments and documents",
+    label: "Advisor portal",
+    description: "Client access to advisor services, tasks, files and appointments",
     path: "/advisors-portal",
     group: "practice",
     inSidebar: true,

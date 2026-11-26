@@ -28,8 +28,12 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   validateSearch: validateSettingsPanelSearch,
   beforeLoad: async ({ location }) => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    // This is a client-side UX gate and runs during both intent preloads and
+    // every navigation. Reading the local session avoids an Auth API roundtrip;
+    // server functions and RLS remain responsible for enforcing access.
+    const { data, error } = await supabase.auth.getSession();
+    const user = data.session?.user;
+    if (error || !user) {
       throw redirect({
         to: "/auth",
         search: { redirect: location.href },
@@ -38,7 +42,7 @@ export const Route = createFileRoute("/_authenticated")({
     if (await needsMfaStepUp()) {
       throw redirect({ to: "/auth/mfa", search: { redirect: location.href } });
     }
-    return { user: data.user };
+    return { user };
   },
   pendingComponent: () => (
     <div className="grid min-h-screen place-items-center bg-background">

@@ -52,6 +52,14 @@ export default {
         const { handleRazorpayCheckout } = await import("./lib/billing/razorpay-checkout.server");
         return handleRazorpayCheckout(request, pathname);
       }
+      if (
+        pathname === "/api/advisors/create-checkout" ||
+        pathname === "/api/advisors/verify-payment"
+      ) {
+        const { handleAdvisorsRazorpayCheckout } =
+          await import("./lib/advisors/razorpay-checkout.server");
+        return handleAdvisorsRazorpayCheckout(request, pathname);
+      }
       if (pathname === "/api/marketplace/v1" || pathname.startsWith("/api/marketplace/v1/")) {
         const { handleMarketplaceApiV1 } = await import("./lib/app-store/api/v1/http.server");
         return handleMarketplaceApiV1(request);
@@ -62,7 +70,9 @@ export default {
       }
       if (
         request.method === "POST" &&
-        (pathname === "/api/billing/stripe" || pathname === "/api/billing/razorpay")
+        (pathname === "/api/billing/stripe" ||
+          pathname === "/api/billing/razorpay" ||
+          pathname === "/api/advisors/razorpay-webhook")
       ) {
         const { handleBillingWebhook } = await import("./lib/billing/webhooks");
         return handleBillingWebhook(request);

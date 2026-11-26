@@ -83,3 +83,9 @@ Validated code revision: `897f30ed` (local commit on `feat/settings-module-overh
 - Started the dev server using `npm.cmd run dev -- --port 8080 --strictPort`; Vite reported ready at `http://localhost:8080/`.
 - The execution environment rejected the localhost socket (`Invoke-WebRequest`: socket access forbidden) and the browser could not connect. This is an environment-level browser-access limitation; the app was not visually verified. The task-launched dev server was stopped after the check. No port 8081 was used.
 - The local environment logged that `VERCEL_OIDC_TOKEN` is not set; no `vercel env pull` was run because it would bring cloud environment secrets into the local test setup. No production credentials were used.
+
+## 2026-11-26 execution environment tool check
+
+- Node.js `v24.21.0`, npm `11.19.0`, Git `2.56.0.windows.2`, PostgreSQL client/pg_dump/pg_restore `19.0`, and Docker CLI client `29.9.3` are available (Docker/PostgreSQL executables were invoked by their installed paths because they are not on this process's PATH).
+- The Docker daemon named pipe returned `permission denied`, so an additional local database container could not be started from this execution context. GitHub run #45821768968 passed all five isolated PostgreSQL suites, including the workflow/settings-adjacent harnesses.
+- The Supabase CLI is not on this process's PATH and was not found in the common installation locations checked. No reinstall was attempted. The hosted Supabase project remains untouched.

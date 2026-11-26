@@ -138,6 +138,9 @@ try {
   sql(
     "DELETE FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000013' AND journal_number=9001;",
   );
+  sql(
+    "DELETE FROM public.journal_lines WHERE journal_id IN (SELECT id FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000011' AND idempotency_key='settings_base_currency_consumer'); DELETE FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000011' AND idempotency_key='settings_base_currency_consumer';",
+  );
   sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
   sql(
     fn(

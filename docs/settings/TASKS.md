@@ -7,7 +7,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. Evidence-backed capabilities are registered individually; remaining typed fields stay partial and are read-only.
 - [ ] Phase 3 / Batch 1 — canonical nested routes, universal breadcrumbs, legacy route compatibility and validated return-to-module are implemented. Authenticated browser E2E is pending because this workspace has no `E2E_EMAIL`/`E2E_PASSWORD` account, and the local `/settings` browser visit showed an application error.
 - [ ] Phase 3 / Batch 2 — organisation identity and tax summary use a transactional, stale-snapshot-guarded RPC with before/after audit; its isolated SQL regression passes CI. Profile now supports verified email changes and has its breadcrumb trail; account-wide preference scope and custom palette sync remain partial.
-- [ ] Phase 3 / Batch 3 — accounting and tax settings; prove safety and effective-date/audit requirements. Currency change is now rejected by the database after a posted journal, and posting functions lock their base-currency reads; other accounting/tax coverage and authenticated review remain open.
+- [ ] Phase 3 / Batch 3 — accounting and tax settings; prove safety and effective-date/audit requirements. Base currency now has tested journal consumption, posting locks and post-history change rejection; other accounting/tax coverage and authenticated review remain open.
 - [ ] Phase 3 / Batch 4 — sales and purchases settings; prove document workflow effects.
 - [ ] Phase 3 / Batch 5 — banking, inventory, assets, expenses, payroll and projects; preserve existing module owners.
 - [ ] Phase 3 / Batch 6 — users, access, firm/client grants, approvals and portal settings.
@@ -139,8 +139,8 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 ## 2026-11-26 Base-currency ledger integrity
 
 - Added migration `20261126210000_settings_base_currency_posting_guard.sql`. The organisation identity RPC now rejects a base-currency change after any posted journal exists. The migration adds `FOR SHARE` to base-currency reads in the central `post_journal` writer and higher-level posting functions that calculate FX before calling it, serialized against the Settings RPC's existing `FOR UPDATE` row lock.
-- The isolated identity regression proves a permitted pre-posting currency change, rejection after posted history, no identity/audit mutation on rejection, and the posting lock in the installed function. The temporary posted journal is created only during the relevant fixture window so it cannot affect unrelated ledger-count assertions.
-- `npm.cmd run test:workflows:postgres` passed in a network-disabled PostgreSQL 17 container. `npm.cmd run check:migrations` passed (383 unique versions; 8 history tests), and focused Settings tests passed (3 files / 12 tests). Hosted Supabase was not accessed.
+- The isolated identity regression proves a permitted pre-posting currency change, that a later journal uses the new base currency, rejection after posted history, no identity/audit mutation on rejection, and locks on installed posting functions. Test journals and lines are removed before unrelated ledger-count assertions.
+- `npm.cmd run test:workflows:postgres` passed in a network-disabled PostgreSQL 17 container. `npm.cmd run check:migrations` passed (383 unique versions; 8 history tests), and focused Settings tests passed (3 files / 13 tests). Hosted Supabase was not accessed.
 - This is a financial-integrity slice of Batch 3; Accounting/Tax and the overall Settings overhaul remain partial. Full validation, new-head Actions, authenticated review, merge and deployment are still pending.
 
 ## 2026-11-26 Purchase-order preference behavior

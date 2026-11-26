@@ -25,6 +25,24 @@ export type SettingCapability = {
  */
 export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
   {
+    key: "company.base_currency",
+    label: "Organisation base currency",
+    moduleId: "settings",
+    route: "/settings/organisation/overview",
+    scope: "company",
+    defaultValue: "Selected during organisation setup",
+    validation:
+      "Organisation identity RPC validates three-letter currency codes and rejects changes after posted journals",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "companies.base_currency through save_company_identity_and_tax",
+    audit:
+      "audit_events records exact before/after organisation identity values in the same transaction",
+    consumer:
+      "Journal posting and higher-level posting functions consume base currency under company-row share locks",
+    test: "tests/integration/settings-company-identity-atomic.sql proves pre-posting update, journal currency consumption, posting locks and post-history rejection",
+  },
+  {
     key: "accounting.lock_policy",
     label: "Accounting lock dates",
     moduleId: "accounting",
@@ -297,7 +315,7 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/settings/organisation/overview",
     missingEvidence: ["field-level consumer tests"],
-    note: "Organisation and legacy tax summary now save atomically with a before/after audit and stale-snapshot rejection; downstream field effects still need field-specific tests.",
+    note: "Base currency has field-level consumer and ledger-safety evidence; other organisation identity, locale and legacy tax-summary fields still need downstream effect tests.",
   },
   {
     key: "accounting.workflow_safeguards",

@@ -13,8 +13,11 @@ DECLARE
   posted_desired jsonb := '{"name":"Posted Ledger Fixture","legal_name":null,"country_code":"GB","base_currency":"INR","fiscal_year_end_month":3,"fiscal_year_end_day":31,"timezone":"Europe/London","tax_regime":"vat","registration_number":null,"prices_include_tax":false}'::jsonb;
   audit_row public.audit_events%ROWTYPE;
   audit_before integer;
+  posted_journal uuid;
 BEGIN
-  SELECT count(*) INTO audit_before FROM public.audit_events WHERE company_id=c;
+  SELECT count(*) INTO audit_before
+  FROM public.audit_events
+  WHERE company_id=c AND action='settings.organization_identity';
 
   -- One successful save updates both tables and records the same transaction's before/after.
   PERFORM public.save_company_identity_and_tax(c, expected, desired);
@@ -30,6 +33,20 @@ BEGIN
      OR audit_row.details->'before' IS DISTINCT FROM expected
      OR audit_row.details->'after' IS DISTINCT FROM desired THEN
     RAISE EXCEPTION 'Organisation save did not record exact before/after audit evidence';
+  END IF;
+
+  posted_journal := public.post_journal(jsonb_build_object(
+    'company_id', c,
+    'journal_date', current_date,
+    'idempotency_key', 'settings_base_currency_consumer',
+    'memo', 'Settings base-currency consumer regression',
+    'lines', jsonb_build_array(
+      jsonb_build_object('account_id', '20000000-0000-4000-8000-000000000011', 'debit_minor', 100, 'credit_minor', 0),
+      jsonb_build_object('account_id', '20000000-0000-4000-8000-000000000012', 'debit_minor', 0, 'credit_minor', 100)
+    )
+  ));
+  IF (SELECT currency_code FROM public.journals WHERE id=posted_journal) <> 'INR' THEN
+    RAISE EXCEPTION 'New journal did not consume the configured base currency';
   END IF;
 
   -- Posted ledger history makes the base currency immutable, even through a
@@ -110,7 +127,8 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     IF SQLERRM NOT ILIKE '%Permission denied%' THEN RAISE; END IF;
   END;
-  IF (SELECT count(*) FROM public.audit_events WHERE company_id=c) <> audit_before + 1 THEN
+  IF (SELECT count(*) FROM public.audit_events
+      WHERE company_id=c AND action='settings.organization_identity') <> audit_before + 1 THEN
     RAISE EXCEPTION 'Rejected organisation saves wrote audit records';
   END IF;
 END $$;

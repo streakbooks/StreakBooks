@@ -77,4 +77,19 @@ describe("Settings capability coverage registry", () => {
         ?.status,
     ).toBe("complete");
   });
+
+  it("records base-currency consumer and ledger-safety evidence separately from other identity fields", () => {
+    expect(
+      SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "company.base_currency"),
+    ).toMatchObject({
+      moduleId: "settings",
+      route: "/settings/organisation/overview",
+      permission: "company.settings.edit",
+      persistence: expect.stringContaining("companies.base_currency"),
+      test: expect.stringContaining("settings-company-identity-atomic.sql"),
+    });
+    expect(SETTINGS_GAPS.find((gap) => gap.key === "company.identity_and_locale")?.status).toBe(
+      "partial",
+    );
+  });
 });

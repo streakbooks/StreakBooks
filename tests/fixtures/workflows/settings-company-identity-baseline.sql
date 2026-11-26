@@ -32,5 +32,14 @@ VALUES
 INSERT INTO public.test_permissions(company_id, user_id, permission)
 VALUES ('10000000-0000-4000-8000-000000000011',
         '00000000-0000-4000-8000-000000000001','company.settings.edit'),
+       ('10000000-0000-4000-8000-000000000011',
+        '00000000-0000-4000-8000-000000000001','journals.manual'),
        ('10000000-0000-4000-8000-000000000013',
         '00000000-0000-4000-8000-000000000001','company.settings.edit');
+INSERT INTO public.accounts(id, company_id, code, account_type)
+VALUES
+  ('20000000-0000-4000-8000-000000000011','10000000-0000-4000-8000-000000000011','1000','asset'),
+  ('20000000-0000-4000-8000-000000000012','10000000-0000-4000-8000-000000000011','3000','equity');
+INSERT INTO public.accounting_periods(company_id, start_date, end_date, status)
+VALUES ('10000000-0000-4000-8000-000000000011','2026-01-01','2027-12-31','open');
+INSERT INTO public.currency_decimals(code, decimals) VALUES ('INR', 2);

@@ -119,23 +119,78 @@ REVOKE ALL ON FUNCTION public.save_company_identity_and_tax(uuid,jsonb,jsonb)
 GRANT EXECUTE ON FUNCTION public.save_company_identity_and_tax(uuid,jsonb,jsonb)
   TO authenticated;
 
--- Add the share lock to the authoritative posting function without copying its
--- large accounting implementation into this migration. Fail closed if the
--- expected source statement is absent or ambiguous on an environment.
+-- Add share locks to the central writer and every higher-level posting
+-- function that reads base currency before calling it. Fail closed if the
+-- expected active posting reads differ from the reviewed source statements.
 DO $$
 DECLARE
+  _function record;
   _definition text;
-  _needle constant text :=
-    'SELECT base_currency INTO _base_currency FROM public.companies WHERE id = _company_id;';
-  _replacement constant text :=
-    'SELECT base_currency INTO _base_currency FROM public.companies WHERE id = _company_id FOR SHARE;';
+  _updated text;
+  _needle text;
+  _replacement text;
+  _statement_count integer;
+  _changed_statements integer := 0;
+  _changed_functions integer := 0;
+  _locked_statement text;
+  _needles constant text[] := ARRAY[
+    'SELECT base_currency INTO _base_currency FROM public.companies WHERE id = _company_id;',
+    'SELECT base_currency INTO _base FROM public.companies WHERE id = _company;',
+    'SELECT base_currency INTO base FROM public.companies WHERE id=_company;'
+  ];
 BEGIN
-  _definition := pg_catalog.pg_get_functiondef('public.post_journal(jsonb)'::regprocedure);
-  IF pg_catalog.length(_definition) - pg_catalog.length(pg_catalog.replace(_definition, _needle, ''))
-       <> pg_catalog.length(_needle) THEN
-    RAISE EXCEPTION 'Expected one base-currency read in public.post_journal; refusing unsafe migration';
+  FOR _function IN
+    SELECT p.oid
+    FROM pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname IN ('public', 'private')
+      AND p.prokind = 'f'
+      AND pg_catalog.pg_get_functiondef(p.oid) LIKE '%post_journal(%'
+  LOOP
+    _definition := pg_catalog.pg_get_functiondef(_function.oid);
+    _updated := _definition;
+    FOREACH _needle IN ARRAY _needles LOOP
+      _statement_count := (
+        pg_catalog.length(_updated) - pg_catalog.length(pg_catalog.replace(_updated, _needle, ''))
+      ) / pg_catalog.length(_needle);
+      IF _statement_count > 0 THEN
+        _replacement := pg_catalog.replace(_needle, ';', ' FOR SHARE;');
+        _updated := pg_catalog.replace(_updated, _needle, _replacement);
+        _changed_statements := _changed_statements + _statement_count;
+      END IF;
+    END LOOP;
+    IF _updated IS DISTINCT FROM _definition THEN
+      EXECUTE _updated;
+      _changed_functions := _changed_functions + 1;
+    END IF;
+  END LOOP;
+
+  IF _changed_statements < 1 OR _changed_functions < 1 THEN
+    RAISE EXCEPTION 'No active journal posting currency reads were patched; refusing unsafe migration';
   END IF;
-  EXECUTE pg_catalog.replace(_definition, _needle, _replacement);
+
+  -- Verify every matching base-currency read in every installed posting
+  -- function, including higher-level functions that compute FX before calling
+  -- post_journal. This also makes partial schemas fail closed.
+  FOR _function IN
+    SELECT p.oid
+    FROM pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname IN ('public', 'private')
+      AND p.prokind = 'f'
+      AND pg_catalog.pg_get_functiondef(p.oid) LIKE '%post_journal(%'
+  LOOP
+    _definition := pg_catalog.pg_get_functiondef(_function.oid);
+    FOREACH _needle IN ARRAY _needles LOOP
+      _locked_statement := pg_catalog.replace(_needle, ';', ' FOR SHARE;');
+      IF pg_catalog.strpos(_definition, _needle) > 0
+         AND pg_catalog.strpos(_definition, _locked_statement) = 0 THEN
+        RAISE EXCEPTION
+          'Posting function % has an unlocked base-currency read',
+          _function.oid::regprocedure;
+      END IF;
+    END LOOP;
+  END LOOP;
 END;
 $$;
 

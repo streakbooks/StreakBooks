@@ -46,11 +46,17 @@ BEGIN
     RAISE EXCEPTION 'Rejected base-currency change modified identity or audit history';
   END IF;
 
-  IF pg_catalog.strpos(
-    pg_catalog.pg_get_functiondef('public.post_journal(jsonb)'::regprocedure),
-    'WHERE id = _company_id FOR SHARE;'
-  ) = 0 THEN
-    RAISE EXCEPTION 'Journal posting does not lock the company currency during its read';
+  IF EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname IN ('public', 'private')
+      AND p.prokind = 'f'
+      AND pg_catalog.pg_get_functiondef(p.oid) LIKE '%post_journal(%'
+      AND pg_catalog.pg_get_functiondef(p.oid) LIKE '%SELECT base_currency INTO%'
+      AND pg_catalog.pg_get_functiondef(p.oid) NOT LIKE '%SELECT base_currency INTO%FOR SHARE;%'
+  ) THEN
+    RAISE EXCEPTION 'A posting function reads company currency without a share lock';
   END IF;
 
   -- Stale callers cannot overwrite another editor's settings or create audit noise.

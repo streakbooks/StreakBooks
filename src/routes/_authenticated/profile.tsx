@@ -126,10 +126,10 @@ function ProfilePage() {
             </CardHeader>
             <CardContent>
               <form
-                className="space-y-4"
+                className="mb-6 space-y-2"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  if (profileDirty && fullName.trim() && !mutation.isPending) mutation.mutate();
+                  if (emailDirty && !emailMutation.isPending) emailMutation.mutate();
                 }}
               >
                 <div className="space-y-2">
@@ -161,15 +161,22 @@ function ProfilePage() {
                     </p>
                   ) : null}
                   <Button
-                    type="button"
+                    type="submit"
                     variant="outline"
                     disabled={!emailDirty || emailMutation.isPending}
-                    onClick={() => emailMutation.mutate()}
                   >
                     {emailMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                     {emailMutation.isPending ? "Sending confirmation…" : "Change email"}
                   </Button>
                 </div>
+              </form>
+              <form
+                className="space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (profileDirty && fullName.trim() && !mutation.isPending) mutation.mutate();
+                }}
+              >
                 <div className="space-y-2">
                   <Label htmlFor="profile-name">Full name</Label>
                   <Input

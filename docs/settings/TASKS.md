@@ -36,3 +36,10 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Changed `upsertWorkflowSettings` to validate and persist only submitted fields. Existing shared-row saves no longer overwrite unrelated module settings; first-save races retry as a partial update. Empty updates are rejected.
 - Added patch-mapping tests and a server-function regression proving an Accounting-only update leaves Sales/Purchases fields out of the database payload. Sales tax-treatment synchronization runs only when `salesPricesIncludeTax` is submitted.
 - This is a targeted ownership/data-loss safeguard, not completion of Batch 4. Sales/Purchase consumer-effect review and authenticated browser verification remain outstanding. Hosted Supabase was not accessed.
+
+## 2026-11-26 Tax master audit continuation
+
+- Added same-transaction before/after audit rows for tax rate and code insert/update/delete events in `settings_change_log`; no-op updates are not logged. The audit function is not directly executable by client roles.
+- Tenant reassignment remains rejected by the existing tax history guard and is covered by the new SQL regression. Audit failures or rejected updates roll back the data mutation; rollback of an inserted rate also leaves no audit row.
+- Added the isolated `test:tax:master:postgres` harness to the PostgreSQL CI matrix. Local run passed against an ephemeral, network-disabled PostgreSQL 17 container, including migration reapplication and two-connection posting/edit races. Hosted Supabase was not accessed.
+- This advances audit and history evidence for Batch 3 only. Regional tax regimes, jurisdiction ownership, effective-date calculation/reporting consumers, and authenticated browser verification remain open; do not mark Batch 3 complete.

@@ -5,7 +5,7 @@
  * node scripts/test-tax-master-history-postgres.mjs
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { verifyTaxPostingRaces } from "./tax-posting-races.mjs";
@@ -23,13 +23,32 @@ for (const key of [
   delete dockerEnv[key];
 }
 
+const windowsDocker = path.join(
+  process.env.ProgramFiles ?? "C:\\Program Files",
+  "Docker",
+  "Docker",
+  "resources",
+  "bin",
+  "docker.exe",
+);
+const dockerBinary =
+  process.platform === "win32" &&
+  !process.env.PATH?.split(path.delimiter).some((entry) =>
+    existsSync(path.join(entry, "docker.exe")),
+  ) &&
+  existsSync(windowsDocker)
+    ? windowsDocker
+    : "docker";
+if (dockerBinary !== "docker") {
+  process.env.PATH = [path.dirname(dockerBinary), process.env.PATH ?? ""]
+    .filter(Boolean)
+    .join(path.delimiter);
+}
+// Keep Windows Docker Desktop's selected context; Linux CI binds its private socket.
+const dockerPrefix = process.platform === "win32" ? [] : ["--host=unix:///var/run/docker.sock"];
+
 function docker(args, input) {
-  // Force a local Docker daemon: Unix socket on Linux/macOS, Docker pipe on Windows.
-  const localHost =
-    process.platform === "win32"
-      ? "--host=npipe:////./pipe/docker_engine"
-      : "--host=unix:///var/run/docker.sock";
-  return execFileSync("docker", [localHost, ...args], {
+  return execFileSync(dockerBinary, [...dockerPrefix, ...args], {
     env: dockerEnv,
     input,
     encoding: "utf8",
@@ -101,13 +120,13 @@ try {
   sql(read("tests/integration/tax-master-schema-postflight.sql"));
   sql(read("tests/integration/tax-master-posted-history.sql"));
   sql(read("tests/integration/tax-extended-posted-sources.sql"));
+  const auditMigration = read("supabase/migrations/20261126170000_tax_master_settings_audit.sql");
+  sql(auditMigration);
+  sql(auditMigration);
+  sql(read("tests/integration/tax-master-settings-audit.sql"));
   console.log("PASS: isolated tax posted-history guards and tenant reference tests");
   sql(read("tests/fixtures/tax-master-history/posting-race.sql"));
-  const localHost =
-    process.platform === "win32"
-      ? "--host=npipe:////./pipe/docker_engine"
-      : "--host=unix:///var/run/docker.sock";
-  await verifyTaxPostingRaces(localHost, name);
+  await verifyTaxPostingRaces(dockerPrefix[0] ?? "", name);
 } finally {
   if (started) {
     try {

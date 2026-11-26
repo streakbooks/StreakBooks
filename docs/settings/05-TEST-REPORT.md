@@ -5,6 +5,27 @@
 **Pull request:** [#92](https://github.com/streakbooks/StreakBooks/pull/92), draft; code revision awaits publication and fresh PR CI.
 **Scope:** Settings overhaul continuation, read-only unenforced accounting preferences, Windows isolated PostgreSQL harness, TanStack Start validator API migration, and partial updates for shared Sales/Purchases workflow settings.
 
+## 2026-11-26 tax master audit continuation
+
+Validated worktree based on local commit `236b9ed9` plus the uncommitted tax audit migration and regression changes (not yet published). The tax harness uses a disposable PostgreSQL 17 Docker container with `--network none`; no hosted Supabase database or customer data is used.
+
+| Check | Result | Evidence / limit |
+| --- | --- | --- |
+| Isolated tax migration regression | **Pass** | `npm.cmd run test:tax:master:postgres` passed. It applies the posted-history and audit migrations twice, verifies before/after audit records, restricted function privileges, rejected cross-tenant changes, rollback behavior, history guards and two-session posting/edit races. |
+| Tax and settings unit tests | **Pass** | 18 files, 126 tests passed: `npm.cmd test -- --run src/lib/tax src/lib/settings/capability-registry.test.ts`. |
+| Migration identity checks | **Pass** | 380 unique versions; all 8 migration identity/history tests passed. |
+| Module/UI/navigation contracts | **Pass** | Module, UI and navigation checks passed; UI scan reported 774 TSX files and zero violations. |
+| Whitespace validation | **Pass** | `git diff --check` passed. |
+| TypeScript | **Pass** | `npm.cmd run typecheck` exited 0. |
+| Full unit suite | **Pass** | `npm.cmd test -- --maxWorkers=4`: 636 test files and 4,355 tests passed. |
+| Full repository ESLint | **Pass** | `npm.cmd run lint -- --max-warnings=0` exited 0. |
+| Production build | **Pass** | `npm.cmd run build` exited 0 on the elevated local retry; Nitro dependency tracing completed without symlink `EPERM`. Vite still reports the `vite-tsconfig-paths` advisory and an ignored `inlineDynamicImports` option. |
+| Bundle, module, UI and navigation checks | **Pass** | `check:bundle` reports 62 bootstrap modules (1,002,596 bytes; 295,711 gzip); `check:modules`, `check:ui`, and `check:navigation` pass. |
+| Authenticated browser at `http://localhost:8080` | **Skipped / unverified** | The three Settings Playwright flows skipped because `E2E_EMAIL` and `E2E_PASSWORD` are not configured. No authenticated browser result is claimed. Port 8081 was not used. |
+| GitHub / deployment / hosted Supabase | **Pending / not performed** | Migration and code changes are local and unpublished. The prior PR #92 CI result does not validate this new tax audit migration. No deployment or hosted migration was attempted. |
+
+The first local run exposed two overly specific assertion patterns against existing tax tenant guards; the test patterns were corrected to match the guard messages and the complete harness then passed. No application or migration failure remains from that adjustment.
+
 ## Results
 
 | Check                            | Result                     | Evidence / limit                                                                                                                                                                                                   |

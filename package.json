@@ -31,6 +31,7 @@
     "check:browsing-coverage": "node scripts/check-browsing-coverage.mjs",
     "sync:browsing-manifest": "node scripts/sync-browsing-manifest.mjs",
     "test:workflows:postgres": "node scripts/test-workflows-postgres.mjs",
+    "test:tax:master:postgres": "node scripts/test-tax-master-history-postgres.mjs",
     "test:documents:postgres": "node scripts/test-document-review-postgres.mjs",
     "test:accountant:postgres": "node scripts/test-accountant-exceptions-postgres.mjs",
     "test:firm-access:postgres": "node scripts/test-firm-access-governance-postgres.mjs",

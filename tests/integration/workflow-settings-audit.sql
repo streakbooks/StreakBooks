@@ -5,6 +5,8 @@ INSERT INTO public.companies(id, name)
 VALUES ('10000000-0000-4000-8000-000000000010', 'Workflow Audit Test');
 INSERT INTO public.companies(id, name)
 VALUES ('10000000-0000-4000-8000-000000000099', 'Other Tenant');
+INSERT INTO public.company_workflow_settings(company_id)
+VALUES ('10000000-0000-4000-8000-000000000099');
 INSERT INTO public.test_permissions(company_id, user_id, permission)
 VALUES
   ('10000000-0000-4000-8000-000000000010', '70000000-0000-4000-8000-000000000010', 'company.settings.edit'),
@@ -40,6 +42,7 @@ INSERT INTO public.company_workflow_settings(
   company_id,
   sales_default_notes,
   sales_payment_instructions,
+  purchases_default_notes,
   accounting_require_journal_memo,
   updated_by
 )
@@ -47,6 +50,7 @@ VALUES (
   '10000000-0000-4000-8000-000000000010',
   'Private note at creation',
   'Sensitive payment instruction',
+  'Private purchase note at creation',
   true,
   '70000000-0000-4000-8000-000000000010'
 );
@@ -56,6 +60,7 @@ SET accounting_require_journal_memo = false,
     sales_default_payment_terms_days = 45,
     purchases_default_payment_terms_days = 60,
     sales_default_notes = 'Updated private note',
+    purchases_default_notes = 'Updated private purchase note',
     updated_by = '70000000-0000-4000-8000-000000000010'
 WHERE company_id = '10000000-0000-4000-8000-000000000010';
 
@@ -124,16 +129,34 @@ BEGIN
       AND new_value = '{"redacted":true}'::jsonb
   ) THEN RAISE EXCEPTION 'Free-text workflow values are not safely redacted in audit'; END IF;
 
+  IF NOT EXISTS (
+    SELECT 1 FROM public.settings_change_log
+    WHERE company_id = '10000000-0000-4000-8000-000000000010'
+      AND category = 'workflow'
+      AND setting_key = 'purchases_default_notes'
+      AND old_value IS NULL
+      AND new_value = '{"redacted":true}'::jsonb
+  ) OR NOT EXISTS (
+    SELECT 1 FROM public.settings_change_log
+    WHERE company_id = '10000000-0000-4000-8000-000000000010'
+      AND category = 'workflow'
+      AND setting_key = 'purchases_default_notes'
+      AND old_value = '{"redacted":true}'::jsonb
+      AND new_value = '{"redacted":true}'::jsonb
+  ) THEN RAISE EXCEPTION 'Purchase note audit values are not redacted'; END IF;
+
   IF EXISTS (
     SELECT 1 FROM public.settings_change_log
     WHERE category = 'workflow'
       AND (coalesce(old_value::text, '') LIKE '%Private note%'
-        OR coalesce(new_value::text, '') LIKE '%payment instruction%')
+        OR coalesce(new_value::text, '') LIKE '%payment instruction%'
+        OR coalesce(old_value::text, '') LIKE '%purchase note%'
+        OR coalesce(new_value::text, '') LIKE '%purchase note%')
   ) THEN RAISE EXCEPTION 'Free-text workflow content leaked into settings audit'; END IF;
 
   IF EXISTS (
     SELECT 1 FROM public.settings_change_log
-    WHERE company_id = '10000000-0000-4000-8000-000000000010'
+    WHERE company_id = '10000000-0000-4000-8000-000000000099'
       AND category = 'workflow'
       AND setting_key = 'purchases_default_notes'
   ) THEN RAISE EXCEPTION 'Unchanged nullable workflow default created an audit row'; END IF;
@@ -157,6 +180,9 @@ BEGIN
     SELECT 1 FROM public.settings_change_log
     WHERE company_id = '10000000-0000-4000-8000-000000000099'
       AND category = 'workflow'
+      AND setting_key = 'accounting_require_journal_memo'
+      AND old_value = 'false'::jsonb
+      AND new_value = 'true'::jsonb
   ) THEN RAISE EXCEPTION 'Tenant-isolated update wrote an audit row to another company'; END IF;
 
   IF has_function_privilege(

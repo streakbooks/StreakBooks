@@ -48,6 +48,10 @@ export function defaultPurchaseBillDueDate(
   });
 }
 
+export function defaultPurchaseBillMemo(notes?: string | null | undefined): string {
+  return notes ?? "";
+}
+
 export function treatmentForMode(mode: TaxCalculationMode): TaxTreatment {
   return mode === "inclusive" ? "inclusive" : "exclusive";
 }

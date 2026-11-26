@@ -57,20 +57,21 @@ Route: `/settings/automation/overview` → **Require memo on manual journals**; 
 
 ## Sales document date defaults
 
-Route: `/settings/sales/overview` → **Sales defaults**; consumers: new invoice due dates and quote expiry dates. The terms default is superseded by a customer's own payment terms. Both controls are server validated, saved through the existing permission-checked workflow settings function, and audited by the workflow settings trigger. Other Sales controls remain partial unless separately evidenced.
+Route: `/settings/sales/overview` → **Sales defaults**; consumers: new invoice due dates, quote expiry dates, and default notes. The terms default is superseded by a customer's own payment terms. Notes apply to invoices and quotes but not credit notes; the audit log redacts their text. These controls are server validated, saved through the existing permission-checked workflow settings function, and audited by the workflow settings trigger. Other Sales controls remain partial unless separately evidenced.
 
 1. In a dedicated non-production organisation, set invoice payment terms to 45 days and quote validity to 60 days, then save. Confirm only the submitted Sales columns are persisted and the settings audit records typed before/after values.
 2. Create a new invoice for a customer with no customer-specific terms and confirm the due date is 45 days after invoice date. Select a customer with 14-day terms and confirm the customer value takes precedence.
 3. Create a new quote and confirm its expiry is 60 days after the quote date. Change the quote date and confirm expiry recalculates from the configured validity.
-4. Set payment terms to 0 and confirm same-day due date; reject invalid/fractional or out-of-range values at both the Settings form and server boundary. Quote validity must be from 1 to 365 days.
-5. Run `src/lib/sales/document-defaults.test.ts`, the workflow settings server tests, and `npm.cmd run test:workflows:postgres` for consumer precedence, permission-checked persistence, audit history, tenant isolation and rollback.
+4. Set a default note and confirm it appears on new invoices and quotes, but is not copied to credit notes. Confirm the audit contains redacted markers rather than note text.
+5. Set payment terms to 0 and confirm same-day due date; reject invalid/fractional or out-of-range values at both the Settings form and server boundary. Quote validity must be from 1 to 365 days.
+6. Run `src/lib/sales/document-defaults.test.ts`, the workflow settings server tests, and `npm.cmd run test:workflows:postgres` for consumer precedence, permission-checked persistence, audit history, tenant isolation and rollback.
 
 ## Purchase bill default payment terms
 
-Route: `/settings/purchases/overview` → **Purchases defaults**; consumer: new purchase bill due dates. Supplier-specific payment terms take precedence over the organisation default; manual due-date overrides remain intact.
+Route: `/settings/purchases/overview` → **Purchases defaults**; consumers: new purchase bill due dates and notes. Supplier-specific payment terms take precedence over the organisation default; manual due-date overrides remain intact. Note text is redacted in audit history.
 
 1. In a non-production organisation, set default purchase terms to 60 days and save. Confirm the `company.settings.edit` check and typed before/after audit event.
-2. Create a bill for a supplier with no supplier-specific payment term and confirm the due date is 60 days after the bill date. Select a supplier with 14-day terms and confirm those terms win.
+2. Create a bill for a supplier with no supplier-specific payment term and confirm the due date is 60 days after the bill date. Select a supplier with 14-day terms and confirm those terms win. Confirm the saved default note is on a new bill.
 3. Set terms to 0 and confirm a same-day due date. Invalid, fractional, or out-of-range values must be rejected on save.
 4. Edit the due date manually and confirm changing supplier does not overwrite the manual override.
 5. Run `src/lib/purchases/bill-form-helpers.test.ts`, the workflow settings server tests, and `npm.cmd run test:workflows:postgres` to verify precedence, persistence, audit and tenant-safe rollback.

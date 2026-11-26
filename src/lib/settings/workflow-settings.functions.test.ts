@@ -192,4 +192,50 @@ describe("upsertWorkflowSettings", () => {
       }),
     );
   });
+
+  it("permission-checks and persists only the submitted Sales and Purchase notes", async () => {
+    const update = vi.fn();
+    const query = {
+      update: (payload: Record<string, unknown>) => {
+        update(payload);
+        return query;
+      },
+      eq: () => query,
+      select: () => query,
+      maybeSingle: async () => ({
+        data: { company_id: "10000000-0000-4000-8000-000000000001" },
+        error: null,
+      }),
+    };
+    const supabase = { from: vi.fn(() => query) };
+    const companyId = "10000000-0000-4000-8000-000000000001";
+    const invoke = upsertWorkflowSettings as unknown as (args: {
+      data: { companyId: string; salesDefaultNotes: string; purchasesDefaultNotes: string };
+      context: { supabase: typeof supabase; userId: string };
+    }) => Promise<{ ok: boolean }>;
+
+    await expect(
+      invoke({
+        data: {
+          companyId,
+          salesDefaultNotes: "Sales note",
+          purchasesDefaultNotes: "Purchase note",
+        },
+        context: { supabase, userId: "20000000-0000-4000-8000-000000000002" },
+      }),
+    ).resolves.toEqual({ ok: true });
+
+    expect(assertCompanyPermission).toHaveBeenCalledWith(
+      supabase,
+      companyId,
+      "company.settings.edit",
+    );
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sales_default_notes: "Sales note",
+        purchases_default_notes: "Purchase note",
+        updated_by: "20000000-0000-4000-8000-000000000002",
+      }),
+    );
+  });
 });

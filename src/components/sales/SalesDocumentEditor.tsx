@@ -38,7 +38,7 @@ import {
   previewPriceListApplication,
 } from "@/lib/sales/price-list-draft";
 import { getWorkflowSettings } from "@/lib/settings/workflow-settings.functions";
-import { salesDocumentEndDate } from "@/lib/sales/document-defaults";
+import { salesDocumentDefaultMemo, salesDocumentEndDate } from "@/lib/sales/document-defaults";
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { decodeInvoiceReturnContext } from "@/lib/sales/invoice-list-navigation";
@@ -383,9 +383,8 @@ export function SalesDocumentEditor({
       quoteValidityDays: settingsQ.data.sales_quote_validity_days,
     });
     if (endDate) setSecondDate(endDate);
-    if (settingsQ.data.sales_default_notes && kind !== "credit_note") {
-      setMemo(settingsQ.data.sales_default_notes);
-    }
+    const defaultMemo = salesDocumentDefaultMemo(kind, settingsQ.data.sales_default_notes);
+    if (defaultMemo !== undefined) setMemo(defaultMemo);
     setDefaultsApplied(true);
   }, [defaultsApplied, config, settingsQ.isSuccess, settingsQ.data, today, base, kind]);
 

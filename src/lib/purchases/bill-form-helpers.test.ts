@@ -4,6 +4,7 @@ import {
   CANCEL_UNSAVED_MESSAGE,
   calculateDueDate,
   defaultPurchaseBillDueDate,
+  defaultPurchaseBillMemo,
   computeBillLine,
   computeBillTotals,
   endOfMonthIso,
@@ -75,6 +76,13 @@ describe("due date calculation", () => {
     expect(defaultPurchaseBillDueDate("2026-11-01", 14, 45)).toBe("2026-11-15");
     expect(defaultPurchaseBillDueDate("2026-11-01")).toBe("2026-12-01");
     expect(defaultPurchaseBillDueDate("2026-11-01", 0, 45)).toBe("2026-11-01");
+  });
+});
+
+describe("purchase bill memo default", () => {
+  it("applies saved notes to new bills and preserves an empty default", () => {
+    expect(defaultPurchaseBillMemo("Internal purchasing note")).toBe("Internal purchasing note");
+    expect(defaultPurchaseBillMemo(null)).toBe("");
   });
 });
 

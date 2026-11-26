@@ -71,6 +71,7 @@ import {
   CANCEL_UNSAVED_MESSAGE,
   canPreviewAttachment,
   computeBillTotals,
+  defaultPurchaseBillMemo,
   defaultPurchaseBillDueDate,
   hasUnsavedBillChanges,
   MAX_ATTACHMENT_BYTES,
@@ -615,7 +616,8 @@ export function NewBill({
       );
     }
     // Optional fields stay blank — only apply org default notes when configured
-    if (settingsQ.data.purchases_default_notes) setMemo(settingsQ.data.purchases_default_notes);
+    const defaultMemo = defaultPurchaseBillMemo(settingsQ.data.purchases_default_notes);
+    if (defaultMemo) setMemo(defaultMemo);
     setCurrencyCode(baseCurrency);
     setDefaultsApplied(true);
   }, [
@@ -1217,7 +1219,7 @@ export function NewBill({
     setDueDateManualOverride(false);
     setPaymentTermId("");
     setSupplierInvoiceNumber("");
-    setMemo(settingsQ.data?.purchases_default_notes ?? "");
+    setMemo(defaultPurchaseBillMemo(settingsQ.data?.purchases_default_notes));
     setCurrencyCode(baseCurrency);
     setTaxCalculation("exclusive");
     setAcknowledgeDuplicate(false);

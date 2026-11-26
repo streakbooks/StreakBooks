@@ -1,0 +1,2 @@
+# Keep the generated route tree on LF so core.autocrlf does not mark an unchanged blob dirty.
+src/routeTree.gen.ts text eol=lf

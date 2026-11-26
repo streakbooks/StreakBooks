@@ -8,7 +8,7 @@ const record = {
   state: "READY",
   target: "production",
   meta: {
-    githubOrg: "linkbusinessadvisory",
+    githubOrg: "streakbooks",
     githubRepo: "StreakBooks",
     githubCommitRef: "main",
     githubCommitSha: sha,
@@ -33,6 +33,20 @@ test("rejects a READY deployment from the previous repository", () => {
         {
           ...record,
           meta: { ...record.meta, githubOrg: "rohitmehra86" },
+        },
+        sha,
+      ),
+    /Wrong deployment repository/,
+  );
+});
+
+test("rejects a READY deployment from the retired LinkBooks organization", () => {
+  assert.throws(
+    () =>
+      validateActionCenterDeployment(
+        {
+          ...record,
+          meta: { ...record.meta, githubOrg: "linkbusinessadvisory" },
         },
         sha,
       ),

@@ -12,6 +12,7 @@ import { BillingAnalyticsAdmin } from "@/components/platform/billing/BillingAnal
 import { CountryPricingAdmin } from "@/components/platform/billing/CountryPricingAdmin";
 import { CouponsAdmin } from "@/components/platform/billing/CouponsAdmin";
 import { FinanceAdmin } from "@/components/platform/billing/FinanceAdmin";
+import { FirmPartnerTiersAdmin } from "@/components/platform/billing/FirmPartnerTiersAdmin";
 import { LegalDocumentsAdmin } from "@/components/platform/billing/LegalDocumentsAdmin";
 import { PartnerProgramAdmin } from "@/components/platform/billing/PartnerProgramAdmin";
 import { PaymentOperationsAdmin } from "@/components/platform/billing/PaymentOperationsAdmin";
@@ -95,6 +96,7 @@ function PlatformBillingPage() {
       <FinanceAdmin canEdit={editor} isOwner={owner} />
       <CouponsAdmin canEdit={editor} />
       <PartnerProgramAdmin canEdit={editor} isOwner={owner} />
+      <FirmPartnerTiersAdmin canEdit={editor} />
       <ApiKeysAdmin isOwner={owner} />
       <CountryPricingAdmin canEdit={editor} />
       <LegalDocumentsAdmin canEdit={editor} isOwner={owner} />

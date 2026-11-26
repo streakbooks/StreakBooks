@@ -54,6 +54,7 @@ jobs:
       matrix:
         script:
           [
+            "test:firm-access:postgres",
             "test:workflows:postgres",
             "test:platform:postgres",
             "test:banking:postgres",

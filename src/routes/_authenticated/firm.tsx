@@ -4,6 +4,7 @@ import { FirmClientPortfolio } from "@/components/firm/FirmClientPortfolio";
 import { FirmOnboardingPanel, FirmTeamPanel } from "@/components/firm/FirmOnboardingAndTeam";
 import { FirmEngagementPanel } from "@/components/firm/FirmEngagementPanel";
 import { FirmStaffAssignments } from "@/components/firm/FirmStaffAssignments";
+import { FirmClientAccessGrants } from "@/components/firm/FirmClientAccessGrants";
 import { FirmInvitationsPanel } from "@/components/firm/FirmInvitationsPanel";
 import { FirmRequestsPanel } from "@/components/firm/FirmRequestsPanel";
 import { FirmPartnerPanel } from "@/components/firm/FirmPartnerPanel";
@@ -141,7 +142,9 @@ function FirmPage() {
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["firm-clients", firmId] });
       await qc.invalidateQueries({ queryKey: ["practice-work"] });
-      toast.success("Client linked. Existing organisation roles were preserved.");
+      toast.success(
+        "Client linked. Grant firm staff access in the team tab; client seats are unchanged.",
+      );
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -473,12 +476,20 @@ function FirmPage() {
               ) : clientsQ.isError ? (
                 <QueryErrorState queries={[clientsQ]} title="Could not load clients" />
               ) : (
-                <FirmStaffAssignments
-                  key={firmId}
-                  firmId={firmId}
-                  clients={clientsQ.data ?? []}
-                  canManage={firmAdmin}
-                />
+                <>
+                  <FirmClientAccessGrants
+                    key={`access-${firmId}`}
+                    firmId={firmId}
+                    clients={clientsQ.data ?? []}
+                    canManage={firmAdmin}
+                  />
+                  <FirmStaffAssignments
+                    key={firmId}
+                    firmId={firmId}
+                    clients={clientsQ.data ?? []}
+                    canManage={firmAdmin}
+                  />
+                </>
               )}
             </TabsContent>
 

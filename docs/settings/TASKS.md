@@ -130,3 +130,8 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Connected `purchases.show_supplier_summary_default` to new bill workspace initialization. The organisation value applies only when the user has no saved personal sidebar preference; explicit user preference continues to win. The existing member-scoped `organisation_config` read and `user_ui_preferences` RLS boundary remain in force.
 - Added a field-level server-function regression for enabled/disabled defaults, saved-user precedence and the existing open fallback, plus registry and coverage evidence. This completes one purchase display preference only; Batch 4 and the wider Settings work remain partial.
 - Focused tests passed (3 files / 13 tests), changed-file lint, module contracts, UI contracts and diff checks passed. Typecheck and fresh-head GitHub Actions are pending. No schema migration or hosted Supabase change was needed.
+
+## 2026-11-26 Report comparison preference
+
+- Promoted the existing organisation default comparison for profit/loss and balance sheet statements into the typed capability registry. The consumer already respects explicit report URL and saved-report choices; this edit enables the control only with that behavior contract and existing tests.
+- The Settings capability regression and `src/lib/settings/report-defaults.test.ts` passed. Batch 9 remains partial because the Reports module still lacks proven view and schedule settings. No schema migration was required.

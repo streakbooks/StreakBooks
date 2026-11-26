@@ -65,5 +65,9 @@ describe("Settings capability coverage registry", () => {
         (setting) => setting.key === "purchases.show_supplier_summary_default",
       )?.status,
     ).toBe("complete");
+    expect(
+      SETTING_FIELD_COVERAGE.find((setting) => setting.key === "reports.default_comparison")
+        ?.status,
+    ).toBe("complete");
   });
 });

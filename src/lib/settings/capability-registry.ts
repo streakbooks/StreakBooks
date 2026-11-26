@@ -55,6 +55,22 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/reports/accounting-basis.test.ts and cash report function tests",
   },
   {
+    key: "reports.default_comparison",
+    label: "Default report comparison",
+    moduleId: "reports",
+    route: "/settings/reports/overview",
+    scope: "company",
+    defaultValue: "No comparison",
+    validation: "Reports settings schema allowlists none, prior period or prior year",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "organisation_config.reports through the version-checked settings RPC",
+    audit: "settings_change_log stores previous and resulting category documents",
+    consumer:
+      "Profit and loss and balance sheet reports use this comparison only when the URL and saved report settings have no explicit comparison",
+    test: "src/lib/settings/report-defaults.test.ts proves defaults and explicit-choice precedence",
+  },
+  {
     key: "accounting.account_code_padding",
     label: "Account code display padding",
     moduleId: "accounting",

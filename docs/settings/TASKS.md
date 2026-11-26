@@ -16,4 +16,4 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - [ ] Phase 3 / Batch 9 — remaining modules discovered from `MODULE_REGISTRY`.
 - [x] Final documentation artifacts — `REVIEW_GUIDE.md`, `coverage-matrix.md`, refreshed `05-TEST-REPORT.md`, and `defect-register.md` are present. The defect register explicitly states that its review is self-review, not an independent external audit.
 - [ ] Final deliverables — complete all remaining implementation batches and their verification; then update this task list and final report.
-- [ ] Delivery — run full gates, commit and push branch, open PR, merge only with CI and full suite green. Supabase hosted changes require target-specific backup confirmation; do not run blind migration sync.
+- [ ] Delivery — implementation commit `6586075d` is pushed on `feat/settings-module-overhaul`; draft PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) is open. Merge remains pending because batches 2–9, authenticated browser verification and green CI are not complete. Supabase hosted changes require target-specific backup confirmation; do not run blind migration sync.

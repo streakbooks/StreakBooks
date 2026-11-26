@@ -1,7 +1,8 @@
 # Settings overhaul test report
 
 **Date:** 2026-11-26
-**Revision:** local feature branch `feat/settings-module-overhaul`; exact commit recorded after delivery.
+**Validated code revision:** `6586075d25d94e78939a007531307ceb5c07ad38` on `feat/settings-module-overhaul`.
+**Pull request:** [#92](https://github.com/streakbooks/StreakBooks/pull/92), draft; GitHub CI is still running and merge is not authorized by this report.
 **Scope:** current Settings route, field coverage/search, and repository quality gates.
 
 ## Results

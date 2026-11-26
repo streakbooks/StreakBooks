@@ -159,8 +159,8 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "profile",
     status: "partial",
     route: "/settings/personal/overview",
-    missingEvidence: ["unified personal settings page and coverage map"],
-    note: "Profile and user preferences are split between profile and workspace preference surfaces.",
+    missingEvidence: ["server-synced personal preferences across devices"],
+    note: "The profile page now groups account details, security and appearance. Appearance choices are browser-local; cross-device preference sync is not available yet.",
   },
 ] as const;
 

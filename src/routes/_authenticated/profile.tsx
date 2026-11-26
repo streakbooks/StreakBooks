@@ -16,6 +16,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { supabase } from "@/integrations/supabase/client";
 import { SecuritySettingsCard } from "@/components/auth/SecuritySettingsCard";
+import { useTheme } from "@/hooks/use-theme";
+import { PALETTE_OPTIONS, isPaletteId, isThemePreference } from "@/lib/theme";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -41,6 +50,7 @@ function ProfilePage() {
   const fetchProfile = useServerFn(getMyProfile);
   const saveProfile = useServerFn(updateMyProfile);
   const queryClient = useQueryClient();
+  const theme = useTheme();
 
   const profileQuery = useQuery({
     queryKey: ["my-profile"],
@@ -142,6 +152,57 @@ function ProfilePage() {
                   </p>
                 ) : null}
               </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Appearance</CardTitle>
+              <CardDescription>
+                Choose how StreakBooks looks in this browser. These preferences are stored locally
+                on this device.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="profile-theme">Colour mode</Label>
+                <Select
+                  value={theme.preference}
+                  onValueChange={(value) => {
+                    if (isThemePreference(value)) theme.setPreference(value);
+                  }}
+                >
+                  <SelectTrigger id="profile-theme" aria-label="Colour mode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="system">Use device setting</SelectItem>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-palette">Colour palette</Label>
+                <Select
+                  value={theme.palette}
+                  onValueChange={(value) => {
+                    if (isPaletteId(value)) theme.setPalette(value);
+                  }}
+                >
+                  <SelectTrigger id="profile-palette" aria-label="Colour palette">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PALETTE_OPTIONS.map((palette) => (
+                      <SelectItem key={palette.id} value={palette.id}>
+                        {palette.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom">Custom palette</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 

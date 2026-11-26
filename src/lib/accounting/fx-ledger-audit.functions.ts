@@ -17,7 +17,7 @@ import {
  */
 export const auditRecentRealisedFx = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }): Promise<FxRealisedAuditResult> => {

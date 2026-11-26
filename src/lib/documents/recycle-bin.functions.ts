@@ -75,7 +75,7 @@ async function audit(
 
 export const getDocumentRetentionSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -97,7 +97,7 @@ export const getDocumentRetentionSettings = createServerFn({ method: "GET" })
 
 export const updateDocumentRetentionSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; retentionDays: number }) => {
+  .validator((input: { companyId: string; retentionDays: number }) => {
     const days = validateRetentionDays(input.retentionDays);
     return { companyId: assertUuid(input.companyId), retentionDays: days };
   })
@@ -119,7 +119,7 @@ export const updateDocumentRetentionSettings = createServerFn({ method: "POST" }
 
 export const listRecycleBinFiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; page?: number }) => ({
+  .validator((input: { companyId: string; page?: number }) => ({
     companyId: assertUuid(input.companyId),
     page: safeFilePage(input.page),
   }))
@@ -152,7 +152,7 @@ export const listRecycleBinFiles = createServerFn({ method: "GET" })
 
 export const restoreRecycleBinFile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
   }))
@@ -174,7 +174,7 @@ export const restoreRecycleBinFile = createServerFn({ method: "POST" })
 
 export const setRecycleBinRetentionHold = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string; enabled: boolean }) => ({
+  .validator((input: { companyId: string; attachmentId: string; enabled: boolean }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
     enabled: input.enabled === true,
@@ -244,7 +244,7 @@ async function retryCleanup(
 
 export const purgeRecycleBinFile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
   }))
@@ -272,7 +272,7 @@ export const purgeRecycleBinFile = createServerFn({ method: "POST" })
 
 export const listStorageCleanupJobs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; page?: number }) => ({
+  .validator((input: { companyId: string; page?: number }) => ({
     companyId: assertUuid(input.companyId),
     page: safeFilePage(input.page),
   }))
@@ -313,7 +313,7 @@ export const listStorageCleanupJobs = createServerFn({ method: "GET" })
 
 export const retryDocumentStorageCleanup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; jobId: string }) => ({
+  .validator((input: { companyId: string; jobId: string }) => ({
     companyId: assertUuid(input.companyId),
     jobId: assertUuid(input.jobId, "job"),
   }))

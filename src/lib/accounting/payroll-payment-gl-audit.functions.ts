@@ -17,7 +17,7 @@ import {
 /** Read-only, company-scoped, bounded Payroll payment / net-pay GL evidence. */
 export const auditPayrollPaymentGl = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; paymentId: string; journalId: string }) => ({
+  .validator((input: { companyId: string; paymentId: string; journalId: string }) => ({
     companyId: assertUuid(input?.companyId),
     paymentId: assertUuid(input?.paymentId, "payroll payment"),
     journalId: assertUuid(input?.journalId, "journal"),

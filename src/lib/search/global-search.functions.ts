@@ -28,7 +28,7 @@ export type SearchCategory = "all" | GlobalSearchHit["entity"];
 
 export const globalSearch = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; q: string; category?: SearchCategory; limit?: number }) => {
       const q = (input.q ?? "").trim().slice(0, 80);
       if (q.length < 2 && !parseMoneySearch(q))

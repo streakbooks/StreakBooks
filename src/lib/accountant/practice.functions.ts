@@ -24,7 +24,7 @@ const scope = z.union([
 ]);
 export const listPracticeWork = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => scope.parse(input))
+  .validator((input: unknown) => scope.parse(input))
   .handler(async ({ data, context }): Promise<PracticeWorkspace> => {
     const sb = context.supabase;
     let clients: PracticeClient[] = [];
@@ -122,7 +122,7 @@ export const listPracticeWork = createServerFn({ method: "GET" })
   });
 export const savePracticeTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ companyId: z.string().uuid(), payload: taskPayload }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -136,7 +136,7 @@ export const savePracticeTask = createServerFn({ method: "POST" })
   });
 export const bulkPracticeTasks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         items: z
@@ -164,7 +164,7 @@ export const bulkPracticeTasks = createServerFn({ method: "POST" })
   });
 export const createMonthEndWork = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         companyIds: z.array(z.string().uuid()).min(1).max(20),
@@ -186,7 +186,7 @@ export const createMonthEndWork = createServerFn({ method: "POST" })
   });
 export const listPracticeAssignees = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ companyId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ companyId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: members, error } = await context.supabase.rpc(
       "practice_assignees" as never,

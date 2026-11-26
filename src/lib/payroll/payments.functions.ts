@@ -145,7 +145,7 @@ async function probePaymentsTable(
  */
 export const listPayrollSettlementAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: companyIdOf(input),
   }))
   .handler(async ({ data, context }) => {
@@ -195,7 +195,7 @@ export const listPayrollSettlementAccounts = createServerFn({ method: "GET" })
 
 export const getPayrollPayment = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; paymentId: string }) => ({
+  .validator((input: { companyId: string; paymentId: string }) => ({
     companyId: companyIdOf(input),
     paymentId: input.paymentId,
   }))
@@ -268,7 +268,7 @@ export const getPayrollPayment = createServerFn({ method: "GET" })
 
 export const listPayrollPayments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId?: string | null }) => ({
+  .validator((input: { companyId: string; runId?: string | null }) => ({
     companyId: companyIdOf(input),
     runId: input.runId?.trim() || null,
   }))
@@ -301,7 +301,7 @@ export const listPayrollPayments = createServerFn({ method: "GET" })
 
 export const recordPayrollPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       paymentDate: string;
@@ -522,7 +522,7 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
 
 export const exportPayrollBankCsvRows = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId?: string | null }) => ({
+  .validator((input: { companyId: string; runId?: string | null }) => ({
     companyId: companyIdOf(input),
     runId: input.runId?.trim() || null,
   }))
@@ -568,7 +568,7 @@ export const exportPayrollBankCsvRows = createServerFn({ method: "GET" })
 
 export const listPayrollRunJournals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string }) => ({
+  .validator((input: { companyId: string; runId: string }) => ({
     companyId: companyIdOf(input),
     runId: input.runId,
   }))
@@ -621,7 +621,7 @@ export const listPayrollRunJournals = createServerFn({ method: "GET" })
 
 export const postPayrollRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string }) => ({
+  .validator((input: { companyId: string; runId: string }) => ({
     companyId: companyIdOf(input),
     runId: input.runId,
   }))
@@ -639,7 +639,7 @@ export const postPayrollRun = createServerFn({ method: "POST" })
 
 export const reversePayrollRunAccrual = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string; reversalDate: string }) => ({
+  .validator((input: { companyId: string; runId: string; reversalDate: string }) => ({
     companyId: companyIdOf(input),
     runId: input.runId,
     reversalDate: input.reversalDate.trim(),
@@ -668,7 +668,7 @@ export const reversePayrollRunAccrual = createServerFn({ method: "POST" })
 
 export const reversePayrollPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; paymentId: string; reversalDate: string }) => ({
+  .validator((input: { companyId: string; paymentId: string; reversalDate: string }) => ({
     companyId: companyIdOf(input),
     paymentId: input.paymentId,
     reversalDate: input.reversalDate.trim(),

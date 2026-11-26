@@ -212,7 +212,7 @@ async function probeEmployeesTable(
 
 export const listPayrollEmployees = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string | null; q?: string | null }) => ({
+  .validator((input: { companyId: string; status?: string | null; q?: string | null }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || null,
     q: input.q?.trim() || null,
@@ -244,7 +244,7 @@ export const listPayrollEmployees = createServerFn({ method: "GET" })
 
 export const getPayrollEmployeePage = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; employeeId: string }) => ({
+  .validator((input: { companyId: string; employeeId: string }) => ({
     companyId: companyIdOf(input),
     employeeId: input.employeeId,
   }))
@@ -286,7 +286,7 @@ export const getPayrollEmployeePage = createServerFn({ method: "GET" })
 
 export const savePayrollEmployee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: PayrollEmployeeDraft }) => ({
+  .validator((input: { companyId: string; draft: PayrollEmployeeDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))
@@ -305,13 +305,11 @@ export const savePayrollEmployee = createServerFn({ method: "POST" })
 
 export const savePayrollEmployeePaymentDetails = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; employeeId: string; draft: PaymentDetailsDraft }) => ({
-      companyId: companyIdOf(input),
-      employeeId: input.employeeId,
-      draft: input.draft,
-    }),
-  )
+  .validator((input: { companyId: string; employeeId: string; draft: PaymentDetailsDraft }) => ({
+    companyId: companyIdOf(input),
+    employeeId: input.employeeId,
+    draft: input.draft,
+  }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.employees.manage");
     const parsed = parsePaymentDetailsDraft(data.draft);
@@ -331,7 +329,7 @@ export const savePayrollEmployeePaymentDetails = createServerFn({ method: "POST"
 
 export const listPayrollSalaryStructures = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.view");
@@ -366,13 +364,11 @@ export const listPayrollSalaryStructures = createServerFn({ method: "GET" })
 
 export const savePayrollSalaryStructure = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; draft: SalaryStructureDraft; currencyCode: string }) => ({
-      companyId: companyIdOf(input),
-      draft: input.draft,
-      currencyCode: input.currencyCode.trim().toUpperCase(),
-    }),
-  )
+  .validator((input: { companyId: string; draft: SalaryStructureDraft; currencyCode: string }) => ({
+    companyId: companyIdOf(input),
+    draft: input.draft,
+    currencyCode: input.currencyCode.trim().toUpperCase(),
+  }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.employees.manage");
     const parsed = parseSalaryStructureDraft(data.draft, data.currencyCode);
@@ -388,7 +384,7 @@ export const savePayrollSalaryStructure = createServerFn({ method: "POST" })
 
 export const assignPayrollEmployeeSalary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       employeeId: string;

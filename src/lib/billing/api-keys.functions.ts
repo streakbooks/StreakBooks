@@ -38,7 +38,7 @@ export const listApiKeys = createServerFn({ method: "GET" })
 
 export const issueApiKey = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         replaceId: z.string().uuid().nullable(),
@@ -59,7 +59,7 @@ export const issueApiKey = createServerFn({ method: "POST" })
 
 export const setApiKeyScopes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         keyId: z.string().uuid(),

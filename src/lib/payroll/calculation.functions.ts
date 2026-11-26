@@ -244,7 +244,7 @@ async function assertPreviewPermission(
 
 export const previewCalculatePayroll = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       periodStart: string;

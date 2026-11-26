@@ -216,7 +216,7 @@ function mapHoliday(raw: unknown): HrHoliday {
 
 export const listHrShiftTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: companyIdOf(input),
   }))
   .handler(async ({ data, context }) => {
@@ -232,7 +232,7 @@ export const listHrShiftTemplates = createServerFn({ method: "GET" })
 
 export const upsertHrShiftTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -271,7 +271,7 @@ export const upsertHrShiftTemplate = createServerFn({ method: "POST" })
 
 export const listHrShiftAssignments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; employeeId?: string | null }) => ({
+  .validator((input: { companyId: string; employeeId?: string | null }) => ({
     companyId: companyIdOf(input),
     employeeId: input.employeeId?.trim() || null,
   }))
@@ -288,7 +288,7 @@ export const listHrShiftAssignments = createServerFn({ method: "GET" })
 
 export const upsertHrShiftAssignment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -322,7 +322,7 @@ export const upsertHrShiftAssignment = createServerFn({ method: "POST" })
 
 export const listHrAttendanceLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       fromDate?: string | null;
@@ -356,7 +356,7 @@ export const listHrAttendanceLogs = createServerFn({ method: "GET" })
 
 export const upsertHrAttendanceLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -393,7 +393,7 @@ export const upsertHrAttendanceLog = createServerFn({ method: "POST" })
 
 export const listHrAttendanceCorrections = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string | null }) => ({
+  .validator((input: { companyId: string; status?: string | null }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || null,
   }))
@@ -410,7 +410,7 @@ export const listHrAttendanceCorrections = createServerFn({ method: "GET" })
 
 export const upsertHrAttendanceCorrection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -444,7 +444,7 @@ export const upsertHrAttendanceCorrection = createServerFn({ method: "POST" })
 
 export const decideHrAttendanceCorrection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       correctionId: string;
@@ -476,7 +476,7 @@ export const decideHrAttendanceCorrection = createServerFn({ method: "POST" })
 
 export const listHrLeaveTypes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: companyIdOf(input),
   }))
   .handler(async ({ data, context }) => {
@@ -492,7 +492,7 @@ export const listHrLeaveTypes = createServerFn({ method: "GET" })
 
 export const upsertHrLeaveType = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -530,13 +530,11 @@ export const upsertHrLeaveType = createServerFn({ method: "POST" })
 
 export const listHrLeaveBalances = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; year?: number | null; employeeId?: string | null }) => ({
-      companyId: companyIdOf(input),
-      year: input.year ?? null,
-      employeeId: input.employeeId?.trim() || null,
-    }),
-  )
+  .validator((input: { companyId: string; year?: number | null; employeeId?: string | null }) => ({
+    companyId: companyIdOf(input),
+    year: input.year ?? null,
+    employeeId: input.employeeId?.trim() || null,
+  }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.view");
     const raw = await callRpc(
@@ -558,7 +556,7 @@ export const listHrLeaveBalances = createServerFn({ method: "GET" })
 
 export const ensureHrLeaveBalance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       employeeId: string;
@@ -597,7 +595,7 @@ export const ensureHrLeaveBalance = createServerFn({ method: "POST" })
 
 export const listHrLeaveRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; status?: string | null; employeeId?: string | null }) => ({
       companyId: companyIdOf(input),
       status: input.status?.trim() || null,
@@ -621,7 +619,7 @@ export const listHrLeaveRequests = createServerFn({ method: "GET" })
 
 export const upsertHrLeaveRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -658,7 +656,7 @@ export const upsertHrLeaveRequest = createServerFn({ method: "POST" })
 
 export const decideHrLeaveRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       requestId: string;
@@ -694,7 +692,7 @@ export const decideHrLeaveRequest = createServerFn({ method: "POST" })
 
 export const listHrHolidayCalendars = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: companyIdOf(input),
   }))
   .handler(async ({ data, context }) => {
@@ -714,7 +712,7 @@ export const listHrHolidayCalendars = createServerFn({ method: "GET" })
 
 export const upsertHrHolidayCalendar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -749,7 +747,7 @@ export const upsertHrHolidayCalendar = createServerFn({ method: "POST" })
 
 export const upsertHrHoliday = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {

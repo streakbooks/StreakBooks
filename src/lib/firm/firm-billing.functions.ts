@@ -24,7 +24,7 @@ export type EngagementInvoiceLink = {
 
 export const listPracticeBillingInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => billingScope.parse(input))
+  .validator((input: unknown) => billingScope.parse(input))
   .handler(async ({ data, context }): Promise<PracticeBillingInvoice[]> => {
     await assertFirmScope(context.supabase, context.userId, data.firmId, data.companyId, false);
     if (data.companyId === data.billingCompanyId)
@@ -44,7 +44,7 @@ export const listPracticeBillingInvoices = createServerFn({ method: "GET" })
 
 export const listEngagementInvoiceLinks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => engagementScope.parse(input))
+  .validator((input: unknown) => engagementScope.parse(input))
   .handler(async ({ data, context }): Promise<EngagementInvoiceLink[]> => {
     await assertFirmScope(context.supabase, context.userId, data.firmId, data.companyId, false);
     const { data: record, error: engagementError } = await context.supabase
@@ -76,7 +76,7 @@ const linkInput = billingScope.extend({
 });
 export const linkFirmEngagementInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => linkInput.parse(input))
+  .validator((input: unknown) => linkInput.parse(input))
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     await assertFirmScope(sb, context.userId, data.firmId, data.companyId, true);
@@ -121,7 +121,7 @@ export const linkFirmEngagementInvoice = createServerFn({ method: "POST" })
 
 export const unlinkFirmEngagementInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => linkInput.parse(input))
+  .validator((input: unknown) => linkInput.parse(input))
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     await assertFirmScope(sb, context.userId, data.firmId, data.companyId, true);

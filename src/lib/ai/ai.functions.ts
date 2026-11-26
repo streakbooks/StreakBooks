@@ -113,7 +113,7 @@ export const getAiAssistantStatus = createServerFn({ method: "GET" })
 
 export const runAiAssistant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; intent: string; message: string }) => {
+  .validator((input: { companyId: string; intent: string; message: string }) => {
     const intent = INTENTS.includes(input.intent as AiIntent) ? (input.intent as AiIntent) : "ask";
     const message = sanitizeUntrustedText(input.message, 4_000);
     if (!message.text.trim()) throw new Error("Enter a question or request");
@@ -345,7 +345,7 @@ export const runAiAssistant = createServerFn({ method: "POST" })
 
 export const listAiSuggestions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -379,7 +379,7 @@ export const listAiSuggestions = createServerFn({ method: "GET" })
  */
 export const applyAiSuggestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       suggestionId: string;
@@ -495,7 +495,7 @@ export const applyAiSuggestion = createServerFn({ method: "POST" })
 
 export const rejectAiSuggestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; suggestionId: string }) => ({
+  .validator((input: { companyId: string; suggestionId: string }) => ({
     companyId: assertUuid(input.companyId),
     suggestionId: assertUuid(input.suggestionId, "suggestion"),
   }))

@@ -51,9 +51,7 @@ export type BillingDocumentList = {
 
 export const listBillingDocuments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ companyId: z.string().uuid() }).strict().parse(input),
-  )
+  .validator((input: unknown) => z.object({ companyId: z.string().uuid() }).strict().parse(input))
   .handler(
     async ({ data, context }) =>
       (await callRpc(context.supabase, "billing_documents", {
@@ -105,12 +103,12 @@ export const documentDownloadFor = createServerOnlyFn(
 
 export const downloadBillingDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => documentRequest.parse(input))
+  .validator((input: unknown) => documentRequest.parse(input))
   .handler(({ data, context }) => documentDownloadFor(context, data));
 
 export const setBillingTaxId = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         accountId: z.string().uuid(),

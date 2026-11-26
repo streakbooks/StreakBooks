@@ -117,7 +117,7 @@ async function claimSend(db: Db, companyId: string, kind: "test_email" | "digest
 /** Truthful provider status. Does not expose keys or claim that an untested domain is verified. */
 export const getCommunicationsStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const [company, destination] = await Promise.all([
@@ -159,7 +159,7 @@ export const getCommunicationsStatus = createServerFn({ method: "GET" })
 
 export const sendCommunicationsTest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     const db = context.supabase;
     await assertCompanyPermission(db, data.companyId, "company.settings.edit");
@@ -200,7 +200,7 @@ export const sendCommunicationsTest = createServerFn({ method: "POST" })
 
 export const sendCommunicationsDigest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     const db = context.supabase;
     await assertCompanyMember(db, data.companyId);

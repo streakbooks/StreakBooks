@@ -35,7 +35,7 @@ function countryFrom(value: string | null | undefined): string | null {
 }
 
 export const getPublicPriceList = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => priceListInput.parse(input))
+  .validator((input: unknown) => priceListInput.parse(input))
   .handler(async ({ data }) => {
     // Region is request-specific: never cache one visitor's prices for another.
     setResponseHeader("Cache-Control", "private, no-store");
@@ -74,7 +74,7 @@ export const getCountryPricingAdmin = createServerFn({ method: "GET" })
 
 export const saveCountryPricingRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => countryRuleInput.parse(input))
+  .validator((input: unknown) => countryRuleInput.parse(input))
   .handler(async ({ data, context }) => {
     await callRpc(context.supabase, "platform_set_country_pricing_rule", {
       _country: data.country,
@@ -91,7 +91,7 @@ export const saveCountryPricingRule = createServerFn({ method: "POST" })
 
 export const savePriceInput = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => priceInputInput.parse(input))
+  .validator((input: unknown) => priceInputInput.parse(input))
   .handler(async ({ data, context }) => {
     await callRpc(context.supabase, "platform_set_price_input", {
       _plan_code: data.planCode,
@@ -106,7 +106,7 @@ export const savePriceInput = createServerFn({ method: "POST" })
 
 export const recordExchangeRate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => exchangeRateInput.parse(input))
+  .validator((input: unknown) => exchangeRateInput.parse(input))
   .handler(async ({ data, context }) => {
     await callRpc(context.supabase, "platform_record_exchange_rate", {
       _quote_currency: data.quoteCurrency,
@@ -119,7 +119,7 @@ export const recordExchangeRate = createServerFn({ method: "POST" })
 
 export const draftCountryPrices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => draftCountryPricesInput.parse(input))
+  .validator((input: unknown) => draftCountryPricesInput.parse(input))
   .handler(
     async ({ data, context }) =>
       (await callRpc(context.supabase, "platform_draft_country_prices", {

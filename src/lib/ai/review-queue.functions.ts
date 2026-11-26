@@ -74,7 +74,7 @@ async function canView(client: Parameters<typeof assertCompanyPermission>[0], co
 /** Latest cases, with stable pagination; no unbounded organization-wide scan. */
 export const listAiJournalReviewCases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     scope
       .extend({
         page: z.number().int().min(0).max(10000).default(0),
@@ -121,7 +121,7 @@ export const listAiJournalReviewCases = createServerFn({ method: "GET" })
 /** One tenant-scoped review case for workpaper-to-AI deep links, independent of queue page. */
 export const getAiJournalReviewCase = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => scope.extend({ caseId: uuid }).parse(input))
+  .validator((input: unknown) => scope.extend({ caseId: uuid }).parse(input))
   .handler(async ({ data, context }): Promise<AiJournalReviewCase> => {
     await canView(context.supabase, data.companyId);
     const { data: row, error } = await context.supabase
@@ -143,7 +143,7 @@ export const getAiJournalReviewCase = createServerFn({ method: "GET" })
 
 export const listAiJournalReviewEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => scope.extend({ caseId: uuid }).parse(input))
+  .validator((input: unknown) => scope.extend({ caseId: uuid }).parse(input))
   .handler(async ({ data, context }): Promise<AiJournalReviewEvent[]> => {
     await canView(context.supabase, data.companyId);
     const { data: belongs, error: caseError } = await context.supabase
@@ -171,7 +171,7 @@ export const listAiJournalReviewEvents = createServerFn({ method: "GET" })
  */
 export const exportAiJournalReviewAudit = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => scope.extend({ caseId: uuid }).parse(input))
+  .validator((input: unknown) => scope.extend({ caseId: uuid }).parse(input))
   .handler(
     async ({
       data,
@@ -246,7 +246,7 @@ export const exportAiJournalReviewAudit = createServerFn({ method: "GET" })
  */
 export const listAiJournalReviewerCandidates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => scope.parse(input))
+  .validator((input: unknown) => scope.parse(input))
   .handler(async ({ data, context }): Promise<AiReviewerCandidate[]> => {
     await canView(context.supabase, data.companyId);
     await assertCompanyPermission(context.supabase, data.companyId, "ai.apply_suggestion");
@@ -282,7 +282,7 @@ export const listAiJournalReviewerCandidates = createServerFn({ method: "GET" })
 /** Version-checked, permissioned, transactional transitions with immutable audit events. */
 export const saveAiJournalReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => reviewActionSchema.parse(input))
+  .validator((input: unknown) => reviewActionSchema.parse(input))
   .handler(async ({ data, context }): Promise<{ id: string; status: string; version: number }> => {
     await canView(context.supabase, data.companyId);
     if (["assign", "sign_off", "reopen"].includes(data.action))

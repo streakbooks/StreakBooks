@@ -12,7 +12,7 @@ import {
 
 export const listSavedReportViews = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; reportId?: string }) => ({
+  .validator((input: { companyId: string; reportId?: string }) => ({
     companyId: assertUuid(input?.companyId),
     reportId: input?.reportId ?? "",
   }))
@@ -34,7 +34,7 @@ export const listSavedReportViews = createServerFn({ method: "GET" })
 
 export const saveReportView = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       reportId: string;
@@ -76,7 +76,7 @@ export const saveReportView = createServerFn({ method: "POST" })
 
 export const deleteSavedReportView = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; viewId: string }) => ({
+  .validator((input: { companyId: string; viewId: string }) => ({
     companyId: assertUuid(input?.companyId),
     viewId: assertUuid(input?.viewId, "view"),
   }))
@@ -98,7 +98,7 @@ export const deleteSavedReportView = createServerFn({ method: "POST" })
 /** Library is always scoped by both authenticated owner and current tenant. */
 export const listReportLibrary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       query?: string;
@@ -168,7 +168,7 @@ export const listReportLibrary = createServerFn({ method: "GET" })
 
 export const updateSavedReportView = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       viewId: string;
@@ -212,7 +212,7 @@ export const updateSavedReportView = createServerFn({ method: "POST" })
 /** Copy the stored configuration server-side; never copy another tenant's results. */
 export const duplicateSavedReportView = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; viewId: string }) => ({
+  .validator((input: { companyId: string; viewId: string }) => ({
     companyId: assertUuid(input?.companyId),
     viewId: assertUuid(input?.viewId, "view"),
   }))

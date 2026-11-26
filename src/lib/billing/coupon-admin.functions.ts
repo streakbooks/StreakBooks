@@ -74,7 +74,7 @@ export const getCoupons = createServerFn({ method: "GET" })
 
 export const saveCoupon = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => couponInput.parse(input))
+  .validator((input: unknown) => couponInput.parse(input))
   .handler(async ({ data, context }) => {
     const { reason: why, ...coupon } = data;
     await callRpc(context.supabase, "platform_save_coupon", {
@@ -90,7 +90,7 @@ export const saveCoupon = createServerFn({ method: "POST" })
 
 export const linkProviderCoupon = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         code: z.string().trim().min(3).max(40),

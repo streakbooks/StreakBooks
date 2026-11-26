@@ -39,7 +39,7 @@ export const listMyBillingAccounts = createServerFn({ method: "GET" })
 
 export const getCompanyBillingAccount = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => companyInput.parse(input))
+  .validator((input: unknown) => companyInput.parse(input))
   .handler(async ({ data, context }): Promise<BillingAccount> => {
     const result = await callRpc(
       context.supabase as unknown as RpcClient,
@@ -53,7 +53,7 @@ export const getCompanyBillingAccount = createServerFn({ method: "GET" })
 
 export const updateBillingProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => updateBillingProfileInput.parse(input))
+  .validator((input: unknown) => updateBillingProfileInput.parse(input))
   .handler(async ({ data, context }): Promise<BillingAccount> => {
     const result = await callRpc(
       context.supabase as unknown as RpcClient,
@@ -69,7 +69,7 @@ export const updateBillingProfile = createServerFn({ method: "POST" })
 
 export const switchToIndividualBilling = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => companyInput.parse(input))
+  .validator((input: unknown) => companyInput.parse(input))
   .handler(async ({ data, context }): Promise<BillingAccount> => {
     const result = await callRpc(
       context.supabase as unknown as RpcClient,
@@ -83,7 +83,7 @@ export const switchToIndividualBilling = createServerFn({ method: "POST" })
 
 export const switchToOrganizationBilling = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => companyInput.parse(input))
+  .validator((input: unknown) => companyInput.parse(input))
   .handler(async ({ data, context }): Promise<BillingAccount> => {
     const result = await callRpc(
       context.supabase as unknown as RpcClient,

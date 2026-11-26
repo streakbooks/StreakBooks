@@ -58,7 +58,7 @@ async function loadRules(
 
 export const listBankRules = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as AnyClient;
     await assertCompanyMember(supabase, data.companyId);
@@ -84,7 +84,7 @@ export const listBankRules = createServerFn({ method: "GET" })
 
 export const saveBankRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -201,7 +201,7 @@ export const saveBankRule = createServerFn({ method: "POST" })
 
 export const deleteBankRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; id: string }) => ({
+  .validator((input: { companyId: string; id: string }) => ({
     companyId: assertUuid(input.companyId),
     id: assertUuid(input.id),
   }))
@@ -225,7 +225,7 @@ export const deleteBankRule = createServerFn({ method: "POST" })
 
 export const setBankRuleActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; id: string; isActive: boolean }) => ({
+  .validator((input: { companyId: string; id: string; isActive: boolean }) => ({
     companyId: assertUuid(input.companyId),
     id: assertUuid(input.id),
     isActive: input.isActive === true,
@@ -263,13 +263,11 @@ type TxnRow = {
  */
 export const previewRuleSuggestions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; bankAccountId?: string | null; limit?: number }) => ({
-      companyId: assertUuid(input.companyId),
-      bankAccountId: input.bankAccountId ? assertUuid(input.bankAccountId) : null,
-      limit: Math.min(500, Math.max(1, Math.round(Number(input.limit ?? 200)) || 200)),
-    }),
-  )
+  .validator((input: { companyId: string; bankAccountId?: string | null; limit?: number }) => ({
+    companyId: assertUuid(input.companyId),
+    bankAccountId: input.bankAccountId ? assertUuid(input.bankAccountId) : null,
+    limit: Math.min(500, Math.max(1, Math.round(Number(input.limit ?? 200)) || 200)),
+  }))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as AnyClient;
     await assertCompanyPermission(supabase, data.companyId, "banking.categorise");
@@ -339,7 +337,7 @@ export const previewRuleSuggestions = createServerFn({ method: "GET" })
 /** User-confirmed application of rule suggestions (single or bulk). Each line is re-checked against its rule. */
 export const applyRuleSuggestions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; items: Array<{ bankTransactionId: string; ruleId: string }> }) => {
       const items = (input.items ?? []).slice(0, 100).map((i) => ({
         bankTransactionId: assertUuid(i.bankTransactionId),

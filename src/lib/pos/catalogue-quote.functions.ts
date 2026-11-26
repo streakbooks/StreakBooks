@@ -14,7 +14,7 @@ import {
 /** Read-only catalogue preview; never posts, accepts a payment or claims stock availability. */
 export const previewPosCatalogueCart = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: PosQuoteInput) => parsePosQuote(input))
+  .validator((input: PosQuoteInput) => parsePosQuote(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "pos.view");
     const { data: company, error: companyError } = await context.supabase
@@ -46,7 +46,7 @@ export const previewPosCatalogueCart = createServerFn({ method: "POST" })
 /** Bounded, tenant-scoped lookup without exposing purchase costs to a cashier. */
 export const searchPosCatalogue = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; q?: string }) => ({
+  .validator((input: { companyId: string; q?: string }) => ({
     companyId: assertUuid(input?.companyId),
     q: typeof input.q === "string" ? input.q.trim().slice(0, 100) : "",
   }))

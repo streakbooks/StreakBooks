@@ -17,7 +17,7 @@ export const getAutomationContext = createServerFn({ method: "GET" })
   );
 export const readAutomation = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => automationReadSchema.parse(v))
+  .validator((v: unknown) => automationReadSchema.parse(v))
   .handler(async ({ context, data }) =>
     unwrap<{ rows: AutomationRow[]; total: number }>(
       await context.supabase.rpc("platform_automation_read", {
@@ -31,7 +31,7 @@ export const readAutomation = createServerFn({ method: "GET" })
   );
 export const actAutomation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => automationActionSchema.parse(v))
+  .validator((v: unknown) => automationActionSchema.parse(v))
   .handler(async ({ context, data }) =>
     unwrap<{ id: string; record: AutomationRow }>(
       await context.supabase.rpc("platform_automation_action", {

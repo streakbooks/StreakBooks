@@ -238,7 +238,7 @@ function mapEmployeeDetail(raw: unknown): HrEmployeeDetail {
 
 export const getHrSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await requireHrPermission(context.supabase, data.companyId, "hr.view");
     const raw = await callRpc(
@@ -252,7 +252,7 @@ export const getHrSettings = createServerFn({ method: "GET" })
 
 export const upsertHrSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       enabled: boolean;
@@ -292,7 +292,7 @@ export const upsertHrSettings = createServerFn({ method: "POST" })
 
 export const getHrDashboardKpis = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await requireHrPermission(context.supabase, data.companyId, "hr.view");
     const raw = await callRpc(
@@ -306,7 +306,7 @@ export const getHrDashboardKpis = createServerFn({ method: "GET" })
 
 export const listHrEmployees = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       status?: string;
@@ -351,7 +351,7 @@ export const listHrEmployees = createServerFn({ method: "GET" })
 
 export const getHrEmployee = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; employeeId: string }) => ({
+  .validator((input: { companyId: string; employeeId: string }) => ({
     companyId: companyIdOf(input),
     employeeId: input.employeeId,
   }))
@@ -368,7 +368,7 @@ export const getHrEmployee = createServerFn({ method: "GET" })
 
 export const upsertHrEmployeeProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; employeeId: string; payload: Record<string, unknown> }) => ({
       companyId: companyIdOf(input),
       employeeId: input.employeeId,
@@ -392,7 +392,7 @@ export const upsertHrEmployeeProfile = createServerFn({ method: "POST" })
 
 export const listHrOrgUnits = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<HrOrgUnits> => {
     await requireHrPermission(context.supabase, data.companyId, "hr.view");
     const raw = await callRpc(
@@ -406,7 +406,7 @@ export const listHrOrgUnits = createServerFn({ method: "GET" })
 
 export const upsertHrOrgUnit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       kind: "location" | "branch" | "department" | "designation";
@@ -451,7 +451,7 @@ export const upsertHrOrgUnit = createServerFn({ method: "POST" })
 
 export const listHrAuditEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; limit?: number; offset?: number }) => ({
+  .validator((input: { companyId: string; limit?: number; offset?: number }) => ({
     companyId: companyIdOf(input),
     limit: Number(input.limit ?? 100),
     offset: Number(input.offset ?? 0),
@@ -487,7 +487,7 @@ export const listHrAuditEvents = createServerFn({ method: "GET" })
 /** Demo-only: re-seed HR org/profiles from payroll employees (server still enforces is_demo). */
 export const seedHrDemoWorkforce = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await requireHrPermission(context.supabase, data.companyId, "hr.settings.edit");
     const raw = await callRpc(

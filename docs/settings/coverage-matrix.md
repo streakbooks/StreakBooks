@@ -31,7 +31,7 @@ This table is synchronized with `MODULE_SETTINGS_COVERAGE`, which is checked aga
 | Contacts            | Numbering, terms, groups and tags                            | **PARTIAL**                                                |
 | Products & Services | Items, stock, valuation and price defaults                   | **PARTIAL**                                                |
 | Files               | Retention, access and upload policy                          | **PARTIAL**                                                |
-| Accounting          | Periods, close policy, journals and dimensions               | **PARTIAL** (lock dates are implemented)                   |
+| Accounting          | Periods, close policy, journals and dimensions               | **PARTIAL** (lock dates and reporting basis are implemented; unenforced warnings stay read-only) |
 | Budgets             | Budget periods, dimensions and alerts                        | **PARTIAL**                                                |
 | Projects            | Project, time and allocation defaults                        | **PARTIAL**                                                |
 | Fixed assets        | Asset classes, depreciation and disposal defaults            | **PARTIAL**                                                |
@@ -57,7 +57,7 @@ This table is synchronized with `MODULE_SETTINGS_COVERAGE`, which is checked aga
 
 ## Known gaps
 
-The machine-readable `SETTINGS_GAPS` entries track: company identity/locale audit and consumer evidence; incomplete sales and purchase typed settings; central banking settings not proven to drive every module control; MFA/idle timeout preferences without end-to-end auth enforcement evidence; provider connection delivery evidence; and personal preferences split between the profile and workspace surfaces.
+The machine-readable `SETTINGS_GAPS` entries track: company identity/locale consumer evidence; unenforced accounting warning and auto-credit settings; incomplete sales and purchase typed settings; central banking settings not proven to drive every module control; MFA/idle timeout preferences without end-to-end auth enforcement evidence; provider connection delivery evidence; and personal preferences split between the profile and workspace surfaces.
 
 Further gaps recorded in `docs/settings/audit.md` include inventory valuation source-of-truth, tax/regional limitations, fixed-asset and time workflows, approval coverage, exports/retention, module-level settings ownership, full screen-reader and mobile verification, and legacy route compatibility. Promote a row only with a behavior-changing test and evidence for all fields in the capability contract.
 

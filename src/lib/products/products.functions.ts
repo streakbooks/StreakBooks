@@ -32,7 +32,7 @@ function productWriteError(error: { code?: string | null; message: string }): st
 
 export const listProducts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       q?: string;
@@ -137,7 +137,7 @@ const PRODUCT_COLUMNS =
 /** Count and page are calculated on the server with identical filters and a stable sort. */
 export const listProductsPage = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: CatalogueFilters & { page?: number; pageSize?: number }) => {
+  .validator((input: CatalogueFilters & { page?: number; pageSize?: number }) => {
     const page = input.page ?? 1;
     const pageSize = input.pageSize ?? 50;
     if (!Number.isInteger(page) || page < 1 || page > 10000) throw new Error("Invalid page");
@@ -174,7 +174,7 @@ export const listProductsPage = createServerFn({ method: "GET" })
  */
 export const exportProductsCsv = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: CatalogueFilters) => parseCatalogueFilters(input))
+  .validator((input: CatalogueFilters) => parseCatalogueFilters(input))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: company, error: companyError } = await context.supabase
@@ -246,7 +246,7 @@ export const exportProductsCsv = createServerFn({ method: "GET" })
 
 export const getProduct = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; productId: string }) => ({
+  .validator((input: { companyId: string; productId: string }) => ({
     companyId: assertUuid(input.companyId),
     productId: assertUuid(input.productId),
   }))
@@ -265,7 +265,7 @@ export const getProduct = createServerFn({ method: "GET" })
 
 export const upsertProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -420,7 +420,7 @@ export const upsertProduct = createServerFn({ method: "POST" })
 
 export const archiveProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; productId: string; restore?: boolean }) => ({
+  .validator((input: { companyId: string; productId: string; restore?: boolean }) => ({
     companyId: assertUuid(input.companyId),
     productId: assertUuid(input.productId),
     restore: Boolean(input.restore),
@@ -446,7 +446,7 @@ export const archiveProduct = createServerFn({ method: "POST" })
  */
 export const setProductsActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; productIds: string[]; isActive: boolean }) => {
+  .validator((input: { companyId: string; productIds: string[]; isActive: boolean }) => {
     if (
       !Array.isArray(input.productIds) ||
       input.productIds.length < 1 ||
@@ -494,7 +494,7 @@ export const setProductsActive = createServerFn({ method: "POST" })
  */
 export const setProductPrices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       productIds: string[];

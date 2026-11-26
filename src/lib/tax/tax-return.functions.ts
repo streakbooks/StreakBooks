@@ -130,7 +130,7 @@ function pickSummary(raw: unknown): Partial<ReturnSummary> {
 /** Calculates a return for a period without saving anything. */
 export const previewTaxReturn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(periodInput)
+  .validator(periodInput)
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const r = await computeReturn(context.supabase as unknown as Sb, data);
@@ -228,7 +228,7 @@ async function calculateGlReview(sb: Sb, params: ReviewPeriod) {
 /** Read-only, permissioned comparison with bounded journal evidence. */
 export const getTaxGlComparison = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(periodInput)
+  .validator(periodInput)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     return calculateGlReview(context.supabase as unknown as Sb, data);
@@ -252,7 +252,7 @@ function taxGlReviewScope(input: TaxGlReviewScope): TaxGlReviewScope {
 /** Review state and immutable change history; never creates GL postings. */
 export const getTaxGlReview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(taxGlReviewScope)
+  .validator(taxGlReviewScope)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: row, error } = await context.supabase
@@ -322,7 +322,7 @@ export const getTaxGlReview = createServerFn({ method: "GET" })
 /** Optimistic version + server-recalculated snapshot protect reviewer decisions. */
 export const saveTaxGlReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (
       input: TaxGlReviewScope & {
         status: TaxGlReviewStatus;
@@ -429,7 +429,7 @@ export const saveTaxGlReview = createServerFn({ method: "POST" })
 /** Where the "new return" form should start, from the filing frequency and the last filed return. */
 export const getReturnDefaults = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const settings = await taxSettings(context.supabase as unknown as Sb, data.companyId);
@@ -478,7 +478,7 @@ export type TaxReturnListItem = {
 
 export const listTaxReturns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(
     async ({ data, context }): Promise<{ available: boolean; returns: TaxReturnListItem[] }> => {
       await assertCompanyMember(context.supabase, data.companyId);
@@ -509,7 +509,7 @@ export const listTaxReturns = createServerFn({ method: "GET" })
 /** Calculates the period again on the server and stores it as the draft for that period. */
 export const saveTaxReturnDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(periodInput)
+  .validator(periodInput)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "tax.settings");
     const r = await computeReturn(context.supabase as unknown as Sb, data);
@@ -554,7 +554,7 @@ export type TaxReturnDetail = {
 
 export const getTaxReturn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; returnId: string }) => ({
+  .validator((input: { companyId: string; returnId: string }) => ({
     companyId: assertUuid(input?.companyId),
     returnId: assertUuid(input?.returnId, "return"),
   }))
@@ -633,7 +633,7 @@ export const getTaxReturn = createServerFn({ method: "GET" })
 /** Freezes a draft. Requires explicit confirmation. Does not post any journal. */
 export const fileTaxReturn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; returnId: string; confirm: boolean }) => {
+  .validator((input: { companyId: string; returnId: string; confirm: boolean }) => {
     if (input?.confirm !== true) throw new Error("Filing a return needs explicit confirmation.");
     return {
       companyId: assertUuid(input.companyId),
@@ -654,7 +654,7 @@ export const fileTaxReturn = createServerFn({ method: "POST" })
 
 export const deleteDraftTaxReturn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; returnId: string }) => ({
+  .validator((input: { companyId: string; returnId: string }) => ({
     companyId: assertUuid(input?.companyId),
     returnId: assertUuid(input?.returnId, "return"),
   }))
@@ -676,7 +676,7 @@ export const deleteDraftTaxReturn = createServerFn({ method: "POST" })
  */
 export const postTaxReturnSettlement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       returnId: string;

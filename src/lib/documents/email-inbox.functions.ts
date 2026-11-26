@@ -66,7 +66,7 @@ async function requireEnabledInbox(
 
 export const getDocumentInbox = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const settings = await loadInbox(context.supabase, data.companyId);
@@ -83,7 +83,7 @@ export const getDocumentInbox = createServerFn({ method: "GET" })
 
 export const createDocumentInbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertEntityAccess(context.supabase, data.companyId, "company", "manage");
     requireProvider();
@@ -99,7 +99,7 @@ export const createDocumentInbox = createServerFn({ method: "POST" })
 
 export const setDocumentInboxEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; enabled: boolean }) => ({
+  .validator((input: { companyId: string; enabled: boolean }) => ({
     companyId: assertUuid(input.companyId),
     enabled: input.enabled === true,
   }))
@@ -118,7 +118,7 @@ export const setDocumentInboxEnabled = createServerFn({ method: "POST" })
 
 export const listDocumentInboxMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; after?: string }) => ({
+  .validator((input: { companyId: string; after?: string }) => ({
     companyId: assertUuid(input.companyId),
     after: input.after ? assertUuid(input.after, "cursor") : undefined,
   }))
@@ -157,7 +157,7 @@ async function verifyEmailRecipient(
 
 export const getDocumentInboxAttachments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; emailId: string }) => ({
+  .validator((input: { companyId: string; emailId: string }) => ({
     companyId: assertUuid(input.companyId),
     emailId: assertUuid(input.emailId, "email"),
   }))
@@ -190,7 +190,7 @@ export const getDocumentInboxAttachments = createServerFn({ method: "GET" })
 
 export const importDocumentInboxAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; emailId: string; attachmentId: string }) => {
+  .validator((input: { companyId: string; emailId: string; attachmentId: string }) => {
     const attachmentId = String(input.attachmentId ?? "");
     if (!/^[a-zA-Z0-9_-]{1,128}$/.test(attachmentId))
       throw new Error("Invalid email attachment identifier.");

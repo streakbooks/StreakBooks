@@ -41,7 +41,7 @@ export type FirmInvitationPreview = {
 
 export const listFirmStaffInvitations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value: unknown) => firmInput.parse(value))
+  .validator((value: unknown) => firmInput.parse(value))
   .handler(async ({ data, context }): Promise<FirmStaffInvitation[]> => {
     const { data: rows, error } = await context.supabase.rpc(
       "firm_invite_list" as never,
@@ -53,7 +53,7 @@ export const listFirmStaffInvitations = createServerFn({ method: "GET" })
 
 export const createFirmStaffInvitation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value: unknown) => createInput.parse(value))
+  .validator((value: unknown) => createInput.parse(value))
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     const { data: issued, error } = await sb.rpc(
@@ -132,7 +132,7 @@ export const createFirmStaffInvitation = createServerFn({ method: "POST" })
 
 export const previewFirmStaffInvitation = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value: unknown) => tokenInput.parse(value))
+  .validator((value: unknown) => tokenInput.parse(value))
   .handler(async ({ data, context }): Promise<FirmInvitationPreview | null> => {
     const { data: preview, error } = await context.supabase.rpc(
       "firm_invite_preview" as never,
@@ -144,7 +144,7 @@ export const previewFirmStaffInvitation = createServerFn({ method: "GET" })
 
 export const acceptFirmStaffInvitation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value: unknown) => tokenInput.parse(value))
+  .validator((value: unknown) => tokenInput.parse(value))
   .handler(async ({ data, context }): Promise<{ firmId: string; role: string }> => {
     const { data: accepted, error } = await context.supabase.rpc(
       "firm_invite_accept" as never,
@@ -156,7 +156,7 @@ export const acceptFirmStaffInvitation = createServerFn({ method: "POST" })
 
 export const revokeFirmStaffInvitation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value: unknown) => revokeInput.parse(value))
+  .validator((value: unknown) => revokeInput.parse(value))
   .handler(async ({ data, context }) => {
     const { data: revoked, error } = await context.supabase.rpc(
       "firm_invite_revoke" as never,

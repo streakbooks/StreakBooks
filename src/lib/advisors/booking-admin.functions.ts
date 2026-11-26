@@ -136,7 +136,7 @@ export const getAdvisorsBookingAdmin = createServerFn({ method: "GET" })
 
 export const saveAdvisorsBookingSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         payload: z.object({
@@ -168,7 +168,7 @@ export const saveAdvisorsBookingSettings = createServerFn({ method: "POST" })
 
 export const addAdvisorsAvailabilityException = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         kind: z.enum(["holiday", "unavailable", "break"]),
@@ -196,7 +196,7 @@ export const addAdvisorsAvailabilityException = createServerFn({ method: "POST" 
 
 export const setAdvisorsAppointmentStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         appointmentId: z.string().uuid(),

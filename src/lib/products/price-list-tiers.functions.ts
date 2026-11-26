@@ -13,7 +13,7 @@ export type ManagedPriceRule = DraftTierPriceRule & {
 /** Full rule list for a managed price list (never a misleading partial list). */
 export const listManagedPriceRules = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; priceListId: string }) => ({
+  .validator((input: { companyId: string; priceListId: string }) => ({
     companyId: assertUuid(input.companyId),
     priceListId: assertUuid(input.priceListId),
   }))
@@ -82,7 +82,7 @@ export const listManagedPriceRules = createServerFn({ method: "GET" })
 
 export const saveManagedPriceRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       priceListId: string;
@@ -176,7 +176,7 @@ export const saveManagedPriceRule = createServerFn({ method: "POST" })
 
 export const deleteManagedPriceRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; priceListId: string; ruleId: string }) => ({
+  .validator((input: { companyId: string; priceListId: string; ruleId: string }) => ({
     companyId: assertUuid(input.companyId),
     priceListId: assertUuid(input.priceListId),
     ruleId: assertUuid(input.ruleId),

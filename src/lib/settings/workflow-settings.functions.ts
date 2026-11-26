@@ -38,7 +38,7 @@ const defaults: Omit<WorkflowSettings, "company_id"> = {
 
 export const getWorkflowSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }): Promise<WorkflowSettings> => {
@@ -57,7 +57,7 @@ export const getWorkflowSettings = createServerFn({ method: "GET" })
 
 export const upsertWorkflowSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       salesDefaultPaymentTermsDays?: number;

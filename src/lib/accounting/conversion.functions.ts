@@ -52,7 +52,7 @@ export type ConversionOverview = {
 
 export const getConversionOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(async ({ data, context }): Promise<ConversionOverview> => {
@@ -116,7 +116,7 @@ export type ConversionContact = { id: string; name: string; kind: string };
 
 export const getConversionSetup = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(
@@ -157,7 +157,7 @@ type PostPayload = Record<string, unknown> & { company_id: string };
 
 export const postConversionBalances = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { payload: PostPayload }) => {
+  .validator((input: { payload: PostPayload }) => {
     if (!input?.payload || typeof input.payload !== "object") throw new Error("Missing payload");
     return {
       payload: { ...input.payload, company_id: assertUuid(input.payload.company_id) },
@@ -188,7 +188,7 @@ export const postConversionBalances = createServerFn({ method: "POST" })
 
 export const reverseConversionBalances = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; reason: string }) => {
+  .validator((input: { companyId: string; reason: string }) => {
     const reason = String(input?.reason ?? "").trim();
     if (!reason) throw new Error("A reason is required");
     return { companyId: assertUuid(input?.companyId), reason };

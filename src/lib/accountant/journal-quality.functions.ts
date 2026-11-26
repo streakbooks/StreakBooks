@@ -29,7 +29,7 @@ const queryInput = z
  */
 export const scanManualJournalQuality = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => queryInput.parse(input))
+  .validator((input: unknown) => queryInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: journals, error } = await context.supabase

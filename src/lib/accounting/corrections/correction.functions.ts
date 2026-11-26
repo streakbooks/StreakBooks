@@ -16,7 +16,7 @@ import {
 const company = z.object({ companyId: z.string().uuid() });
 export const getCorrectionSetup = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => company.parse(input))
+  .validator((input: unknown) => company.parse(input))
   .handler(async ({ data, context }) => {
     const { data: setup, error } = await context.supabase.rpc(
       "transaction_correction_setup" as never,
@@ -35,7 +35,7 @@ export const getCorrectionSetup = createServerFn({ method: "GET" })
   });
 export const findCorrectionLines = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => company.extend({ filters: correctionFilter }).parse(input))
+  .validator((input: unknown) => company.extend({ filters: correctionFilter }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase.rpc(
       "find_correction_lines" as never,
@@ -79,7 +79,7 @@ function params(data: z.infer<typeof correctionInput>) {
 }
 export const previewCorrection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => correctionInput.parse(input))
+  .validator((input: unknown) => correctionInput.parse(input))
   .handler(async ({ data, context }) => {
     const { data: plan, error } = await context.supabase.rpc(
       "preview_transaction_correction" as never,
@@ -90,7 +90,7 @@ export const previewCorrection = createServerFn({ method: "POST" })
   });
 export const applyCorrection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => {
+  .validator((input: unknown) => {
     const raw = z
       .object({
         requestKey: z.string().uuid(),
@@ -114,7 +114,7 @@ export const applyCorrection = createServerFn({ method: "POST" })
   });
 export const undoCorrection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     company
       .extend({
         batchId: z.string().uuid(),
@@ -142,7 +142,7 @@ export const undoCorrection = createServerFn({ method: "POST" })
  */
 export const getCorrectionUndoSnapshot = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => company.extend({ batchId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => company.extend({ batchId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<CorrectionUndoSnapshot> => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: batch, error } = await context.supabase
@@ -158,7 +158,7 @@ export const getCorrectionUndoSnapshot = createServerFn({ method: "GET" })
 
 export const listCorrectionHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     company.extend({ page: z.number().int().min(0).max(100000).default(0) }).parse(input),
   )
   .handler(async ({ data, context }) => {

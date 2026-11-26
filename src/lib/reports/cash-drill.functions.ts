@@ -10,7 +10,7 @@ import { isReportDate } from "./date-validation";
 
 export const getCashProfitLossTransactions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         companyId: z.string().uuid(),

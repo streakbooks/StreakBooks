@@ -67,7 +67,7 @@ export const getPaymentSettings = createServerFn({ method: "GET" })
 
 export const setProviderRoute = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => routeInput.parse(input))
+  .validator((input: unknown) => routeInput.parse(input))
   .handler(async ({ data, context }) => {
     await callRpc(context.supabase, "platform_set_provider_route", {
       _country: data.country,
@@ -81,7 +81,7 @@ export const setProviderRoute = createServerFn({ method: "POST" })
 
 export const setCountryBilling = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => countryInput.parse(input))
+  .validator((input: unknown) => countryInput.parse(input))
   .handler(async ({ data, context }) => {
     await callRpc(context.supabase, "platform_set_country_billing", {
       _country: data.country,
@@ -93,7 +93,7 @@ export const setCountryBilling = createServerFn({ method: "POST" })
 
 export const requeueWebhookEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => requeueInput.parse(input))
+  .validator((input: unknown) => requeueInput.parse(input))
   .handler(async ({ data, context }) => {
     await callRpc(context.supabase, "platform_requeue_webhook_event", {
       _id: data.id,

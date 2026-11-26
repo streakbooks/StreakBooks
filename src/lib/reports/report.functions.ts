@@ -155,7 +155,7 @@ function serialiseStatement(lines: StatementLine[]) {
 
 export const getTrialBalance = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       from?: string;
@@ -254,7 +254,7 @@ export function plColumns(mode: ColumnMode, from: string, to: string): DateColum
 
 export const getProfitAndLoss = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       from: string;
@@ -306,7 +306,7 @@ export const getProfitAndLoss = createServerFn({ method: "GET" })
 
 export const getBalanceSheet = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       asOf: string;
@@ -367,7 +367,7 @@ export const getBalanceSheet = createServerFn({ method: "GET" })
 
 export const getEquityChanges = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       from: string;
@@ -444,7 +444,7 @@ export const getEquityChanges = createServerFn({ method: "GET" })
 
 export const getAccountTransactions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       accountId: string;
@@ -694,7 +694,7 @@ export const getAccountTransactions = createServerFn({ method: "GET" })
 
 export const getGeneralLedgerAll = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       from: string;
@@ -871,7 +871,7 @@ export async function controlBalance(
 
 export const getAgedReceivables = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; asOf: string }) => ({
+  .validator((input: { companyId: string; asOf: string }) => ({
     companyId: companyId(input),
     asOf: isoDate(input.asOf, "As at"),
   }))
@@ -944,7 +944,7 @@ export const getAgedReceivables = createServerFn({ method: "GET" })
 
 export const getAgedPayables = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; asOf: string }) => ({
+  .validator((input: { companyId: string; asOf: string }) => ({
     companyId: companyId(input),
     asOf: isoDate(input.asOf, "As at"),
   }))
@@ -1057,7 +1057,7 @@ const JOURNAL_ID_CHUNK = 120;
 
 export const getCashFlow = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       from: string;
@@ -1156,7 +1156,7 @@ export const getCashFlow = createServerFn({ method: "GET" })
 
 export const getTaxReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from: string; to: string; basis?: string }) => ({
+  .validator((input: { companyId: string; from: string; to: string; basis?: string }) => ({
     companyId: companyId(input),
     from: isoDate(input.from, "From"),
     to: isoDate(input.to, "To"),
@@ -1286,7 +1286,7 @@ export const getTaxReport = createServerFn({ method: "GET" })
 
 export const getJournalReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       from?: string;
@@ -1374,7 +1374,7 @@ export const getJournalReport = createServerFn({ method: "GET" })
 
 export const getAuditReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       from?: string;
@@ -1465,7 +1465,7 @@ export const getAuditReport = createServerFn({ method: "GET" })
 /** Distinct actors / entity types for the audit filters (small lists). */
 export const getAuditFilterOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyId(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyId(input) }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "audit.view");
     const { data: members } = await context.supabase

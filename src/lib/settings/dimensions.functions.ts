@@ -30,7 +30,7 @@ async function audit(
 
 export const listTrackingDimensions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; includeInactive?: boolean }) => ({
+  .validator((input: { companyId: string; includeInactive?: boolean }) => ({
     companyId: assertUuid(input.companyId),
     includeInactive: Boolean(input.includeInactive),
   }))
@@ -69,7 +69,7 @@ export const listTrackingDimensions = createServerFn({ method: "GET" })
 
 export const upsertTrackingCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -157,7 +157,7 @@ export const upsertTrackingCategory = createServerFn({ method: "POST" })
 
 export const upsertTrackingOption = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       categoryId: string;
@@ -272,7 +272,7 @@ export const upsertTrackingOption = createServerFn({ method: "POST" })
 
 export const setDocumentTracking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       entityType: string;
@@ -342,7 +342,7 @@ export const setDocumentTracking = createServerFn({ method: "POST" })
 
 export const getDocumentTracking = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; entityType: string; entityId: string }) => ({
+  .validator((input: { companyId: string; entityType: string; entityId: string }) => ({
     companyId: assertUuid(input.companyId),
     entityType: (input.entityType ?? "").trim(),
     entityId: assertUuid(input.entityId),
@@ -364,7 +364,7 @@ export const getDocumentTracking = createServerFn({ method: "GET" })
 /** P&L by dimension option — income/expense from posted journals filtered via document assignments on invoices/bills. */
 export const reportPnLByDimension = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; categoryId: string; fromDate: string; toDate: string }) => ({
       companyId: assertUuid(input.companyId),
       categoryId: assertUuid(input.categoryId),
@@ -489,7 +489,7 @@ export const reportPnLByDimension = createServerFn({ method: "GET" })
 
 export const exportDimensionsCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {

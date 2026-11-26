@@ -18,7 +18,7 @@ export type FirmPracticePulse = {
 /** Portfolio metrics are permission-scoped, not claims about all practice clients. */
 export const getFirmPracticePulse = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
+  .validator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
   .handler(async ({ data, context }): Promise<FirmPracticePulse> => {
     const sb = context.supabase;
     const { data: member, error: membershipError } = await sb

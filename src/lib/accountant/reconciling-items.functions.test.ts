@@ -7,7 +7,7 @@ vi.mock("@tanstack/react-start", () => ({
       middleware() {
         return this;
       },
-      inputValidator(fn: (input: unknown) => unknown) {
+      validator(fn: (input: unknown) => unknown) {
         validate = fn;
         return this;
       },

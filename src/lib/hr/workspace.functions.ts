@@ -148,7 +148,7 @@ function mapApproval(raw: unknown): HrApprovalItem {
 
 export const getHrSelfContext = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: companyIdOf(input),
   }))
   .handler(async ({ data, context }) => {
@@ -164,7 +164,7 @@ export const getHrSelfContext = createServerFn({ method: "GET" })
 
 export const updateHrSelfProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -195,7 +195,7 @@ export const updateHrSelfProfile = createServerFn({ method: "POST" })
 
 export const listHrSelfLeaveRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: companyIdOf(input),
   }))
   .handler(async ({ data, context }) => {
@@ -216,7 +216,7 @@ export const listHrSelfLeaveRequests = createServerFn({ method: "GET" })
 
 export const createHrSelfLeaveRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -250,7 +250,7 @@ export const createHrSelfLeaveRequest = createServerFn({ method: "POST" })
 
 export const listHrSelfAttendance = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: companyIdOf(input),
   }))
   .handler(async ({ data, context }) => {
@@ -271,7 +271,7 @@ export const listHrSelfAttendance = createServerFn({ method: "GET" })
 
 export const clockHrSelfAttendance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       action: "check_in" | "check_out";
@@ -309,7 +309,7 @@ export const clockHrSelfAttendance = createServerFn({ method: "POST" })
 
 export const listHrManagerTeam = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: companyIdOf(input),
   }))
   .handler(async ({ data, context }) => {
@@ -331,7 +331,7 @@ export const listHrManagerTeam = createServerFn({ method: "GET" })
 
 export const listHrApprovalsInbox = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: companyIdOf(input),
   }))
   .handler(async ({ data, context }) => {
@@ -351,7 +351,7 @@ export const listHrApprovalsInbox = createServerFn({ method: "GET" })
 
 export const linkHrEmployeeUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; employeeId: string; userId: string | null }) => ({
+  .validator((input: { companyId: string; employeeId: string; userId: string | null }) => ({
     companyId: companyIdOf(input),
     employeeId: input.employeeId,
     userId: input.userId,

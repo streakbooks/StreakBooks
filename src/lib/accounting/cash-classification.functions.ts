@@ -88,7 +88,7 @@ const companyInput = (input: { companyId: string }) => ({
 /** Read-only: generating a report never creates or approves classifications. */
 export const listCashClassifications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyInput)
+  .validator(companyInput)
   .handler(async ({ data, context }) => {
     await assertCashClassificationView(context.supabase, data.companyId);
     const read = <T>(table: string, columns: string) =>
@@ -124,7 +124,7 @@ export const listCashClassifications = createServerFn({ method: "GET" })
 
 export const approveCashPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: CashPolicyInput) => cashPolicyInput.parse(input))
+  .validator((input: CashPolicyInput) => cashPolicyInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.post");
     return workflowRpc<string>(context.supabase, "approve_cash_classification_policy", {
@@ -134,7 +134,7 @@ export const approveCashPolicy = createServerFn({ method: "POST" })
   });
 export const approveCashOpening = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: CashOpeningInput) => cashOpeningInput.parse(input))
+  .validator((input: CashOpeningInput) => cashOpeningInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.post");
     return workflowRpc<string>(context.supabase, "approve_cash_opening_evidence", {
@@ -144,7 +144,7 @@ export const approveCashOpening = createServerFn({ method: "POST" })
   });
 export const approveCashInventory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: CashInventoryInput) => cashInventoryInput.parse(input))
+  .validator((input: CashInventoryInput) => cashInventoryInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.post");
     if (
@@ -161,7 +161,7 @@ export const approveCashInventory = createServerFn({ method: "POST" })
   });
 export const recordCashClassificationException = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: CashExceptionInput) => cashExceptionInput.parse(input))
+  .validator((input: CashExceptionInput) => cashExceptionInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertCashClassificationView(context.supabase, data.companyId);
     const e = data.exception;
@@ -196,7 +196,7 @@ export const recordCashClassificationException = createServerFn({ method: "POST"
   });
 export const resolveCashClassificationException = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: CashResolveInput) => cashResolveInput.parse(input))
+  .validator((input: CashResolveInput) => cashResolveInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.post");
     return workflowRpc<string>(context.supabase, "resolve_cash_classification_exception", {
@@ -238,7 +238,7 @@ const sourceInput = z.object({
 /** Uses the document's authoritative journal link; never guesses using a reference or account name. */
 export const listCashClassificationDocuments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: z.input<typeof sourceInput>) => sourceInput.parse(input))
+  .validator((input: z.input<typeof sourceInput>) => sourceInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertCashClassificationView(context.supabase, data.companyId);
     const sale = data.sourceKind === "sales_invoice";
@@ -282,7 +282,7 @@ export const listCashClassificationDocuments = createServerFn({ method: "GET" })
 
 export const getCashInventoryTrace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from: string; to: string }) =>
+  .validator((input: { companyId: string; from: string; to: string }) =>
     z
       .object({
         companyId: z.string().uuid(),

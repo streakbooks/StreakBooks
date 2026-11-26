@@ -36,7 +36,7 @@ function parseTreatment(v: unknown): "inclusive" | "exclusive" {
 /** Everything the coding panel needs: postable non-control accounts, tax codes with rates, contacts. */
 export const listCodingOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as AnyClient;
     await assertCompanyMember(supabase, data.companyId);
@@ -118,7 +118,7 @@ export const listCodingOptions = createServerFn({ method: "GET" })
  */
 export const codeBankTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       bankTransactionId: string;
@@ -160,7 +160,7 @@ export const codeBankTransaction = createServerFn({ method: "POST" })
  */
 export const bulkCodeByFilter = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       bankAccountId?: string | null;

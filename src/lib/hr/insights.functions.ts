@@ -46,7 +46,7 @@ async function requireHr(
 
 export const runHrReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       reportId: string;
@@ -96,7 +96,7 @@ export const runHrReport = createServerFn({ method: "GET" })
 
 export const exportHrEmployeeDirectory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.view");
     const raw = await callRpc(
@@ -132,7 +132,7 @@ export const exportHrEmployeeDirectory = createServerFn({ method: "GET" })
 
 export const previewHrEmployeeImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; rows: Array<Record<string, string | null>> }) => ({
+  .validator((input: { companyId: string; rows: Array<Record<string, string | null>> }) => ({
     companyId: companyIdOf(input),
     rows: input.rows,
   }))
@@ -167,7 +167,7 @@ export const previewHrEmployeeImport = createServerFn({ method: "POST" })
 
 export const listHrAutomationRules = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.settings.edit");
     const raw = await callRpc(
@@ -215,7 +215,7 @@ export const listHrAutomationRules = createServerFn({ method: "GET" })
 
 export const upsertHrAutomationRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -250,7 +250,7 @@ export const upsertHrAutomationRule = createServerFn({ method: "POST" })
 
 export const runHrAutomations = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; ruleId?: string | null }) => ({
+  .validator((input: { companyId: string; ruleId?: string | null }) => ({
     companyId: companyIdOf(input),
     ruleId: input.ruleId?.trim() || null,
   }))

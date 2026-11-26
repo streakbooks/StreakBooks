@@ -48,7 +48,7 @@ export type FirmClientProfileInput = z.infer<typeof schema>;
 
 export const listFirmClientProfiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
+  .validator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
   .handler(async ({ data, context }): Promise<FirmClientProfile[]> => {
     const { data: membership, error: memberError } = await context.supabase
       .from("firm_members" as never)
@@ -79,7 +79,7 @@ export const listFirmClientProfiles = createServerFn({ method: "GET" })
 
 export const saveFirmClientProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => schema.parse(input))
+  .validator((input: unknown) => schema.parse(input))
   .handler(async ({ data, context }): Promise<FirmClientProfile> => {
     const { data: membership, error: memberError } = await context.supabase
       .from("firm_members" as never)
@@ -171,7 +171,7 @@ export type FirmClientBulkInput = z.infer<typeof bulkSchema>;
 
 export const bulkUpdateFirmClientProfiles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => bulkSchema.parse(input))
+  .validator((input: unknown) => bulkSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc(
       "bulk_update_firm_client_profiles" as never,
@@ -214,7 +214,7 @@ export type FirmBulkTagsInput = z.infer<typeof tagSchema>;
 
 export const bulkUpdateFirmClientTags = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => tagSchema.parse(input))
+  .validator((input: unknown) => tagSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc(
       "bulk_update_firm_client_tags" as never,
@@ -252,7 +252,7 @@ export type FirmClientProfileAudit = {
 
 export const listFirmClientProfileAudit = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
+  .validator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
   .handler(async ({ data, context }): Promise<FirmClientProfileAudit[]> => {
     const { data: member, error: memberError } = await context.supabase
       .from("firm_members" as never)

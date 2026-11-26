@@ -16,7 +16,7 @@ import {
  */
 export const getAiJournalExplanation = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; journalId: string }) => ({
+  .validator((input: { companyId: string; journalId: string }) => ({
     companyId: assertUuid(input.companyId),
     journalId: assertUuid(input.journalId, "journal"),
   }))

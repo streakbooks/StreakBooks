@@ -21,7 +21,7 @@ const ACTIONS: readonly ReconciliationReviewAction[] = [
  */
 export const listReconciliationReviewHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; caseId: string }) => ({
+  .validator((input: { companyId: string; caseId: string }) => ({
     companyId: assertUuid(input?.companyId),
     caseId: assertUuid(input?.caseId, "review case"),
   }))
@@ -81,7 +81,7 @@ export type ProgressReconciliationReviewInput = {
  */
 export const progressReconciliationReviewCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: ProgressReconciliationReviewInput) => {
+  .validator((input: ProgressReconciliationReviewInput) => {
     if (!ACTIONS.includes(input?.action)) throw new Error("Invalid review progression action.");
     if (!Number.isSafeInteger(input?.expectedVersion) || input.expectedVersion < 1) {
       throw new Error("Current positive review version required.");

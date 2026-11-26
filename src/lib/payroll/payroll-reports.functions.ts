@@ -421,7 +421,7 @@ async function buildReportFacts(
 
 export const getPayrollReportsCatalog = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: companyIdOf(input),
   }))
   .handler(async ({ data, context }) => {
@@ -465,7 +465,7 @@ export const getPayrollReportsCatalog = createServerFn({ method: "GET" })
 
 export const runPayrollReportServer = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       reportId: PayrollReportId;

@@ -61,7 +61,7 @@ function rpcClient(db: Db): RpcClient {
 
 export const getPrintableDocument = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; kind: string; id: string }) => {
+  .validator((input: { companyId: string; kind: string; id: string }) => {
     if (!isDocumentKind(input.kind)) throw new Error("Unknown document type");
     return {
       companyId: assertUuid(input.companyId),
@@ -89,7 +89,7 @@ export const getPrintableDocument = createServerFn({ method: "GET" })
 
 export const getDocumentBranding = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; kind?: "customer_statement" }) => ({
+  .validator((input: { companyId: string; kind?: "customer_statement" }) => ({
     companyId: assertUuid(input.companyId),
     kind: input.kind === "customer_statement" ? input.kind : undefined,
   }))
@@ -110,7 +110,7 @@ export const getDocumentBranding = createServerFn({ method: "GET" })
 
 export const getBrandingSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const ctx = await loadCompanyDocContext(context.supabase, data.companyId);
@@ -139,7 +139,7 @@ export const getBrandingSettings = createServerFn({ method: "GET" })
 
 export const saveBrandingSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       tradingName: string;
@@ -243,7 +243,7 @@ async function emailState(isDemo: boolean): Promise<EmailState> {
 /** Delivery panel data for one document: provider status, send history, online link state. */
 export const getDocumentDelivery = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; kind: string; id: string }) => {
+  .validator((input: { companyId: string; kind: string; id: string }) => {
     if (!isDocumentKind(input.kind) && input.kind !== "customer_statement") {
       throw new Error("Unknown document type");
     }
@@ -551,7 +551,7 @@ async function sendOne(db: Db, input: SendInput): Promise<SendEmailResult> {
 
 export const sendDocumentEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       kind: string;
@@ -605,7 +605,7 @@ export const sendDocumentEmail = createServerFn({ method: "POST" })
 
 export const createInvoiceShareLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; invoiceId: string; expiresInDays?: number }) => {
+  .validator((input: { companyId: string; invoiceId: string; expiresInDays?: number }) => {
     const days = input.expiresInDays === undefined ? null : Math.floor(Number(input.expiresInDays));
     if (days !== null && (!Number.isFinite(days) || days < 1 || days > 3650)) {
       throw new Error("Expiry must be between 1 and 3650 days.");
@@ -630,7 +630,7 @@ export const createInvoiceShareLink = createServerFn({ method: "POST" })
 
 export const revokeInvoiceShareLinks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; invoiceId: string }) => ({
+  .validator((input: { companyId: string; invoiceId: string }) => ({
     companyId: assertUuid(input.companyId),
     invoiceId: assertUuid(input.invoiceId, "invoice"),
   }))
@@ -649,7 +649,7 @@ export const revokeInvoiceShareLinks = createServerFn({ method: "POST" })
 
 /** PUBLIC: one invoice by token. No sign-in. Returns null for unknown / revoked / expired. */
 export const getSharedInvoice = createServerFn({ method: "GET" })
-  .inputValidator((input: { token: string }) => {
+  .validator((input: { token: string }) => {
     const token = (input.token ?? "").trim().toLowerCase();
     return { token: /^[0-9a-f]{64}$/.test(token) ? token : null };
   })
@@ -747,7 +747,7 @@ async function loadReminderSettings(db: Db, companyId: string): Promise<Reminder
 
 export const getReminderSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     return loadReminderSettings(context.supabase, data.companyId);
@@ -755,7 +755,7 @@ export const getReminderSettings = createServerFn({ method: "GET" })
 
 export const saveReminderSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string } & Partial<ReminderSettings>) => ({
+  .validator((input: { companyId: string } & Partial<ReminderSettings>) => ({
     companyId: assertUuid(input.companyId),
     settings: normaliseReminderSettings(input),
   }))
@@ -798,7 +798,7 @@ export type ReminderCandidateRow = {
 /** Overdue invoices with a decision on whether the next scheduled reminder is due today. */
 export const listReminderCandidates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "sales.view");
@@ -906,7 +906,7 @@ export const listReminderCandidates = createServerFn({ method: "GET" })
 /** Send the reminder template for the chosen invoices (max 20 per call), one result each. */
 export const sendReminders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; invoiceIds: string[] }) => {
+  .validator((input: { companyId: string; invoiceIds: string[] }) => {
     const ids = [...new Set((input.invoiceIds ?? []).map((i) => assertUuid(i, "invoice")))];
     if (!ids.length) throw new Error("Choose at least one invoice.");
     if (ids.length > 20) throw new Error("Send at most 20 reminders at a time.");

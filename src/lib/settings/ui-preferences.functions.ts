@@ -125,7 +125,7 @@ export const DEFAULT_BILLS_LIST_PREFS: BillsListWorkspacePrefs = {
 
 export const getBillsListPrefs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -156,7 +156,7 @@ export const getBillsListPrefs = createServerFn({ method: "GET" })
 
 export const saveBillsListPrefs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; prefs: Partial<BillsListWorkspacePrefs> }) => ({
+  .validator((input: { companyId: string; prefs: Partial<BillsListWorkspacePrefs> }) => ({
     companyId: assertUuid(input.companyId),
     prefs: input.prefs ?? {},
   }))
@@ -197,7 +197,7 @@ export const saveBillsListPrefs = createServerFn({ method: "POST" })
 
 export const getBillWorkspacePrefs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -226,7 +226,7 @@ export const getBillWorkspacePrefs = createServerFn({ method: "GET" })
 
 export const saveBillWorkspacePrefs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; prefs: Partial<BillWorkspacePrefs> }) => ({
+  .validator((input: { companyId: string; prefs: Partial<BillWorkspacePrefs> }) => ({
     companyId: assertUuid(input.companyId),
     prefs: input.prefs ?? {},
   }))

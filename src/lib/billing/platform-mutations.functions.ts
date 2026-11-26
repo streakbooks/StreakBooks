@@ -6,7 +6,7 @@ import { isBillingCurrency, isPlanCode } from "@/lib/billing/pricing";
 
 export const savePlanVersionDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       planCode: string;
       currency: string;
@@ -34,7 +34,7 @@ export const savePlanVersionDraft = createServerFn({ method: "POST" })
   });
 export const publishPlanVersion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { versionId: string; reason: string; password?: string }) => ({
+  .validator((input: { versionId: string; reason: string; password?: string }) => ({
     versionId: assertUuid(input?.versionId),
     reason: input?.reason ?? "",
   }))
@@ -48,7 +48,7 @@ export const publishPlanVersion = createServerFn({ method: "POST" })
   });
 export const rollbackPlanVersion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { planCode: string; reason: string; password?: string }) => {
+  .validator((input: { planCode: string; reason: string; password?: string }) => {
     if (!isPlanCode(input?.planCode)) throw new Error("Choose a plan.");
     return { planCode: input.planCode, reason: input.reason };
   })

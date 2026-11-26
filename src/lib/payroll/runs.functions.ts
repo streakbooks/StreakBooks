@@ -373,7 +373,7 @@ async function computeAndPersistRun(
 
 export const listPayrollRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string | null }) => ({
+  .validator((input: { companyId: string; status?: string | null }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || null,
   }))
@@ -400,7 +400,7 @@ export const listPayrollRuns = createServerFn({ method: "GET" })
 
 export const getPayrollRunPage = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string }) => ({
+  .validator((input: { companyId: string; runId: string }) => ({
     companyId: companyIdOf(input),
     runId: input.runId,
   }))
@@ -456,7 +456,7 @@ export const getPayrollRunPage = createServerFn({ method: "GET" })
 
 export const createPayrollRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payScheduleId: string;
@@ -492,7 +492,7 @@ export const createPayrollRun = createServerFn({ method: "POST" })
 
 export const calculatePayrollRunFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string }) => ({
+  .validator((input: { companyId: string; runId: string }) => ({
     companyId: companyIdOf(input),
     runId: input.runId,
   }))
@@ -508,7 +508,7 @@ export const calculatePayrollRunFn = createServerFn({ method: "POST" })
 
 export const recalculatePayrollRunFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string }) => ({
+  .validator((input: { companyId: string; runId: string }) => ({
     companyId: companyIdOf(input),
     runId: input.runId,
   }))
@@ -524,7 +524,7 @@ export const recalculatePayrollRunFn = createServerFn({ method: "POST" })
 
 export const markPayrollRunReviewed = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string }) => ({
+  .validator((input: { companyId: string; runId: string }) => ({
     companyId: companyIdOf(input),
     runId: input.runId,
   }))
@@ -541,7 +541,7 @@ export const markPayrollRunReviewed = createServerFn({ method: "POST" })
 
 export const approvePayrollRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string }) => ({
+  .validator((input: { companyId: string; runId: string }) => ({
     companyId: companyIdOf(input),
     runId: input.runId,
   }))
@@ -572,7 +572,7 @@ export const approvePayrollRun = createServerFn({ method: "POST" })
 
 export const adjustPayrollRunEmployee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       runId: string;
@@ -632,7 +632,7 @@ export const adjustPayrollRunEmployee = createServerFn({ method: "POST" })
 
 export const voidPayrollRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string }) => ({
+  .validator((input: { companyId: string; runId: string }) => ({
     companyId: companyIdOf(input),
     runId: input.runId,
   }))
@@ -697,7 +697,7 @@ async function listPayslipsForEmployee(
 
 export const listPayrollPayslips = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       runId?: string | null;
@@ -763,7 +763,7 @@ export const listPayrollPayslips = createServerFn({ method: "GET" })
 
 export const getPayrollPayslipPage = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; payslipId: string }) => ({
+  .validator((input: { companyId: string; payslipId: string }) => ({
     companyId: companyIdOf(input),
     payslipId: input.payslipId,
   }))

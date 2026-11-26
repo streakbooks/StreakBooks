@@ -47,7 +47,7 @@ async function plan(supabase: Sb, companyId: string, fyEnd: string) {
 
 export const previewYearEndClose = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; fyEnd: string }) => {
+  .validator((input: { companyId: string; fyEnd: string }) => {
     if (!ISO.test(input?.fyEnd ?? "")) throw new Error("fyEnd must be YYYY-MM-DD");
     return { companyId: assertUuid(input.companyId), fyEnd: input.fyEnd };
   })
@@ -88,7 +88,7 @@ export const previewYearEndClose = createServerFn({ method: "GET" })
  */
 export const postYearEndClose = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; fyEnd: string; confirm: boolean }) => {
+  .validator((input: { companyId: string; fyEnd: string; confirm: boolean }) => {
     if (!ISO.test(input?.fyEnd ?? "")) throw new Error("fyEnd must be YYYY-MM-DD");
     if (input?.confirm !== true) throw new Error("Closing a year needs explicit confirmation.");
     return { companyId: assertUuid(input.companyId), fyEnd: input.fyEnd };

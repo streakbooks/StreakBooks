@@ -91,6 +91,16 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     note: "Organisation and legacy tax summary now save atomically with a before/after audit and stale-snapshot rejection; downstream field effects still need field-specific tests.",
   },
   {
+    key: "accounting.workflow_safeguards",
+    moduleId: "accounting",
+    status: "partial",
+    route: "/settings/accounting/overview",
+    missingEvidence: [
+      "workflow consumers and behavior tests for each warning and automation field",
+    ],
+    note: "Stored warning and auto-credit values are visible but read-only until the related transaction workflows enforce them.",
+  },
+  {
     key: "sales.typed_configuration",
     moduleId: "sales",
     status: "partial",

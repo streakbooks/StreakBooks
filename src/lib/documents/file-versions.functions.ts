@@ -79,7 +79,7 @@ type StoredVersion = {
 
 export const listFileVersions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
   }))
@@ -125,7 +125,7 @@ export const listFileVersions = createServerFn({ method: "GET" })
 
 export const registerFileVersion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       attachmentId: string;
@@ -229,7 +229,7 @@ export const registerFileVersion = createServerFn({ method: "POST" })
 
 export const downloadFileVersion = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string; version: number }) => {
+  .validator((input: { companyId: string; attachmentId: string; version: number }) => {
     const version = Number(input.version);
     if (!Number.isSafeInteger(version) || version < 1 || version > 50)
       throw new Error("Invalid version number.");

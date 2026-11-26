@@ -1,6 +1,6 @@
 import { execFileSync, execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -14,9 +14,27 @@ for (const key of [
 ])
   delete env[key];
 const name = `streakbooks-workflows-${process.pid}`;
-const prefix = ["--host=unix:///var/run/docker.sock"];
+const windowsDocker = path.join(
+  process.env.ProgramFiles ?? "C:\\Program Files",
+  "Docker",
+  "Docker",
+  "resources",
+  "bin",
+  "docker.exe",
+);
+const dockerBinary =
+  process.platform === "win32" &&
+  !process.env.PATH?.split(path.delimiter).some((entry) =>
+    existsSync(path.join(entry, "docker.exe")),
+  ) &&
+  existsSync(windowsDocker)
+    ? windowsDocker
+    : "docker";
+// Windows Docker Desktop selects its named-pipe context from the local CLI config;
+// Linux CI uses the job's isolated Unix socket explicitly.
+const prefix = process.platform === "win32" ? [] : ["--host=unix:///var/run/docker.sock"];
 const docker = (args, input) =>
-  execFileSync("docker", [...prefix, ...args], {
+  execFileSync(dockerBinary, [...prefix, ...args], {
     env,
     input,
     encoding: "utf8",
@@ -143,7 +161,7 @@ try {
   // numbers. The RLS-safe trigger locks only the organisation's counter row.
   const contactRace = async (index) =>
     promisify(execFile)(
-      "docker",
+      dockerBinary,
       [
         ...prefix,
         "exec",
@@ -183,7 +201,7 @@ try {
   );
   const race = async () =>
     promisify(execFile)(
-      "docker",
+      dockerBinary,
       [
         ...prefix,
         "exec",

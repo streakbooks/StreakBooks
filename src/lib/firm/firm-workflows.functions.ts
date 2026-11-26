@@ -128,7 +128,7 @@ async function checkScope(
 
 export const listFirmOnboardingSteps = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmClientScope.parse(input))
+  .validator((input: unknown) => firmClientScope.parse(input))
   .handler(async ({ data, context }): Promise<FirmOnboardingStep[]> => {
     await checkScope(context, data.firmId, data.companyId, false);
     const { data: rows, error } = await context.supabase
@@ -145,7 +145,7 @@ export const listFirmOnboardingSteps = createServerFn({ method: "GET" })
 
 export const initializeFirmOnboarding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmClientScope.parse(input))
+  .validator((input: unknown) => firmClientScope.parse(input))
   .handler(async ({ data, context }) => {
     await checkScope(context, data.firmId, data.companyId, true);
     const { error } = await context.supabase.from("firm_client_onboarding_steps" as never).upsert(
@@ -164,7 +164,7 @@ export const initializeFirmOnboarding = createServerFn({ method: "POST" })
 
 export const initializeFirmOffboarding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmClientScope.parse(input))
+  .validator((input: unknown) => firmClientScope.parse(input))
   .handler(async ({ data, context }) => {
     await checkScope(context, data.firmId, data.companyId, true);
     const { error } = await context.supabase.from("firm_client_onboarding_steps" as never).upsert(
@@ -192,7 +192,7 @@ const stepUpdate = firmClientScope
 
 export const updateFirmOnboardingStep = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => stepUpdate.parse(input))
+  .validator((input: unknown) => stepUpdate.parse(input))
   .handler(async ({ data, context }): Promise<FirmOnboardingStep> => {
     await checkScope(context, data.firmId, data.companyId, true);
     const { data: updated, error } = await context.supabase
@@ -233,7 +233,7 @@ export type FirmOnboardingPlanInput = z.infer<typeof planningInput>;
 
 export const saveFirmOnboardingPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => planningInput.parse(input))
+  .validator((input: unknown) => planningInput.parse(input))
   .handler(async ({ data, context }): Promise<FirmOnboardingStep> => {
     await checkScope(context, data.firmId, data.companyId, true);
     const { data: saved, error } = await context.supabase
@@ -258,7 +258,7 @@ export const saveFirmOnboardingPlan = createServerFn({ method: "POST" })
 
 export const listFirmOnboardingOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
+  .validator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
   .handler(async ({ data, context }): Promise<FirmOnboardingOverviewRow[]> => {
     const { data: membership, error: memberError } = await context.supabase
       .from("firm_members" as never)
@@ -294,7 +294,7 @@ export const listFirmOnboardingOverview = createServerFn({ method: "GET" })
 
 export const listFirmEngagements = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmClientScope.parse(input))
+  .validator((input: unknown) => firmClientScope.parse(input))
   .handler(async ({ data, context }): Promise<FirmEngagement[]> => {
     await checkScope(context, data.firmId, data.companyId, false);
     const { data: rows, error } = await context.supabase
@@ -313,7 +313,7 @@ export const listFirmEngagements = createServerFn({ method: "GET" })
 
 export const saveFirmEngagement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => engagementInput.parse(input))
+  .validator((input: unknown) => engagementInput.parse(input))
   .handler(async ({ data, context }): Promise<FirmEngagement> => {
     await checkScope(context, data.firmId, data.companyId, true);
     const { firmId, companyId, id, version, ...fields } = data;
@@ -359,7 +359,7 @@ export type FirmTeamMember = {
 
 export const listFirmTeam = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
+  .validator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
   .handler(async ({ data, context }): Promise<FirmTeamMember[]> => {
     const sb = context.supabase;
     const { data: membership, error: memberError } = await sb

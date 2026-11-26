@@ -51,7 +51,7 @@ type Filterable = {
 /** Creates (or returns) the financial year containing a date. */
 export const createFinancialYear = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; date: string }) => ({
+  .validator((input: { companyId: string; date: string }) => ({
     companyId: assertUuid(input?.companyId),
     date: isoDate(input?.date, "Date"),
   }))
@@ -83,7 +83,7 @@ export type PeriodCloseFacts = {
 /** Raw facts for the close checklist. Read-only. AR/AP tie-outs come from the aged reports. */
 export const getPeriodCloseFacts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; periodEnd: string }) => ({
+  .validator((input: { companyId: string; periodEnd: string }) => ({
     companyId: assertUuid(input?.companyId),
     periodEnd: isoDate(input?.periodEnd, "Period end"),
   }))

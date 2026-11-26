@@ -21,7 +21,7 @@ function exactDay(value: string, label: string): string {
 }
 export const getPayrollLiabilityRollforward = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from: string; to: string }) => {
+  .validator((input: { companyId: string; from: string; to: string }) => {
     const from = exactDay(input?.from, "From date");
     const to = exactDay(input?.to, "To date");
     const duration = Math.round(

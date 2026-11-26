@@ -147,7 +147,7 @@ export { loadTaxTreatment } from "@/lib/sales/sales-common";
 
 export const listCustomers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; q?: string }) => ({
+  .validator((input: { companyId: string; q?: string }) => ({
     companyId: assertUuid(input.companyId),
     q: (input.q ?? "").trim().slice(0, 100),
   }))
@@ -167,7 +167,7 @@ export const listCustomers = createServerFn({ method: "GET" })
 
 export const upsertCustomer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -345,7 +345,7 @@ export type InvoiceListRow = {
 
 export const listInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseInvoiceListInput)
+  .validator(parseInvoiceListInput)
   .handler(async ({ data: f, context }) => {
     await assertCompanyMember(context.supabase, f.companyId);
     const parts = await invoiceListQueryParts(context.supabase, f);
@@ -374,7 +374,7 @@ export const listInvoices = createServerFn({ method: "GET" })
 
 export const exportInvoicesCsv = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseInvoiceListInput)
+  .validator(parseInvoiceListInput)
   .handler(async ({ data: f, context }) => {
     await assertCompanyMember(context.supabase, f.companyId);
     const parts = await invoiceListQueryParts(context.supabase, f);
@@ -526,7 +526,7 @@ export type InvoiceDetail = {
 
 export const getInvoice = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; invoiceId: string }) => ({
+  .validator((input: { companyId: string; invoiceId: string }) => ({
     companyId: assertUuid(input.companyId),
     invoiceId: assertUuid(input.invoiceId, "invoice"),
   }))
@@ -742,7 +742,7 @@ async function saveInvoiceDraftCore(
 
 export const saveInvoiceDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseInvoiceDraftInput)
+  .validator(parseInvoiceDraftInput)
   .handler(async ({ data, context }) => saveInvoiceDraftCore(context, data));
 
 async function authoriseInvoiceCore(
@@ -859,7 +859,7 @@ export { JournalPostedUnlinkedError } from "@/lib/accounting/journal-posted-unli
 
 export const authoriseInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; invoiceId: string; acknowledgeCreditLimit?: boolean }) => ({
       companyId: assertUuid(input.companyId),
       invoiceId: assertUuid(input.invoiceId, "invoice"),
@@ -877,7 +877,7 @@ export const authoriseInvoice = createServerFn({ method: "POST" })
  */
 export const saveAndAuthoriseInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseInvoiceDraftInput)
+  .validator(parseInvoiceDraftInput)
   .handler(async ({ data, context }) => {
     const saved = await saveInvoiceDraftCore(context, data);
     try {
@@ -910,7 +910,7 @@ export const saveAndAuthoriseInvoice = createServerFn({ method: "POST" })
 
 export const voidInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; invoiceId: string; reason: string; voidDate?: string }) => ({
       companyId: assertUuid(input.companyId),
       invoiceId: assertUuid(input.invoiceId, "invoice"),
@@ -941,7 +941,7 @@ export const voidInvoice = createServerFn({ method: "POST" })
 
 export const writeOffInvoiceBadDebt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       invoiceId: string;
@@ -986,7 +986,7 @@ export const writeOffInvoiceBadDebt = createServerFn({ method: "POST" })
 
 export const deleteDraftInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; invoiceId: string }) => ({
+  .validator((input: { companyId: string; invoiceId: string }) => ({
     companyId: assertUuid(input.companyId),
     invoiceId: assertUuid(input.invoiceId, "invoice"),
   }))
@@ -998,7 +998,7 @@ export const deleteDraftInvoice = createServerFn({ method: "POST" })
 
 export const markInvoiceSent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; invoiceId: string }) => ({
+  .validator((input: { companyId: string; invoiceId: string }) => ({
     companyId: assertUuid(input.companyId),
     invoiceId: assertUuid(input.invoiceId, "invoice"),
   }))
@@ -1028,7 +1028,7 @@ export const markInvoiceSent = createServerFn({ method: "POST" })
 /** Copy an invoice into a NEW draft dated today (company timezone) with the customer's terms. */
 export const copyInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; invoiceId: string }) => ({
+  .validator((input: { companyId: string; invoiceId: string }) => ({
     companyId: assertUuid(input.companyId),
     invoiceId: assertUuid(input.invoiceId, "invoice"),
   }))
@@ -1105,7 +1105,7 @@ export const copyInvoice = createServerFn({ method: "POST" })
 /** Copy a quote into a NEW draft dated today (keeps expiry span when present). */
 export const copyQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; quoteId: string }) => ({
+  .validator((input: { companyId: string; quoteId: string }) => ({
     companyId: assertUuid(input.companyId),
     quoteId: assertUuid(input.quoteId, "quote"),
   }))
@@ -1242,7 +1242,7 @@ async function quoteSearchOr(
 
 export const listQuotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseQuoteListInput)
+  .validator(parseQuoteListInput)
   .handler(async ({ data: f, context }) => {
     await assertCompanyMember(context.supabase, f.companyId);
     const or = await quoteSearchOr(context.supabase, f);
@@ -1283,7 +1283,7 @@ export const listQuotes = createServerFn({ method: "GET" })
 
 export const exportQuotesCsv = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseQuoteListInput)
+  .validator(parseQuoteListInput)
   .handler(async ({ data: f, context }) => {
     await assertCompanyMember(context.supabase, f.companyId);
     const or = await quoteSearchOr(context.supabase, f);
@@ -1318,7 +1318,7 @@ export const exportQuotesCsv = createServerFn({ method: "GET" })
 
 export const saveQuoteDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       quoteId?: string;
@@ -1418,7 +1418,7 @@ export type QuoteDetail = {
 
 export const getQuote = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; quoteId: string }) => ({
+  .validator((input: { companyId: string; quoteId: string }) => ({
     companyId: assertUuid(input.companyId),
     quoteId: assertUuid(input.quoteId, "quote"),
   }))
@@ -1441,7 +1441,7 @@ export const getQuote = createServerFn({ method: "GET" })
 
 export const updateQuoteStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; quoteId: string; status: string }) => {
+  .validator((input: { companyId: string; quoteId: string; status: string }) => {
     const status = (input.status ?? "").trim();
     if (!isQuoteStatus(status)) throw new Error("Invalid quote status");
     return {
@@ -1485,7 +1485,7 @@ export const updateQuoteStatus = createServerFn({ method: "POST" })
 
 export const deleteDraftQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; quoteId: string }) => ({
+  .validator((input: { companyId: string; quoteId: string }) => ({
     companyId: assertUuid(input.companyId),
     quoteId: assertUuid(input.quoteId, "quote"),
   }))
@@ -1497,7 +1497,7 @@ export const deleteDraftQuote = createServerFn({ method: "POST" })
 
 export const convertQuoteToInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; quoteId: string; dueDate?: string }) => ({
+  .validator((input: { companyId: string; quoteId: string; dueDate?: string }) => ({
     companyId: assertUuid(input.companyId),
     quoteId: assertUuid(input.quoteId),
     dueDate: optionalIsoDate(input.dueDate, "Due date"),
@@ -1595,7 +1595,7 @@ export const convertQuoteToInvoice = createServerFn({ method: "POST" })
  */
 export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; csvText: string; authorise?: boolean }) => {
+  .validator((input: { companyId: string; csvText: string; authorise?: boolean }) => {
     if (typeof input?.csvText !== "string" || input.csvText.length > 5 * 1024 * 1024) {
       throw new Error("Invalid CSV or file exceeds 5 MB");
     }

@@ -57,11 +57,11 @@ async function run(supabase: Sb, data: StandardStatementRequest) {
 }
 export const getStandardStatement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => requestSchema.parse(input))
+  .validator((input: unknown) => requestSchema.parse(input))
   .handler(async ({ data, context }) => run(context.supabase, data));
 export const exportStandardStatement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     requestSchema.extend({ format: z.enum(["pdf", "xlsx", "csv"]) }).parse(input),
   )
   .handler(async ({ data, context }) => {

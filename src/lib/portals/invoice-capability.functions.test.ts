@@ -8,7 +8,7 @@ vi.mock("@tanstack/react-start", () => ({
         expect(steps).toContain(middleware.auth);
         return chain;
       },
-      inputValidator(fn: (input: unknown) => unknown) {
+      validator(fn: (input: unknown) => unknown) {
         validate = fn;
         return chain;
       },

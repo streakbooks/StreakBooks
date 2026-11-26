@@ -184,14 +184,12 @@ export async function loadCustomerStatement(
 
 export const getCustomerStatement = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; contactId: string; from?: string; to?: string }) => ({
-      companyId: assertUuid(input.companyId),
-      contactId: assertUuid(input.contactId, "customer"),
-      from: isIsoDateString(input.from) ? input.from : null,
-      to: isIsoDateString(input.to) ? input.to : null,
-    }),
-  )
+  .validator((input: { companyId: string; contactId: string; from?: string; to?: string }) => ({
+    companyId: assertUuid(input.companyId),
+    contactId: assertUuid(input.contactId, "customer"),
+    from: isIsoDateString(input.from) ? input.from : null,
+    to: isIsoDateString(input.to) ? input.to : null,
+  }))
   .handler(async ({ data, context }) => loadCustomerStatement(context.supabase, data));
 
 /**
@@ -200,7 +198,7 @@ export const getCustomerStatement = createServerFn({ method: "GET" })
  */
 export const getSalesOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyMember(supabase, data.companyId);

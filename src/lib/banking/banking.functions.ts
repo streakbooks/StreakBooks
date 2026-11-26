@@ -85,7 +85,7 @@ function isIsoDate(s: string): boolean {
 
 export const listBankAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; includeInactive?: boolean }) => ({
+  .validator((input: { companyId: string; includeInactive?: boolean }) => ({
     companyId: assertUuid(input.companyId),
     includeInactive: input.includeInactive === true,
   }))
@@ -133,7 +133,7 @@ export const listBankAccounts = createServerFn({ method: "GET" })
 /** Rename or archive/restore a bank account (BK-16). Archiving hides it from pickers; history is kept. */
 export const updateBankAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; id: string; name?: string; isActive?: boolean }) => {
+  .validator((input: { companyId: string; id: string; name?: string; isActive?: boolean }) => {
     const name = input.name === undefined ? undefined : input.name.trim().slice(0, 120);
     if (name !== undefined && !name) throw new Error("Account name is required");
     if (name === undefined && input.isActive === undefined) throw new Error("Nothing to update");
@@ -173,7 +173,7 @@ export const updateBankAccount = createServerFn({ method: "POST" })
 /** Account cards on /banking: statement balance (last reconciliation), ledger balance, unreconciled count. */
 export const getBankAccountSummaries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as AnyClient;
     await assertCompanyMember(supabase, data.companyId);
@@ -240,7 +240,7 @@ export const getBankAccountSummaries = createServerFn({ method: "GET" })
 
 export const createBankAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; name: string; currencyCode: string; glAccountId: string }) => {
       const name = (input.name ?? "").trim();
       if (!name) throw new Error("Account name is required");
@@ -275,7 +275,7 @@ export const createBankAccount = createServerFn({ method: "POST" })
 
 export const listBankTransactions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       bankAccountId?: string;
@@ -436,7 +436,7 @@ export const listBankTransactions = createServerFn({ method: "GET" })
 
 export const categoriseTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       bankTransactionId: string;
@@ -471,7 +471,7 @@ export const categoriseTransaction = createServerFn({ method: "POST" })
 
 export const createTransfer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       fromBankAccountId: string;
@@ -674,7 +674,7 @@ export const createTransfer = createServerFn({ method: "POST" })
 
 export const listStatementImports = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
@@ -691,7 +691,7 @@ export const listStatementImports = createServerFn({ method: "GET" })
 
 export const voidTransfer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; transferId: string }) => ({
+  .validator((input: { companyId: string; transferId: string }) => ({
     companyId: assertUuid(input.companyId),
     transferId: assertUuid(input.transferId),
   }))
@@ -723,7 +723,7 @@ export const voidTransfer = createServerFn({ method: "POST" })
 
 export const getBankingWorkspaceCounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; bankAccountId?: string }) => ({
+  .validator((input: { companyId: string; bankAccountId?: string }) => ({
     companyId: assertUuid(input.companyId),
     bankAccountId: input.bankAccountId ? assertUuid(input.bankAccountId) : null,
   }))
@@ -751,7 +751,7 @@ export const getBankingWorkspaceCounts = createServerFn({ method: "GET" })
 
 export const excludeBankTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; bankTransactionId: string; reason?: string }) => ({
+  .validator((input: { companyId: string; bankTransactionId: string; reason?: string }) => ({
     companyId: assertUuid(input.companyId),
     bankTransactionId: assertUuid(input.bankTransactionId),
     reason: (input.reason ?? "").trim().slice(0, 500) || null,
@@ -787,7 +787,7 @@ export const excludeBankTransaction = createServerFn({ method: "POST" })
 
 export const restoreBankTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; bankTransactionId: string }) => ({
+  .validator((input: { companyId: string; bankTransactionId: string }) => ({
     companyId: assertUuid(input.companyId),
     bankTransactionId: assertUuid(input.bankTransactionId),
   }))
@@ -825,7 +825,7 @@ export const restoreBankTransaction = createServerFn({ method: "POST" })
 
 export const bulkCategoriseTransactions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       bankTransactionIds: string[];
@@ -879,7 +879,7 @@ export const bulkCategoriseTransactions = createServerFn({ method: "POST" })
 
 export const suggestBankCoding = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; bankTransactionId: string }) => ({
+  .validator((input: { companyId: string; bankTransactionId: string }) => ({
     companyId: assertUuid(input.companyId),
     bankTransactionId: assertUuid(input.bankTransactionId),
   }))
@@ -989,7 +989,7 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
 
 export const listBankTransfers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as AnyClient;
     await assertCompanyMember(supabase, data.companyId);

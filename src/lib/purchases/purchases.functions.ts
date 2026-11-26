@@ -239,7 +239,7 @@ function companyIdOf(input: { companyId: string }) {
 
 export const listSuppliers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; q?: string; includeInactive?: boolean }) => ({
+  .validator((input: { companyId: string; q?: string; includeInactive?: boolean }) => ({
     companyId: assertUuid(input.companyId),
     q: (input.q ?? "").trim().slice(0, 100),
     includeInactive: Boolean(input.includeInactive),
@@ -264,7 +264,7 @@ export const listSuppliers = createServerFn({ method: "GET" })
 
 export const upsertSupplier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -629,7 +629,7 @@ async function runListBills(
 
 export const listBills = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: ListBillsInput) => parseListBillsInput(input))
+  .validator((input: ListBillsInput) => parseListBillsInput(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
     return runListBills(context.supabase, data);
@@ -654,7 +654,7 @@ const BILLS_CSV_COLUMNS = [
 /** Server-side CSV of EVERY bill matching the filters, not just the visible page (P-23). */
 export const exportBillsCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: ListBillsInput) => parseListBillsInput(input))
+  .validator((input: ListBillsInput) => parseListBillsInput(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
     const { csvEscape } = await import("@/lib/contacts/contact-helpers");
@@ -710,7 +710,7 @@ export type CurrencyTotal = {
 
 export const getBillsWorkspaceSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -822,7 +822,7 @@ export const getBillsWorkspaceSummary = createServerFn({ method: "GET" })
  */
 export const getPurchasesOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
     const today = new Date().toISOString().slice(0, 10);
@@ -933,7 +933,7 @@ export const getPurchasesOverview = createServerFn({ method: "GET" })
 
 export const submitBillForApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string; comment?: string }) => ({
+  .validator((input: { companyId: string; billId: string; comment?: string }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
     comment: (input.comment ?? "").trim().slice(0, 1000) || null,
@@ -976,7 +976,7 @@ export const submitBillForApproval = createServerFn({ method: "POST" })
 
 export const rejectBillApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string; reason?: string }) => ({
+  .validator((input: { companyId: string; billId: string; reason?: string }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
     reason: (input.reason ?? "").trim().slice(0, 1000) || null,
@@ -1019,7 +1019,7 @@ export const rejectBillApproval = createServerFn({ method: "POST" })
 
 export const deleteDraftBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string }) => ({
+  .validator((input: { companyId: string; billId: string }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
   }))
@@ -1067,7 +1067,7 @@ export const deleteDraftBill = createServerFn({ method: "POST" })
 /** Header-only edits preserve the source quantities and cumulative rounding allocation. */
 export const updatePurchaseOrderBillDetails = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       billId: string;
@@ -1113,7 +1113,7 @@ export const updatePurchaseOrderBillDetails = createServerFn({ method: "POST" })
 
 export const getBill = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string }) => ({
+  .validator((input: { companyId: string; billId: string }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
   }))
@@ -1313,7 +1313,7 @@ export const getBill = createServerFn({ method: "GET" })
 /** Previous / next bill ids for document workspace navigation (bill_date desc, id desc). */
 export const getBillNeighbors = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string }) => ({
+  .validator((input: { companyId: string; billId: string }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
   }))
@@ -1378,7 +1378,7 @@ export const getBillNeighbors = createServerFn({ method: "GET" })
 
 export const checkDuplicateSupplierBill = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactId: string;
@@ -1775,7 +1775,7 @@ async function saveBillDraftCore(
 
 export const saveBillDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseBillDraftInput)
+  .validator(parseBillDraftInput)
   .handler(async ({ data, context }) => saveBillDraftCore(data, context));
 
 /**
@@ -1785,7 +1785,7 @@ export const saveBillDraft = createServerFn({ method: "POST" })
  */
 export const saveAndAuthoriseBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: Parameters<typeof parseBillDraftInput>[0] & { acknowledgeCreditLimit?: boolean }) => ({
       ...parseBillDraftInput(input),
       acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
@@ -1829,7 +1829,7 @@ export const saveAndAuthoriseBill = createServerFn({ method: "POST" })
 /** Copy a bill into a NEW draft dated today with the supplier's payment terms. */
 export const copyBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string }) => ({
+  .validator((input: { companyId: string; billId: string }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
   }))
@@ -2088,13 +2088,11 @@ export async function authoriseBillInternal(
 
 export const authoriseBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; billId: string; acknowledgeCreditLimit?: boolean }) => ({
-      companyId: assertUuid(input.companyId),
-      billId: assertUuid(input.billId, "bill"),
-      acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
-    }),
-  )
+  .validator((input: { companyId: string; billId: string; acknowledgeCreditLimit?: boolean }) => ({
+    companyId: assertUuid(input.companyId),
+    billId: assertUuid(input.billId, "bill"),
+    acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
+  }))
   .handler(async ({ data, context }) => {
     return authoriseBillInternal(
       context.supabase,
@@ -2108,7 +2106,7 @@ export const authoriseBill = createServerFn({ method: "POST" })
 /** Order × received × bill match for a purchase-order-linked bill (advisory + authorise gate). */
 export const getBillPurchaseOrderMatch = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string }) => ({
+  .validator((input: { companyId: string; billId: string }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
   }))
@@ -2145,23 +2143,21 @@ export const getBillPurchaseOrderMatch = createServerFn({ method: "GET" })
 
 export const voidBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; billId: string; reason: string; voidDate?: string }) => {
-      const reason = String(input.reason ?? "").trim();
-      if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
-      const voidDate =
-        input.voidDate && String(input.voidDate).trim() ? String(input.voidDate).trim() : null;
-      if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
-        throw new Error("Void date must be YYYY-MM-DD");
-      }
-      return {
-        companyId: assertUuid(input.companyId),
-        billId: assertUuid(input.billId, "bill"),
-        reason: reason.slice(0, 500),
-        voidDate,
-      };
-    },
-  )
+  .validator((input: { companyId: string; billId: string; reason: string; voidDate?: string }) => {
+    const reason = String(input.reason ?? "").trim();
+    if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
+    const voidDate =
+      input.voidDate && String(input.voidDate).trim() ? String(input.voidDate).trim() : null;
+    if (voidDate && !/^\d{4}-\d{2}-\d{2}$/.test(voidDate)) {
+      throw new Error("Void date must be YYYY-MM-DD");
+    }
+    return {
+      companyId: assertUuid(input.companyId),
+      billId: assertUuid(input.billId, "bill"),
+      reason: reason.slice(0, 500),
+      voidDate,
+    };
+  })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "purchases.authorise");
@@ -2243,7 +2239,7 @@ export const voidBill = createServerFn({ method: "POST" })
 
 export const listExpenses = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdOf)
+  .validator(companyIdOf)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
     const { data: rows, error } = await context.supabase
@@ -2260,7 +2256,7 @@ export const listExpenses = createServerFn({ method: "GET" })
 
 export const getExpense = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; expenseId: string }) => ({
+  .validator((input: { companyId: string; expenseId: string }) => ({
     companyId: assertUuid(input.companyId),
     expenseId: assertUuid(input.expenseId, "expense"),
   }))
@@ -2279,7 +2275,7 @@ export const getExpense = createServerFn({ method: "GET" })
 
 export const saveAndPostExpense = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payeeName: string;
@@ -2422,7 +2418,7 @@ async function postExpenseRecord(
 
 export const postDraftExpense = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; expenseId: string }) => ({
+  .validator((input: { companyId: string; expenseId: string }) => ({
     companyId: assertUuid(input.companyId),
     expenseId: assertUuid(input.expenseId, "expense"),
   }))
@@ -2434,7 +2430,7 @@ export const postDraftExpense = createServerFn({ method: "POST" })
 
 export const deleteDraftExpense = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; expenseId: string }) => ({
+  .validator((input: { companyId: string; expenseId: string }) => ({
     companyId: assertUuid(input.companyId),
     expenseId: assertUuid(input.expenseId, "expense"),
   }))
@@ -2462,7 +2458,7 @@ export const deleteDraftExpense = createServerFn({ method: "POST" })
  */
 export const voidPurchaseExpense = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; expenseId: string; reason: string; voidDate?: string }) => {
       const reason = String(input.reason ?? "").trim();
       if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
@@ -2551,7 +2547,7 @@ export const voidPurchaseExpense = createServerFn({ method: "POST" })
 
 export const listPayments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdOf)
+  .validator(companyIdOf)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
     const { data: rows, error } = await context.supabase
@@ -2568,7 +2564,7 @@ export const listPayments = createServerFn({ method: "GET" })
 
 export const getSupplierPayment = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; paymentId: string }) => ({
+  .validator((input: { companyId: string; paymentId: string }) => ({
     companyId: assertUuid(input.companyId),
     paymentId: assertUuid(input.paymentId, "payment"),
   }))
@@ -2697,7 +2693,7 @@ const SUPPLIER_PAYMENT_MIGRATION = "20261025300200_ops_purchases_payments_fx.sql
 
 export const createAndPostPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactId: string;
@@ -2787,7 +2783,7 @@ export const createAndPostPayment = createServerFn({ method: "POST" })
  */
 export const createBatchPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       paymentDate: string;
@@ -2862,7 +2858,7 @@ export const createBatchPayment = createServerFn({ method: "POST" })
  */
 export const reverseSupplierPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; paymentId: string; reason: string; voidDate?: string }) => {
       const reason = String(input.reason ?? "").trim();
       if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
@@ -2921,7 +2917,7 @@ export const reverseSupplierPayment = createServerFn({ method: "POST" })
 
 export const listCreditNotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdOf)
+  .validator(companyIdOf)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
     const { data: rows, error } = await context.supabase
@@ -3229,7 +3225,7 @@ async function authoriseCreditNoteInternal(
 
 export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       /** When set, updates this draft instead of allocating a new credit number. */
@@ -3453,7 +3449,7 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
 /** Copy a supplier credit note into a NEW draft dated today (no allocations). */
 export const copyCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; creditNoteId: string }) => ({
+  .validator((input: { companyId: string; creditNoteId: string }) => ({
     companyId: assertUuid(input.companyId),
     creditNoteId: assertUuid(input.creditNoteId, "credit note"),
   }))
@@ -3589,7 +3585,7 @@ export const copyCreditNote = createServerFn({ method: "POST" })
 
 export const authoriseCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       creditNoteId: string;
@@ -3614,7 +3610,7 @@ export const authoriseCreditNote = createServerFn({ method: "POST" })
 
 export const updateCreditNoteDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       creditNoteId: string;
@@ -3693,7 +3689,7 @@ export const updateCreditNoteDraft = createServerFn({ method: "POST" })
 
 export const deleteCreditNoteDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; creditNoteId: string }) => ({
+  .validator((input: { companyId: string; creditNoteId: string }) => ({
     companyId: assertUuid(input.companyId),
     creditNoteId: assertUuid(input.creditNoteId, "credit note"),
   }))
@@ -3766,7 +3762,7 @@ export type CreditNoteDetail = {
 
 export const getCreditNote = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; creditNoteId: string }) => ({
+  .validator((input: { companyId: string; creditNoteId: string }) => ({
     companyId: assertUuid(input.companyId),
     creditNoteId: assertUuid(input.creditNoteId, "credit note"),
   }))
@@ -3818,7 +3814,7 @@ export const getCreditNote = createServerFn({ method: "GET" })
 
 export const allocatePurchaseCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       creditNoteId: string;
@@ -3907,7 +3903,7 @@ async function unallocateCreditInternal(
 
 export const unallocatePurchaseCredit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; creditNoteId: string; billId?: string }) => ({
+  .validator((input: { companyId: string; creditNoteId: string; billId?: string }) => ({
     companyId: assertUuid(input.companyId),
     creditNoteId: assertUuid(input.creditNoteId, "credit note"),
     billId: input.billId ? assertUuid(input.billId, "bill") : null,
@@ -3933,7 +3929,7 @@ export const unallocatePurchaseCredit = createServerFn({ method: "POST" })
 
 export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; creditNoteId: string; reason: string; voidDate?: string }) => {
       const reason = String(input.reason ?? "").trim();
       if (reason.length < 3) throw new Error("A void reason is required (at least 3 characters)");
@@ -4033,7 +4029,7 @@ export const voidPurchaseCreditNote = createServerFn({ method: "POST" })
  */
 export const allocateSupplierPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       paymentId: string;
@@ -4144,7 +4140,7 @@ export const allocateSupplierPayment = createServerFn({ method: "POST" })
 
 export const listPurchaseOrders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; q?: string; status?: string; page?: number }) => ({
+  .validator((input: { companyId: string; q?: string; status?: string; page?: number }) => ({
     companyId: assertUuid(input.companyId),
     q: (input.q ?? "").trim().slice(0, 100),
     status: input.status ?? "all",
@@ -4183,7 +4179,7 @@ export const listPurchaseOrders = createServerFn({ method: "GET" })
 
 export const getPurchaseOrder = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; orderId: string }) => ({
+  .validator((input: { companyId: string; orderId: string }) => ({
     companyId: assertUuid(input.companyId),
     orderId: assertUuid(input.orderId, "order"),
   }))
@@ -4203,7 +4199,7 @@ export const getPurchaseOrder = createServerFn({ method: "GET" })
 
 export const changePurchaseOrderStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; orderId: string; status: "sent" | "cancelled" }) => {
+  .validator((input: { companyId: string; orderId: string; status: "sent" | "cancelled" }) => {
     if (!["sent", "cancelled"].includes(input.status)) throw new Error("Invalid order status");
     return {
       companyId: assertUuid(input.companyId),
@@ -4222,7 +4218,7 @@ export const changePurchaseOrderStatus = createServerFn({ method: "POST" })
 
 export const savePurchaseOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactId: string;
@@ -4274,7 +4270,7 @@ export const savePurchaseOrder = createServerFn({ method: "POST" })
 /** Copy a purchase order into a NEW draft dated today (receipt/bill state is not copied). */
 export const copyPurchaseOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; orderId: string }) => ({
+  .validator((input: { companyId: string; orderId: string }) => ({
     companyId: assertUuid(input.companyId),
     orderId: assertUuid(input.orderId, "order"),
   }))
@@ -4349,7 +4345,7 @@ export const copyPurchaseOrder = createServerFn({ method: "POST" })
 /** Convert unbilled received quantities into a draft bill (fail closed if nothing billable). */
 export const convertPurchaseOrderToBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; orderId: string }) => ({
+  .validator((input: { companyId: string; orderId: string }) => ({
     companyId: assertUuid(input.companyId),
     orderId: assertUuid(input.orderId, "order"),
   }))
@@ -4368,7 +4364,7 @@ export const convertPurchaseOrderToBill = createServerFn({ method: "POST" })
 /** Non-posting goods receipt against a sent / partially received purchase order. */
 export const receivePurchaseOrderGoods = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       orderId: string;
@@ -4418,7 +4414,7 @@ export const receivePurchaseOrderGoods = createServerFn({ method: "POST" })
 
 export const listRecurringBills = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdOf)
+  .validator(companyIdOf)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
     const { data: rows, error } = await context.supabase
@@ -4435,7 +4431,7 @@ export const listRecurringBills = createServerFn({ method: "GET" })
 
 export const getRecurringBill = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringId: string }) => ({
+  .validator((input: { companyId: string; recurringId: string }) => ({
     companyId: assertUuid(input.companyId),
     recurringId: assertUuid(input.recurringId, "recurring"),
   }))
@@ -4510,7 +4506,7 @@ function recurringDocument(
 
 export const saveRecurringBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactId: string;
@@ -4679,7 +4675,7 @@ export const saveRecurringBill = createServerFn({ method: "POST" })
 
 export const generateRecurringBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringId: string }) => ({
+  .validator((input: { companyId: string; recurringId: string }) => ({
     companyId: assertUuid(input.companyId),
     recurringId: assertUuid(input.recurringId, "recurring"),
   }))
@@ -4698,7 +4694,7 @@ export const generateRecurringBill = createServerFn({ method: "POST" })
 
 export const listEmployeeClaims = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdOf)
+  .validator(companyIdOf)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
     // Claims are personal: only people who can approve them (or see all purchases) see every claim.
@@ -4744,7 +4740,7 @@ export const listEmployeeClaims = createServerFn({ method: "GET" })
 
 export const submitEmployeeClaim = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       claimDate: string;
@@ -4801,7 +4797,7 @@ export const submitEmployeeClaim = createServerFn({ method: "POST" })
 
 export const approveAndReimburseClaim = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; claimId: string; paymentAccountId: string }) => ({
+  .validator((input: { companyId: string; claimId: string; paymentAccountId: string }) => ({
     companyId: assertUuid(input.companyId),
     claimId: assertUuid(input.claimId, "claim"),
     paymentAccountId: assertUuid(input.paymentAccountId, "payment account"),
@@ -4874,7 +4870,7 @@ export const approveAndReimburseClaim = createServerFn({ method: "POST" })
 
 export const setRecurringBillActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringId: string; isActive: boolean }) => ({
+  .validator((input: { companyId: string; recurringId: string; isActive: boolean }) => ({
     companyId: assertUuid(input.companyId),
     recurringId: assertUuid(input.recurringId),
     isActive: Boolean(input.isActive),
@@ -4903,7 +4899,7 @@ export const setRecurringBillActive = createServerFn({ method: "POST" })
 
 export const deleteRecurringBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringId: string }) => ({
+  .validator((input: { companyId: string; recurringId: string }) => ({
     companyId: assertUuid(input.companyId),
     recurringId: assertUuid(input.recurringId, "recurring"),
   }))
@@ -4938,7 +4934,7 @@ export const deleteRecurringBill = createServerFn({ method: "POST" })
 
 export const rejectEmployeeClaim = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; claimId: string }) => ({
+  .validator((input: { companyId: string; claimId: string }) => ({
     companyId: assertUuid(input.companyId),
     claimId: assertUuid(input.claimId),
   }))
@@ -4971,7 +4967,7 @@ export const rejectEmployeeClaim = createServerFn({ method: "POST" })
 
 export const getSupplierStatement = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactId: string;
@@ -5202,7 +5198,7 @@ export const getSupplierStatement = createServerFn({ method: "GET" })
 
 export const listPaymentAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
@@ -5235,7 +5231,7 @@ export const listPaymentAccounts = createServerFn({ method: "GET" })
 
 export const listPaymentTerms = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
@@ -5250,7 +5246,7 @@ export const listPaymentTerms = createServerFn({ method: "GET" })
 
 export const createPaymentTerm = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; name: string; days: number; calculationMethod?: string }) => {
       const name = (input.name ?? "").trim();
       if (!name) throw new Error("Payment term name is required");
@@ -5289,7 +5285,7 @@ export const createPaymentTerm = createServerFn({ method: "POST" })
 
 export const listBillAttachments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string; entityType?: string }) => ({
+  .validator((input: { companyId: string; billId: string; entityType?: string }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "document"),
     entityType: input.entityType === "recurring_bill" ? "recurring_bill" : "purchase_bill",
@@ -5329,7 +5325,7 @@ export const listBillAttachments = createServerFn({ method: "GET" })
 
 export const uploadBillAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       billId: string;
@@ -5418,7 +5414,7 @@ export const uploadBillAttachment = createServerFn({ method: "POST" })
 
 export const downloadBillAttachment = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId),
   }))
@@ -5453,7 +5449,7 @@ export const downloadBillAttachment = createServerFn({ method: "GET" })
 
 export const deleteBillAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId),
   }))
@@ -5496,7 +5492,7 @@ export const deleteBillAttachment = createServerFn({ method: "POST" })
 
 export const listBillNotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string }) => ({
+  .validator((input: { companyId: string; billId: string }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "bill"),
   }))
@@ -5527,7 +5523,7 @@ export const listBillNotes = createServerFn({ method: "GET" })
 
 export const addBillNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string; body: string }) => {
+  .validator((input: { companyId: string; billId: string; body: string }) => {
     const body = (input.body ?? "").trim();
     if (!body) throw new Error("Note body is required");
     return {
@@ -5558,7 +5554,7 @@ export const addBillNote = createServerFn({ method: "POST" })
 
 export const listBillActivity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; billId: string; entityType?: string }) => ({
+  .validator((input: { companyId: string; billId: string; entityType?: string }) => ({
     companyId: assertUuid(input.companyId),
     billId: assertUuid(input.billId, "document"),
     entityType: input.entityType === "recurring_bill" ? "recurring_bill" : "purchase_bill",
@@ -5722,7 +5718,7 @@ export const listBillActivity = createServerFn({ method: "GET" })
 
 export const resolveFxRateForBill = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; currencyCode: string; onDate: string; baseCurrency: string }) => ({
       companyId: assertUuid(input.companyId),
       currencyCode: (input.currencyCode ?? "").toUpperCase().slice(0, 3),
@@ -5757,7 +5753,7 @@ export const resolveFxRateForBill = createServerFn({ method: "GET" })
 /** Aggregated supplier intelligence for the New Bill right sidebar. */
 export const getSupplierIntelligence = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; contactId: string }) => ({
+  .validator((input: { companyId: string; contactId: string }) => ({
     companyId: assertUuid(input.companyId),
     contactId: assertUuid(input.contactId, "supplier"),
   }))
@@ -5898,7 +5894,7 @@ export const getSupplierIntelligence = createServerFn({ method: "GET" })
  */
 export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; csvText: string; authorise?: boolean }) => {
+  .validator((input: { companyId: string; csvText: string; authorise?: boolean }) => {
     if (typeof input?.csvText !== "string" || input.csvText.length > 5 * 1024 * 1024) {
       throw new Error("Invalid CSV or file exceeds 5 MB");
     }

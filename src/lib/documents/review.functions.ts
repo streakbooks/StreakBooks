@@ -44,17 +44,15 @@ type ReviewRow = Omit<ReviewQueueItem, "file_name" | "content_type" | "size_byte
 
 export const listDocumentReviewQueue = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; status?: string; page?: number; pageSize?: number }) => ({
-      companyId: assertUuid(input.companyId),
-      status:
-        input.status && REVIEW_STATUSES.includes(input.status as ReviewStatus)
-          ? (input.status as ReviewStatus)
-          : null,
-      page: Math.max(0, Math.min(100000, Math.floor(Number(input.page) || 0))),
-      pageSize: Math.max(5, Math.min(100, Math.floor(Number(input.pageSize) || 25))),
-    }),
-  )
+  .validator((input: { companyId: string; status?: string; page?: number; pageSize?: number }) => ({
+    companyId: assertUuid(input.companyId),
+    status:
+      input.status && REVIEW_STATUSES.includes(input.status as ReviewStatus)
+        ? (input.status as ReviewStatus)
+        : null,
+    page: Math.max(0, Math.min(100000, Math.floor(Number(input.page) || 0))),
+    pageSize: Math.max(5, Math.min(100, Math.floor(Number(input.pageSize) || 25))),
+  }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     let query = context.supabase
@@ -121,7 +119,7 @@ export const listDocumentReviewQueue = createServerFn({ method: "GET" })
 
 export const updateDocumentReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (
       input: {
         companyId: string;
@@ -181,7 +179,7 @@ export const updateDocumentReview = createServerFn({ method: "POST" })
 
 export const listDocumentReviewHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; reviewId: string }) => ({
+  .validator((input: { companyId: string; reviewId: string }) => ({
     companyId: assertUuid(input.companyId),
     reviewId: assertUuid(input.reviewId, "review"),
   }))

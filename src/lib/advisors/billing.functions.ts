@@ -40,7 +40,7 @@ const reasonSchema = z.string().trim().min(3).max(500);
 
 export const getAdvisorsBillingBoard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         status: z.string().trim().max(40).optional(),
@@ -60,7 +60,7 @@ export const getAdvisorsBillingBoard = createServerFn({ method: "GET" })
 
 export const linkAdvisorsClientCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         clientId: z.string().uuid(),
@@ -82,7 +82,7 @@ export const linkAdvisorsClientCompany = createServerFn({ method: "POST" })
 
 export const prepareAdvisorsSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         engagementId: z.string().uuid(),
@@ -104,7 +104,7 @@ export const prepareAdvisorsSubscription = createServerFn({ method: "POST" })
 
 export const syncAdvisorsSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ subscriptionId: z.string().uuid() }).strict().parse(input),
   )
   .handler(async ({ data, context }): Promise<AdvisorsSubscription> => {
@@ -117,7 +117,7 @@ export const syncAdvisorsSubscription = createServerFn({ method: "POST" })
 
 export const markAdvisorsManualBilling = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         subscriptionId: z.string().uuid(),
@@ -163,7 +163,7 @@ const checkoutSchema = z
 
 export const startAdvisorsSubscriptionCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => checkoutSchema.parse(input))
+  .validator((input: unknown) => checkoutSchema.parse(input))
   .handler(async ({ data, context }) => {
     // Existing billing engine only — never invent payment success here.
     const billing = data.billing;

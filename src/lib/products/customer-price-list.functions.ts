@@ -19,7 +19,7 @@ type AssignedList = { id: string; name: string; currency_code: string; is_active
 
 export const searchPriceListCustomers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; q?: string }) => ({
+  .validator((input: { companyId: string; q?: string }) => ({
     companyId: assertUuid(input.companyId),
     q: (input.q ?? "").trim().slice(0, 100),
   }))
@@ -41,7 +41,7 @@ export const searchPriceListCustomers = createServerFn({ method: "GET" })
 
 export const listCustomerPriceListDefaults = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }): Promise<CustomerPriceListAssignment[]> => {
@@ -90,7 +90,7 @@ export const listCustomerPriceListDefaults = createServerFn({ method: "GET" })
 /** Only suggest a valid active default for a new invoice/quote; never read/write document lines. */
 export const getCustomerPriceListDefault = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; contactId: string; documentCurrency: string }) => {
+  .validator((input: { companyId: string; contactId: string; documentCurrency: string }) => {
     if (!/^[A-Z]{3}$/.test(input.documentCurrency ?? "")) {
       throw new Error("Invalid document currency");
     }
@@ -142,13 +142,11 @@ export const getCustomerPriceListDefault = createServerFn({ method: "GET" })
 
 export const saveCustomerPriceListDefault = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; contactId: string; priceListId: string | null }) => ({
-      companyId: assertUuid(input.companyId),
-      contactId: assertUuid(input.contactId),
-      priceListId: input.priceListId ? assertUuid(input.priceListId) : null,
-    }),
-  )
+  .validator((input: { companyId: string; contactId: string; priceListId: string | null }) => ({
+    companyId: assertUuid(input.companyId),
+    contactId: assertUuid(input.contactId),
+    priceListId: input.priceListId ? assertUuid(input.priceListId) : null,
+  }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "products.manage");
     const { data: customer, error: customerError } = await context.supabase

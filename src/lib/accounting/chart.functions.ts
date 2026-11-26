@@ -57,7 +57,7 @@ const ACCOUNT_COLUMNS =
 
 export const listChartAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: accountRows, error } = await context.supabase
@@ -93,7 +93,7 @@ export const listChartAccounts = createServerFn({ method: "GET" })
 
 export const saveChartAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => {
+  .validator((input: unknown) => {
     const parsed = saveAccountSchema.safeParse(input);
     if (!parsed.success)
       throw new Error(parsed.error.issues[0]?.message ?? "Check the account details.");
@@ -179,7 +179,7 @@ export const saveChartAccount = createServerFn({ method: "POST" })
 
 export const archiveChartAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; accountId: string }) => ({
+  .validator((input: { companyId: string; accountId: string }) => ({
     companyId: assertUuid(input.companyId),
     accountId: assertUuid(input.accountId, "account"),
   }))
@@ -201,7 +201,7 @@ export const archiveChartAccount = createServerFn({ method: "POST" })
 /** AC-08: what a merge would post, period by period, before anything is written. */
 export const previewMergeChartAccounts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; sourceId: string; targetId: string }) => ({
+  .validator((input: { companyId: string; sourceId: string; targetId: string }) => ({
     companyId: assertUuid(input.companyId),
     sourceId: assertUuid(input.sourceId, "account"),
     targetId: assertUuid(input.targetId, "account"),
@@ -232,7 +232,7 @@ export const previewMergeChartAccounts = createServerFn({ method: "POST" })
 
 export const mergeChartAccounts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       sourceId: string;
@@ -330,7 +330,7 @@ export const mergeChartAccounts = createServerFn({ method: "POST" })
 
 export const importChartAccounts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => {
+  .validator((input: unknown) => {
     const parsed = importAccountsSchema.safeParse(input);
     if (!parsed.success)
       throw new Error(parsed.error.issues[0]?.message ?? "Check the import file.");
@@ -374,7 +374,7 @@ export const importChartAccounts = createServerFn({ method: "POST" })
 
 export const copyChartAccounts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { sourceCompanyId: string; targetCompanyId: string }) => ({
+  .validator((input: { sourceCompanyId: string; targetCompanyId: string }) => ({
     sourceCompanyId: assertUuid(input.sourceCompanyId, "organisation"),
     targetCompanyId: assertUuid(input.targetCompanyId, "organisation"),
   }))
@@ -394,7 +394,7 @@ export const copyChartAccounts = createServerFn({ method: "POST" })
 
 export const suggestChartAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { description: string }) => ({
+  .validator((input: { description: string }) => ({
     description: (input.description ?? "").trim().slice(0, 200),
   }))
   .handler(async ({ data }) => {

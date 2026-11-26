@@ -28,7 +28,7 @@ export const getDemoModuleStatus = createServerFn({ method: "GET" })
  */
 export const reseedDemoCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -74,7 +74,7 @@ export const reseedDemoCompany = createServerFn({ method: "POST" })
 /** Ensure demo has sample ledger after first open (idempotent). */
 export const ensureDemoSeeded = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -111,7 +111,7 @@ export const ensureDemoSeeded = createServerFn({ method: "POST" })
  */
 export const getDemoLedgerSnapshot = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {

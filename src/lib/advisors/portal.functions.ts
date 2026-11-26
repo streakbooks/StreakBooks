@@ -85,7 +85,7 @@ export const listAdvisorsPortalDocuments = createServerFn({ method: "GET" })
 
 export const markAdvisorsPortalDocumentReceived = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         requestId: z.string().uuid(),
@@ -113,7 +113,7 @@ export const listAdvisorsPortalMessages = createServerFn({ method: "GET" })
 
 export const sendAdvisorsPortalMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ body: z.string().trim().min(1).max(4000) })
       .strict()
@@ -129,7 +129,7 @@ export const sendAdvisorsPortalMessage = createServerFn({ method: "POST" })
 
 export const updateAdvisorsPortalContact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         name: z.string().trim().min(1).max(120).optional(),
@@ -153,7 +153,7 @@ export const updateAdvisorsPortalContact = createServerFn({ method: "POST" })
 
 export const createAdvisorsPortalServiceRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         kind: z.enum(["plan_change", "cancellation"]),
@@ -184,7 +184,7 @@ export const listAdvisorsPortalNotifications = createServerFn({ method: "GET" })
 
 export const markAdvisorsPortalNotificationsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         ids: z.array(z.string().uuid()).max(100).optional(),
@@ -201,7 +201,7 @@ export const markAdvisorsPortalNotificationsRead = createServerFn({ method: "POS
 
 export const acceptAdvisorsPortalInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ token: z.string().trim().min(16).max(200) })
       .strict()
@@ -217,7 +217,7 @@ export const acceptAdvisorsPortalInvite = createServerFn({ method: "POST" })
 
 export const createAdvisorsPortalInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         clientId: z.string().uuid(),
@@ -253,7 +253,7 @@ export const createAdvisorsPortalInvite = createServerFn({ method: "POST" })
 
 export const unlinkAdvisorsPortalUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         clientId: z.string().uuid(),
@@ -273,7 +273,7 @@ export const unlinkAdvisorsPortalUser = createServerFn({ method: "POST" })
 
 export const replyAdvisorsPortalMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         clientId: z.string().uuid(),
@@ -295,7 +295,7 @@ export const replyAdvisorsPortalMessage = createServerFn({ method: "POST" })
 
 export const listAdvisorsPortalServiceRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         status: z.enum(["open", "in_review", "accepted", "declined", "cancelled"]).optional(),
@@ -314,7 +314,7 @@ export const listAdvisorsPortalServiceRequests = createServerFn({ method: "GET" 
 
 export const dispatchAdvisorsBookingReminders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         limit: z.number().int().min(1).max(100).optional(),

@@ -15,7 +15,7 @@ import {
  */
 export const getContactDirectoryPreferences = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -38,7 +38,7 @@ export const getContactDirectoryPreferences = createServerFn({ method: "GET" })
  */
 export const saveContactDirectoryPreference = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; kind: ContactPreferenceKind; value: unknown }) => {
+  .validator((input: { companyId: string; kind: ContactPreferenceKind; value: unknown }) => {
     if (input.kind !== "columns" && input.kind !== "views") {
       throw new Error("Unsupported Contacts preference");
     }

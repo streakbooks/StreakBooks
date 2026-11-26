@@ -143,7 +143,7 @@ function mapTrust(raw: unknown): PmTrustSummary {
 
 export const upsertPmAccountMappings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; mappings: PmAccountMappings; expectedVersion: number }) => ({
       companyId: companyIdOf(input),
       mappings: input.mappings,
@@ -175,7 +175,7 @@ export const upsertPmAccountMappings = createServerFn({ method: "POST" })
 
 export const postPmRentCharge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; chargeId: string }) => ({
+  .validator((input: { companyId: string; chargeId: string }) => ({
     companyId: companyIdOf(input),
     chargeId: String(input.chargeId),
   }))
@@ -199,7 +199,7 @@ export const postPmRentCharge = createServerFn({ method: "POST" })
 
 export const postPmCommission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; calculationId: string }) => ({
+  .validator((input: { companyId: string; calculationId: string }) => ({
     companyId: companyIdOf(input),
     calculationId: String(input.calculationId),
   }))
@@ -221,7 +221,7 @@ export const postPmCommission = createServerFn({ method: "POST" })
 
 export const listPmOwnerDistributions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; ownerId?: string | null }) => ({
+  .validator((input: { companyId: string; ownerId?: string | null }) => ({
     companyId: companyIdOf(input),
     ownerId: input.ownerId ?? null,
   }))
@@ -238,7 +238,7 @@ export const listPmOwnerDistributions = createServerFn({ method: "GET" })
 
 export const upsertPmOwnerDistribution = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       ownerId: string;
@@ -282,7 +282,7 @@ export const upsertPmOwnerDistribution = createServerFn({ method: "POST" })
 
 export const approvePmOwnerDistribution = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; distributionId: string }) => ({
+  .validator((input: { companyId: string; distributionId: string }) => ({
     companyId: companyIdOf(input),
     distributionId: String(input.distributionId),
   }))
@@ -300,7 +300,7 @@ export const approvePmOwnerDistribution = createServerFn({ method: "POST" })
 
 export const postPmOwnerDistribution = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; distributionId: string }) => ({
+  .validator((input: { companyId: string; distributionId: string }) => ({
     companyId: companyIdOf(input),
     distributionId: String(input.distributionId),
   }))
@@ -318,7 +318,7 @@ export const postPmOwnerDistribution = createServerFn({ method: "POST" })
 
 export const listPmPortalAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; portalRole?: "owner" | "tenant" | null }) => ({
+  .validator((input: { companyId: string; portalRole?: "owner" | "tenant" | null }) => ({
     companyId: companyIdOf(input),
     portalRole: input.portalRole ?? null,
   }))
@@ -335,7 +335,7 @@ export const listPmPortalAccess = createServerFn({ method: "GET" })
 
 export const upsertPmPortalAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactId: string;
@@ -373,7 +373,7 @@ export const upsertPmPortalAccess = createServerFn({ method: "POST" })
 
 export const revokePmPortalAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; accessId: string }) => ({
+  .validator((input: { companyId: string; accessId: string }) => ({
     companyId: companyIdOf(input),
     accessId: String(input.accessId),
   }))
@@ -390,7 +390,7 @@ export const revokePmPortalAccess = createServerFn({ method: "POST" })
 
 export const getPmTrustSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<PmTrustSummary> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(

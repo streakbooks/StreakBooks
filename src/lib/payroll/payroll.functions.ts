@@ -325,7 +325,7 @@ function pageFromRpc(
 
 export const getPayrollSettingsPage = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.view");
@@ -393,7 +393,7 @@ export const getPayrollSettingsPage = createServerFn({ method: "GET" })
 
 export const savePayrollSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: PayrollSettingsDraft }) => ({
+  .validator((input: { companyId: string; draft: PayrollSettingsDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))
@@ -414,7 +414,7 @@ export const savePayrollSettings = createServerFn({ method: "POST" })
 
 export const savePayrollPaySchedule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: PayScheduleDraft }) => ({
+  .validator((input: { companyId: string; draft: PayScheduleDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))
@@ -433,7 +433,7 @@ export const savePayrollPaySchedule = createServerFn({ method: "POST" })
 
 export const savePayrollComponentType = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: ComponentDraft }) => ({
+  .validator((input: { companyId: string; draft: ComponentDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))
@@ -452,7 +452,7 @@ export const savePayrollComponentType = createServerFn({ method: "POST" })
 
 export const savePayrollDocumentSequences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payrollRunPrefix: string;

@@ -25,7 +25,7 @@ export type RecurringJournalRow = {
 
 export const listRecurringJournals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
@@ -123,7 +123,7 @@ export const updateRecurringJournalSchedule = createServerFn({ method: "POST" })
 /** "Run due now": posts every occurrence due up to today (or the given date) for this company. */
 export const runDueRecurringJournals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; asOfDate?: string }) => ({
+  .validator((input: { companyId: string; asOfDate?: string }) => ({
     companyId: assertUuid(input.companyId),
     asOfDate: input.asOfDate && /^\d{4}-\d{2}-\d{2}$/.test(input.asOfDate) ? input.asOfDate : null,
   }))
@@ -149,7 +149,7 @@ export const runDueRecurringJournals = createServerFn({ method: "POST" })
 
 export const setRecurringJournalActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; templateId: string; active: boolean }) => ({
+  .validator((input: { companyId: string; templateId: string; active: boolean }) => ({
     companyId: assertUuid(input.companyId),
     templateId: assertUuid(input.templateId, "template"),
     active: Boolean(input.active),

@@ -120,7 +120,7 @@ export const getAdvisorsCatalogueAdmin = createServerFn({ method: "GET" })
 
 export const saveAdvisorsCatalogueDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => saveDraftSchema.parse(input))
+  .validator((input: unknown) => saveDraftSchema.parse(input))
   .handler(async ({ data, context }) => {
     const payload = normalizeAdminPayload(data.payload);
     const errors = validateAdminPayload(payload);
@@ -143,7 +143,7 @@ export const saveAdvisorsCatalogueDraft = createServerFn({ method: "POST" })
 
 export const publishAdvisorsCatalogueDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ reason: reasonSchema }).strict().parse(input))
+  .validator((input: unknown) => z.object({ reason: reasonSchema }).strict().parse(input))
   .handler(async ({ data, context }) => {
     const result = await callRpc(context.supabase, "platform_advisors_publish_draft", {
       _reason: data.reason,
@@ -159,7 +159,7 @@ export const publishAdvisorsCatalogueDraft = createServerFn({ method: "POST" })
 
 export const restoreAdvisorsCatalogueVersion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ versionId: z.string().uuid(), reason: reasonSchema }).strict().parse(input),
   )
   .handler(async ({ data, context }) => {

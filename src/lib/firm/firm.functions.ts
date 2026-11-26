@@ -29,7 +29,7 @@ export const listMyFirms = createServerFn({ method: "GET" })
 
 export const createFirm = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { name: string }) => {
+  .validator((input: { name: string }) => {
     const name = (input.name ?? "").trim();
     if (name.length < 2) throw new Error("Firm name is required");
     if (name.length > 120) throw new Error("Firm name must not exceed 120 characters");
@@ -46,7 +46,7 @@ export const createFirm = createServerFn({ method: "POST" })
 
 export const listFirmClients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { firmId: string }) => ({ firmId: assertUuid(input.firmId) }))
+  .validator((input: { firmId: string }) => ({ firmId: assertUuid(input.firmId) }))
   .handler(async ({ data, context }) => {
     const { data: member, error: memberError } = await context.supabase
       .from("firm_members" as never)
@@ -84,7 +84,7 @@ export const listFirmClients = createServerFn({ method: "GET" })
  */
 export const linkFirmClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { firmId: string; companyId: string; accessLevel: string }) => {
+  .validator((input: { firmId: string; companyId: string; accessLevel: string }) => {
     if (!["view", "bookkeep", "full"].includes(input.accessLevel)) {
       throw new Error("Invalid access level");
     }
@@ -110,7 +110,7 @@ export const linkFirmClient = createServerFn({ method: "POST" })
 
 export const revokeFirmClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { firmId: string; companyId: string }) => ({
+  .validator((input: { firmId: string; companyId: string }) => ({
     firmId: assertUuid(input.firmId),
     companyId: assertUuid(input.companyId),
   }))
@@ -131,7 +131,7 @@ export const revokeFirmClient = createServerFn({ method: "POST" })
 /** Client activity for a linked company (audit slice) — firm members with company access. */
 export const listFirmClientActivity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { firmId: string; companyId: string }) => ({
+  .validator((input: { firmId: string; companyId: string }) => ({
     firmId: assertUuid(input.firmId),
     companyId: assertUuid(input.companyId),
   }))
@@ -175,7 +175,7 @@ export const listFirmClientActivity = createServerFn({ method: "GET" })
 
 export const listFirmClientAccessLog = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase.rpc(
       "firm_client_access_log" as never,
@@ -193,7 +193,7 @@ export const listFirmClientAccessLog = createServerFn({ method: "GET" })
 /** Record a firm staff member opening a client workspace module. */
 export const recordFirmClientModuleAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         companyId: z.string().uuid(),
@@ -212,7 +212,7 @@ export const recordFirmClientModuleAccess = createServerFn({ method: "POST" })
 
 export const listFirmClientAccessGrants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ firmId: z.string().uuid(), companyId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -228,7 +228,7 @@ export const listFirmClientAccessGrants = createServerFn({ method: "GET" })
 
 export const saveFirmClientAccessGrant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         firmId: z.string().uuid(),
@@ -262,7 +262,7 @@ export const saveFirmClientAccessGrant = createServerFn({ method: "POST" })
 
 export const revokeFirmClientAccessGrant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         firmId: z.string().uuid(),
@@ -293,7 +293,7 @@ export const revokeFirmClientAccessGrant = createServerFn({ method: "POST" })
 
 export const requestFirmClientPermissions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         firmId: z.string().uuid(),
@@ -338,7 +338,7 @@ export const requestFirmClientPermissions = createServerFn({ method: "POST" })
 
 export const listFirmClientPermissionRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ companyId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ companyId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase.rpc(
       "firm_client_pending_requests" as never,
@@ -357,7 +357,7 @@ export const listFirmClientPermissionRequests = createServerFn({ method: "GET" }
 
 export const listFirmClientConnections = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ companyId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ companyId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase.rpc(
       "firm_client_connections" as never,
@@ -369,7 +369,7 @@ export const listFirmClientConnections = createServerFn({ method: "GET" })
 
 export const disconnectFirmClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ firmId: z.string().uuid(), companyId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -383,7 +383,7 @@ export const disconnectFirmClient = createServerFn({ method: "POST" })
 
 export const reviewFirmClientPermissionRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         requestId: z.string().uuid(),

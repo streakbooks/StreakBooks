@@ -42,7 +42,7 @@ export type FirmCustomOnboardingStep = {
 
 export const listFirmServiceCategories = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmScope.parse(input))
+  .validator((input: unknown) => firmScope.parse(input))
   .handler(async ({ data, context }): Promise<FirmServiceCategory[]> => {
     await assertFirmMembership(context, data.firmId, false);
     const { data: rows, error } = await context.supabase
@@ -72,7 +72,7 @@ export type FirmServiceInput = z.infer<typeof serviceInput>;
 
 export const saveFirmServiceCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => serviceInput.parse(input))
+  .validator((input: unknown) => serviceInput.parse(input))
   .handler(async ({ data, context }): Promise<FirmServiceCategory> => {
     await assertFirmMembership(context, data.firmId, true);
     const { firmId, id, version, ...fields } = data;
@@ -105,7 +105,7 @@ export const saveFirmServiceCategory = createServerFn({ method: "POST" })
 
 export const listFirmCustomOnboarding = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmScope.parse(input))
+  .validator((input: unknown) => firmScope.parse(input))
   .handler(async ({ data, context }): Promise<FirmCustomOnboardingStep[]> => {
     await assertFirmMembership(context, data.firmId, false);
     const { data: rows, error } = await context.supabase
@@ -144,7 +144,7 @@ export type FirmCustomOnboardingInput = z.infer<typeof onboardingInput>;
 
 export const saveFirmCustomOnboarding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => onboardingInput.parse(input))
+  .validator((input: unknown) => onboardingInput.parse(input))
   .handler(async ({ data, context }): Promise<FirmCustomOnboardingStep> => {
     await assertFirmMembership(context, data.firmId, true);
     const { firmId, task_key, version, ...fields } = data;
@@ -178,9 +178,7 @@ export const saveFirmCustomOnboarding = createServerFn({ method: "POST" })
 
 export const applyFirmCustomOnboarding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    firmScope.extend({ companyId: z.string().uuid() }).parse(input),
-  )
+  .validator((input: unknown) => firmScope.extend({ companyId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertFirmMembership(context, data.firmId, true);
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");

@@ -110,7 +110,7 @@ async function relationError<T>(
 /** Everything the register page needs in one call. */
 export const getAssetRegisterPage = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const sb = context.supabase as unknown as Sb;
@@ -182,7 +182,7 @@ export const getAssetRegisterPage = createServerFn({ method: "GET" })
 /** One asset with its posted entries and the projected schedule from its terms. */
 export const getFixedAsset = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; assetId: string }) => ({
+  .validator((input: { companyId: string; assetId: string }) => ({
     companyId: companyIdOf(input),
     assetId: assertUuid(input?.assetId, "asset"),
   }))
@@ -257,7 +257,7 @@ export type SaveAssetTypeInput = {
 
 export const saveAssetType = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: SaveAssetTypeInput) => {
+  .validator((input: SaveAssetTypeInput) => {
     if (!METHODS.includes(input?.method)) throw new Error("Choose a depreciation method.");
     return {
       companyId: companyIdOf(input),
@@ -322,7 +322,7 @@ export type SaveFixedAssetInput = {
 
 export const saveFixedAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: SaveFixedAssetInput) => {
+  .validator((input: SaveFixedAssetInput) => {
     if (!METHODS.includes(input?.method)) throw new Error("Choose a depreciation method.");
     const v = {
       companyId: companyIdOf(input),
@@ -543,7 +543,7 @@ export const importFixedAssetRegisterCsv = createServerFn({ method: "POST" })
 
 export const deleteFixedAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; assetId: string }) => ({
+  .validator((input: { companyId: string; assetId: string }) => ({
     companyId: companyIdOf(input),
     assetId: assertUuid(input?.assetId, "asset"),
   }))
@@ -588,7 +588,7 @@ function periodEndOf(v: unknown): string {
 /** Preview of one month: writes nothing. */
 export const previewDepreciation = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; periodEnd: string }) => ({
+  .validator((input: { companyId: string; periodEnd: string }) => ({
     companyId: companyIdOf(input),
     periodEnd: periodEndOf(input?.periodEnd),
   }))
@@ -619,7 +619,7 @@ export const previewDepreciation = createServerFn({ method: "GET" })
  */
 export const runDepreciation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; periodEnds: string[] }) => {
+  .validator((input: { companyId: string; periodEnds: string[] }) => {
     const ends = Array.isArray(input?.periodEnds) ? input.periodEnds.map(periodEndOf) : [];
     const periods = validateDepreciationPostingPeriods(ends, monthEnd(todayIso()));
     return { companyId: companyIdOf(input), periodEnds: periods };
@@ -656,7 +656,7 @@ export const runDepreciation = createServerFn({ method: "POST" })
 
 export const disposeFixedAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       assetId: string;
@@ -752,7 +752,7 @@ function capitalisationDisplayMinor(value: bigint, field: string): number {
 /** Posted bill lines coded to asset accounts: review candidates, not confirmed PPE. */
 export const listCapitalisableBillLines = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; asOf?: string }) => {
+  .validator((input: { companyId: string; asOf?: string }) => {
     const asOf = input?.asOf ? isoDate(input.asOf, "As at") : todayIso();
     if (asOf > todayIso()) throw new Error("Bill review date cannot be in the future.");
     return { companyId: companyIdOf(input), asOf };
@@ -870,7 +870,7 @@ export type FixedAssetRegisterRow = {
 
 export const getFixedAssetRegister = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; asOf: string }) => ({
+  .validator((input: { companyId: string; asOf: string }) => ({
     companyId: companyIdOf(input),
     asOf: isoDate(input?.asOf, "As at"),
   }))
@@ -918,7 +918,7 @@ export type DepreciationScheduleRow = {
 
 export const getDepreciationSchedule = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from: string; to: string }) => {
+  .validator((input: { companyId: string; from: string; to: string }) => {
     const from = isoDate(input?.from, "From");
     const to = isoDate(input?.to, "To");
     if (to < from) throw new Error("The end date is before the start date.");

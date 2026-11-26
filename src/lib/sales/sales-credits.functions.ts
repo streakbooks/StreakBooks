@@ -87,7 +87,7 @@ async function cnSearchOr(supabase: SalesClient, f: ReturnType<typeof parseCnLis
 
 export const listCreditNotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseCnListInput)
+  .validator(parseCnListInput)
   .handler(async ({ data: f, context }) => {
     await assertCompanyMember(context.supabase, f.companyId);
     const or = await cnSearchOr(context.supabase, f);
@@ -125,7 +125,7 @@ export const listCreditNotes = createServerFn({ method: "GET" })
 
 export const exportCreditNotesCsv = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseCnListInput)
+  .validator(parseCnListInput)
   .handler(async ({ data: f, context }) => {
     await assertCompanyMember(context.supabase, f.companyId);
     const or = await cnSearchOr(context.supabase, f);
@@ -166,7 +166,7 @@ export const exportCreditNotesCsv = createServerFn({ method: "GET" })
 
 export const getCreditNote = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; creditNoteId: string }) => ({
+  .validator((input: { companyId: string; creditNoteId: string }) => ({
     companyId: assertUuid(input.companyId),
     creditNoteId: assertUuid(input.creditNoteId, "credit note"),
   }))
@@ -258,7 +258,7 @@ export const getCreditNote = createServerFn({ method: "GET" })
 
 export const saveCreditNoteDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       creditNoteId?: string;
@@ -317,7 +317,7 @@ export const saveCreditNoteDraft = createServerFn({ method: "POST" })
 
 export const deleteDraftCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; creditNoteId: string }) => ({
+  .validator((input: { companyId: string; creditNoteId: string }) => ({
     companyId: assertUuid(input.companyId),
     creditNoteId: assertUuid(input.creditNoteId, "credit note"),
   }))
@@ -330,7 +330,7 @@ export const deleteDraftCreditNote = createServerFn({ method: "POST" })
 /** Copy a sales credit note into a NEW draft dated today (no allocations / source invoice link). */
 export const copyCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; creditNoteId: string }) => ({
+  .validator((input: { companyId: string; creditNoteId: string }) => ({
     companyId: assertUuid(input.companyId),
     creditNoteId: assertUuid(input.creditNoteId, "credit note"),
   }))
@@ -406,7 +406,7 @@ export const copyCreditNote = createServerFn({ method: "POST" })
 
 export const authoriseCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; creditNoteId: string }) => ({
+  .validator((input: { companyId: string; creditNoteId: string }) => ({
     companyId: assertUuid(input.companyId),
     creditNoteId: assertUuid(input.creditNoteId),
   }))
@@ -497,7 +497,7 @@ export const authoriseCreditNote = createServerFn({ method: "POST" })
 
 export const allocateCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       creditNoteId: string;
@@ -551,7 +551,7 @@ export const allocateCreditNote = createServerFn({ method: "POST" })
 
 export const voidCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; creditNoteId: string; reason: string; voidDate?: string }) => ({
       companyId: assertUuid(input.companyId),
       creditNoteId: assertUuid(input.creditNoteId, "credit note"),
@@ -577,7 +577,7 @@ export const voidCreditNote = createServerFn({ method: "POST" })
 
 export const removeCreditAllocation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       allocationId: string;

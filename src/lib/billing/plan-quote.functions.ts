@@ -90,7 +90,7 @@ function planAmount(
 }
 
 export const quoteCustomerPlan = createServerFn({ method: "POST" })
-  .inputValidator((value: unknown) => selectionSchema.parse(value))
+  .validator((value: unknown) => selectionSchema.parse(value))
   .handler(async ({ data }) => {
     setResponseHeader("Cache-Control", "private, no-store");
     const region = resolveBillingRegion({

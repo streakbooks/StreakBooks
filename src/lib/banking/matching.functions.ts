@@ -49,7 +49,7 @@ async function assertCanMatchBank(supabase: AnyClient, companyId: string): Promi
  */
 export const unmatchBankTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; bankTransactionId: string; reason?: string }) => ({
+  .validator((input: { companyId: string; bankTransactionId: string; reason?: string }) => ({
     companyId: assertUuid(input.companyId),
     bankTransactionId: assertUuid(input.bankTransactionId),
     reason: (input.reason ?? "").trim().slice(0, 500) || null,
@@ -86,16 +86,14 @@ export type MatchCandidateRow = {
 
 export const listMatchCandidates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; bankTransactionId: string; windowDays?: number }) => ({
-      companyId: assertUuid(input.companyId),
-      bankTransactionId: assertUuid(input.bankTransactionId),
-      windowDays: Math.min(
-        90,
-        Math.max(0, Math.round(Number(input.windowDays ?? DEFAULT_MATCH_WINDOW_DAYS))),
-      ),
-    }),
-  )
+  .validator((input: { companyId: string; bankTransactionId: string; windowDays?: number }) => ({
+    companyId: assertUuid(input.companyId),
+    bankTransactionId: assertUuid(input.bankTransactionId),
+    windowDays: Math.min(
+      90,
+      Math.max(0, Math.round(Number(input.windowDays ?? DEFAULT_MATCH_WINDOW_DAYS))),
+    ),
+  }))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as AnyClient;
     await assertCompanyMember(supabase, data.companyId);
@@ -200,7 +198,7 @@ export const listMatchCandidates = createServerFn({ method: "GET" })
 /** One statement line ↔ one or several existing bank-ledger lines that add up exactly (RPC validates again). */
 export const matchBankTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; bankTransactionId: string; journalLineIds: string[] }) => {
       const ids = [
         ...new Set((input.journalLineIds ?? []).map((id) => assertUuid(id, "Journal line"))),
@@ -229,7 +227,7 @@ export const matchBankTransaction = createServerFn({ method: "POST" })
 /** Several statement lines ↔ one ledger line (e.g. a bank deposit made of several receipts). */
 export const matchStatementLinesToJournalLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; bankTransactionIds: string[]; journalLineId: string }) => {
       const ids = [
         ...new Set((input.bankTransactionIds ?? []).map((id) => assertUuid(id, "Transaction"))),

@@ -5,7 +5,7 @@ vi.mock("@tanstack/react-start", () => ({
     let validate = (input: unknown): unknown => input;
     const chain = {
       middleware: () => chain,
-      inputValidator(fn: typeof validate) {
+      validator(fn: typeof validate) {
         validate = fn;
         return chain;
       },

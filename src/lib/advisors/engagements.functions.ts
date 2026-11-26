@@ -81,7 +81,7 @@ const listFiltersSchema = z
 
 export const listAdvisorsEngagements = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listFiltersSchema.parse(input ?? {}))
+  .validator((input: unknown) => listFiltersSchema.parse(input ?? {}))
   .handler(async ({ data, context }): Promise<AdvisorsEngagement[]> => {
     const raw = await callRpc(context.supabase, "platform_advisors_list_engagements", {
       _status: data.status || null,
@@ -93,7 +93,7 @@ export const listAdvisorsEngagements = createServerFn({ method: "GET" })
 
 export const getAdvisorsEngagement = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ engagementId: z.string().uuid() }).strict().parse(input),
   )
   .handler(async ({ data, context }): Promise<AdvisorsEngagementDetail> => {
@@ -106,7 +106,7 @@ export const getAdvisorsEngagement = createServerFn({ method: "GET" })
 
 export const upsertAdvisorsEngagement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         id: z.string().uuid().optional(),
@@ -152,7 +152,7 @@ export const upsertAdvisorsEngagement = createServerFn({ method: "POST" })
 
 export const upsertAdvisorsProposal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         id: z.string().uuid().optional(),
@@ -196,7 +196,7 @@ export const upsertAdvisorsProposal = createServerFn({ method: "POST" })
 
 export const sendAdvisorsProposal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         proposalId: z.string().uuid(),
@@ -215,7 +215,7 @@ export const sendAdvisorsProposal = createServerFn({ method: "POST" })
   });
 
 export const getPublicAdvisorsProposal = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ token: z.string().trim().min(16).max(128) })
       .strict()
@@ -226,7 +226,7 @@ export const getPublicAdvisorsProposal = createServerFn({ method: "GET" })
   });
 
 export const respondPublicAdvisorsProposal = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         token: z.string().trim().min(16).max(128),
@@ -252,7 +252,7 @@ export const respondPublicAdvisorsProposal = createServerFn({ method: "POST" })
   });
 
 export const getPublicAdvisorsAgreement = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ token: z.string().trim().min(16).max(128) })
       .strict()
@@ -263,7 +263,7 @@ export const getPublicAdvisorsAgreement = createServerFn({ method: "GET" })
   });
 
 export const acceptPublicAdvisorsAgreement = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         token: z.string().trim().min(16).max(128),
@@ -288,7 +288,7 @@ export const acceptPublicAdvisorsAgreement = createServerFn({ method: "POST" })
 
 export const listAdvisorsOnboarding = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         status: z.enum(["onboarding", "active", "accepted"]).optional(),
@@ -307,7 +307,7 @@ export const listAdvisorsOnboarding = createServerFn({ method: "GET" })
 
 export const setAdvisorsOnboardingTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         taskId: z.string().uuid(),

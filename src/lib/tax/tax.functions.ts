@@ -16,7 +16,7 @@ import { isValidTaxDate, isValidTaxBasisPoints } from "@/lib/tax/tax-input-valid
 
 export const getTaxSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: row, error } = await context.supabase
@@ -32,7 +32,7 @@ export const getTaxSettings = createServerFn({ method: "GET" })
 
 export const updateTaxSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: TaxSettingsInput & { companyId: string }) => {
+  .validator((input: TaxSettingsInput & { companyId: string }) => {
     const { companyId, ...fields } = input;
     // Validates and keeps only the fields that were actually sent (partial update, TX-02).
     const patch = buildTaxSettingsPatch(fields);
@@ -71,7 +71,7 @@ export const updateTaxSettings = createServerFn({ method: "POST" })
 
 export const listTaxRates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; onDate?: string }) => {
+  .validator((input: { companyId: string; onDate?: string }) => {
     if (input.onDate && !isValidTaxDate(input.onDate)) {
       throw new Error("onDate must be a real YYYY-MM-DD calendar date");
     }
@@ -101,7 +101,7 @@ export const listTaxRates = createServerFn({ method: "GET" })
 
 export const saveTaxRate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -171,7 +171,7 @@ export const saveTaxRate = createServerFn({ method: "POST" })
 
 export const listTaxCodes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
@@ -187,7 +187,7 @@ export const listTaxCodes = createServerFn({ method: "GET" })
 
 export const saveTaxCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -263,7 +263,7 @@ export const saveTaxCode = createServerFn({ method: "POST" })
 
 export const seedTaxPack = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; packId?: string }) => ({
+  .validator((input: { companyId: string; packId?: string }) => ({
     companyId: assertUuid(input.companyId),
     packId: (input.packId ?? "").trim().slice(0, 60) || null,
   }))
@@ -296,7 +296,7 @@ export const seedTaxPack = createServerFn({ method: "POST" })
 
 export const listTaxCountryPacks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; countryCode?: string }) => ({
+  .validator((input: { companyId: string; countryCode?: string }) => ({
     companyId: assertUuid(input.companyId),
     countryCode: (input.countryCode ?? "").trim().toUpperCase().slice(0, 2),
   }))
@@ -318,7 +318,7 @@ export const listTaxCountryPacks = createServerFn({ method: "GET" })
  */
 export const postTaxAdjustment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       journalDate: string;

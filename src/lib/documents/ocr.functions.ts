@@ -85,7 +85,7 @@ async function eligibleDocument(
 
 export const getDocumentOcrAvailability = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -103,7 +103,7 @@ export const getDocumentOcrAvailability = createServerFn({ method: "GET" })
 
 export const startDocumentOcr = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string; consent: boolean }) => ({
+  .validator((input: { companyId: string; attachmentId: string; consent: boolean }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
     consent: input.consent === true,
@@ -155,7 +155,7 @@ export const startDocumentOcr = createServerFn({ method: "POST" })
 
 export const checkDocumentOcr = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string; jobToken: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string; jobToken: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
     jobToken: String(input.jobToken ?? "").slice(0, 1600),

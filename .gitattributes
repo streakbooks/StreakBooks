@@ -1,2 +1,3 @@
-# Keep the generated route tree on LF so core.autocrlf does not mark an unchanged blob dirty.
+# Keep generated text on LF so core.autocrlf does not dirty unchanged blobs or fail byte comparisons.
 src/routeTree.gen.ts text eol=lf
+docs/billing/openapi.json text eol=lf

@@ -186,6 +186,13 @@ export const navItems: NavItem[] = [
     description: "Reports Centre and financial statements",
   },
   {
+    label: "Find an advisor",
+    to: "/advisors",
+    icon: Handshake,
+    group: "practice",
+    description: "Browse support plans and book an advisor consultation",
+  },
+  {
     label: "Accountant",
     to: "/accountant",
     icon: Briefcase,
@@ -200,14 +207,14 @@ export const navItems: NavItem[] = [
     description: "Practice and client access",
   },
   {
-    label: "Advisors",
+    label: "Advisors admin",
     to: "/advisors-admin",
-    icon: Handshake,
+    icon: ContactRound,
     group: "practice",
     description: "Advisors inquiries, clients and delivery",
   },
   {
-    label: "Advisors portal",
+    label: "Advisor portal",
     to: "/advisors-portal",
     icon: Handshake,
     group: "practice",

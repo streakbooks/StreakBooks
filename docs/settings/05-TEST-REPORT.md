@@ -76,4 +76,10 @@ Validated code revision: `897f30ed` (local commit on `feat/settings-module-overh
 | Diff whitespace check | **Pass** | `git diff --check` exited 0 before commit. |
 | Local/hosted database | **Not run for this patch** | No schema change. The previously documented isolated PostgreSQL workflow suite remains a separate earlier pass; hosted Supabase was not accessed. |
 | Browser / authenticated staging / production | **Unverified / not performed** | Local app at port 8080 could not be reached in this environment. No deployment or production verification. |
-| GitHub CI | **Pending** | This revision has not yet been pushed; the previous published head's green run does not validate `897f30ed`. |
+| GitHub CI | **Pass** | [Run #45821768968](https://github.com/streakbooks/StreakBooks/actions/runs/45821768968) passed on published head `b8d036641bb2c21203392d2c0bbbcc7dc280377f`; all validation, isolated PostgreSQL, and browser-fixture jobs succeeded. |
+
+## 2026-11-26 port-8080 access check
+
+- Started the dev server using `npm.cmd run dev -- --port 8080 --strictPort`; Vite reported ready at `http://localhost:8080/`.
+- The execution environment rejected the localhost socket (`Invoke-WebRequest`: socket access forbidden) and the browser could not connect. This is an environment-level browser-access limitation; the app was not visually verified. The task-launched dev server was stopped after the check. No port 8081 was used.
+- The local environment logged that `VERCEL_OIDC_TOKEN` is not set; no `vercel env pull` was run because it would bring cloud environment secrets into the local test setup. No production credentials were used.

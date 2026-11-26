@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SecuritySettingsCard } from "@/components/auth/SecuritySettingsCard";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { PersonalAppearanceCard } from "@/components/settings/PersonalAppearanceCard";
+import { authCallbackUrl, clearNext, rememberNext } from "@/lib/auth-session";
+import { normalizeEmailChangeAddress } from "@/lib/auth-email-change";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -25,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
       { title: "Your profile — StreakBooks" },
       {
         name: "description",
-        content: "View and update your StreakBooks account details and password.",
+        content: "View and update your StreakBooks account details, email and password.",
       },
       { property: "og:title", content: "Your profile — StreakBooks" },
       {
@@ -52,6 +54,8 @@ function ProfilePage() {
 
   const [fullName, setFullName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
+  const [emailDraft, setEmailDraft] = useState("");
+  const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
 
   useEffect(() => {
     if (!profileQuery.isSuccess || !profileQuery.data) return;
@@ -68,6 +72,31 @@ function ProfilePage() {
     onSuccess: (data) => {
       queryClient.setQueryData(["my-profile"], data);
       toast.success("Profile updated");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const nextEmail = normalizeEmailChangeAddress(emailDraft);
+  const emailDirty = Boolean(
+    nextEmail && nextEmail.toLowerCase() !== profileQuery.data?.email.toLowerCase(),
+  );
+  const emailMutation = useMutation({
+    mutationFn: async () => {
+      if (!nextEmail || !emailDirty) throw new Error("Enter a different valid email address.");
+      rememberNext("/profile");
+      const { error } = await supabase.auth.updateUser(
+        { email: nextEmail },
+        { emailRedirectTo: authCallbackUrl() },
+      );
+      if (error) {
+        clearNext();
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      setEmailDraft("");
+      setEmailConfirmationSent(true);
+      toast.success("Check your email to confirm the address change");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -105,10 +134,41 @@ function ProfilePage() {
               >
                 <div className="space-y-2">
                   <Label htmlFor="profile-email">Email</Label>
-                  <Input id="profile-email" value={profileQuery.data.email} disabled readOnly />
+                  <Input
+                    id="profile-email"
+                    type="email"
+                    autoComplete="email"
+                    maxLength={254}
+                    value={emailDraft}
+                    placeholder={profileQuery.data.email}
+                    aria-invalid={Boolean(emailDraft && !nextEmail)}
+                    disabled={emailMutation.isPending}
+                    onChange={(event) => {
+                      setEmailDraft(event.target.value);
+                      setEmailConfirmationSent(false);
+                    }}
+                  />
                   <p className="text-xs text-muted-foreground">
-                    Your email is your sign-in identity and can't be changed in this phase.
+                    Your current address remains active until you confirm the change from the
+                    verification email.
                   </p>
+                  {emailDraft && !nextEmail ? (
+                    <p className="text-sm text-destructive">Enter a valid email address.</p>
+                  ) : null}
+                  {emailConfirmationSent ? (
+                    <p role="status" className="text-sm text-muted-foreground">
+                      Confirmation sent. Your sign-in email changes only after verification.
+                    </p>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!emailDirty || emailMutation.isPending}
+                    onClick={() => emailMutation.mutate()}
+                  >
+                    {emailMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                    {emailMutation.isPending ? "Sending confirmation…" : "Change email"}
+                  </Button>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="profile-name">Full name</Label>

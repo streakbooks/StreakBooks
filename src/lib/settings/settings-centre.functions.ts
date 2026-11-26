@@ -24,6 +24,10 @@ import {
 import { evaluateSettingsChange } from "@/lib/settings/dependency-engine";
 import { loadBasicPayrollFeatureConfigComplete } from "@/lib/payroll/payroll.functions";
 import type { Sb } from "@/lib/accounting/ledger-data";
+import {
+  mapSettingsOverviewCompany,
+  SETTINGS_OVERVIEW_COMPANY_SELECT,
+} from "@/lib/settings/settings-overview-company";
 
 /** JSON-serializable settings document for TanStack server functions. */
 export type SettingsDocument = Record<
@@ -363,16 +367,17 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
 
     const { data: company, error: companyError } = await context.supabase
       .from("companies" as never)
-      .select("name, base_currency, fiscal_year_end_month, tax_regime, is_demo" as never)
+      .select(SETTINGS_OVERVIEW_COMPANY_SELECT as never)
       .eq("id" as never, data.companyId as never)
       .maybeSingle();
 
     if (companyError) throw new Error(companyError.message);
     if (!company) throw new Error("Organisation not found");
     const { readEmailConfig } = await import("@/lib/documents/email-provider.server");
+    const overviewCompany = mapSettingsOverviewCompany(company);
     const integrations = buildIntegrationHealth({
       emailConfigured: readEmailConfig().configured,
-      isDemo: (company as { is_demo: boolean }).is_demo,
+      isDemo: overviewCompany.is_demo,
     });
 
     // These reads are independent after organisation membership is checked.
@@ -435,13 +440,7 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
     };
 
     return {
-      company: company as {
-        name: string;
-        base_currency: string;
-        fiscal_year_end_month: number;
-        tax_regime: string | null;
-        is_demo: boolean;
-      } | null,
+      company: overviewCompany,
       lockPolicy,
       memberCount: memberCount ?? 0,
       warnings,

@@ -121,8 +121,6 @@ function BatchPayment() {
     );
   if (billsQ.isError)
     return <QueryErrorState queries={[billsQ]} title="Could not load bills to pay" />;
-  if (accountsQ.isError)
-    return <QueryErrorState queries={[accountsQ]} title="Could not load payment accounts" />;
   if (billsQ.isPending || accountsQ.isPending) return <LoadingState />;
 
   return (

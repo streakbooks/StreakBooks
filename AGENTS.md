@@ -12,7 +12,7 @@ Include the result statement, complete verification table, actual PR/commit/CI l
 PowerShell review commands, a task-specific manual checklist, and remaining limitations/next steps.
 Distinguish local changes, GitHub main, deployment, isolated fixtures, authenticated staging and
 production verification. Never fabricate test counts or successful migrations/deployments.
-The user workstation is `D:\MyApp\StreakBooks`; the development URL is `http://localhost:8080`.
+The user workstation is `D:\StreakBooks`; the development URL is `http://localhost:8080`.
 A separate cloud checkout does not modify the user's Windows project.
 
 - Reusable route screens live in `src/screens/`. TSX file routes export only the `Route` runtime value (types are allowed); overlays import screens directly. Keep URL validators and metadata in route registration. Why: reusable route exports defeat component splitting and inflate bootstrap imports. `check:ui` and `check:bundle` enforce this boundary.
@@ -22,10 +22,14 @@ A separate cloud checkout does not modify the user's Windows project.
 ## Authoritative GitHub repository
 
 **Canonical remote:** https://github.com/streakbooks/StreakBooks  
+**Local checkout:** `D:\StreakBooks`  
+**Supabase project:** `qugoaaizclvkzesptovm` ([dashboard](https://supabase.com/dashboard/project/qugoaaizclvkzesptovm))  
 **Product site:** https://streakbooks.com/
 
-Use the org repo for all branches, pull requests and deliveries. Legacy `linkbusinessadvisory/LinkBooks` is read-only upstream until an org owner completes transfer.
-Do not publish to personal forks. The user's Windows checkout is `D:\MyApp\StreakBooks` when present; cloud checkouts are separate.
+Use this org repo, local path, and Supabase project for all branches, pull requests, deliveries, database work, and agent work going forward.
+Retired from this workflow (do not access, publish to, or treat as current): `linkbusinessadvisory/LinkBooks`, `rohitmehra86/LinkBooks`, and `D:\MyApp\LinkBooks`.
+Do not publish to personal forks. Cloud checkouts are separate from `D:\StreakBooks`.
+Hosted migrations require target-specific backup evidence for `qugoaaizclvkzesptovm` only.
 
 - Merge without waiting for GitHub Actions when failures are solely org billing /
   spending-limit (jobs never started). After local gates pass, merge with admin

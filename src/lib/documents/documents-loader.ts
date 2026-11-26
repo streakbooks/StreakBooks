@@ -17,6 +17,7 @@ import {
 } from "@/lib/documents/mappers";
 import type { DocumentBranding, DocumentKind, PrintDocument } from "@/lib/documents/types";
 import { todayInTimezone } from "@/lib/sales/dates";
+import { salesPaymentInstructionsForDocument } from "@/lib/documents/sales-document-defaults";
 import type { SalesClient } from "@/lib/sales/rpc";
 import type { Permission } from "@/lib/permissions";
 
@@ -42,6 +43,7 @@ export function sendPermissionFor(kind: DocumentKind): Permission {
 export type CompanyDocContext = {
   company: Row;
   branding: DocumentBranding;
+  salesDefaultPaymentInstructions?: string | null | undefined;
   rawBranding: Row | null;
   locale: string;
   dateFormat: string | null;
@@ -106,6 +108,14 @@ export async function loadCompanyDocContext(
   );
   if (!company) throw new Error("Organisation not found");
   let branding = await one(db, "company_branding", "*", { company_id: companyId });
+  const salesDefaultPaymentInstructions =
+    source && !source.kind.startsWith("purchase_") && source.kind !== "supplier_remittance"
+      ? ((
+          await one(db, "company_workflow_settings", "sales_payment_instructions", {
+            company_id: companyId,
+          })
+        )?.["sales_payment_instructions"] as string | null | undefined)
+      : undefined;
   let appearanceParty: Row | null | undefined;
   let appearanceProvenance: string | undefined;
   if (source || themeKind) {
@@ -137,11 +147,22 @@ export async function loadCompanyDocContext(
   if (!logoUrl && /^https:\/\/[^\s"'<>]+$/i.test(external)) logoUrl = external;
 
   const timezone = String(company["timezone"] ?? "UTC");
+  const mappedBranding = mapBranding(company, branding, logoUrl);
   return {
     company,
     appearanceParty,
     appearanceProvenance,
-    branding: mapBranding(company, branding, logoUrl),
+    branding: {
+      ...mappedBranding,
+      paymentInstructions: source
+        ? salesPaymentInstructionsForDocument(
+            source.kind,
+            mappedBranding.paymentInstructions,
+            salesDefaultPaymentInstructions,
+          )
+        : mappedBranding.paymentInstructions,
+    },
+    salesDefaultPaymentInstructions,
     rawBranding: branding,
     locale: String(company["locale"] ?? "en-GB"),
     dateFormat:

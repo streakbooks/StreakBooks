@@ -136,6 +136,22 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/sales/document-defaults.test.ts, src/lib/settings/workflow-settings.functions.test.ts, and tests/integration/workflow-settings-audit.sql",
   },
   {
+    key: "sales.payment_instructions",
+    label: "Default sales payment instructions",
+    moduleId: "sales",
+    route: "/settings/sales/overview",
+    scope: "company",
+    defaultValue: "No instructions",
+    validation: "Server validates and bounds text input before persistence",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "company_workflow_settings.sales_payment_instructions",
+    audit: "workflow settings trigger redacts free-text before/after values in settings_change_log",
+    consumer:
+      "Sales invoice, quote and receipt printing uses this text when document branding has no explicit payment instructions",
+    test: "src/lib/documents/sales-document-defaults.test.ts, src/lib/settings/workflow-settings.functions.test.ts, and tests/integration/workflow-settings-audit.sql",
+  },
+  {
     key: "sales.quote_validity",
     label: "Default quote validity",
     moduleId: "sales",

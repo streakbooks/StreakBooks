@@ -451,7 +451,7 @@ Added migration `20261126210000_settings_base_currency_posting_guard.sql`: the i
 
 # Settings overhaul — purchase-order preference behavior, 26 November 2026
 
-Connected the existing `purchases_require_po` setting to a tested bill-workspace notice. Enabling it clearly recommends linking a PO but continues to allow independent bills, consistent with the setting's “Prefer purchase order before bill” label. Added enabled/disabled consumer tests, a permission/persistence regression, and field-level capability evidence for the existing typed audit trigger. Focused tests passed (3 files / 13 tests) and changed-file ESLint passed. No migration was needed. This slice remains on the feature branch and needs a fresh Actions run; no hosted Supabase, deployment, authenticated staging or production was used.
+Connected the existing `purchases_require_po` setting to a tested bill-workspace notice. Enabling it clearly recommends linking a PO but continues to allow independent bills, consistent with the setting's “Prefer purchase order before bill” label. Added enabled/disabled consumer tests, a permission/persistence regression, and field-level capability evidence. The isolated workflow SQL regression now proves true/false typed before/after audit values; the network-disabled PostgreSQL 17 harness passed. Focused tests passed (3 files / 13 tests), changed-file ESLint and UI contracts passed. No migration was needed. This follow-up is uncommitted at handoff until its current feature branch push and Actions run; no hosted Supabase, deployment, authenticated staging or production was used.
 
 # Settings overhaul — tax treatment ownership, 26 November 2026
 

@@ -43,6 +43,7 @@ INSERT INTO public.company_workflow_settings(
   sales_default_notes,
   sales_payment_instructions,
   purchases_default_notes,
+  purchases_require_po,
   accounting_require_journal_memo,
   updated_by
 )
@@ -52,11 +53,13 @@ VALUES (
   'Sensitive payment instruction',
   'Private purchase note at creation',
   true,
+  true,
   '70000000-0000-4000-8000-000000000010'
 );
 
 UPDATE public.company_workflow_settings
 SET accounting_require_journal_memo = false,
+    purchases_require_po = false,
     sales_default_payment_terms_days = 45,
     purchases_default_payment_terms_days = 60,
     sales_default_notes = 'Updated private note',
@@ -94,6 +97,22 @@ BEGIN
       AND old_value = 'true'::jsonb
       AND new_value = 'false'::jsonb
   ) THEN RAISE EXCEPTION 'Workflow setting update is missing before/after audit evidence'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.settings_change_log
+    WHERE company_id = '10000000-0000-4000-8000-000000000010'
+      AND category = 'workflow'
+      AND setting_key = 'purchases_require_po'
+      AND old_value IS NULL
+      AND new_value = 'true'::jsonb
+  ) OR NOT EXISTS (
+    SELECT 1 FROM public.settings_change_log
+    WHERE company_id = '10000000-0000-4000-8000-000000000010'
+      AND category = 'workflow'
+      AND setting_key = 'purchases_require_po'
+      AND old_value = 'true'::jsonb
+      AND new_value = 'false'::jsonb
+  ) THEN RAISE EXCEPTION 'Purchase-order preference is missing typed before/after audit evidence'; END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM public.settings_change_log

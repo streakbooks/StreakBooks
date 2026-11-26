@@ -78,6 +78,7 @@ import { UsersAccessPanel } from "@/components/settings/UsersAccessPanel";
 import { FirmClientAccessLog } from "@/components/firm/FirmClientAccessLog";
 import { FirmPermissionApprovals } from "@/components/firm/FirmPermissionApprovals";
 import { SettingsNav } from "@/components/settings/SettingsNav";
+import { SettingsMobileNav } from "@/components/settings/SettingsMobileNav";
 import { SettingsOverviewPanel } from "@/components/settings/SettingsOverviewPanel";
 import { SettingsFeatureManager } from "@/components/settings/SettingsFeatureManager";
 import { SettingsAccountingLocksPanel } from "@/components/settings/SettingsAccountingLocksPanel";
@@ -615,6 +616,7 @@ export function SettingsForCompany({
   const legacyTab = LEGACY_TAB_BY_SECTION[section];
   const sectionMeta = categoryMeta.find((c) => c.id === section);
   const showLegacy = Boolean(legacyTab);
+  const isHubView = !embeddedSection && !detail && section === "overview";
 
   const settingsMain = (
     <>
@@ -623,35 +625,24 @@ export function SettingsForCompany({
           open={cmdOpen}
           onOpenChange={setCmdOpen}
           onSelectSection={selectSection}
+          showDemo={isDemo}
         />
       )}
 
-      {!embeddedSection && (
-        <div className="mb-4 lg:hidden">
-          <Label htmlFor="mobile-settings-section" className="mb-2 block text-sm font-medium">
-            Settings section
-          </Label>
-          <Select value={section} onValueChange={selectSection}>
-            {/* lookup-fixed-enum: Settings sections are a fixed navigation enumeration. */}
+      {!embeddedSection && !isHubView ? (
+        <SettingsMobileNav
+          section={section}
+          showDemo={isDemo}
+          onSection={(id) => selectSection(id)}
+        />
+      ) : null}
 
-            <SelectTrigger id="mobile-settings-section" aria-label="Choose settings section">
-              <SelectValue placeholder="Choose a settings section" />
-            </SelectTrigger>
-            <SelectContent>
-              {categoryMeta
-                .filter((item) => item.id !== "demo" || isDemo)
-                .map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      <div className={embeddedSection ? "" : "grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]"}>
-        {!embeddedSection && (
+      <div
+        className={
+          embeddedSection ? "" : isHubView ? "space-y-5" : "grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]"
+        }
+      >
+        {!embeddedSection && !isHubView && (
           <aside className="hidden lg:sticky lg:top-4 lg:block lg:self-start">
             <div className="rounded-xl border bg-card p-3 shadow-sm">
               <div className="mb-3 flex items-center gap-2 px-2 text-sm font-semibold">
@@ -678,7 +669,20 @@ export function SettingsForCompany({
         )}
 
         <div className="min-w-0 space-y-5">
-          {!detail && sectionMeta && !embeddedSection ? (
+          {!detail && sectionMeta && !embeddedSection && !isHubView ? (
+            <nav className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <Link
+                to="/settings"
+                search={{ section: "overview" }}
+                className="font-medium hover:text-foreground"
+              >
+                Settings
+              </Link>
+              <span aria-hidden>/</span>
+              <span className="text-foreground">{sectionMeta.label}</span>
+            </nav>
+          ) : null}
+          {!detail && sectionMeta && !embeddedSection && !isHubView ? (
             <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border bg-card/60 p-4 shadow-sm sm:p-5">
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
@@ -690,6 +694,8 @@ export function SettingsForCompany({
               </div>
               {sectionMeta.availability === "unavailable" ? (
                 <Badge variant="outline">Not available</Badge>
+              ) : sectionMeta.availability === "partial" ? (
+                <Badge variant="secondary">Module setup</Badge>
               ) : null}
             </div>
           ) : null}
@@ -705,8 +711,18 @@ export function SettingsForCompany({
             <InPlaceSettingsPanel panel={detail} insideCentre />
           ) : (
             <>
-              {!embeddedSection && <ModuleSettingsLinks category={section} central />}
-              {section === "overview" ? <SettingsOverviewPanel companyId={companyId} /> : null}
+              {!embeddedSection && section !== "overview" ? (
+                <ModuleSettingsLinks category={section} central />
+              ) : null}
+              {section === "overview" ? (
+                <SettingsOverviewPanel
+                  companyId={companyId}
+                  showDemo={isDemo}
+                  filter={navFilter}
+                  onFilterChange={setNavFilter}
+                  onOpenSearch={() => setCmdOpen(true)}
+                />
+              ) : null}
               {section === "features" ? (
                 <SettingsFeatureManager companyId={companyId} canEdit={canEdit} />
               ) : null}
@@ -737,7 +753,7 @@ export function SettingsForCompany({
                 <Tabs value={legacyTab}>
                   <TabsList
                     onKeyDown={handleNativeTabKeyDown}
-                    className={embeddedSection ? "hidden" : "flex h-auto flex-wrap gap-1"}
+                    className={embeddedSection ? "flex h-auto flex-wrap gap-1" : "hidden"}
                   >
                     <Link
                       className={nativeTabLinkClass}

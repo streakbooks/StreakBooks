@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
+import { SETTINGS_NAV_GROUPS } from "./nav-groups";
+import { SETTINGS_CATEGORIES } from "./categories";
 import { categoryMeta, resolveSettingsCategory, searchSettings } from "./registry";
 
 describe("Settings Centre category routing and search", () => {
+  it("maps every category to a navigation group", () => {
+    const grouped = new Set(SETTINGS_NAV_GROUPS.flatMap((g) => g.ids));
+    for (const id of SETTINGS_CATEGORIES) {
+      expect(grouped.has(id), id).toBe(true);
+    }
+  });
+
   it("keeps valid deep links and falls back for invalid or unsafe categories", () => {
     expect(resolveSettingsCategory("notifications")).toBe("notifications");
     expect(resolveSettingsCategory("accounting")).toBe("accounting");

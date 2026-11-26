@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, ArrowUpRight, CheckCircle2, CircleDashed, RefreshCcw } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleDashed, RefreshCcw } from "lucide-react";
 import { IntegrationHealthBadge } from "@/components/settings/IntegrationHealthBadge";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { getSettingsOverview } from "@/lib/settings/settings-centre.functions";
@@ -11,19 +11,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SettingsCategoryHub } from "@/components/settings/SettingsCategoryHub";
 
-type Props = { companyId: string };
+type Props = {
+  companyId: string;
+  showDemo: boolean;
+  filter: string;
+  onFilterChange: (value: string) => void;
+  onOpenSearch?: (() => void) | undefined;
+};
 
-const SHORTCUTS = [
-  { label: "Company details", section: "organisation", description: "Identity and localisation" },
-  { label: "Financial controls", section: "accounting", description: "Lock dates and accounting" },
-  { label: "Users and access", section: "users", description: "Roles and permissions" },
-  { label: "Features", section: "features", description: "Module availability" },
-  { label: "Documents", section: "documents", description: "Branding and numbering" },
-  { label: "Notifications", section: "notifications", description: "Delivery and preferences" },
-] as const;
-
-export function SettingsOverviewPanel({ companyId }: Props) {
+export function SettingsOverviewPanel({
+  companyId,
+  showDemo,
+  filter,
+  onFilterChange,
+  onOpenSearch,
+}: Props) {
   const fetch = useServerFn(getSettingsOverview);
   const q = useQuery({
     queryKey: ["settings-overview", companyId],
@@ -32,12 +36,21 @@ export function SettingsOverviewPanel({ companyId }: Props) {
 
   if (q.isPending) {
     return (
-      <div aria-label="Loading Settings Centre overview" className="space-y-4">
-        <Skeleton className="h-24 w-full" />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }, (_, index) => (
-            <Skeleton key={index} className="h-24 w-full" />
-          ))}
+      <div aria-label="Loading Settings Centre overview" className="space-y-8">
+        <SettingsCategoryHub
+          currentSection="overview"
+          showDemo={showDemo}
+          filter={filter}
+          onFilterChange={onFilterChange}
+          {...(onOpenSearch ? { onOpenSearch } : {})}
+        />
+        <div className="space-y-4">
+          <Skeleton className="h-24 w-full" />
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }, (_, index) => (
+              <Skeleton key={index} className="h-24 w-full" />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -77,7 +90,19 @@ export function SettingsOverviewPanel({ companyId }: Props) {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
+      <SettingsCategoryHub
+        currentSection="overview"
+        showDemo={showDemo}
+        filter={filter}
+        onFilterChange={onFilterChange}
+        {...(onOpenSearch ? { onOpenSearch } : {})}
+      />
+
+      <div className="border-t pt-8">
+        <h3 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Setup status
+        </h3>
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/80 bg-gradient-to-r from-card via-card to-accent/30 px-5 py-4 shadow-xs">
         <div className="min-w-0">
           <p className="truncate font-medium">{d.company?.name ?? "Organisation"}</p>
@@ -181,34 +206,7 @@ export function SettingsOverviewPanel({ companyId }: Props) {
         </Card>
       ) : null}
 
-      <div className="grid items-start gap-4 xl:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Manage your settings</CardTitle>
-            <CardDescription>Go straight to the most-used configuration areas.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-2 sm:grid-cols-2">
-            {SHORTCUTS.map((shortcut) => (
-              <Link
-                key={shortcut.section}
-                to="/settings"
-                search={{ section: shortcut.section }}
-                className="group flex min-h-20 items-start justify-between gap-3 rounded-xl border border-border/80 bg-background p-3.5 transition-[border-color,background-color,box-shadow] hover:border-primary/35 hover:bg-accent/40 hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium">{shortcut.label}</span>
-                  <span className="mt-1 block text-xs text-muted-foreground">
-                    {shortcut.description}
-                  </span>
-                </span>
-                <ArrowUpRight
-                  className="mt-0.5 size-4 shrink-0 text-muted-foreground group-hover:text-primary"
-                  aria-hidden
-                />
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
+      <div className="grid items-start gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Integration health</CardTitle>
@@ -234,6 +232,7 @@ export function SettingsOverviewPanel({ companyId }: Props) {
             ) : null}
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );

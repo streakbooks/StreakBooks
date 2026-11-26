@@ -15,9 +15,10 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectSection: (section: string) => void;
+  showDemo?: boolean;
 };
 
-export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: Props) {
+export function SettingsCommandPalette({ open, onOpenChange, onSelectSection, showDemo = false }: Props) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const keyboardActivation = useRef(false);
@@ -34,7 +35,7 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
     if (!open) setQuery("");
   }, [open]);
 
-  const matches = searchSettings(query);
+  const matches = searchSettings(query).filter((category) => category.id !== "demo" || showDemo);
   const modules = navItems.filter(
     (item) =>
       item.to !== "/settings" &&

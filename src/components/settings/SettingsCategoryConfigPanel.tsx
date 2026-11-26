@@ -216,11 +216,6 @@ export function SettingsCategoryConfigPanel({
 
   return (
     <div className="space-y-4">
-      <Alert>
-        <AlertTitle>{meta.label}</AlertTitle>
-        <AlertDescription>{meta.description}</AlertDescription>
-      </Alert>
-
       {showModuleLinks && meta.moduleLinks?.length ? (
         <div className="flex flex-wrap gap-2">
           {meta.moduleLinks.map((link) => (

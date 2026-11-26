@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { WorkspaceAccessPanel } from "@/components/dashboard/WorkspaceAccessPanel";
 
 export const Route = createFileRoute("/_authenticated/")({
   validateSearch: parseDashboardSearch,
@@ -183,6 +184,7 @@ function Dashboard() {
         </>
       }
     >
+      <WorkspaceAccessPanel />
       {isDemo && demoSnapQ.isSuccess && (demoSnap?.journalLineCount ?? 0) === 0 ? (
         <Alert className="mb-6 border-warning/40 bg-warning-soft">
           <AlertTitle>Preparing demo records</AlertTitle>
@@ -252,3 +254,4 @@ function Dashboard() {
     </ListWorkspace>
   );
 }
+

@@ -190,6 +190,26 @@ export const listFirmClientAccessLog = createServerFn({ method: "GET" })
     }>;
   });
 
+/** Record a firm staff member opening a client workspace module. */
+export const recordFirmClientModuleAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        companyId: z.string().uuid(),
+        moduleKey: z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc(
+      "record_firm_client_access" as never,
+      { _company_id: data.companyId, _module_key: data.moduleKey } as never,
+    );
+    if (error) throw new Error(error.message);
+    return { recorded: true };
+  });
+
 export const listFirmClientAccessGrants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>

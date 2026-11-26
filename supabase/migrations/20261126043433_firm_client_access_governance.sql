@@ -205,6 +205,11 @@ BEGIN
       SELECT c.id,c.name,c.legal_name,c.country_code,c.base_currency,
         c.fiscal_year_end_month,c.fiscal_year_end_day,c.timezone,c.is_demo,c.archived_at,
         c.locale,c.date_format,
+        EXISTS (SELECT 1 FROM public.firm_client_access_grants fg
+          JOIN public.firm_client_links fl ON fl.firm_id=fg.firm_id AND fl.company_id=fg.company_id
+          JOIN public.firms ff ON ff.id=fg.firm_id AND ff.status='active'
+          WHERE fg.company_id=c.id AND fg.user_id=auth.uid() AND fg.revoked_at IS NULL
+            AND fl.revoked_at IS NULL) AS firm_access,
         coalesce(
           (SELECT cm.role::text FROM public.company_members cm
             WHERE cm.company_id=c.id AND cm.user_id=auth.uid() AND cm.status='active'),
@@ -563,6 +568,35 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION billing.set_firm_partner_tier(text,integer,integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION billing.set_firm_partner_tier(text,integer,integer) TO authenticated;
+
+CREATE OR REPLACE FUNCTION billing.firm_partner_tier_admin_list()
+RETURNS TABLE(tier_code text,minimum_active_paid_clients integer,discount_bps integer,updated_at timestamptz)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = '' AS $$
+BEGIN
+  PERFORM private.require_platform('billing.manage');
+  RETURN QUERY SELECT t.tier_code,t.minimum_active_paid_clients,t.discount_bps,t.updated_at
+    FROM billing.firm_partner_tiers t ORDER BY t.minimum_active_paid_clients,t.tier_code;
+END $$;
+REVOKE ALL ON FUNCTION billing.firm_partner_tier_admin_list() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION billing.firm_partner_tier_admin_list() TO authenticated;
+
+-- Public-schema RPC wrappers are required because the billing schema is intentionally not exposed
+-- through the Supabase Data API.
+CREATE OR REPLACE FUNCTION public.firm_partner_tier_admin_list()
+RETURNS TABLE(tier_code text,minimum_active_paid_clients integer,discount_bps integer,updated_at timestamptz)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT * FROM billing.firm_partner_tier_admin_list();
+$$;
+REVOKE ALL ON FUNCTION public.firm_partner_tier_admin_list() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.firm_partner_tier_admin_list() TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.set_firm_partner_tier(
+  _tier_code text, _minimum_active_paid_clients integer, _discount_bps integer
+) RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = '' AS $$
+  SELECT billing.set_firm_partner_tier(_tier_code,_minimum_active_paid_clients,_discount_bps);
+$$;
+REVOKE ALL ON FUNCTION public.set_firm_partner_tier(text,integer,integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.set_firm_partner_tier(text,integer,integer) TO authenticated;
 
 CREATE OR REPLACE FUNCTION billing.firm_partner_tier_summary(_firm_id uuid)
 RETURNS TABLE(active_paid_clients bigint, tier_code text, discount_bps integer)

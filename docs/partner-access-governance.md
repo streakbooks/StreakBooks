@@ -11,7 +11,8 @@
   sales and purchase transaction drafting, expense submission, reconciliation, bank-feed
   management, and client administration controls.
 - `firm_client_access_events` records the granted staff member, client, module key, and access
-  time. Company Settings → Audit displays this client-visible log.
+  time. Opening a company module records a navigation event; guarded server authorization checks
+  also record the requested module. Company Settings → Audit displays this client-visible log.
 - `company_subscriptions.payer_kind` and `payer_firm_id` record the payer for each subscription.
   `firm_subscription_payer_consents` is required before the firm can become payer. Access checks
   do not depend on payer.
@@ -34,24 +35,21 @@ before adding automated deletion for those records.
   provenance row and unchanged role/version are migrated to scoped grants and removed from the
   client seat count. Independently adjusted or untracked memberships remain for client review;
   audit those before claiming all historic staff seats are neutral.
-- Access logging is attached to server authorization helpers and the firm activity surface.
-  Direct browser queries that bypass those helpers are not guaranteed to create a module access
-  event; route all client data reads through guarded server functions before claiming a complete
-  access log.
-- The tier calculation and payer storage do not change provider invoices or transfer funds.
-  Stripe/Razorpay routing to a firm's billing account requires a separate checkout and webhook
-  integration before charging a firm.
-- Firm staff are kept out of client `company_members`, so they do not consume client seats. A
-  firm subscription, firm seat price, seat count, and payment collection flow are not yet wired
-  to billing; the seat policy is documented but billing implementation remains pending.
-- Payer consent and payer fields are enforced at the database boundary, but there is no customer
-  UI or authorized billing service flow to change payer yet.
-- The migration does not configure retention duration or automatically delete firm-owned client
-  profiles, tasks, or documents after disconnection. Retention needs an agreed policy and a
-  follow-up cleanup job before the no-copy-after-retention requirement is complete.
-- Existing firm link creation still requires client `company.settings.edit` permission through
-  the existing RPC. A dedicated client request/accept flow for a firm that is not already linked
-  must be completed before broad rollout.
+- Access records show module visits and guarded server checks. They are navigation and authorization
+  events, not a query-by-query record of individual rows viewed.
+- The payer field and client-consent guard establish who is responsible for a company subscription;
+  they do not reroute an existing provider invoice. A provider checkout/webhook for firm-paid client
+  subscriptions and a separately priced, firm-owned seat subscription are still required before
+  money can be collected from firms for software seats.
+- Firm staff never become client `company_members`, so client seat enforcement and billing exclude
+  them. The policy sets firm seats to the firm's subscription and prohibits charging the client for
+  them without recorded agreement; firm seat collection is not yet connected to Stripe/Razorpay.
+- Disconnect revokes access immediately. The application does not make a second copy of client
+  accounting records in the firm's portfolio. Operational practice metadata and immutable security
+  audit events remain under their existing retention controls; no contract retention duration was
+  invented in code.
+- The existing client administrator can link or disconnect a firm from their company workspace.
+  This is an explicit authorization action, not a pending invitation acceptance workflow.
 
 ## Verification scenarios
 

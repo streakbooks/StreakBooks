@@ -29,9 +29,9 @@ INSERT INTO public.company_members(company_id,user_id,role) VALUES
  ('20000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000006','owner')
 ON CONFLICT (company_id,user_id) DO NOTHING;
 INSERT INTO public.role_permissions(role,permission) VALUES
- ('owner','company.view'),('owner','company.settings.edit'),('owner','members.manage'),('owner','accounting.view'),('owner','accounting.post'),
- ('admin','company.view'),('admin','accounting.view'),('admin','accounting.post'),
- ('read_only','company.view'),('read_only','accounting.view'),('bookkeeper','company.view'),('bookkeeper','accounting.view'),('bookkeeper','accounting.post')
+ ('owner','company.view'),('owner','company.settings.edit'),('owner','members.manage'),('owner','accounting.view'),('owner','accounting.export'),('owner','accounting.post'),
+ ('admin','company.view'),('admin','accounting.view'),('admin','accounting.export'),('admin','accounting.post'),
+ ('read_only','company.view'),('read_only','accounting.view'),('read_only','accounting.export'),('bookkeeper','company.view'),('bookkeeper','accounting.view'),('bookkeeper','accounting.export'),('bookkeeper','accounting.post')
 ON CONFLICT (role,permission) DO NOTHING;
 
 -- Link both clients. The caller already has a client admin role; the RPC must not add any staff seats.
@@ -72,7 +72,7 @@ DO $$ BEGIN
   END IF;
 END $$;
 RESET ROLE;
-SELECT public.record_firm_client_access('20000000-0000-0000-0000-000000000001','accounting.view');
+SELECT public.record_firm_client_access('20000000-0000-0000-0000-000000000001','accounting');
 SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000003"}',false);
 DO $$ BEGIN
   IF NOT public.has_company_permission('20000000-0000-0000-0000-000000000002','accounting.view') THEN RAISE EXCEPTION 'Staff 2 denied assigned Client B'; END IF;
@@ -96,6 +96,10 @@ SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-00000000
 DO $$ BEGIN
   IF jsonb_array_length(public.platform_company_context()) <> 2 THEN
     RAISE EXCEPTION 'Company switcher did not expose both granted clients';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements(public.platform_company_context()) c
+    WHERE c->>'id'='20000000-0000-0000-0000-000000000001' AND c->>'firm_access'='true') THEN
+    RAISE EXCEPTION 'Company context did not identify a firm-granted client workspace';
   END IF;
 END $$;
 UPDATE public.firm_client_access_grants SET revoked_at=now()
@@ -140,6 +144,9 @@ END $$;
 SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000004"}',false);
 DO $$ BEGIN
   IF (SELECT count(*) FROM public.firm_client_access_log('20000000-0000-0000-0000-000000000001')) < 1 THEN RAISE EXCEPTION 'Client access log is empty'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.firm_client_access_log('20000000-0000-0000-0000-000000000001') WHERE module_key='accounting') THEN
+    RAISE EXCEPTION 'Client access log did not identify the visited module';
+  END IF;
 END $$;
 
 -- Firm suspension and link disconnect stop delegated access but preserve client view/export access.
@@ -151,7 +158,19 @@ END $$;
 SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000004"}',false);
 DO $$ BEGIN
   IF NOT public.has_company_permission('20000000-0000-0000-0000-000000000001','accounting.view') THEN RAISE EXCEPTION 'Firm suspension blocked client read'; END IF;
+  IF NOT public.has_company_permission('20000000-0000-0000-0000-000000000001','accounting.export') THEN RAISE EXCEPTION 'Firm suspension blocked client export'; END IF;
 END $$;
+UPDATE public.firms SET status='disputed' WHERE id='30000000-0000-0000-0000-000000000001';
+SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000002"}',false);
+DO $$ BEGIN
+  IF public.has_company_permission('20000000-0000-0000-0000-000000000001','accounting.view') THEN RAISE EXCEPTION 'Disputed firm retained delegated access'; END IF;
+END $$;
+SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000004"}',false);
+DO $$ BEGIN
+  IF NOT public.has_company_permission('20000000-0000-0000-0000-000000000001','accounting.view') THEN RAISE EXCEPTION 'Firm dispute blocked client read'; END IF;
+  IF NOT public.has_company_permission('20000000-0000-0000-0000-000000000001','accounting.export') THEN RAISE EXCEPTION 'Firm dispute blocked client export'; END IF;
+END $$;
+UPDATE public.firms SET status='active' WHERE id='30000000-0000-0000-0000-000000000001';
 SELECT set_config('test.write_allowed','false',false);
 DO $$ BEGIN
   IF NOT public.has_company_permission('20000000-0000-0000-0000-000000000001','accounting.view') THEN RAISE EXCEPTION 'Tenant suspension blocked client read-only access'; END IF;

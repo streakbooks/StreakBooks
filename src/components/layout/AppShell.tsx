@@ -19,6 +19,7 @@ import {
   useRouter,
   useRouterState,
 } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -63,6 +64,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { PlatformAnnouncements } from "@/components/platform/PlatformAnnouncements";
 import { StreakBooksBrand } from "@/components/brand/StreakBooksBrand";
+import { recordFirmClientModuleAccess } from "@/lib/firm/firm.functions";
+import { firmAccessModuleKey } from "@/lib/firm/firm-module-access";
 
 const COLLAPSE_KEY = "streakbooks-sidebar-collapsed";
 const InPlaceSettingsPanel = lazy(() =>
@@ -465,6 +468,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
   const mainRef = useRef<HTMLElement>(null);
   const previousPath = useRef(pathname);
   const { company, isPending } = useActiveCompany();
+  const recordFirmModuleAccess = useServerFn(recordFirmClientModuleAccess);
   const title = useRouterState({
     select: (s) =>
       activeNavLabel(s.location.pathname, (s.location.search as Record<string, unknown>)["from"]),
@@ -476,6 +480,15 @@ function AppShellLayout({ children }: { children: ReactNode }) {
     // Announce a new page without stealing focus on filter/search updates.
     mainRef.current?.focus({ preventScroll: true });
   }, [pathname]);
+
+  useEffect(() => {
+    if (isPending || !company?.id || !company.firm_access) return;
+    void recordFirmModuleAccess({
+      data: { companyId: company.id, moduleKey: firmAccessModuleKey(pathname) },
+    }).catch(() => {
+      // This is an audit enhancement. The data APIs still enforce their own RLS and permissions.
+    });
+  }, [company?.firm_access, company?.id, isPending, pathname, recordFirmModuleAccess]);
 
   // Read the saved sidebar state after mount so server and first client render agree.
   useEffect(() => {

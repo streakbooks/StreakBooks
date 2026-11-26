@@ -27,6 +27,8 @@ export type CompanySummary = {
   locale?: string | null;
   date_format?: string | null;
   role: CompanyRole;
+  /** True when this user entered the company through an active firm staff grant. */
+  firm_access?: boolean;
   permissions?: Permission[];
 };
 

@@ -12,8 +12,10 @@ through to a client without that client's recorded agreement.
 The company membership table remains the source for client users. `firm_client_access_grants`
 is separate from `company_members` and is scoped to one firm, one client, and one firm staff
 member. The payer is recorded per company subscription as `payer_kind` and `payer_firm_id`.
-Firm billing requires active client consent. Changing payer does not participate in access
-checks, so changing payer does not revoke the client's read access.
+Firm billing responsibility requires active client consent. Changing payer does not participate in
+access checks, so changing payer does not revoke the client's read access. Provider collection for
+firm-paid client subscriptions and firm seat subscriptions remains a separate billing integration;
+the payer marker alone does not charge or redirect a provider invoice.
 
 ## Client-owned records and firm suspension
 
@@ -21,8 +23,8 @@ Clients own their company records. Suspending a firm blocks its delegated staff 
 does not change company membership or the client's access to read and export its own records.
 Disconnecting a firm revokes the link and grants immediately. The application does not mirror
 the client's accounting ledger into a firm-owned data store. Existing practice metadata and
-document workflows remain in their current tables and need a client-facing retention policy
-before any deletion schedule is enabled.
+immutable audit events remain in their current tables under their existing retention controls;
+no unapproved retention duration or destructive cleanup schedule is assumed.
 
 ## Elevated partner access
 

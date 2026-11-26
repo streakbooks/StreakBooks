@@ -482,8 +482,8 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "profile",
     status: "partial",
     route: "/settings/personal/overview",
-    missingEvidence: ["account-wide preference scope and custom palette sync"],
-    note: "Profile groups account details, security and appearance. Colour mode and named palettes sync per organisation; custom palette colours remain on this device.",
+    missingEvidence: ["account-wide preference scope"],
+    note: "Profile groups account details, security and appearance. Colour mode plus named and validated custom palettes sync per user within each organisation; preferences are not account-global.",
   },
 ] as const;
 

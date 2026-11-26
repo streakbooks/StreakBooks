@@ -48,7 +48,19 @@ describe("personal appearance server functions", () => {
   it("loads only the authenticated user's row after checking organisation membership", async () => {
     vi.mocked(assertCompanyMember).mockResolvedValue(undefined);
     const query = makeQuery({
-      data: { preference_value: { theme: "dark", palette: "sapphire" } },
+      data: {
+        preference_value: {
+          theme: "dark",
+          palette: "custom",
+          customPalette: {
+            primary: "#112233",
+            accent: "#445566",
+            sidebar: "#778899",
+            lightBackground: "#aabbcc",
+            darkBackground: "#010203",
+          },
+        },
+      },
       error: null,
     });
     const supabase = { from: vi.fn(() => query) };
@@ -59,7 +71,14 @@ describe("personal appearance server functions", () => {
 
     await expect(invoke({ data: { companyId }, context: { supabase, userId } })).resolves.toEqual({
       theme: "dark",
-      palette: "sapphire",
+      palette: "custom",
+      customPalette: {
+        primary: "#112233",
+        accent: "#445566",
+        sidebar: "#778899",
+        lightBackground: "#aabbcc",
+        darkBackground: "#010203",
+      },
     });
     expect(assertCompanyMember).toHaveBeenCalledWith(supabase, companyId);
     expect(query.eq).toHaveBeenCalledWith("company_id", companyId);
@@ -72,29 +91,60 @@ describe("personal appearance server functions", () => {
     const query = makeQuery();
     const supabase = { from: vi.fn(() => query) };
     const invoke = savePersonalAppearancePreferences as unknown as (args: {
-      data: { companyId: string; theme: unknown; palette: unknown };
+      data: { companyId: string; theme: unknown; palette: unknown; customPalette?: unknown };
       context: { supabase: typeof supabase; userId: string };
     }) => Promise<unknown>;
 
     await expect(
       invoke({
-        data: { companyId, theme: "dark", palette: "sapphire" },
+        data: {
+          companyId,
+          theme: "dark",
+          palette: "custom",
+          customPalette: {
+            primary: "#112233",
+            accent: "#445566",
+            sidebar: "#778899",
+            lightBackground: "#aabbcc",
+            darkBackground: "#010203",
+          },
+        },
         context: { supabase, userId },
       }),
-    ).resolves.toEqual({ theme: "dark", palette: "sapphire" });
+    ).resolves.toEqual({
+      theme: "dark",
+      palette: "custom",
+      customPalette: {
+        primary: "#112233",
+        accent: "#445566",
+        sidebar: "#778899",
+        lightBackground: "#aabbcc",
+        darkBackground: "#010203",
+      },
+    });
     expect(query.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         company_id: companyId,
         user_id: userId,
         preference_key: "personal_appearance",
-        preference_value: { theme: "dark", palette: "sapphire" },
+        preference_value: {
+          theme: "dark",
+          palette: "custom",
+          customPalette: {
+            primary: "#112233",
+            accent: "#445566",
+            sidebar: "#778899",
+            lightBackground: "#aabbcc",
+            darkBackground: "#010203",
+          },
+        },
       }),
       { onConflict: "company_id,user_id,preference_key" },
     );
 
     expect(() =>
       invoke({
-        data: { companyId, theme: "dark", palette: "custom" },
+        data: { companyId, theme: "dark", palette: "invalid" },
         context: { supabase, userId },
       }),
     ).toThrow("Choose a supported named colour palette");

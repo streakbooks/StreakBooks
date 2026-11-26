@@ -28,16 +28,18 @@ export const getPersonalAppearancePreferences = createServerFn({ method: "GET" }
 
 export const savePersonalAppearancePreferences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: { companyId: string; theme: unknown; palette: unknown }) => {
-    if (!isThemePreference(input.theme)) throw new Error("Choose a supported colour mode");
-    if (!isPaletteId(input.palette) || input.palette === "custom") {
-      throw new Error("Choose a supported named colour palette");
-    }
-    return {
-      companyId: assertUuid(input.companyId),
-      preferences: normalizePersonalAppearance(input),
-    };
-  })
+  .validator(
+    (input: { companyId: string; theme: unknown; palette: unknown; customPalette?: unknown }) => {
+      if (!isThemePreference(input.theme)) throw new Error("Choose a supported colour mode");
+      if (!isPaletteId(input.palette)) {
+        throw new Error("Choose a supported named colour palette");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        preferences: normalizePersonalAppearance(input),
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { error } = await context.supabase.from("user_ui_preferences" as never).upsert(

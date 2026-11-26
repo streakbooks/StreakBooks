@@ -4,10 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/use-theme";
 import { PALETTE_OPTIONS, isPaletteId, isThemePreference } from "@/lib/theme";
-import {
-  DEFAULT_PERSONAL_APPEARANCE,
-  type PersonalAppearancePreferences,
-} from "@/lib/settings/personal-appearance";
+import type { PersonalAppearancePreferences } from "@/lib/settings/personal-appearance";
 import {
   getPersonalAppearancePreferences,
   savePersonalAppearancePreferences,
@@ -38,25 +35,11 @@ export function PersonalAppearanceCard({ companyId }: { companyId: string | null
   });
   const persistedPreferences = preferencesQuery.data;
   const { preference: themePreference, palette: themePalette, setPreference, setPalette } = theme;
-
-  useEffect(() => {
-    if (!preferencesQuery.isSuccess || !persistedPreferences) return;
-    if (themePreference !== persistedPreferences.theme) {
-      setPreference(persistedPreferences.theme);
-    }
-    // Custom palettes are stored only on this device, so a named server value must not replace one.
-    if (themePalette !== "custom" && themePalette !== persistedPreferences.palette) {
-      setPalette(persistedPreferences.palette);
-    }
-  }, [
-    preferencesQuery.isSuccess,
-    persistedPreferences,
-    themePreference,
-    themePalette,
-    setPreference,
-    setPalette,
-  ]);
-
+  const { customColors, setCustomColors } = theme;
+  const customPaletteValue = JSON.stringify(customColors);
+  const savedCustomPaletteValue = persistedPreferences
+    ? JSON.stringify(persistedPreferences.customPalette)
+    : "";
   const mutation = useMutation({
     mutationFn: (preferences: PersonalAppearancePreferences) => {
       if (!companyId) return Promise.resolve(preferences);
@@ -66,23 +49,47 @@ export function PersonalAppearanceCard({ companyId }: { companyId: string | null
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  const savedPreferences = preferencesQuery.data ?? DEFAULT_PERSONAL_APPEARANCE;
-  const syncPalette = (): PersonalAppearancePreferences["palette"] =>
-    theme.palette === "custom" ? savedPreferences.palette : theme.palette;
+  useEffect(() => {
+    if (!preferencesQuery.isSuccess || !persistedPreferences) return;
+    if (themePreference !== persistedPreferences.theme) {
+      setPreference(persistedPreferences.theme);
+    }
+    if (persistedPreferences.palette === "custom") {
+      if (themePalette !== "custom" || customPaletteValue !== savedCustomPaletteValue) {
+        setCustomColors(persistedPreferences.customPalette);
+      }
+    } else if (themePalette !== "custom" && themePalette !== persistedPreferences.palette) {
+      setPalette(persistedPreferences.palette);
+    }
+  }, [
+    preferencesQuery.isSuccess,
+    persistedPreferences,
+    themePreference,
+    themePalette,
+    customPaletteValue,
+    savedCustomPaletteValue,
+    setPreference,
+    setPalette,
+    setCustomColors,
+  ]);
+
+  const currentPreferences = (): PersonalAppearancePreferences => ({
+    theme: theme.preference,
+    palette: theme.palette,
+    customPalette: theme.customColors,
+  });
   const savingDisabled = Boolean(companyId && preferencesQuery.isPending) || mutation.isPending;
 
   const updateTheme = (value: string) => {
     if (!isThemePreference(value)) return;
     theme.setPreference(value);
-    if (companyId) mutation.mutate({ theme: value, palette: syncPalette() });
+    if (companyId) mutation.mutate({ ...currentPreferences(), theme: value });
   };
 
   const updatePalette = (value: string) => {
     if (!isPaletteId(value)) return;
     theme.setPalette(value);
-    if (companyId && value !== "custom") {
-      mutation.mutate({ theme: theme.preference, palette: value });
-    }
+    if (companyId) mutation.mutate({ ...currentPreferences(), palette: value });
   };
 
   return (
@@ -90,8 +97,7 @@ export function PersonalAppearanceCard({ companyId }: { companyId: string | null
       <CardHeader>
         <CardTitle className="text-base">Appearance</CardTitle>
         <CardDescription>
-          Colour mode and named palettes sync for this organisation. Custom colours stay on this
-          device.
+          Colour mode and custom or named palettes sync for your user in this organisation.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -150,14 +156,27 @@ export function PersonalAppearanceCard({ companyId }: { companyId: string | null
           </p>
         ) : null}
         {theme.palette === "custom" ? (
-          <Button
-            type="button"
-            variant="link"
-            className="h-auto p-0 text-xs"
-            onClick={() => theme.resetCustomColors()}
-          >
-            Reset custom colours on this device
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-xs"
+              onClick={() => theme.resetCustomColors()}
+            >
+              Reset custom colours
+            </Button>
+            {customPaletteValue !== savedCustomPaletteValue ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!companyId || savingDisabled}
+                onClick={() => mutation.mutate(currentPreferences())}
+              >
+                Save custom palette
+              </Button>
+            ) : null}
+          </div>
         ) : null}
       </CardContent>
     </Card>

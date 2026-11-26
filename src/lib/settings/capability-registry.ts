@@ -71,6 +71,21 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/accounting/chart-view.test.ts covers configured padding and numeric/non-numeric codes",
   },
   {
+    key: "accounting.manual_journal_memo",
+    label: "Require memo on manual journals",
+    moduleId: "accounting",
+    route: "/settings/automation/overview",
+    scope: "company",
+    defaultValue: "false",
+    validation: "Server normalizes the setting to a boolean and checks company.settings.edit",
+    permission: "company.settings.edit for configuration; journals.manual for posting",
+    entitlement: null,
+    persistence: "company_workflow_settings.accounting_require_journal_memo",
+    audit: "workflow settings trigger logs before/after values in the same transaction",
+    consumer: "postManualJournal rejects an empty memo when the setting is enabled",
+    test: "src/lib/accounting/manual-journal-settings.test.ts and tests/integration/workflow-settings-audit.sql",
+  },
+  {
     key: "tax.rate_code_master",
     label: "Tax rate and code master data",
     moduleId: "tax",
@@ -130,9 +145,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/settings/accounting/overview",
     missingEvidence: [
-      "workflow consumers and behavior tests for each warning and automation field",
+      "workflow consumers and behavior tests for duplicate, control-account, bank-posting and backdate warnings plus auto-credit",
     ],
-    note: "Stored warning and auto-credit values are visible but read-only until the related transaction workflows enforce them.",
+    note: "Require-memo-on-manual-journal now has a tested server guard and transactional audit; other warning and auto-credit values stay read-only until their workflows enforce them.",
   },
   {
     key: "tax.regional_configuration",

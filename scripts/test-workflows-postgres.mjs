@@ -140,6 +140,8 @@ try {
   );
   sql(read("supabase/migrations/20261104181716_multicurrency_feature_disable_guard.sql"));
   sql(read("tests/integration/settings-feature-disable-guard.sql"));
+  sql(read("supabase/migrations/20261126180000_workflow_settings_audit.sql"));
+  sql(read("tests/integration/workflow-settings-audit.sql"));
   sql(read("tests/fixtures/workflows/settings-lock-policy-cas-baseline.sql"));
   sql(
     fn(

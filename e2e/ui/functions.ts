@@ -1,6 +1,28 @@
 // Deterministic browser fixtures. Production authorization and RPC tests are separate.
 const scenario = () => new URLSearchParams(window.location.search);
 export const useServerFn = <T>(fn: T): T => fn;
+export const createMiddleware = (_options: unknown) => ({
+  server: (handler: unknown) => handler,
+});
+export function createServerFn(_options: unknown) {
+  let validate = (value: unknown) => value;
+  const chain = {
+    middleware: (_middleware: unknown[]) => chain,
+    validator: (fn: (value: unknown) => unknown) => {
+      validate = fn;
+      return chain;
+    },
+    inputValidator: (fn: (value: unknown) => unknown) => {
+      validate = fn;
+      return chain;
+    },
+    handler:
+      (fn: (args: { data: unknown; context: unknown }) => unknown) =>
+      (args: { data: unknown; context: unknown }) =>
+        fn({ ...args, data: validate(args.data) }),
+  };
+  return chain;
+}
 export function useActiveCompany() {
   return {
     company: {

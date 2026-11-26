@@ -45,6 +45,16 @@ Route: `/tax` → **Rates** and **Codes**. Status: **IMPLEMENTED** for the rate/
 5. Confirm posted documents retain their captured tax amount/rate after master edits. Do not use production tax data or submit a tax filing as part of this review.
 6. Review the isolated PostgreSQL commands/tests in the CI workflow: `tax-master-settings-audit.sql` and `tax-master-posted-history.sql`. The regional tax filing path is not covered by this capability.
 
+## Manual-journal memo requirement
+
+Route: `/settings/automation/overview` → **Require memo on manual journals**; consumer: manual journal posting. Status: **IMPLEMENTED** with migration `20261126180000_workflow_settings_audit.sql` (READY-TO-APPLY; hosted Supabase was not changed).
+
+1. In a dedicated non-production organisation, enable **Require memo on manual journals** and save. Confirm the setting is permission-checked and its before/after event is visible to a user with `audit.view`.
+2. Open a manual journal draft with two balanced lines, omit the memo, and attempt to post. The server must refuse it before journal creation and show the organisation-settings error.
+3. Add a memo and retry using an approved disposable test organisation. The posting should follow the normal accounting path; do not use production data.
+4. Disable the setting and confirm the same balanced test journal can pass memo validation without a memo. Do not post it unless a financial test fixture is approved.
+5. Run `npm.cmd run test:workflows:postgres` to exercise transactional audit evidence, redaction of free-text settings, no-op metadata updates, RLS/tenant isolation, and rollback when audit insertion fails. The audit failure must also roll back the preference update.
+
 ## Scope and permission review
 
 - Tenant settings continue to use the existing server functions, membership checks, version checks and row-level security. Route visibility is not authorization.

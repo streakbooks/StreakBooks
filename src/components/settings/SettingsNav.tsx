@@ -2,47 +2,12 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { openSettingsPanel, type SettingsPanelId } from "@/lib/settings/panels";
 import { cn } from "@/lib/utils";
 import { categoryMeta, searchSettings, type SettingsCategory } from "@/lib/settings/registry";
+import { SETTINGS_NAV_GROUPS } from "@/lib/settings/nav-groups";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
-
-const GROUPS: Array<{ label: string; ids: SettingsCategory[] }> = [
-  { label: "Start", ids: ["overview", "features"] },
-  {
-    label: "Organisation",
-    ids: ["organisation", "accounting", "currencies", "tax", "documents"],
-  },
-  {
-    label: "Operations",
-    ids: [
-      "sales",
-      "purchases",
-      "banking",
-      "dimensions",
-      "products",
-      "contacts",
-      "expenses",
-      "reports",
-    ],
-  },
-  {
-    label: "Platform",
-    ids: [
-      "users",
-      "automation",
-      "integrations",
-      "notifications",
-      "audit",
-      "import_migration",
-      "portals",
-      "fixed_assets",
-      "payroll",
-    ],
-  },
-  { label: "Firm & plan", ids: ["accountant", "subscription", "demo"] },
-];
 
 const NAV_KEY = "streakbooks.settings.nav.open";
 
@@ -63,7 +28,7 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
       if (raw) setOpen(JSON.parse(raw) as Record<string, boolean>);
       else {
         const init: Record<string, boolean> = {};
-        GROUPS.forEach((g) => {
+        SETTINGS_NAV_GROUPS.forEach((g) => {
           init[g.label] = true;
         });
         setOpen(init);
@@ -90,7 +55,7 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
 
   return (
     <nav className="space-y-2" aria-label="Settings categories">
-      {GROUPS.map((group) => {
+      {SETTINGS_NAV_GROUPS.map((group) => {
         const items = categoryMeta.filter((c) => {
           if (!group.ids.includes(c.id)) return false;
           if (c.id === "demo" && !showDemo) return false;
@@ -138,10 +103,6 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
                   {c.availability === "unavailable" ? (
                     <Badge variant="outline" className="ml-1 shrink-0 text-[10px]">
                       Unavailable
-                    </Badge>
-                  ) : c.availability === "partial" ? (
-                    <Badge variant="secondary" className="ml-1 shrink-0 text-[10px]">
-                      Partial
                     </Badge>
                   ) : null}
                 </Link>

@@ -2,7 +2,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { Check, Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Check, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,61 @@ function paidSubscription(sub: BillingOverview["subscription"]): boolean {
     sub.status === "trialing" ||
     sub.status === "past_due" ||
     sub.status === "paused"
+  );
+}
+
+function checkoutProviderForCountry(countryCode: string): "stripe" | "razorpay" {
+  return countryCode === "IN" ? "razorpay" : "stripe";
+}
+
+function paymentProviderReady(data: BillingOverview): boolean {
+  const provider = checkoutProviderForCountry(data.countryCode);
+  return data.providers[provider];
+}
+
+function PaymentSetupCallout({
+  data,
+  plans,
+}: {
+  data: BillingOverview;
+  plans: BillingPlanView[];
+}) {
+  const hasCatalogPrices = plans.some((plan) => plan.listPrice?.monthlyMinor != null);
+  if (!hasCatalogPrices || paymentProviderReady(data)) return null;
+  if (data.subscription && paidSubscription(data.subscription)) return null;
+
+  const provider = checkoutProviderForCountry(data.countryCode);
+  const providerLabel = provider === "stripe" ? "Stripe" : "Razorpay";
+
+  return (
+    <Alert variant="info" className="max-w-3xl mx-auto">
+      <Info className="size-4" aria-hidden />
+      <AlertTitle>{providerLabel} is not connected on this server</AlertTitle>
+      <AlertDescription className="space-y-2">
+        <p>
+          Plan prices are published for {data.countryCode}. Subscribe needs {providerLabel} API keys
+          in server environment variables — not products you create in the {providerLabel} dashboard.
+        </p>
+        <p className="text-muted-foreground">
+          You can ignore Stripe&apos;s setup guide steps such as &quot;Create a recurring product&quot;
+          or customer portal; StreakBooks creates provider prices on first checkout.
+        </p>
+        {import.meta.env.DEV ? (
+          <p className="text-muted-foreground">
+            Local dev: add{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-xs">
+              {provider === "stripe" ? "STRIPE_SECRET_KEY" : "RAZORPAY_KEY_ID"}=
+            </code>{" "}
+            and webhook forwarding to{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-xs">.env.local</code>. See{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-xs">
+              docs/billing/14-stripe-local-setup.md
+            </code>{" "}
+            in the repository.
+          </p>
+        ) : null}
+      </AlertDescription>
+    </Alert>
   );
 }
 
@@ -423,14 +479,17 @@ function PlanPicker({
 }) {
   const plans = visiblePlans(data);
   const anyPriced = plans.some((plan) => plan.pricePublished);
+  const anyListPrices = plans.some((plan) => plan.listPrice?.monthlyMinor != null);
   const anyYearly = plans.some(
     (plan) =>
-      plan.pricePublished && (plan.monthlyMinor !== null || plan.listPrice?.yearlyMinor != null),
+      plan.listPrice?.yearlyMinor != null ||
+      (plan.pricePublished && plan.monthlyMinor !== null),
   );
-  const anyPromo = anyPriced;
+  const anyPromo = anyPriced || (anyListPrices && paymentProviderReady(data));
   const trialPlan = plans.find((plan) => plan.code === data.settings.trialPlanCode);
   return (
     <>
+      <PaymentSetupCallout data={data} plans={plans} />
       <div className="flex flex-col items-center gap-3">
         <div
           className={cn("inline-flex rounded-full border bg-muted/40 p-1", !anyYearly && "hidden")}

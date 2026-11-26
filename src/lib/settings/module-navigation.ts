@@ -82,6 +82,35 @@ export const MODULE_SETTINGS_LINKS: Partial<Record<SettingsCategory, SettingsLin
       to: "/banking/import",
     },
   ],
+  contacts: [
+    {
+      label: "Contacts defaults",
+      description: "Numbering, terms, groups and tags for customers and suppliers.",
+      to: "/contacts/settings",
+    },
+    {
+      label: "CRM settings",
+      description: "Pipelines, territories, and CRM workspace preferences.",
+      to: "/crm/settings",
+    },
+  ],
+  integrations: [
+    {
+      label: "App Store",
+      description: "Install and configure marketplace integrations.",
+      to: "/app-store",
+    },
+    {
+      label: "Developer portal",
+      description: "API keys, OAuth apps and webhook diagnostics.",
+      to: "/developer",
+    },
+    {
+      label: "Messaging settings",
+      description: "Channels, retention and collaboration preferences.",
+      to: "/messages/settings",
+    },
+  ],
   documents: [
     {
       label: "Invoice themes & branding",

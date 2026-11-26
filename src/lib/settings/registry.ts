@@ -36,7 +36,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Legal identity, locale, theme and document identity.",
     synonyms: ["company", "branding", "locale", "timezone", "language"],
     legacyTab: "organisation",
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "accounting",
@@ -45,7 +45,7 @@ export const categoryMeta: CategoryMeta[] = [
     synonyms: ["fy", "financial year", "lock", "closing date", "period locks", "books start"],
     legacyTab: "financial",
     moduleLinks: [{ label: "Accounting periods", to: "/accounting" }],
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "sales",
@@ -65,7 +65,7 @@ export const categoryMeta: CategoryMeta[] = [
       "numbering",
     ],
     moduleLinks: [{ label: "Sales settings", to: "/sales/settings" }],
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "purchases",
@@ -87,7 +87,7 @@ export const categoryMeta: CategoryMeta[] = [
       { label: "Purchases settings", to: "/purchases/settings" },
       { label: "New bill", to: "/purchases/bills/new" },
     ],
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "banking",
@@ -95,7 +95,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Import formats, rules, tolerances and feed connection state.",
     synonyms: ["bank", "reconcile", "feeds", "csv", "ofx"],
     moduleLinks: [{ label: "Banking", to: "/banking" }],
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "dimensions",
@@ -103,7 +103,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Classes, locations, departments, projects and custom dimensions.",
     synonyms: ["tracking", "class", "location", "department", "cost centre", "project"],
     legacyTab: "dimensions",
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "tax",
@@ -119,7 +119,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "SKUs, pricing, stock and valuation policies.",
     synonyms: ["inventory", "sku", "stock", "cogs", "barcode"],
     moduleLinks: [{ label: "Products & Services", to: "/products-services" }],
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "reports",
@@ -127,7 +127,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Default basis, saved views, packs and schedules.",
     synonyms: ["pnl", "balance sheet", "kpi", "budget", "forecast"],
     moduleLinks: [{ label: "Reports", to: "/reports" }],
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "documents",
@@ -135,7 +135,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Numbering, branding, themes and PDF defaults.",
     synonyms: ["invoice theme", "pdf", "logo", "numbering", "templates"],
     legacyTab: "documents",
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "currencies",
@@ -143,15 +143,18 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Base currency, foreign currencies and exchange rates.",
     synonyms: ["fx", "exchange rate", "multicurrency", "revaluation"],
     legacyTab: "currencies",
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "contacts",
     label: "Contacts & CRM",
     description: "Customer and supplier defaults, duplicates and privacy.",
     synonyms: ["customers", "suppliers", "crm", "merge"],
-    moduleLinks: [{ label: "Contacts settings", to: "/contacts/settings" }],
-    availability: "partial",
+    moduleLinks: [
+      { label: "Contacts settings", to: "/contacts/settings" },
+      { label: "CRM settings", to: "/crm/settings" },
+    ],
+    availability: "live",
   },
   {
     id: "expenses",
@@ -172,7 +175,7 @@ export const categoryMeta: CategoryMeta[] = [
     synonyms: ["ai", "voice", "rules", "workflow", "recurring"],
     legacyTab: "automation",
     moduleLinks: [{ label: "AI Assistant", to: "/ai-assistant" }],
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "users",
@@ -189,10 +192,11 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Platform connection health. Browse and manage marketplace apps in the App Store.",
     synonyms: ["api", "webhook", "oauth", "bank feed", "gateway", "app store", "marketplace"],
     legacyTab: "integrations",
-    availability: "partial",
+    availability: "live",
     moduleLinks: [
       { label: "App Store", to: "/app-store" },
       { label: "Developer portal", to: "/developer" },
+      { label: "Messaging settings", to: "/messages/settings" },
     ],
   },
   {
@@ -201,7 +205,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Configuration history, exports and retention.",
     synonyms: ["audit log", "export", "backup", "retention"],
     legacyTab: "audit",
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "accountant",
@@ -219,7 +223,7 @@ export const categoryMeta: CategoryMeta[] = [
     label: "Subscription & Usage",
     description: "Plan, seats, trial, promo codes and payment.",
     synonyms: ["billing", "plan", "seats", "quota", "stripe", "razorpay", "trial"],
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "demo",
@@ -235,15 +239,18 @@ export const categoryMeta: CategoryMeta[] = [
     description:
       "Provider status, email identity, notification preferences, quiet hours and on-demand digests.",
     synonyms: ["email", "reply-to", "quiet hours", "digest", "notification", "resend"],
-    moduleLinks: [{ label: "Action Center", to: "/notifications" }],
-    availability: "partial",
+    moduleLinks: [
+      { label: "Action Center", to: "/notifications" },
+      { label: "Messaging settings", to: "/messages/settings" },
+    ],
+    availability: "live",
   },
   {
     id: "portals",
     label: "Customer & Supplier Portals",
     description: "Client and supplier self-service portals.",
     synonyms: ["portal", "client login", "pay online"],
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "fixed_assets",

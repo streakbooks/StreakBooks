@@ -1,0 +1,20 @@
+---
+description: Canonical GitHub repo and local path for all StreakBooks work
+alwaysApply: true
+---
+
+# Canonical location (StreakBooks)
+
+Gulshan (Operations) confirmed on 2026-11-26:
+
+- **GitHub:** https://github.com/streakbooks/StreakBooks
+- **Local:** `D:\StreakBooks`
+- **Dev URL:** http://localhost:8080
+- **Supabase project:** `qugoaaizclvkzesptovm`  
+  Dashboard: https://supabase.com/dashboard/project/qugoaaizclvkzesptovm  
+  API URL: `https://qugoaaizclvkzesptovm.supabase.co`
+
+Use only this repository, checkout, and Supabase project for branches, PRs, commits, CI inspection, deliveries, and database work.
+
+Do **not** use or publish to retired locations: `linkbusinessadvisory/LinkBooks`, `rohitmehra86/LinkBooks`, or `D:\MyApp\LinkBooks`.
+Do **not** apply hosted migrations to other Supabase project IDs; historical notes naming different projects are not the current target.

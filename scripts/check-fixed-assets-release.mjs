@@ -66,7 +66,7 @@ console.log("\nStreakBooks Fixed Assets — local non-CI release verification");
 // Do not log the origin URL: it may contain a credential.
 const origin = git(["config", "--get", "remote.origin.url"]);
 const authoritative =
-  /^((https:\/\/|ssh:\/\/git@)github\.com\/|git@github\.com:|https:\/\/[^@]+@github\.com\/)(linkbusinessadvisory\/StreakBooks)(\.git)?\/?$/i;
+  /^((https:\/\/|ssh:\/\/git@)github\.com\/|git@github\.com:|https:\/\/[^@]+@github\.com\/)(streakbooks\/StreakBooks)(\.git)?\/?$/i;
 if (origin === null || !authoritative.test(origin)) {
   refuse("Git origin is not streakbooks/StreakBooks.");
 }

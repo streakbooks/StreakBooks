@@ -90,7 +90,12 @@ function execute(f, { fail = "", mutate = "", args = [] } = {}) {
 }
 
 function seen(f) {
-  return existsSync(f.logs) ? readFileSync(f.logs, "utf8").trim().split("\n") : [];
+  return existsSync(f.logs)
+    ? readFileSync(f.logs, "utf8")
+        .trim()
+        .split(/\r?\n/)
+        .map((line) => line.replace(/\r$/, ""))
+    : [];
 }
 
 function caseWithRepo(callback) {
@@ -120,10 +125,10 @@ describe("Fixed Assets local non-CI release gate", () => {
 
   it("refuses the old repository without running npm", () =>
     caseWithRepo((f) => {
-      git(f.repo, "remote", "set-url", "origin", "https://github.com/streakbooks/StreakBooks.git");
+      git(f.repo, "remote", "set-url", "origin", "https://github.com/linkbusinessadvisory/LinkBooks.git");
       const x = execute(f);
       assert.equal(x.status, 2);
-      assert.match(x.output, /authoritative|not linkbusinessadvisory/i);
+      assert.match(x.output, /not streakbooks\/StreakBooks/i);
       assert.equal(seen(f).length, 0);
     }));
 

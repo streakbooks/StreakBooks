@@ -2,8 +2,7 @@ ALTER TABLE public.companies
   ADD COLUMN legal_name text,
   ADD COLUMN country_code text NOT NULL DEFAULT 'GB',
   ADD COLUMN fiscal_year_end_month smallint NOT NULL DEFAULT 3,
-  ADD COLUMN fiscal_year_end_day smallint NOT NULL DEFAULT 31,
-  ADD COLUMN timezone text NOT NULL DEFAULT 'Europe/London';
+  ADD COLUMN fiscal_year_end_day smallint NOT NULL DEFAULT 31;
 
 ALTER TABLE public.company_tax_settings
   ADD COLUMN tax_regime text NOT NULL DEFAULT 'none',

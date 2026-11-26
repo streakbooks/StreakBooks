@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AdvisorsServiceSelectedPage } from "@/screens/advisors/service-selected";
+import { AdvisorPublicLayout } from "@/components/advisors/AdvisorPublicLayout";
 
 export const Route = createFileRoute("/advisors_/$serviceCode")({
   head: ({ params }) => ({
@@ -22,5 +23,9 @@ export const Route = createFileRoute("/advisors_/$serviceCode")({
 
 function AdvisorsServiceRoute() {
   const { serviceCode } = Route.useParams();
-  return <AdvisorsServiceSelectedPage serviceCode={serviceCode} />;
+  return (
+    <AdvisorPublicLayout>
+      <AdvisorsServiceSelectedPage serviceCode={serviceCode} />
+    </AdvisorPublicLayout>
+  );
 }

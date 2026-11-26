@@ -12,15 +12,10 @@ import {
   type ReactNode,
 } from "react";
 import { LoadingState } from "@/components/common/states";
-import {
-  Link,
-  useNavigate,
-  useRouteContext,
-  useRouter,
-  useRouterState,
-} from "@tanstack/react-router";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
+import type { User } from "@supabase/supabase-js";
 import {
   ChevronDown,
   ChevronRight,
@@ -74,8 +69,7 @@ const InPlaceSettingsPanel = lazy(() =>
   })),
 );
 
-function UserMenu() {
-  const { user } = useRouteContext({ from: "/_authenticated" });
+function UserMenu({ user }: { user: User }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fullName = (user.user_metadata?.["full_name"] as string | undefined) ?? "";
@@ -447,22 +441,20 @@ function Breadcrumbs() {
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
-  const { user } = useRouteContext({ from: "/_authenticated" });
+export function AppShell({ children, user }: { children: ReactNode; user: User }) {
   return (
     <VoiceProvider userId={user.id}>
-      <AppShellLayout>{children}</AppShellLayout>
+      <AppShellLayout user={user}>{children}</AppShellLayout>
     </VoiceProvider>
   );
 }
 
-function AppShellLayout({ children }: { children: ReactNode }) {
+function AppShellLayout({ children, user }: { children: ReactNode; user: User }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const settingsPanel = useRouterState({
     select: (s) =>
       parseSettingsPanel((s.location.search as Record<string, unknown>)["settingsPanel"]),
   });
-  const { user } = useRouteContext({ from: "/_authenticated" });
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
@@ -618,7 +610,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
           <NotificationBell companyId={company?.id ?? null} userId={user.id} />
           <CreateNewMenu />
           <ThemeToggle />
-          <UserMenu />
+          <UserMenu user={user} />
         </header>
 
         <PlatformAnnouncements companyId={company?.id ?? null} />

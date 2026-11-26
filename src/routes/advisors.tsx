@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AdvisorsLandingPage } from "@/screens/advisors/landing";
+import { AdvisorPublicLayout } from "@/components/advisors/AdvisorPublicLayout";
 
 export const Route = createFileRoute("/advisors")({
   head: () => ({
@@ -12,5 +13,9 @@ export const Route = createFileRoute("/advisors")({
       },
     ],
   }),
-  component: AdvisorsLandingPage,
+  component: () => (
+    <AdvisorPublicLayout>
+      <AdvisorsLandingPage />
+    </AdvisorPublicLayout>
+  ),
 });

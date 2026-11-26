@@ -5,6 +5,7 @@ import {
   Outlet,
   redirect,
   useNavigate,
+  useRouteContext,
   useRouterState,
 } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -60,6 +61,7 @@ function AuthenticatedLayout() {
 }
 
 function CompanyLayout() {
+  const { user } = useRouteContext({ from: "/_authenticated" });
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data, isPending, isError, error, refetch } = useActiveCompany();
@@ -110,7 +112,7 @@ function CompanyLayout() {
   }
 
   return (
-    <AppShell>
+    <AppShell user={user}>
       <Outlet />
     </AppShell>
   );

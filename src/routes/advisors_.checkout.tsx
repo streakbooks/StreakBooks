@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { AdvisorsCheckoutPage } from "@/screens/advisors/checkout";
+import { AdvisorPublicLayout } from "@/components/advisors/AdvisorPublicLayout";
 
 const searchSchema = z.object({
   service: z.enum(["bookkeeping", "coaching"]).optional(),
@@ -23,5 +24,9 @@ export const Route = createFileRoute("/advisors_/checkout")({
 
 function AdvisorsCheckoutRoute() {
   const search = Route.useSearch();
-  return <AdvisorsCheckoutPage serviceCode={search.service ?? ""} planCode={search.plan ?? ""} />;
+  return (
+    <AdvisorPublicLayout>
+      <AdvisorsCheckoutPage serviceCode={search.service ?? ""} planCode={search.plan ?? ""} />
+    </AdvisorPublicLayout>
+  );
 }

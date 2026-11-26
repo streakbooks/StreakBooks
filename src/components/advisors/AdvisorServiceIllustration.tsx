@@ -41,12 +41,16 @@ export function AdvisorServiceIllustration({
       src={raster.src}
       alt={raster.alt}
       title={title}
-      loading="lazy"
+      loading="eager"
       decoding="async"
+      fetchPriority="high"
       width={1280}
       height={720}
       onError={() => setFailed(true)}
-      className={cn("h-auto w-full rounded-2xl object-cover shadow-raised", className)}
+      className={cn(
+        "aspect-video h-auto w-full rounded-2xl bg-muted/40 object-cover shadow-raised",
+        className,
+      )}
     />
   );
 }

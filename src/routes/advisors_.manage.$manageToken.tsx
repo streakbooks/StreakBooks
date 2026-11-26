@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AdvisorsManageAppointmentPage } from "@/screens/advisors/manage-appointment";
+import { AdvisorPublicLayout } from "@/components/advisors/AdvisorPublicLayout";
 
 export const Route = createFileRoute("/advisors_/manage/$manageToken")({
   head: () => ({
@@ -10,5 +11,9 @@ export const Route = createFileRoute("/advisors_/manage/$manageToken")({
 
 function AdvisorsManageRoute() {
   const { manageToken } = Route.useParams();
-  return <AdvisorsManageAppointmentPage manageToken={manageToken} />;
+  return (
+    <AdvisorPublicLayout>
+      <AdvisorsManageAppointmentPage manageToken={manageToken} />
+    </AdvisorPublicLayout>
+  );
 }

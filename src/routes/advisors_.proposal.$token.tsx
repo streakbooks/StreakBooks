@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AdvisorsProposalPage } from "@/screens/advisors/proposal";
+import { AdvisorPublicLayout } from "@/components/advisors/AdvisorPublicLayout";
 
 export const Route = createFileRoute("/advisors_/proposal/$token")({
   head: () => ({
@@ -10,5 +11,9 @@ export const Route = createFileRoute("/advisors_/proposal/$token")({
 
 function AdvisorsProposalRoute() {
   const { token } = Route.useParams();
-  return <AdvisorsProposalPage token={token} />;
+  return (
+    <AdvisorPublicLayout>
+      <AdvisorsProposalPage token={token} />
+    </AdvisorPublicLayout>
+  );
 }

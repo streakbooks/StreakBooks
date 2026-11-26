@@ -16,6 +16,7 @@ import appCss from "../styles.css?url";
 import { reportRuntimeError } from "../lib/runtime-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { AdvisorPublicSessionProvider } from "@/components/advisors/AdvisorPublicSessionProvider";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import {
   hideRecoveryStatus,
@@ -174,7 +175,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <AdvisorPublicSessionProvider>
+        <Outlet />
+      </AdvisorPublicSessionProvider>
       <Toaster />
     </QueryClientProvider>
   );

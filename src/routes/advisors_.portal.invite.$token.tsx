@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AdvisorsPortalInvitePage } from "@/screens/advisors/portal-invite";
+import { AdvisorPublicLayout } from "@/components/advisors/AdvisorPublicLayout";
 
 export const Route = createFileRoute("/advisors_/portal/invite/$token")({
   ssr: false,
@@ -8,6 +9,10 @@ export const Route = createFileRoute("/advisors_/portal/invite/$token")({
   }),
   component: function AdvisorsPortalInviteRoute() {
     const { token } = Route.useParams();
-    return <AdvisorsPortalInvitePage token={token} />;
+    return (
+      <AdvisorPublicLayout>
+        <AdvisorsPortalInvitePage token={token} />
+      </AdvisorPublicLayout>
+    );
   },
 });

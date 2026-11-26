@@ -70,8 +70,8 @@ export function AdvisorsLandingPage() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,oklch(0.72_0.08_210_/_0.22),transparent_42%),radial-gradient(circle_at_80%_20%,oklch(0.55_0.08_250_/_0.18),transparent_36%),linear-gradient(180deg,oklch(0.97_0.01_250),transparent_48%)] dark:bg-[radial-gradient(circle_at_top_left,oklch(0.35_0.06_210_/_0.35),transparent_42%),radial-gradient(circle_at_80%_10%,oklch(0.28_0.05_250_/_0.35),transparent_40%),linear-gradient(180deg,oklch(0.2_0.03_250),transparent_50%)]"
       />
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-12 sm:px-6 lg:py-16">
-        <header className="max-w-3xl space-y-5">
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:py-10">
+        <header className="max-w-3xl space-y-4">
           <p className="text-sm font-semibold tracking-[0.18em] text-primary uppercase">
             {ADVISORS_LANDING.brandTitle}
           </p>
@@ -92,7 +92,7 @@ export function AdvisorsLandingPage() {
         ) : catalogue.isSuccess ? (
           <section
             aria-label="Advisor service choices"
-            className="grid gap-6 lg:grid-cols-2 lg:gap-8"
+            className="grid gap-5 lg:grid-cols-2 lg:gap-6"
           >
             {services.slice(0, 2).map((service) => (
               <ServiceCard key={service.code} service={service} />

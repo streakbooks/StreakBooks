@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { AdvisorsBookingPage } from "@/screens/advisors/booking";
+import { AdvisorPublicLayout } from "@/components/advisors/AdvisorPublicLayout";
 
 const searchSchema = z.object({
   service: z.enum(["bookkeeping", "coaching"]).optional(),
@@ -24,9 +25,11 @@ export const Route = createFileRoute("/advisors_/book")({
 function AdvisorsBookRoute() {
   const search = Route.useSearch();
   return (
-    <AdvisorsBookingPage
-      {...(search.service ? { serviceCode: search.service } : {})}
-      {...(search.plan ? { planCode: search.plan } : {})}
-    />
+    <AdvisorPublicLayout>
+      <AdvisorsBookingPage
+        {...(search.service ? { serviceCode: search.service } : {})}
+        {...(search.plan ? { planCode: search.plan } : {})}
+      />
+    </AdvisorPublicLayout>
   );
 }

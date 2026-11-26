@@ -128,6 +128,7 @@ export function PersonalAppearanceCard({ companyId }: { companyId: string | null
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                {/* lookup-fixed-enum: Theme palettes are a short display preference enumeration. */}
                 {PALETTE_OPTIONS.map((palette) => (
                   <SelectItem key={palette.id} value={palette.id}>
                     {palette.name}

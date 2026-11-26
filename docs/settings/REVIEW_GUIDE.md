@@ -12,6 +12,18 @@
 6. Inspect a typed editor. Evidence-backed controls remain editable. Other controls display **Partial** and are disabled until their consumer behavior and access tests are established.
 7. Try an unsupported category/page and an external `returnTo` value. Invalid routes recover safely; external paths must not be rendered as return links.
 
+## Profile appearance preferences
+
+Route: `/profile` (Profile → Appearance card). Status: **PARTIAL**; colour mode and named palettes sync per user and organisation, while custom colour values remain on the current device.
+
+1. Sign in to a dedicated non-production user who belongs to a test organisation; start the app with `npm.cmd run dev` and open `http://localhost:8080/profile`.
+2. Select Light, Dark, and Use device setting. Each selection should update immediately and report a save in the UI.
+3. Select a named palette, reload, and confirm the same preference is restored for that user and organisation.
+4. Change to another test organisation and confirm that organisation's stored preference loads. Confirm a different user does not inherit the first user's preference.
+5. Select Custom palette and confirm the existing custom colours are not replaced by a remote named palette. Reset custom colours and verify only this device's custom values reset.
+6. Inspect `getPersonalAppearancePreferences` and `savePersonalAppearancePreferences` behavior through their unit tests. Each validates authentication; the server checks company membership, scopes reads/writes to `context.userId`, and rejects `custom` as a synced palette.
+7. For a permissions failure or unavailable Supabase connection, confirm the existing local theme still works and a user-visible error is reported. Use no production account or hosted customer data for this check.
+
 ## Scope and permission review
 
 - Tenant settings continue to use the existing server functions, membership checks, version checks and row-level security. Route visibility is not authorization.

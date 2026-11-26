@@ -4,6 +4,12 @@
 - Provide matching backup evidence for Supabase project `qugoaaizclvkzesptovm` before any hosted migration is run. Existing backup evidence in historical notes names a different project.
 - Review deployment-provider account constraints before enabling deploy checks: the PR currently reports Vercel Hobby/private-organization restrictions and a failed Cloudflare Workers build check. No plan change or production deploy was made.
 
+# Settings overhaul — profile preference completion, 26 November 2026
+
+Profile appearance preferences now save theme mode and named palette per authenticated user and organisation through the existing `user_ui_preferences` row and RLS policy. Custom palette colours remain device-local. Added server-function tests for membership checks, user scoping, upsert ownership and invalid palette rejection. No schema change or hosted Supabase action was needed.
+
+The working diff based on feature commit `37bb5f338a63277d7460cf3ef1ce8e6dab4b86d9` passes: 638 test files / 4,359 tests, full ESLint, typecheck and production build; UI/module/navigation checks pass. GitHub run [#45839137235](https://github.com/streakbooks/StreakBooks/actions/runs/45839137235) passed six isolated PostgreSQL suites and browser fixtures, but `validate` failed `check:lookups` because a fixed theme enumeration needed the documented annotation. That fix now passes locally and is pending the next PR run. PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) remains open/draft. Next: push the lookup fix and server-function tests, then proceed to Batch 3 Accounting and Tax; authenticated browser review still needs a dedicated non-production test account. No hosted migration, deployment or production verification occurred.
+
 # Settings overhaul — latest continuation, 26 November 2026
 
 Published commits `b2c1ce871a3f56f0d34b118f9fdea286f1c2d0b6` (corrected the atomic

@@ -76,17 +76,6 @@ export function PurchasesDefaultsForm({ companyId }: { companyId: string }) {
         companyId,
         ...parsed.value,
       };
-      if (q.data) {
-        data.salesDefaultPaymentTermsDays = q.data.sales_default_payment_terms_days;
-        if (q.data.sales_default_notes) data.salesDefaultNotes = q.data.sales_default_notes;
-        if (q.data.sales_payment_instructions) {
-          data.salesPaymentInstructions = q.data.sales_payment_instructions;
-        }
-        data.salesQuoteValidityDays = q.data.sales_quote_validity_days;
-        data.salesPricesIncludeTax = q.data.sales_prices_include_tax;
-        data.bankingCsvDateFormat = q.data.banking_csv_date_format;
-        data.accountingRequireJournalMemo = q.data.accounting_require_journal_memo;
-      }
       return save({ data });
     },
     onSuccess: async () => {

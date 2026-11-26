@@ -252,18 +252,30 @@ CREATE POLICY firm_client_access_grants_read ON public.firm_client_access_grants
     SELECT 1 FROM public.company_members cm WHERE cm.company_id=firm_client_access_grants.company_id
       AND cm.user_id=auth.uid() AND cm.status='active'));
 DROP POLICY IF EXISTS firm_client_access_grants_manage ON public.firm_client_access_grants;
-CREATE POLICY firm_client_access_grants_manage ON public.firm_client_access_grants FOR ALL TO authenticated
+DROP POLICY IF EXISTS firm_client_access_grants_insert ON public.firm_client_access_grants;
+DROP POLICY IF EXISTS firm_client_access_grants_update ON public.firm_client_access_grants;
+DROP POLICY IF EXISTS firm_client_access_grants_delete ON public.firm_client_access_grants;
+CREATE POLICY firm_client_access_grants_insert ON public.firm_client_access_grants FOR INSERT TO authenticated
+  WITH CHECK (public.is_firm_admin(firm_id) AND granted_by=auth.uid() AND revoked_at IS NULL
+    AND EXISTS (SELECT 1 FROM public.firm_client_links l
+    JOIN public.firms f ON f.id = l.firm_id AND f.status = 'active'
+    JOIN public.firm_members target ON target.firm_id = l.firm_id AND target.user_id = firm_client_access_grants.user_id
+    WHERE l.firm_id = firm_client_access_grants.firm_id AND l.company_id = firm_client_access_grants.company_id
+      AND l.revoked_at IS NULL));
+CREATE POLICY firm_client_access_grants_update ON public.firm_client_access_grants FOR UPDATE TO authenticated
   USING (public.is_firm_admin(firm_id) AND EXISTS (SELECT 1 FROM public.firm_client_links l
     JOIN public.firms f ON f.id = l.firm_id AND f.status = 'active'
     JOIN public.firm_members target ON target.firm_id = l.firm_id AND target.user_id = firm_client_access_grants.user_id
     WHERE l.firm_id = firm_client_access_grants.firm_id AND l.company_id = firm_client_access_grants.company_id
       AND l.revoked_at IS NULL))
-  WITH CHECK (public.is_firm_admin(firm_id) AND granted_by = auth.uid() AND EXISTS (
+  WITH CHECK (public.is_firm_admin(firm_id) AND EXISTS (
     SELECT 1 FROM public.firm_client_links l
     JOIN public.firms f ON f.id = l.firm_id AND f.status = 'active'
     JOIN public.firm_members target ON target.firm_id = l.firm_id AND target.user_id = firm_client_access_grants.user_id
     WHERE l.firm_id = firm_client_access_grants.firm_id AND l.company_id = firm_client_access_grants.company_id
-      AND l.revoked_at IS NULL AND firm_client_access_grants.revoked_at IS NULL));
+      AND l.revoked_at IS NULL));
+CREATE POLICY firm_client_access_grants_delete ON public.firm_client_access_grants FOR DELETE TO authenticated
+  USING (public.is_firm_admin(firm_id));
 
 DROP POLICY IF EXISTS firm_client_permission_requests_read ON public.firm_client_permission_requests;
 CREATE POLICY firm_client_permission_requests_read ON public.firm_client_permission_requests FOR SELECT TO authenticated

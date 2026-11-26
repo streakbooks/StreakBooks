@@ -5,6 +5,12 @@ export type ChartSortKey = "code" | "name" | "type" | "balance" | "activity";
 export type ChartSort = SortState<ChartSortKey>;
 export type ChartViewRow = { account: ChartAccount; depth: number; hasChildren: boolean };
 
+/** Format numeric codes for display only; account identifiers remain unchanged in storage. */
+export function formatAccountCodeForDisplay(code: string, minimumDigits: number): string {
+  const width = Number.isInteger(minimumDigits) ? Math.min(8, Math.max(0, minimumDigits)) : 0;
+  return /^\d+$/.test(code) ? code.padStart(width, "0") : code;
+}
+
 /** Display balances with their normal debit/credit sign, not raw debit-minus-credit. */
 export function accountSignedMinor(
   account: ChartAccount,

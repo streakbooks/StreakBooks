@@ -10,6 +10,10 @@ Profile appearance preferences now save theme mode and named palette per authent
 
 The working diff based on feature commit `37bb5f338a63277d7460cf3ef1ce8e6dab4b86d9` passes: 638 test files / 4,359 tests, full ESLint, typecheck and production build; UI/module/navigation checks pass. GitHub run [#45839137235](https://github.com/streakbooks/StreakBooks/actions/runs/45839137235) passed six isolated PostgreSQL suites and browser fixtures, but `validate` failed `check:lookups` because a fixed theme enumeration needed the documented annotation. That fix now passes locally and is pending the next PR run. PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) remains open/draft. Next: push the lookup fix and server-function tests, then proceed to Batch 3 Accounting and Tax; authenticated browser review still needs a dedicated non-production test account. No hosted migration, deployment or production verification occurred.
 
+# Settings overhaul — Accounting display preference, 26 November 2026
+
+Implemented `accounting.account_code_padding` end to end for the Chart of Accounts display: the existing versioned `organisation_config` save validates 0–8, requires `company.settings.edit`, and records before/after configuration audit; a membership-checked reader applies zero padding only to numeric chart labels. Stored account IDs/codes, CSV data and journals are unchanged. No migration was needed. Local validation of this diff: 638 test files / 4,360 tests, TypeScript, full ESLint and production build pass; focused Accounting/registry tests (12), UI/navigation/lookup/migration checks pass. The most recent GitHub run [#45840352414](https://github.com/streakbooks/StreakBooks/actions/runs/45840352414) passes the previous profile-settings head; a new run is required for this Accounting diff. Next: continue Batch 3 with tax/accounting effects proven by consumers and tests. PR #92 stays open/draft; no hosted migration, deploy, authenticated staging or production verification.
+
 # Settings overhaul — latest continuation, 26 November 2026
 
 Published commits `b2c1ce871a3f56f0d34b118f9fdea286f1c2d0b6` (corrected the atomic

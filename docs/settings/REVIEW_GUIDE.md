@@ -24,6 +24,16 @@ Route: `/profile` (Profile → Appearance card). Status: **PARTIAL**; colour mod
 6. Inspect `getPersonalAppearancePreferences` and `savePersonalAppearancePreferences` behavior through their unit tests. Each validates authentication; the server checks company membership, scopes reads/writes to `context.userId`, and rejects `custom` as a synced palette.
 7. For a permissions failure or unavailable Supabase connection, confirm the existing local theme still works and a user-visible error is reported. Use no production account or hosted customer data for this check.
 
+## Accounting account-code display
+
+Route: `/settings/accounting/overview` → **Account code padding**, then `/accounting` → Chart of Accounts. Status: **IMPLEMENTED** for display formatting only; accounting module coverage remains **PARTIAL**.
+
+1. In a dedicated non-production organisation, open the Accounting settings page as a user with `company.settings.edit` and set **Account code padding** to 4; save.
+2. Open the Chart of Accounts. Numeric codes such as `21` should display as `0021`; codes already longer than the minimum remain unchanged; alphanumeric codes such as `A-21` remain unchanged.
+3. Set the value back to 0 and confirm the display returns to the stored code.
+4. Verify the database account codes and posted journal line references are unchanged. The setting affects the chart's visible labels only; search and exports use canonical stored values.
+5. A user without settings edit permission may view the chart but cannot change the setting. Organization membership is checked on configuration reads; the write uses the existing permission-checked, versioned audit RPC.
+
 ## Scope and permission review
 
 - Tenant settings continue to use the existing server functions, membership checks, version checks and row-level security. Route visibility is not authorization.

@@ -55,6 +55,22 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/reports/accounting-basis.test.ts and cash report function tests",
   },
   {
+    key: "accounting.account_code_padding",
+    label: "Account code display padding",
+    moduleId: "accounting",
+    route: "/settings/accounting/overview",
+    scope: "company",
+    defaultValue: "0 minimum digits",
+    validation: "accountingConfigSchema validates an integer from 0 to 8 on the server",
+    permission: "company.settings.edit; member-scoped reads",
+    entitlement: null,
+    persistence: "organisation_config.accounting via version-checked settings RPC",
+    audit: "settings_change_log records before/after category documents",
+    consumer:
+      "ChartAccountsPanel formats numeric codes for display; stored codes and postings are unchanged",
+    test: "src/lib/accounting/chart-view.test.ts covers configured padding and numeric/non-numeric codes",
+  },
+  {
     key: "features.classes",
     label: "Classes feature",
     moduleId: "accounting",

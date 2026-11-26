@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { ChartAccount } from "./chart.functions";
-import { accountSignedMinor, canSelectForArchive, chartViewRows } from "./chart-view";
+import {
+  accountSignedMinor,
+  canSelectForArchive,
+  chartViewRows,
+  formatAccountCodeForDisplay,
+} from "./chart-view";
 
 function account(
   id: string,
@@ -35,6 +40,13 @@ describe("chart of accounts display", () => {
     account("c", "21", "Child", "b"),
     account("d", "11", "Detail", "a"),
   ];
+
+  it("pads numeric account codes for display without changing nonnumeric identifiers", () => {
+    expect(formatAccountCodeForDisplay("21", 4)).toBe("0021");
+    expect(formatAccountCodeForDisplay("10000", 4)).toBe("10000");
+    expect(formatAccountCodeForDisplay("A-21", 4)).toBe("A-21");
+    expect(formatAccountCodeForDisplay("21", 99)).toBe("00000021");
+  });
 
   it("sorts codes naturally in flat layout", () => {
     const result = chartViewRows(roots, new Set(), "flat", { key: "code", dir: "asc" }, true);

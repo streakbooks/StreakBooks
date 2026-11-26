@@ -135,6 +135,22 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/sales/document-defaults.test.ts, src/lib/settings/workflow-settings.functions.test.ts, and tests/integration/workflow-settings-audit.sql",
   },
   {
+    key: "purchases.default_payment_terms",
+    label: "Default purchase bill payment terms",
+    moduleId: "purchases",
+    route: "/settings/purchases/overview",
+    scope: "company",
+    defaultValue: "30 days",
+    validation: "Server validates an integer from 0 to 3650 days",
+    permission:
+      "company.settings.edit for configuration; supplier-specific terms still take precedence",
+    entitlement: null,
+    persistence: "company_workflow_settings.purchases_default_payment_terms_days",
+    audit: "workflow settings trigger records before/after typed values in settings_change_log",
+    consumer: "Purchase bill editor uses this term to calculate new bill due dates",
+    test: "src/lib/purchases/bill-form-helpers.test.ts, src/lib/settings/workflow-settings.functions.test.ts, and tests/integration/workflow-settings-audit.sql",
+  },
+  {
     key: "features.classes",
     label: "Classes feature",
     moduleId: "accounting",

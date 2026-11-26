@@ -71,6 +71,7 @@ import {
   CANCEL_UNSAVED_MESSAGE,
   canPreviewAttachment,
   computeBillTotals,
+  defaultPurchaseBillDueDate,
   hasUnsavedBillChanges,
   MAX_ATTACHMENT_BYTES,
   validateAttachmentFile,
@@ -604,9 +605,14 @@ export function NewBill({
 
   useEffect(() => {
     if (defaultsApplied || !settingsQ.isSuccess || !settingsQ.data) return;
-    const days = settingsQ.data.purchases_default_payment_terms_days ?? 30;
     if (!dueDateManualOverride) {
-      setDueDate(calculateDueDate(today, { days, calculation_method: "days_after_bill_date" }));
+      setDueDate(
+        defaultPurchaseBillDueDate(
+          today,
+          undefined,
+          settingsQ.data.purchases_default_payment_terms_days,
+        ),
+      );
     }
     // Optional fields stay blank — only apply org default notes when configured
     if (settingsQ.data.purchases_default_notes) setMemo(settingsQ.data.purchases_default_notes);
@@ -820,8 +826,13 @@ export function NewBill({
         setDueDate(calculateDueDate(date, term));
         return;
       }
-      const days = settingsQ.data?.purchases_default_payment_terms_days ?? 30;
-      setDueDate(calculateDueDate(date, { days, calculation_method: "days_after_bill_date" }));
+      setDueDate(
+        defaultPurchaseBillDueDate(
+          date,
+          undefined,
+          settingsQ.data?.purchases_default_payment_terms_days,
+        ),
+      );
     },
     [dueDateManualOverride, terms, settingsQ.data],
   );
@@ -849,11 +860,11 @@ export function NewBill({
         applyDueFromTerms(billDate, match.id);
       } else if (!dueDateManualOverride) {
         setDueDate(
-          calculateDueDate(billDate, {
-            days:
-              s.payment_terms_days ?? settingsQ.data?.purchases_default_payment_terms_days ?? 30,
-            calculation_method: "days_after_bill_date",
-          }),
+          defaultPurchaseBillDueDate(
+            billDate,
+            s.payment_terms_days,
+            settingsQ.data?.purchases_default_payment_terms_days,
+          ),
         );
       }
     }
@@ -1215,8 +1226,13 @@ export function NewBill({
     setPendingAttachments([]);
     setInternalNoteDraft("");
     setFormError(null);
-    const days = settingsQ.data?.purchases_default_payment_terms_days ?? 30;
-    setDueDate(calculateDueDate(today, { days, calculation_method: "days_after_bill_date" }));
+    setDueDate(
+      defaultPurchaseBillDueDate(
+        today,
+        undefined,
+        settingsQ.data?.purchases_default_payment_terms_days,
+      ),
+    );
     window.setTimeout(() => setBaseline(snapshot()), 0);
   }
 

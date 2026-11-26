@@ -92,3 +92,10 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Added field-specific permission/persistence tests, date-consumer precedence and leap-safe calendar behavior tests; the isolated SQL regression proves typed term audit history, RLS, tenant isolation and failed-audit rollback. Focused tests passed (3 files / 12 tests), full suite passed (640 files / 4,368 tests), TypeScript, ESLint, production build, module/UI/navigation/lookup/migration contracts and client bundle guard passed locally.
 - The last pushed commit `55b719cfcfb5a2ce66220c790a655173a9afb283` passed GitHub Actions run [#45849928949](https://github.com/streakbooks/StreakBooks/actions/runs/45849928949), including 97 browser fixtures and six isolated PostgreSQL jobs. This Sales diff requires its own fresh Actions run; no hosted Supabase migration or deployment occurred.
 - Next: continue Batch 4 for Sales/Purchases by field, then proceed through batches 5–9. Sales as a module remains partial. Do not promote further fields without the same evidence.
+
+## 2026-11-26 Purchase bill default terms
+
+- Routed purchase bill initial dates, term resets and supplier selection through one policy helper. The saved organisation default now has a field-level behavior test, while supplier terms retain precedence and manual overrides remain protected by the existing flow.
+- Added a separate complete capability for `purchases.default_payment_terms`, plus permission/persistence tests and typed audit assertions. Other Purchases controls remain partial; Batch 4 is still in progress.
+- Focused tests passed (3 files / 23 tests); full unit suite passed (640 files / 4,370 tests), TypeScript, full ESLint, production build, module/UI/navigation/lookup/migration contracts and client bundle guard passed. The isolated workflow Postgres audit suite passed, and all 97 Playwright UI fixtures passed on this revision.
+- This Sales/Purchases diff is local and needs to be committed/pushed to PR #92 for fresh Actions. No hosted Supabase migration or deployment occurred. Continue remaining Sales/Purchase settings and batches 5–9; the Purchases module and Batch 4 are still partial.

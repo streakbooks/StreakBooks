@@ -65,6 +65,16 @@ Route: `/settings/sales/overview` → **Sales defaults**; consumers: new invoice
 4. Set payment terms to 0 and confirm same-day due date; reject invalid/fractional or out-of-range values at both the Settings form and server boundary. Quote validity must be from 1 to 365 days.
 5. Run `src/lib/sales/document-defaults.test.ts`, the workflow settings server tests, and `npm.cmd run test:workflows:postgres` for consumer precedence, permission-checked persistence, audit history, tenant isolation and rollback.
 
+## Purchase bill default payment terms
+
+Route: `/settings/purchases/overview` → **Purchases defaults**; consumer: new purchase bill due dates. Supplier-specific payment terms take precedence over the organisation default; manual due-date overrides remain intact.
+
+1. In a non-production organisation, set default purchase terms to 60 days and save. Confirm the `company.settings.edit` check and typed before/after audit event.
+2. Create a bill for a supplier with no supplier-specific payment term and confirm the due date is 60 days after the bill date. Select a supplier with 14-day terms and confirm those terms win.
+3. Set terms to 0 and confirm a same-day due date. Invalid, fractional, or out-of-range values must be rejected on save.
+4. Edit the due date manually and confirm changing supplier does not overwrite the manual override.
+5. Run `src/lib/purchases/bill-form-helpers.test.ts`, the workflow settings server tests, and `npm.cmd run test:workflows:postgres` to verify precedence, persistence, audit and tenant-safe rollback.
+
 ## Scope and permission review
 
 - Tenant settings continue to use the existing server functions, membership checks, version checks and row-level security. Route visibility is not authorization.

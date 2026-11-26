@@ -64,9 +64,7 @@ export function AppStoreOverviewPage() {
     );
   }
   if (catalogue.isError) {
-    return (
-      <QueryErrorState queries={[catalogue]} title="Could not load App Store" />
-    );
+    return <QueryErrorState queries={[catalogue]} title="Could not load App Store" />;
   }
   if (!catalogue.isSuccess) return null;
   const apps = catalogue.data?.apps ?? [];

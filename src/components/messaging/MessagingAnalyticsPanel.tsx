@@ -23,9 +23,7 @@ export function MessagingAnalyticsPanel({ companyId }: { companyId: string | nul
   }
   if (query.isPending) return <LoadingState rows={3} />;
   if (query.isError) {
-    return (
-      <QueryErrorState queries={[query]} title="Could not load messaging analytics" />
-    );
+    return <QueryErrorState queries={[query]} title="Could not load messaging analytics" />;
   }
   if (!query.isSuccess) return <LoadingState rows={3} />;
 

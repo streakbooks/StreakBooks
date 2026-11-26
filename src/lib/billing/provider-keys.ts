@@ -12,7 +12,9 @@ export function assertStripeTestKey(secret: string, env: Env = process.env): voi
   if (secret.startsWith("sk_test_")) return;
   if (secret.startsWith("sk_live_") && livePaymentKeysAllowed(env)) return;
   if (secret.startsWith("sk_live_")) {
-    throw new Error("Stripe live keys are refused unless STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true.");
+    throw new Error(
+      "Stripe live keys are refused unless STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true.",
+    );
   }
   throw new Error("Stripe secret must start with sk_test_.");
 }

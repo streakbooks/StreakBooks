@@ -546,10 +546,7 @@ export function FirmTeamPanel({ firmId }: { firmId: string }) {
     queryFn: () => load({ data: { firmId } }),
   });
   if (teamQ.isPending) return <LoadingState />;
-  if (teamQ.isError)
-    return (
-      <QueryErrorState queries={[teamQ]} title="Could not load firm team" />
-    );
+  if (teamQ.isError) return <QueryErrorState queries={[teamQ]} title="Could not load firm team" />;
   if (!teamQ.isSuccess) return <LoadingState />;
   return (
     <section className="space-y-4">

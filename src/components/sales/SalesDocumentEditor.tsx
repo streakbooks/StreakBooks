@@ -1043,10 +1043,7 @@ export function SalesDocumentEditor({
                   <FormControlShell width="contact">
                     <Label htmlFor="sales-price-list">Sales price list</Label>
                     {priceListsQ.isError ? (
-                      <QueryErrorState
-                        queries={[priceListsQ]}
-                        title="Could not load price lists"
-                      />
+                      <QueryErrorState queries={[priceListsQ]} title="Could not load price lists" />
                     ) : (
                       <RecordLookupSelect
                         value={selectedPriceListId || "none"}

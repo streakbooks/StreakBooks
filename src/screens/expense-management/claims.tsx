@@ -644,10 +644,7 @@ export function ExpenseManagementClaimsPage({
   // List is list-only. Create opens only via ?create=true → TransactionWorkspace.
   const createForm =
     mode === "my-expenses" && canSubmit && forceCreate && createLookupsFailed ? (
-      <QueryErrorState
-        queries={createLookupQueries}
-        title="Could not load claim create options"
-      />
+      <QueryErrorState queries={createLookupQueries} title="Could not load claim create options" />
     ) : mode === "my-expenses" && canSubmit && forceCreate ? (
       <form
         id="expense-claim-create"

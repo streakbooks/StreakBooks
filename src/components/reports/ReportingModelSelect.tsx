@@ -79,8 +79,7 @@ export function ReportingModelSelect({
               throw new Error("The model type changed; refresh and try again.");
             onSelect(model);
           } catch (error) {
-            if (scope.active && attempt === request.current)
-              setOpenError(friendlyAuthError(error));
+            if (scope.active && attempt === request.current) setOpenError(friendlyAuthError(error));
           } finally {
             if (scope.active && attempt === request.current) setOpening(false);
           }

@@ -233,65 +233,65 @@ export function FirmRecurringBillingPanel({
               ) : null}
               {linksQ.isSuccess
                 ? (linksQ.data ?? []).map((item) => {
-                const schedule = item.sales_recurring_invoices;
-                return (
-                  <div
-                    key={item.recurring_id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
-                  >
-                    <div>
-                      <p className="font-medium">{schedule?.name ?? "Recurring invoice"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Next due {schedule?.next_due_date ?? "unknown"} ·{" "}
-                        {schedule?.frequency ?? ""}
-                      </p>
-                      <Badge variant="outline">
-                        {schedule?.is_active ? "Active template" : "Inactive template"}
-                      </Badge>
-                    </div>
-                    {canManage ? (
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          disabled={
-                            generateM.isPending ||
-                            !engagement ||
-                            !schedule ||
-                            !compatiblePracticeRecurring(engagement, schedule) ||
-                            !practiceDraftDue(schedule, new Date().toISOString().slice(0, 10))
-                          }
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                "Generate a due DRAFT Sales invoice in the practice billing company? No client books will be changed.",
-                              )
-                            ) {
-                              generateM.mutate(item.recurring_id);
-                            }
-                          }}
-                        >
-                          Generate due draft
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={unlinkM.isPending}
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                "Unlink the recurring reference without deleting its template?",
-                              )
-                            )
-                              unlinkM.mutate(item.recurring_id);
-                          }}
-                        >
-                          Unlink
-                        </Button>
+                    const schedule = item.sales_recurring_invoices;
+                    return (
+                      <div
+                        key={item.recurring_id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
+                      >
+                        <div>
+                          <p className="font-medium">{schedule?.name ?? "Recurring invoice"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Next due {schedule?.next_due_date ?? "unknown"} ·{" "}
+                            {schedule?.frequency ?? ""}
+                          </p>
+                          <Badge variant="outline">
+                            {schedule?.is_active ? "Active template" : "Inactive template"}
+                          </Badge>
+                        </div>
+                        {canManage ? (
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              disabled={
+                                generateM.isPending ||
+                                !engagement ||
+                                !schedule ||
+                                !compatiblePracticeRecurring(engagement, schedule) ||
+                                !practiceDraftDue(schedule, new Date().toISOString().slice(0, 10))
+                              }
+                              onClick={() => {
+                                if (
+                                  window.confirm(
+                                    "Generate a due DRAFT Sales invoice in the practice billing company? No client books will be changed.",
+                                  )
+                                ) {
+                                  generateM.mutate(item.recurring_id);
+                                }
+                              }}
+                            >
+                              Generate due draft
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={unlinkM.isPending}
+                              onClick={() => {
+                                if (
+                                  window.confirm(
+                                    "Unlink the recurring reference without deleting its template?",
+                                  )
+                                )
+                                  unlinkM.mutate(item.recurring_id);
+                              }}
+                            >
+                              Unlink
+                            </Button>
+                          </div>
+                        ) : null}
                       </div>
-                    ) : null}
-                  </div>
-                );
-              })
+                    );
+                  })
                 : null}
               {canManage && engagement && eligible.length ? (
                 <div className="flex flex-wrap items-end gap-3 rounded-lg border p-4">

@@ -376,11 +376,7 @@ export function HrTrainingPage() {
             <Button
               type="button"
               disabled={
-                !courseId ||
-                !employeeId ||
-                enrollM.isPending ||
-                !dataQ.isSuccess ||
-                !empQ.isSuccess
+                !courseId || !employeeId || enrollM.isPending || !dataQ.isSuccess || !empQ.isSuccess
               }
               onClick={() => enrollM.mutate()}
             >

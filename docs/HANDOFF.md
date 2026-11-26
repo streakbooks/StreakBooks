@@ -1,3 +1,16 @@
+# NEEDS FROM OWNER
+
+- Configure a dedicated non-production authenticated browser-test account through `E2E_EMAIL` and `E2E_PASSWORD` when available; do not commit or paste credentials.
+- Review deployment-provider account constraints before enabling deploy checks: the PR currently reports Vercel Hobby/private-organization restrictions and a failed Cloudflare Workers build check. No plan change or production deploy was made.
+
+# Settings overhaul — continuation, 26 November 2026
+
+Continued `feat/settings-module-overhaul` / PR #92. Fixed the repository-wide Prettier lint failure without disabling lint rules, and corrected the browsing inventory so the public `/advisors` storefront is tracked separately from authenticated routes. Current local verification: 633 Vitest files / 4,349 tests, TypeScript, full ESLint with zero warnings, production build, navigation/UI/module/bundle checks and all-module browsing inventory pass. Browser E2E is still unverified because the in-app browser cannot reach the workspace-local Vite listener; three authenticated Playwright cases remain skipped without a test account. The coverage inventory correctly reports 0/30 modules as fully verified.
+
+No Settings schema change was needed; no Supabase migration or hosted database action was performed. The configured target is `qugoaaizclvkzesptovm`, and the backup evidence in historical notes is for a different project. PR #92 remains open/draft; do not merge while Settings batches 2–9, authenticated browser verification and the task's release gates remain incomplete. Recheck new-head Actions after the verification commit is pushed. Previous CI evidence is at [run #37](https://github.com/streakbooks/StreakBooks/actions/runs/45797328652), which predates the current fixes.
+
+---
+
 # Settings overhaul — 26 November 2026
 
 Work is in progress on `feat/settings-module-overhaul`, based on clean `main`

@@ -568,8 +568,7 @@ function ImportCentre() {
                 {importResult.auditError && (
                   <p className="text-destructive">
                     Audit recording failed: {friendlyAuthError(importResult.auditError)}. Review the
-                    audit log before
-                    relying on this import.
+                    audit log before relying on this import.
                   </p>
                 )}
               </div>
@@ -623,8 +622,7 @@ function ImportCentre() {
                 {projectResult.auditError && (
                   <p className="text-destructive">
                     Audit recording failed: {friendlyAuthError(projectResult.auditError)}. Review
-                    the audit log before
-                    relying on this import.
+                    the audit log before relying on this import.
                   </p>
                 )}
               </div>
@@ -893,227 +891,233 @@ function ImportCentre() {
               />
             ) : (
               <>
-            <p className="text-sm">
-              1. Download the sample CSV and field guide above. 2. Upload an asset register. 3.
-              Match your columns and review every financial field. 4. Confirm to create register
-              records.
-            </p>
-            <p className="text-sm">
-              External asset references are retained in the audit mapping. Your registered assets
-              receive StreakBooks asset numbers. This batch does not change existing assets or create
-              accounting journals.
-            </p>
-            {csv && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold">Match columns from your file</h4>
-                <p className="text-xs text-muted-foreground">
-                  Headers matching the StreakBooks template are selected automatically. For other
-                  systems, choose the source column for each field. Every required field must be
-                  mapped.
+                <p className="text-sm">
+                  1. Download the sample CSV and field guide above. 2. Upload an asset register. 3.
+                  Match your columns and review every financial field. 4. Confirm to create register
+                  records.
                 </p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {definition.fields.map((field) => {
-                    const automatic =
-                      assetSourceHeaders.find(
-                        (h) =>
-                          h.toLocaleLowerCase("en-US") === field.label.toLocaleLowerCase("en-US"),
-                      ) ?? "";
-                    const selectedColumn = assetFieldMapping[field.key] ?? automatic;
-                    return (
-                      <label key={field.key} className="space-y-1 text-xs">
-                        <span className="font-medium">
-                          {field.label}
-                          {field.required ? " *" : ""}
-                        </span>
-                        <RecordLookupSelect
-                          className="w-full rounded-md border bg-background p-2 text-sm"
-                          value={selectedColumn}
-                          onValueChange={(e) => {
-                            setAssetFieldMapping((current) => ({
-                              ...current,
-                              [field.key]: e,
-                            }));
-                            setFixedAssetResult(null);
-                            setAssetImportAcknowledged(false);
-                          }}
-                        >
-                          <option value="">
-                            {field.required ? "Select required column" : "Not supplied"}
-                          </option>
-                          {assetSourceHeaders.map((header) => (
-                            <option key={header} value={header}>
-                              {header}
-                            </option>
+                <p className="text-sm">
+                  External asset references are retained in the audit mapping. Your registered
+                  assets receive StreakBooks asset numbers. This batch does not change existing
+                  assets or create accounting journals.
+                </p>
+                {csv && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold">Match columns from your file</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Headers matching the StreakBooks template are selected automatically. For
+                      other systems, choose the source column for each field. Every required field
+                      must be mapped.
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {definition.fields.map((field) => {
+                        const automatic =
+                          assetSourceHeaders.find(
+                            (h) =>
+                              h.toLocaleLowerCase("en-US") ===
+                              field.label.toLocaleLowerCase("en-US"),
+                          ) ?? "";
+                        const selectedColumn = assetFieldMapping[field.key] ?? automatic;
+                        return (
+                          <label key={field.key} className="space-y-1 text-xs">
+                            <span className="font-medium">
+                              {field.label}
+                              {field.required ? " *" : ""}
+                            </span>
+                            <RecordLookupSelect
+                              className="w-full rounded-md border bg-background p-2 text-sm"
+                              value={selectedColumn}
+                              onValueChange={(e) => {
+                                setAssetFieldMapping((current) => ({
+                                  ...current,
+                                  [field.key]: e,
+                                }));
+                                setFixedAssetResult(null);
+                                setAssetImportAcknowledged(false);
+                              }}
+                            >
+                              <option value="">
+                                {field.required ? "Select required column" : "Not supplied"}
+                              </option>
+                              {assetSourceHeaders.map((header) => (
+                                <option key={header} value={header}>
+                                  {header}
+                                </option>
+                              ))}
+                            </RecordLookupSelect>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {assetMapped.error && (
+                      <p role="alert" className="text-sm text-destructive">
+                        {assetMapped.error}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {assetRows && assetRows.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold">
+                      Validated asset preview ({assetRows.length} records)
+                    </h4>
+                    <div className="overflow-x-auto rounded-md border">
+                      <table className="w-full min-w-[850px] text-left text-xs">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            {[
+                              "CSV row",
+                              "External reference",
+                              "Asset",
+                              "Purchased",
+                              "Method",
+                              "Cost",
+                              "Opening depreciation",
+                              "Net book value",
+                            ].map((h) => (
+                              <th key={h} className="p-2">
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {assetRows.slice(0, 25).map((a) => (
+                            <tr key={a.externalCode} className="border-t">
+                              <td className="p-2">{a.sourceRow}</td>
+                              <td className="p-2">{a.externalCode}</td>
+                              <td className="p-2">{a.name}</td>
+                              <td className="p-2">{a.purchaseDate}</td>
+                              <td className="p-2">{a.method.replaceAll("_", " ")}</td>
+                              <td className="p-2 tabular-nums">
+                                {fromMinorUnits(a.costMinor, company?.base_currency ?? "USD")}
+                              </td>
+                              <td className="p-2 tabular-nums">
+                                {fromMinorUnits(
+                                  a.openingAccumulatedMinor,
+                                  company?.base_currency ?? "USD",
+                                )}
+                              </td>
+                              <td className="p-2 tabular-nums">
+                                {fromMinorUnits(
+                                  a.costMinor - a.openingAccumulatedMinor,
+                                  company?.base_currency ?? "USD",
+                                )}
+                              </td>
+                            </tr>
                           ))}
-                        </RecordLookupSelect>
-                      </label>
-                    );
-                  })}
-                </div>
-                {assetMapped.error && (
-                  <p role="alert" className="text-sm text-destructive">
-                    {assetMapped.error}
-                  </p>
+                        </tbody>
+                      </table>
+                    </div>
+                    {assetRows.length > 25 && (
+                      <p className="text-xs text-muted-foreground">
+                        Showing the first 25 of {assetRows.length} assets; the server validates
+                        every row before saving.
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      <span>
+                        Gross cost:{" "}
+                        <strong className="tabular-nums">
+                          {fromMinorUnits(
+                            assetRows.reduce((sum, a) => sum + BigInt(a.costMinor), 0n),
+                            company?.base_currency ?? "USD",
+                          )}
+                        </strong>
+                      </span>
+                      <span>
+                        Opening depreciation:{" "}
+                        <strong className="tabular-nums">
+                          {fromMinorUnits(
+                            assetRows.reduce(
+                              (sum, a) => sum + BigInt(a.openingAccumulatedMinor),
+                              0n,
+                            ),
+                            company?.base_currency ?? "USD",
+                          )}
+                        </strong>
+                      </span>
+                      <span>
+                        Net book value:{" "}
+                        <strong className="tabular-nums">
+                          {fromMinorUnits(
+                            assetRows.reduce(
+                              (sum, a) => sum + BigInt(a.costMinor - a.openingAccumulatedMinor),
+                              0n,
+                            ),
+                            company?.base_currency ?? "USD",
+                          )}
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
                 )}
-              </div>
-            )}
-            {assetRows && assetRows.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold">
-                  Validated asset preview ({assetRows.length} records)
-                </h4>
-                <div className="overflow-x-auto rounded-md border">
-                  <table className="w-full min-w-[850px] text-left text-xs">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        {[
-                          "CSV row",
-                          "External reference",
-                          "Asset",
-                          "Purchased",
-                          "Method",
-                          "Cost",
-                          "Opening depreciation",
-                          "Net book value",
-                        ].map((h) => (
-                          <th key={h} className="p-2">
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {assetRows.slice(0, 25).map((a) => (
-                        <tr key={a.externalCode} className="border-t">
-                          <td className="p-2">{a.sourceRow}</td>
-                          <td className="p-2">{a.externalCode}</td>
-                          <td className="p-2">{a.name}</td>
-                          <td className="p-2">{a.purchaseDate}</td>
-                          <td className="p-2">{a.method.replaceAll("_", " ")}</td>
-                          <td className="p-2 tabular-nums">
-                            {fromMinorUnits(a.costMinor, company?.base_currency ?? "USD")}
-                          </td>
-                          <td className="p-2 tabular-nums">
-                            {fromMinorUnits(
-                              a.openingAccumulatedMinor,
-                              company?.base_currency ?? "USD",
-                            )}
-                          </td>
-                          <td className="p-2 tabular-nums">
-                            {fromMinorUnits(
-                              a.costMinor - a.openingAccumulatedMinor,
-                              company?.base_currency ?? "USD",
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {assetRows.length > 25 && (
-                  <p className="text-xs text-muted-foreground">
-                    Showing the first 25 of {assetRows.length} assets; the server validates every
-                    row before saving.
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <span>
-                    Gross cost:{" "}
-                    <strong className="tabular-nums">
-                      {fromMinorUnits(
-                        assetRows.reduce((sum, a) => sum + BigInt(a.costMinor), 0n),
-                        company?.base_currency ?? "USD",
-                      )}
-                    </strong>
-                  </span>
-                  <span>
-                    Opening depreciation:{" "}
-                    <strong className="tabular-nums">
-                      {fromMinorUnits(
-                        assetRows.reduce((sum, a) => sum + BigInt(a.openingAccumulatedMinor), 0n),
-                        company?.base_currency ?? "USD",
-                      )}
-                    </strong>
-                  </span>
-                  <span>
-                    Net book value:{" "}
-                    <strong className="tabular-nums">
-                      {fromMinorUnits(
-                        assetRows.reduce(
-                          (sum, a) => sum + BigInt(a.costMinor - a.openingAccumulatedMinor),
-                          0n,
-                        ),
-                        company?.base_currency ?? "USD",
-                      )}
-                    </strong>
-                  </span>
-                </div>
-              </div>
-            )}
-            <p className="text-sm">
-              All mapped GL account codes must resolve to active accounts in this organisation. Each
-              row supplies a depreciation method, valuation, residual amount, and the remaining
-              useful life or declining-balance rate where applicable.
-            </p>
-            <p className="text-sm font-medium">
-              Register-only import: historical acquisition cost and opening accumulated depreciation
-              must be reconciled to existing opening GL balances. This import will not create
-              purchase, opening-balance or depreciation journals.
-            </p>
-            <label className="flex items-start gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={assetImportAcknowledged}
-                onChange={(e) => setAssetImportAcknowledged(e.currentTarget.checked)}
-              />
-              I understand these are fixed asset register entries only, and I will reconcile opening
-              ledger balances separately.
-            </label>
-            <Button
-              type="button"
-              disabled={
-                !company ||
-                !canManageProjects ||
-                !assetReadyQ.data?.available ||
-                !assetImportAcknowledged ||
-                !assetRows?.length ||
-                !preview?.result ||
-                preview.result.issues.length > 0 ||
-                assetImport.isPending
-              }
-              onClick={() => {
-                if (
-                  window.confirm(
-                    "Import this entire fixed asset register into the selected organisation? No journals will be posted; existing external references will be checked for conflicts.",
-                  )
-                )
-                  assetImport.mutate();
-              }}
-            >
-              {assetImport.isPending ? "Importing asset register…" : "Import fixed asset register"}
-            </Button>
-            {!canManageProjects && (
-              <p className="text-sm text-destructive">
-                You need accounts.manage permission to import assets.
-              </p>
-            )}
-            {fixedAssetResult && (
-              <div role="status" className="space-y-1 text-sm">
-                <p>
-                  Created: {fixedAssetResult.created}; skipped identical imports:{" "}
-                  {fixedAssetResult.skipped}.{" "}
-                  <Link to="/fixed-assets" className="underline">
-                    Return to fixed asset register
-                  </Link>
-                  .
+                <p className="text-sm">
+                  All mapped GL account codes must resolve to active accounts in this organisation.
+                  Each row supplies a depreciation method, valuation, residual amount, and the
+                  remaining useful life or declining-balance rate where applicable.
                 </p>
-                {fixedAssetResult.assets.map((asset) => (
-                  <p key={asset.asset_id}>
-                    Reference {asset.external_code}: asset ID {asset.asset_id}
+                <p className="text-sm font-medium">
+                  Register-only import: historical acquisition cost and opening accumulated
+                  depreciation must be reconciled to existing opening GL balances. This import will
+                  not create purchase, opening-balance or depreciation journals.
+                </p>
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={assetImportAcknowledged}
+                    onChange={(e) => setAssetImportAcknowledged(e.currentTarget.checked)}
+                  />
+                  I understand these are fixed asset register entries only, and I will reconcile
+                  opening ledger balances separately.
+                </label>
+                <Button
+                  type="button"
+                  disabled={
+                    !company ||
+                    !canManageProjects ||
+                    !assetReadyQ.data?.available ||
+                    !assetImportAcknowledged ||
+                    !assetRows?.length ||
+                    !preview?.result ||
+                    preview.result.issues.length > 0 ||
+                    assetImport.isPending
+                  }
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Import this entire fixed asset register into the selected organisation? No journals will be posted; existing external references will be checked for conflicts.",
+                      )
+                    )
+                      assetImport.mutate();
+                  }}
+                >
+                  {assetImport.isPending
+                    ? "Importing asset register…"
+                    : "Import fixed asset register"}
+                </Button>
+                {!canManageProjects && (
+                  <p className="text-sm text-destructive">
+                    You need accounts.manage permission to import assets.
                   </p>
-                ))}
-              </div>
-            )}
+                )}
+                {fixedAssetResult && (
+                  <div role="status" className="space-y-1 text-sm">
+                    <p>
+                      Created: {fixedAssetResult.created}; skipped identical imports:{" "}
+                      {fixedAssetResult.skipped}.{" "}
+                      <Link to="/fixed-assets" className="underline">
+                        Return to fixed asset register
+                      </Link>
+                      .
+                    </p>
+                    {fixedAssetResult.assets.map((asset) => (
+                      <p key={asset.asset_id}>
+                        Reference {asset.external_code}: asset ID {asset.asset_id}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>

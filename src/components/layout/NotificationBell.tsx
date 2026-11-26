@@ -99,7 +99,9 @@ export function NotificationBell({
             visible.slice(0, 15).map((n) => (
               <div key={n.id} className="border-b px-4 py-3 last:border-0">
                 <div className="flex items-start gap-2">
-                  {!n.read_at && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />}
+                  {!n.read_at && (
+                    <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="break-words text-sm font-medium">{n.title}</span>

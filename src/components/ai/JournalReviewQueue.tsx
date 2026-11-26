@@ -427,10 +427,7 @@ export function AiJournalReviewQueue({
                       size="sm"
                       variant="outline"
                       disabled={
-                        !assignee ||
-                        mutate.isPending ||
-                        reviewersQ.isError ||
-                        !reviewersQ.isSuccess
+                        !assignee || mutate.isPending || reviewersQ.isError || !reviewersQ.isSuccess
                       }
                       onClick={() => submit("assign")}
                     >

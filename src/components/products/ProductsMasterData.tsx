@@ -313,43 +313,43 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
             ) : null}
             {listsQ.isSuccess
               ? listsQ.data.map((list) => (
-              <div
-                key={list.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/25"
-              >
-                <div>
-                  <p className="font-medium">{list.name}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{list.currency_code}</span>
-                    <StatusBadge status={list.is_active ? "active" : "archived"} />
+                  <div
+                    key={list.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/25"
+                  >
+                    <div>
+                      <p className="font-medium">{list.name}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-muted-foreground">{list.currency_code}</span>
+                        <StatusBadge status={list.is_active ? "active" : "archived"} />
+                      </div>
+                      {list.description ? (
+                        <p className="text-sm text-muted-foreground">{list.description}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedListId(list.id);
+                          setProductId("");
+                          setPrice("");
+                        }}
+                      >
+                        Prices
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!canManage}
+                        onClick={() => startEditing(list)}
+                      >
+                        Edit
+                      </Button>
+                    </div>
                   </div>
-                  {list.description ? (
-                    <p className="text-sm text-muted-foreground">{list.description}</p>
-                  ) : null}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedListId(list.id);
-                      setProductId("");
-                      setPrice("");
-                    }}
-                  >
-                    Prices
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!canManage}
-                    onClick={() => startEditing(list)}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              </div>
-            ))
+                ))
               : null}
             {listsQ.isSuccess && listsQ.data.length >= 500 ? (
               <p className="text-sm text-muted-foreground">Showing first 500 price lists.</p>
@@ -487,53 +487,55 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
               <p className="rounded-md border p-3 text-sm">No price overrides for this list.</p>
             ) : null}
             {pricesQ.isSuccess ? (
-            <div className="space-y-2">
-              {pricesQ.data.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/25"
-                >
-                  <div>
-                    <p className="font-medium">
-                      {item.product_code ? `${item.product_code} — ` : ""}
-                      {item.product_name}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Base: {fromMinorUnits(BigInt(item.base_price_minor), currency)} {currency}
-                      {" · "}List: {fromMinorUnits(BigInt(item.unit_price_minor), currency)}{" "}
-                      {currency}
-                    </p>
+              <div className="space-y-2">
+                {pricesQ.data.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/80 bg-background p-3.5 transition-colors hover:border-primary/25"
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {item.product_code ? `${item.product_code} — ` : ""}
+                        {item.product_name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Base: {fromMinorUnits(BigInt(item.base_price_minor), currency)} {currency}
+                        {" · "}List: {fromMinorUnits(BigInt(item.unit_price_minor), currency)}{" "}
+                        {currency}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!canManage || !chosen.is_active}
+                        onClick={() => {
+                          setProductSearch(item.product_name);
+                          setProductId(item.product_id);
+                          setPrice(fromMinorUnits(BigInt(item.unit_price_minor), currency));
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!canManage || deleteMut.isPending}
+                        aria-label={`Remove price override for ${item.product_name}`}
+                        onClick={() => {
+                          if (
+                            window.confirm(`Remove the price override for ${item.product_name}?`)
+                          ) {
+                            deleteMut.mutate(item.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!canManage || !chosen.is_active}
-                      onClick={() => {
-                        setProductSearch(item.product_name);
-                        setProductId(item.product_id);
-                        setPrice(fromMinorUnits(BigInt(item.unit_price_minor), currency));
-                      }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={!canManage || deleteMut.isPending}
-                      aria-label={`Remove price override for ${item.product_name}`}
-                      onClick={() => {
-                        if (window.confirm(`Remove the price override for ${item.product_name}?`)) {
-                          deleteMut.mutate(item.id);
-                        }
-                      }}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
             ) : null}
             {pricesQ.isSuccess && pricesQ.data.length >= 500 ? (
               <p className="text-sm text-muted-foreground">

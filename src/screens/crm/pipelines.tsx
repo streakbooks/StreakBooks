@@ -438,9 +438,7 @@ export function CrmPipelinesPage() {
                             type="button"
                             size="sm"
                             disabled={
-                              stageMutation.isPending ||
-                              !pipelines.isSuccess ||
-                              pipelines.isError
+                              stageMutation.isPending || !pipelines.isSuccess || pipelines.isError
                             }
                             onClick={() => submitStage(pipeline.id)}
                           >

@@ -129,7 +129,13 @@ describe("Fixed Assets local non-CI release gate", () => {
 
   it("never prints a credential-bearing remote URL", () =>
     caseWithRepo((f) => {
-      git(f.repo, "remote", "set-url", "origin", "https://secret-value@example.com/StreakBooks.git");
+      git(
+        f.repo,
+        "remote",
+        "set-url",
+        "origin",
+        "https://secret-value@example.com/StreakBooks.git",
+      );
       const x = execute(f);
       assert.equal(x.status, 2);
       assert.ok(!x.output.includes("secret-value"));

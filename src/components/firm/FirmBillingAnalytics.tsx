@@ -312,9 +312,7 @@ export function FirmAnalyticsPanel({ firmId }: { firmId: string }) {
   });
   if (pulse.isPending) return <LoadingState />;
   if (pulse.isError)
-    return (
-      <QueryErrorState queries={[pulse]} title="Could not load practice insights" />
-    );
+    return <QueryErrorState queries={[pulse]} title="Could not load practice insights" />;
   if (!pulse.isSuccess || !pulse.data) return <LoadingState />;
   const item = pulse.data;
   const metrics = [

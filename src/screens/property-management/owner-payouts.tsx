@@ -176,72 +176,72 @@ export function PmOwnerPayoutsPage() {
             ) : owners.isPending ? (
               <LoadingState />
             ) : (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle>New owner payout</CardTitle>
-                <CardDescription>
-                  Creates a draft distribution. Map COA accounts in Settings before posting.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label>Owner</Label>
-                  {owners.isSuccess ? (
-                    <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select owner" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(owners.data ?? []).map((owner) => (
-                          <SelectItem key={owner.id} value={owner.id}>
-                            {owner.displayName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </RecordLookupSelect>
-                  ) : null}
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-payout-amount">Amount</Label>
-                  <Input
-                    id="pm-payout-amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-payout-currency">Currency</Label>
-                  <Input
-                    id="pm-payout-currency"
-                    value={currency}
-                    maxLength={3}
-                    onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-payout-memo">Memo</Label>
-                  <Input
-                    id="pm-payout-memo"
-                    value={memo}
-                    onChange={(e) => setMemo(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    disabled={
-                      !owners.isSuccess || !ownerId || !amount || createMutation.isPending
-                    }
-                    onClick={() => createMutation.mutate()}
-                  >
-                    {createMutation.isPending ? "Saving…" : "Create draft"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>New owner payout</CardTitle>
+                  <CardDescription>
+                    Creates a draft distribution. Map COA accounts in Settings before posting.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label>Owner</Label>
+                    {owners.isSuccess ? (
+                      <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select owner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(owners.data ?? []).map((owner) => (
+                            <SelectItem key={owner.id} value={owner.id}>
+                              {owner.displayName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </RecordLookupSelect>
+                    ) : null}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-payout-amount">Amount</Label>
+                    <Input
+                      id="pm-payout-amount"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-payout-currency">Currency</Label>
+                    <Input
+                      id="pm-payout-currency"
+                      value={currency}
+                      maxLength={3}
+                      onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-payout-memo">Memo</Label>
+                    <Input
+                      id="pm-payout-memo"
+                      value={memo}
+                      onChange={(e) => setMemo(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      disabled={
+                        !owners.isSuccess || !ownerId || !amount || createMutation.isPending
+                      }
+                      onClick={() => createMutation.mutate()}
+                    >
+                      {createMutation.isPending ? "Saving…" : "Create draft"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )
           ) : null}
           {distributions.isLoading ? <LoadingState /> : null}

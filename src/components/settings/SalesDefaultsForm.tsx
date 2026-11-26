@@ -101,10 +101,7 @@ export function SalesDefaultsForm({ companyId }: { companyId: string }) {
   });
 
   if (q.isPending) return <LoadingState />;
-  if (q.isError)
-    return (
-      <QueryErrorState queries={[q]} title="Could not load defaults" />
-    );
+  if (q.isError) return <QueryErrorState queries={[q]} title="Could not load defaults" />;
 
   return (
     <Card className="max-w-xl">

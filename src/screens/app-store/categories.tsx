@@ -49,9 +49,7 @@ export function AppStoreCategoriesPage() {
     );
   }
   if (catalogue.isError) {
-    return (
-      <QueryErrorState queries={[catalogue]} title="Could not load categories" />
-    );
+    return <QueryErrorState queries={[catalogue]} title="Could not load categories" />;
   }
   if (!catalogue.isSuccess) return null;
   const counts = new Map(categoryCounts(catalogue.data?.apps ?? []).map((c) => [c.code, c.count]));

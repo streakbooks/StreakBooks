@@ -444,9 +444,7 @@ export function PurchasesDocumentLines({
           minWidthPx: w("account"),
         }
       : null,
-    col("tax")
-      ? { id: "tax", header: "Tax rate", widthPx: w("tax"), minWidthPx: w("tax") }
-      : null,
+    col("tax") ? { id: "tax", header: "Tax rate", widthPx: w("tax"), minWidthPx: w("tax") } : null,
     col("class")
       ? { id: "class", header: "Class", widthPx: w("class"), minWidthPx: w("class") }
       : null,
@@ -571,367 +569,354 @@ export function PurchasesDocumentLines({
         }
       >
         {lines.map((line, idx) => {
-                let lineAmount = "—";
-                try {
-                  const c = computeBillTotals(
-                    [
-                      {
-                        quantity: Number(line.quantity),
-                        unitPriceMinor: Number(toMinor(line.unitPrice || "0")),
-                        discountMinor: Number(toMinor(line.discount || "0")),
-                        taxRateBps: Number(line.taxRateBps || 0),
-                      },
-                    ],
-                    taxCalculation,
-                  );
-                  lineAmount = fromMinorUnits(c.total_minor, currency);
-                } catch {
-                  /* invalid row */
-                }
-                return (
-                  <TableRow
-                    key={idx}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => onDrop(e, idx)}
-                  >
-                    <TableCell className="p-0 align-middle">
-                      <button
-                        type="button"
-                        className="cursor-grab p-1 text-muted-foreground"
-                        draggable
-                        onDragStart={(e) => onDragStart(e, idx)}
-                        aria-label={`Drag to reorder line ${idx + 1}`}
-                      >
-                        <GripVertical className="size-4" />
-                      </button>
-                    </TableCell>
-                    {col("item") ? (
-                      <TableCell className="p-0 align-middle">
-                        <EntityCombobox
-                          aria-label={`Line ${idx + 1} product`}
-                          options={productOptions}
-                          value={line.productId}
-                          onChange={(v) => applyProduct(idx, v)}
-                          placeholder="Optional"
-                          emptyText="No catalogue items"
-                          onAddNew={addItem}
-                          addNewLabel="+ Add new item or service…"
-                          {...(companyId ? { companyId } : {})}
-                          renderCreate={
-                            companyId && !addItem && can("products.manage")
-                              ? (ctx) => (
-                                  <ProductCreateForm
-                                    companyId={companyId}
-                                    currency={currency}
-                                    priceRole="purchase"
-                                    ctx={ctx}
-                                  />
-                                )
-                              : undefined
-                          }
-                          onCreated={
-                            addItem
-                              ? undefined
-                              : (option) =>
-                                  update(idx, {
-                                    productId: option.id,
-                                    description: line.description.trim()
-                                      ? line.description
-                                      : option.description || option.name || option.label,
-                                    unitPrice:
-                                      line.unitPrice && line.unitPrice !== "0.00"
-                                        ? line.unitPrice
-                                        : option.meta || line.unitPrice,
-                                  })
-                          }
-                        />
-                      </TableCell>
-                    ) : null}
-                    {col("description") ? (
-                      <TableCell className="p-0 align-top">
-                        <VoiceTextarea
-                          aria-label={`Line ${idx + 1} description`}
-                          voiceField={{
-                            key: "description",
-                            label: "Description",
-                            aliases: [],
+          let lineAmount = "—";
+          try {
+            const c = computeBillTotals(
+              [
+                {
+                  quantity: Number(line.quantity),
+                  unitPriceMinor: Number(toMinor(line.unitPrice || "0")),
+                  discountMinor: Number(toMinor(line.discount || "0")),
+                  taxRateBps: Number(line.taxRateBps || 0),
+                },
+              ],
+              taxCalculation,
+            );
+            lineAmount = fromMinorUnits(c.total_minor, currency);
+          } catch {
+            /* invalid row */
+          }
+          return (
+            <TableRow
+              key={idx}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => onDrop(e, idx)}
+            >
+              <TableCell className="p-0 align-middle">
+                <button
+                  type="button"
+                  className="cursor-grab p-1 text-muted-foreground"
+                  draggable
+                  onDragStart={(e) => onDragStart(e, idx)}
+                  aria-label={`Drag to reorder line ${idx + 1}`}
+                >
+                  <GripVertical className="size-4" />
+                </button>
+              </TableCell>
+              {col("item") ? (
+                <TableCell className="p-0 align-middle">
+                  <EntityCombobox
+                    aria-label={`Line ${idx + 1} product`}
+                    options={productOptions}
+                    value={line.productId}
+                    onChange={(v) => applyProduct(idx, v)}
+                    placeholder="Optional"
+                    emptyText="No catalogue items"
+                    onAddNew={addItem}
+                    addNewLabel="+ Add new item or service…"
+                    {...(companyId ? { companyId } : {})}
+                    renderCreate={
+                      companyId && !addItem && can("products.manage")
+                        ? (ctx) => (
+                            <ProductCreateForm
+                              companyId={companyId}
+                              currency={currency}
+                              priceRole="purchase"
+                              ctx={ctx}
+                            />
+                          )
+                        : undefined
+                    }
+                    onCreated={
+                      addItem
+                        ? undefined
+                        : (option) =>
+                            update(idx, {
+                              productId: option.id,
+                              description: line.description.trim()
+                                ? line.description
+                                : option.description || option.name || option.label,
+                              unitPrice:
+                                line.unitPrice && line.unitPrice !== "0.00"
+                                  ? line.unitPrice
+                                  : option.meta || line.unitPrice,
+                            })
+                    }
+                  />
+                </TableCell>
+              ) : null}
+              {col("description") ? (
+                <TableCell className="p-0 align-top">
+                  <VoiceTextarea
+                    aria-label={`Line ${idx + 1} description`}
+                    voiceField={{
+                      key: "description",
+                      label: "Description",
+                      aliases: [],
+                      line: idx,
+                      order: 100 + idx * 100 + 10,
+                    }}
+                    value={line.description}
+                    onChange={(e) => update(idx, { description: e.target.value })}
+                    placeholder="Description"
+                    rows={1}
+                    className="lb-spreadsheet-wrap min-h-8"
+                  />
+                </TableCell>
+              ) : null}
+              {col("quantity") ? (
+                <TableCell className="p-0">
+                  <Input
+                    aria-label={`Line ${idx + 1} quantity`}
+                    data-purchase-cell={`${idx}-quantity`}
+                    voiceField={{
+                      key: "quantity",
+                      label: "Quantity",
+                      aliases: ["qty"],
+                      line: idx,
+                      order: 100 + idx * 100 + 20,
+                    }}
+                    value={line.quantity}
+                    onChange={(e) => update(idx, { quantity: e.target.value })}
+                    onKeyDown={(e) => onNumericKeyDown(e, idx, "quantity")}
+                    onPaste={(e) => onNumericPaste(e, idx, "quantity")}
+                    inputMode="decimal"
+                    className={cn(CELL_INPUT, "text-right tabular-nums")}
+                  />
+                </TableCell>
+              ) : null}
+              {col("unitPrice") ? (
+                <TableCell className="p-0">
+                  <Input
+                    aria-label={`Line ${idx + 1} unit price`}
+                    data-purchase-cell={`${idx}-unitPrice`}
+                    voiceField={{
+                      key: "unitPrice",
+                      label: "Unit price",
+                      aliases: ["price"],
+                      line: idx,
+                      order: 100 + idx * 100 + 30,
+                    }}
+                    value={line.unitPrice}
+                    onChange={(e) => update(idx, { unitPrice: e.target.value })}
+                    onKeyDown={(e) => onNumericKeyDown(e, idx, "unitPrice")}
+                    onPaste={(e) => onNumericPaste(e, idx, "unitPrice")}
+                    inputMode="decimal"
+                    className={cn(CELL_INPUT, "text-right tabular-nums")}
+                  />
+                </TableCell>
+              ) : null}
+              {col("discount") ? (
+                <TableCell className="p-0">
+                  <Input
+                    aria-label={`Line ${idx + 1} discount`}
+                    data-purchase-cell={`${idx}-discount`}
+                    voiceField={{
+                      key: "discount",
+                      label: "Discount",
+                      aliases: [],
+                      line: idx,
+                      order: 100 + idx * 100 + 40,
+                    }}
+                    value={line.discount}
+                    onChange={(e) => update(idx, { discount: e.target.value })}
+                    onKeyDown={(e) => onNumericKeyDown(e, idx, "discount")}
+                    onPaste={(e) => onNumericPaste(e, idx, "discount")}
+                    inputMode="decimal"
+                    className={cn(CELL_INPUT, "text-right tabular-nums")}
+                  />
+                </TableCell>
+              ) : null}
+              {col("account") ? (
+                <TableCell className="p-0">
+                  <EntityCombobox
+                    aria-label={`Line ${idx + 1} account`}
+                    options={accountOptions}
+                    voiceField={{
+                      key: "accountId",
+                      label: "Account",
+                      aliases: ["revenue account", "expense account", "expense asset account"],
+                      line: idx,
+                      order: 100 + idx * 100 + 50,
+                    }}
+                    value={line.accountId}
+                    onChange={(v) => update(idx, { accountId: v })}
+                    placeholder="Account"
+                    allowClear={false}
+                    onAddNew={onAddNewAccount}
+                    addNewLabel="+ Add new account…"
+                    {...(companyId ? { companyId } : {})}
+                    renderCreate={
+                      companyId && !onAddNewAccount && can("accounts.manage")
+                        ? (ctx) => (
+                            <AccountCreateForm
+                              companyId={companyId}
+                              currency={baseCurrency || currency}
+                              initialKind="expense"
+                              ctx={ctx}
+                            />
+                          )
+                        : undefined
+                    }
+                  />
+                </TableCell>
+              ) : null}
+              {col("tax") ? (
+                <TableCell className="p-0">
+                  <EntityCombobox
+                    aria-label={`Line ${idx + 1} tax rate`}
+                    options={
+                      taxCalculation === "none"
+                        ? [{ value: "__none__", label: "No tax" }]
+                        : [
+                            {
+                              value: "__bps__",
+                              label: `Manual (${(Number(line.taxRateBps || 0) / 100).toFixed(2)}%)`,
+                            },
+                            ...purchaseTaxCodes.map((t) => ({
+                              value: t.id,
+                              label: `${t.code} — ${(t.rateBps / 100).toFixed(2)}%`,
+                              keywords: t.name,
+                            })),
+                          ]
+                    }
+                    voiceField={
+                      taxCalculation === "none"
+                        ? undefined
+                        : {
+                            key: "taxCodeId",
+                            label: "Tax",
+                            aliases: ["tax rate", "tax code"],
                             line: idx,
-                            order: 100 + idx * 100 + 10,
-                          }}
-                          value={line.description}
-                          onChange={(e) => update(idx, { description: e.target.value })}
-                          placeholder="Description"
-                          rows={1}
-                          className="lb-spreadsheet-wrap min-h-8"
-                        />
-                      </TableCell>
-                    ) : null}
-                    {col("quantity") ? (
-                      <TableCell className="p-0">
-                        <Input
-                          aria-label={`Line ${idx + 1} quantity`}
-                          data-purchase-cell={`${idx}-quantity`}
-                          voiceField={{
-                            key: "quantity",
-                            label: "Quantity",
-                            aliases: ["qty"],
-                            line: idx,
-                            order: 100 + idx * 100 + 20,
-                          }}
-                          value={line.quantity}
-                          onChange={(e) => update(idx, { quantity: e.target.value })}
-                          onKeyDown={(e) => onNumericKeyDown(e, idx, "quantity")}
-                          onPaste={(e) => onNumericPaste(e, idx, "quantity")}
-                          inputMode="decimal"
-                          className={cn(CELL_INPUT, "text-right tabular-nums")}
-                        />
-                      </TableCell>
-                    ) : null}
-                    {col("unitPrice") ? (
-                      <TableCell className="p-0">
-                        <Input
-                          aria-label={`Line ${idx + 1} unit price`}
-                          data-purchase-cell={`${idx}-unitPrice`}
-                          voiceField={{
-                            key: "unitPrice",
-                            label: "Unit price",
-                            aliases: ["price"],
-                            line: idx,
-                            order: 100 + idx * 100 + 30,
-                          }}
-                          value={line.unitPrice}
-                          onChange={(e) => update(idx, { unitPrice: e.target.value })}
-                          onKeyDown={(e) => onNumericKeyDown(e, idx, "unitPrice")}
-                          onPaste={(e) => onNumericPaste(e, idx, "unitPrice")}
-                          inputMode="decimal"
-                          className={cn(CELL_INPUT, "text-right tabular-nums")}
-                        />
-                      </TableCell>
-                    ) : null}
-                    {col("discount") ? (
-                      <TableCell className="p-0">
-                        <Input
-                          aria-label={`Line ${idx + 1} discount`}
-                          data-purchase-cell={`${idx}-discount`}
-                          voiceField={{
-                            key: "discount",
-                            label: "Discount",
-                            aliases: [],
-                            line: idx,
-                            order: 100 + idx * 100 + 40,
-                          }}
-                          value={line.discount}
-                          onChange={(e) => update(idx, { discount: e.target.value })}
-                          onKeyDown={(e) => onNumericKeyDown(e, idx, "discount")}
-                          onPaste={(e) => onNumericPaste(e, idx, "discount")}
-                          inputMode="decimal"
-                          className={cn(CELL_INPUT, "text-right tabular-nums")}
-                        />
-                      </TableCell>
-                    ) : null}
-                    {col("account") ? (
-                      <TableCell className="p-0">
-                        <EntityCombobox
-                          aria-label={`Line ${idx + 1} account`}
-                          options={accountOptions}
-                          voiceField={{
-                            key: "accountId",
-                            label: "Account",
-                            aliases: [
-                              "revenue account",
-                              "expense account",
-                              "expense asset account",
-                            ],
-                            line: idx,
-                            order: 100 + idx * 100 + 50,
-                          }}
-                          value={line.accountId}
-                          onChange={(v) => update(idx, { accountId: v })}
-                          placeholder="Account"
-                          allowClear={false}
-                          onAddNew={onAddNewAccount}
-                          addNewLabel="+ Add new account…"
-                          {...(companyId ? { companyId } : {})}
-                          renderCreate={
-                            companyId && !onAddNewAccount && can("accounts.manage")
-                              ? (ctx) => (
-                                  <AccountCreateForm
-                                    companyId={companyId}
-                                    currency={baseCurrency || currency}
-                                    initialKind="expense"
-                                    ctx={ctx}
-                                  />
-                                )
-                              : undefined
+                            order: 100 + idx * 100 + 60,
                           }
-                        />
-                      </TableCell>
-                    ) : null}
-                    {col("tax") ? (
-                      <TableCell className="p-0">
-                        <EntityCombobox
-                          aria-label={`Line ${idx + 1} tax rate`}
-                          options={
-                            taxCalculation === "none"
-                              ? [{ value: "__none__", label: "No tax" }]
-                              : [
-                                  {
-                                    value: "__bps__",
-                                    label: `Manual (${(Number(line.taxRateBps || 0) / 100).toFixed(2)}%)`,
-                                  },
-                                  ...purchaseTaxCodes.map((t) => ({
-                                    value: t.id,
-                                    label: `${t.code} — ${(t.rateBps / 100).toFixed(2)}%`,
-                                    keywords: t.name,
-                                  })),
-                                ]
-                          }
-                          voiceField={
-                            taxCalculation === "none"
-                              ? undefined
-                              : {
-                                  key: "taxCodeId",
-                                  label: "Tax",
-                                  aliases: ["tax rate", "tax code"],
-                                  line: idx,
-                                  order: 100 + idx * 100 + 60,
-                                }
-                          }
-                          value={
-                            taxCalculation === "none" ? "__none__" : line.taxCodeId || "__bps__"
-                          }
-                          onChange={(v) => {
-                            if (v === "__bps__" || v === "__none__") update(idx, { taxCodeId: "" });
-                            else applyTaxCode(idx, v);
-                          }}
-                          placeholder="Tax"
-                          allowClear={false}
-                          onAddNew={taxCalculation === "none" ? undefined : onAddNewTax}
-                          addNewLabel="+ Add new tax rate…"
-                          {...(companyId ? { companyId } : {})}
-                          renderCreate={
-                            companyId &&
-                            taxCalculation !== "none" &&
-                            !onAddNewTax &&
-                            can("tax.settings")
-                              ? (ctx) => (
-                                  <TaxCodeCreateForm
-                                    companyId={companyId}
-                                    appliesTo="purchases"
-                                    ctx={ctx}
-                                  />
-                                )
-                              : undefined
-                          }
-                          onCreated={
-                            onAddNewTax
-                              ? undefined
-                              : (option) =>
-                                  update(idx, {
-                                    taxCodeId: option.id,
-                                    taxRateBps: option.meta ?? line.taxRateBps,
-                                  })
-                          }
-                        />
-                      </TableCell>
-                    ) : null}
-                    {col("class") ? (
-                      <TableCell className="p-0">
-                        <EntityCombobox
-                          aria-label={`Line ${idx + 1} class`}
-                          options={classOptions.map((o) => ({ value: o.id, label: o.name }))}
-                          value={line.classOptionId}
-                          onChange={(v) => update(idx, { classOptionId: v })}
-                          placeholder="Class"
-                          onAddNew={onAddNewClass}
-                          addNewLabel="+ Add new class…"
-                        />
-                      </TableCell>
-                    ) : null}
-                    {col("location") ? (
-                      <TableCell className="p-0">
-                        <EntityCombobox
-                          aria-label={`Line ${idx + 1} location`}
-                          options={locationOptions.map((o) => ({ value: o.id, label: o.name }))}
-                          value={line.locationOptionId}
-                          onChange={(v) => update(idx, { locationOptionId: v })}
-                          placeholder="Location"
-                          onAddNew={onAddNewLocation}
-                          addNewLabel="+ Add new location…"
-                        />
-                      </TableCell>
-                    ) : null}
-                    {col("customer") || col("project") ? (
-                      <TableCell className="space-y-1 p-0">
-                        {col("customer") ? (
-                          <EntityCombobox
-                            aria-label={`Line ${idx + 1} customer`}
-                            options={customerOptions}
-                            value={line.customerContactId}
-                            onChange={(v) => update(idx, { customerContactId: v })}
-                            placeholder="Customer"
-                            onAddNew={onAddNewCustomer}
-                            addNewLabel="+ Add new customer…"
-                            {...(companyId ? { companyId } : {})}
-                            renderCreate={
-                              companyId && !onAddNewCustomer && can("contacts.manage")
-                                ? (ctx) => (
-                                    <ContactCreateForm
-                                      companyId={companyId}
-                                      kind="customer"
-                                      ctx={ctx}
-                                    />
-                                  )
-                                : undefined
-                            }
-                          />
-                        ) : null}
-                        {col("project") ? (
-                          <EntityCombobox
-                            aria-label={`Line ${idx + 1} project`}
-                            options={projectOptions.map((o) => ({ value: o.id, label: o.name }))}
-                            value={line.projectOptionId}
-                            onChange={(v) => update(idx, { projectOptionId: v })}
-                            placeholder="Project"
-                            onAddNew={onAddNewProject}
-                            addNewLabel="+ Add new project…"
-                          />
-                        ) : null}
-                      </TableCell>
-                    ) : null}
-                    {col("billable") ? (
-                      <TableCell className="p-2 text-center">
-                        <Checkbox
-                          checked={line.isBillable}
-                          onCheckedChange={(c) => update(idx, { isBillable: Boolean(c) })}
-                          aria-label={`Line ${idx + 1} billable`}
-                        />
-                      </TableCell>
-                    ) : null}
-                    {col("amount") ? (
-                      <TableCell className="px-2 py-1 text-right tabular-nums whitespace-nowrap">
-                        {lineAmount}
-                      </TableCell>
-                    ) : null}
-                    <TableCell className="p-0">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-7 text-destructive"
-                        disabled={lines.length <= 1}
-                        onClick={() => {
-                          voice?.clearField();
-                          onChange(lines.filter((_, i) => i !== idx));
-                        }}
-                        aria-label={`Delete line ${idx + 1}`}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                    }
+                    value={taxCalculation === "none" ? "__none__" : line.taxCodeId || "__bps__"}
+                    onChange={(v) => {
+                      if (v === "__bps__" || v === "__none__") update(idx, { taxCodeId: "" });
+                      else applyTaxCode(idx, v);
+                    }}
+                    placeholder="Tax"
+                    allowClear={false}
+                    onAddNew={taxCalculation === "none" ? undefined : onAddNewTax}
+                    addNewLabel="+ Add new tax rate…"
+                    {...(companyId ? { companyId } : {})}
+                    renderCreate={
+                      companyId && taxCalculation !== "none" && !onAddNewTax && can("tax.settings")
+                        ? (ctx) => (
+                            <TaxCodeCreateForm
+                              companyId={companyId}
+                              appliesTo="purchases"
+                              ctx={ctx}
+                            />
+                          )
+                        : undefined
+                    }
+                    onCreated={
+                      onAddNewTax
+                        ? undefined
+                        : (option) =>
+                            update(idx, {
+                              taxCodeId: option.id,
+                              taxRateBps: option.meta ?? line.taxRateBps,
+                            })
+                    }
+                  />
+                </TableCell>
+              ) : null}
+              {col("class") ? (
+                <TableCell className="p-0">
+                  <EntityCombobox
+                    aria-label={`Line ${idx + 1} class`}
+                    options={classOptions.map((o) => ({ value: o.id, label: o.name }))}
+                    value={line.classOptionId}
+                    onChange={(v) => update(idx, { classOptionId: v })}
+                    placeholder="Class"
+                    onAddNew={onAddNewClass}
+                    addNewLabel="+ Add new class…"
+                  />
+                </TableCell>
+              ) : null}
+              {col("location") ? (
+                <TableCell className="p-0">
+                  <EntityCombobox
+                    aria-label={`Line ${idx + 1} location`}
+                    options={locationOptions.map((o) => ({ value: o.id, label: o.name }))}
+                    value={line.locationOptionId}
+                    onChange={(v) => update(idx, { locationOptionId: v })}
+                    placeholder="Location"
+                    onAddNew={onAddNewLocation}
+                    addNewLabel="+ Add new location…"
+                  />
+                </TableCell>
+              ) : null}
+              {col("customer") || col("project") ? (
+                <TableCell className="space-y-1 p-0">
+                  {col("customer") ? (
+                    <EntityCombobox
+                      aria-label={`Line ${idx + 1} customer`}
+                      options={customerOptions}
+                      value={line.customerContactId}
+                      onChange={(v) => update(idx, { customerContactId: v })}
+                      placeholder="Customer"
+                      onAddNew={onAddNewCustomer}
+                      addNewLabel="+ Add new customer…"
+                      {...(companyId ? { companyId } : {})}
+                      renderCreate={
+                        companyId && !onAddNewCustomer && can("contacts.manage")
+                          ? (ctx) => (
+                              <ContactCreateForm companyId={companyId} kind="customer" ctx={ctx} />
+                            )
+                          : undefined
+                      }
+                    />
+                  ) : null}
+                  {col("project") ? (
+                    <EntityCombobox
+                      aria-label={`Line ${idx + 1} project`}
+                      options={projectOptions.map((o) => ({ value: o.id, label: o.name }))}
+                      value={line.projectOptionId}
+                      onChange={(v) => update(idx, { projectOptionId: v })}
+                      placeholder="Project"
+                      onAddNew={onAddNewProject}
+                      addNewLabel="+ Add new project…"
+                    />
+                  ) : null}
+                </TableCell>
+              ) : null}
+              {col("billable") ? (
+                <TableCell className="p-2 text-center">
+                  <Checkbox
+                    checked={line.isBillable}
+                    onCheckedChange={(c) => update(idx, { isBillable: Boolean(c) })}
+                    aria-label={`Line ${idx + 1} billable`}
+                  />
+                </TableCell>
+              ) : null}
+              {col("amount") ? (
+                <TableCell className="px-2 py-1 text-right tabular-nums whitespace-nowrap">
+                  {lineAmount}
+                </TableCell>
+              ) : null}
+              <TableCell className="p-0">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-destructive"
+                  disabled={lines.length <= 1}
+                  onClick={() => {
+                    voice?.clearField();
+                    onChange(lines.filter((_, i) => i !== idx));
+                  }}
+                  aria-label={`Delete line ${idx + 1}`}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </EditableLineItemGrid>
     </div>
   );

@@ -75,13 +75,7 @@ function paymentProviderReady(data: BillingOverview): boolean {
   return data.providers[provider];
 }
 
-function PaymentSetupCallout({
-  data,
-  plans,
-}: {
-  data: BillingOverview;
-  plans: BillingPlanView[];
-}) {
+function PaymentSetupCallout({ data, plans }: { data: BillingOverview; plans: BillingPlanView[] }) {
   const hasCatalogPrices = plans.some((plan) => plan.listPrice?.monthlyMinor != null);
   if (!hasCatalogPrices || paymentProviderReady(data)) return null;
   if (data.subscription && paidSubscription(data.subscription)) return null;
@@ -96,11 +90,12 @@ function PaymentSetupCallout({
       <AlertDescription className="space-y-2">
         <p>
           Plan prices are published for {data.countryCode}. Subscribe needs {providerLabel} API keys
-          in server environment variables — not products you create in the {providerLabel} dashboard.
+          in server environment variables — not products you create in the {providerLabel}{" "}
+          dashboard.
         </p>
         <p className="text-muted-foreground">
-          You can ignore Stripe&apos;s setup guide steps such as &quot;Create a recurring product&quot;
-          or customer portal; StreakBooks creates provider prices on first checkout.
+          You can ignore Stripe&apos;s setup guide steps such as &quot;Create a recurring
+          product&quot; or customer portal; StreakBooks creates provider prices on first checkout.
         </p>
         {import.meta.env.DEV ? (
           <p className="text-muted-foreground">
@@ -482,8 +477,7 @@ function PlanPicker({
   const anyListPrices = plans.some((plan) => plan.listPrice?.monthlyMinor != null);
   const anyYearly = plans.some(
     (plan) =>
-      plan.listPrice?.yearlyMinor != null ||
-      (plan.pricePublished && plan.monthlyMinor !== null),
+      plan.listPrice?.yearlyMinor != null || (plan.pricePublished && plan.monthlyMinor !== null),
   );
   const anyPromo = anyPriced || (anyListPrices && paymentProviderReady(data));
   const trialPlan = plans.find((plan) => plan.code === data.settings.trialPlanCode);

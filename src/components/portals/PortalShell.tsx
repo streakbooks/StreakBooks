@@ -53,8 +53,8 @@ export function PortalShell() {
       <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-3 px-4">
         <h1 className="text-xl font-semibold">No portal access yet</h1>
         <p className="text-sm text-muted-foreground">
-          Ask the organisation to invite this email address. If you also work in StreakBooks, open the
-          main app.
+          Ask the organisation to invite this email address. If you also work in StreakBooks, open
+          the main app.
         </p>
         <Button asChild variant="outline">
           <Link to="/">Open StreakBooks</Link>

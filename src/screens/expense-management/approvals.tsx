@@ -452,9 +452,7 @@ export function ExpenseManagementApprovalsPage() {
                 size="sm"
                 variant="secondary"
                 disabled={
-                  refreshEscalationMut.isPending ||
-                  !escalationsQ.isSuccess ||
-                  escalationsQ.isError
+                  refreshEscalationMut.isPending || !escalationsQ.isSuccess || escalationsQ.isError
                 }
                 onClick={() => refreshEscalationMut.mutate()}
               >

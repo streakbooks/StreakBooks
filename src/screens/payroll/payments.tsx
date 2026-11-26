@@ -634,130 +634,131 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <QueryErrorState queries={[accountsQ]} title="Could not load clearing accounts" />
             ) : null}
             {settingsQ.isError || payslipsQ.isError || accountsQ.isError ? null : (
-            <>
-            <div className="grid gap-2">
-              <Label htmlFor="pr-pay-date">Payment date</Label>
-              <Input
-                id="pr-pay-date"
-                type="date"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Method</Label>
-              <RecordLookupSelect value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(METHOD_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </RecordLookupSelect>
-            </div>
-            <div className="grid gap-2">
-              <Label>Clearing account</Label>
-              {accountsQ.isSuccess ? (
-                <>
-                  {excludedClearingAccounts > 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      {excludedClearingAccounts} clearing account
-                      {excludedClearingAccounts === 1 ? "" : "s"} with a different currency hidden.
-                      Payroll settlements must use {payCurrency}.
-                    </p>
-                  ) : null}
-                  <AccountLookup
-                    ariaLabel="Clearing account"
-                    companyId={company.id}
-                    accounts={
-                      availableClearingAccounts as unknown as Array<{
-                        id: string;
-                        code: string;
-                        name: string;
-                        account_type: string;
-                        is_active: boolean;
-                        is_postable: boolean;
-                      }>
-                    }
-                    value={clearingAccountId}
-                    onChange={(v) => setClearingAccountId(v ?? "")}
-                    purpose="posting"
-                    createKind="bank"
-                    placeholder="Bank or cash account"
-                    allowClear={false}
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="pr-pay-date">Payment date</Label>
+                  <Input
+                    id="pr-pay-date"
+                    type="date"
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
                   />
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">Loading clearing accounts…</p>
-              )}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="pr-pay-amount">Amount</Label>
-              <Input
-                id="pr-pay-amount"
-                inputMode="decimal"
-                value={amountMajor}
-                onChange={(e) => setAmountMajor(e.target.value)}
-                placeholder={`e.g. 2,500.00 ${payCurrency}`}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="pr-pay-ref">Reference</Label>
-              <Input
-                id="pr-pay-ref"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="pr-pay-memo">Memo</Label>
-              <Input id="pr-pay-memo" value={memo} onChange={(e) => setMemo(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Allocate to payslips (optional)</Label>
-              {payslipsQ.isPending ? (
-                <p className="text-sm text-muted-foreground">Loading open payslips…</p>
-              ) : payslipsQ.isError ? (
-                <QueryErrorState queries={[payslipsQ]} title="Could not load open payslips" />
-              ) : !payslipsQ.isSuccess ? (
-                <LoadingState />
-              ) : openPayslips.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No outstanding {payCurrency} payslips on posted runs
-                  {runIdFilter ? " in this pay run" : ""}. You can still record an unallocated
-                  payment.
-                </p>
-              ) : (
-                <ul className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-2 text-sm">
-                  {openPayslips.map((row) => (
-                    <li key={row.payslip.id} className="flex flex-col gap-1">
-                      <span>
-                        {row.run.run_number} · {row.employee.first_name} {row.employee.last_name}{" "}
-                        <span className="text-muted-foreground">
-                          (outstanding {fromMinorUnits(row.outstanding, row.run.currency)})
-                        </span>
-                      </span>
-                      <Input
-                        inputMode="decimal"
-                        placeholder={`Allocation (${row.run.currency})`}
-                        value={alloc[row.payslip.id] ?? ""}
-                        onChange={(e) =>
-                          setAlloc((prev) => ({
-                            ...prev,
-                            [row.payslip.id]: e.target.value,
-                          }))
+                </div>
+                <div className="grid gap-2">
+                  <Label>Method</Label>
+                  <RecordLookupSelect value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(METHOD_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </RecordLookupSelect>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Clearing account</Label>
+                  {accountsQ.isSuccess ? (
+                    <>
+                      {excludedClearingAccounts > 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          {excludedClearingAccounts} clearing account
+                          {excludedClearingAccounts === 1 ? "" : "s"} with a different currency
+                          hidden. Payroll settlements must use {payCurrency}.
+                        </p>
+                      ) : null}
+                      <AccountLookup
+                        ariaLabel="Clearing account"
+                        companyId={company.id}
+                        accounts={
+                          availableClearingAccounts as unknown as Array<{
+                            id: string;
+                            code: string;
+                            name: string;
+                            account_type: string;
+                            is_active: boolean;
+                            is_postable: boolean;
+                          }>
                         }
+                        value={clearingAccountId}
+                        onChange={(v) => setClearingAccountId(v ?? "")}
+                        purpose="posting"
+                        createKind="bank"
+                        placeholder="Bank or cash account"
+                        allowClear={false}
                       />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            </>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Loading clearing accounts…</p>
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="pr-pay-amount">Amount</Label>
+                  <Input
+                    id="pr-pay-amount"
+                    inputMode="decimal"
+                    value={amountMajor}
+                    onChange={(e) => setAmountMajor(e.target.value)}
+                    placeholder={`e.g. 2,500.00 ${payCurrency}`}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="pr-pay-ref">Reference</Label>
+                  <Input
+                    id="pr-pay-ref"
+                    value={reference}
+                    onChange={(e) => setReference(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="pr-pay-memo">Memo</Label>
+                  <Input id="pr-pay-memo" value={memo} onChange={(e) => setMemo(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Allocate to payslips (optional)</Label>
+                  {payslipsQ.isPending ? (
+                    <p className="text-sm text-muted-foreground">Loading open payslips…</p>
+                  ) : payslipsQ.isError ? (
+                    <QueryErrorState queries={[payslipsQ]} title="Could not load open payslips" />
+                  ) : !payslipsQ.isSuccess ? (
+                    <LoadingState />
+                  ) : openPayslips.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No outstanding {payCurrency} payslips on posted runs
+                      {runIdFilter ? " in this pay run" : ""}. You can still record an unallocated
+                      payment.
+                    </p>
+                  ) : (
+                    <ul className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-2 text-sm">
+                      {openPayslips.map((row) => (
+                        <li key={row.payslip.id} className="flex flex-col gap-1">
+                          <span>
+                            {row.run.run_number} · {row.employee.first_name}{" "}
+                            {row.employee.last_name}{" "}
+                            <span className="text-muted-foreground">
+                              (outstanding {fromMinorUnits(row.outstanding, row.run.currency)})
+                            </span>
+                          </span>
+                          <Input
+                            inputMode="decimal"
+                            placeholder={`Allocation (${row.run.currency})`}
+                            value={alloc[row.payslip.id] ?? ""}
+                            onChange={(e) =>
+                              setAlloc((prev) => ({
+                                ...prev,
+                                [row.payslip.id]: e.target.value,
+                              }))
+                            }
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
             )}
           </div>
           <DialogFooter>

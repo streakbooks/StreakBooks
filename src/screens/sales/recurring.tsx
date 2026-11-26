@@ -254,8 +254,7 @@ function RecurringInvoiceWorkspace({
   }
   if (editingId && !hydratedId) return <LoadingState />;
   const optionsReady =
-    requiredQueries.every((query) => query.isSuccess) &&
-    (!editingId || scheduleQ.isSuccess);
+    requiredQueries.every((query) => query.isSuccess) && (!editingId || scheduleQ.isSuccess);
 
   return (
     <TransactionWorkspace

@@ -358,9 +358,7 @@ export function HrOffboardingPage() {
             </Button>
             <Button
               type="button"
-              disabled={
-                !employeeId || !lastWorkingDay || createM.isPending || !empQ.isSuccess
-              }
+              disabled={!employeeId || !lastWorkingDay || createM.isPending || !empQ.isSuccess}
               onClick={() => createM.mutate()}
             >
               Create

@@ -329,7 +329,9 @@ export const THEME_INIT_SCRIPT =
   ";" +
   "var valid=/^#[0-9a-fA-F]{6}$/;var colors={};" +
   "Object.keys(defaults).forEach(function(k){colors[k]=saved&&typeof saved[k]==='string'&&valid.test(saved[k])?saved[k]:defaults[k];});" +
-  "if(" + JSON.stringify(LEGACY_BLUE_PRIMARIES) + ".indexOf(colors.primary.toLowerCase())!==-1)colors.primary=defaults.primary;" +
+  "if(" +
+  JSON.stringify(LEGACY_BLUE_PRIMARIES) +
+  ".indexOf(colors.primary.toLowerCase())!==-1)colors.primary=defaults.primary;" +
   "var tokens=(" +
   computeCustomTokens.toString() +
   ")(colors,dark);" +

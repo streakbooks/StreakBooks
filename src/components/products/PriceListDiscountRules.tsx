@@ -245,51 +245,51 @@ export function PriceListDiscountRules({
           </p>
         ) : null}
         {rulesQ.isSuccess ? (
-        <div className="space-y-2">
-          {rulesQ.data.map((rule) => (
-            <div
-              key={rule.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
-            >
-              <div className="min-w-0">
-                <p className="font-medium">
-                  {rule.product_code ? `${rule.product_code} — ` : ""}
-                  {rule.product_name}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Qty ≥ {rule.min_quantity} · {discountBpsToPercent(rule.discount_bps)}% off ·{" "}
-                  {rule.effective_from} to {rule.effective_to ?? "open ended"}
-                </p>
+          <div className="space-y-2">
+            {rulesQ.data.map((rule) => (
+              <div
+                key={rule.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    {rule.product_code ? `${rule.product_code} — ` : ""}
+                    {rule.product_name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Qty ≥ {rule.min_quantity} · {discountBpsToPercent(rule.discount_bps)}% off ·{" "}
+                    {rule.effective_from} to {rule.effective_to ?? "open ended"}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!canManage || !isActive}
+                    onClick={() => edit(rule)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!canManage || removeMut.isPending}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `Remove discount for ${rule.product_name} at quantity ${rule.min_quantity}?`,
+                        )
+                      ) {
+                        removeMut.mutate(rule.id);
+                      }
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!canManage || !isActive}
-                  onClick={() => edit(rule)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!canManage || removeMut.isPending}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Remove discount for ${rule.product_name} at quantity ${rule.min_quantity}?`,
-                      )
-                    ) {
-                      removeMut.mutate(rule.id);
-                    }
-                  }}
-                >
-                  Remove
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
         ) : null}
         {rulesQ.isSuccess && rulesQ.data.length >= 500 ? (
           <p className="text-xs text-muted-foreground">

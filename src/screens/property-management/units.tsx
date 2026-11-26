@@ -170,58 +170,71 @@ export function PmUnitsPage() {
           )}
           {showForm && canManage ? (
             properties.isError ? (
-              <QueryErrorState queries={[properties]} title="Could not load properties for new unit" />
+              <QueryErrorState
+                queries={[properties]}
+                title="Could not load properties for new unit"
+              />
             ) : (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle>New unit</CardTitle>
-                <CardDescription>A unit belongs to exactly one property at a time.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2 sm:col-span-2">
-                  <Label>Property</Label>
-                  {properties.isSuccess ? (
-                    <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select property" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(properties.data ?? []).map((property) => (
-                          <SelectItem key={property.id} value={property.id}>
-                            {property.code} — {property.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </RecordLookupSelect>
-                  ) : (
-                    <LoadingState />
-                  )}
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-unit-code">Code</Label>
-                  <Input id="pm-unit-code" value={code} onChange={(e) => setCode(e.target.value)} />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-unit-name">Name</Label>
-                  <Input id="pm-unit-name" value={name} onChange={(e) => setName(e.target.value)} />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    disabled={
-                      !propertyId ||
-                      !code.trim() ||
-                      !name.trim() ||
-                      mutation.isPending ||
-                      !properties.isSuccess
-                    }
-                    onClick={() => mutation.mutate()}
-                  >
-                    {mutation.isPending ? "Saving…" : "Save unit"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>New unit</CardTitle>
+                  <CardDescription>
+                    A unit belongs to exactly one property at a time.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2 sm:col-span-2">
+                    <Label>Property</Label>
+                    {properties.isSuccess ? (
+                      <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select property" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(properties.data ?? []).map((property) => (
+                            <SelectItem key={property.id} value={property.id}>
+                              {property.code} — {property.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </RecordLookupSelect>
+                    ) : (
+                      <LoadingState />
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-unit-code">Code</Label>
+                    <Input
+                      id="pm-unit-code"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-unit-name">Name</Label>
+                    <Input
+                      id="pm-unit-name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      disabled={
+                        !propertyId ||
+                        !code.trim() ||
+                        !name.trim() ||
+                        mutation.isPending ||
+                        !properties.isSuccess
+                      }
+                      onClick={() => mutation.mutate()}
+                    >
+                      {mutation.isPending ? "Saving…" : "Save unit"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )
           ) : null}
           {units.isLoading ? <LoadingState /> : null}

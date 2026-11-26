@@ -94,54 +94,54 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
           {dimsQ.isError ? (
             <QueryErrorState queries={[dimsQ]} title="Could not load tracking dimensions" />
           ) : (
-          <div className="grid gap-2 sm:grid-cols-3">
-            <div className="space-y-1">
-              <Label>New dimension</Label>
-              <Input
-                value={catName}
-                disabled={!canEdit}
-                onChange={(e) => setCatName(e.target.value)}
-                placeholder="e.g. Department"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Kind</Label>
-              <Select value={catKind} onValueChange={setCatKind} disabled={!canEdit}>
-                {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="space-y-1">
+                <Label>New dimension</Label>
+                <Input
+                  value={catName}
+                  disabled={!canEdit}
+                  onChange={(e) => setCatName(e.target.value)}
+                  placeholder="e.g. Department"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Kind</Label>
+                <Select value={catKind} onValueChange={setCatKind} disabled={!canEdit}>
+                  {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(dimsQ.data?.dimensionKinds ?? []).map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {dimensionKindLabel(k)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(dimsQ.data?.dimensionKinds ?? []).map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {dimensionKindLabel(k)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button
+                  size="sm"
+                  disabled={!canEdit || !catName.trim() || !dimsQ.isSuccess}
+                  onClick={async () => {
+                    try {
+                      await saveCat({
+                        data: { companyId, name: catName, dimensionKind: catKind },
+                      });
+                      setCatName("");
+                      await qc.invalidateQueries({ queryKey: ["tracking-dimensions", companyId] });
+                      toast.success("Dimension created");
+                    } catch (e) {
+                      toast.error(friendlyAuthError(e));
+                    }
+                  }}
+                >
+                  Add dimension
+                </Button>
+              </div>
             </div>
-            <div className="flex items-end">
-              <Button
-                size="sm"
-                disabled={!canEdit || !catName.trim() || !dimsQ.isSuccess}
-                onClick={async () => {
-                  try {
-                    await saveCat({
-                      data: { companyId, name: catName, dimensionKind: catKind },
-                    });
-                    setCatName("");
-                    await qc.invalidateQueries({ queryKey: ["tracking-dimensions", companyId] });
-                    toast.success("Dimension created");
-                  } catch (e) {
-                    toast.error(friendlyAuthError(e));
-                  }
-                }}
-              >
-                Add dimension
-              </Button>
-            </div>
-          </div>
           )}
 
           {dimsQ.isError ? null : dimsQ.isSuccess ? (
@@ -197,79 +197,79 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
           )}
 
           {dimsQ.isError ? null : dimsQ.isSuccess ? (
-          <div className="grid gap-2 border-t pt-4 sm:grid-cols-3">
-            <div className="space-y-1">
-              <Label>Dimension</Label>
-              <LookupSelect
-                ariaLabel="Dimension"
-                allowClear={false}
-                disabled={!canEdit || !dimsQ.isSuccess}
-                value={optCategoryId}
-                onChange={setOptCategoryId}
-                placeholder="Select…"
-                searchPlaceholder="Search dimension"
-                options={cats
-                  .filter((c) => c.is_active)
-                  .map((c) => ({
-                    id: c.id,
-                    name: c.name,
-                    label: c.name,
-                    group: dimensionKindLabel(c.dimension_kind),
-                    keywords: `${c.name} ${c.dimension_kind}`,
-                  }))}
-              />
+            <div className="grid gap-2 border-t pt-4 sm:grid-cols-3">
+              <div className="space-y-1">
+                <Label>Dimension</Label>
+                <LookupSelect
+                  ariaLabel="Dimension"
+                  allowClear={false}
+                  disabled={!canEdit || !dimsQ.isSuccess}
+                  value={optCategoryId}
+                  onChange={setOptCategoryId}
+                  placeholder="Select…"
+                  searchPlaceholder="Search dimension"
+                  options={cats
+                    .filter((c) => c.is_active)
+                    .map((c) => ({
+                      id: c.id,
+                      name: c.name,
+                      label: c.name,
+                      group: dimensionKindLabel(c.dimension_kind),
+                      keywords: `${c.name} ${c.dimension_kind}`,
+                    }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Option name</Label>
+                <Input
+                  value={optName}
+                  disabled={!canEdit || !dimsQ.isSuccess}
+                  onChange={(e) => setOptName(e.target.value)}
+                  placeholder="e.g. North region"
+                />
+              </div>
+              <div className="flex items-end gap-2">
+                <Button
+                  size="sm"
+                  disabled={!canEdit || !optCategoryId || !optName.trim() || !dimsQ.isSuccess}
+                  onClick={async () => {
+                    try {
+                      await saveOpt({
+                        data: { companyId, categoryId: optCategoryId, name: optName },
+                      });
+                      setOptName("");
+                      await qc.invalidateQueries({ queryKey: ["tracking-dimensions", companyId] });
+                      toast.success("Option added");
+                    } catch (e) {
+                      toast.error(friendlyAuthError(e));
+                    }
+                  }}
+                >
+                  Add option
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!dimsQ.isSuccess || dimsQ.isFetching}
+                  onClick={async () => {
+                    try {
+                      const res = await exportFn({ data: { companyId } });
+                      const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "streakbooks-dimensions.csv";
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    } catch (e) {
+                      toast.error(friendlyAuthError(e));
+                    }
+                  }}
+                >
+                  Export CSV
+                </Button>
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label>Option name</Label>
-              <Input
-                value={optName}
-                disabled={!canEdit || !dimsQ.isSuccess}
-                onChange={(e) => setOptName(e.target.value)}
-                placeholder="e.g. North region"
-              />
-            </div>
-            <div className="flex items-end gap-2">
-              <Button
-                size="sm"
-                disabled={!canEdit || !optCategoryId || !optName.trim() || !dimsQ.isSuccess}
-                onClick={async () => {
-                  try {
-                    await saveOpt({
-                      data: { companyId, categoryId: optCategoryId, name: optName },
-                    });
-                    setOptName("");
-                    await qc.invalidateQueries({ queryKey: ["tracking-dimensions", companyId] });
-                    toast.success("Option added");
-                  } catch (e) {
-                    toast.error(friendlyAuthError(e));
-                  }
-                }}
-              >
-                Add option
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!dimsQ.isSuccess || dimsQ.isFetching}
-                onClick={async () => {
-                  try {
-                    const res = await exportFn({ data: { companyId } });
-                    const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "streakbooks-dimensions.csv";
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  } catch (e) {
-                    toast.error(friendlyAuthError(e));
-                  }
-                }}
-              >
-                Export CSV
-              </Button>
-            </div>
-          </div>
           ) : null}
 
           {opts.length && dimsQ.isSuccess ? (

@@ -51,7 +51,10 @@ describe("staging E2E safety guard", () => {
     expect(() => validateStagingTarget({ ...staging, productionUrl: "" })).toThrow();
     expect(() => validateStagingTarget({ ...staging, expectedHost: "" })).toThrow();
     expect(() =>
-      validateStagingTarget({ ...staging, expectedHost: "https://staging.streakbooks.example.com" }),
+      validateStagingTarget({
+        ...staging,
+        expectedHost: "https://staging.streakbooks.example.com",
+      }),
     ).toThrow();
   });
 

@@ -8,7 +8,10 @@ export const Route = createFileRoute("/_authenticated/contacts/")({
   head: () => ({
     meta: [
       { title: "Contacts — StreakBooks" },
-      { name: "description", content: "StreakBooks contact directory for customers and suppliers." },
+      {
+        name: "description",
+        content: "StreakBooks contact directory for customers and suppliers.",
+      },
     ],
   }),
   component: ContactsPage,

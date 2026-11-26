@@ -461,10 +461,7 @@ export function ExpenseManagementReimbursementsPage() {
                     <Button
                       size="sm"
                       disabled={
-                        pay.isPending ||
-                        !bankGlAccountId ||
-                        !banksQ.isSuccess ||
-                        banksQ.isError
+                        pay.isPending || !bankGlAccountId || !banksQ.isSuccess || banksQ.isError
                       }
                       onClick={() =>
                         pay.mutate({

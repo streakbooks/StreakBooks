@@ -105,9 +105,7 @@ export function ExpenseManagementOverviewPage() {
     );
   }
   if (overview.isError) {
-    return (
-      <QueryErrorState queries={[overview]} title="Could not load expense overview" />
-    );
+    return <QueryErrorState queries={[overview]} title="Could not load expense overview" />;
   }
 
   if (!overview.data) {

@@ -156,8 +156,8 @@ function MfaChallengePage() {
           {busy ? "Verifying…" : "Verify"}
         </Button>
         <p className="text-xs text-muted-foreground">
-          Lost access to your authenticator? Ask an organisation owner to contact StreakBooks support
-          to verify your identity and reset two-step verification.
+          Lost access to your authenticator? Ask an organisation owner to contact StreakBooks
+          support to verify your identity and reset two-step verification.
         </p>
       </form>
     </AuthLayout>

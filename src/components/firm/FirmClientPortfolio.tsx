@@ -188,7 +188,10 @@ export function FirmClientPortfolio({
     const next = normalizeFirmClientColumns(columns);
     setSavedColumns({ firmId, columns: next });
     try {
-      window.localStorage.setItem("streakbooks:firm-client-columns:" + firmId, JSON.stringify(next));
+      window.localStorage.setItem(
+        "streakbooks:firm-client-columns:" + firmId,
+        JSON.stringify(next),
+      );
     } catch {
       toast.message("Columns changed for this session; browser storage is unavailable");
     }

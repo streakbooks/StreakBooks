@@ -19,9 +19,7 @@ export function ConversationPinned({
 
   if (query.isPending) return <LoadingState rows={2} />;
   if (query.isError) {
-    return (
-      <QueryErrorState queries={[query]} title="Could not load pinned messages" />
-    );
+    return <QueryErrorState queries={[query]} title="Could not load pinned messages" />;
   }
   if (!query.isSuccess) return <LoadingState rows={2} />;
   if (!query.data?.length) {

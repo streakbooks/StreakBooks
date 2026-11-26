@@ -428,23 +428,23 @@ export function FirmOnboardingReportingPanel({
           {!operationalReady && (overviewQ.isPending || staffQ.isPending) ? (
             <p className="text-sm text-muted-foreground">Loading staff workload…</p>
           ) : null}
-          {operationalReady && workloads.length ? (
-            workloads.map((person) => (
-              <div
-                key={person.user_id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded border p-2 text-sm"
-              >
-                <span className="font-medium">{person.display_name}</span>
-                <span className="tabular-nums">
-                  {person.assignedOpen} / {person.capacity} open steps
-                  {" · "}
-                  {person.utilizationPercent}% utilization
-                  {" · "}
-                  {person.overdue} overdue
-                </span>
-              </div>
-            ))
-          ) : null}
+          {operationalReady && workloads.length
+            ? workloads.map((person) => (
+                <div
+                  key={person.user_id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded border p-2 text-sm"
+                >
+                  <span className="font-medium">{person.display_name}</span>
+                  <span className="tabular-nums">
+                    {person.assignedOpen} / {person.capacity} open steps
+                    {" · "}
+                    {person.utilizationPercent}% utilization
+                    {" · "}
+                    {person.overdue} overdue
+                  </span>
+                </div>
+              ))
+            : null}
           {operationalReady && !workloads.length ? (
             <p className="text-sm text-muted-foreground">No staff workload comparison available.</p>
           ) : null}

@@ -169,8 +169,8 @@ export function AiJournalEvidenceExplorer({
           <Badge variant="secondary">Posted ledger · read-only</Badge>
         </CardTitle>
         <CardDescription>
-          Investigate actual posted journals and account movements, trace them to StreakBooks records,
-          and review deterministic integrity signals. Nothing is posted or changed.
+          Investigate actual posted journals and account movements, trace them to StreakBooks
+          records, and review deterministic integrity signals. Nothing is posted or changed.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -451,200 +451,202 @@ export function AiJournalEvidenceExplorer({
                   <QueryErrorState queries={[accountsQ]} title="Accounts unavailable" />
                 ) : accountsQ.isSuccess ? (
                   <>
-                <div className="flex flex-wrap items-end gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ai-evidence-account">Ledger account</Label>
-                    <RecordLookupSelect
-                      id="ai-evidence-account"
-                      className="flex h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
-                      value={accountId}
-                      onValueChange={(nextValue) => {
-                        setAccountId(nextValue);
-                        setAccountPage(0);
-                      }}
-                    >
-                      <option value="">Choose an account to investigate</option>
-                      {(accountsQ.data ?? []).map((account) => (
-                        <option value={account.id} key={account.id}>
-                          {account.code} — {account.name}
-                          {!account.is_active ? " (inactive)" : ""}
-                        </option>
-                      ))}
-                    </RecordLookupSelect>
-                  </div>
-                  {selectedAccount ? (
-                    <Link
-                      className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-                      to="/reports/$reportId"
-                      params={{ reportId: "general-ledger" }}
-                      search={{
-                        account: accountId,
-                        from: range.from,
-                        to: range.to,
-                        ...(transactions ? { basis: transactions.accountingBasis } : {}),
-                      }}
-                    >
-                      Open Account Transactions report
-                    </Link>
-                  ) : null}
-                </div>
-                {!accountId ? (
-                  <p className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
-                    Select an account to inspect the exact posted movements returned by its
-                    general-ledger report.
-                  </p>
-                ) : accountQ.isPending ? (
-                  <p role="status" className="text-sm text-muted-foreground">
-                    Loading account evidence…
-                  </p>
-                ) : accountQ.isError ? (
-                  <QueryErrorState queries={[accountQ]} title="Account evidence unavailable" />
-                ) : transactions ? (
-                  <>
-                    <div className="grid grid-cols-1 gap-3 rounded-lg border p-4 text-sm sm:grid-cols-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Opening balance · {transactions.accountingBasis}
-                        </p>
-                        <p className="font-semibold tabular-nums">
-                          {evidenceMoney(transactions.opening_balance_minor, currency)}
-                        </p>
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="ai-evidence-account">Ledger account</Label>
+                        <RecordLookupSelect
+                          id="ai-evidence-account"
+                          className="flex h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
+                          value={accountId}
+                          onValueChange={(nextValue) => {
+                            setAccountId(nextValue);
+                            setAccountPage(0);
+                          }}
+                        >
+                          <option value="">Choose an account to investigate</option>
+                          {(accountsQ.data ?? []).map((account) => (
+                            <option value={account.id} key={account.id}>
+                              {account.code} — {account.name}
+                              {!account.is_active ? " (inactive)" : ""}
+                            </option>
+                          ))}
+                        </RecordLookupSelect>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Closing balance · {transactions.accountingBasis}
-                        </p>
-                        <p className="font-semibold tabular-nums">
-                          {evidenceMoney(transactions.closing_balance_minor, currency)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Movements matching selected dates
-                        </p>
-                        <p className="font-semibold tabular-nums">{transactions.total_count}</p>
-                      </div>
+                      {selectedAccount ? (
+                        <Link
+                          className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                          to="/reports/$reportId"
+                          params={{ reportId: "general-ledger" }}
+                          search={{
+                            account: accountId,
+                            from: range.from,
+                            to: range.to,
+                            ...(transactions ? { basis: transactions.accountingBasis } : {}),
+                          }}
+                        >
+                          Open Account Transactions report
+                        </Link>
+                      ) : null}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      The opening/closing balances are reported for the full selected period, while
-                      the rows below are just one page. The account's normal-balance convention is
-                      used for displayed running balances. Do not add movements across pages without
-                      reviewing the full report.
-                    </p>
-                    {transactions.rows.length === 0 ? (
+                    {!accountId ? (
                       <p className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
-                        No posted movements in the selected period.
+                        Select an account to inspect the exact posted movements returned by its
+                        general-ledger report.
                       </p>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Journal</TableHead>
-                              <TableHead>Description / source</TableHead>
-                              <TableHead className="text-right">Debit</TableHead>
-                              <TableHead className="text-right">Credit</TableHead>
-                              <TableHead className="text-right">Running balance</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {transactions.rows.map((row) => {
-                              const check = assessAccountEvidenceLine(row);
-                              return (
-                                <TableRow key={row.line_id}>
-                                  <TableCell className="whitespace-nowrap text-xs">
-                                    {row.journal_date}
-                                  </TableCell>
-                                  <TableCell className="whitespace-nowrap">
-                                    <JournalLink
-                                      journalId={row.journal_id}
-                                      number={row.journal_number}
-                                    />
-                                    {UUID.test(row.journal_id) ? (
-                                      <>
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => setExplainJournalId(row.journal_id)}
-                                        >
-                                          Explain
-                                        </Button>
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          disabled={createReviewM.isPending}
-                                          onClick={() => createReviewM.mutate(row.journal_id)}
-                                        >
-                                          Add to review queue
-                                        </Button>
-                                      </>
-                                    ) : null}
-                                  </TableCell>
-                                  <TableCell className="min-w-48 max-w-96 text-xs">
-                                    <p className="break-words">
-                                      {row.description || row.memo || "No description recorded"}
-                                    </p>
-                                    <SourceLink type={row.source_type} id={row.source_id} />
-                                    {check.status !== "ordinary" ? (
-                                      <p className="mt-1 text-destructive">{check.explanation}</p>
-                                    ) : null}
-                                  </TableCell>
-                                  <TableCell className="whitespace-nowrap text-right text-xs tabular-nums">
-                                    {check.status === "unavailable"
-                                      ? "Unavailable"
-                                      : evidenceMoney(row.debit_minor, currency)}
-                                  </TableCell>
-                                  <TableCell className="whitespace-nowrap text-right text-xs tabular-nums">
-                                    {check.status === "unavailable"
-                                      ? "Unavailable"
-                                      : evidenceMoney(row.credit_minor, currency)}
-                                  </TableCell>
-                                  <TableCell className="whitespace-nowrap text-right text-xs tabular-nums">
-                                    {check.status === "unavailable"
-                                      ? "Unavailable"
-                                      : evidenceMoney(row.running_balance_minor, currency)}
-                                  </TableCell>
+                    ) : accountQ.isPending ? (
+                      <p role="status" className="text-sm text-muted-foreground">
+                        Loading account evidence…
+                      </p>
+                    ) : accountQ.isError ? (
+                      <QueryErrorState queries={[accountQ]} title="Account evidence unavailable" />
+                    ) : transactions ? (
+                      <>
+                        <div className="grid grid-cols-1 gap-3 rounded-lg border p-4 text-sm sm:grid-cols-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Opening balance · {transactions.accountingBasis}
+                            </p>
+                            <p className="font-semibold tabular-nums">
+                              {evidenceMoney(transactions.opening_balance_minor, currency)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Closing balance · {transactions.accountingBasis}
+                            </p>
+                            <p className="font-semibold tabular-nums">
+                              {evidenceMoney(transactions.closing_balance_minor, currency)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Movements matching selected dates
+                            </p>
+                            <p className="font-semibold tabular-nums">{transactions.total_count}</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          The opening/closing balances are reported for the full selected period,
+                          while the rows below are just one page. The account's normal-balance
+                          convention is used for displayed running balances. Do not add movements
+                          across pages without reviewing the full report.
+                        </p>
+                        {transactions.rows.length === 0 ? (
+                          <p className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
+                            No posted movements in the selected period.
+                          </p>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Date</TableHead>
+                                  <TableHead>Journal</TableHead>
+                                  <TableHead>Description / source</TableHead>
+                                  <TableHead className="text-right">Debit</TableHead>
+                                  <TableHead className="text-right">Credit</TableHead>
+                                  <TableHead className="text-right">Running balance</TableHead>
                                 </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-muted-foreground">
-                        Page {accountPage + 1} of{" "}
-                        {Math.max(1, Math.ceil(transactions.total_count / pageSize))}
-                      </span>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={accountPage === 0 || accountQ.isFetching}
-                          onClick={() => setAccountPage((p) => Math.max(0, p - 1))}
-                        >
-                          Previous
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={
-                            (accountPage + 1) * pageSize >= transactions.total_count ||
-                            accountQ.isFetching
-                          }
-                          onClick={() => setAccountPage((p) => p + 1)}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    </div>
-                  </>
-                ) : null}
+                              </TableHeader>
+                              <TableBody>
+                                {transactions.rows.map((row) => {
+                                  const check = assessAccountEvidenceLine(row);
+                                  return (
+                                    <TableRow key={row.line_id}>
+                                      <TableCell className="whitespace-nowrap text-xs">
+                                        {row.journal_date}
+                                      </TableCell>
+                                      <TableCell className="whitespace-nowrap">
+                                        <JournalLink
+                                          journalId={row.journal_id}
+                                          number={row.journal_number}
+                                        />
+                                        {UUID.test(row.journal_id) ? (
+                                          <>
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => setExplainJournalId(row.journal_id)}
+                                            >
+                                              Explain
+                                            </Button>
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              disabled={createReviewM.isPending}
+                                              onClick={() => createReviewM.mutate(row.journal_id)}
+                                            >
+                                              Add to review queue
+                                            </Button>
+                                          </>
+                                        ) : null}
+                                      </TableCell>
+                                      <TableCell className="min-w-48 max-w-96 text-xs">
+                                        <p className="break-words">
+                                          {row.description || row.memo || "No description recorded"}
+                                        </p>
+                                        <SourceLink type={row.source_type} id={row.source_id} />
+                                        {check.status !== "ordinary" ? (
+                                          <p className="mt-1 text-destructive">
+                                            {check.explanation}
+                                          </p>
+                                        ) : null}
+                                      </TableCell>
+                                      <TableCell className="whitespace-nowrap text-right text-xs tabular-nums">
+                                        {check.status === "unavailable"
+                                          ? "Unavailable"
+                                          : evidenceMoney(row.debit_minor, currency)}
+                                      </TableCell>
+                                      <TableCell className="whitespace-nowrap text-right text-xs tabular-nums">
+                                        {check.status === "unavailable"
+                                          ? "Unavailable"
+                                          : evidenceMoney(row.credit_minor, currency)}
+                                      </TableCell>
+                                      <TableCell className="whitespace-nowrap text-right text-xs tabular-nums">
+                                        {check.status === "unavailable"
+                                          ? "Unavailable"
+                                          : evidenceMoney(row.running_balance_minor, currency)}
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between gap-2 text-sm">
+                          <span className="text-muted-foreground">
+                            Page {accountPage + 1} of{" "}
+                            {Math.max(1, Math.ceil(transactions.total_count / pageSize))}
+                          </span>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={accountPage === 0 || accountQ.isFetching}
+                              onClick={() => setAccountPage((p) => Math.max(0, p - 1))}
+                            >
+                              Previous
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={
+                                (accountPage + 1) * pageSize >= transactions.total_count ||
+                                accountQ.isFetching
+                              }
+                              onClick={() => setAccountPage((p) => p + 1)}
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    ) : null}
                   </>
                 ) : null}
               </div>

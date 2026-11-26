@@ -153,55 +153,57 @@ export function PmRentChargesPage() {
             leases.isError ? (
               <QueryErrorState queries={[leases]} title="Could not load leases" />
             ) : (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle>Generate rent charge</CardTitle>
-                <CardDescription>
-                  Duplicate periods for the same lease are rejected by the backend.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label>Lease</Label>
-                  {leases.isSuccess ? (
-                    <RecordLookupSelect value={leaseId} onValueChange={setLeaseId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select lease" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(leases.data ?? [])
-                          .filter((lease) => lease.status === "active" || lease.status === "draft")
-                          .map((lease) => (
-                            <SelectItem key={lease.id} value={lease.id}>
-                              {lease.leaseNumber}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </RecordLookupSelect>
-                  ) : (
-                    <LoadingState />
-                  )}
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-rent-month">Period month</Label>
-                  <Input
-                    id="pm-rent-month"
-                    type="month"
-                    value={month}
-                    onChange={(e) => setMonth(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    disabled={!leaseId || mutation.isPending || !leases.isSuccess}
-                    onClick={() => mutation.mutate()}
-                  >
-                    {mutation.isPending ? "Generating…" : "Generate"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>Generate rent charge</CardTitle>
+                  <CardDescription>
+                    Duplicate periods for the same lease are rejected by the backend.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label>Lease</Label>
+                    {leases.isSuccess ? (
+                      <RecordLookupSelect value={leaseId} onValueChange={setLeaseId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select lease" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(leases.data ?? [])
+                            .filter(
+                              (lease) => lease.status === "active" || lease.status === "draft",
+                            )
+                            .map((lease) => (
+                              <SelectItem key={lease.id} value={lease.id}>
+                                {lease.leaseNumber}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </RecordLookupSelect>
+                    ) : (
+                      <LoadingState />
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-rent-month">Period month</Label>
+                    <Input
+                      id="pm-rent-month"
+                      type="month"
+                      value={month}
+                      onChange={(e) => setMonth(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      disabled={!leaseId || mutation.isPending || !leases.isSuccess}
+                      onClick={() => mutation.mutate()}
+                    >
+                      {mutation.isPending ? "Generating…" : "Generate"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )
           ) : null}
           {charges.isLoading ? <LoadingState /> : null}
@@ -252,9 +254,7 @@ export function PmRentChargesPage() {
                             type="button"
                             size="sm"
                             disabled={
-                              postMutation.isPending ||
-                              !charges.isSuccess ||
-                              charges.isError
+                              postMutation.isPending || !charges.isSuccess || charges.isError
                             }
                             onClick={() => postMutation.mutate(charge.id)}
                           >

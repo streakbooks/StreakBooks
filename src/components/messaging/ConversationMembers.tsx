@@ -58,9 +58,7 @@ export function ConversationMembers({
 
   if (query.isPending) return <LoadingState rows={2} />;
   if (query.isError) {
-    return (
-      <QueryErrorState queries={[query]} title="Could not load members" />
-    );
+    return <QueryErrorState queries={[query]} title="Could not load members" />;
   }
   if (!query.isSuccess) return <LoadingState rows={2} />;
   if (!query.data?.length) {

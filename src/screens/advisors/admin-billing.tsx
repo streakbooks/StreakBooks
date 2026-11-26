@@ -175,7 +175,10 @@ export function AdvisorsAdminBillingPage() {
   if (query.isPending)
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <ListWorkspace title="Billing" description="Advisors subscriptions via StreakBooks billing.">
+        <ListWorkspace
+          title="Billing"
+          description="Advisors subscriptions via StreakBooks billing."
+        >
           <AdvisorsSubnav />
           <div role="status" aria-live="polite">
             <LoadingState />
@@ -186,7 +189,10 @@ export function AdvisorsAdminBillingPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <ListWorkspace title="Billing" description="Advisors subscriptions via StreakBooks billing.">
+        <ListWorkspace
+          title="Billing"
+          description="Advisors subscriptions via StreakBooks billing."
+        >
           <AdvisorsSubnav />
           <div role="alert">
             <QueryErrorState queries={[query]} title="Advisors billing unavailable" />

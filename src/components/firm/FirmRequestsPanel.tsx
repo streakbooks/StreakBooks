@@ -62,9 +62,7 @@ function RequestCompletion({
   });
   if (files.isPending) return <LoadingState rows={1} />;
   if (files.isError)
-    return (
-      <QueryErrorState queries={[files]} title="Could not load eligible documents" />
-    );
+    return <QueryErrorState queries={[files]} title="Could not load eligible documents" />;
   return (
     <div className="mt-3 space-y-2 rounded-md border bg-muted/20 p-3">
       <p className="text-sm text-muted-foreground">
@@ -213,7 +211,10 @@ export function FirmRequestsPanel({
               {recipientsQ.isPending ? (
                 <LoadingState rows={1} />
               ) : recipientsQ.isError ? (
-                <QueryErrorState queries={[recipientsQ]} title="Could not load authorised recipients" />
+                <QueryErrorState
+                  queries={[recipientsQ]}
+                  title="Could not load authorised recipients"
+                />
               ) : !recipientsQ.isSuccess ? (
                 <LoadingState />
               ) : recipients.length === 0 ? (

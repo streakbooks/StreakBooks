@@ -196,14 +196,10 @@ export function PayrollRunsPage({
   }
   if (settingsQ.isPending || listQ.isPending) return renderRunState(<LoadingState />);
   if (settingsQ.isError) {
-    return renderRunState(
-      <QueryErrorState queries={[settingsQ]} title="Could not load payroll" />,
-    );
+    return renderRunState(<QueryErrorState queries={[settingsQ]} title="Could not load payroll" />);
   }
   if (listQ.isError) {
-    return renderRunState(
-      <QueryErrorState queries={[listQ]} title="Could not load runs" />,
-    );
+    return renderRunState(<QueryErrorState queries={[listQ]} title="Could not load runs" />);
   }
   if (!settingsQ.isSuccess || !listQ.isSuccess || !settingsQ.data || !listQ.data) {
     return null;

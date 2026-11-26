@@ -172,10 +172,7 @@ export function DocumentClassificationPanel({
           Loading file metadata…
         </p>
       ) : metadata.isError || tags.isError ? (
-        <QueryErrorState
-          queries={[metadata, tags]}
-          title="Could not load categories and tags"
-        />
+        <QueryErrorState queries={[metadata, tags]} title="Could not load categories and tags" />
       ) : metadata.data ? (
         <>
           <div className="flex flex-wrap items-center gap-2">

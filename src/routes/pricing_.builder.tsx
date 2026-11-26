@@ -15,7 +15,8 @@ export const Route = createFileRoute("/pricing_/builder")({
       { title: "Plan builder — StreakBooks" },
       {
         name: "description",
-        content: "Quote a StreakBooks plan and published add-ons. This page does not charge a card.",
+        content:
+          "Quote a StreakBooks plan and published add-ons. This page does not charge a card.",
       },
     ],
   }),

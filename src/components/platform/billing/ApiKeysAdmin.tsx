@@ -121,7 +121,11 @@ export function ApiKeysAdmin({ isOwner }: { isOwner: boolean }) {
               </div>
               <label className="text-sm">
                 Reason
-                <Input className="mt-1" value={reason} onChange={(e) => setReason(e.target.value)} />
+                <Input
+                  className="mt-1"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
               </label>
               <div className="flex items-end">
                 <Button
@@ -163,10 +167,7 @@ export function ApiKeysAdmin({ isOwner }: { isOwner: boolean }) {
                   size="sm"
                   variant="outline"
                   disabled={
-                    !scopeKey ||
-                    reason.trim().length < 3 ||
-                    scopeM.isPending ||
-                    !query.isSuccess
+                    !scopeKey || reason.trim().length < 3 || scopeM.isPending || !query.isSuccess
                   }
                   onClick={() => scopeM.mutate()}
                 >

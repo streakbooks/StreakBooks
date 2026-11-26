@@ -189,67 +189,69 @@ export function AdvisorsBookingPage({
           )}
 
           {slotsQ.isSuccess ? (
-          <form
-            className="grid gap-3 sm:grid-cols-2"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!selectedSlot) {
-                toast.error("Choose an available time slot.");
-                return;
-              }
-              bookM.mutate();
-            }}
-          >
-            <div className="space-y-1 sm:col-span-1">
-              <Label htmlFor="booking-name">Your name</Label>
-              <Input
-                id="booking-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="booking-email">Email</Label>
-              <Input
-                id="booking-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="booking-business">Business name</Label>
-              <Input
-                id="booking-business"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="booking-phone">Phone (optional)</Label>
-              <Input id="booking-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <Label htmlFor="booking-notes">Notes (optional)</Label>
-              <Textarea
-                id="booking-notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <Button
-                type="submit"
-                disabled={
-                  bookM.isPending || !slotsQ.isSuccess || slotsQ.isError || !selectedSlot
+            <form
+              className="grid gap-3 sm:grid-cols-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!selectedSlot) {
+                  toast.error("Choose an available time slot.");
+                  return;
                 }
-              >
-                Confirm free consultation
-              </Button>
-            </div>
-          </form>
+                bookM.mutate();
+              }}
+            >
+              <div className="space-y-1 sm:col-span-1">
+                <Label htmlFor="booking-name">Your name</Label>
+                <Input
+                  id="booking-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="booking-email">Email</Label>
+                <Input
+                  id="booking-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="booking-business">Business name</Label>
+                <Input
+                  id="booking-business"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="booking-phone">Phone (optional)</Label>
+                <Input
+                  id="booking-phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="booking-notes">Notes (optional)</Label>
+                <Textarea
+                  id="booking-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Button
+                  type="submit"
+                  disabled={bookM.isPending || !slotsQ.isSuccess || slotsQ.isError || !selectedSlot}
+                >
+                  Confirm free consultation
+                </Button>
+              </div>
+            </form>
           ) : null}
         </section>
       </div>

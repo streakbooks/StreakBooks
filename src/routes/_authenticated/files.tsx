@@ -1300,7 +1300,7 @@ function FilesPage() {
             setTagFilter(value);
             setPage(0);
           }}
-          disabled={tagsQ.isError || !tagsQ.isSuccess || !(tagsQ.data?.length)}
+          disabled={tagsQ.isError || !tagsQ.isSuccess || !tagsQ.data?.length}
         >
           <SelectTrigger className="w-48" aria-label="Filter by company document tag">
             <SelectValue placeholder="All tags" />

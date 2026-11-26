@@ -56,10 +56,7 @@ export function TaxOverviewPanel({
   if (ratesQ.isPending || codesQ.isPending || returnsQ.isPending) return <LoadingState />;
   if (ratesQ.isError || codesQ.isError || returnsQ.isError) {
     return (
-      <QueryErrorState
-        queries={[ratesQ, codesQ, returnsQ]}
-        title="Could not load tax overview"
-      />
+      <QueryErrorState queries={[ratesQ, codesQ, returnsQ]} title="Could not load tax overview" />
     );
   }
 

@@ -410,7 +410,9 @@ export function ContactPortalPanel({
             />
             <Button
               type="submit"
-              disabled={message.isPending || !body.trim() || !messages.isSuccess || messages.isError}
+              disabled={
+                message.isPending || !body.trim() || !messages.isSuccess || messages.isError
+              }
             >
               Send
             </Button>

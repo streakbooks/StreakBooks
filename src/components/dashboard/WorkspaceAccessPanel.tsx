@@ -194,4 +194,3 @@ function WorkspaceCard({
     </section>
   );
 }
-

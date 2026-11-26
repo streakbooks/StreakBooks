@@ -7,14 +7,15 @@
     "routeInventoryCommit": "9263b0f6c0706727a9c67cd616979b16e90d291c",
     "navigationSource": "src/lib/nav.ts",
     "routeRoot": "src/routes/_authenticated/",
-    "syncedAt": "2026-11-19",
+    "syncedAt": "2026-11-26",
     "note": "Inventory sync only. fullyVerified remains false until DoD evidence exists."
   },
   "invariant": "Every top-level sidebar item and every authenticated route file must appear exactly once in this manifest. New ones require an explicit coverage entry. Inventory inclusion is not implementation verification.",
   "counts": {
-    "sidebarModules": 29,
-    "authenticatedRouteFiles": 168,
-    "supportingRouteFiles": 15
+    "sidebarModules": 30,
+    "authenticatedRouteFiles": 169,
+    "supportingRouteFiles": 15,
+    "publicRouteFiles": 1
   },
   "acceptanceCriteria": [
     "NATIVE_NAVIGATION",
@@ -695,6 +696,22 @@
       "tests": "NOT RUN"
     },
     {
+      "label": "Find an advisor",
+      "href": "/advisors",
+      "routeFiles": [],
+      "publicRouteFiles": [
+        "advisors.tsx"
+      ],
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "remaining": [
+        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+        "Run authenticated browser, unit and coverage acceptance suites"
+      ],
+      "tests": "NOT RUN"
+    },
+    {
       "label": "Accountant",
       "href": "/accountant",
       "routeFiles": [
@@ -730,7 +747,7 @@
       "tests": "NOT RUN"
     },
     {
-      "label": "Advisors",
+      "label": "Advisors admin",
       "href": "/advisors-admin",
       "routeFiles": [
         "advisors-admin.appointments.tsx",
@@ -785,7 +802,7 @@
       "tests": "NOT RUN"
     },
     {
-      "label": "Advisors portal",
+      "label": "Advisor portal",
       "href": "/advisors-portal",
       "routeFiles": [
         "advisors-portal.account.tsx",
@@ -923,6 +940,7 @@
       "label": "Settings",
       "href": "/settings",
       "routeFiles": [
+        "settings.$group.$page.tsx",
         "settings.tsx"
       ],
       "browsingImplementation": "partial_code_not_runtime_verified",

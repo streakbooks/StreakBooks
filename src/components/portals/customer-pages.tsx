@@ -62,10 +62,7 @@ export function PortalHome() {
   if (!current) return <LoadingState />;
   if (!current.enabled) return null;
   if (query.isPending) return <LoadingState />;
-  if (query.isError)
-    return (
-      <QueryErrorState queries={[query]} />
-    );
+  if (query.isError) return <QueryErrorState queries={[query]} />;
   if (!query.isSuccess || !query.data) return <LoadingState />;
   const home = query.data;
   if (home["role"] === "supplier") {
@@ -241,10 +238,7 @@ export function PortalInvoiceDetail({ invoiceId }: { invoiceId: string }) {
   });
   if (!current) return <LoadingState />;
   if (query.isPending) return <LoadingState />;
-  if (query.isError)
-    return (
-      <QueryErrorState queries={[query]} />
-    );
+  if (query.isError) return <QueryErrorState queries={[query]} />;
   if (!query.isSuccess || !query.data) return <LoadingState />;
   const data = query.data;
   const invoice = (data["invoice"] as Row) ?? {};
@@ -392,10 +386,7 @@ export function PortalCredits() {
   });
   if (!current) return <LoadingState />;
   if (query.isPending) return <LoadingState />;
-  if (query.isError)
-    return (
-      <QueryErrorState queries={[query]} />
-    );
+  if (query.isError) return <QueryErrorState queries={[query]} />;
   if (!query.isSuccess) return <LoadingState />;
   return (
     <ul className="divide-y divide-border rounded-md border border-border">
@@ -466,7 +457,9 @@ export function PortalStatement() {
                 <CardTitle className="text-base">{String(section["currency"])}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <p>Opening {money(section["opening_minor"], section["currency"], current.locale)}</p>
+                <p>
+                  Opening {money(section["opening_minor"], section["currency"], current.locale)}
+                </p>
                 <ul className="divide-y divide-border">
                   {((section["rows"] as Row[]) ?? []).map((row, index) => (
                     <li key={index} className="flex justify-between gap-2 py-2">

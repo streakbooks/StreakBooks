@@ -1541,10 +1541,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               </p>
             ) : null}
             {someSelected && canManage && (groupsQ.isError || tagsQ.isError) ? (
-              <QueryErrorState
-                queries={[groupsQ, tagsQ]}
-                title="Could not load groups or tags"
-              />
+              <QueryErrorState queries={[groupsQ, tagsQ]} title="Could not load groups or tags" />
             ) : null}
           </div>
           {query.isPending ? (

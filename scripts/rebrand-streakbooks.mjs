@@ -19,7 +19,10 @@ const SKIP_EXT = new Set([".png", ".jpg", ".jpeg", ".gif", ".ico", ".woff", ".wo
 const SKIP_PATH_PARTS = ["supabase/migrations/"];
 
 const REPLACEMENTS = [
-  ["https://github.com/linkbusinessadvisory/LinkBooks", "https://github.com/streakbooks/StreakBooks"],
+  [
+    "https://github.com/linkbusinessadvisory/LinkBooks",
+    "https://github.com/streakbooks/StreakBooks",
+  ],
   ["https://github.com/rohitmehra86/LinkBooks", "https://github.com/streakbooks/StreakBooks"],
   ["linkbusinessadvisory/LinkBooks", "streakbooks/StreakBooks"],
   ["rohitmehra86/LinkBooks", "streakbooks/StreakBooks"],
@@ -64,7 +67,11 @@ for (const file of walk(ROOT)) {
     continue;
   }
   if (!text.includes("LinkBooks") && !text.includes("linkbooks") && !text.includes("LINKBOOKS")) {
-    if (!text.includes("linkbusinessadvisory") && !text.includes("link-books") && !text.includes("LOVABLE_CRON")) {
+    if (
+      !text.includes("linkbusinessadvisory") &&
+      !text.includes("link-books") &&
+      !text.includes("LOVABLE_CRON")
+    ) {
       continue;
     }
   }

@@ -166,10 +166,7 @@ export function IndustryCoaPanel({ companyId }: Props) {
   const requiredQueries = [industriesQ, settingsQ, trackingQ, libraryQry];
   if (requiredQueries.some((query) => query.isError)) {
     return (
-      <QueryErrorState
-        queries={requiredQueries}
-        title="Could not load chart of accounts options"
-      />
+      <QueryErrorState queries={requiredQueries} title="Could not load chart of accounts options" />
     );
   }
 

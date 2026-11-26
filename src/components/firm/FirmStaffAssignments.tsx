@@ -242,7 +242,10 @@ export function FirmStaffAssignments({
               {candidatesQ.isPending ? (
                 <LoadingState rows={2} />
               ) : candidatesQ.isError ? (
-                <QueryErrorState queries={[candidatesQ]} title="Could not load eligible colleagues" />
+                <QueryErrorState
+                  queries={[candidatesQ]}
+                  title="Could not load eligible colleagues"
+                />
               ) : !candidatesQ.isSuccess ? (
                 <LoadingState />
               ) : candidates.length === 0 ? (

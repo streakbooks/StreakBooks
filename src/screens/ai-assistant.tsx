@@ -354,16 +354,19 @@ function AiAssistantWorkspace({
   }
 
   const savedExchanges: Exchange[] = historyQ.isSuccess
-    ? ((historyQ.data ?? []) as AiConversationRow[]).slice().reverse().map((entry) => ({
-        id: entry.id,
-        question: entry.question,
-        intent: entry.intent,
-        answer: entry.reply_markdown,
-        mode: entry.mode,
-        injectionFlagged: entry.injection_flagged,
-        facts: entry.facts ?? [],
-        suggestionId: entry.suggestion_id,
-      }))
+    ? ((historyQ.data ?? []) as AiConversationRow[])
+        .slice()
+        .reverse()
+        .map((entry) => ({
+          id: entry.id,
+          question: entry.question,
+          intent: entry.intent,
+          answer: entry.reply_markdown,
+          mode: entry.mode,
+          injectionFlagged: entry.injection_flagged,
+          facts: entry.facts ?? [],
+          suggestionId: entry.suggestion_id,
+        }))
     : [];
   const savedIds = new Set(savedExchanges.map((entry) => entry.id));
   const exchanges = [...savedExchanges, ...history.filter((entry) => !savedIds.has(entry.id))];
@@ -972,10 +975,7 @@ function AiAssistantWorkspace({
             </AlertDescription>
           </Alert>
           {accountsQ.isError ? (
-            <QueryErrorState
-              queries={[accountsQ]}
-              title="Could not verify journal account names"
-            />
+            <QueryErrorState queries={[accountsQ]} title="Could not verify journal account names" />
           ) : accountsQ.isFetching ? (
             <p className="text-xs text-muted-foreground">Loading chart of accounts for review…</p>
           ) : journalLines && !accountsResolved ? (

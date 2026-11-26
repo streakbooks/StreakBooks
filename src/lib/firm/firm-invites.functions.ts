@@ -91,7 +91,11 @@ export const createFirmStaffInvitation = createServerFn({ method: "POST" })
           const name = (firm as { name: string }).name;
           const link = origin + path;
           const message = [
-            "You have been invited to join " + name + " as a " + invitation.role + " in StreakBooks.",
+            "You have been invited to join " +
+              name +
+              " as a " +
+              invitation.role +
+              " in StreakBooks.",
             "Open this link and sign in using the invited email address:",
             link,
             "This link expires in seven days. Accepting an invitation does not grant access to client books.",

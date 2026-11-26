@@ -152,7 +152,9 @@ function ReportPage() {
   }
 
   if (companyBasis.isError)
-    return <QueryErrorState queries={[companyBasis]} title="Could not load accounting preferences" />;
+    return (
+      <QueryErrorState queries={[companyBasis]} title="Could not load accounting preferences" />
+    );
 
   const effectiveSearch =
     needsDefault && reportDefaults.data

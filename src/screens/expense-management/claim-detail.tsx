@@ -585,10 +585,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
               <Button
                 size="sm"
                 disabled={
-                  rebill.isPending ||
-                  !canRebillNow ||
-                  contactsQ.isError ||
-                  !contactsQ.isSuccess
+                  rebill.isPending || !canRebillNow || contactsQ.isError || !contactsQ.isSuccess
                 }
                 onClick={() => rebill.mutate()}
               >

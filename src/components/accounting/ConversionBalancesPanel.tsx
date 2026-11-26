@@ -468,10 +468,10 @@ export function ConversionBalancesPanel({
       <Alert>
         <AlertTitle>How this works</AlertTitle>
         <AlertDescription>
-          Pick the day your books in StreakBooks start (the conversion date). Enter the closing trial
-          balance from your old system as at the day before, then the unpaid customer invoices and
-          supplier bills. One balanced opening journal is posted via the posting engine; postings
-          before the conversion date are then blocked.
+          Pick the day your books in StreakBooks start (the conversion date). Enter the closing
+          trial balance from your old system as at the day before, then the unpaid customer invoices
+          and supplier bills. One balanced opening journal is posted via the posting engine;
+          postings before the conversion date are then blocked.
         </AlertDescription>
       </Alert>
       {hasUnsavedDraft ? (
@@ -516,50 +516,50 @@ export function ConversionBalancesPanel({
             <QueryErrorState queries={[setup]} title="Could not load conversion setup" />
           ) : null}
           {setup.isSuccess ? (
-          <div className="max-h-96 overflow-auto">
-            <EditableLineItemGrid
-              aria-label="Trial balance"
-              columns={TB_GRID_COLUMNS}
-              toolbar={
-                <Input
-                  placeholder="Filter accounts"
-                  aria-label="Filter accounts"
-                  className="max-w-xs"
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                />
-              }
-            >
-              {visibleAccounts.map((a) => (
-                <TableRow key={a.id}>
-                  <TableCell className="px-2 py-1.5 align-middle text-sm" data-fluid="true">
-                    <span className="font-mono text-xs text-muted-foreground">{a.code}</span>{" "}
-                    {a.name}
-                  </TableCell>
-                  {(["debit", "credit"] as const).map((side) => (
-                    <TableCell key={side} className="p-1 align-middle">
-                      <Input
-                        aria-label={`${side} for ${a.code}`}
-                        inputMode="decimal"
-                        value={tbInput[a.id]?.[side] ?? ""}
-                        className={spreadsheetInputClass}
-                        onChange={(e) =>
-                          setTbInput((cur) => ({
-                            ...cur,
-                            [a.id]: {
-                              debit: cur[a.id]?.debit ?? "",
-                              credit: cur[a.id]?.credit ?? "",
-                              [side]: e.target.value,
-                            },
-                          }))
-                        }
-                      />
+            <div className="max-h-96 overflow-auto">
+              <EditableLineItemGrid
+                aria-label="Trial balance"
+                columns={TB_GRID_COLUMNS}
+                toolbar={
+                  <Input
+                    placeholder="Filter accounts"
+                    aria-label="Filter accounts"
+                    className="max-w-xs"
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                  />
+                }
+              >
+                {visibleAccounts.map((a) => (
+                  <TableRow key={a.id}>
+                    <TableCell className="px-2 py-1.5 align-middle text-sm" data-fluid="true">
+                      <span className="font-mono text-xs text-muted-foreground">{a.code}</span>{" "}
+                      {a.name}
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </EditableLineItemGrid>
-          </div>
+                    {(["debit", "credit"] as const).map((side) => (
+                      <TableCell key={side} className="p-1 align-middle">
+                        <Input
+                          aria-label={`${side} for ${a.code}`}
+                          inputMode="decimal"
+                          value={tbInput[a.id]?.[side] ?? ""}
+                          className={spreadsheetInputClass}
+                          onChange={(e) =>
+                            setTbInput((cur) => ({
+                              ...cur,
+                              [a.id]: {
+                                debit: cur[a.id]?.debit ?? "",
+                                credit: cur[a.id]?.credit ?? "",
+                                [side]: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </EditableLineItemGrid>
+            </div>
           ) : null}
         </CardContent>
       </Card>
@@ -641,9 +641,7 @@ export function ConversionBalancesPanel({
             <Input id="conv-note" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
           <Button
-            disabled={
-              !validation.canPost || nothingEntered || post.isPending || !setup.isSuccess
-            }
+            disabled={!validation.canPost || nothingEntered || post.isPending || !setup.isSuccess}
             onClick={exportReview}
             variant="outline"
           >
@@ -657,9 +655,7 @@ export function ConversionBalancesPanel({
             <Checkbox
               id="conv-review-confirm"
               checked={reviewMatches}
-              disabled={
-                !validation.canPost || nothingEntered || post.isPending || !setup.isSuccess
-              }
+              disabled={!validation.canPost || nothingEntered || post.isPending || !setup.isSuccess}
               onCheckedChange={(checked) =>
                 setReviewedFingerprint(checked === true ? reviewFingerprint : "")
               }

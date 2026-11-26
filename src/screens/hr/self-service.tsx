@@ -198,9 +198,7 @@ export function HrSelfServicePage() {
   if (!contextQ.isSuccess || !contextQ.data) return null;
 
   const ctx = contextQ.data;
-  const types = typesQ.isSuccess
-    ? (typesQ.data?.items?.filter((t) => t.isActive) ?? [])
-    : [];
+  const types = typesQ.isSuccess ? (typesQ.data?.items?.filter((t) => t.isActive) ?? []) : [];
 
   return (
     <ListWorkspace
@@ -487,11 +485,7 @@ export function HrSelfServicePage() {
             <Button
               type="button"
               disabled={
-                !leaveTypeId ||
-                !startDate ||
-                !endDate ||
-                leaveM.isPending ||
-                !typesQ.isSuccess
+                !leaveTypeId || !startDate || !endDate || leaveM.isPending || !typesQ.isSuccess
               }
               onClick={() => leaveM.mutate()}
             >

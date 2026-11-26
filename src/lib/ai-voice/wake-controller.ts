@@ -142,7 +142,8 @@ export class WakeController {
     if (!this.available) return;
     if (!validWakePhrase(phrase)) {
       this.set({
-        message: "Choose a phrase of 2 or more words, 5–60 characters, for example Hey StreakBooks.",
+        message:
+          "Choose a phrase of 2 or more words, 5–60 characters, for example Hey StreakBooks.",
       });
       return;
     }

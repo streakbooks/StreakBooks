@@ -612,7 +612,14 @@ export function NewBill({
     if (settingsQ.data.purchases_default_notes) setMemo(settingsQ.data.purchases_default_notes);
     setCurrencyCode(baseCurrency);
     setDefaultsApplied(true);
-  }, [settingsQ.isSuccess, settingsQ.data, defaultsApplied, today, dueDateManualOverride, baseCurrency]);
+  }, [
+    settingsQ.isSuccess,
+    settingsQ.data,
+    defaultsApplied,
+    today,
+    dueDateManualOverride,
+    baseCurrency,
+  ]);
 
   // Capture baseline after first paint so opening alone is not "dirty"
   useEffect(() => {
@@ -1423,14 +1430,10 @@ export function NewBill({
     );
   }
   if (dimsQ.isError) {
-    return (
-      <QueryErrorState queries={[dimsQ]} title="Could not load tracking dimensions" />
-    );
+    return <QueryErrorState queries={[dimsQ]} title="Could not load tracking dimensions" />;
   }
   const billOptionsReady =
-    billOptionQueries.every((query) => query.isSuccess) &&
-    dimsQ.isSuccess &&
-    settingsQ.isSuccess;
+    billOptionQueries.every((query) => query.isSuccess) && dimsQ.isSuccess && settingsQ.isSuccess;
 
   const headerBar: ReactNode = (
     <div className="flex flex-wrap items-center gap-2">

@@ -50,9 +50,7 @@ export function AppStoreFeaturedPage() {
     );
   }
   if (catalogue.isError) {
-    return (
-      <QueryErrorState queries={[catalogue]} title="Could not load featured apps" />
-    );
+    return <QueryErrorState queries={[catalogue]} title="Could not load featured apps" />;
   }
   if (!catalogue.isSuccess) return null;
   const apps = catalogue.data?.apps ?? [];

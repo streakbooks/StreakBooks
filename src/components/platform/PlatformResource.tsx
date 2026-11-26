@@ -281,7 +281,10 @@ export function PlatformResource({
             </p>
           ) : cohorts.isError ? (
             <div className="mt-2">
-              <QueryErrorState queries={[cohorts]} title="Could not load subscription start months" />
+              <QueryErrorState
+                queries={[cohorts]}
+                title="Could not load subscription start months"
+              />
             </div>
           ) : cohorts.data?.message ? (
             <p className="mt-2" role="status">

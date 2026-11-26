@@ -207,81 +207,81 @@ function PricingPage() {
         <p>Published prices appear here after the billing migration is applied.</p>
       ) : null}
       {query.isSuccess ? (
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {plans.map((plan) => {
-          const published = bookPrice(plan.code, interval);
-          const price = published
-            ? {
-                currency: published.currency,
-                interval: published.interval,
-                amountMinor: published.amountMinor,
-                needsReview: false,
-              }
-            : plan.prices?.find((row) => row.currency === currency && row.interval === interval);
-          const included = (plan.features ?? []).filter((feature) => feature.enabled);
-          const action = plan.trial?.enabled ? "Start free trial" : "Subscribe";
-          const destination = `/settings?section=subscription&plan=${plan.code}&interval=${interval}`;
-          return (
-            <article key={plan.code} className="flex flex-col gap-2 rounded-lg border p-4">
-              <h2 className="text-lg font-semibold">{plan.name}</h2>
-              {plan.badge ? <p className="text-xs font-medium">{plan.badge}</p> : null}
-              <p className="text-sm text-muted-foreground">{plan.summary}</p>
-              {price ? (
-                <p className="text-2xl font-semibold">
-                  {published
-                    ? formatMinorAmount(BigInt(published.amountMinor), published.currency)
-                    : formatMinor(price.amountMinor, currency)}
-                  <span className="text-sm font-normal text-muted-foreground">
-                    {" "}
-                    / {interval === "year" ? "year" : "month"}
-                  </span>
-                </p>
-              ) : (
-                <p className="text-xl font-semibold">Price coming soon</p>
-              )}
-              {price?.needsReview ? (
-                <p className="text-xs text-muted-foreground">Regional price pending review.</p>
-              ) : null}
-              {plan.trial?.enabled ? (
-                <p className="text-xs text-muted-foreground">
-                  {plan.trial.days}-day free trial, no card needed
-                </p>
-              ) : null}
-              <Button type="button" asChild>
-                {signedIn ? (
-                  <Link
-                    to="/settings"
-                    search={{ section: "subscription", plan: plan.code, interval }}
-                  >
-                    {action}
-                  </Link>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {plans.map((plan) => {
+            const published = bookPrice(plan.code, interval);
+            const price = published
+              ? {
+                  currency: published.currency,
+                  interval: published.interval,
+                  amountMinor: published.amountMinor,
+                  needsReview: false,
+                }
+              : plan.prices?.find((row) => row.currency === currency && row.interval === interval);
+            const included = (plan.features ?? []).filter((feature) => feature.enabled);
+            const action = plan.trial?.enabled ? "Start free trial" : "Subscribe";
+            const destination = `/settings?section=subscription&plan=${plan.code}&interval=${interval}`;
+            return (
+              <article key={plan.code} className="flex flex-col gap-2 rounded-lg border p-4">
+                <h2 className="text-lg font-semibold">{plan.name}</h2>
+                {plan.badge ? <p className="text-xs font-medium">{plan.badge}</p> : null}
+                <p className="text-sm text-muted-foreground">{plan.summary}</p>
+                {price ? (
+                  <p className="text-2xl font-semibold">
+                    {published
+                      ? formatMinorAmount(BigInt(published.amountMinor), published.currency)
+                      : formatMinor(price.amountMinor, currency)}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      {" "}
+                      / {interval === "year" ? "year" : "month"}
+                    </span>
+                  </p>
                 ) : (
-                  <Link to="/auth" search={{ redirect: destination }}>
-                    {action}
-                  </Link>
+                  <p className="text-xl font-semibold">Price coming soon</p>
                 )}
-              </Button>
-              {included.length ? (
-                <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
-                  {included.map((feature) => (
-                    <li key={feature.key} className="flex gap-2">
-                      {feature.availability === "coming_soon" ? (
-                        <Clock className="mt-0.5 size-4 shrink-0" aria-hidden />
-                      ) : (
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
-                      )}
-                      <span>
-                        {featureText(feature)}
-                        {feature.availability === "coming_soon" ? " (coming soon)" : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </article>
-          );
-        })}
-      </div>
+                {price?.needsReview ? (
+                  <p className="text-xs text-muted-foreground">Regional price pending review.</p>
+                ) : null}
+                {plan.trial?.enabled ? (
+                  <p className="text-xs text-muted-foreground">
+                    {plan.trial.days}-day free trial, no card needed
+                  </p>
+                ) : null}
+                <Button type="button" asChild>
+                  {signedIn ? (
+                    <Link
+                      to="/settings"
+                      search={{ section: "subscription", plan: plan.code, interval }}
+                    >
+                      {action}
+                    </Link>
+                  ) : (
+                    <Link to="/auth" search={{ redirect: destination }}>
+                      {action}
+                    </Link>
+                  )}
+                </Button>
+                {included.length ? (
+                  <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
+                    {included.map((feature) => (
+                      <li key={feature.key} className="flex gap-2">
+                        {feature.availability === "coming_soon" ? (
+                          <Clock className="mt-0.5 size-4 shrink-0" aria-hidden />
+                        ) : (
+                          <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+                        )}
+                        <span>
+                          {featureText(feature)}
+                          {feature.availability === "coming_soon" ? " (coming soon)" : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
       ) : null}
       <section className="space-y-2 text-sm">
         <h2 className="text-lg font-semibold">Questions</h2>

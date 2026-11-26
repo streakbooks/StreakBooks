@@ -215,9 +215,7 @@ export function MoneyDocumentPanel({
 
   const requiredQueries = [
     accountsQ,
-    ...(kind !== "bank_deposit" &&
-    kind !== "card_payment" &&
-    kind !== "bank_adjustment"
+    ...(kind !== "bank_deposit" && kind !== "card_payment" && kind !== "bank_adjustment"
       ? [contactsQ]
       : []),
     ...(kind === "bank_deposit" ? [undepositedQ] : []),

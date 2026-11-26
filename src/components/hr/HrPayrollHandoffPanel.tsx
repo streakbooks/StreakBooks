@@ -215,9 +215,7 @@ export function HrPayrollHandoffPanel({ companyId }: { companyId: string }) {
                             type="button"
                             size="sm"
                             disabled={
-                              applyExitM.isPending ||
-                              !handoffQ.isSuccess ||
-                              handoffQ.isError
+                              applyExitM.isPending || !handoffQ.isSuccess || handoffQ.isError
                             }
                             onClick={() => applyExitM.mutate(row.id)}
                           >

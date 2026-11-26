@@ -43,9 +43,7 @@ export function DocumentEmailInbox({
     queryKey: ["document-email-inbox", companyId],
     queryFn: () => loadSettings({ data: { companyId } }),
   });
-  const ready = Boolean(
-    settings.isSuccess && settings.data?.configured && settings.data?.enabled,
-  );
+  const ready = Boolean(settings.isSuccess && settings.data?.configured && settings.data?.enabled);
   const emails = useQuery({
     queryKey: ["document-email-messages", companyId, cursor],
     enabled: ready,
@@ -110,9 +108,9 @@ export function DocumentEmailInbox({
             <Inbox className="size-5" /> Email-to-Inbox
           </h2>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Forward supplier invoices and receipts to a private StreakBooks receiving address. Review
-            and import selected attachments manually. Imports do not create or post accounting
-            entries.
+            Forward supplier invoices and receipts to a private StreakBooks receiving address.
+            Review and import selected attachments manually. Imports do not create or post
+            accounting entries.
           </p>
         </div>
         <Button variant="outline" onClick={onClose}>

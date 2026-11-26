@@ -34,10 +34,9 @@ export function AssetPortfolioPanel({
       <div className="space-y-3">
         <Alert variant="destructive">
           <AlertDescription role="alert">
-            The asset overview could not calculate trustworthy totals:{" "}
-            {friendlyAuthError(error)} Review
-            the saved asset amounts and depreciation history before relying on this dashboard. No
-            accounting records have been changed.
+            The asset overview could not calculate trustworthy totals: {friendlyAuthError(error)}{" "}
+            Review the saved asset amounts and depreciation history before relying on this
+            dashboard. No accounting records have been changed.
           </AlertDescription>
         </Alert>
         <div className="flex flex-wrap gap-2">

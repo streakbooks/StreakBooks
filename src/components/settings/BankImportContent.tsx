@@ -371,11 +371,11 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   const canImport =
     Boolean(
       bankAccountId &&
-        mapped &&
-        mapped.rows.length > 0 &&
-        dupQ.isSuccess &&
-        dupQ.data &&
-        accountsQ.isSuccess,
+      mapped &&
+      mapped.rows.length > 0 &&
+      dupQ.isSuccess &&
+      dupQ.data &&
+      accountsQ.isSuccess,
     ) &&
     !ofxCurrencyMismatch &&
     rowsToImport > 0 &&

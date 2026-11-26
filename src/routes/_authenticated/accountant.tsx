@@ -376,91 +376,93 @@ function AccountantTools() {
           {accountsQ.isError ? (
             <QueryErrorState queries={[accountsQ]} title="Could not load posting accounts" />
           ) : (
-          <div className="mb-8 grid max-w-2xl gap-4 rounded-xl border border-border/85 bg-card p-5 shadow-card">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label>Date</Label>
-                <Input type="date" value={adjDate} onChange={(e) => setAdjDate(e.target.value)} />
+            <div className="mb-8 grid max-w-2xl gap-4 rounded-xl border border-border/85 bg-card p-5 shadow-card">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label>Date</Label>
+                  <Input type="date" value={adjDate} onChange={(e) => setAdjDate(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Adjustment reference</Label>
+                  <Input value={adjKey} onChange={(e) => setAdjKey(e.target.value)} />
+                </div>
               </div>
               <div className="space-y-1">
-                <Label>Adjustment reference</Label>
-                <Input value={adjKey} onChange={(e) => setAdjKey(e.target.value)} />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <Label>Tax control account</Label>
-              <AccountLookup
-                ariaLabel="Tax control account"
-                accounts={accounts}
-                value={taxAcc}
-                onChange={setTaxAcc}
-                companyId={companyId}
-                placeholder="e.g. 2100 Tax Payable"
-                allowClear={false}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Offset account</Label>
-              <AccountLookup
-                ariaLabel="Offset account"
-                accounts={accounts}
-                value={offsetAcc}
-                onChange={setOffsetAcc}
-                companyId={companyId}
-                placeholder="Expense / equity"
-                allowClear={false}
-              />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label>Amount</Label>
-                <Input
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
+                <Label>Tax control account</Label>
+                <AccountLookup
+                  ariaLabel="Tax control account"
+                  accounts={accounts}
+                  value={taxAcc}
+                  onChange={setTaxAcc}
+                  companyId={companyId}
+                  placeholder="e.g. 2100 Tax Payable"
+                  allowClear={false}
                 />
               </div>
               <div className="space-y-1">
-                <Label>Direction</Label>
-                <Select
-                  value={direction}
-                  onValueChange={(v) => setDirection(v as typeof direction)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="increase_payable">Increase tax payable</SelectItem>
-                    <SelectItem value="decrease_payable">Decrease tax payable</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Offset account</Label>
+                <AccountLookup
+                  ariaLabel="Offset account"
+                  accounts={accounts}
+                  value={offsetAcc}
+                  onChange={setOffsetAcc}
+                  companyId={companyId}
+                  placeholder="Expense / equity"
+                  allowClear={false}
+                />
               </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label>Amount</Label>
+                  <Input
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Direction</Label>
+                  <Select
+                    value={direction}
+                    onValueChange={(v) => setDirection(v as typeof direction)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="increase_payable">Increase tax payable</SelectItem>
+                      <SelectItem value="decrease_payable">Decrease tax payable</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label>Memo</Label>
+                <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
+              </div>
+              <Button
+                size="sm"
+                disabled={
+                  !canAdjust ||
+                  adjustM.isPending ||
+                  accountsQ.isPending ||
+                  !accountsQ.isSuccess ||
+                  !taxAcc ||
+                  !offsetAcc ||
+                  taxAcc === offsetAcc ||
+                  !(Number(amount) > 0) ||
+                  adjKey.trim().length < 4
+                }
+                onClick={() => {
+                  if (
+                    window.confirm("Post this tax adjustment to the active organisation’s ledger?")
+                  )
+                    adjustM.mutate();
+                }}
+              >
+                Post tax adjustment
+              </Button>
             </div>
-            <div className="space-y-1">
-              <Label>Memo</Label>
-              <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
-            </div>
-            <Button
-              size="sm"
-              disabled={
-                !canAdjust ||
-                adjustM.isPending ||
-                accountsQ.isPending ||
-                !accountsQ.isSuccess ||
-                !taxAcc ||
-                !offsetAcc ||
-                taxAcc === offsetAcc ||
-                !(Number(amount) > 0) ||
-                adjKey.trim().length < 4
-              }
-              onClick={() => {
-                if (window.confirm("Post this tax adjustment to the active organisation’s ledger?"))
-                  adjustM.mutate();
-              }}
-            >
-              Post tax adjustment
-            </Button>
-          </div>
           )}
         </TabsContent>
       </Tabs>

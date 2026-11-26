@@ -750,84 +750,86 @@ function BankTransactions() {
             <QueryErrorState queries={[optionsQ]} title="Could not load coding accounts" />
           ) : (
             <>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-medium">
-              {selected.size > 0 ? `${selected.size} selected` : "Bulk coding"}
-            </span>
-            <AccountLookup
-              className="w-56"
-              ariaLabel="Account for bulk coding"
-              accounts={optionsQ.data?.accounts ?? []}
-              value={bulkAccountId}
-              onChange={setBulkAccountId}
-              companyId={companyId}
-              placeholder="Account"
-              allowClear={false}
-            />
-            <LookupSelect
-              className="w-40"
-              ariaLabel="Tax code for bulk coding"
-              allowClear={false}
-              value={bulkTaxCodeId}
-              onChange={setBulkTaxCodeId}
-              searchPlaceholder="Search tax code"
-              options={[
-                { id: NONE, label: "No tax" },
-                ...taxChoices.map((t) => ({
-                  id: t.id,
-                  code: t.code,
-                  name: t.name,
-                  label: t.name,
-                  meta: t.code,
-                  keywords: `${t.code} ${t.name}`,
-                })),
-              ]}
-              {...(companyId && canTax
-                ? {
-                    companyId,
-                    createTitle: "New tax code",
-                    renderCreate: (ctx: LookupCreateContext) => (
-                      <TaxCodeCreateForm companyId={companyId} appliesTo="both" ctx={ctx} />
-                    ),
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-medium">
+                  {selected.size > 0 ? `${selected.size} selected` : "Bulk coding"}
+                </span>
+                <AccountLookup
+                  className="w-56"
+                  ariaLabel="Account for bulk coding"
+                  accounts={optionsQ.data?.accounts ?? []}
+                  value={bulkAccountId}
+                  onChange={setBulkAccountId}
+                  companyId={companyId}
+                  placeholder="Account"
+                  allowClear={false}
+                />
+                <LookupSelect
+                  className="w-40"
+                  ariaLabel="Tax code for bulk coding"
+                  allowClear={false}
+                  value={bulkTaxCodeId}
+                  onChange={setBulkTaxCodeId}
+                  searchPlaceholder="Search tax code"
+                  options={[
+                    { id: NONE, label: "No tax" },
+                    ...taxChoices.map((t) => ({
+                      id: t.id,
+                      code: t.code,
+                      name: t.name,
+                      label: t.name,
+                      meta: t.code,
+                      keywords: `${t.code} ${t.name}`,
+                    })),
+                  ]}
+                  {...(companyId && canTax
+                    ? {
+                        companyId,
+                        createTitle: "New tax code",
+                        renderCreate: (ctx: LookupCreateContext) => (
+                          <TaxCodeCreateForm companyId={companyId} appliesTo="both" ctx={ctx} />
+                        ),
+                      }
+                    : {})}
+                />
+                <Button
+                  size="sm"
+                  disabled={
+                    selected.size === 0 ||
+                    !bulkReady ||
+                    bulkSelectedM.isPending ||
+                    !optionsQ.isSuccess
                   }
-                : {})}
-            />
-            <Button
-              size="sm"
-              disabled={
-                selected.size === 0 ||
-                !bulkReady ||
-                bulkSelectedM.isPending ||
-                !optionsQ.isSuccess
-              }
-              onClick={() => bulkSelectedM.mutate()}
-            >
-              Code selected
-            </Button>
-          </div>
-          {allPageSelected && total > uncategorisedRows.length ? (
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span>
-                All {uncategorisedRows.length} on this page are selected. {total} lines match this
-                filter.
-              </span>
-              <ConfirmButton
-                title={`Code all ${total} matching lines?`}
-                description={`Every uncategorised line matching the current filters will be coded to the chosen account${
-                  bulkTaxCodeId === NONE ? "" : " and tax code"
-                }, one journal each. Lines that cannot be coded are skipped and reported.`}
-                confirmLabel={`Code all ${total}`}
-                disabled={!bulkReady || bulkAllM.isPending || !optionsQ.isSuccess}
-                onConfirm={() => bulkAllM.mutate()}
-              >
-                Code all {total} matching
-              </ConfirmButton>
-              {!bulkReady ? (
-                <span className="text-muted-foreground">Choose an account first.</span>
+                  onClick={() => bulkSelectedM.mutate()}
+                >
+                  Code selected
+                </Button>
+              </div>
+              {allPageSelected && total > uncategorisedRows.length ? (
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span>
+                    All {uncategorisedRows.length} on this page are selected. {total} lines match
+                    this filter.
+                  </span>
+                  <ConfirmButton
+                    title={`Code all ${total} matching lines?`}
+                    description={`Every uncategorised line matching the current filters will be coded to the chosen account${
+                      bulkTaxCodeId === NONE ? "" : " and tax code"
+                    }, one journal each. Lines that cannot be coded are skipped and reported.`}
+                    confirmLabel={`Code all ${total}`}
+                    disabled={!bulkReady || bulkAllM.isPending || !optionsQ.isSuccess}
+                    onConfirm={() => bulkAllM.mutate()}
+                  >
+                    Code all {total} matching
+                  </ConfirmButton>
+                  {!bulkReady ? (
+                    <span className="text-muted-foreground">Choose an account first.</span>
+                  ) : null}
+                </div>
               ) : null}
-            </div>
-          ) : null}
-          {bulkProgress ? <p className="text-xs text-muted-foreground">{bulkProgress}</p> : null}
+              {bulkProgress ? (
+                <p className="text-xs text-muted-foreground">{bulkProgress}</p>
+              ) : null}
             </>
           )}
         </div>

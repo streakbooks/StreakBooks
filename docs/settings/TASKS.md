@@ -11,7 +11,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - [ ] Phase 3 / Batch 4 — sales and purchases settings; prove document workflow effects.
 - [ ] Phase 3 / Batch 5 — banking, inventory, assets, expenses, payroll and projects; preserve existing module owners.
 - [ ] Phase 3 / Batch 6 — users, access, firm/client grants, approvals and portal settings.
-- [ ] Phase 3 / Batch 7 — notifications, automation, integrations and API.
+- [ ] Phase 3 / Batch 7 — notifications, automation, integrations and API. Outgoing email sender name/reply-to and organisation digest quiet hours now have tested consumers; provider connections, AI, voice and API controls remain partial.
 - [ ] Phase 3 / Batch 8 — AI/voice, billing/subscription, security/audit, data/privacy.
 - [ ] Phase 3 / Batch 9 — remaining modules discovered from `MODULE_REGISTRY`.
 - [x] Final documentation artifacts — `REVIEW_GUIDE.md`, `coverage-matrix.md`, refreshed `05-TEST-REPORT.md`, and `defect-register.md` are present. The defect register explicitly states that its review is self-review, not an independent external audit.
@@ -154,3 +154,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Connected `accounting.warn_backdated_days` to the manual-journal date field as an accessible, non-blocking warning. A stored threshold of 0 disables the warning; malformed dates or thresholds fail closed to no warning. Existing accounting-period lock enforcement remains authoritative.
 - Registered the field as complete only after confirming the version-checked organisation settings writer, Accounting edit permission, category audit, field behavior test and consumer. Other Accounting warning settings and auto-credit remain partial/read-only.
 - Focused tests passed (4 files / 14 tests), typecheck, changed-file ESLint, `check:ui`, `check:modules`, and the network-disabled PostgreSQL 17 workflow regression passed. No schema change, hosted Supabase operation or deployment was performed.
+
+## 2026-11-26 Notification sender and digest quiet-hours coverage
+
+- Added Settings capability entries for outgoing sender name, reply-to and organisation quiet-hours start/end/enabled. These use the existing authenticated, version-checked `organisation_config.notifications` writer and its transaction audit; sender identity remains bound to the server-verified email address.
+- Added tests for saved notification loading/defaults, malformed configuration rejection, configured sender/reply-to behavior and digest quiet-hour timing. Existing manual and scheduled digest paths honor the configured organisation timezone.
+- Focused tests passed (4 files / 21 tests) and typecheck passed. Changed-file lint and the existing Actions workflow were still pending at this doc update. No schema, hosted Supabase or deployment changes were made. Provider delivery verification remains incomplete.

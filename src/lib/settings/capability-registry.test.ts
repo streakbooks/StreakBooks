@@ -110,4 +110,26 @@ describe("Settings capability coverage registry", () => {
         ?.status,
     ).toBe("complete");
   });
+
+  it("requires verified notification sender and digest timing consumers for editable organisation fields", () => {
+    const provenKeys = [
+      "notifications.email_from_name",
+      "notifications.reply_to",
+      "notifications.quiet_hours_enabled",
+      "notifications.quiet_hours_start",
+      "notifications.quiet_hours_end",
+    ];
+    for (const key of provenKeys) {
+      expect(SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === key)).toMatchObject({
+        moduleId: "settings",
+        route: "/settings/notifications/overview",
+        permission: "company.settings.edit",
+        persistence: expect.stringContaining("organisation_config.notifications"),
+        audit: expect.stringContaining("settings_change_log"),
+      });
+      expect(SETTING_FIELD_COVERAGE.find((setting) => setting.key === key)?.status).toBe(
+        "complete",
+      );
+    }
+  });
 });

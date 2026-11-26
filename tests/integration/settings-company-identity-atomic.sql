@@ -40,13 +40,16 @@ BEGIN
     RAISE EXCEPTION 'Stale organisation save changed the company';
   END IF;
 
-  -- Invalid calendar dates fail before either table changes.
+  -- February 30 is invalid and must fail before either table changes.
   BEGIN
     PERFORM public.save_company_identity_and_tax(
       c, desired,
-      jsonb_set(desired, '{fiscal_year_end_day}', '30'::jsonb)
+      jsonb_set(
+        jsonb_set(desired, '{fiscal_year_end_month}', '2'::jsonb),
+        '{fiscal_year_end_day}', '30'::jsonb
+      )
     );
-    RAISE EXCEPTION 'Invalid February year end was accepted';
+    RAISE EXCEPTION 'Invalid February 30 year end was accepted';
   EXCEPTION WHEN OTHERS THEN
     IF SQLERRM NOT ILIKE '%financial year end date%' THEN RAISE; END IF;
   END;

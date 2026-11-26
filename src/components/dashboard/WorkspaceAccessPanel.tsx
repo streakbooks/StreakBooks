@@ -42,8 +42,9 @@ export function WorkspaceAccessPanel() {
   });
 
   const companyPermissions = new Set(company?.permissions ?? []);
-  const canManageBilling =
+  const canViewBilling =
     companyPermissions.has("billing.view") || companyPermissions.has("billing.manage");
+  const canManageBilling = companyPermissions.has("billing.manage");
   const canOpenBooks = companyPermissions.has("accounting.view");
   const firms = firmsQuery.data ?? [];
   const platformAccess = Boolean(platformQuery.data);
@@ -62,16 +63,30 @@ export function WorkspaceAccessPanel() {
       <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <WorkspaceCard
           icon={<Building2 className="size-4" />}
-          title="Company owner or subscriber"
+          title="Company workspace"
           description={
             canManageBilling
               ? "Manage your organisation, plan, team and books. Switch companies from the top bar."
-              : "Open your invited organisation. Billing controls are available to its authorised owner."
+              : canViewBilling
+                ? "Review the organisation plan and billing history. The owner controls billing changes."
+                : "Open your invited organisation. Billing controls are available to its authorised owner."
           }
-          href={canManageBilling ? "/settings" : "/"}
-          search={canManageBilling ? { section: "subscription" } : undefined}
-          action={canManageBilling ? "Manage subscription" : "Open company books"}
-          status={canManageBilling ? "Company owner" : (company?.role ?? "Company member")}
+          href={canViewBilling ? "/settings" : "/"}
+          search={canViewBilling ? { section: "subscription" } : undefined}
+          action={
+            canManageBilling
+              ? "Manage subscription"
+              : canViewBilling
+                ? "View plan"
+                : "Open company books"
+          }
+          status={
+            canManageBilling
+              ? "Billing admin"
+              : canViewBilling
+                ? "Billing viewer"
+                : (company?.role ?? "Company member")
+          }
         />
         <WorkspaceCard
           icon={<Calculator className="size-4" />}

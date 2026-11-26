@@ -6,8 +6,11 @@ DO $$
 DECLARE
   c uuid := '10000000-0000-4000-8000-000000000011';
   other_c uuid := '10000000-0000-4000-8000-000000000012';
+  posted_c uuid := '10000000-0000-4000-8000-000000000013';
   expected jsonb := '{"name":"Company Identity Fixture","legal_name":"Fixture Legal Entity","country_code":"GB","base_currency":"GBP","fiscal_year_end_month":3,"fiscal_year_end_day":31,"timezone":"Europe/London","tax_regime":"vat","registration_number":"GB123456789","prices_include_tax":false}'::jsonb;
   desired jsonb := '{"name":"Updated Fixture","legal_name":"Updated Legal Entity","country_code":"IN","base_currency":"INR","fiscal_year_end_month":3,"fiscal_year_end_day":31,"timezone":"Asia/Kolkata","tax_regime":"gst","registration_number":"GSTIN123","prices_include_tax":true}'::jsonb;
+  posted_expected jsonb := '{"name":"Posted Ledger Fixture","legal_name":null,"country_code":"GB","base_currency":"GBP","fiscal_year_end_month":3,"fiscal_year_end_day":31,"timezone":"Europe/London","tax_regime":"vat","registration_number":null,"prices_include_tax":false}'::jsonb;
+  posted_desired jsonb := '{"name":"Posted Ledger Fixture","legal_name":null,"country_code":"GB","base_currency":"INR","fiscal_year_end_month":3,"fiscal_year_end_day":31,"timezone":"Europe/London","tax_regime":"vat","registration_number":null,"prices_include_tax":false}'::jsonb;
   audit_row public.audit_events%ROWTYPE;
   audit_before integer;
 BEGIN
@@ -27,6 +30,27 @@ BEGIN
      OR audit_row.details->'before' IS DISTINCT FROM expected
      OR audit_row.details->'after' IS DISTINCT FROM desired THEN
     RAISE EXCEPTION 'Organisation save did not record exact before/after audit evidence';
+  END IF;
+
+  -- Posted ledger history makes the base currency immutable, even through a
+  -- direct authenticated RPC call. The rejected save must leave audit history untouched.
+  BEGIN
+    PERFORM public.save_company_identity_and_tax(posted_c, posted_expected, posted_desired);
+    RAISE EXCEPTION 'Base currency changed after a journal was posted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%Base currency cannot change after journals have been posted%' THEN RAISE; END IF;
+  END;
+  IF (SELECT base_currency FROM public.companies WHERE id=posted_c) <> 'GBP'
+     OR EXISTS (SELECT 1 FROM public.audit_events
+                WHERE company_id=posted_c AND action='settings.organization_identity') THEN
+    RAISE EXCEPTION 'Rejected base-currency change modified identity or audit history';
+  END IF;
+
+  IF pg_catalog.strpos(
+    pg_catalog.pg_get_functiondef('public.post_journal(jsonb)'::regprocedure),
+    'WHERE id = _company_id FOR SHARE;'
+  ) = 0 THEN
+    RAISE EXCEPTION 'Journal posting does not lock the company currency during its read';
   END IF;
 
   -- Stale callers cannot overwrite another editor's settings or create audit noise.

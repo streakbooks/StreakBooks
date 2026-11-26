@@ -445,6 +445,10 @@ Connected the saved Sales payment-instructions setting to invoice, quote and rec
 
 The visual route inventory was stale for Advisor navigation and the new canonical Settings route. It is now synchronized at 30 sidebar modules and 206 routes; the guard passes and runtime verification remains explicitly false. These changes remain local to the feature worktree and need a fresh Actions run. Authenticated localhost review still needs non-production credentials. No migration, hosted database or deployment was changed.
 
+# Settings overhaul — base-currency ledger integrity, 26 November 2026
+
+Added migration `20261126210000_settings_base_currency_posting_guard.sql`: the identity RPC rejects a base-currency change after posted journals, while `post_journal` takes a share lock on the company row when reading base currency. This serializes ledger posting with the Settings RPC's existing update lock. Regression checks reject direct RPC attempts after posted history without changing identity/audit rows, and assert the installed posting function contains the lock. The temporary posted journal is deleted before later harness checks. The network-disabled PostgreSQL 17 workflow harness passed; migration identity/history checks passed at 383 unique versions and 8 tests; focused Settings tests passed (3 files / 12 tests). No hosted Supabase, deployment, authenticated staging or production was used. Batch 3 and the wider Settings work remain incomplete. The new commit requires fresh GitHub Actions validation.
+
 # Settings overhaul — tax treatment ownership, 26 November 2026
 
 Removed the duplicate “prices include tax” control and write path from Sales workflow defaults. The organisation Tax settings page is the single configuration owner, preventing independent saves from diverging between transaction previews and posting. The legacy workflow database column remains for compatibility but application code no longer reads or writes it. Focused tests passed (3 files / 31 tests), changed-file lint and full typecheck passed. No migration, hosted database or deployment was changed.

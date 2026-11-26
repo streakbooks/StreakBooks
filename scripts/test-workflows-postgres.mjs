@@ -126,7 +126,18 @@ try {
   sql(read("tests/integration/settings-legacy-cas.sql"));
   sql(read("tests/fixtures/workflows/settings-company-identity-baseline.sql"));
   sql(read("supabase/migrations/20261126150000_settings_company_identity_atomic.sql"));
+  sql(read("supabase/migrations/20261126210000_settings_base_currency_posting_guard.sql"));
+  sql(`INSERT INTO public.journals (
+    company_id, journal_number, journal_date, status, source_type, currency_code,
+    created_by, posted_at, posted_by
+  ) VALUES (
+    '10000000-0000-4000-8000-000000000013', 9001, current_date, 'posted', 'manual', 'GBP',
+    '00000000-0000-4000-8000-000000000001', now(), '00000000-0000-4000-8000-000000000001'
+  );`);
   sql(read("tests/integration/settings-company-identity-atomic.sql"));
+  sql(
+    "DELETE FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000013' AND journal_number=9001;",
+  );
   sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
   sql(
     fn(

@@ -1,3 +1,13 @@
+# Settings overhaul — 26 November 2026
+
+Phase 0 audit and Phase 1 clean-room benchmark/IA are documented on
+`feat/settings-module-overhaul`. See `docs/settings/TASKS.md` for the ordered
+remaining batches. Baseline `main` was clean at `207b7bc6`. No feature code,
+database changes, migrations, deployment or hosted Supabase actions were made.
+The configured Supabase project is `qugoaaizclvkzesptovm`; historical backup
+evidence in this file is for a different project, so it does not authorize a
+hosted migration here. Continue with the per-setting registry and coverage test.
+
 # Executing workers and observed alerts — 3 November 2026
 
 Delivery stays on main only; fetch before the next change. The preceding

@@ -5,7 +5,6 @@ export type WorkflowSettingsUpdateInput = {
   salesDefaultNotes?: string | null | undefined;
   salesPaymentInstructions?: string | null | undefined;
   salesQuoteValidityDays?: number | undefined;
-  salesPricesIncludeTax?: boolean | undefined;
   purchasesDefaultPaymentTermsDays?: number | undefined;
   purchasesDefaultNotes?: string | null | undefined;
   purchasesRequirePo?: boolean | undefined;
@@ -26,8 +25,6 @@ export function toWorkflowSettingsPatch(
     patch.sales_payment_instructions = input.salesPaymentInstructions;
   if (input.salesQuoteValidityDays !== undefined)
     patch.sales_quote_validity_days = input.salesQuoteValidityDays;
-  if (input.salesPricesIncludeTax !== undefined)
-    patch.sales_prices_include_tax = input.salesPricesIncludeTax;
   if (input.purchasesDefaultPaymentTermsDays !== undefined)
     patch.purchases_default_payment_terms_days = input.purchasesDefaultPaymentTermsDays;
   if (input.purchasesDefaultNotes !== undefined)

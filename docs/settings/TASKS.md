@@ -34,7 +34,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - Removed duplicated Sales and Purchases defaults from the Automation panel; module-owned values remain editable in their Sales/Purchases settings screens.
 - Changed `upsertWorkflowSettings` to validate and persist only submitted fields. Existing shared-row saves no longer overwrite unrelated module settings; first-save races retry as a partial update. Empty updates are rejected.
-- Added patch-mapping tests and a server-function regression proving an Accounting-only update leaves Sales/Purchases fields out of the database payload. Sales tax-treatment synchronization runs only when `salesPricesIncludeTax` is submitted.
+- Added patch-mapping tests and a server-function regression proving an Accounting-only update leaves Sales/Purchases fields out of the database payload. Tax-inclusive pricing is configured only through organisation Tax settings; the duplicate Sales workflow writer is removed so invoice previews and posting share one source.
 - This is a targeted ownership/data-loss safeguard, not completion of Batch 4. Sales/Purchase consumer-effect review and authenticated browser verification remain outstanding. Hosted Supabase was not accessed.
 
 ## 2026-11-26 Tax master audit continuation
@@ -113,3 +113,8 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Added behavior tests and promoted `sales.payment_instructions` in the capability registry and coverage matrix. The settings audit continues to redact its free text.
 - Focused tests passed (3 files / 10 tests); full suite passed (642 files / 4,378 tests), and TypeScript, full ESLint, production build, module/UI/navigation/lookup/migration checks and client bundle guard passed. All 97 deterministic Playwright UI fixtures and the isolated workflow PostgreSQL suite passed. `check:visual-coverage` exposed stale route inventory entries; the Advisor discovery routes and new canonical Settings route are now tracked with browser verification still explicitly false, and the check passes at 30 modules / 206 routes.
 - These changes are local on the feature worktree and need commit/push plus a fresh Actions run. Authenticated localhost review still needs non-production credentials. No migration, hosted database, deployment or production environment was changed.
+
+## 2026-11-26 Tax treatment setting ownership
+
+- Removed the duplicate tax-inclusive pricing switch and write path from Sales workflow defaults. The organisation Tax settings screen is now the single configuration owner, avoiding independent saves that could leave preview and posting treatment inconsistent.
+- Focused draft, patch, workflow-function and UI checks for this change remain pending. The legacy database column is retained for compatibility and is no longer read or written by application code. No migration or hosted database change was made.

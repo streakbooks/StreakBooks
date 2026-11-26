@@ -24,7 +24,6 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 export function SalesDefaultsForm({ companyId }: { companyId: string }) {
@@ -41,7 +40,6 @@ export function SalesDefaultsForm({ companyId }: { companyId: string }) {
   const [quoteDays, setQuoteDays] = useState("30");
   const [notes, setNotes] = useState("");
   const [instructions, setInstructions] = useState("");
-  const [inclusive, setInclusive] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [baseline, setBaseline] = useState("");
 
@@ -52,10 +50,9 @@ export function SalesDefaultsForm({ companyId }: { companyId: string }) {
     setQuoteDays(String(q.data.sales_quote_validity_days));
     setNotes(q.data.sales_default_notes ?? "");
     setInstructions(q.data.sales_payment_instructions ?? "");
-    setInclusive(q.data.sales_prices_include_tax);
   }, [q.data, dirty]);
 
-  const parsed = parseSalesDefaultsDraft({ terms, quoteDays, notes, instructions, inclusive });
+  const parsed = parseSalesDefaultsDraft({ terms, quoteDays, notes, instructions });
   const serverChanged = Boolean(dirty && q.data && JSON.stringify(q.data) !== baseline);
   const navigationBlocker = useBlocker({
     shouldBlockFn: () => dirty,
@@ -68,7 +65,6 @@ export function SalesDefaultsForm({ companyId }: { companyId: string }) {
     setQuoteDays(String(q.data.sales_quote_validity_days));
     setNotes(q.data.sales_default_notes ?? "");
     setInstructions(q.data.sales_payment_instructions ?? "");
-    setInclusive(q.data.sales_prices_include_tax);
     setBaseline(JSON.stringify(q.data));
     setDirty(false);
   };
@@ -132,18 +128,9 @@ export function SalesDefaultsForm({ companyId }: { companyId: string }) {
             }}
           />
         </div>
-        <div className="flex items-center justify-between gap-3">
-          <Label htmlFor={`${uiId}-inc-tax`}>Prices include tax by default</Label>
-          <Switch
-            id={`${uiId}-inc-tax`}
-            checked={inclusive}
-            disabled={!canEdit || mut.isPending}
-            onCheckedChange={(checked) => {
-              setInclusive(checked);
-              setDirty(true);
-            }}
-          />
-        </div>
+        <p className="text-sm text-muted-foreground">
+          Tax-inclusive pricing is managed in the organisation Tax settings.
+        </p>
         <div className="grid gap-1">
           <Label htmlFor={`${uiId}-sales-notes`}>Default invoice notes</Label>
           <Textarea

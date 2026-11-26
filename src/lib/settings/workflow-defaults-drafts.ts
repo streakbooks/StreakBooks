@@ -7,7 +7,6 @@ export type SalesDefaultsDraft = {
   quoteDays: string;
   notes: string;
   instructions: string;
-  inclusive: boolean;
 };
 
 export type PurchasesDefaultsDraft = {
@@ -39,7 +38,6 @@ export function parseSalesDefaultsDraft(draft: SalesDefaultsDraft) {
       salesQuoteValidityDays: quoteDays,
       salesDefaultNotes: draft.notes,
       salesPaymentInstructions: draft.instructions,
-      salesPricesIncludeTax: draft.inclusive,
     },
   };
 }

@@ -16,7 +16,6 @@ export type WorkflowSettings = {
   sales_default_notes: string | null;
   sales_payment_instructions: string | null;
   sales_quote_validity_days: number;
-  sales_prices_include_tax: boolean;
   purchases_default_payment_terms_days: number;
   purchases_default_notes: string | null;
   purchases_require_po: boolean;
@@ -29,7 +28,6 @@ const defaults: Omit<WorkflowSettings, "company_id"> = {
   sales_default_notes: null,
   sales_payment_instructions: null,
   sales_quote_validity_days: 30,
-  sales_prices_include_tax: false,
   purchases_default_payment_terms_days: 30,
   purchases_default_notes: null,
   purchases_require_po: false,
@@ -65,7 +63,6 @@ export const upsertWorkflowSettings = createServerFn({ method: "POST" })
       salesDefaultNotes?: string;
       salesPaymentInstructions?: string;
       salesQuoteValidityDays?: number;
-      salesPricesIncludeTax?: boolean;
       purchasesDefaultPaymentTermsDays?: number;
       purchasesDefaultNotes?: string;
       purchasesRequirePo?: boolean;
@@ -89,10 +86,6 @@ export const upsertWorkflowSettings = createServerFn({ method: "POST" })
         input.salesQuoteValidityDays === undefined
           ? undefined
           : parseWorkflowWholeDays(input.salesQuoteValidityDays, 30, 1, 365),
-      salesPricesIncludeTax:
-        input.salesPricesIncludeTax === undefined
-          ? undefined
-          : parseWorkflowBoolean(input.salesPricesIncludeTax, false),
       purchasesDefaultPaymentTermsDays:
         input.purchasesDefaultPaymentTermsDays === undefined
           ? undefined
@@ -149,32 +142,5 @@ export const upsertWorkflowSettings = createServerFn({ method: "POST" })
       }
     }
 
-    // Keep posting tax treatment in sync only when Sales settings changed it.
-    if (data.salesPricesIncludeTax !== undefined) {
-      const { data: taxRow } = await context.supabase
-        .from("company_tax_settings" as never)
-        .select("company_id" as never)
-        .eq("company_id" as never, data.companyId as never)
-        .maybeSingle();
-      if (taxRow) {
-        const { error: taxErr } = await context.supabase
-          .from("company_tax_settings" as never)
-          .update({
-            prices_include_tax: data.salesPricesIncludeTax,
-            updated_at: new Date().toISOString(),
-          } as never)
-          .eq("company_id" as never, data.companyId as never);
-        if (taxErr) console.warn("[workflow settings] tax sync:", taxErr.message);
-      } else {
-        const { error: taxErr } = await context.supabase
-          .from("company_tax_settings" as never)
-          .insert({
-            company_id: data.companyId,
-            prices_include_tax: data.salesPricesIncludeTax,
-            tax_regime: "none",
-          } as never);
-        if (taxErr) console.warn("[workflow settings] tax insert:", taxErr.message);
-      }
-    }
     return { ok: true };
   });

@@ -19,13 +19,11 @@ describe("workflow settings partial updates", () => {
       toWorkflowSettingsPatch({
         salesDefaultPaymentTermsDays: 0,
         salesDefaultNotes: "",
-        salesPricesIncludeTax: false,
         purchasesRequirePo: false,
       }),
     ).toEqual({
       sales_default_payment_terms_days: 0,
       sales_default_notes: "",
-      sales_prices_include_tax: false,
       purchases_require_po: false,
     });
   });

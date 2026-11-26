@@ -1,0 +1,167 @@
+# Settings module audit
+
+**Audit date:** 2026-11-26  
+**Baseline:** `main` at `207b7bc66a3044d5b9ebea8329ef267980ae4324`  
+**Scope:** inventory and read-only review before feature changes. This records the current repository state; it is not evidence of hosted Supabase schema parity or production verification.
+
+## Executive summary
+
+Settings is already a substantial, authenticated module with a central settings centre, a typed category registry, module-specific settings pages, server functions and database-backed permission checks. The current baseline does **not** satisfy the requested destination model completely: the central deep links use `?section=` and in-place overlays use `settingsPanel`, rather than canonical nested page routes; the centre has a two-level breadcrumb for category pages, but no consistently rendered breadcrumb for every embedded or in-place sub-page. Several categories are navigation shells or partial configuration, not end-to-end settings. The registry classifies categories, but it is not yet the per-setting source of truth required for auditing UI, persistence, validation, permission, audit and consumer wiring together.
+
+No feature code was changed during this Phase 0 audit.
+
+## 1. Routes and navigation
+
+### Existing route surfaces
+
+| Surface | Route(s) | Implementation / notes |
+|---|---|---|
+| Central Settings | `/settings` | `src/routes/_authenticated/settings.tsx` → `src/screens/settings.tsx`; uses authenticated app shell, route search validation and active company. |
+| Sales settings | `/sales/settings` | `src/routes/_authenticated/sales/settings.tsx` → `SalesDefaultsForm`, module links, `ListWorkspace`. |
+| Purchase settings | `/purchases/settings` | `src/routes/_authenticated/purchases/settings.tsx` → `PurchasesDefaultsForm`, module links, `ListWorkspace`. |
+| Contacts settings | `/contacts/settings` | `src/routes/_authenticated/contacts/settings.tsx` → `ContactSettingsContent`. |
+| Payroll settings | `/payroll/settings` | `src/routes/_authenticated/payroll/settings.tsx` → `src/screens/payroll/settings.tsx`. |
+| Messaging settings | `/messages/settings` | `src/routes/_authenticated/messages/settings.tsx` → organisation, notification, blocked-user and analytics panels. |
+| Legacy / focused settings destinations | `/documents/branding`, `/sales/reminders`, `/banking/rules`, `/banking/feeds`, `/banking/import`, `/tax`, `/accounting`, and several module settings routes | These are existing module or settings screens and are referenced by `src/lib/settings/module-navigation.ts`; they should remain working during any routing redesign. |
+| Other module-local settings | CRM, HR, expense management, property management, integrations, portals, etc. | Route presence varies. This audit does not treat a registry link as proof a destination exists or is fully implemented; Phase 1/implementation must validate each destination against the generated route tree and screen. |
+
+The real module registry is `src/lib/modules/registry.ts`, not a manually assumed product list. Its authenticated/sidebar modules include Dashboard, Banking, Point of Sale, Sales, Purchases, Expenses, CRM, Property Management, HR, Contacts, Products & Services, Files, Accounting, Budgets, Fixed Assets, Payroll, Reports, Tax, Find an advisor, Accountant, Firm, Advisors admin, Advisor portal, Action Center, App Store, Developer, Messages, AI Assistant, Settings and Help. Non-sidebar registered surfaces include Projects, Platform, Profile, Onboarding and Auth. The registry currently marks modules with `premiumStatus`; that is not a Settings completion status.
+
+### Current navigation model and risks
+
+- `/settings?section=<category>` is the central category URL. `src/lib/settings/search.ts` validates it and `src/lib/settings/registry.ts` defines category metadata.
+- Contextual module settings open in place through `settingsPanel` and bounded `settingsTrail`, implemented by `src/lib/settings/panels.ts` and `src/components/settings/InPlaceSettingsPanel.tsx`. `src/lib/settings/module-navigation.ts` contains the allowlisted destination mapping.
+- The category page renders clickable `Settings` → current category breadcrumb in `src/screens/settings.tsx`. The overview has no breadcrumb; the sidebar is absent from the overview. In-place panels and several module-local settings surfaces use separate framing/breadcrumb implementations. This falls short of “breadcrumb everywhere” and does not implement `/settings/{group}/{page}`.
+- The app module registry declares `/settings` and the current `main` route file points to `SettingsPage`; no direct evidence in the inspected route shows a current global Settings-to-other-module redirect. Navigation contracts still need to be tested from sidebar, top bar and profile/user menus.
+- `MODULE_SETTINGS_LINKS` includes paths such as `/crm/settings`, `/expense-management/settings`, `/imports`, and `/banking/feeds`; route existence and fallback behaviour must be reconciled mechanically before relying on them. Unknown settings categories fail closed to `overview`, which can make an invalid deep link look like a successful redirect unless surfaced to the user.
+- Duplicate ownership is intentional in some cases (central shortcut plus module-local page), but it is not documented consistently. Sales/Purchases defaults have their own routes while central categories also link to them; branding, numbering and reminders are separate screens. Phase 1 should distinguish canonical edit screens from shortcuts.
+
+## 2. Current component and service map
+
+### Central components
+
+`src/screens/settings.tsx` owns the central page composition and legacy organisation, locale, branding, document sequence, FX, audit and demo-reset forms. Shared components under `src/components/settings/` include:
+
+- navigation and discovery: `SettingsCategoryHub`, `SettingsNav`, `SettingsMobileNav`, `SettingsCommandPalette`, `ModuleSettingsLinks`, `InPlaceSettingsPanel`;
+- status and governance: `SettingsOverviewPanel`, `SettingsFeatureManager`, `SettingsUnavailablePanel`, `SettingsGovernanceExtras`, `IntegrationHealthBadge`;
+- editing: `SettingsCategoryConfigPanel`, `SettingsSaveBar`, `SettingsPanelFrame`, `SettingsSurface`, `SettingsAccountingLocksPanel`, `SettingsDimensionsPanel`, `UsersAccessPanel`;
+- module-specific forms: `SalesDefaultsForm`, `PurchasesDefaultsForm`, `ContactSettingsContent`, `ReminderSettingsContent`, `BankRulesContent`, `BankFeedsContent`, `BankImportContent`, `SettingsCommunicationsPanel`.
+
+### Server functions and related services
+
+| Capability | Code entry point(s) | Persistence / enforcement observed |
+|---|---|---|
+| Company identity and tax basics | `src/lib/company.functions.ts` (`getCompanyDetails`, `updateCompany`) | Company row; server authorization; database policies. |
+| Locale, branding, currencies, sequences, exchange rates, audit, demo reset | `src/lib/settings/org-settings.functions.ts` | `companies`, `company_branding`, `company_currencies`, `exchange_rates`, `document_sequences`, audit events and dedicated RPCs; optimistic concurrency on several legacy writes. |
+| Typed category settings, feature flags, lock policy, audit, opaque secrets | `src/lib/settings/settings-centre.functions.ts` | `organisation_config`, `organisation_features`, `organisation_lock_policy`, `settings_change_log`, `organisation_secrets`; Zod/server validation and authenticated company permission checks. |
+| Sales/purchase workflow defaults | `src/lib/settings/workflow-settings.functions.ts` | `company_workflow_settings`; corresponding sales/purchase consumers exist. |
+| User UI preferences | `src/lib/settings/ui-preferences.functions.ts` | `user_ui_preferences`; user-scoped preferences. |
+| Member/access and invitations | `src/lib/settings/member-access.functions.ts`, legacy org settings functions | Membership/access/invitation records and permission checks; delivery status is not equivalent to email delivery. |
+| Dimensions | `src/lib/settings/dimensions.functions.ts` | `tracking_categories`, `tracking_options` and document assignment records; account permissions and server validation. |
+| Integration status | `src/lib/settings/integration-health.functions.ts` | Status/configuration reads; a healthy configuration is not proof of external delivery. |
+| Payroll, messaging, CRM, HR, PM and expense preferences | module-specific functions under `src/lib/{payroll,messaging,crm,hr,property-management,expenses}/` | Module-owned tables and RLS/RPCs; each needs its own settings consumer proof and coverage row. |
+
+### Core Settings tables and policy shape
+
+The existing foundation migration is `supabase/migrations/20261022125237_settings_centre_foundation.sql` (the stale schema document names a different timestamp). It creates the typed configuration, feature, lock, change-log and secret-store tables and authenticated RPCs. The migration enables RLS. Organisation configuration/features are member-readable with direct writes denied; mutation is through guarded RPCs. `organisation_secrets` is not readable as secret material; only metadata/digest operations are exposed. `settings-centre.functions.ts` validates company scope, permissions and category documents before calling the RPCs. Accounting locks have subsequent enforcement/CAS migrations, including `20261023170000_ledger_write_path_hardening.sql` and `20261105041953_settings_lock_policy_cas.sql`.
+
+Other settings are persisted in existing business/module tables, not one unified Settings table. Relevant examples include `companies`, `company_branding`, `document_sequences`, `company_currencies`, `exchange_rates`, `company_workflow_settings`, `tracking_categories`, `company_invitations`, `user_ui_preferences`, `payroll_settings`, `messaging_settings`, `crm_settings`, `hr_settings`, `pm_settings`, `expense_management_settings`, portal tables and tax configuration. The owning migration defines the exact policy/RPC shape for each; there is no single global policy that proves all of them safe. Security/RLS reviews must follow each actual table and callable function.
+
+## 3. Functional audit and status
+
+Status definitions: **IMPLEMENTED** means persistence, server-side validation/authorization, audit (where relevant), consumer and test evidence were all found. **PARTIAL** means at least one layer is present but a required layer or proof is missing. **PLACEHOLDER** means the visible configuration is not connected to a working outcome or is explicitly unavailable. **MISSING** means no supported setting surface was found. Category-level “live” metadata is not evidence that every field is implemented.
+
+| Setting group / fields found | UI and persistence | Defaults / validation / permission / audit | Consumer and test evidence | Audit status |
+|---|---|---|---|---|
+| Organisation identity: company name, legal name, country, base currency, timezone, fiscal year end, tax regime, registration number, prices include tax | Central legacy form; company update service | Form checks name/length and fiscal date bounds; server/database checks and settings permission; audit path exists through company update | Consumer includes invoice/report identity, locale/currency and accounting period logic; targeted integration coverage is not mapped for every field | **PARTIAL** — per-field consumer and before/after audit proof needed. |
+| Locale / document presentation: locale, date format, invoice footer, theme colour; branding: trading name, letterhead, invoice email/phone, logo URL | Central forms and `/documents/branding`; `company_branding` and company locale columns | Email/colour/https URL and length validation; guarded saves/CAS in later migration; company settings permission | Invoice rendering consumes branding; tests cover validation/CAS but full render behaviour is not proven for each field | **PARTIAL**. |
+| Document numbering | Central document sequence panel and module destinations | Preview and sequence validation; sequence allocation RPC is used on invoice and bill creation | Dedicated helper/legacy tests exist; runtime allocation covered in sales/purchases paths | **IMPLEMENTED for supported invoice/bill flows; PARTIAL across all document types.** |
+| Accounting preferences: reporting basis, duplicate/control-account/bank-posting/backdate warnings, auto-apply credits, account-code padding | Typed `accounting` config schema/editor | Defaults in `registry.ts`; server Zod validation, CAS/version, `company.settings.edit`; settings change-log RPC | Reporting basis is consumed by report service; warning fields and remaining controls require consumer proof. Unit tests cover schemas/helpers, not all effects | **PARTIAL**. |
+| Sales typed config: late fee, reminder timing, partial payment, write-off threshold, retainers | Typed schema/editor | Defaults in registry; validation on server; write permission and settings log | Reminder delivery and late-fee generation are explicitly unavailable in docs; other fields need consumer map | **PARTIAL** (some fields are not actionable; UI must not imply enabled delivery). |
+| Purchase config: supplier summary, inbox, approval threshold, duplicate detection, three-way match, 1099 | Typed schema/editor plus purchase defaults form | Defaults and server schema; company settings permission, versioned audit | Some are wired to purchase workflow; inbox/1099 and each policy require proving a concrete transaction effect | **PARTIAL**. |
+| Banking: rule automation, confidence threshold, tolerance, import format | Typed config plus bank rule/feed/import screens | Schema bounds; banking permission in owning module; settings log applies only to typed document | Rule/import screens have separate implementations; no blanket proof that these four typed fields drive them | **PARTIAL**. |
+| Dimensions: classes/locations/projects and custom dimension CRUD | Central dimension panel and accounting/module forms | `accounts.manage`; server validation; tables/RPCs and audit paths | New Bill and reports have some integration; dimension allocation coverage exists but reporting is document-total based and not full journal-line allocation | **PARTIAL**. |
+| Feature Manager: enable/disable optional features | Feature list with lifecycle states and dependency checks | RPC permission checks; fails closed when unavailable; server-side dependency guards and audit | Consumers include New Bill dimensions/billable fields; unit/integration tests cover dependency/disable guards | **IMPLEMENTED for currently wired feature keys; PARTIAL as a catalogue-wide contract.** |
+| Tax / rates / codes / mappings / returns | `/tax` and central links; separate tax tables/functions | Tax-specific validation and permissions; setting centre category is not the owner of all tax forms | Tax rates/codes used by tax calculations, but statutory filings vary by country and are not complete | **PARTIAL**. |
+| Product inventory and valuation | Typed `products` fields and product module | Defaults/schema; category editor and server permission | Stock module has independent inventory policies; no per-field link from typed settings to inventory valuation was established in this audit | **PARTIAL; possible duplicate or disconnected sources of truth.** |
+| Reports: default basis/comparison | Typed editor | Defaults/schema/permission and change log | Basis is read by reporting; comparison consumer and user/org scope need explicit proof | **PARTIAL**. |
+| Contacts / CRM defaults | `/contacts/settings`, customer/supplier forms, CRM settings | contact/CRM services validate and protect writes; permissions vary by operation | Customer and supplier workflows consume their specific defaults; cross-page category currently combines CRM and contacts | **PARTIAL**. |
+| Expenses / projects / assets | Expense Management, `/projects`, `/fixed-assets`, typed category shortcuts | Module-specific forms/policies; central category has no typed schema for several capabilities | Some module settings exist; statutory, scheduling or transaction effects vary; timesheets remain absent | **PARTIAL**; projects/settings source and the hidden sidebar decision need reconciliation. |
+| Automation / AI: AI mode, voice commands, workflow defaults | Typed editor, workflow and voice panels | AI mode enum defaults to off; server setting permission; workflow validation including payment terms | Workflow defaults have direct sales/purchase consumers; AI/voice actions have separate gating and must remain fail-closed without an authorised executor | **PARTIAL**. |
+| Users/security: owner MFA flag, idle-session minutes, support consent; memberships and invitations | User/access panel, profile/session settings | Membership/admin RPC checks; typed fields validate numbers; support access separately governed | The setting values alone do not enforce MFA/SSO/session expiry globally; invitations may be manually shared when mail is unavailable | **PARTIAL**; do not present unenforced security preferences as enforced policy. |
+| Integrations/API: connection status, secrets metadata, App Store, Developer | Central overview/status plus separate integration surfaces | Opaque secret RPC; no secret retrieval to client; integration-specific authorization | Configuration status does not prove live delivery; several providers remain disconnected/unavailable | **PARTIAL / PLACEHOLDER per provider**. |
+| Audit/data: settings history, organisation audit events, CSV export | Central paginated audit UI and settings log | `audit.view`; append-oriented RPC/table; export reflects visible page | CSV helper and tests exist; no hash chain, retention controls or complete per-setting before/after coverage | **PARTIAL**. |
+| Notifications/communications | Dedicated central panel and communications service | Settings schema and permission; delivery/provider controls live on server | Outbox, provider health and digest code exist; worker/provider acceptance is an external operational dependency | **PARTIAL** (availability must remain tied to verified delivery). |
+| Customer/supplier portals | Portal settings panel | Permission and portal-specific data access | Existing portal endpoints exist, but specific toggles and effective behavior require per-control proof | **PARTIAL**. |
+| Payroll settings | `/payroll/settings` and `payroll_settings` | Payroll-specific permission, validation, RPCs | Basic global payroll only; statutory calculations remain manual by explicit module description | **PARTIAL**. |
+| Subscription, plan, seats, trial, promo and payment | `SubscriptionPanel` within Settings | Subscription service and entitlement/billing permissions | Billing integrations have module-specific status, and the central plan screen is not proof of payment provider success | **PARTIAL**. |
+| Demo reset/developer | Demo-only central panel | `is_demo` and `demo.reset` gates plus server-side guard | Reset path uses seed/posting services; tests live with demo services | **IMPLEMENTED for guarded reset; diagnostic scope PARTIAL.** |
+| Personal preferences: navigation density/order, locale or user view preferences | Preferences services and workspace UI | User-scoped rows; individual validation | Preferences are consumed by workspace layouts; not gathered into a coherent personal-settings page | **PARTIAL**. |
+
+### Existing automated coverage inventory
+
+Settings-focused tests found include registry/category/search/panels/navigation, config validation and draft state, feature/dependency engine, integration health, dimension helpers, audit export, currency safety, workflow defaults, accounting preferences, foreign-currency selection, UI presentation and concurrency/SQL integration specs. The current checked-in test files are broader than the historical `05-TEST-REPORT.md` (which is dated 2026-10-22 and reports 193 tests). The current report must be regenerated from actual commands before a delivery claim. Existing SQL fixtures are isolated tests; they are not hosted Supabase evidence. No current proof was found for a complete per-setting UI → persistence → audit → consumer coverage contract.
+
+## 4. UX and accessibility findings
+
+### Strengths observed
+
+- The route is under `_authenticated` and renders inside the existing StreakBooks shell.
+- Settings categories are grouped and searchable, use deep links, and have a mobile section selector.
+- Overview uses loading skeletons, query error states, refresh, warnings and honest integration status labels.
+- Typed configuration forms guard internal and unload navigation when dirty, expose discard/save states, validate before save and handle optimistic-concurrency conflicts by requiring a refetch.
+- Module settings preserve source context with in-place panels; sales/purchases settings are outside their horizontal workspace tab scroller.
+- Most controls use shared UI primitives and visible names; nav indicates active page with `aria-current`.
+
+### Risks and gaps to carry into redesign
+
+- Breadcrumb coverage is inconsistent and central hub/category URLs are query-state rather than nested canonical paths. There is no uniform “Back to previous module” affordance.
+- The central `src/screens/settings.tsx` remains a large file mixing legacy forms, data loading and composition; it makes changes, review and route-level splitting harder.
+- The hub has the category cards and search but does not yet offer a unified setting-level search index; category search can be mistaken for field search.
+- The desktop side navigation is sticky with an internal scroller; verify keyboard scrolling, focus visibility, mobile selector focus and page scroll restoration on real browser sizes.
+- Save/dirty handling is implemented in more than one form family. Audit all exit paths, including switching active company, browser back, closing an overlay and switching a nested setting.
+- Several module pages use different headers and breadcrumb styles. Some categories say “live” despite having no typed editor or only a route link. Status copy should describe supported scope.
+- Some empty and loading states exist, but permission denied, entitlements, unsupported countries, and unavailable backend/provider states are not uniform.
+- No completed axe run or authenticated visual/responsive browser pass was identified in the current repository evidence. Contrast and focus are not certified here.
+- Expensive sections are fetched selectively in the central page, but the route still imports many settings-related modules; bundle impact should be measured after redesign, not inferred.
+
+## 5. Module-to-settings discovery
+
+The canonical module IDs, labels, routes, subnavigation and sidebar visibility are defined in `src/lib/modules/registry.ts`. For this audit the current registered modules are grouped as follows:
+
+| Product area | Module IDs | Settings expected / found |
+|---|---|---|
+| Workspace | `dashboard`, `settings`, `profile`, `onboarding`, `auth` | Company setup, personal preferences, access/session, first-run defaults; central settings and profile are separate today. |
+| Money | `banking`, `pos`, `sales`, `purchases`, `expense-management` | Banking feeds/rules/import, register and tax configuration, invoice/quote/payment defaults, bill/vendor/approval defaults, reimbursement policy. |
+| Records | `crm`, `property-management`, `hr`, `contacts`, `products-services`, `files` | Pipelines, property policies, workforce settings, contact defaults, item/inventory settings, file/retention policies. |
+| Accounting | `accounting`, `budgets`, `projects`, `fixed-assets`, `payroll`, `reports`, `tax` | Periods and journals, budget defaults, tracking/time, depreciation, payroll schedules/accounts, report defaults, tax codes/registration. |
+| Practice/advisory | `advisors-marketplace`, `accountant`, `firm`, `advisors-admin`, `advisors-portal` | Client access, firm tiers/roles, service catalogue, appointments, public checkout, client portal and practice-owned settings. These are distinct from organisation Settings. |
+| Tools | `action-center`, `app-store`, `developer`, `messages`, `ai-assistant`, `platform` | Alert preferences, marketplace/provider connections, APIs/webhooks, messaging, AI controls, platform-owner controls. Platform settings must be isolated from tenant settings. |
+| Help | `help` | Help preferences / support destinations; no business-configuration controls expected. |
+
+This is an expected-settings map, not a claim every row is implemented. The requested final coverage matrix must retain `MISSING` rows when a setting is not yet supported rather than add decorative controls.
+
+## 6. Repository and database safety state
+
+- At audit start, local `main` was clean and matched `origin/main` at `207b7bc66a3044d5b9ebea8329ef267980ae4324`.
+- Existing side branches include `codex/advisor-public-discovery`, `codex/advisors-shell-navigation`, and `feat/owner-access-and-sales`. The latter is divergent and stale relative to current Settings; its work is not assumed to be compatible. GitHub search for open PRs returned no results, including an unfiltered open-PR search at audit time.
+- `supabase/config.toml` identifies project `qugoaaizclvkzesptovm`. `docs/HANDOFF.md` contains historic backup and applied-migration evidence for a different project ID (`ipxflpzfcqwtenodbxwc`). That evidence does **not** satisfy the pasted command's backup prerequisite for the configured project. Hosted migrations are therefore not authorized by the available evidence. Future schema changes must be additive, include rollback SQL, be exercised in isolated local/staging Postgres, and remain `READY-TO-APPLY` until backup evidence for the exact target is recorded.
+- Migration history notes elsewhere in `docs/HANDOFF.md` report divergence and warn against blind migration sync. No hosted migration, deployment or production verification was performed for this audit.
+
+## 7. Defect register for Phase 0
+
+| Severity | Finding | Evidence | Required resolution |
+|---|---|---|---|
+| High | No unified per-setting registry/audit contract proves every visible setting has UI, persistence, validation, permission, audit and a real consumer. | Typed `CATEGORY_SCHEMAS` in `src/lib/settings/registry.ts` covers a subset; many fields remain in legacy/module-owned forms. | Phase 2 coverage model and phased module mapping; hide or clearly mark fields without effects. |
+| High | Breadcrumbs are not present consistently on every settings surface, especially hub and embedded/in-place/module pages. | Conditional breadcrumb only for non-overview category in `src/screens/settings.tsx`; standalone pages have inconsistent patterns. | Phase 3 routing/page-header shell and navigation tests. |
+| High | `availability: "live"` is assigned at category level even where no category schema/editor exists; unsupported categories can render a generic linked-module message. | `src/lib/settings/registry.ts`, `src/components/settings/SettingsCategoryConfigPanel.tsx`. | Align labels with individual capabilities and explicit unavailable/partial states. |
+| Medium | Deep links use query category and overlay state, not nested canonical routes. | `src/lib/settings/search.ts`, `panels.ts`, route tree. | Add canonical nested routes and preserve legacy URL redirects with route tests. |
+| Medium | A large central screen owns many unrelated settings forms and data paths. | `src/screens/settings.tsx`. | Split into reusable screens by group without changing persistence behavior. |
+| Medium | The Settings centre category search is not a field-level, module-wide search index. | `SettingsNav` searches `categoryMeta`; registry is category-oriented. | Build the search index from registered setting metadata and permission-aware results. |
+| Medium | Duplicate settings sources exist across central typed config, existing module tables, and module routes without a complete ownership map. | Product inventory typed config versus module settings, workflow and other module-owned tables. | Declare one source of truth per setting and prove consumers before adding new fields. |
+| Medium | Existing docs report old suite totals and path/timestamp mismatches. | `05-TEST-REPORT.md`, `03-SCHEMA-SERVICES.md`, migration tree. | Replace stale reports with command output and actual migration IDs at each batch. |
+| Medium | Full accessibility, mobile and authenticated settings E2E evidence is incomplete. | Historical report calls out pending axe and browser work; no complete current report found. | Run deterministic accessibility and browser tests per acceptance, label synthetic versus authenticated. |
+
+## Phase 0 outcome
+
+Audit inventory is complete enough to proceed to Phase 1 clean-room benchmark and design. Implementation must first validate links against the actual route tree, make availability honest, and formalize setting ownership so the redesign does not create competing persisted values. No database change is recommended based on the audit alone.

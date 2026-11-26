@@ -217,6 +217,22 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/settings/ui-preferences.functions.test.ts proves default application and saved user preference precedence",
   },
   {
+    key: "purchases.require_po",
+    label: "Prefer purchase orders before bills",
+    moduleId: "purchases",
+    route: "/settings/purchases/overview",
+    scope: "company",
+    defaultValue: "false",
+    validation: "Server parses the submitted value as a boolean before updating workflow settings",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "company_workflow_settings.purchases_require_po, updated only when submitted",
+    audit: "Same-transaction workflow settings trigger records this boolean in settings_change_log",
+    consumer:
+      "New bill workspace displays a clear purchase-order preference notice when enabled; independent bills remain allowed by design",
+    test: "src/lib/purchases/purchase-order-preference.test.ts, src/lib/settings/workflow-settings.functions.test.ts and tests/integration/workflow-settings-audit.sql",
+  },
+  {
     key: "purchases.default_payment_terms",
     label: "Default purchase bill payment terms",
     moduleId: "purchases",
@@ -323,7 +339,7 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     missingEvidence: [
       "consumer tests for bill inbox, approval threshold, duplicate detection, three-way match policy and contractor tracking",
     ],
-    note: "Default supplier summary, bill terms and bill notes have display or transaction consumers; unsupported purchase policies stay read-only.",
+    note: "Supplier summary, bill terms, bill notes and the purchase-order preference have field-level consumers; unsupported purchase policies stay read-only.",
   },
   {
     key: "banking.typed_configuration",
@@ -379,7 +395,7 @@ const completeKeys = new Set(SETTING_CAPABILITY_REGISTRY.map((setting) => settin
 /**
  * Per-field coverage for every persisted typed setting. This intentionally
  * marks fields partial until their consumer effects and field-level tests are
- * proven; the three capabilities above are the only complete controls.
+ * proven; capabilities above are complete only when their cross-layer contracts are evidenced.
  */
 export const SETTING_FIELD_COVERAGE: readonly SettingFieldCoverage[] = Object.entries(
   CATEGORY_SCHEMAS,

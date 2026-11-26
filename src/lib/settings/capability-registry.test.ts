@@ -66,6 +66,13 @@ describe("Settings capability coverage registry", () => {
       )?.status,
     ).toBe("complete");
     expect(
+      SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "purchases.require_po"),
+    ).toMatchObject({
+      moduleId: "purchases",
+      permission: "company.settings.edit",
+      persistence: expect.stringContaining("purchases_require_po"),
+    });
+    expect(
       SETTING_FIELD_COVERAGE.find((setting) => setting.key === "reports.default_comparison")
         ?.status,
     ).toBe("complete");

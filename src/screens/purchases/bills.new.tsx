@@ -36,6 +36,7 @@ import {
 } from "@/lib/settings/dimensions.functions";
 import { getOrgExtendedSettings } from "@/lib/settings/org-settings.functions";
 import { getWorkflowSettings } from "@/lib/settings/workflow-settings.functions";
+import { purchaseOrderPreferenceNotice } from "@/lib/purchases/purchase-order-preference";
 import { listOrganisationFeatures } from "@/lib/settings/settings-centre.functions";
 import {
   getBillWorkspacePrefs,
@@ -1631,11 +1632,10 @@ export function NewBill({
         }}
         header={headerBar}
       >
-        {settingsQ.data?.purchases_require_po ? (
+        {purchaseOrderPreferenceNotice(Boolean(settingsQ.data?.purchases_require_po)) ? (
           <Alert className="mb-4">
             <AlertDescription>
-              Organisation policy prefers a purchase order before bills. Link a PO from Orders when
-              converting, or continue if this bill is independent.
+              {purchaseOrderPreferenceNotice(Boolean(settingsQ.data?.purchases_require_po))}
             </AlertDescription>
           </Alert>
         ) : null}

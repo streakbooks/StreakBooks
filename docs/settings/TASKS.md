@@ -4,9 +4,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - [x] Phase 0 — audit current routes, UI, persistence, consumers, permissions, tests and module registry (`audit.md`). No feature code changed in this phase.
 - [x] Phase 1 — official public benchmark, clean-room IA, decision and originality record (`benchmark.md`, `ia-design.md`, `docs/decisions/011-settings-information-architecture.md`, `docs/compliance/originality-log.md`).
-- [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. The three evidence-backed capabilities are complete; remaining typed fields stay partial and are read-only.
+- [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. Evidence-backed capabilities are registered individually; remaining typed fields stay partial and are read-only.
 - [ ] Phase 3 / Batch 1 — canonical nested routes, universal breadcrumbs, legacy route compatibility and validated return-to-module are implemented. Authenticated browser E2E is pending because this workspace has no `E2E_EMAIL`/`E2E_PASSWORD` account, and the local `/settings` browser visit showed an application error.
-- [ ] Phase 3 / Batch 2 — organisation identity and tax summary use a transactional, stale-snapshot-guarded RPC with before/after audit; its isolated SQL regression passes CI. Personal account settings remain partial (Profile/security exist; profile breadcrumbs and a complete preference surface are in progress).
+- [ ] Phase 3 / Batch 2 — organisation identity and tax summary use a transactional, stale-snapshot-guarded RPC with before/after audit; its isolated SQL regression passes CI. Profile has its breadcrumb trail; account-wide preference scope and custom palette sync remain partial.
 - [ ] Phase 3 / Batch 3 — accounting and tax settings; prove safety and effective-date/audit requirements. Currency change is now rejected by the database after a posted journal, and posting locks the company currency read; other accounting/tax coverage and authenticated review remain open.
 - [ ] Phase 3 / Batch 4 — sales and purchases settings; prove document workflow effects.
 - [ ] Phase 3 / Batch 5 — banking, inventory, assets, expenses, payroll and projects; preserve existing module owners.
@@ -17,7 +17,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - [x] Final documentation artifacts — `REVIEW_GUIDE.md`, `coverage-matrix.md`, refreshed `05-TEST-REPORT.md`, and `defect-register.md` are present. The defect register explicitly states that its review is self-review, not an independent external audit.
 - [x] Validation remediation — formatted the existing linted TS/TSX/MJS tree without weakening lint rules; aligned the browsing inventory guard with public Advisor storefront routes as well as authenticated modules. Full lint and browsing inventory checks now pass locally.
 - [ ] Final deliverables — complete all remaining implementation batches and their verification; then update this task list and final report.
-- [ ] Delivery — implementation commits are on `feat/settings-module-overhaul`; draft PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) is open. Latest published commit `52aadac1953ccfa7e24955f9970691f2cb14aa4a` has Actions run [#45860832213](https://github.com/streakbooks/StreakBooks/actions/runs/45860832213) in progress. Merge remains pending because Settings batches 3–9 and authenticated browser verification are incomplete. Hosted Supabase remains untouched; do not run blind migration sync.
+- [ ] Delivery — implementation commits are on `feat/settings-module-overhaul`; draft PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) is open. Latest published commit `e35eff43f1b1e38aa1f42444c0b42ac495baed38` has Actions run [#45867746347](https://github.com/streakbooks/StreakBooks/actions/runs/45867746347) in progress. Merge remains pending because Settings batches 3–9 and authenticated browser verification are incomplete. Hosted Supabase remains untouched; do not run blind migration sync.
 
 ## 2026-11-26 continuation
 
@@ -142,3 +142,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - The isolated identity regression proves a permitted pre-posting currency change, rejection after posted history, no identity/audit mutation on rejection, and the posting lock in the installed function. The temporary posted journal is created only during the relevant fixture window so it cannot affect unrelated ledger-count assertions.
 - `npm.cmd run test:workflows:postgres` passed in a network-disabled PostgreSQL 17 container. `npm.cmd run check:migrations` passed (383 unique versions; 8 history tests), and focused Settings tests passed (3 files / 12 tests). Hosted Supabase was not accessed.
 - This is a financial-integrity slice of Batch 3; Accounting/Tax and the overall Settings overhaul remain partial. Full validation, new-head Actions, authenticated review, merge and deployment are still pending.
+
+## 2026-11-26 Purchase-order preference behavior
+
+- Added a focused consumer for the existing `purchases_require_po` preference. The bill workspace now renders the guidance through a testable helper; the copy explicitly keeps independent bills allowed, matching the preference’s intended, non-blocking behavior.
+- Added permission/persistence and enabled/disabled consumer tests, then registered `purchases.require_po` only after confirming that the workflow audit trigger records its boolean in the same transaction. Updated the capability matrix and corrected stale Phase 2/Batch 2 descriptions.
+- Focused tests passed (3 files / 13 tests) and changed-file ESLint passed. No schema change was required. This completes one preference slice only; Batch 4 and the overall Settings work remain partial.

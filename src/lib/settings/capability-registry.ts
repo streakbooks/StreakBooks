@@ -184,6 +184,23 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/sales/document-defaults.test.ts, src/lib/settings/workflow-settings.functions.test.ts, and tests/integration/workflow-settings-audit.sql",
   },
   {
+    key: "purchases.show_supplier_summary_default",
+    label: "Show supplier summary by default",
+    moduleId: "purchases",
+    route: "/settings/purchases/overview",
+    scope: "company",
+    defaultValue: "Show the summary when a user has no saved bill workspace preference",
+    validation:
+      "Purchases settings schema requires a boolean; malformed stored data keeps the existing open default",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "organisation_config.purchases through the version-checked settings RPC",
+    audit: "settings_change_log stores previous and resulting category documents",
+    consumer:
+      "New bill workspaces use this organisation default until a user saves their own sidebar preference",
+    test: "src/lib/settings/ui-preferences.functions.test.ts proves default application and saved user preference precedence",
+  },
+  {
     key: "purchases.default_payment_terms",
     label: "Default purchase bill payment terms",
     moduleId: "purchases",
@@ -287,8 +304,10 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "purchases",
     status: "partial",
     route: "/settings/purchases/overview",
-    missingEvidence: ["consumer tests for each field"],
-    note: "Some bill defaults are wired; each policy needs a concrete transaction-effect test before being marked complete.",
+    missingEvidence: [
+      "consumer tests for bill inbox, approval threshold, duplicate detection, three-way match policy and contractor tracking",
+    ],
+    note: "Default supplier summary, bill terms and bill notes have display or transaction consumers; unsupported purchase policies stay read-only.",
   },
   {
     key: "banking.typed_configuration",

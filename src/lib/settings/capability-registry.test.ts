@@ -60,5 +60,10 @@ describe("Settings capability coverage registry", () => {
     expect(
       SETTING_FIELD_COVERAGE.find((setting) => setting.key === "sales.late_fees_enabled")?.status,
     ).toBe("partial");
+    expect(
+      SETTING_FIELD_COVERAGE.find(
+        (setting) => setting.key === "purchases.show_supplier_summary_default",
+      )?.status,
+    ).toBe("complete");
   });
 });

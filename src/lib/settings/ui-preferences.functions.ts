@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
+import { purchasesConfigSchema } from "@/lib/settings/registry";
 
 export type BillSidebarState = "open" | "collapsed" | "closed";
 
@@ -49,6 +50,21 @@ export const DEFAULT_BILL_WORKSPACE_PREFS: BillWorkspacePrefs = {
 
 const KEY = "bill_workspace";
 const LIST_KEY = "bills_list_workspace";
+
+export function resolveBillWorkspacePrefs(
+  stored: Partial<BillWorkspacePrefs> | null | undefined,
+  showSupplierSummaryDefault: boolean,
+): BillWorkspacePrefs {
+  return {
+    ...DEFAULT_BILL_WORKSPACE_PREFS,
+    sidebarState: showSupplierSummaryDefault ? "open" : "closed",
+    ...(stored ?? {}),
+    sidebarWidthPx: Math.min(
+      480,
+      Math.max(260, Number(stored?.sidebarWidthPx ?? DEFAULT_BILL_WORKSPACE_PREFS.sidebarWidthPx)),
+    ),
+  };
+}
 
 export type BillsListColumnId =
   | "select"
@@ -202,26 +218,31 @@ export const getBillWorkspacePrefs = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: row } = await context.supabase
-      .from("user_ui_preferences" as never)
-      .select("preference_value" as never)
-      .eq("company_id" as never, data.companyId as never)
-      .eq("user_id" as never, context.userId as never)
-      .eq("preference_key" as never, KEY as never)
-      .maybeSingle();
+    const [{ data: row }, { data: configRow, error: configError }] = await Promise.all([
+      context.supabase
+        .from("user_ui_preferences" as never)
+        .select("preference_value" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("user_id" as never, context.userId as never)
+        .eq("preference_key" as never, KEY as never)
+        .maybeSingle(),
+      context.supabase
+        .from("organisation_config" as never)
+        .select("document" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("category" as never, "purchases" as never)
+        .maybeSingle(),
+    ]);
+    if (configError) throw new Error(configError.message);
+    const purchasesConfig = purchasesConfigSchema.safeParse(
+      (configRow as { document?: unknown } | null)?.document ?? {},
+    );
+    const showSupplierSummaryDefault = purchasesConfig.success
+      ? purchasesConfig.data.show_supplier_summary_default
+      : true;
     const stored = (row as { preference_value?: Partial<BillWorkspacePrefs> } | null)
       ?.preference_value;
-    return {
-      ...DEFAULT_BILL_WORKSPACE_PREFS,
-      ...(stored ?? {}),
-      sidebarWidthPx: Math.min(
-        480,
-        Math.max(
-          260,
-          Number(stored?.sidebarWidthPx ?? DEFAULT_BILL_WORKSPACE_PREFS.sidebarWidthPx),
-        ),
-      ),
-    } satisfies BillWorkspacePrefs;
+    return resolveBillWorkspacePrefs(stored, showSupplierSummaryDefault);
   });
 
 export const saveBillWorkspacePrefs = createServerFn({ method: "POST" })

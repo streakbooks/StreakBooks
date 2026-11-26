@@ -17,7 +17,8 @@
   `firm_subscription_payer_consents` is required before the firm can become payer. Access checks
   do not depend on payer.
 - `billing.firm_partner_tiers` holds owner-configured thresholds and discounts. The tier summary
-  excludes trials and clients without a company-member sign-in in the previous 120 days.
+  excludes trials and clients without a client-side company-member sign-in in the previous 120
+  days; logins by staff of the firm do not keep a client active.
 - `firms.status = 'suspended'` disables firm staff portfolio and delegated access without
   disabling a client's own company memberships.
 

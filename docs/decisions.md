@@ -37,5 +37,6 @@ stores the reviewer, timestamp, reason, and exact permission set.
 ## Partner tier calculation
 
 Partner tiers count only clients with an active paid subscription and at least one active
-company member who signed in during the prior 120 days. Trials do not count. Platform owners
-configure each tier threshold and discount; no discount is assumed or seeded.
+client-side company member who signed in during the prior 120 days. Sign-ins by members of the
+partner firm do not count as client activity. Trials do not count. Platform owners configure
+each tier threshold and discount; no discount is assumed or seeded.

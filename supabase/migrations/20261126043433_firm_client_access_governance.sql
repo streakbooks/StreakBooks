@@ -622,6 +622,9 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
     JOIN public.company_members cm ON cm.company_id = l.company_id AND cm.status = 'active'
     JOIN auth.users u ON u.id = cm.user_id AND u.last_sign_in_at >= now() - interval '120 days'
     WHERE l.firm_id = _firm_id AND l.revoked_at IS NULL
+      -- Activity by the bookkeeping firm itself must not keep a dormant client active.
+      AND NOT EXISTS (SELECT 1 FROM public.firm_members fm
+        WHERE fm.firm_id = l.firm_id AND fm.user_id = cm.user_id)
   ), count_clients AS (SELECT count(*) AS n FROM active_clients), tier AS (
     SELECT t.tier_code, t.discount_bps FROM billing.firm_partner_tiers t, count_clients c
     WHERE t.minimum_active_paid_clients <= c.n ORDER BY t.minimum_active_paid_clients DESC LIMIT 1

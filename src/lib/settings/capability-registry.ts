@@ -71,6 +71,24 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/accounting/chart-view.test.ts covers configured padding and numeric/non-numeric codes",
   },
   {
+    key: "tax.rate_code_master",
+    label: "Tax rate and code master data",
+    moduleId: "tax",
+    route: "/tax",
+    scope: "company",
+    defaultValue: "No rates or tax codes until configured for the organisation",
+    validation:
+      "Server validates rate basis points, real effective dates, code format and linked account ownership",
+    permission: "tax.settings",
+    entitlement: null,
+    persistence: "Tenant-scoped tax_rates and tax_codes tables with existing RLS",
+    audit:
+      "Tax master triggers append before/after rows to settings_change_log in the same transaction",
+    consumer:
+      "Effective tax rates and codes drive sales/purchase tax selection; captured rate basis points feed document posting and tax returns",
+    test: "tests/integration/tax-master-settings-audit.sql, tests/integration/tax-master-posted-history.sql, and tax math/report consumer tests",
+  },
+  {
     key: "features.classes",
     label: "Classes feature",
     moduleId: "accounting",

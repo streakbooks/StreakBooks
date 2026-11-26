@@ -34,6 +34,17 @@ Route: `/settings/accounting/overview` → **Account code padding**, then `/acco
 4. Verify the database account codes and posted journal line references are unchanged. The setting affects the chart's visible labels only; search and exports use canonical stored values.
 5. A user without settings edit permission may view the chart but cannot change the setting. Organization membership is checked on configuration reads; the write uses the existing permission-checked, versioned audit RPC.
 
+## Tax rate and code master
+
+Route: `/tax` → **Rates** and **Codes**. Status: **IMPLEMENTED** for the rate/code master lifecycle; jurisdiction-specific filing and regional regime configuration remain **PARTIAL**.
+
+1. In a dedicated non-production organisation, grant a test user `tax.settings` and create a tax rate with a real start date, optional end date, and a basis-point rate from 0 to 10,000.
+2. Confirm scheduled/current/ended status follows the effective dates. Use an end date earlier than the start date, an impossible date such as February 30, or a rate outside the allowed range; the form/server must reject it.
+3. Create a tax code linked to the rate; confirm sales/purchase applicability and recoverability behave as configured in the tax selectors and calculations.
+4. Edit the rate and code. Check `settings_change_log` has same-transaction before/after rows. Try cross-organisation reassignment; it must be rejected and create no cross-tenant audit record.
+5. Confirm posted documents retain their captured tax amount/rate after master edits. Do not use production tax data or submit a tax filing as part of this review.
+6. Review the isolated PostgreSQL commands/tests in the CI workflow: `tax-master-settings-audit.sql` and `tax-master-posted-history.sql`. The regional tax filing path is not covered by this capability.
+
 ## Scope and permission review
 
 - Tenant settings continue to use the existing server functions, membership checks, version checks and row-level security. Route visibility is not authorization.

@@ -12,7 +12,12 @@ describe("Settings capability coverage registry", () => {
   it("requires UI, defaults, validation, permission, persistence, audit, consumer and test evidence for every complete setting", () => {
     expect(validateSettingsCapabilityRegistry()).toEqual([]);
     for (const setting of SETTING_CAPABILITY_REGISTRY) {
-      expect(setting.route).toMatch(/^\/settings\//);
+      // The rate/code master is edited in the canonical Tax workspace linked from Settings.
+      if (setting.route === "/tax") {
+        expect(setting.moduleId).toBe("tax");
+      } else {
+        expect(setting.route).toMatch(/^\/settings\//);
+      }
       expect(setting.defaultValue.trim()).not.toBe("");
       expect(setting.validation.trim()).not.toBe("");
       expect(setting.permission.trim()).not.toBe("");

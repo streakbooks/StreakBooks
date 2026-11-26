@@ -125,7 +125,13 @@ describe("Fixed Assets local non-CI release gate", () => {
 
   it("refuses the old repository without running npm", () =>
     caseWithRepo((f) => {
-      git(f.repo, "remote", "set-url", "origin", "https://github.com/linkbusinessadvisory/LinkBooks.git");
+      git(
+        f.repo,
+        "remote",
+        "set-url",
+        "origin",
+        "https://github.com/linkbusinessadvisory/LinkBooks.git",
+      );
       const x = execute(f);
       assert.equal(x.status, 2);
       assert.match(x.output, /not streakbooks\/StreakBooks/i);

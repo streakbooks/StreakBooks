@@ -159,8 +159,8 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "profile",
     status: "partial",
     route: "/settings/personal/overview",
-    missingEvidence: ["server-synced personal preferences across devices"],
-    note: "The profile page now groups account details, security and appearance. Appearance choices are browser-local; cross-device preference sync is not available yet.",
+    missingEvidence: ["account-wide preference scope and custom palette sync"],
+    note: "Profile groups account details, security and appearance. Colour mode and named palettes sync per organisation; custom palette colours remain on this device.",
   },
 ] as const;
 

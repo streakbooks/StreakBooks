@@ -25,7 +25,7 @@ function exists(rel) {
 const requiredDocs = [
   "docs/premium-ui/ROUTE_AND_INTERACTION_INVENTORY.md",
   "docs/premium-ui/COMPETITOR_GAP_AND_ORIGINALITY_MATRIX.md",
-  "docs/premium-ui/STREAKBOOKS_DESIGN_SYSTEM.md",
+  "docs/premium-ui/LINKBOOKS_DESIGN_SYSTEM.md",
   "docs/premium-ui/WORKSPACE_AND_WORKFLOW_SPEC.md",
   "docs/premium-ui/ACCEPTANCE_TRACEABILITY_MATRIX.md",
   "docs/premium-ui/LEGAL_ASSET_LICENSE_REGISTER.md",

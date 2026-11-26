@@ -75,6 +75,8 @@ import {
   SettingsIntegrationsPanel,
 } from "@/components/settings/SettingsGovernanceExtras";
 import { UsersAccessPanel } from "@/components/settings/UsersAccessPanel";
+import { FirmClientAccessLog } from "@/components/firm/FirmClientAccessLog";
+import { FirmPermissionApprovals } from "@/components/firm/FirmPermissionApprovals";
 import { SettingsNav } from "@/components/settings/SettingsNav";
 import { SettingsOverviewPanel } from "@/components/settings/SettingsOverviewPanel";
 import { SettingsFeatureManager } from "@/components/settings/SettingsFeatureManager";
@@ -1559,6 +1561,12 @@ export function SettingsForCompany({
                   </TabsContent>
 
                   <TabsContent value="audit" className="mt-4">
+                    <div className="mb-4">
+                      <FirmPermissionApprovals companyId={companyId} />
+                    </div>
+                    <div className="mb-4">
+                      <FirmClientAccessLog companyId={companyId} />
+                    </div>
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-base">Audit history</CardTitle>

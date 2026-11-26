@@ -21,6 +21,11 @@ export async function assertCompanyPermission(
   if (!data) {
     throw new Error("You do not have permission to perform this action for this organisation.");
   }
+  const { error: auditError } = await supabase.rpc(
+    "record_firm_client_access" as never,
+    { _company_id: companyId, _module_key: permission.split(".", 1)[0] } as never,
+  );
+  if (auditError) throw new Error(auditError.message);
 }
 
 export async function assertCompanyMember(
@@ -34,4 +39,9 @@ export async function assertCompanyMember(
   if (!data) {
     throw new Error("You do not have access to that organisation.");
   }
+  const { error: auditError } = await supabase.rpc(
+    "record_firm_client_access" as never,
+    { _company_id: companyId, _module_key: "company" } as never,
+  );
+  if (auditError) throw new Error(auditError.message);
 }

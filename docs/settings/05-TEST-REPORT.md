@@ -1,31 +1,31 @@
 # Settings overhaul test report
 
 **Date:** 2026-11-26
-**Validated code revision:** `b2c1ce871a3f56f0d34b118f9fdea286f1c2d0b6` on `feat/settings-module-overhaul`; the follow-on Profile breadcrumb edit passes changed-file ESLint and the focused settings test set.
-**Pull request:** [#92](https://github.com/streakbooks/StreakBooks/pull/92), draft; published head `b2c1ce871a3f56f0d34b118f9fdea286f1c2d0b6`.
-**Scope:** Settings route, field coverage/search, and the Batch 2 organisation identity/tax transactional save.
+**Validated code revision:** `a20015e5e63ab1ad548ee5e5847cd35a4f9027c7` on `feat/settings-module-overhaul`.
+**Pull request:** [#92](https://github.com/streakbooks/StreakBooks/pull/92), draft; published head `a20015e5e63ab1ad548ee5e5847cd35a4f9027c7`.
+**Scope:** Settings overhaul continuation, read-only unenforced accounting preferences, Windows isolated PostgreSQL harness, and TanStack Start validator API migration.
 
 ## Results
 
 | Check                            | Result                     | Evidence / limit                                                                                                                                                                                                   |
 | -------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| TypeScript                       | **Pass**                   | `npm.cmd run typecheck` exited 0 on the current implementation.                                                                                                                                                    |
-| Full unit suite                  | **Pass**                   | `npm.cmd test -- --maxWorkers=4`: 633 test files, 4,349 tests passed on this local continuation.                                                                                                                   |
+| TypeScript                       | **Pass**                   | `npm.cmd run typecheck` exited 0 after replacing the deprecated validator API.                                                                                                                                     |
+| Full unit suite                  | **Pass**                   | `npm.cmd test -- --maxWorkers=4`: 634 test files, 4,350 tests passed after updating the server-function mocks.                                                                                                     |
 | Focused Settings/company tests   | **Pass**                   | 27 files and 225 tests passed, including all Settings tests and company input validation.                                                                                                                          |
 | Changed-file ESLint              | **Pass**                   | ESLint passed for changed TS/TSX/MJS files with zero warnings.                                                                                                                                                      |
 | Full repository ESLint           | **Pass**                   | `npm.cmd run lint -- --max-warnings=0` exited 0. The preceding feature-branch commit formatted 143 existing TypeScript/TSX/MJS files; no rules were disabled.                                                       |
 | Navigation source audit          | **Pass**                   | `npm.cmd run check:navigation`: 23 files and 11 reporting tabs.                                                                                                                                                    |
 | Shared lookup architecture       | **Pass**                   | `npm.cmd run check:lookups`: 418 shared lookup declarations and 0 violations after replacing dynamic staff options with `RecordLookupSelect` and marking fixed enums.                                                  |
-| UI contract                      | **Pass**                   | `npm.cmd run check:ui`: 773 TSX files, 0 route definitions, 0 violations.                                                                                                                                          |
+| UI contract                      | **Pass**                   | `npm.cmd run check:ui`: 774 TSX files, 0 route definitions, 0 violations on the latest local continuation.                                                                                                         |
 | Module checks                    | **Pass**                   | `npm.cmd run check:modules`: permissions, 35 modules, 30 sidebar modules, workspace adoption, empty states and retry states passed.                                                                                |
 | Client bundle                    | **Pass**                   | `npm.cmd run check:bundle`: 62 modules, 1,002,662 bytes; 295,719 gzip bytes.                                                                                                                                       |
 | All-module browsing inventory    | **Pass**                   | `npm.cmd run check:browsing-coverage`: 30 sidebar modules, 169 authenticated route files, 1 public route file, 15 supporting routes. Inventory-only; 0 modules are fully verified.                                  |
-| Production build                 | **Pass**                   | `npm.cmd run build` exited 0 and generated `.vercel/output/nitro.json`. Nitro emitted deprecated `inputValidator` notices and Windows symlink warnings during dependency tracing.                                   |
+| Production build                 | **Pass**                   | `npm.cmd run build` exited 0 and generated `.vercel/output/nitro.json`. TanStack deprecation and Windows symlink warnings are gone; one Vite advisory remains because the shared config injects `vite-tsconfig-paths`. |
 | Settings Playwright              | **Skipped**                | Three tests exist in `e2e/settings-navigation.spec.ts`; all were skipped because `E2E_EMAIL` and `E2E_PASSWORD` are not configured.                                                                                |
-| Browser review                   | **Blocked / unverified**   | The IAB could not connect to `http://localhost:8080`; the browser showed connection refused. No app runtime exception was confirmed.                                                                                |
-| Database integration / migration | **CI passed; hosted pending** | The isolated PostgreSQL workflow suite passed on head `b2c1ce871a3f56f0d34b118f9fdea286f1c2d0b6`, including the atomic identity/tax regression. Local Docker/psql/Supabase CLI are unavailable. Migration is unapplied to hosted Supabase. |
+| Browser review                   | **Unverified**             | A listener already occupies `http://localhost:8080`, but a local HTTP request timed out. No app runtime exception was confirmed; no 8081 browser was used.                                                          |
+| Database integration / migration | **Local isolated pass; hosted pending** | The workflow regression suite passed on the latest continuation using an ephemeral, network-disabled PostgreSQL 17 container. No hosted Supabase was accessed and no migration was applied there.                   |
 | Deployment / production          | **Not performed**          | No Vercel deployment, authenticated staging verification, or production verification.                                                                                                                              |
-| GitHub PR checks                 | **Partial / in progress** | [Run #45807731340](https://github.com/streakbooks/StreakBooks/actions/runs/45807731340): all five PostgreSQL jobs and browser fixtures passed; validate was still running at last check. Cloudflare Workers failed externally and Vercel checks report the private-organization Hobby-plan restriction. Supabase Preview was skipped because no Supabase branch is associated with the PR. |
+| GitHub PR checks                 | **In progress**            | [Run #45817451111](https://github.com/streakbooks/StreakBooks/actions/runs/45817451111) is in progress on the latest head. Earlier run [#45807731340](https://github.com/streakbooks/StreakBooks/actions/runs/45807731340) passed five PostgreSQL jobs and browser fixtures; it predates this continuation. |
 
 ## Corrections made to enable deterministic tests
 
@@ -35,11 +35,11 @@
 
 ## Required follow-up
 
-1. The new identity/tax atomic-save SQL regression passed in GitHub's isolated PostgreSQL job. Local rerun remains unavailable because Docker is absent.
+1. The identity/tax atomic-save SQL regression passed in earlier GitHub isolated PostgreSQL CI and the latest local workflow suite ran successfully through Windows Docker Desktop.
 2. Re-run the Settings Playwright cases with a dedicated authenticated test organisation and diagnose the local `/settings` runtime error.
 3. Complete unchecked batches in `TASKS.md`; the current coverage matrix deliberately leaves unproven fields partial and read-only.
 4. Finish the remaining Settings batches and review all checks on the newest head. Do not merge while implementation batches, authenticated browser verification, or real release failures remain. The standing billing exception applies only when billing prevented jobs from starting; it does not waive real failures or unfinished work.
-5. Apply the migration only after target-specific backup evidence is confirmed for configured project `qugoaaizclvkzesptovm`; no hosted migration was applied.
+5. Do not apply a hosted migration without target-specific backup evidence for project `qugoaaizclvkzesptovm`; no hosted migration was applied.
 
 ## 2026-11-26 local continuation
 

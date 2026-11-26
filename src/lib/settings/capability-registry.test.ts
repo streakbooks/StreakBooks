@@ -92,4 +92,22 @@ describe("Settings capability coverage registry", () => {
       "partial",
     );
   });
+
+  it("promotes only the tested manual-journal backdate warning from Accounting settings", () => {
+    expect(
+      SETTING_CAPABILITY_REGISTRY.find(
+        (setting) => setting.key === "accounting.warn_backdated_days",
+      ),
+    ).toMatchObject({
+      moduleId: "accounting",
+      route: "/settings/accounting/overview",
+      permission: "company.settings.edit",
+      consumer: expect.stringContaining("non-blocking warning"),
+      test: expect.stringContaining("backdated-journal-warning.test.ts"),
+    });
+    expect(
+      SETTING_FIELD_COVERAGE.find((setting) => setting.key === "accounting.warn_backdated_days")
+        ?.status,
+    ).toBe("complete");
+  });
 });

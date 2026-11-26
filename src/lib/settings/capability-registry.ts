@@ -58,6 +58,22 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "tests/integration/settings-lock-policy-cas.sql",
   },
   {
+    key: "accounting.warn_backdated_days",
+    label: "Backdated entry warning threshold",
+    moduleId: "accounting",
+    route: "/settings/accounting/overview",
+    scope: "company",
+    defaultValue: "90 days; 0 disables the warning",
+    validation: "accountingConfigSchema requires an integer from 0 to 3650",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "organisation_config.accounting through the version-checked settings RPC",
+    audit: "settings_change_log records before/after category documents",
+    consumer:
+      "Manual journal entry shows a non-blocking warning when its date reaches the configured age; period locks remain authoritative",
+    test: "src/lib/settings/backdated-journal-warning.test.ts",
+  },
+  {
     key: "accounting.reporting_basis",
     label: "Default reporting basis",
     moduleId: "reports",
@@ -323,9 +339,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/settings/accounting/overview",
     missingEvidence: [
-      "workflow consumers and behavior tests for duplicate, control-account, bank-posting and backdate warnings plus auto-credit",
+      "workflow consumers and behavior tests for duplicate, control-account and bank-posting warnings plus auto-credit",
     ],
-    note: "Require-memo-on-manual-journal now has a tested server guard and transactional audit; other warning and auto-credit values stay read-only until their workflows enforce them.",
+    note: "Manual-journal memo enforcement and the backdate warning have tested consumers; duplicate, control-account and bank-posting warnings plus auto-credit remain read-only until their workflows enforce them.",
   },
   {
     key: "tax.regional_configuration",

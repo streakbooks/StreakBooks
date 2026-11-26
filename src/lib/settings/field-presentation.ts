@@ -28,7 +28,7 @@ const FIELDS: Record<string, SettingsFieldPresentation> = {
   },
   "accounting.warn_backdated_days": {
     label: "Backdated entry warning (days)",
-    description: "Warn when a transaction is older than this many days.",
+    description: "Show a non-blocking journal warning at this age. Set to 0 to turn it off.",
   },
   "accounting.auto_apply_credits": {
     label: "Automatically apply available credits",

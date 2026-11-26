@@ -7,6 +7,8 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { listAccounts, postManualJournal } from "@/lib/accounting/accounting.functions";
+import { getOrganisationConfig } from "@/lib/settings/settings-centre.functions";
+import { backdatedJournalWarning } from "@/lib/settings/backdated-journal-warning";
 import {
   generateRecurringJournal,
   saveRecurringJournalTemplate,
@@ -66,6 +68,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   const today = new Date().toISOString().slice(0, 10);
   const qc = useQueryClient();
   const fetchAccounts = useServerFn(listAccounts);
+  const fetchAccountingSettings = useServerFn(getOrganisationConfig);
   const post = useServerFn(postManualJournal);
   const saveTemplate = useServerFn(saveRecurringJournalTemplate);
   const generate = useServerFn(generateRecurringJournal);
@@ -73,6 +76,13 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
     queryKey: ["accounts", companyId],
     enabled: Boolean(companyId),
     queryFn: () => fetchAccounts({ data: { companyId: companyId! } }),
+  });
+  const accountingSettingsQ = useQuery({
+    queryKey: ["organisation-config", companyId, "accounting"],
+    enabled: Boolean(companyId) && mode === "post",
+    staleTime: 60_000,
+    queryFn: () =>
+      fetchAccountingSettings({ data: { companyId: companyId!, category: "accounting" } }),
   });
   const [date, setDate] = useState(today);
   const [name, setName] = useState("");
@@ -100,6 +110,13 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   const totals = review;
   const balanced = review.balanced;
   const reverseError = mode === "post" ? validateAutoReverseDate(date, autoReverseOn) : null;
+  const backdatedWarning =
+    mode === "post"
+      ? backdatedJournalWarning(
+          date,
+          Number(accountingSettingsQ.data?.document["warn_backdated_days"] ?? 90),
+        )
+      : null;
   const canSubmit =
     review.canPost &&
     !reverseError &&
@@ -374,6 +391,11 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                 />
+                {backdatedWarning ? (
+                  <p role="status" className="text-sm text-amber-700">
+                    {backdatedWarning} This is a warning only; accounting period locks still apply.
+                  </p>
+                ) : null}
               </FormControlShell>
               <FormControlShell className="sm:col-span-2">
                 <Label htmlFor="journal-memo">Narration</Label>

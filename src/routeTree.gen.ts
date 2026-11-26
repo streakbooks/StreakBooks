@@ -200,6 +200,7 @@ import { Route as AuthenticatedSalesReceiptsReceiptIdRouteImport } from './route
 import { Route as AuthenticatedSalesReceiptsNewRouteImport } from './routes/_authenticated/sales/receipts.new'
 import { Route as AuthenticatedSalesRecurringIndexRouteImport } from './routes/_authenticated/sales/recurring.index'
 import { Route as AuthenticatedSalesRecurringNewRouteImport } from './routes/_authenticated/sales/recurring.new'
+import { Route as AuthenticatedSettingsGroupPageRouteImport } from './routes/_authenticated/settings.$group.$page'
 import { Route as AdvisorsPortalInviteTokenRouteImport } from './routes/advisors_.portal.invite.$token'
 import { Route as PortalAppInvoicesInvoiceIdRouteImport } from './routes/portal/app/invoices.$invoiceId'
 import { Route as AuthenticatedDocumentsPrintKindIdRouteImport } from './routes/_authenticated/documents.print.$kind.$id'
@@ -1305,6 +1306,12 @@ const AuthenticatedSalesRecurringNewRoute =
     path: '/recurring/new',
     getParentRoute: () => AuthenticatedSalesRouteRoute,
   } as any)
+const AuthenticatedSettingsGroupPageRoute =
+  AuthenticatedSettingsGroupPageRouteImport.update({
+    id: '/$group/$page',
+    path: '/$group/$page',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AdvisorsPortalInviteTokenRoute =
   AdvisorsPortalInviteTokenRouteImport.update({
     id: '/advisors_/portal/invite/$token',
@@ -1411,7 +1418,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/recurring-journals': typeof AuthenticatedRecurringJournalsRoute
-  '/settings': typeof AuthenticatedSettingsRoute
+  '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tax': typeof AuthenticatedTaxRoute
   '/advisors/$serviceCode': typeof AdvisorsServiceCodeRoute
   '/advisors/book': typeof AdvisorsBookRoute
@@ -1557,6 +1564,7 @@ export interface FileRoutesByFullPath {
   '/sales/receipts/$receiptId': typeof AuthenticatedSalesReceiptsReceiptIdRoute
   '/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
   '/sales/recurring/new': typeof AuthenticatedSalesRecurringNewRoute
+  '/settings/$group/$page': typeof AuthenticatedSettingsGroupPageRoute
   '/advisors/portal/invite/$token': typeof AdvisorsPortalInviteTokenRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/banking/transfers/': typeof AuthenticatedBankingTransfersIndexRoute
@@ -1607,7 +1615,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/recurring-journals': typeof AuthenticatedRecurringJournalsRoute
-  '/settings': typeof AuthenticatedSettingsRoute
+  '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tax': typeof AuthenticatedTaxRoute
   '/advisors/$serviceCode': typeof AdvisorsServiceCodeRoute
   '/advisors/book': typeof AdvisorsBookRoute
@@ -1751,6 +1759,7 @@ export interface FileRoutesByTo {
   '/sales/receipts/$receiptId': typeof AuthenticatedSalesReceiptsReceiptIdRoute
   '/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
   '/sales/recurring/new': typeof AuthenticatedSalesRecurringNewRoute
+  '/settings/$group/$page': typeof AuthenticatedSettingsGroupPageRoute
   '/advisors/portal/invite/$token': typeof AdvisorsPortalInviteTokenRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/banking/transfers': typeof AuthenticatedBankingTransfersIndexRoute
@@ -1811,7 +1820,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/recurring-journals': typeof AuthenticatedRecurringJournalsRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tax': typeof AuthenticatedTaxRoute
   '/advisors_/$serviceCode': typeof AdvisorsServiceCodeRoute
   '/advisors_/book': typeof AdvisorsBookRoute
@@ -1958,6 +1967,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/receipts/$receiptId': typeof AuthenticatedSalesReceiptsReceiptIdRoute
   '/_authenticated/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
   '/_authenticated/sales/recurring/new': typeof AuthenticatedSalesRecurringNewRoute
+  '/_authenticated/settings/$group/$page': typeof AuthenticatedSettingsGroupPageRoute
   '/advisors_/portal/invite/$token': typeof AdvisorsPortalInviteTokenRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/_authenticated/banking/transfers/': typeof AuthenticatedBankingTransfersIndexRoute
@@ -2165,6 +2175,7 @@ export interface FileRouteTypes {
     | '/sales/receipts/$receiptId'
     | '/sales/receipts/new'
     | '/sales/recurring/new'
+    | '/settings/$group/$page'
     | '/advisors/portal/invite/$token'
     | '/portal/app/invoices/$invoiceId'
     | '/banking/transfers/'
@@ -2359,6 +2370,7 @@ export interface FileRouteTypes {
     | '/sales/receipts/$receiptId'
     | '/sales/receipts/new'
     | '/sales/recurring/new'
+    | '/settings/$group/$page'
     | '/advisors/portal/invite/$token'
     | '/portal/app/invoices/$invoiceId'
     | '/banking/transfers'
@@ -2565,6 +2577,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/receipts/$receiptId'
     | '/_authenticated/sales/receipts/new'
     | '/_authenticated/sales/recurring/new'
+    | '/_authenticated/settings/$group/$page'
     | '/advisors_/portal/invite/$token'
     | '/portal/app/invoices/$invoiceId'
     | '/_authenticated/banking/transfers/'
@@ -3959,6 +3972,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalesRecurringNewRouteImport
       parentRoute: typeof AuthenticatedSalesRouteRoute
     }
+    '/_authenticated/settings/$group/$page': {
+      id: '/_authenticated/settings/$group/$page'
+      path: '/$group/$page'
+      fullPath: '/settings/$group/$page'
+      preLoaderRoute: typeof AuthenticatedSettingsGroupPageRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/advisors_/portal/invite/$token': {
       id: '/advisors_/portal/invite/$token'
       path: '/advisors/portal/invite/$token'
@@ -4462,6 +4482,19 @@ const AuthenticatedPlatformRouteWithChildren =
     AuthenticatedPlatformRouteChildren,
   )
 
+interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsGroupPageRoute: typeof AuthenticatedSettingsGroupPageRoute
+}
+
+const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsGroupPageRoute: AuthenticatedSettingsGroupPageRoute,
+}
+
+const AuthenticatedSettingsRouteWithChildren =
+  AuthenticatedSettingsRoute._addFileChildren(
+    AuthenticatedSettingsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBankingRouteRoute: typeof AuthenticatedBankingRouteRouteWithChildren
   AuthenticatedPayrollRouteRoute: typeof AuthenticatedPayrollRouteRouteWithChildren
@@ -4481,7 +4514,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedRecurringJournalsRoute: typeof AuthenticatedRecurringJournalsRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTaxRoute: typeof AuthenticatedTaxRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdvisorsPortalAccountRoute: typeof AuthenticatedAdvisorsPortalAccountRoute
@@ -4551,7 +4584,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedRecurringJournalsRoute: AuthenticatedRecurringJournalsRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTaxRoute: AuthenticatedTaxRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdvisorsPortalAccountRoute:

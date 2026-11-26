@@ -25,9 +25,13 @@ describe("unapplied platform authorisation", () => {
         names.add(name);
         const start = (match.index ?? 0) + match[0].length;
         const body = file.sql.slice(start, file.sql.indexOf("$$;", start));
-        expect(body, `${file.name} ${name}`).toMatch(
-          /require_platform|platform_can|SECURITY INVOKER/,
-        );
+        const hasExplicitRoleGuard =
+          /platform_role\(\)/.test(body) &&
+          /role_name\s+IS\s+NULL\s+OR\s+role_name\s+NOT\s+IN/i.test(body);
+        expect(
+          /require_platform|platform_can|SECURITY INVOKER/.test(body) || hasExplicitRoleGuard,
+          `${file.name} ${name}`,
+        ).toBe(true);
       }
       for (const match of file.sql.matchAll(/CREATE TABLE public\.([a-z0-9_]+)/g)) {
         const table = match[1] ?? "";

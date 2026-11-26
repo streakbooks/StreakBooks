@@ -1,10 +1,13 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { SETTINGS_NAV_GROUPS } from "@/lib/settings/nav-groups";
 import { CATEGORY_ICONS } from "@/lib/settings/category-icons";
 import { categoryMeta, searchSettings } from "@/lib/settings/registry";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { settingsRouteForSection } from "@/lib/settings/route-model";
+import { validateSettingsReturnTo } from "@/lib/settings/return-context";
 
 type Props = {
   currentSection?: string;
@@ -23,6 +26,11 @@ export function SettingsCategoryHub({
   onOpenSearch,
   className,
 }: Props) {
+  const routeSearch = useRouterState({ select: (state) => state.location.search }) as Record<
+    string,
+    unknown
+  >;
+  const returnTo = validateSettingsReturnTo(routeSearch["returnTo"]);
   const q = filter.trim().toLowerCase();
   const allowed = new Set(
     searchSettings(q)
@@ -82,8 +90,9 @@ export function SettingsCategoryHub({
                 return (
                   <li key={item.id}>
                     <Link
-                      to="/settings"
-                      search={{ section: item.id }}
+                      to="/settings/$group/$page"
+                      params={settingsRouteForSection(item.id)}
+                      search={{ section: item.id, ...(returnTo ? { returnTo } : {}) }}
                       className={cn(
                         "group flex h-full gap-3 rounded-xl border bg-card p-4 text-left transition-colors",
                         "hover:border-primary/40 hover:bg-accent/30",
@@ -107,6 +116,11 @@ export function SettingsCategoryHub({
                         <span className="mt-1 block text-sm leading-snug text-muted-foreground line-clamp-2">
                           {item.description}
                         </span>
+                        {item.availability !== "live" ? (
+                          <Badge variant="secondary" className="mt-2">
+                            {item.availability === "partial" ? "Partial" : "Unavailable"}
+                          </Badge>
+                        ) : null}
                       </span>
                     </Link>
                   </li>
@@ -119,8 +133,8 @@ export function SettingsCategoryHub({
 
       {q && allowed.size === 0 ? (
         <p className="text-sm text-muted-foreground" role="status">
-          No settings match &quot;{filter.trim()}&quot;. Try another term or open search (Ctrl/⌘ Shift
-          K).
+          No settings match &quot;{filter.trim()}&quot;. Try another term or open search (Ctrl/⌘
+          Shift K).
         </p>
       ) : null}
     </div>

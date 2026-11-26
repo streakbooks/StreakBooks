@@ -1,7 +1,7 @@
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { PurchasesDefaultsForm } from "@/components/settings/PurchasesDefaultsForm";
 import { ModuleSettingsLinks } from "@/components/settings/ModuleSettingsLinks";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
 
 import { LoadingState } from "@/components/common/states";
@@ -10,6 +10,13 @@ import { CompanyEmptyState } from "@/components/common/company-empty";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/purchases/settings")({
+  beforeLoad: () => {
+    throw redirect({
+      to: "/settings/$group/$page",
+      params: { group: "purchases", page: "defaults" },
+      search: { section: "purchases", returnTo: "/purchases" },
+    });
+  },
   head: () => ({ meta: [{ title: "Purchases settings — StreakBooks" }] }),
   component: PurchasesSettingsPage,
 });

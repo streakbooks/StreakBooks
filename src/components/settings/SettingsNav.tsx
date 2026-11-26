@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
+import { settingsRouteForSection } from "@/lib/settings/route-model";
+import { validateSettingsReturnTo } from "@/lib/settings/return-context";
 
 const NAV_KEY = "streakbooks.settings.nav.open";
 
@@ -19,7 +21,10 @@ type Props = {
 };
 
 export function SettingsNav({ section, embedded = false, showDemo, filter }: Props) {
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const location = useRouterState({ select: (state) => state.location });
+  const pathname = location.pathname;
+  const routeSearch = location.search as Record<string, unknown>;
+  const returnTo = validateSettingsReturnTo(routeSearch["returnTo"]);
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -84,12 +89,13 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
               {items.map((c) => (
                 <Link
                   key={c.id}
-                  to={embedded ? pathname : "/settings"}
+                  to={embedded ? pathname : "/settings/$group/$page"}
+                  {...(embedded ? {} : { params: settingsRouteForSection(c.id) })}
                   search={
                     embedded
                       ? (previous: Record<string, unknown>) =>
                           openSettingsPanel(previous, `category:${c.id}` as SettingsPanelId)
-                      : { section: c.id }
+                      : { section: c.id, ...(returnTo ? { returnTo } : {}) }
                   }
                   aria-current={section === c.id ? "page" : undefined}
                   className={cn(
@@ -100,9 +106,9 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
                   )}
                 >
                   <span className="truncate">{c.label}</span>
-                  {c.availability === "unavailable" ? (
+                  {c.availability !== "live" ? (
                     <Badge variant="outline" className="ml-1 shrink-0 text-[10px]">
-                      Unavailable
+                      {c.availability === "partial" ? "Partial" : "Unavailable"}
                     </Badge>
                   ) : null}
                 </Link>

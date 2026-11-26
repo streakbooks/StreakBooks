@@ -25,6 +25,10 @@ describe("Settings Centre category routing and search", () => {
     expect(searchSettings("mfa").some((item) => item.id === "users")).toBe(true);
     expect(searchSettings("bank feeds").some((item) => item.id === "banking")).toBe(true);
     expect(searchSettings("not-a-real-category-keyword")).toHaveLength(0);
+    expect(searchSettings("late-fee grace period").some((item) => item.id === "sales")).toBe(true);
+    expect(searchSettings("account code padding").some((item) => item.id === "accounting")).toBe(
+      true,
+    );
   });
   it("provides real workspace destinations for import, fixed assets and payroll", () => {
     const importMeta = categoryMeta.find((item) => item.id === "import_migration");

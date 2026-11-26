@@ -97,7 +97,9 @@ describe("contracts", () => {
     const generated = `${JSON.stringify(buildOpenApiDocument(), null, 2)}\n`;
     const file = new URL("../../../../../docs/billing/openapi.json", import.meta.url);
     if (process.env["UPDATE_OPENAPI"] === "1") writeFileSync(file, generated);
-    expect(readFileSync(file, "utf8")).toBe(generated);
+    expect(readFileSync(file, "utf8").replaceAll("\r\n", "\n")).toBe(
+      generated.replaceAll("\r\n", "\n"),
+    );
   });
 });
 

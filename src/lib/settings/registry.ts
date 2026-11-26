@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { SETTINGS_CATEGORIES, type SettingsCategory } from "./categories";
+import { settingsFieldPresentation } from "./field-presentation";
 export { SETTINGS_CATEGORIES, type SettingsCategory } from "./categories";
 
 export type CategoryMeta = {
@@ -24,6 +25,14 @@ export const categoryMeta: CategoryMeta[] = [
     availability: "live",
   },
   {
+    id: "personal",
+    label: "Personal preferences",
+    description: "Your profile, display preferences and account-level options.",
+    synonyms: ["profile", "my account", "language", "theme", "time zone", "accessibility"],
+    moduleLinks: [{ label: "Open your profile", to: "/profile" }],
+    availability: "partial",
+  },
+  {
     id: "features",
     label: "Feature Manager",
     description: "Enable optional modules with honest availability states.",
@@ -36,7 +45,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Legal identity, locale, theme and document identity.",
     synonyms: ["company", "branding", "locale", "timezone", "language"],
     legacyTab: "organisation",
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "accounting",
@@ -45,7 +54,7 @@ export const categoryMeta: CategoryMeta[] = [
     synonyms: ["fy", "financial year", "lock", "closing date", "period locks", "books start"],
     legacyTab: "financial",
     moduleLinks: [{ label: "Accounting periods", to: "/accounting" }],
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "sales",
@@ -65,7 +74,7 @@ export const categoryMeta: CategoryMeta[] = [
       "numbering",
     ],
     moduleLinks: [{ label: "Sales settings", to: "/sales/settings" }],
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "purchases",
@@ -87,7 +96,7 @@ export const categoryMeta: CategoryMeta[] = [
       { label: "Purchases settings", to: "/purchases/settings" },
       { label: "New bill", to: "/purchases/bills/new" },
     ],
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "banking",
@@ -95,7 +104,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Import formats, rules, tolerances and feed connection state.",
     synonyms: ["bank", "reconcile", "feeds", "csv", "ofx"],
     moduleLinks: [{ label: "Banking", to: "/banking" }],
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "dimensions",
@@ -103,7 +112,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Classes, locations, departments, projects and custom dimensions.",
     synonyms: ["tracking", "class", "location", "department", "cost centre", "project"],
     legacyTab: "dimensions",
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "tax",
@@ -119,7 +128,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "SKUs, pricing, stock and valuation policies.",
     synonyms: ["inventory", "sku", "stock", "cogs", "barcode"],
     moduleLinks: [{ label: "Products & Services", to: "/products-services" }],
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "reports",
@@ -127,7 +136,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Default basis, saved views, packs and schedules.",
     synonyms: ["pnl", "balance sheet", "kpi", "budget", "forecast"],
     moduleLinks: [{ label: "Reports", to: "/reports" }],
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "documents",
@@ -154,7 +163,7 @@ export const categoryMeta: CategoryMeta[] = [
       { label: "Contacts settings", to: "/contacts/settings" },
       { label: "CRM settings", to: "/crm/settings" },
     ],
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "expenses",
@@ -175,7 +184,7 @@ export const categoryMeta: CategoryMeta[] = [
     synonyms: ["ai", "voice", "rules", "workflow", "recurring"],
     legacyTab: "automation",
     moduleLinks: [{ label: "AI Assistant", to: "/ai-assistant" }],
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "users",
@@ -184,7 +193,7 @@ export const categoryMeta: CategoryMeta[] = [
       "Duty roles, tailored access, invitations and suspension. Enforced in the database.",
     synonyms: ["roles", "mfa", "sso", "permissions", "invite", "privacy"],
     legacyTab: "users",
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "integrations",
@@ -192,7 +201,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Platform connection health. Browse and manage marketplace apps in the App Store.",
     synonyms: ["api", "webhook", "oauth", "bank feed", "gateway", "app store", "marketplace"],
     legacyTab: "integrations",
-    availability: "live",
+    availability: "partial",
     moduleLinks: [
       { label: "App Store", to: "/app-store" },
       { label: "Developer portal", to: "/developer" },
@@ -205,7 +214,7 @@ export const categoryMeta: CategoryMeta[] = [
     description: "Configuration history, exports and retention.",
     synonyms: ["audit log", "export", "backup", "retention"],
     legacyTab: "audit",
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "accountant",
@@ -223,7 +232,7 @@ export const categoryMeta: CategoryMeta[] = [
     label: "Subscription & Usage",
     description: "Plan, seats, trial, promo codes and payment.",
     synonyms: ["billing", "plan", "seats", "quota", "stripe", "razorpay", "trial"],
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "demo",
@@ -243,14 +252,14 @@ export const categoryMeta: CategoryMeta[] = [
       { label: "Action Center", to: "/notifications" },
       { label: "Messaging settings", to: "/messages/settings" },
     ],
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "portals",
     label: "Customer & Supplier Portals",
     description: "Client and supplier self-service portals.",
     synonyms: ["portal", "client login", "pay online"],
-    availability: "live",
+    availability: "partial",
   },
   {
     id: "fixed_assets",
@@ -327,9 +336,19 @@ export function searchSettings(query: string): CategoryMeta[] {
   for (const [synonym, categories] of Object.entries(searchSynonyms)) {
     if (matches(synonym)) categories.forEach((category) => synonymHits.add(category));
   }
+  const fieldHits = new Set<SettingsCategory>();
+  for (const [category, schema] of Object.entries(CATEGORY_SCHEMAS)) {
+    for (const field of Object.keys(schema.shape)) {
+      const presentation = settingsFieldPresentation(category as SettingsCategory, field);
+      if (matches(presentation.label) || matches(presentation.description) || matches(field)) {
+        fieldHits.add(category as SettingsCategory);
+      }
+    }
+  }
   return categoryMeta.filter(
     (category) =>
       synonymHits.has(category.id) ||
+      fieldHits.has(category.id) ||
       matches(category.label) ||
       matches(category.description) ||
       category.synonyms.some(matches),
@@ -418,7 +437,7 @@ export const usersSecurityConfigSchema = z.object({
   support_access_consent: z.boolean().default(false),
 });
 
-export const CATEGORY_SCHEMAS: Partial<Record<SettingsCategory, z.ZodType>> = {
+export const CATEGORY_SCHEMAS: Partial<Record<SettingsCategory, z.ZodObject<z.ZodRawShape>>> = {
   accounting: accountingConfigSchema,
   sales: salesConfigSchema,
   purchases: purchasesConfigSchema,

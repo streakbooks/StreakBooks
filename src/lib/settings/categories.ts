@@ -1,6 +1,7 @@
 /** Settings Centre category ids — information architecture. */
 export const SETTINGS_CATEGORIES = [
   "overview",
+  "personal",
   "features",
   "organisation",
   "accounting",

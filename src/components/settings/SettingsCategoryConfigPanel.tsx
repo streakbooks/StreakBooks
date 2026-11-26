@@ -22,6 +22,7 @@ import {
 } from "@/lib/settings/registry";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { settingsFieldPresentation } from "@/lib/settings/field-presentation";
+import { SETTING_FIELD_COVERAGE } from "@/lib/settings/capability-registry";
 import { CheckCircle2, CircleAlert, Loader2 } from "lucide-react";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -34,6 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -276,6 +278,10 @@ export function SettingsCategoryConfigPanel({
                   {Object.entries(draft).map(([key, value]) => {
                     const id = "settings-" + category + "-" + key;
                     const field = settingsFieldPresentation(category, key);
+                    const fieldComplete =
+                      SETTING_FIELD_COVERAGE.find((item) => item.key === `${category}.${key}`)
+                        ?.status === "complete";
+                    const fieldDisabled = disabled || !fieldComplete;
                     const options = ENUM_OPTIONS[category + "." + key];
                     const error = fieldErrors[key];
                     const isNumeric =
@@ -296,13 +302,20 @@ export function SettingsCategoryConfigPanel({
                               className="text-xs leading-relaxed text-muted-foreground"
                             >
                               {field.description}
+                              {!fieldComplete ? (
+                                <span className="mt-2 flex items-center gap-2">
+                                  <Badge variant="secondary">Partial</Badge>
+                                  Editing is paused until the setting’s effect and access checks are
+                                  verified.
+                                </span>
+                              ) : null}
                             </p>
                           </div>
                           <Switch
                             id={id}
                             checked={value}
                             aria-describedby={id + "-description"}
-                            disabled={disabled}
+                            disabled={fieldDisabled}
                             onCheckedChange={(checked) => updateField(key, checked)}
                           />
                         </div>
@@ -314,10 +327,17 @@ export function SettingsCategoryConfigPanel({
                           <Label htmlFor={id}>{field.label}</Label>
                           <p id={id + "-description"} className="text-xs text-muted-foreground">
                             {field.description}
+                            {!fieldComplete ? (
+                              <span className="mt-2 flex items-center gap-2">
+                                <Badge variant="secondary">Partial</Badge>
+                                Editing is paused until the setting’s effect and access checks are
+                                verified.
+                              </span>
+                            ) : null}
                           </p>
                           <Select
                             value={value}
-                            disabled={disabled}
+                            disabled={fieldDisabled}
                             onValueChange={(selected) => updateField(key, selected)}
                           >
                             {/* lookup-fixed-enum: Settings values come from the fixed ENUM_OPTIONS schema. */}
@@ -351,11 +371,18 @@ export function SettingsCategoryConfigPanel({
                           <Label htmlFor={id}>{field.label}</Label>
                           <p id={id + "-description"} className="text-xs text-muted-foreground">
                             {field.description}
+                            {!fieldComplete ? (
+                              <span className="mt-2 flex items-center gap-2">
+                                <Badge variant="secondary">Partial</Badge>
+                                Editing is paused until the setting’s effect and access checks are
+                                verified.
+                              </span>
+                            ) : null}
                           </p>
                           <Input
                             id={id}
                             value={value.join(", ")}
-                            disabled={disabled}
+                            disabled={fieldDisabled}
                             aria-invalid={Boolean(error)}
                             aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}
                             onChange={(event) => {
@@ -394,11 +421,18 @@ export function SettingsCategoryConfigPanel({
                           <Label htmlFor={id}>{field.label}</Label>
                           <p id={id + "-description"} className="text-xs text-muted-foreground">
                             {field.description}
+                            {!fieldComplete ? (
+                              <span className="mt-2 flex items-center gap-2">
+                                <Badge variant="secondary">Partial</Badge>
+                                Editing is paused until the setting’s effect and access checks are
+                                verified.
+                              </span>
+                            ) : null}
                           </p>
                           <Input
                             id={id}
                             value={value === null ? "" : String(value)}
-                            disabled={disabled}
+                            disabled={fieldDisabled}
                             inputMode={isNumeric ? "decimal" : undefined}
                             aria-invalid={Boolean(error)}
                             aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}

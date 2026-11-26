@@ -1,11 +1,13 @@
 import { resolveSettingsCategory } from "./registry";
 import { validateSettingsPanelSearch, type SettingsPanelId } from "./panels";
+import { validateSettingsReturnTo } from "./return-context";
 
 /** Normalize untrusted deep-link parameters without changing valid billing links. */
 export function parseSettingsSearch(search: Record<string, unknown>): {
   section: string;
   plan?: string;
   interval?: "month" | "year";
+  returnTo?: string;
   settingsPanel?: SettingsPanelId;
   settingsTrail?: SettingsPanelId[];
 } {
@@ -18,10 +20,12 @@ export function parseSettingsSearch(search: Record<string, unknown>): {
     search["interval"] === "month" || search["interval"] === "year"
       ? search["interval"]
       : undefined;
+  const returnTo = validateSettingsReturnTo(search["returnTo"]);
   return {
     section: resolveSettingsCategory(search["section"]),
     ...(plan ? { plan } : {}),
     ...(interval ? { interval } : {}),
+    ...(returnTo ? { returnTo } : {}),
     ...validateSettingsPanelSearch(search),
   };
 }

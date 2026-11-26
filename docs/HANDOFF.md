@@ -1,12 +1,20 @@
 # Settings overhaul — 26 November 2026
 
-Phase 0 audit and Phase 1 clean-room benchmark/IA are documented on
-`feat/settings-module-overhaul`. See `docs/settings/TASKS.md` for the ordered
-remaining batches. Baseline `main` was clean at `207b7bc6`. No feature code,
-database changes, migrations, deployment or hosted Supabase actions were made.
-The configured Supabase project is `qugoaaizclvkzesptovm`; historical backup
-evidence in this file is for a different project, so it does not authorize a
-hosted migration here. Continue with the per-setting registry and coverage test.
+Work is in progress on `feat/settings-module-overhaul`, based on clean `main`
+`207b7bc6`. Phases 0–2 and the route-first implementation foundation are
+documented in `docs/settings/`; batches 2–9 remain open. The current full unit
+suite passes (633 files / 4,349 tests), as do typecheck, build, changed-file
+ESLint, navigation/UI/module checks and bundle check. Full-repository lint still
+fails; three authenticated Settings Playwright tests are skipped without test
+credentials, and the local browser visit to `/settings` rendered an application
+error. See `docs/settings/05-TEST-REPORT.md` and `defect-register.md`.
+
+No database change or migration was needed for the route/UI work. No deployment
+or hosted Supabase action was made. The configured Supabase project is
+`qugoaaizclvkzesptovm`; historical backup evidence elsewhere in this file is for
+a different project and does not authorize a hosted migration. Continue the
+remaining batches in `docs/settings/TASKS.md`; do not merge until the task's
+remaining work and green-check requirements are satisfied.
 
 # Executing workers and observed alerts — 3 November 2026
 

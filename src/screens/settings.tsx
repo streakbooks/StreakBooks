@@ -4,6 +4,11 @@ import { openSettingsPanel } from "@/lib/settings/panels";
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { InPlaceSettingsPanel } from "@/components/settings/InPlaceSettingsPanel";
 import { parseSettingsPanel } from "@/lib/settings/panels";
+import {
+  resolveSettingsRoute,
+  settingsRouteForSection,
+  settingsRouteForPanel,
+} from "@/lib/settings/route-model";
 import { ModuleSettingsLinks } from "@/components/settings/ModuleSettingsLinks";
 import { WakeSettings } from "@/components/ai-voice/WakeSettings";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -89,6 +94,8 @@ import { SubscriptionPanel } from "@/components/billing/SubscriptionPanel";
 import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
 import { maxFiscalYearEndDay, formatDocumentNumberPreview } from "@/lib/settings/dimension-helpers";
 import { SettingsSaveBar } from "@/components/settings/SettingsSaveBar";
+import { MODULE_REGISTRY } from "@/lib/modules/registry";
+import { validateSettingsReturnTo } from "@/lib/settings/return-context";
 import { hasUnsavedLegacySettings } from "@/lib/settings/legacy-navigation";
 import {
   AUDIT_PAGE_SIZE,
@@ -170,20 +177,32 @@ export function SettingsForCompany({
   embeddedSection?: SettingsCategory;
 }) {
   const navigate = useNavigate();
-  const currentSearch = useRouterState({ select: (s) => s.location.search }) as Record<
-    string,
-    unknown
-  >;
+  const location = useRouterState({ select: (s) => s.location });
+  const currentSearch = location.search as Record<string, unknown>;
+  const pathParts = location.pathname.split("/").filter(Boolean);
+  const canonicalRoute =
+    pathParts.length === 3 && pathParts[0] === "settings"
+      ? resolveSettingsRoute(pathParts[1]!, pathParts[2]!)
+      : undefined;
   const sectionRaw =
     embeddedSection ??
+    canonicalRoute?.section ??
     (typeof currentSearch["section"] === "string" ? currentSearch["section"] : "overview");
   const plan = typeof currentSearch["plan"] === "string" ? currentSearch["plan"] : undefined;
   const interval =
     currentSearch["interval"] === "month" || currentSearch["interval"] === "year"
       ? currentSearch["interval"]
       : undefined;
-  const detail = embeddedSection ? undefined : parseSettingsPanel(currentSearch["settingsPanel"]);
+  const detail = embeddedSection
+    ? undefined
+    : (canonicalRoute?.panel ?? parseSettingsPanel(currentSearch["settingsPanel"]));
   const section = resolveSettingsCategory(sectionRaw);
+  const returnTo = validateSettingsReturnTo(currentSearch["returnTo"]);
+  const returnPath = returnTo?.split(/[?#]/, 1)[0] ?? "";
+  const returnModule = MODULE_REGISTRY.find(
+    (module) =>
+      module.inSidebar && (returnPath === module.path || returnPath.startsWith(module.path + "/")),
+  );
   const [navFilter, setNavFilter] = useState("");
   const [cmdOpen, setCmdOpen] = useState(false);
 
@@ -211,8 +230,38 @@ export function SettingsForCompany({
       });
       return;
     }
-    void navigate({ to: "/settings", search: { section: id } });
+    const route = settingsRouteForSection(resolveSettingsCategory(id));
+    void navigate({
+      to: "/settings/$group/$page",
+      params: route,
+      search: {
+        section: route.group,
+        ...(returnTo ? { returnTo } : {}),
+        ...(plan ? { plan } : {}),
+        ...(interval ? { interval } : {}),
+      },
+    });
   };
+
+  const legacyRoute = detail
+    ? settingsRouteForPanel(detail)
+    : section === "overview"
+      ? undefined
+      : settingsRouteForSection(section);
+  useEffect(() => {
+    if (embeddedSection || location.pathname !== "/settings" || !legacyRoute) return;
+    void navigate({
+      to: "/settings/$group/$page",
+      params: legacyRoute,
+      search: {
+        section: legacyRoute.group,
+        ...(returnTo ? { returnTo } : {}),
+        ...(plan ? { plan } : {}),
+        ...(interval ? { interval } : {}),
+      },
+      replace: true,
+    });
+  }, [embeddedSection, interval, legacyRoute, location.pathname, navigate, plan, returnTo]);
 
   const fetchDetails = useServerFn(getCompanyDetails);
   const saveCompany = useServerFn(updateCompany);
@@ -639,7 +688,11 @@ export function SettingsForCompany({
 
       <div
         className={
-          embeddedSection ? "" : isHubView ? "space-y-5" : "grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]"
+          embeddedSection
+            ? ""
+            : isHubView
+              ? "space-y-5"
+              : "grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]"
         }
       >
         {!embeddedSection && !isHubView && (
@@ -669,17 +722,60 @@ export function SettingsForCompany({
         )}
 
         <div className="min-w-0 space-y-5">
-          {!detail && sectionMeta && !embeddedSection && !isHubView ? (
-            <nav className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          {!embeddedSection ? (
+            <nav
+              aria-label="Breadcrumb"
+              className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
+            >
               <Link
                 to="/settings"
-                search={{ section: "overview" }}
+                search={{ section: "overview", ...(returnTo ? { returnTo } : {}) }}
                 className="font-medium hover:text-foreground"
               >
                 Settings
               </Link>
-              <span aria-hidden>/</span>
-              <span className="text-foreground">{sectionMeta.label}</span>
+              {sectionMeta && !isHubView ? (
+                <>
+                  <span aria-hidden>/</span>
+                  {detail ? (
+                    <Link
+                      to="/settings/$group/$page"
+                      params={settingsRouteForSection(section)}
+                      search={{ section, ...(returnTo ? { returnTo } : {}) }}
+                      className="font-medium hover:text-foreground"
+                    >
+                      {sectionMeta.label}
+                    </Link>
+                  ) : (
+                    <span className="text-foreground" aria-current="page">
+                      {sectionMeta.label}
+                    </span>
+                  )}
+                  {detail ? (
+                    <>
+                      <span aria-hidden>/</span>
+                      <span className="text-foreground" aria-current="page">
+                        {canonicalRoute?.pageLabel ?? detail.replaceAll("-", " ")}
+                      </span>
+                    </>
+                  ) : null}
+                </>
+              ) : isHubView ? (
+                <>
+                  <span aria-hidden>/</span>
+                  <span className="text-foreground" aria-current="page">
+                    Overview
+                  </span>
+                </>
+              ) : null}
+              {returnTo && returnModule ? (
+                <a
+                  href={returnTo}
+                  className="ml-auto rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Back to {returnModule.label}
+                </a>
+              ) : null}
             </nav>
           ) : null}
           {!detail && sectionMeta && !embeddedSection && !isHubView ? (
@@ -695,7 +791,7 @@ export function SettingsForCompany({
               {sectionMeta.availability === "unavailable" ? (
                 <Badge variant="outline">Not available</Badge>
               ) : sectionMeta.availability === "partial" ? (
-                <Badge variant="secondary">Module setup</Badge>
+                <Badge variant="secondary">Partial</Badge>
               ) : null}
             </div>
           ) : null}

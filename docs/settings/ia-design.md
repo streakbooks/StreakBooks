@@ -1,6 +1,6 @@
 # Settings information architecture and interaction design
 
-**Status:** implementation target for the Settings overhaul  
+**Status:** clean-room target architecture; only the route-first navigation foundation is implemented so far
 **Product:** StreakBooks  
 **Principles:** clean-room, route-first, permission-aware and based on the actual module registry.
 
@@ -33,6 +33,8 @@ Adapt the requested categories to registered StreakBooks modules:
 17. **Security and audit** — role/security state, audit history and support-access records.
 18. **Data and privacy** — export, retention, attachment and privacy controls where implemented.
 19. **Personal preferences** — profile, language, regional display choices, navigation and session preferences.
+
+The current navigation groups are a first implementation slice: **Start here**, **Company & preferences**, **Books & compliance**, **Sales, purchases & contacts**, **Banking & operations**, **People & access**, **Automation & connections**, and **Subscription & developer tools**. The more detailed categories above remain the target for subsequent batches; the current navigation must not be read as proof that every category's settings have been consolidated or completed.
 
 Areas backed by separate modules may show a concise handoff card in the Settings workspace while retaining the module's canonical form. A page is marked **PARTIAL** or **UNAVAILABLE** per capability and never exposes a switch without an enforced consumer.
 

@@ -7,12 +7,18 @@ import {
   type SettingsDestination,
 } from "@/lib/settings/module-navigation";
 import type { SettingsCategory } from "@/lib/settings/registry";
+import {
+  settingsRouteForLegacyPath,
+  settingsRouteForPanel,
+  settingsRouteForSection,
+} from "@/lib/settings/route-model";
+import { currentSettingsReturnTo, validateSettingsReturnTo } from "@/lib/settings/return-context";
 export function SettingsDestinationLink({
   destination,
   children,
   className,
   ariaLabel,
-  mode = "panel",
+  mode = "route",
 }: {
   destination: SettingsDestination;
   children: React.ReactNode;
@@ -21,18 +27,34 @@ export function SettingsDestinationLink({
   mode?: "panel" | "route";
 }) {
   const location = useRouterState({ select: (s) => s.location });
+  const currentSearch = location.search as Record<string, unknown>;
+  const returnTo =
+    validateSettingsReturnTo(currentSearch["returnTo"]) ??
+    currentSettingsReturnTo(location.pathname);
   const panel = mode === "panel" ? panelForDestination(destination) : undefined;
+  const canonicalRoute =
+    mode === "route"
+      ? ((destination.panel ? settingsRouteForPanel(destination.panel) : undefined) ??
+        (destination.section ? settingsRouteForSection(destination.section) : undefined) ??
+        settingsRouteForLegacyPath(destination.to))
+      : undefined;
   return (
     <Link
-      to={panel ? location.pathname : destination.to}
+      to={canonicalRoute ? "/settings/$group/$page" : panel ? location.pathname : destination.to}
+      {...(canonicalRoute ? { params: canonicalRoute } : {})}
       search={
-        panel
-          ? (previous: Record<string, unknown>) => openSettingsPanel(previous, panel)
-          : destination.section
-            ? { section: destination.section }
-            : destination.from
-              ? { from: destination.from }
-              : {}
+        canonicalRoute
+          ? {
+              section: "overview",
+              ...(returnTo ? { returnTo } : {}),
+            }
+          : panel
+            ? (previous: Record<string, unknown>) => openSettingsPanel(previous, panel)
+            : destination.section
+              ? { section: destination.section }
+              : destination.from
+                ? { from: destination.from }
+                : {}
       }
       className={className}
       aria-label={ariaLabel}

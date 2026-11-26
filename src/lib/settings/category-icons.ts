@@ -4,6 +4,7 @@ import {
   Building2,
   Calculator,
   CreditCard,
+  CircleUserRound,
   FileText,
   FlaskConical,
   Globe,
@@ -28,6 +29,7 @@ import type { SettingsCategory } from "./categories";
 
 export const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
   overview: LayoutDashboard,
+  personal: CircleUserRound,
   features: ToggleLeft,
   organisation: Building2,
   accounting: Calculator,

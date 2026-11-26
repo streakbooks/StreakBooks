@@ -56,4 +56,19 @@ describe("Settings billing deep-link parsing", () => {
     expect(parseSettingsSearch({ plan: "pro", interval: "weekly" })).toMatchObject({ plan: "pro" });
     expect(parseSettingsSearch({ plan: "pro", interval: "weekly" })).not.toHaveProperty("interval");
   });
+  it("preserves only safe in-app module return destinations", () => {
+    expect(parseSettingsSearch({ returnTo: "/sales?tab=invoices" }).returnTo).toBe(
+      "/sales?tab=invoices",
+    );
+    for (const returnTo of [
+      "https://example.invalid",
+      "//example.invalid",
+      "/settings",
+      "/../auth",
+      "/sales/%2e%2e/auth",
+      "/auth",
+    ]) {
+      expect(parseSettingsSearch({ returnTo })).not.toHaveProperty("returnTo");
+    }
+  });
 });

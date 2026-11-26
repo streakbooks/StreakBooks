@@ -9,6 +9,8 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { searchSettings } from "@/lib/settings/registry";
+import { SETTING_FIELD_COVERAGE } from "@/lib/settings/capability-registry";
+import { settingsRouteForSection } from "@/lib/settings/route-model";
 import { navItems } from "@/lib/nav";
 
 type Props = {
@@ -18,7 +20,12 @@ type Props = {
   showDemo?: boolean;
 };
 
-export function SettingsCommandPalette({ open, onOpenChange, onSelectSection, showDemo = false }: Props) {
+export function SettingsCommandPalette({
+  open,
+  onOpenChange,
+  onSelectSection,
+  showDemo = false,
+}: Props) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const keyboardActivation = useRef(false);
@@ -36,6 +43,15 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection, sh
   }, [open]);
 
   const matches = searchSettings(query).filter((category) => category.id !== "demo" || showDemo);
+  const fieldQuery = query.trim().toLowerCase();
+  const fieldMatches = fieldQuery
+    ? SETTING_FIELD_COVERAGE.filter(
+        (field) =>
+          field.label.toLowerCase().includes(fieldQuery) ||
+          field.key.toLowerCase().includes(fieldQuery) ||
+          field.consumer.toLowerCase().includes(fieldQuery),
+      ).slice(0, 8)
+    : [];
   const modules = navItems.filter(
     (item) =>
       item.to !== "/settings" &&
@@ -94,6 +110,36 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection, sh
                 >
                   <span className="font-medium">{category.label}</span>
                   <span className="text-xs text-muted-foreground">{category.description}</span>
+                </Link>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        ) : null}
+        {fieldMatches.length > 0 ? (
+          <CommandGroup heading="Setting fields">
+            {fieldMatches.map((field) => (
+              <CommandItem
+                asChild
+                key={field.key}
+                value={`${field.label} ${field.key} ${field.consumer}`}
+                onSelect={() => {
+                  selectFromKeyboard(() => onSelectSection(field.category));
+                }}
+              >
+                <Link
+                  to="/settings/$group/$page"
+                  params={settingsRouteForSection(field.category)}
+                  search={{ section: field.category }}
+                  onClick={onLinkClick}
+                  className="flex w-full items-start justify-between gap-3 py-2"
+                >
+                  <span>
+                    <span className="block font-medium">{field.label}</span>
+                    <span className="text-xs text-muted-foreground">{field.category}</span>
+                  </span>
+                  {field.status === "partial" ? (
+                    <span className="text-xs text-muted-foreground">Partial</span>
+                  ) : null}
                 </Link>
               </CommandItem>
             ))}

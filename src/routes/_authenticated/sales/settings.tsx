@@ -1,7 +1,7 @@
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { SalesDefaultsForm } from "@/components/settings/SalesDefaultsForm";
 import { ModuleSettingsLinks } from "@/components/settings/ModuleSettingsLinks";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
 
 import { LoadingState } from "@/components/common/states";
@@ -10,6 +10,13 @@ import { CompanyEmptyState } from "@/components/common/company-empty";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/sales/settings")({
+  beforeLoad: () => {
+    throw redirect({
+      to: "/settings/$group/$page",
+      params: { group: "sales", page: "defaults" },
+      search: { section: "sales", returnTo: "/sales" },
+    });
+  },
   head: () => ({ meta: [{ title: "Sales settings — StreakBooks" }] }),
   component: SalesSettingsPage,
 });

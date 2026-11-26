@@ -1,9 +1,9 @@
 # Settings overhaul test report
 
 **Date:** 2026-11-26
-**Validated code revision:** `a20015e5e63ab1ad548ee5e5847cd35a4f9027c7` on `feat/settings-module-overhaul`.
-**Pull request:** [#92](https://github.com/streakbooks/StreakBooks/pull/92), draft; published head `a20015e5e63ab1ad548ee5e5847cd35a4f9027c7`.
-**Scope:** Settings overhaul continuation, read-only unenforced accounting preferences, Windows isolated PostgreSQL harness, and TanStack Start validator API migration.
+**Validated code revision:** `897f30ed` on `feat/settings-module-overhaul`.
+**Pull request:** [#92](https://github.com/streakbooks/StreakBooks/pull/92), draft; code revision awaits publication and fresh PR CI.
+**Scope:** Settings overhaul continuation, read-only unenforced accounting preferences, Windows isolated PostgreSQL harness, TanStack Start validator API migration, and partial updates for shared Sales/Purchases workflow settings.
 
 ## Results
 
@@ -58,4 +58,22 @@ This continuation adds read-only handling for unenforced accounting warning/auto
 | Production build after API cleanup | **Pass** | `npm.cmd run build` exited 0 and generated `.vercel/output/nitro.json`. No deprecated `inputValidator` notices or symlink permission errors remain. The shared Vite config still injects `vite-tsconfig-paths`, leaving one Vite 8 advisory. |
 | Browser verification at port 8080 | **Unverified** | A Vite listener already occupies 8080; an HTTP request timed out, and a second server cannot start with `--strictPort`. No 8081 browser was opened. |
 | Hosted Supabase / migrations | **Not performed** | No hosted project was accessed or changed. The isolated harness only loaded the identity/tax migration and workflow test fixtures into its disposable local database. |
-| GitHub / deployment | **Pending** | These local changes are not yet committed or pushed. PR #92 remains draft and unmerged. No deployment was attempted. |
+| GitHub / deployment | **Pending** | Local commit `897f30ed` is not yet pushed. PR #92 remains draft and unmerged. No deployment was attempted. |
+
+## 2026-11-26 shared Sales/Purchases workflow update safeguard
+
+Validated code revision: `897f30ed` (local commit on `feat/settings-module-overhaul`; fresh PR CI pending).
+
+| Check | Result | Evidence / limit |
+| --- | --- | --- |
+| Focused workflow settings tests | **Pass** | 3 files, 27 tests passed after changing settings writes to preserve absent fields and rejecting empty patches. |
+| Changed-file ESLint | **Pass** | ESLint passed for all seven changed TS/TSX files with zero warnings. |
+| Full repository ESLint | **Pass** | `npm.cmd run lint -- --max-warnings=0` exited 0 on the current code tree. |
+| TypeScript validation | **Pass** | `npm.cmd run typecheck` exited 0 on the current code tree. |
+| Module/UI/navigation checks | **Pass** | `check:modules`, `check:ui` (774 TSX files, zero violations), and `check:navigation` (23 files, 11 reporting tabs) passed. |
+| Production build | **Pass** | `npm.cmd run build` exited 0 and generated `.vercel/output/nitro.json`; the shared `vite-tsconfig-paths` advisory remains. |
+| Full unit suite | **Pass (prior to final test-only assertion tightening)** | 636 test files and 4,355 tests passed; the current three-file focused suite passed after the last test edit. |
+| Diff whitespace check | **Pass** | `git diff --check` exited 0 before commit. |
+| Local/hosted database | **Not run for this patch** | No schema change. The previously documented isolated PostgreSQL workflow suite remains a separate earlier pass; hosted Supabase was not accessed. |
+| Browser / authenticated staging / production | **Unverified / not performed** | Local app at port 8080 could not be reached in this environment. No deployment or production verification. |
+| GitHub CI | **Pending** | This revision has not yet been pushed; the previous published head's green run does not validate `897f30ed`. |

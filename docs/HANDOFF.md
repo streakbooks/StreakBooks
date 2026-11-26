@@ -1,7 +1,38 @@
 # NEEDS FROM OWNER
 
 - Configure a dedicated non-production authenticated browser-test account through `E2E_EMAIL` and `E2E_PASSWORD` when available; do not commit or paste credentials.
+- Provide matching backup evidence for Supabase project `qugoaaizclvkzesptovm` before any hosted migration is run. Existing backup evidence in historical notes names a different project.
 - Review deployment-provider account constraints before enabling deploy checks: the PR currently reports Vercel Hobby/private-organization restrictions and a failed Cloudflare Workers build check. No plan change or production deploy was made.
+
+# Settings overhaul — latest continuation, 26 November 2026
+
+Published commits `b2c1ce871a3f56f0d34b118f9fdea286f1c2d0b6` (corrected the atomic
+identity/tax SQL regression to test February 30) and
+`a1ff0cbd08abf71e9cfa32fdc8e06fe317330097` (added Settings / Personal preferences /
+Profile breadcrumbs and refreshed progress notes) to `feat/settings-module-overhaul`.
+PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) remains open and draft.
+
+On Actions run [#45807731340](https://github.com/streakbooks/StreakBooks/actions/runs/45807731340),
+all five isolated PostgreSQL suites and browser fixtures passed, including the identity/tax
+atomic-save regression. The current head run
+[#45808722118](https://github.com/streakbooks/StreakBooks/actions/runs/45808722118) has all
+five PostgreSQL jobs passed; `validate` and browser fixtures were still running at last check.
+Vercel status checks fail because its Hobby plan disallows this private organization repo;
+Cloudflare Workers also reports an external build failure. Neither is an org billing job-start
+failure. The Supabase Preview check is skipped because the PR is not linked to a Supabase branch.
+
+Local changed-file ESLint and the two focused Settings tests pass (8 tests). A new full
+TypeScript command did not return and was interrupted; the preceding full typecheck/build/lint
+and wider test suite passed before the Profile breadcrumb-only edit. Local Docker is absent, so
+the SQL workflow is CI-verified only. The Vite server started on `http://localhost:8080`, but
+the workstation socket is inaccessible from this execution's browser and shell network contexts;
+no live browser verification is claimed. Port 8081 was not used.
+
+No hosted migration, deploy, authenticated staging or production verification was performed.
+The identity/tax migration is additive and has a drop-only rollback, but remains unapplied until
+the correct project's backup and complete release verification are available. Batches 2–9 and
+authenticated browser checks remain open. Continue with Batch 2 personal settings, then proceed
+in order; do not merge this incomplete PR.
 
 # Settings overhaul — Batch 2 continuation, 26 November 2026
 

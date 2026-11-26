@@ -30,7 +30,7 @@ INSERT INTO public.company_members(company_id,user_id,role) VALUES
 ON CONFLICT (company_id,user_id) DO NOTHING;
 INSERT INTO public.role_permissions(role,permission) VALUES
  ('owner','company.view'),('owner','company.settings.edit'),('owner','members.manage'),('owner','accounting.view'),('owner','accounting.export'),('owner','accounting.post'),
- ('admin','company.view'),('admin','accounting.view'),('admin','accounting.export'),('admin','accounting.post'),
+ ('admin','company.view'),('admin','accounting.view'),('admin','accounting.export'),('admin','accounting.post'),('admin','sales.draft'),
  ('read_only','company.view'),('read_only','accounting.view'),('read_only','accounting.export'),('bookkeeper','company.view'),('bookkeeper','accounting.view'),('bookkeeper','accounting.export'),('bookkeeper','accounting.post')
 ON CONFLICT (role,permission) DO NOTHING;
 

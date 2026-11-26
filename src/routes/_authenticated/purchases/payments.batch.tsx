@@ -143,25 +143,29 @@ function BatchPayment() {
           <FormGrid columns={4}>
             <FormControlShell width="contact" className="sm:col-span-2">
               <Label htmlFor="batch-bank">Bank / cash account</Label>
-              <AccountLookup
-                id="batch-bank"
-                ariaLabel="Bank / cash account"
-                accounts={
-                  (accountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>
-                }
-                value={bankAccountId}
-                onChange={setBankAccountId}
-                companyId={companyId}
-                purpose="posting"
-                createKind="bank"
-                disabled={accountsQ.isPending || accountsQ.isError || mutation.isPending}
-                placeholder={
-                  accountsQ.isPending
-                    ? "Loading payment accounts…"
-                    : "Paid from (bank or cash account)"
-                }
-                allowClear={false}
-              />
+              {accountsQ.isError ? (
+                <QueryErrorState queries={[accountsQ]} title="Could not load payment accounts" />
+              ) : (
+                <AccountLookup
+                  id="batch-bank"
+                  ariaLabel="Bank / cash account"
+                  accounts={
+                    (accountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>
+                  }
+                  value={bankAccountId}
+                  onChange={setBankAccountId}
+                  companyId={companyId}
+                  purpose="posting"
+                  createKind="bank"
+                  disabled={accountsQ.isPending || mutation.isPending}
+                  placeholder={
+                    accountsQ.isPending
+                      ? "Loading payment accounts…"
+                      : "Paid from (bank or cash account)"
+                  }
+                  allowClear={false}
+                />
+              )}
             </FormControlShell>
             <FormControlShell width="date">
               <Label htmlFor="batch-payment-date">Payment date</Label>

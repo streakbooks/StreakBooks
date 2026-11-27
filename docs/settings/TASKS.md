@@ -24,6 +24,13 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Focused tests passed (3 files / 30 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed including the new self-approval case. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
 - Expense Management remains partial because threshold, approval-count, advance, petty-cash and rebilling fields still need evidence.
 
+## 2026-11-27 Expense multi-approver policy
+
+- Added an isolated regression using the production `save_expense_required_approval_count` and `approve_expense_claim` functions. It proves a count of two leaves the claim in review after one approval, rejects the same approver twice, and marks the claim approved only after a second user approves; the settings audit row contains the saved count.
+- Aligned the two approval-settings server functions with their UI and database policies so either `expenses.manage_policies` or `expenses.admin` can save.
+- Focused tests passed (3 files / 30 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed with the two-approver regression. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
+- Expense Management remains partial because receipt/spending thresholds, escalation, advances, petty cash and rebilling still need evidence.
+
 - [x] Phase 0 — audit current routes, UI, persistence, consumers, permissions, tests and module registry (`audit.md`). No feature code changed in this phase.
 - [x] Phase 1 — official public benchmark, clean-room IA, decision and originality record (`benchmark.md`, `ia-design.md`, `docs/decisions/011-settings-information-architecture.md`, `docs/compliance/originality-log.md`).
 - [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. Evidence-backed capabilities are registered individually; remaining typed fields stay partial and are read-only.

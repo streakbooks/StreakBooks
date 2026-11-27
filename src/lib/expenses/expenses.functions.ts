@@ -1197,7 +1197,10 @@ export const saveExpenseRequiredApprovalCount = createServerFn({ method: "POST" 
   }))
   .handler(
     async ({ data, context }): Promise<{ requiredApprovalCount: number; version: number }> => {
-      await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_policies");
+      await assertCompanyPermissionAny(context.supabase, data.companyId, [
+        "expenses.manage_policies",
+        "expenses.admin",
+      ]);
       const raw = await callRpc<{
         required_approval_count?: number;
         version?: number;
@@ -1511,7 +1514,10 @@ export const saveExpenseApprovalEscalationDays = createServerFn({ method: "POST"
   }))
   .handler(
     async ({ data, context }): Promise<{ approvalEscalationDays: number; version: number }> => {
-      await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_policies");
+      await assertCompanyPermissionAny(context.supabase, data.companyId, [
+        "expenses.manage_policies",
+        "expenses.admin",
+      ]);
       const raw = await callRpc<{
         approval_escalation_days?: number;
         version?: number;

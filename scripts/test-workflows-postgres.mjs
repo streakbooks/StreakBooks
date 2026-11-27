@@ -178,6 +178,20 @@ try {
   sql(
     "DELETE FROM public.expense_claim_reimbursement_payments WHERE claim_id='40000000-0000-4000-8000-000000000013'; DELETE FROM public.journal_lines WHERE journal_id IN (SELECT id FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000013' AND idempotency_key LIKE 'expense_claim:40000000-0000-4000-8000-000000000013:reimburse:%'); DELETE FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000013' AND idempotency_key LIKE 'expense_claim:40000000-0000-4000-8000-000000000013:reimburse:%'; DELETE FROM public.expense_claims WHERE id='40000000-0000-4000-8000-000000000013';",
   );
+  sql(read("tests/fixtures/workflows/expense-multilevel-approval-baseline.sql"));
+  sql(
+    fn(
+      "supabase/migrations/20261107153000_expense_management_multilevel_approvals.sql",
+      "public.save_expense_required_approval_count",
+    ),
+  );
+  sql(
+    fn(
+      "supabase/migrations/20261107153000_expense_management_multilevel_approvals.sql",
+      "public.approve_expense_claim",
+    ),
+  );
+  sql(read("tests/integration/expense-required-approvals.sql"));
   sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
   sql(
     fn(

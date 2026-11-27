@@ -22,6 +22,8 @@ describe("Settings capability coverage registry", () => {
         expect(setting.moduleId).toBe("payroll");
       } else if (setting.route === "/expense-management/settings") {
         expect(setting.moduleId).toBe("expense-management");
+      } else if (setting.route === "/expense-management/approvals") {
+        expect(setting.moduleId).toBe("expense-management");
       } else {
         expect(setting.route).toMatch(/^\/settings\//);
       }

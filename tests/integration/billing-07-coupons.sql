@@ -91,8 +91,9 @@ SELECT pg_temp.expect_error($$SELECT public.billing_quote_coupon('60000000-0000-
 SELECT pg_temp.act('00000000-0000-0000-0000-0000000000e9', 'aal1');
 SELECT pg_temp.expect_error($$SELECT public.billing_quote_coupon('60000000-0000-0000-0000-000000000003', 'pro', 'month', 'LAUNCH10')$$,
   'P0001', 'Country restrictions apply');
-SELECT pg_temp.ok((SELECT (q->'coupon'->>'discountMinor')::int = 500 FROM (SELECT public.billing_quote_coupon(
-  '60000000-0000-0000-0000-000000000003', 'pro', 'month', 'FLATUSD') AS q) x), 'A fixed discount applies in its currency');
+-- GB launch prices are GBP; a fixed USD coupon cannot apply there.
+SELECT pg_temp.expect_error($$SELECT public.billing_quote_coupon('60000000-0000-0000-0000-000000000003', 'pro', 'month', 'FLATUSD')$$,
+  'P0001', 'A fixed USD discount does not apply to GBP prices');
 SELECT pg_temp.act('00000000-0000-0000-0000-0000000000e7', 'aal1');
 SELECT pg_temp.expect_error($$SELECT public.billing_quote_coupon('60000000-0000-0000-0000-000000000001', 'pro', 'month', 'FLATUSD')$$,
   'P0001', 'A fixed discount only applies in its currency');

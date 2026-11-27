@@ -1125,8 +1125,7 @@
                           "type": "string",
                           "enum": [
                             "upgrade",
-                            "downgrade",
-                            "same"
+                            "downgrade"
                           ]
                         },
                         "applies": {
@@ -1141,12 +1140,45 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "targetPlanCode": {
+                          "type": "string"
+                        },
+                        "targetInterval": {
+                          "type": "string",
+                          "enum": [
+                            "month",
+                            "year"
+                          ]
+                        },
+                        "paymentActionUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "amountDueMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "alreadyApplied": {
+                          "type": "boolean"
+                        },
+                        "chargedOnFile": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
                         "kind",
                         "applies",
-                        "effectiveAt"
+                        "effectiveAt",
+                        "targetPlanCode",
+                        "targetInterval",
+                        "paymentActionUrl",
+                        "amountDueMinor",
+                        "alreadyApplied",
+                        "chargedOnFile"
                       ],
                       "additionalProperties": false
                     },
@@ -1250,6 +1282,13 @@
                       "standard",
                       "pro",
                       "business"
+                    ]
+                  },
+                  "interval": {
+                    "type": "string",
+                    "enum": [
+                      "month",
+                      "year"
                     ]
                   }
                 },

@@ -17,8 +17,15 @@ export function assertStripeTestKey(secret: string, env: Env = process.env): voi
   throw new Error("Stripe secret must start with sk_test_.");
 }
 
-/** Accept a Razorpay test key id. A live key id needs the same production flag. */
+/**
+ * Accept a Razorpay test key id. A live key id needs the production flag.
+ * When `RAZORPAY_MODE=test` (recommended for local/staging), live key ids are always refused.
+ */
 export function assertRazorpayTestKey(keyId: string, env: Env = process.env): void {
+  const mode = (env["RAZORPAY_MODE"] ?? "").trim().toLowerCase();
+  if (mode === "test" && keyId.startsWith("rzp_live_")) {
+    throw new Error("RAZORPAY_MODE=test refuses live Razorpay key ids.");
+  }
   if (keyId.startsWith("rzp_test_")) return;
   if (keyId.startsWith("rzp_live_") && livePaymentKeysAllowed(env)) return;
   if (keyId.startsWith("rzp_live_")) {

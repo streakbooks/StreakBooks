@@ -226,8 +226,9 @@ export async function processStoredEvent(
       if (event.kind === "checkout_completed" && result.result === "applied") {
         await rpc(client, "billing_redeem_coupon", { _checkout_id: event.data.checkoutId });
       }
-      if (event.kind === "payment_failed" && result.result === "applied")
-        await notifyPaymentFailed();
+      if (event.kind === "payment_failed" && result.result === "applied") {
+        await notifyPaymentFailed(claimed.provider, event.data.subscriptionId);
+      }
     }
     const payment =
       claimed.provider === "stripe"
@@ -296,8 +297,19 @@ export async function retryDueWebhooks(limit = 20): Promise<{ processed: number;
   let failed = 0;
   for (const id of ids) {
     const outcome = await processStoredEvent(id);
-    if (outcome === "failed") failed += 1;
-    else if (outcome !== "busy") processed += 1;
+    if (outcome === "failed") {
+      failed += 1;
+      // Event id only — never log payloads (may contain provider customer metadata).
+      console.error("Billing webhook retry item failed", JSON.stringify({ eventId: id }));
+    } else if (outcome !== "busy") {
+      processed += 1;
+    }
+  }
+  if (failed > 0) {
+    console.error(
+      "Billing webhook retry batch",
+      JSON.stringify({ due: ids.length, processed, failed }),
+    );
   }
   return { processed, failed };
 }
@@ -390,11 +402,21 @@ async function applyRefund(client: Admin, provider: ProviderId, refund: Normalis
   });
 }
 
-async function notifyPaymentFailed(): Promise<void> {
+async function notifyPaymentFailed(provider: string, subscriptionId: string): Promise<void> {
+  const client = await admin();
+  const companyId = await rpc<string | null>(client, "billing_company_for_provider_subscription", {
+    _provider: provider,
+    _subscription_id: subscriptionId,
+  }).catch(() => null);
+  const to = companyId
+    ? await rpc<string | null>(client, "billing_contact_email", { _company_id: companyId }).catch(
+        () => null,
+      )
+    : null;
   const { sendBillingNotice } = await import("@/lib/billing/notices");
   await sendBillingNotice({
-    to: null,
+    to,
     subject: "StreakBooks payment failed",
-    text: "A subscription payment failed. The organisation keeps access during the grace period. Existing reports stay available.",
+    text: "A subscription payment failed. The organisation keeps access during the grace period. Open Settings → Subscription → Manage billing to update the card. Existing reports stay available.",
   }).catch(() => undefined);
 }

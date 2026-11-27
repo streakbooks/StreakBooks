@@ -17,6 +17,15 @@ export type CreateCompanyInput = {
   timezone: string;
 };
 
+function isValidTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function validateCompanyInput(input: CreateCompanyInput): CreateCompanyInput {
   const name = (input?.name ?? "").trim();
   if (name.length < 2 || name.length > 160)
@@ -34,7 +43,9 @@ export function validateCompanyInput(input: CreateCompanyInput): CreateCompanyIn
   if (!Number.isInteger(d) || d < 1 || d > maxDay)
     throw new Error("Choose a valid financial year end day.");
   const timezone = (input.timezone ?? "").trim();
-  if (!timezone || timezone.length > 64) throw new Error("Choose a time zone.");
+  if (!timezone || timezone.length > 64 || !isValidTimeZone(timezone)) {
+    throw new Error("Choose a valid IANA time zone.");
+  }
   const legal_name = (input.legal_name ?? "").trim().slice(0, 200);
   return {
     name,

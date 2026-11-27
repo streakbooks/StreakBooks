@@ -469,6 +469,10 @@ Extended the existing per-user, per-organisation appearance preference document 
 
 Made `purchases.three_way_matching` a field-level complete capability after tracing the existing fail-closed bill authorization path. Malformed saved purchase settings now stop authorization rather than being interpreted as disabled. New loader tests cover missing, enabled, malformed and unreadable configuration. Focused tests passed (3 files / 29 tests), typecheck, changed-file ESLint, `check:modules`, `check:ui` and `git diff --check` passed. No schema, hosted Supabase, deployment or production change was made. Batch 4 remains partial.
 
+# Settings overhaul — organisation timezone validation, 27 November 2026
+
+Company create/update input now rejects invalid IANA time-zone identifiers before saving, and the existing date tests confirm company-local dates can differ from UTC. Focused tests passed (2 files / 10 tests), typecheck, changed-file ESLint and `git diff --check` passed. The directly granted SQL RPC currently checks only for a nonempty timezone, so database-level validation and a direct-RPC regression are still required before this field can be marked complete. No migration was applied to hosted Supabase.
+
 # Settings overhaul — purchase-order preference behavior, 26 November 2026
 
 Connected the existing `purchases_require_po` setting to a tested bill-workspace notice. Enabling it clearly recommends linking a PO but continues to allow independent bills, consistent with the setting's “Prefer purchase order before bill” label. Added enabled/disabled consumer tests, a permission/persistence regression, and field-level capability evidence. The isolated workflow SQL regression proves true/false typed before/after audit values; the network-disabled PostgreSQL 17 harness passed. Focused tests passed (3 files / 13 tests), changed-file ESLint and UI contracts passed. No migration was needed. The feature branch push and Actions for this preference are still in progress; no hosted Supabase, deployment, authenticated staging or production was used.

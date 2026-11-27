@@ -178,3 +178,8 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Promoted `purchases.three_way_matching` to complete field evidence after confirming that PO-linked bill authorisation reads the organisation setting and fails when matching is required but the order, receipt and bill do not agree.
 - Fixed malformed saved Purchases settings to fail closed instead of silently disabling the authorization guard. Added loader regressions for default, enabled, malformed and unreadable configuration.
 - Focused tests passed (3 files / 29 tests), typecheck, changed-file ESLint, `check:modules`, `check:ui` and `git diff --check` passed. No schema or hosted Supabase change was made; Batch 4 remains partial because other Sales/Purchases fields still lack safe consumers.
+
+## 2026-11-27 Organisation timezone validation
+
+- Company creation/update validation now rejects unknown IANA timezone identifiers before sending a save; valid organisation zones continue to control company-local business dates.
+- Focused company-validation and date-consumer tests passed (2 files / 10 tests), typecheck, changed-file ESLint and `git diff --check` passed. The SQL RPC currently accepts any nonempty timezone when invoked directly, so the field remains PARTIAL pending database-level validation and direct-RPC regression; no hosted database change was made.

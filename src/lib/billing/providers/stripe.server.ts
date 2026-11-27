@@ -166,16 +166,28 @@ export function stripePlanChangeCancelUrl(origin: string): string {
 }
 
 /** Fresh key each attempt so Stripe never rejects parameter changes (common retry failure). */
+/**
+ * Stable Stripe Idempotency-Key for plan changes within a preview window.
+ * Double-clicks / retries with the same proration_date reuse one Stripe request.
+ * Uses the full price id (Stripe allows long Idempotency-Key values).
+ */
 export function stripePlanChangeIdempotencyKey(
   companyId: string,
   planPriceId: string,
   kind: "upgrade" | "downgrade",
+  prorationDateUnix?: number | null,
 ): string {
-  const nonce =
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  return `sb-plan-${kind}-${companyId.slice(0, 8)}-${planPriceId.slice(0, 8)}-${nonce}`;
+  const windowSeconds =
+    typeof prorationDateUnix === "number" &&
+    Number.isFinite(prorationDateUnix) &&
+    prorationDateUnix > 0
+      ? Math.floor(prorationDateUnix)
+      : Math.floor(Date.now() / 1000);
+  // Bucket to 60s so a confirm a few seconds after preview still matches.
+  const bucket = Math.floor(windowSeconds / 60);
+  const company = companyId.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 36);
+  const price = planPriceId.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64);
+  return `sb-plan-${kind}-${company}-${price}-${bucket}`;
 }
 
 function firstSubscriptionItem(subscription: Record<string, unknown>): {

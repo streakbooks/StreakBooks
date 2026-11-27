@@ -659,7 +659,12 @@ export const changePlanFor = createServerOnlyFn(
       friendlyStripePlanChangeError,
     } = await import("@/lib/billing/providers/stripe.server");
     const stripe = createStripeClient();
-    const key = stripePlanChangeIdempotencyKey(data.companyId, change.planPriceId, change.kind);
+    const key = stripePlanChangeIdempotencyKey(
+      data.companyId,
+      change.planPriceId,
+      change.kind,
+      data.prorationDateUnix,
+    );
 
     let stripeResult;
     try {

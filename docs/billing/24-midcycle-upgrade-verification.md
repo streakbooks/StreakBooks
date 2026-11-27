@@ -8,16 +8,16 @@
 
 ## CI (GitHub Actions) — run `46042014608` @ `50cd7dc0` (completed)
 
-| Job | Result | Notes |
-| --- | --- | --- |
-| `browser-fixtures` | **Pass** | |
-| `postgres` (platform/POS/banking/workflows/firm-access) | **Pass** | All five |
-| `validate` → typecheck | **Pass** | `tsc --noEmit` |
-| `validate` → lint | **Fail** | `eslint .` Prettier baseline debt (also on `main`); job stops here |
-| `validate` → build / module gates | **Not run** | Skipped after lint failure |
-| Vercel Preview build | **Pass** | Preview deployment build succeeded (see below) |
-| Cloudflare Workers Builds | **Fail** | External Workers preview; not app billing gate |
-| Supabase Preview | Skipped | |
+| Job                                                     | Result      | Notes                                                              |
+| ------------------------------------------------------- | ----------- | ------------------------------------------------------------------ |
+| `browser-fixtures`                                      | **Pass**    |                                                                    |
+| `postgres` (platform/POS/banking/workflows/firm-access) | **Pass**    | All five                                                           |
+| `validate` → typecheck                                  | **Pass**    | `tsc --noEmit`                                                     |
+| `validate` → lint                                       | **Fail**    | `eslint .` Prettier baseline debt (also on `main`); job stops here |
+| `validate` → build / module gates                       | **Not run** | Skipped after lint failure                                         |
+| Vercel Preview build                                    | **Pass**    | Preview deployment build succeeded (see below)                     |
+| Cloudflare Workers Builds                               | **Fail**    | External Workers preview; not app billing gate                     |
+| Supabase Preview                                        | Skipped     |                                                                    |
 
 **Lint policy:** PR-touched files stay Prettier-clean. Do **not** mass-format the repo on this branch.
 
@@ -25,10 +25,10 @@
 
 ## Vercel Preview deployments (@ `50cd7dc0`)
 
-| Project (GitHub check) | State | URL / inspect |
-| --- | --- | --- |
-| **Vercel – streakbooks** (`paxaris/streakbooks`) | **Ready** | **Use alias:** https://streakbooks-git-feature-qb-midcycle-plan-upgrade-paxaris.vercel.app · Deployment: https://streakbooks-f11oakpvs-paxaris.vercel.app · Inspect: https://vercel.com/paxaris/streakbooks/E17J97iPjmZhfKNKN175GFe9AjiU |
-| **Vercel – streak-books** | **Ready** (GitHub check) | Inspect: https://vercel.com/streak-books/streak-books/23dVdGJAczPQN1Xak4vJCVn728LY |
+| Project (GitHub check)                           | State                    | URL / inspect                                                                                                                                                                                                                            |
+| ------------------------------------------------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vercel – streakbooks** (`paxaris/streakbooks`) | **Ready**                | **Use alias:** https://streakbooks-git-feature-qb-midcycle-plan-upgrade-paxaris.vercel.app · Deployment: https://streakbooks-f11oakpvs-paxaris.vercel.app · Inspect: https://vercel.com/paxaris/streakbooks/E17J97iPjmZhfKNKN175GFe9AjiU |
+| **Vercel – streak-books**                        | **Ready** (GitHub check) | Inspect: https://vercel.com/streak-books/streak-books/23dVdGJAczPQN1Xak4vJCVn728LY                                                                                                                                                       |
 
 **Agent verification notes**
 
@@ -40,20 +40,20 @@
 
 ## Scenario matrix (automated + staging)
 
-| # | Scenario | Result | Notes |
-| --- | --- | --- | --- |
-| R1 | Razorpay test credentials | **Pass** | `npm run verify:razorpay` |
-| R2 | Card / UPI / e-mandate identification | **Pass** | `RAZORPAY_SANDBOX=1` |
-| R3 | Immediate card upgrade (charged amount) | **Awaiting Workflow A** | Pre-auth API subs cannot prove charge |
-| R4 | UPI / e-mandate unsupported | **Pass** | App fail-closed |
-| R5 | Failure / delayed / duplicate webhook | **Pass (SQL/sig)** | billing-04 + HMAC |
-| R6 | Razorpay amount, tax, renewal | **Awaiting Workflow A** | Capture sheet below |
-| R7 | Entitlements after provider confirm | **Pass (SQL)** | `pending_payment` ≠ plan change |
-| S1 | Authenticated Settings UI upgrade | **Awaiting Workflow B** | Needs `E2E_*` |
-| S2–S5 | Stripe Test Clock journeys | **Pass** | `test:billing:sandbox:stripe` 6/1 |
-| S6 | 3DS recovery | **Awaiting Workflow B** | Use SCA test card |
-| D1–D3 | Lock / idempotency / rollback | **Pass** | SQL + stable Idempotency-Key |
-| C1 | PR-touched lint | **Pass** | Full-repo lint still fails on `main` debt |
+| #     | Scenario                                | Result                  | Notes                                     |
+| ----- | --------------------------------------- | ----------------------- | ----------------------------------------- |
+| R1    | Razorpay test credentials               | **Pass**                | `npm run verify:razorpay`                 |
+| R2    | Card / UPI / e-mandate identification   | **Pass**                | `RAZORPAY_SANDBOX=1`                      |
+| R3    | Immediate card upgrade (charged amount) | **Awaiting Workflow A** | Pre-auth API subs cannot prove charge     |
+| R4    | UPI / e-mandate unsupported             | **Pass**                | App fail-closed                           |
+| R5    | Failure / delayed / duplicate webhook   | **Pass (SQL/sig)**      | billing-04 + HMAC                         |
+| R6    | Razorpay amount, tax, renewal           | **Awaiting Workflow A** | Capture sheet below                       |
+| R7    | Entitlements after provider confirm     | **Pass (SQL)**          | `pending_payment` ≠ plan change           |
+| S1    | Authenticated Settings UI upgrade       | **Awaiting Workflow B** | Needs `E2E_*`                             |
+| S2–S5 | Stripe Test Clock journeys              | **Pass**                | `test:billing:sandbox:stripe` 6/1         |
+| S6    | 3DS recovery                            | **Awaiting Workflow B** | Use SCA test card                         |
+| D1–D3 | Lock / idempotency / rollback           | **Pass**                | SQL + stable Idempotency-Key              |
+| C1    | PR-touched lint                         | **Pass**                | Full-repo lint still fails on `main` debt |
 
 ---
 
@@ -106,28 +106,28 @@ from public.company_subscriptions
 where provider_subscription_id = '<sub_…>';
 ```
 
-   - Expect: `provider = razorpay`, `plan_code = pro` (or your Pro code) **only after** webhook success; currency `INR`.
+- Expect: `provider = razorpay`, `plan_code = pro` (or your Pro code) **only after** webhook success; currency `INR`.
 
 ### Capture sheet A (paste into PR comment when done)
 
-| Field | Value |
-| --- | --- |
-| App URL used | |
-| Company name / id | |
-| Razorpay subscription id | `sub_` |
-| Status after Checkout | authenticated / active |
-| Webhook events seen | |
-| Preview: remaining days | |
-| Preview: due today (UI) | |
-| Preview: tax (UI) | |
-| Preview: next renewal (UI) | |
-| Provider adjustment / charge (Dashboard) | |
-| Provider tax (if shown) | |
-| `company_subscriptions.plan_code` after confirm | |
-| `current_period_end` | |
-| Entitlements match Pro? (users limit etc.) | yes / no |
-| Any Stripe CTA shown? | must be **no** |
-| Pass / Fail | |
+| Field                                           | Value                  |
+| ----------------------------------------------- | ---------------------- |
+| App URL used                                    |                        |
+| Company name / id                               |                        |
+| Razorpay subscription id                        | `sub_`                 |
+| Status after Checkout                           | authenticated / active |
+| Webhook events seen                             |                        |
+| Preview: remaining days                         |                        |
+| Preview: due today (UI)                         |                        |
+| Preview: tax (UI)                               |                        |
+| Preview: next renewal (UI)                      |                        |
+| Provider adjustment / charge (Dashboard)        |                        |
+| Provider tax (if shown)                         |                        |
+| `company_subscriptions.plan_code` after confirm |                        |
+| `current_period_end`                            |                        |
+| Entitlements match Pro? (users limit etc.)      | yes / no               |
+| Any Stripe CTA shown?                           | must be **no**         |
+| Pass / Fail                                     |                        |
 
 ---
 
@@ -137,7 +137,7 @@ where provider_subscription_id = '<sub_…>';
 
 1. Stripe Dashboard → **Test mode**.
 2. Env: `STRIPE_SECRET_KEY=sk_test_…`, webhook secret for `/api/billing/stripe` (or existing staging wiring).
-3. Dedicated **UK** staging user + organisation (country **GB**).  
+3. Dedicated **UK** staging user + organisation (country **GB**).
 4. Put credentials **only** in local env (never commit, never paste into chat):
 
 ```bash
@@ -189,20 +189,20 @@ npm run test:billing:live
 
 ### Capture sheet B
 
-| Field | Value |
-| --- | --- |
-| App URL | |
-| Company / user (email only) | |
-| Stripe customer id | `cus_` |
-| Stripe subscription id | `sub_` |
-| After monthly upgrade: invoice id / amount_due / tax | |
-| Next renewal (`current_period_end`) | |
-| Annual change: invoice / period | |
-| Failure card result | |
-| 3DS card + outcome | |
-| DB `plan_code` / `provider=stripe` | |
-| `npm run test:billing:live` result | pass / skip / fail |
-| Pass / Fail | |
+| Field                                                | Value              |
+| ---------------------------------------------------- | ------------------ |
+| App URL                                              |                    |
+| Company / user (email only)                          |                    |
+| Stripe customer id                                   | `cus_`             |
+| Stripe subscription id                               | `sub_`             |
+| After monthly upgrade: invoice id / amount_due / tax |                    |
+| Next renewal (`current_period_end`)                  |                    |
+| Annual change: invoice / period                      |                    |
+| Failure card result                                  |                    |
+| 3DS card + outcome                                   |                    |
+| DB `plan_code` / `provider=stripe`                   |                    |
+| `npm run test:billing:live` result                   | pass / skip / fail |
+| Pass / Fail                                          |                    |
 
 ---
 

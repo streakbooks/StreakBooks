@@ -623,6 +623,7 @@ export const changePlanFor = createServerOnlyFn(
       }
 
       // Entitlements stay on the prior plan until subscription.updated / charged webhook sync.
+      // Do not claim chargedOnFile — Razorpay may still be collecting; webhook is authoritative.
       return {
         kind: change.kind,
         provider: "razorpay",
@@ -633,7 +634,7 @@ export const changePlanFor = createServerOnlyFn(
         paymentActionUrl: null,
         amountDueMinor: 0,
         alreadyApplied: false,
-        chargedOnFile: change.kind === "upgrade",
+        chargedOnFile: false,
       };
     }
 

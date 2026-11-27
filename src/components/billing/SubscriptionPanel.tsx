@@ -482,13 +482,19 @@ export function SubscriptionPanel({
         );
       } else if (result.kind === "upgrade") {
         setPlanSwitchPending(result.targetPlanCode);
-        toast.success(
-          result.chargedOnFile
-            ? "Upgrade charged to your card on file. Updating your plan…"
-            : result.alreadyApplied
-              ? "Your plan is already upgraded."
-              : "Upgrade complete. Refreshing your subscription…",
-        );
+        if (result.provider === "razorpay") {
+          toast.message(
+            "Upgrade submitted to Razorpay. Your plan updates after Razorpay confirms payment — not from this screen alone.",
+          );
+        } else {
+          toast.success(
+            result.chargedOnFile
+              ? "Upgrade charged to your card on file. Updating your plan…"
+              : result.alreadyApplied
+                ? "Your plan is already upgraded."
+                : "Upgrade complete. Refreshing your subscription…",
+          );
+        }
       } else {
         toast.success(
           `Downgrade scheduled. You keep your current plan until${

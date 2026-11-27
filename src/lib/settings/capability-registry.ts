@@ -781,9 +781,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/settings/organisation/overview",
     missingEvidence: [
-      "single write owner and reporting/return consumer evidence for the legacy tax regime and registration summary fields",
+      "a single Tax registration write owner and compare-and-set protection for stale Tax workspace edits",
     ],
-    note: "Country, base currency, legal name, fiscal year end, time zone, document locale, document date format and inclusive sales pricing have field-level consumer evidence. Tax regime and registration summary values remain partial because both organisation identity and Tax settings can write the same fields through different save paths.",
+    note: "Country, base currency, legal name, fiscal year end, time zone, document locale, document date format and inclusive sales pricing have field-level consumer evidence. Tax summary edits now have same-transaction field audit, but the legacy organisation and Tax forms still share write paths and the Tax editor has no stale-snapshot guard.",
   },
   {
     key: "accounting.workflow_safeguards",
@@ -801,10 +801,10 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/settings/tax/overview",
     missingEvidence: [
-      "authoritative tax-regime and tax-code ownership",
       "effective-date, jurisdiction and reporting-consumer behavior tests",
+      "single write owner and compare-and-set protection for Tax registration fields",
     ],
-    note: "Tax controls remain in the Tax module; do not add duplicate organisation-level rate or regime fields until their transaction and reporting effects are proven.",
+    note: "Tax rate/code history is audited and regime/registration updates are now field-audited. The legacy organisation form still overlaps the Tax registration form, and effective-date, jurisdiction and statutory reporting behaviors remain partial.",
   },
   {
     key: "sales.typed_configuration",

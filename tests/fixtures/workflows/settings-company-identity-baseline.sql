@@ -12,6 +12,20 @@ WHERE prices_include_tax IS NULL;
 ALTER TABLE public.company_tax_settings
   ALTER COLUMN prices_include_tax SET DEFAULT false,
   ALTER COLUMN prices_include_tax SET NOT NULL;
+
+CREATE FUNCTION public.test_tax_settings_audit_failure()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF current_setting('test.fail_tax_audit', true) = 'on'
+     AND NEW.category = 'tax' THEN
+    RAISE EXCEPTION 'Injected Tax audit failure';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER test_tax_settings_audit_failure
+BEFORE INSERT ON public.settings_change_log
+FOR EACH ROW EXECUTE FUNCTION public.test_tax_settings_audit_failure();
 GRANT UPDATE ON public.companies, public.company_tax_settings TO authenticated;
 
 INSERT INTO public.companies (

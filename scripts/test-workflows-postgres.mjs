@@ -140,6 +140,7 @@ try {
   sql(read("supabase/migrations/20261126150000_settings_company_identity_atomic.sql"));
   sql(read("supabase/migrations/20261126210000_settings_base_currency_posting_guard.sql"));
   sql(read("supabase/migrations/20261127100000_settings_timezone_guard.sql"));
+  sql(read("supabase/migrations/20261127140000_company_tax_settings_audit.sql"));
   sql(read("tests/fixtures/workflows/expense-settings-audit-baseline.sql"));
   sql(read("supabase/migrations/20261127110000_expense_settings_audit.sql"));
   sql(read("tests/integration/expense-settings-audit.sql"));
@@ -161,6 +162,7 @@ try {
     '00000000-0000-4000-8000-000000000001', now(), '00000000-0000-4000-8000-000000000001'
   );`);
   sql(read("tests/integration/settings-company-identity-atomic.sql"));
+  sql(read("tests/integration/company-tax-settings-audit.sql"));
   sql(
     "DELETE FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000013' AND journal_number=9001;",
   );

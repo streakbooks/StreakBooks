@@ -66,6 +66,18 @@ describe("Settings capability coverage registry", () => {
       )?.status,
     ).toBe("complete");
     expect(
+      SETTING_FIELD_COVERAGE.find((setting) => setting.key === "purchases.three_way_matching")
+        ?.status,
+    ).toBe("complete");
+    expect(
+      SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "purchases.three_way_matching"),
+    ).toMatchObject({
+      moduleId: "purchases",
+      permission: expect.stringContaining("company.settings.edit"),
+      persistence: expect.stringContaining("organisation_config.purchases"),
+      consumer: expect.stringContaining("fail closed"),
+    });
+    expect(
       SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "purchases.require_po"),
     ).toMatchObject({
       moduleId: "purchases",

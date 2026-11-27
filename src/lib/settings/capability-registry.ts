@@ -267,6 +267,24 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/purchases/purchase-order-preference.test.ts, src/lib/settings/workflow-settings.functions.test.ts and tests/integration/workflow-settings-audit.sql",
   },
   {
+    key: "purchases.three_way_matching",
+    label: "Require three-way matching for purchase-order bills",
+    moduleId: "purchases",
+    route: "/settings/purchases/overview",
+    scope: "company",
+    defaultValue: "disabled",
+    validation:
+      "Purchases settings use shared schema validation; malformed saved data blocks bill authorisation",
+    permission:
+      "company.settings.edit to change the setting; purchases.view to inspect match results; bill authorisation stays server-side",
+    entitlement: null,
+    persistence: "organisation_config.purchases through the version-checked settings RPC",
+    audit: "settings_change_log stores previous and resulting category documents",
+    consumer:
+      "Purchase-order bill authorisation requires an order, receipt and bill match when enabled; invalid configuration and unavailable required receipt data fail closed",
+    test: "src/lib/purchases/po-three-way-match.load.test.ts and src/lib/purchases/po-three-way-match.test.ts",
+  },
+  {
     key: "purchases.default_payment_terms",
     label: "Default purchase bill payment terms",
     moduleId: "purchases",
@@ -449,9 +467,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/settings/purchases/overview",
     missingEvidence: [
-      "consumer tests for bill inbox, approval threshold, duplicate detection, three-way match policy and contractor tracking",
+      "consumer tests for bill inbox, approval threshold, duplicate detection and contractor tracking",
     ],
-    note: "Supplier summary, bill terms, bill notes and the purchase-order preference have field-level consumers; unsupported purchase policies stay read-only.",
+    note: "Supplier summary, bill terms, bill notes, purchase-order preference and three-way-match authorization have field-level consumers; unsupported purchase policies stay read-only.",
   },
   {
     key: "banking.typed_configuration",

@@ -8,7 +8,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - [ ] Phase 3 / Batch 1 — canonical nested routes, universal breadcrumbs, legacy route compatibility and validated return-to-module are implemented. Authenticated browser E2E is pending because this workspace has no `E2E_EMAIL`/`E2E_PASSWORD` account, and the local `/settings` browser visit showed an application error.
 - [ ] Phase 3 / Batch 2 — organisation identity and tax summary use a transactional, stale-snapshot-guarded RPC with before/after audit; its isolated SQL regression passes CI. Profile now supports verified email changes, breadcrumb trail and same-organisation custom palette sync; account-wide preference scope remains partial.
 - [ ] Phase 3 / Batch 3 — accounting and tax settings; prove safety and effective-date/audit requirements. Base currency now has tested journal consumption, posting locks and post-history change rejection; the configured backdate threshold now produces a non-blocking manual-journal warning. Other accounting/tax coverage and authenticated review remain open.
-- [ ] Phase 3 / Batch 4 — sales and purchases settings; prove document workflow effects.
+- [ ] Phase 3 / Batch 4 — sales and purchases settings; prove document workflow effects. Purchase-order three-way matching is now an editable, audited preference enforced during bill authorisation; other purchase inbox/approval/duplicate/contractor settings and sales controls without consumers remain partial/read-only.
 - [ ] Phase 3 / Batch 5 — banking, inventory, assets, expenses, payroll and projects; preserve existing module owners.
 - [ ] Phase 3 / Batch 6 — users, access, firm/client grants, approvals and portal settings.
 - [ ] Phase 3 / Batch 7 — notifications, automation, integrations and API. Outgoing email sender name/reply-to and organisation digest quiet hours now have tested consumers; provider connections, AI, voice and API controls remain partial.
@@ -172,3 +172,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Extended the existing per-user, per-organisation appearance preference document to persist validated custom palette colors. Existing local theme storage remains the immediate renderer source; saved custom palettes are loaded into it, and edits made from the global theme controls can be saved with the new Appearance-card action.
 - Added normalization and server-function tests for custom palette read/write and malformed input. Existing named palette and colour-mode behavior remains supported. Account-wide preference scope is still partial; palette data is organisation-scoped in the current `user_ui_preferences` model.
 - Focused tests passed (4 files / 23 tests), typecheck, changed-file ESLint, `check:ui` and `git diff --check` passed. No schema migration, hosted database or deployment change was made.
+
+## 2026-11-27 Purchase-order three-way matching
+
+- Promoted `purchases.three_way_matching` to complete field evidence after confirming that PO-linked bill authorisation reads the organisation setting and fails when matching is required but the order, receipt and bill do not agree.
+- Fixed malformed saved Purchases settings to fail closed instead of silently disabling the authorization guard. Added loader regressions for default, enabled, malformed and unreadable configuration.
+- Focused tests passed (3 files / 29 tests), typecheck, changed-file ESLint, `check:modules`, `check:ui` and `git diff --check` passed. No schema or hosted Supabase change was made; Batch 4 remains partial because other Sales/Purchases fields still lack safe consumers.

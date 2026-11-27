@@ -465,6 +465,10 @@ Added an isolated PostgreSQL test for the shared `upsert_organisation_config` Se
 
 Extended the existing per-user, per-organisation appearance preference document with validated custom palette colors. The Appearance card loads saved custom values into local theme storage and offers a save action when edits made through the global theme controls differ from the saved palette. Theme rendering and validation continue to use the existing color-token path. Focused tests passed (4 files / 23 tests), typecheck, changed-file ESLint, `check:ui` and `git diff --check` passed. No migration, hosted Supabase, deployment or production changes were made. Account-wide preference scope remains incomplete.
 
+# Settings overhaul — purchase-order three-way matching, 27 November 2026
+
+Made `purchases.three_way_matching` a field-level complete capability after tracing the existing fail-closed bill authorization path. Malformed saved purchase settings now stop authorization rather than being interpreted as disabled. New loader tests cover missing, enabled, malformed and unreadable configuration. Focused tests passed (3 files / 29 tests), typecheck, changed-file ESLint, `check:modules`, `check:ui` and `git diff --check` passed. No schema, hosted Supabase, deployment or production change was made. Batch 4 remains partial.
+
 # Settings overhaul — purchase-order preference behavior, 26 November 2026
 
 Connected the existing `purchases_require_po` setting to a tested bill-workspace notice. Enabling it clearly recommends linking a PO but continues to allow independent bills, consistent with the setting's “Prefer purchase order before bill” label. Added enabled/disabled consumer tests, a permission/persistence regression, and field-level capability evidence. The isolated workflow SQL regression proves true/false typed before/after audit values; the network-disabled PostgreSQL 17 harness passed. Focused tests passed (3 files / 13 tests), changed-file ESLint and UI contracts passed. No migration was needed. The feature branch push and Actions for this preference are still in progress; no hosted Supabase, deployment, authenticated staging or production was used.

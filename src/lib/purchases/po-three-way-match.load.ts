@@ -29,7 +29,12 @@ export async function loadThreeWayMatchingRequired(
       ? (data as { document: unknown }).document
       : defaultDocumentFor("purchases");
   const parsed = purchasesConfigSchema.safeParse(raw ?? {});
-  return parsed.success ? parsed.data.three_way_matching : false;
+  if (!parsed.success) {
+    throw new Error(
+      "Saved Purchases settings are invalid. Correct them before authorising purchase-order bills.",
+    );
+  }
+  return parsed.data.three_way_matching;
 }
 
 export async function loadBillThreeWayMatch(

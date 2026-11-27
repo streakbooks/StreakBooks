@@ -8,7 +8,7 @@ DECLARE
   other_c uuid := '10000000-0000-4000-8000-000000000012';
   posted_c uuid := '10000000-0000-4000-8000-000000000013';
   expected jsonb := '{"name":"Company Identity Fixture","legal_name":"Fixture Legal Entity","country_code":"GB","base_currency":"GBP","fiscal_year_end_month":3,"fiscal_year_end_day":31,"timezone":"Europe/London","tax_regime":"vat","registration_number":"GB123456789","prices_include_tax":false}'::jsonb;
-  desired jsonb := '{"name":"Updated Fixture","legal_name":"Updated Legal Entity","country_code":"IN","base_currency":"INR","fiscal_year_end_month":3,"fiscal_year_end_day":31,"timezone":"Asia/Kolkata","tax_regime":"gst","registration_number":"GSTIN123","prices_include_tax":true}'::jsonb;
+  desired jsonb := '{"name":"Updated Fixture","legal_name":"Updated Legal Entity","country_code":"IN","base_currency":"INR","fiscal_year_end_month":6,"fiscal_year_end_day":30,"timezone":"Asia/Kolkata","tax_regime":"gst","registration_number":"GSTIN123","prices_include_tax":true}'::jsonb;
   posted_expected jsonb := '{"name":"Posted Ledger Fixture","legal_name":null,"country_code":"GB","base_currency":"GBP","fiscal_year_end_month":3,"fiscal_year_end_day":31,"timezone":"Europe/London","tax_regime":"vat","registration_number":null,"prices_include_tax":false}'::jsonb;
   posted_desired jsonb := '{"name":"Posted Ledger Fixture","legal_name":null,"country_code":"GB","base_currency":"INR","fiscal_year_end_month":3,"fiscal_year_end_day":31,"timezone":"Europe/London","tax_regime":"vat","registration_number":null,"prices_include_tax":false}'::jsonb;
   localisation_expected jsonb := '{"locale":"en-GB","date_format":"DD/MM/YYYY","invoice_footer":"","document_theme_color":"#0F766E"}'::jsonb;
@@ -25,6 +25,8 @@ BEGIN
   PERFORM public.save_company_identity_and_tax(c, expected, desired);
   IF (SELECT name FROM public.companies WHERE id=c) <> 'Updated Fixture'
      OR (SELECT legal_name FROM public.companies WHERE id=c) <> 'Updated Legal Entity'
+     OR (SELECT fiscal_year_end_month FROM public.companies WHERE id=c) <> 6
+     OR (SELECT fiscal_year_end_day FROM public.companies WHERE id=c) <> 30
      OR (SELECT tax_regime FROM public.company_tax_settings WHERE company_id=c) <> 'gst'
      OR NOT (SELECT prices_include_tax FROM public.company_tax_settings WHERE company_id=c) THEN
     RAISE EXCEPTION 'Organisation identity and tax settings were not saved together';
@@ -161,7 +163,7 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     IF SQLERRM NOT ILIKE '%financial year end date%' THEN RAISE; END IF;
   END;
-  IF (SELECT fiscal_year_end_day FROM public.companies WHERE id=c) <> 31 THEN
+  IF (SELECT fiscal_year_end_day FROM public.companies WHERE id=c) <> 30 THEN
     RAISE EXCEPTION 'Invalid date partially changed company settings';
   END IF;
 

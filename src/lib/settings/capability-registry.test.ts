@@ -132,6 +132,19 @@ describe("Settings capability coverage registry", () => {
     });
   });
 
+  it("records fiscal-year-end validation and report consumer evidence", () => {
+    expect(
+      SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "company.fiscal_year_end"),
+    ).toMatchObject({
+      route: "/settings/organisation/overview",
+      permission: "company.settings.edit",
+      persistence: expect.stringContaining("fiscal_year_end_month"),
+      audit: expect.stringContaining("before/after"),
+      consumer: expect.stringContaining("period-close"),
+      test: expect.stringContaining("ledger-data.test.ts"),
+    });
+  });
+
   it("records audited document numbering and allocation evidence", () => {
     expect(
       SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "documents.number_sequences"),

@@ -199,3 +199,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - Added a direct document-context regression showing the company legal name from organisation Settings is carried into customer-facing branding while the trading/display name remains separate. The existing identity SQL regression now explicitly asserts the saved legal-name column and already verifies the full before/after audit payload, permission checks and rollback behavior.
 - Registered `company.legal_name` as a complete field capability. Organisation identity overall remains partial because country, fiscal year, timezone and tax configuration still need broader server-side effect coverage.
+
+## 2026-11-27 Fiscal-year consumer evidence
+
+- Added an organisation metadata regression that carries the saved June 30 year end into the real accounting fiscal-year range calculation. The isolated identity SQL regression now saves and asserts that month/day alongside legal name, before/after audit and stale-write safety; its invalid February 30 and rollback coverage remains in place.
+- Registered `company.fiscal_year_end` as a complete capability. The organisation identity group remains partial because country, timezone and broader tax/reporting configuration still need consumer coverage.
+- Focused tests passed (3 files / 18 tests), the isolated PostgreSQL 17 workflow harness passed, and changed-file ESLint plus `git diff --check` passed. Hosted Supabase and migrations were not touched.

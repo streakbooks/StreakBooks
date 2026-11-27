@@ -78,6 +78,25 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/documents/documents-loader.test.ts and tests/integration/settings-company-identity-atomic.sql",
   },
   {
+    key: "company.fiscal_year_end",
+    label: "Organisation fiscal year end",
+    moduleId: "settings",
+    route: "/settings/organisation/overview",
+    scope: "company",
+    defaultValue: "31 December unless a different organisation year end is saved",
+    validation:
+      "Company identity validator and database RPC validate the month/day pair, including leap-year February boundaries",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence:
+      "companies.fiscal_year_end_month and fiscal_year_end_day through save_company_identity_and_tax",
+    audit:
+      "audit_events stores exact before/after organisation identity values in the same transaction",
+    consumer:
+      "Accounting report, balance-sheet, year-end and period-close date ranges use the saved fiscal year end",
+    test: "src/lib/accounting/ledger-data.test.ts, src/lib/accounting/fiscal-year.test.ts, and tests/integration/settings-company-identity-atomic.sql",
+  },
+  {
     key: "company.locale",
     label: "Organisation document locale",
     moduleId: "settings",

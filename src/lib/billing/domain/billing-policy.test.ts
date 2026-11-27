@@ -22,14 +22,15 @@ describe("billing policy (industry standard)", () => {
     expect(downgrade.whenStarts.toLowerCase()).toContain("renewal");
   });
 
-  it("never routes Razorpay plan changes through Stripe copy", () => {
+  it("explains Razorpay UPI cannot change plan mid-mandate", () => {
     const upgrade = planChangePaymentCopy("upgrade", "razorpay");
     const downgrade = planChangePaymentCopy("downgrade", "razorpay");
     expect(upgrade.button.toLowerCase()).not.toContain("stripe");
-    expect(upgrade.paymentNow.toLowerCase()).toContain("no charge");
-    expect(upgrade.description.toLowerCase()).toContain("razorpay");
-    expect(upgrade.description.toLowerCase()).not.toContain("stripe");
-    expect(downgrade.button.toLowerCase()).toContain("schedule");
+    expect(upgrade.button.toLowerCase()).toContain("got it");
+    expect(upgrade.description.toLowerCase()).toMatch(/upi|e-mandate|emandate/);
+    expect(upgrade.description.toLowerCase()).toContain("cancel");
+    expect(downgrade.button).toBe(upgrade.button);
     expect(billingChargeRules("razorpay").some((rule) => /stripe/i.test(rule.body))).toBe(false);
+    expect(billingChargeRules("razorpay").some((rule) => /upi/i.test(rule.body))).toBe(true);
   });
 });

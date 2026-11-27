@@ -148,6 +148,22 @@ describe("Settings capability coverage registry", () => {
       persistence: expect.stringContaining("purchases_require_po"),
     });
     expect(
+      SETTING_CAPABILITY_REGISTRY.find(
+        (setting) => setting.key === "purchases.duplicate_detection",
+      ),
+    ).toMatchObject({
+      moduleId: "purchases",
+      permission: expect.stringContaining("purchases.view"),
+      persistence: expect.stringContaining("organisation_config.purchases"),
+      audit: expect.stringContaining("settings_change_log"),
+      consumer: expect.stringContaining("database uniqueness guard"),
+      test: expect.stringContaining("duplicate-detection-preference.test.ts"),
+    });
+    expect(
+      SETTING_FIELD_COVERAGE.find((setting) => setting.key === "purchases.duplicate_detection")
+        ?.status,
+    ).toBe("complete");
+    expect(
       SETTING_FIELD_COVERAGE.find((setting) => setting.key === "reports.default_comparison")
         ?.status,
     ).toBe("complete");

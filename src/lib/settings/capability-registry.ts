@@ -652,6 +652,23 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/purchases/bill-form-helpers.test.ts, src/lib/settings/workflow-settings.functions.test.ts, and tests/integration/workflow-settings-audit.sql",
   },
   {
+    key: "purchases.duplicate_detection",
+    label: "Supplier invoice duplicate preflight",
+    moduleId: "purchases",
+    route: "/settings/purchases/overview",
+    scope: "company",
+    defaultValue: "Enabled",
+    validation:
+      "Purchases category schema validates the saved boolean; malformed values keep the preflight enabled",
+    permission: "company.settings.edit to configure; purchases.view to inspect candidate matches",
+    entitlement: null,
+    persistence: "organisation_config.purchases through the version-checked settings RPC",
+    audit: "settings_change_log stores previous and resulting category documents",
+    consumer:
+      "Bill entry skips the advisory duplicate preflight only when disabled; the database uniqueness guard still rejects exact active duplicates unless explicitly acknowledged",
+    test: "src/lib/purchases/duplicate-detection-preference.test.ts and existing purchase_bills_supplier_invoice_uidx database guard",
+  },
+  {
     key: "notifications.email_from_name",
     label: "Outgoing email sender name",
     moduleId: "settings",
@@ -810,10 +827,8 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "purchases",
     status: "partial",
     route: "/settings/purchases/overview",
-    missingEvidence: [
-      "consumer tests for bill inbox, approval threshold, duplicate detection and contractor tracking",
-    ],
-    note: "Supplier summary, bill terms, bill notes, purchase-order preference and three-way-match authorization have field-level consumers; unsupported purchase policies stay read-only.",
+    missingEvidence: ["consumer tests for bill inbox, approval threshold and contractor tracking"],
+    note: "Supplier summary, bill terms, bill notes, purchase-order preference, three-way-match authorization and the optional duplicate preflight have field-level consumers; unsupported purchase policies stay read-only.",
   },
   {
     key: "expense-management.typed_configuration",

@@ -36,6 +36,11 @@ import {
 } from "@/lib/settings/dimensions.functions";
 import { getOrgExtendedSettings } from "@/lib/settings/org-settings.functions";
 import { getWorkflowSettings } from "@/lib/settings/workflow-settings.functions";
+import { getOrganisationConfig } from "@/lib/settings/settings-centre.functions";
+import {
+  purchaseDuplicateDetectionEnabled,
+  shouldShowDuplicateSupplierBillWarning,
+} from "@/lib/purchases/duplicate-detection-preference";
 import { purchaseOrderPreferenceNotice } from "@/lib/purchases/purchase-order-preference";
 import { listOrganisationFeatures } from "@/lib/settings/settings-centre.functions";
 import {
@@ -246,6 +251,7 @@ export function NewBill({
   const fetchAccounts = useServerFn(listAccounts);
   const fetchProducts = useServerFn(listProducts);
   const fetchSettings = useServerFn(getWorkflowSettings);
+  const fetchOrganisationConfig = useServerFn(getOrganisationConfig);
   const fetchOrg = useServerFn(getOrgExtendedSettings);
   const fetchTaxCodes = useServerFn(listTaxCodes);
   const fetchDimensions = useServerFn(listTrackingDimensions);
@@ -300,6 +306,15 @@ export function NewBill({
     enabled: Boolean(companyId),
     queryFn: () => fetchSettings({ data: { companyId: companyId! } }),
   });
+  const purchaseConfigQ = useQuery({
+    queryKey: ["organisation-config", companyId, "purchases"],
+    enabled: Boolean(companyId),
+    queryFn: () =>
+      fetchOrganisationConfig({ data: { companyId: companyId!, category: "purchases" } }),
+  });
+  const duplicateDetectionEnabled = purchaseConfigQ.isSuccess
+    ? purchaseDuplicateDetectionEnabled(purchaseConfigQ.data.document)
+    : true;
   const orgQ = useQuery({
     queryKey: ["org-settings", companyId],
     enabled: Boolean(companyId),
@@ -574,7 +589,13 @@ export function NewBill({
 
   const dupQ = useQuery({
     queryKey: ["bill-dup", companyId, contactId, supplierInvoiceNumber, billId],
-    enabled: Boolean(companyId && contactId && supplierInvoiceNumber.trim()),
+    enabled: Boolean(
+      companyId &&
+      contactId &&
+      supplierInvoiceNumber.trim() &&
+      purchaseConfigQ.isSuccess &&
+      duplicateDetectionEnabled,
+    ),
     queryFn: () =>
       checkDup({
         data: {
@@ -933,7 +954,16 @@ export function NewBill({
         "No exchange rate available for this currency and date. Add a rate in Settings before saving.",
       );
     }
-    if (dupQ.data?.duplicate && !acknowledgeDuplicate) {
+    if (!purchaseConfigQ.isSuccess) {
+      throw new Error("Could not load Purchases policies. Reload before saving this bill.");
+    }
+    if (
+      shouldShowDuplicateSupplierBillWarning(
+        duplicateDetectionEnabled,
+        Boolean(dupQ.data?.duplicate),
+      ) &&
+      !acknowledgeDuplicate
+    ) {
       throw new Error(
         "A bill with this supplier invoice number may already exist. Review it and acknowledge to continue.",
       );
@@ -1640,7 +1670,10 @@ export function NewBill({
           </Alert>
         ) : null}
 
-        {dupQ.data?.duplicate ? (
+        {shouldShowDuplicateSupplierBillWarning(
+          duplicateDetectionEnabled,
+          Boolean(dupQ.data?.duplicate),
+        ) ? (
           <Alert variant="destructive" className="mb-4">
             <AlertTitle>Possible duplicate supplier bill</AlertTitle>
             <AlertDescription className="space-y-2">
@@ -1649,7 +1682,7 @@ export function NewBill({
                 this supplier.
               </p>
               <ul className="list-disc pl-5 text-sm">
-                {dupQ.data.matches.map((m) => (
+                {(dupQ.data?.matches ?? []).map((m) => (
                   <li key={m.id}>
                     <Link
                       to="/purchases/bills/$billId"

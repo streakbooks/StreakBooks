@@ -382,3 +382,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Added field-specific explanations to disabled Sales and Purchases policy controls, including unavailable late-fee posting, scheduled reminder delivery, amount-based bill approval, bill inbox ingestion and contractor tax reporting. Duplicate supplier-invoice checks remain mandatory for bill integrity; the preference cannot disable the guard.
 - Kept unsupported controls fail-closed and preserved existing workflow behavior. Fixed the Organisation save payload's empty-registration fallback after TypeScript identified a nullable-to-string mismatch.
 - Focused tests passed (3 files / 23 tests), changed-file ESLint, `check:ui` (775 TSX files, zero violations), typecheck and `git diff --check` passed. No schema or hosted Supabase operation was performed. Settings batches 3–9 and authenticated review remain open; no deployment or production verification occurred.
+
+## 2026-11-27 Purchases duplicate-detection preference consumer
+
+- Connected the saved Purchases duplicate-detection preference to the supplier-invoice preflight shown during bill entry. The default remains enabled; malformed or unreadable settings fail closed. Disabling the advisory lookup does not disable the database uniqueness guard or allow an unacknowledged duplicate.
+- Registered the preference as a complete field capability with the existing versioned, permission-gated and audited settings writer. The Purchases module remains partial for bill inbox ingestion, amount-based approval thresholds and contractor tax tracking.
+- Focused tests passed (2 files / 18 tests), changed-file ESLint, `check:ui` and `git diff --check` passed. Typecheck identified a nullable query-result narrowing issue which is corrected; the clean rerun is pending. No schema or hosted Supabase operation was performed.

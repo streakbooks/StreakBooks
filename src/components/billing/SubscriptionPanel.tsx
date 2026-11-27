@@ -793,9 +793,7 @@ export function SubscriptionPanel({
                     <dt className="text-muted-foreground">New price</dt>
                     <dd className="font-medium">
                       {formatMinor(
-                        switchPreview?.newRecurringMinor ??
-                          switchPreview?.listAmountMinor ??
-                          due,
+                        switchPreview?.newRecurringMinor ?? switchPreview?.listAmountMinor ?? due,
                         dueCurrency,
                       )}
                       /{interval === "year" ? "yr" : "mo"}
@@ -948,8 +946,8 @@ export function SubscriptionPanel({
                         {switchPreview.nextRenewalAt ? (
                           <li>
                             Your next billing date stays{" "}
-                            {new Date(switchPreview.nextRenewalAt).toLocaleDateString()} (cycle
-                            not reset).
+                            {new Date(switchPreview.nextRenewalAt).toLocaleDateString()} (cycle not
+                            reset).
                           </li>
                         ) : null}
                         {switchPreview.changeSupported === false ? (

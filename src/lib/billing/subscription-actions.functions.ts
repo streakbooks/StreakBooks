@@ -195,10 +195,7 @@ function assertPreviewFresh(prorationDateUnix: number | null | undefined): void 
 }
 
 export type PlanChangeAppliesMode =
-  | "immediate"
-  | "period_end"
-  | "unsupported"
-  | "migration_required";
+  "immediate" | "period_end" | "unsupported" | "migration_required";
 
 export type PlanChangePreview = {
   kind: "upgrade" | "downgrade";
@@ -328,9 +325,8 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
     );
 
     if (change.provider === "razorpay") {
-      const { createRazorpayClient, razorpayInspectSubscription } = await import(
-        "@/lib/billing/providers/razorpay.server"
-      );
+      const { createRazorpayClient, razorpayInspectSubscription } =
+        await import("@/lib/billing/providers/razorpay.server");
       let mandate: RazorpayMandateKind = "unknown";
       let periodStartIso: string | null = null;
       let periodEndIso = change.periodEnd;
@@ -461,9 +457,7 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
       );
       const paymentRequired = change.kind === "upgrade" && preview.amountDueMinor > 0;
       const nextRenewalAt =
-        preview.periodEndUnix != null
-          ? unixToIso(preview.periodEndUnix)
-          : change.periodEnd;
+        preview.periodEndUnix != null ? unixToIso(preview.periodEndUnix) : change.periodEnd;
       const remainingDays = remainingBillingDays(nextRenewalAt);
       const amountDue = paymentRequired ? preview.amountDueMinor : 0;
       return {
@@ -585,16 +579,10 @@ export const changePlanFor = createServerOnlyFn(
     });
 
     if (change.provider === "razorpay") {
-      const {
-        createRazorpayClient,
-        razorpayInspectSubscription,
-        razorpayChangePlan,
-      } = await import("@/lib/billing/providers/razorpay.server");
+      const { createRazorpayClient, razorpayInspectSubscription, razorpayChangePlan } =
+        await import("@/lib/billing/providers/razorpay.server");
       const razorpay = createRazorpayClient();
-      const inspected = await razorpayInspectSubscription(
-        razorpay,
-        change.providerSubscriptionId,
-      );
+      const inspected = await razorpayInspectSubscription(razorpay, change.providerSubscriptionId);
       const mandate = razorpayMandateKindFromNotes(inspected.notes, inspected.payment_method);
       if (!razorpaySupportsImmediatePlanChange(mandate)) {
         throw new Error(
@@ -634,16 +622,17 @@ export const changePlanFor = createServerOnlyFn(
         }
       }
 
+      // Entitlements stay on the prior plan until subscription.updated / charged webhook sync.
       return {
         kind: change.kind,
         provider: "razorpay",
-        applies: change.kind === "upgrade" ? "immediate" : "period_end",
+        applies: change.kind === "upgrade" ? "after_payment" : "period_end",
         effectiveAt: unixToIso(inspected.current_end) ?? change.periodEnd,
         targetPlanCode: data.planCode,
         targetInterval: change.interval,
         paymentActionUrl: null,
         amountDueMinor: 0,
-        alreadyApplied: change.kind === "upgrade",
+        alreadyApplied: false,
         chargedOnFile: change.kind === "upgrade",
       };
     }

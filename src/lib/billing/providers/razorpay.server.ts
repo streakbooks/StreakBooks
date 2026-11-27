@@ -148,10 +148,7 @@ export async function razorpayInspectSubscription(
   client: RazorpayClient,
   subscriptionId: string,
 ): Promise<RazorpaySubscriptionInspect> {
-  const raw = await client.request(
-    "GET",
-    `subscriptions/${encodeURIComponent(subscriptionId)}`,
-  );
+  const raw = await client.request("GET", `subscriptions/${encodeURIComponent(subscriptionId)}`);
   const notesRaw = raw["notes"];
   const notes =
     notesRaw && typeof notesRaw === "object" && !Array.isArray(notesRaw)
@@ -161,8 +158,7 @@ export async function razorpayInspectSubscription(
     id: String(raw["id"] ?? subscriptionId),
     status: String(raw["status"] ?? ""),
     plan_id: raw["plan_id"] == null ? null : String(raw["plan_id"]),
-    current_start:
-      typeof raw["current_start"] === "number" ? raw["current_start"] : null,
+    current_start: typeof raw["current_start"] === "number" ? raw["current_start"] : null,
     current_end: typeof raw["current_end"] === "number" ? raw["current_end"] : null,
     charge_at: typeof raw["charge_at"] === "number" ? raw["charge_at"] : null,
     notes,
@@ -182,15 +178,11 @@ export async function razorpayChangePlan(
   scheduleChangeAt: "now" | "cycle_end" = "cycle_end",
 ): Promise<Record<string, unknown>> {
   try {
-    return await client.request(
-      "PATCH",
-      `subscriptions/${encodeURIComponent(subscriptionId)}`,
-      {
-        plan_id: planId,
-        schedule_change_at: scheduleChangeAt,
-        customer_notify: true,
-      },
-    );
+    return await client.request("PATCH", `subscriptions/${encodeURIComponent(subscriptionId)}`, {
+      plan_id: planId,
+      schedule_change_at: scheduleChangeAt,
+      customer_notify: true,
+    });
   } catch (error) {
     if (error instanceof RazorpayError && /(UPI|emandate|e-mandate)/i.test(error.message)) {
       throw new Error(

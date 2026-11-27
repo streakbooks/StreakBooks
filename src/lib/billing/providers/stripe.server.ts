@@ -222,10 +222,7 @@ async function loadInvoice(
   client: StripeClient,
   invoiceId: string,
 ): Promise<Record<string, unknown>> {
-  return client.request(
-    "GET",
-    `invoices/${encodeURIComponent(invoiceId)}?expand[]=payment_intent`,
-  );
+  return client.request("GET", `invoices/${encodeURIComponent(invoiceId)}?expand[]=payment_intent`);
 }
 
 /** Stripe's hosted invoice pay page — the standard mid-cycle upgrade payment screen. */
@@ -501,10 +498,7 @@ export async function stripePreviewPlanChange(
     query.set("subscription", subscriptionId);
     query.set("subscription_items[0][id]", item.id);
     query.set("subscription_items[0][price]", priceId);
-    query.set(
-      "subscription_proration_behavior",
-      kind === "upgrade" ? "create_prorations" : "none",
-    );
+    query.set("subscription_proration_behavior", kind === "upgrade" ? "create_prorations" : "none");
     if (kind === "upgrade") {
       query.set("subscription_proration_date", String(prorationDateUnix));
     }
@@ -513,7 +507,8 @@ export async function stripePreviewPlanChange(
 
   const currency = String(preview["currency"] ?? "gbp").toUpperCase();
   const amountDue = Number(preview["amount_due"] ?? 0);
-  const linesRaw = (preview["lines"] as { data?: Record<string, unknown>[] } | undefined)?.data ?? [];
+  const linesRaw =
+    (preview["lines"] as { data?: Record<string, unknown>[] } | undefined)?.data ?? [];
   const lines = linesRaw.slice(0, 8).map((line) => ({
     description: String(line["description"] ?? "Line"),
     amountMinor: Number(line["amount"] ?? 0),

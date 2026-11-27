@@ -25,32 +25,26 @@ describe("hybrid provider resolution", () => {
   });
 
   it("offers Razorpay card + UPI + e-mandate for India when Razorpay is routed", () => {
-    const methods = paymentMethodsForRoutedCountry(
-      "IN",
-      { stripe: true, razorpay: true },
-      ["razorpay"],
-    );
+    const methods = paymentMethodsForRoutedCountry("IN", { stripe: true, razorpay: true }, [
+      "razorpay",
+    ]);
     expect(methods.map((m) => m.id)).toEqual(["card", "upi", "emandate"]);
     expect(methods.every((m) => m.provider === "razorpay")).toBe(true);
   });
 
   it("offers only Stripe card for US/UK when Stripe is routed", () => {
     for (const country of ["US", "GB"] as const) {
-      const methods = paymentMethodsForRoutedCountry(
-        country,
-        { stripe: true, razorpay: true },
-        ["stripe"],
-      );
+      const methods = paymentMethodsForRoutedCountry(country, { stripe: true, razorpay: true }, [
+        "stripe",
+      ]);
       expect(methods.map((m) => m.id)).toEqual(["card"]);
     }
   });
 
   it("marks methods unavailable when the routed provider has no keys", () => {
-    const methods = paymentMethodsForRoutedCountry(
-      "IN",
-      { stripe: true, razorpay: false },
-      ["razorpay"],
-    );
+    const methods = paymentMethodsForRoutedCountry("IN", { stripe: true, razorpay: false }, [
+      "razorpay",
+    ]);
     expect(methods.every((m) => !m.available)).toBe(true);
   });
 
@@ -58,9 +52,9 @@ describe("hybrid provider resolution", () => {
     expect(() => assertProviderRouted("stripe", ["razorpay"])).toThrow(/not offered/i);
     expect(lockedSubscriptionProvider("razorpay")).toBe("razorpay");
     expect(lockedSubscriptionProvider("none")).toBeNull();
-    expect(preferredCheckoutProvider(["razorpay", "stripe"], { stripe: true, razorpay: false })).toBe(
-      "stripe",
-    );
+    expect(
+      preferredCheckoutProvider(["razorpay", "stripe"], { stripe: true, razorpay: false }),
+    ).toBe("stripe");
     expect(preferredCheckoutProvider(["razorpay"], { stripe: true, razorpay: false })).toBeNull();
   });
 });

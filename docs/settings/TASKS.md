@@ -183,3 +183,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - Company creation/update validation now rejects unknown IANA timezone identifiers before sending a save; valid organisation zones continue to control company-local business dates.
 - Focused company-validation and date-consumer tests passed (2 files / 10 tests), typecheck, changed-file ESLint and `git diff --check` passed. The SQL RPC currently accepts any nonempty timezone when invoked directly, so the field remains PARTIAL pending database-level validation and direct-RPC regression; no hosted database change was made.
+
+## 2026-11-27 Organisation locale and date formatting
+
+- Promoted the supported organisation locale and document date format as separate capabilities after adding consumer tests for loading them into document context and formatting a customer invoice email with the selected locale/date pattern.
+- Extended the existing isolated PostgreSQL identity regression to exercise the audited localisation RPC: exact before/after audit, unsupported locale rejection, stale snapshot rejection, permission denial and audit-failure rollback.
+- Focused tests passed (3 files / 29 tests); the network-disabled PostgreSQL 17 workflow harness, typecheck, changed-file ESLint and `git diff --check` passed. No migration or hosted database change was made; broader identity and Settings batches remain partial.

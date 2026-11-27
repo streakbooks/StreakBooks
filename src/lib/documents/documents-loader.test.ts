@@ -3,7 +3,12 @@ import { loadCompanyDocContext } from "@/lib/documents/documents-loader";
 
 const companyId = "10000000-0000-4000-8000-000000000001";
 
-function database(brandingInstructions: string | null, salesInstructions: string) {
+function database(
+  brandingInstructions: string | null,
+  salesInstructions: string,
+  locale = "en-GB",
+  dateFormat = "DD/MM/YYYY",
+) {
   return {
     from: (table: string) => {
       let selected = "";
@@ -17,7 +22,7 @@ function database(brandingInstructions: string | null, salesInstructions: string
           error: null,
           data:
             table === "companies"
-              ? { name: "Example Co", timezone: "UTC", locale: "en-GB" }
+              ? { name: "Example Co", timezone: "UTC", locale, date_format: dateFormat }
               : table === "company_branding"
                 ? { payment_instructions: brandingInstructions }
                 : table === "company_workflow_settings" && selected === "sales_payment_instructions"
@@ -56,5 +61,15 @@ describe("loadCompanyDocContext Sales payment instructions", () => {
       { kind: "sales_invoice", id: "20000000-0000-4000-8000-000000000002" },
     );
     expect(ctx.branding.paymentInstructions).toBe("Pay using this document reference");
+  });
+
+  it("passes saved organisation locale and date format into document generation", async () => {
+    const ctx = await loadCompanyDocContext(
+      database(null, "", "en-US", "MM/DD/YYYY") as never,
+      companyId,
+      { kind: "sales_invoice", id: "20000000-0000-4000-8000-000000000002" },
+    );
+    expect(ctx.locale).toBe("en-US");
+    expect(ctx.dateFormat).toBe("MM/DD/YYYY");
   });
 });

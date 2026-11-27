@@ -105,6 +105,18 @@ describe("Settings capability coverage registry", () => {
     );
   });
 
+  it("records document locale and date-format consumers separately from storage format", () => {
+    for (const key of ["company.locale", "company.date_format"]) {
+      expect(SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === key)).toMatchObject({
+        route: "/settings/organisation/overview",
+        permission: "company.settings.edit",
+        persistence: expect.stringContaining("save_company_localisation_if_unchanged"),
+        audit: expect.stringContaining("settings.localization"),
+        test: expect.stringContaining("settings-company-identity-atomic.sql"),
+      });
+    }
+  });
+
   it("promotes only the tested manual-journal backdate warning from Accounting settings", () => {
     expect(
       SETTING_CAPABILITY_REGISTRY.find(

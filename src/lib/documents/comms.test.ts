@@ -52,6 +52,17 @@ describe("email templates", () => {
     expect(e.text).toContain("Sort 00-00-00");
   });
 
+  it("uses the organisation locale and date format for customer invoice email values", () => {
+    const email = renderEmail("invoice", {
+      ...input,
+      currency: "USD",
+      locale: "en-US",
+      dateFormat: "MM/DD/YYYY",
+    });
+    expect(email.text).toContain("$1,234.56");
+    expect(email.text).toContain("10/31/2026");
+  });
+
   it("escapes HTML in names and never emits raw markup from data", () => {
     const e = renderEmail("invoice", { ...input, partyName: '<script>alert("x")</script>' });
     expect(e.html).not.toContain("<script>");

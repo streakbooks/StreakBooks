@@ -43,6 +43,39 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "tests/integration/settings-company-identity-atomic.sql proves pre-posting update, journal currency consumption, posting locks and post-history rejection",
   },
   {
+    key: "company.locale",
+    label: "Organisation document locale",
+    moduleId: "settings",
+    route: "/settings/organisation/overview",
+    scope: "company",
+    defaultValue: "en-GB",
+    validation: "The authenticated save function and database RPC allow only supported locales",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "companies.locale through save_company_localisation_if_unchanged",
+    audit: "settings.localization stores exact before/after values in the same transaction",
+    consumer:
+      "Generated customer documents and emails format dates and currency using the saved locale",
+    test: "src/lib/documents/documents-loader.test.ts, src/lib/documents/comms.test.ts, and tests/integration/settings-company-identity-atomic.sql",
+  },
+  {
+    key: "company.date_format",
+    label: "Organisation document date format",
+    moduleId: "settings",
+    route: "/settings/organisation/overview",
+    scope: "company",
+    defaultValue: "DD/MM/YYYY",
+    validation:
+      "The authenticated save function and database RPC allow only supported date formats",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "companies.date_format through save_company_localisation_if_unchanged",
+    audit: "settings.localization stores exact before/after values in the same transaction",
+    consumer:
+      "Generated customer documents and emails use the saved date pattern while stored dates remain ISO",
+    test: "src/lib/documents/documents-loader.test.ts, src/lib/documents/comms.test.ts, and tests/integration/settings-company-identity-atomic.sql",
+  },
+  {
     key: "accounting.lock_policy",
     label: "Accounting lock dates",
     moduleId: "accounting",
@@ -426,8 +459,10 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "settings",
     status: "partial",
     route: "/settings/organisation/overview",
-    missingEvidence: ["field-level consumer tests"],
-    note: "Base currency has field-level consumer and ledger-safety evidence; other organisation identity, locale and legacy tax-summary fields still need downstream effect tests.",
+    missingEvidence: [
+      "field-level consumers for legal identity, country, fiscal year, timezone and legacy tax summary",
+    ],
+    note: "Base currency, document locale and document date format have field-level consumer tests; other organisation identity, timezone and legacy tax-summary fields remain partial.",
   },
   {
     key: "accounting.workflow_safeguards",

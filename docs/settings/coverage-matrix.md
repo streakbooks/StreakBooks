@@ -81,7 +81,7 @@ This table is synchronized with `MODULE_SETTINGS_COVERAGE`, which is checked aga
 | Onboarding          | Initial organisation setup and safe defaults                 | **PARTIAL**                                                                                                                                        |
 | Auth                | Authentication screens; policy owned by server configuration | **NOT APPLICABLE**                                                                                                                                 |
 
-Expense claim coverage also includes a validated default currency for new employee claims when the company has enabled the currency and multi-currency claims. Incompatible templates are hidden, and amount values are not converted or reinterpreted.
+Expense claim coverage also includes a validated default currency for new employee claims when the company has enabled the currency and multi-currency claims. Incompatible templates are hidden, and amount values are not converted or reinterpreted. Missing receipts generate a high-risk review flag; this policy currently does not block claim submission.
 
 ## Known gaps
 

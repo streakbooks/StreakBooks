@@ -463,7 +463,7 @@ export function ExpenseManagementSettingsPage() {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="em-receipt">Require receipt above (minor units)</Label>
+          <Label htmlFor="em-receipt">Flag missing receipts at or above (minor units)</Label>
           <Input
             id="em-receipt"
             inputMode="numeric"
@@ -473,6 +473,10 @@ export function ExpenseManagementSettingsPage() {
               setDraft({ ...draft, requireReceiptAboveMinor: event.target.value })
             }
           />
+          <p className="text-sm text-muted-foreground">
+            Claims at or above this amount without an attachment receive a high-risk review flag;
+            this setting does not block submission. Set to 0 to disable.
+          </p>
         </div>
 
         <div className="grid gap-2">

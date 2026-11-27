@@ -86,6 +86,7 @@ Routes: `/expense-management/settings`, `/expense-management/mileage` and `/expe
 4. Remove/disable a selected foreign currency and confirm the backend rejects it as a new default. Turn off multi-currency claims and confirm the default returns to the organisation base currency.
 5. Use a base-currency cash advance, petty-cash float or company card and confirm the workflow does not offer it for a claim in a different currency.
 6. Verify offline drafts retain their explicit currency and sync without changing their amount/currency pair. Use a dedicated non-production organisation and do not post test claims to live ledgers.
+7. Set the receipt threshold and scan a claim at or above it without an attachment. Confirm it receives a high-risk review flag. The setting currently flags for review and does not block submission; verify the UI explains that behavior.
 
 ## Scope and permission review
 

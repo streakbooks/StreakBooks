@@ -228,3 +228,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Connected the saved default claim currency to new employee claim drafts. Currency choices are loaded from the organisation base currency and enabled-currency list; the server rejects unsupported defaults and foreign defaults when multi-currency claims are disabled.
 - New online claim forms wait for settings/currency lookups before enabling entry, and claim templates are filtered to currency-compatible values so existing minor-unit amounts are not reinterpreted. Offline starts use the base currency without attempting live settings/currency requests; offline drafts retain the explicit currency selected when they were created.
 - Added resolver, validation and template-compatibility tests. Focused tests passed (4 files / 28 tests), typecheck, changed-file ESLint, `check:modules`, `check:navigation`, `check:ui`, and `git diff --check` passed. Expense settings still remain partial because other fields and field-level audit evidence are not complete. No schema change or hosted Supabase operation was made.
+
+## 2026-11-27 Expense receipt threshold wording
+
+- Changed the Expenses setting label and helper copy to state that missing receipts are flagged for high-risk review but do not currently block submission. The existing database risk scan emits that flag; the wording no longer promises enforcement it does not provide.
+- Added a manual review step and retained the Expense group as **PARTIAL** pending same-transaction setting audit and reimbursement-account consumer evidence.
+- Focused risk and settings tests passed (2 files / 10 tests); changed-file ESLint, `check:ui`, and `git diff --check` passed. No schema or hosted Supabase change was made.

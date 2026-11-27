@@ -251,11 +251,13 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 ## 2026-11-27 Database time-zone validation
 
 - Added a database trigger that checks `companies.timezone` against PostgreSQL's IANA time-zone catalog for inserts and every update to the field. Invalid direct RPC/table writes now fail atomically, alongside the existing application-level validator.
+- Added a drop-only rollback script; no company data is rewritten by this migration.
 - Extended the network-disabled PostgreSQL workflow harness to apply this migration and prove an invalid identity RPC cannot alter company values or emit an audit event. Registered the time zone as an individually complete Settings capability; company identity remains partial for country and legacy tax-summary evidence.
 - Focused tests passed (4 files / 29 tests), migration identity/history checks passed (8 tests), changed-file ESLint passed, and `npm run test:workflows:postgres` passed using an ephemeral PostgreSQL 17 container with networking disabled. No hosted Supabase operation was performed.
 
 ## 2026-11-27 Expense settings transactional audit
 
 - Added an `expense_management_settings` audit trigger that stores explicit before/after values for policy fields on insert/update in the same transaction. No-op updates do not create an audit row; audit failure aborts the settings write. Unauthenticated service maintenance is not attributed to a user.
+- Added a drop-only rollback script; existing Settings and audit records remain intact if it is used.
 - Added the migration and insert/update/audit-failure rollback regression to the isolated network-disabled PostgreSQL harness. Expense settings remain partial until a dedicated integration proves the configured employee payable account reaches the actual reimbursement journal.
 - `npm run test:workflows:postgres` passed on PostgreSQL 17 with no network or hosted data. No hosted Supabase operation was performed.

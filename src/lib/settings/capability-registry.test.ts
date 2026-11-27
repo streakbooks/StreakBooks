@@ -64,6 +64,15 @@ describe("Settings capability coverage registry", () => {
     });
   });
 
+  it("keeps MFA and idle-timeout preferences read-only until auth/session enforcement exists", () => {
+    for (const key of ["users.force_mfa_for_owners", "users.session_idle_minutes"]) {
+      expect(SETTING_FIELD_COVERAGE.find((setting) => setting.key === key)?.status).toBe("partial");
+    }
+    expect(
+      SETTINGS_GAPS.find((gap) => gap.key === "users.security_preferences")?.missingEvidence,
+    ).toEqual(["enforcement proof for MFA and idle timeout"]);
+  });
+
   it("accounts for typed fields and marks unproven controls partial", () => {
     expect(SETTING_FIELD_COVERAGE.length).toBeGreaterThan(0);
     expect(

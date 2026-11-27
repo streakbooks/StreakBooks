@@ -261,3 +261,8 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Added a drop-only rollback script; existing Settings and audit records remain intact if it is used.
 - Added the migration and insert/update/audit-failure rollback regression to the isolated network-disabled PostgreSQL harness. Expense settings remain partial until a dedicated integration proves the configured employee payable account reaches the actual reimbursement journal.
 - `npm run test:workflows:postgres` passed on PostgreSQL 17 with no network or hosted data. No hosted Supabase operation was performed.
+
+## 2026-11-27 Authentication policy controls fail closed
+
+- Added a regression that keeps organisation MFA and idle-timeout fields partial/read-only until the authentication and session runtime enforce them. The Settings panel derives its disabled state from this evidence registry, so unsupported security controls cannot be saved as if enforced.
+- Focused Settings registry tests passed; no schema, hosted Supabase or deployment operation was performed.

@@ -52,6 +52,13 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Focused tests passed (4 files / 34 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed with the account-mapping journal assertions. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
 - Expense Management remains partial because rebilling and other cash-advance/petty-cash policies still need consumer evidence.
 
+## 2026-11-27 Expense rebilling account evidence
+
+- Registered the rebilling income account as a separate capability. Existing Expense settings mapping/serialization tests and the customer-rebilling line builder prove the saved account is required and assigned to billable invoice lines; the claim screen passes the setting to sales invoice creation.
+- Extended transactional settings audit assertions to verify before/after rebilling income account IDs. No production code or schema change was required.
+- Focused tests passed (3 files / 27 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed including exact before/after account-audit evidence. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
+- Expense Management remains partial for other advance/petty-cash workflow policies and any unsupported settings.
+
 - [x] Phase 0 — audit current routes, UI, persistence, consumers, permissions, tests and module registry (`audit.md`). No feature code changed in this phase.
 - [x] Phase 1 — official public benchmark, clean-room IA, decision and originality record (`benchmark.md`, `ia-design.md`, `docs/decisions/011-settings-information-architecture.md`, `docs/compliance/originality-log.md`).
 - [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. Evidence-backed capabilities are registered individually; remaining typed fields stay partial and are read-only.

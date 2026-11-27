@@ -394,3 +394,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Connected the saved organisation Banking `import_formats` policy to statement upload. The default now preserves all currently supported formats (CSV/TXT, OFX/QFX and QIF); the file picker and dropped-file validation use the saved selection, while MT940/CAMT remain unavailable because no parser exists.
 - Registered this field as complete against the existing permission-gated, version-checked and audited settings RPC and the actual import component. Banking remains partial for automatic rule application, confidence thresholds and reconciliation tolerance.
 - Focused tests passed (5 files / 60 tests); typecheck, changed-file ESLint, `check:ui` (775 TSX files, zero violations) and `git diff --check` passed. No database schema or hosted Supabase operation was needed.
+
+## 2026-11-27 Payroll default schedule selection
+
+- New payroll runs now preselect the organisation's configured default schedule when it is still active. If it is missing or inactive, no schedule is silently substituted and the preparer must choose one; opening each new run resets stale dates and selections.
+- Added pure selection tests for active, inactive, deleted and unset defaults. No schema, hosted Supabase or deployment change was made. Batch 5 remains partial for unverified schedule/component settings and other modules.
+- Focused tests passed (3 files / 24 tests); typecheck, changed-file ESLint, `check:ui` (775 TSX files, zero violations) and `git diff --check` passed.

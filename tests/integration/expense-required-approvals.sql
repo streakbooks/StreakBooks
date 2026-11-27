@@ -76,6 +76,41 @@ SELECT 'PASS: required approval count gates claims until distinct approvers meet
 
 SELECT set_config('request.jwt.claims',
   '{"sub":"00000000-0000-4000-8000-000000000001"}', false);
+UPDATE public.expense_management_settings
+SET require_receipt_above_minor = 1000,
+    require_spending_request_above_minor = 500
+WHERE company_id = '10000000-0000-4000-8000-000000000011';
+DO $$
+DECLARE
+  _scan jsonb;
+BEGIN
+  _scan := public.scan_expense_claim_risks(
+    '10000000-0000-4000-8000-000000000011',
+    '40000000-0000-4000-8000-000000000021'
+  );
+  IF NOT (_scan->'flags' @> '[{"code":"missing_receipt"}]'::jsonb)
+     OR NOT (_scan->'flags' @> '[{"code":"missing_spending_request"}]'::jsonb) THEN
+    RAISE EXCEPTION 'TEST: expense claim risk scan ignored configured receipt or spending thresholds';
+  END IF;
+END $$;
+UPDATE public.expense_management_settings
+SET require_receipt_above_minor = 1001,
+    require_spending_request_above_minor = 1001
+WHERE company_id = '10000000-0000-4000-8000-000000000011';
+DO $$
+DECLARE
+  _scan jsonb;
+BEGIN
+  _scan := public.scan_expense_claim_risks(
+    '10000000-0000-4000-8000-000000000011',
+    '40000000-0000-4000-8000-000000000021'
+  );
+  IF _scan->'flags' @> '[{"code":"missing_receipt"}]'::jsonb
+     OR _scan->'flags' @> '[{"code":"missing_spending_request"}]'::jsonb THEN
+    RAISE EXCEPTION 'TEST: below-threshold claim was flagged for receipt or spending request';
+  END IF;
+END $$;
+
 UPDATE public.expense_claims
 SET approval_status = 'submitted', submitted_at = clock_timestamp() - interval '6 days'
 WHERE id = '40000000-0000-4000-8000-000000000021';

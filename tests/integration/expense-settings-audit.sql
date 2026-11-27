@@ -3,9 +3,10 @@ SELECT set_config('request.jwt.claims',
 
 INSERT INTO public.expense_management_settings (
   company_id, enabled, claim_number_prefix, require_receipt_above_minor,
-  default_distance_unit, approval_escalation_days, required_approval_count
+  require_spending_request_above_minor, default_distance_unit,
+  approval_escalation_days, required_approval_count
 ) VALUES (
-  '10000000-0000-4000-8000-000000000011', true, 'CLAIM-', 5000, 'km', 5, 1
+  '10000000-0000-4000-8000-000000000011', true, 'CLAIM-', 5000, 7500, 'km', 5, 1
 );
 
 DO $$
@@ -21,13 +22,16 @@ BEGIN
   IF audit_row.id IS NULL
      OR audit_row.details->'before' <> '{}'::jsonb
      OR audit_row.details->'after'->>'claim_number_prefix' <> 'CLAIM-'
-     OR audit_row.details->'after'->>'require_receipt_above_minor' <> '5000' THEN
+     OR audit_row.details->'after'->>'require_receipt_above_minor' <> '5000'
+     OR audit_row.details->'after'->>'require_spending_request_above_minor' <> '7500' THEN
     RAISE EXCEPTION 'Expense settings insert omitted field-level audit evidence';
   END IF;
   _insert_audit_id := audit_row.id;
 
   UPDATE public.expense_management_settings
-  SET default_distance_unit = 'mi', default_claim_currency = 'USD', required_approval_count = 2
+  SET default_distance_unit = 'mi', default_claim_currency = 'USD', required_approval_count = 2,
+      require_receipt_above_minor = 6000,
+      require_spending_request_above_minor = 8000
   WHERE expense_management_settings.company_id = _company_id;
 
   SELECT * INTO audit_row FROM public.audit_events AS ae
@@ -40,7 +44,11 @@ BEGIN
      OR audit_row.details->'before'->'default_claim_currency' IS DISTINCT FROM 'null'::jsonb
      OR audit_row.details->'after'->>'default_claim_currency' <> 'USD'
      OR audit_row.details->'before'->>'required_approval_count' <> '1'
-     OR audit_row.details->'after'->>'required_approval_count' <> '2' THEN
+     OR audit_row.details->'after'->>'required_approval_count' <> '2'
+     OR audit_row.details->'before'->>'require_receipt_above_minor' <> '5000'
+     OR audit_row.details->'after'->>'require_receipt_above_minor' <> '6000'
+     OR audit_row.details->'before'->>'require_spending_request_above_minor' <> '7500'
+     OR audit_row.details->'after'->>'require_spending_request_above_minor' <> '8000' THEN
     RAISE EXCEPTION 'Expense settings update omitted exact before/after values';
   END IF;
 

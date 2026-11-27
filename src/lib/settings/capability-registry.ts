@@ -133,6 +133,23 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "tests/integration/expense-required-approvals.sql and tests/integration/expense-settings-audit.sql",
   },
   {
+    key: "expense-management.receipt_and_spending_thresholds",
+    label: "Receipt and spending-request thresholds",
+    moduleId: "expense-management",
+    route: "/expense-management/settings",
+    scope: "company",
+    defaultValue: "0 (disabled)",
+    validation: "Non-negative company currency minor-unit thresholds",
+    permission: "expenses.manage_policies or expenses.admin",
+    entitlement: null,
+    persistence:
+      "expense_management_settings.require_receipt_above_minor and require_spending_request_above_minor",
+    audit: "audit_events records before/after threshold values in the same transaction",
+    consumer:
+      "Claim risk scanning flags a missing receipt or spending request at or above its configured threshold",
+    test: "tests/integration/expense-required-approvals.sql, tests/integration/expense-settings-audit.sql and src/lib/expenses/risk.test.ts",
+  },
+  {
     key: "documents.number_sequences",
     label: "Sales and purchase document number sequences",
     moduleId: "settings",
@@ -726,9 +743,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/expense-management/settings",
     missingEvidence: [
-      "consumer tests and audit coverage for receipt/spending thresholds, advances, petty-cash and rebilling fields",
+      "consumer tests and audit coverage for advances, petty-cash and rebilling fields",
     ],
-    note: "The employee payable account, default claim currency, default distance unit, self-approval guard, required approval count and escalation window have field-level evidence. Other typed expense policies, including thresholds, advances, petty-cash and rebilling, remain partial.",
+    note: "The employee payable account, default claim currency, default distance unit, self-approval guard, required approval count, escalation window and receipt/spending thresholds have field-level evidence. Other typed expense policies, including advances, petty-cash and rebilling, remain partial.",
   },
   {
     key: "banking.typed_configuration",

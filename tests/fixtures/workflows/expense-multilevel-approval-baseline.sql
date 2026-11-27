@@ -17,7 +17,28 @@ ALTER TABLE public.expense_claims
   ADD COLUMN claimant_user_id uuid REFERENCES auth.users(id),
   ADD COLUMN approved_at timestamptz,
   ADD COLUMN approved_by uuid REFERENCES auth.users(id),
-  ADD COLUMN submitted_at timestamptz;
+  ADD COLUMN submitted_at timestamptz,
+  ADD COLUMN spending_request_id uuid;
+
+CREATE TABLE public.document_attachments (
+  company_id uuid NOT NULL,
+  entity_type text NOT NULL,
+  entity_id uuid NOT NULL
+);
+
+CREATE TABLE public.expense_claim_lines (
+  claim_id uuid NOT NULL,
+  expense_date date,
+  gross_minor bigint NOT NULL DEFAULT 0
+);
+
+CREATE OR REPLACE FUNCTION private.expense_claim_can_read(uuid, uuid)
+RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT true $$;
+
+CREATE OR REPLACE FUNCTION public.find_expense_claim_duplicates(uuid, uuid)
+RETURNS jsonb LANGUAGE sql STABLE AS $$
+  SELECT jsonb_build_object('duplicates', '[]'::jsonb)
+$$;
 
 CREATE TABLE public.expense_claim_approvals (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

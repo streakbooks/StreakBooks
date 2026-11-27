@@ -196,6 +196,12 @@ try {
     "public.save_expense_approval_escalation_days",
   ])
     sql(fn("supabase/migrations/20261107151000_expense_management_approval_escalation.sql", name));
+  sql(
+    fn(
+      "supabase/migrations/20261107146000_expense_management_risk_duplicates.sql",
+      "public.scan_expense_claim_risks",
+    ),
+  );
   sql(read("tests/integration/expense-required-approvals.sql"));
   sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
   sql(

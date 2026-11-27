@@ -1,5 +1,19 @@
 -- Keep organisation time zones valid for all writes, including direct RPC/table
 -- paths that do not pass through the application-level Intl validator.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM public.companies AS company
+    LEFT JOIN pg_catalog.pg_timezone_names AS zone
+      ON zone.name = company.timezone
+    WHERE company.timezone IS NULL OR zone.name IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Cannot install company timezone validation while unsupported existing time zones remain';
+  END IF;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.validate_company_timezone()
 RETURNS trigger
 LANGUAGE plpgsql

@@ -250,7 +250,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 ## 2026-11-27 Database time-zone validation
 
-- Added a database trigger that checks `companies.timezone` against PostgreSQL's IANA time-zone catalog for inserts and every update to the field. Invalid direct RPC/table writes now fail atomically, alongside the existing application-level validator.
+- Added a migration preflight that aborts if existing companies contain unsupported zones, then a database trigger that checks `companies.timezone` against PostgreSQL's IANA catalog for inserts and every update to the field. Invalid direct RPC/table writes now fail atomically, alongside the existing application-level validator.
 - Added a drop-only rollback script; no company data is rewritten by this migration.
 - Extended the network-disabled PostgreSQL workflow harness to apply this migration and prove an invalid identity RPC cannot alter company or tax values or emit an audit event. Registered the time zone as an individually complete Settings capability; company identity remains partial for country and legacy tax-summary evidence.
 - Focused tests passed (4 files / 29 tests), migration identity/history checks passed (8 tests), changed-file ESLint passed, and `npm run test:workflows:postgres` passed using an ephemeral PostgreSQL 17 container with networking disabled. No hosted Supabase operation was performed.

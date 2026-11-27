@@ -32,7 +32,7 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     scope: "company",
     defaultValue: "Not configured until an organisation selects its employee payable account",
     validation:
-      "Reimbursement RPC requires a configured payable account distinct from the selected bank account",
+      "Database guard requires an active, postable liability account owned by this organisation; reimbursement also checks the selected bank account",
     permission:
       "expenses.reimburse or expenses.admin for reimbursement; settings editor is permission-gated",
     entitlement: null,
@@ -156,7 +156,8 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     route: "/expense-management/settings",
     scope: "company",
     defaultValue: "not configured",
-    validation: "Versioned settings RPC saves the organisation-owned ledger account",
+    validation:
+      "Database guard requires an active, postable asset account owned by this organisation",
     permission: "expenses.manage_policies or expenses.admin",
     entitlement: null,
     persistence:
@@ -173,7 +174,8 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     route: "/expense-management/settings",
     scope: "company",
     defaultValue: "not configured",
-    validation: "Versioned settings RPC saves the organisation-owned ledger account",
+    validation:
+      "Database guard requires an active, postable asset account owned by this organisation",
     permission: "expenses.manage_policies or expenses.admin",
     entitlement: null,
     persistence:
@@ -190,7 +192,8 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     route: "/expense-management/settings",
     scope: "company",
     defaultValue: "not configured",
-    validation: "Versioned settings RPC saves the organisation-owned ledger account",
+    validation:
+      "Database guard requires an active, postable income account owned by this organisation",
     permission: "expenses.manage_policies or expenses.admin",
     entitlement: null,
     persistence:

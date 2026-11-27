@@ -59,6 +59,12 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Focused tests passed (3 files / 27 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed including exact before/after account-audit evidence. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
 - Expense Management remains partial for other advance/petty-cash workflow policies and any unsupported settings.
 
+## 2026-11-27 Expense ledger account scope guard
+
+- Added a database trigger that fail-closes all six ledger mappings on insert or change unless the selected account is active, postable, belongs to the settings company's organisation and has the required type (employee payable: liability; advances/petty cash: asset; rebilling/FX gain: income; FX loss: expense).
+- Added isolated negative regressions for cross-company references on all six fields and wrong account types on all six fields. The test confirms rejected saves do not change the settings version, then uses valid mappings to post balanced advance and petty-cash journals through the real local posting engine.
+- The network-disabled PostgreSQL 17 workflow harness passed, including successful first-time save and rejection cases for all six cross-company mappings and all six wrong account types. Migration identity/history checks passed (8 tests); focused tests passed (3 files / 27 tests); changed-file ESLint, `git diff --check` and `check:ui` passed (775 TSX files, zero violations). Current-head GitHub validation is pending. The migration is committed only as repository code; hosted Supabase was not modified and no backup/safety evidence was available.
+
 - [x] Phase 0 — audit current routes, UI, persistence, consumers, permissions, tests and module registry (`audit.md`). No feature code changed in this phase.
 - [x] Phase 1 — official public benchmark, clean-room IA, decision and originality record (`benchmark.md`, `ia-design.md`, `docs/decisions/011-settings-information-architecture.md`, `docs/compliance/originality-log.md`).
 - [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. Evidence-backed capabilities are registered individually; remaining typed fields stay partial and are read-only.

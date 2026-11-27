@@ -209,6 +209,7 @@ try {
     sql(fn("supabase/migrations/20261107144000_expense_management_disputes_rebilling.sql", name));
   sql(read("tests/integration/expense-required-approvals.sql"));
   sql(read("tests/fixtures/workflows/expense-account-mapping-baseline.sql"));
+  sql(read("supabase/migrations/20261127130000_expense_settings_account_scope.sql"));
   for (const name of [
     "private.expense_cash_advance_json",
     "public.issue_expense_cash_advance",

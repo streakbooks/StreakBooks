@@ -412,3 +412,8 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Replaced the last four deprecated `.inputValidator()` calls in `src/` with `.validator()` and removed the legacy method from the organisation server-function test mock. Source search confirms no deprecated calls remain.
 - Focused organisation-function tests passed (1 file / 4 tests); changed-file ESLint passed; production build passed. TanStack server-function deprecation warnings are gone. The build still reports the Vite `vite-tsconfig-paths` advisory because the shared `@lovable.dev/vite-tanstack-config` wrapper injects/requires that plugin; Nitro also reports Windows symlink `EPERM` warnings while preparing deployment output. Neither warning caused build failure.
 - No database migration, hosted Supabase operation or deployment was performed.
+
+## 2026-11-27 Report basis precedence (Batch 3)
+
+- [x] Route Reports users to the Accounting basis editor. Profit and loss and balance sheet now use the Accounting basis even if an older Reports document contains a different value. Explicit report choices retain precedence. Both Accounting editors invalidate affected cached reports after saving.
+- Local Settings and Reports suites passed (83 files, 721 tests). Verify with an authenticated test organisation by saving Cash in Accounting, opening profit and loss, and switching that report to Accrual. Regional Tax work and authenticated acceptance are still open.

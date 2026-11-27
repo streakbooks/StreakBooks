@@ -1,3 +1,4 @@
+import { reportQueryUsesAccountingDefaults } from "@/lib/settings/report-defaults";
 import { useEffect, useMemo, useState } from "react";
 import { useBlocker } from "@tanstack/react-router";
 import { SettingsDestinationLink } from "./ModuleSettingsLinks";
@@ -153,6 +154,11 @@ export function SettingsCategoryConfigPanel({
         updated_at: new Date().toISOString(),
       });
       await qc.invalidateQueries({ queryKey });
+      if (category === "accounting") {
+        await qc.invalidateQueries({
+          predicate: (query) => reportQueryUsesAccountingDefaults(query.queryKey, companyId),
+        });
+      }
       await qc.invalidateQueries({ queryKey: ["organisation-features", companyId] });
       toast.success("Settings saved");
     },

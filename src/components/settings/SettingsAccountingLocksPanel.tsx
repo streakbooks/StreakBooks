@@ -1,3 +1,4 @@
+import { reportQueryUsesAccountingDefaults } from "@/lib/settings/report-defaults";
 import { useEffect, useState } from "react";
 import { Link, useBlocker } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -226,15 +227,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
       await qc.invalidateQueries({ queryKey: ["organisation-config", companyId, "accounting"] });
       // Basis-dependent data must be refreshed after changing the company default.
       await qc.invalidateQueries({
-        predicate: (query) =>
-          (query.queryKey[0] === "firm-reporting" || query.queryKey.includes(companyId)) &&
-          (query.queryKey[0] === "management-metrics" ||
-            query.queryKey[0] === "firm-reporting" ||
-            query.queryKey[0] === "reporting-basis" ||
-            query.queryKey[0] === "dashboard-snapshot" ||
-            query.queryKey[0] === "standard-statement" ||
-            query.queryKey[0] === "project-profitability" ||
-            String(query.queryKey[0]).startsWith("report-")),
+        predicate: (query) => reportQueryUsesAccountingDefaults(query.queryKey, companyId),
       });
       toast.success("Accounting preferences saved");
     },

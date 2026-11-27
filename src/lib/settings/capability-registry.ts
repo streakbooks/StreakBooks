@@ -222,6 +222,23 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "tests/integration/settings-legacy-cas.sql and src/lib/settings/document-numbering.test.ts",
   },
   {
+    key: "company.country_code",
+    label: "Organisation country",
+    moduleId: "settings",
+    route: "/settings/organisation/overview",
+    scope: "company",
+    defaultValue: "Selected during organisation setup",
+    validation:
+      "Company identity validator and versioned database RPC accept only a two-letter ISO country code",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "companies.country_code through save_company_identity_and_tax",
+    audit: "audit_events records exact before/after organisation country in the same transaction",
+    consumer:
+      "Tax country packs and regime suggestions plus payroll setup defaults use the saved organisation country",
+    test: "src/lib/company-validation.test.ts, src/lib/tax/country-packs.test.ts and tests/integration/settings-company-identity-atomic.sql",
+  },
+  {
     key: "company.base_currency",
     label: "Organisation base currency",
     moduleId: "settings",
@@ -746,8 +763,8 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "settings",
     status: "partial",
     route: "/settings/organisation/overview",
-    missingEvidence: ["field-level consumers for country and legacy tax summary"],
-    note: "Base currency, legal name, fiscal year end, time zone, document locale and document date format have field-level evidence; country and legacy tax-summary fields remain partial.",
+    missingEvidence: ["field-level consumer tests for the legacy tax summary fields"],
+    note: "Country, base currency, legal name, fiscal year end, time zone, document locale and document date format have field-level consumer evidence. The legacy tax summary still needs clearer proof against Tax module ownership and reporting effects.",
   },
   {
     key: "accounting.workflow_safeguards",

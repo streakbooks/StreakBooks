@@ -65,6 +65,12 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Added isolated negative regressions for cross-company references on all six fields and wrong account types on all six fields. The test confirms rejected saves do not change the settings version, then uses valid mappings to post balanced advance and petty-cash journals through the real local posting engine.
 - The network-disabled PostgreSQL 17 workflow harness passed, including successful first-time save and rejection cases for all six cross-company mappings and all six wrong account types. Migration identity/history checks passed (8 tests); focused tests passed (3 files / 27 tests); changed-file ESLint, `git diff --check` and `check:ui` passed (775 TSX files, zero violations). Current-head GitHub validation is pending. The migration is committed only as repository code; hosted Supabase was not modified and no backup/safety evidence was available.
 
+## 2026-11-27 Organisation country consumer evidence
+
+- Registered organisation country as a complete Settings capability after confirming the country reaches the Tax country-pack and suggested-regime UI and Payroll setup defaults. The versioned identity RPC already validates ISO alpha-2 values and audits the company/tax row transactionally.
+- Strengthened the identity SQL regression to assert the saved country on the company row, in addition to the exact before/after identity audit payload. The legacy tax summary remains partial until its ownership and reporting consumers are separately established.
+- Focused tests passed (3 files / 29 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed with the company-row country assertion. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
+
 - [x] Phase 0 — audit current routes, UI, persistence, consumers, permissions, tests and module registry (`audit.md`). No feature code changed in this phase.
 - [x] Phase 1 — official public benchmark, clean-room IA, decision and originality record (`benchmark.md`, `ia-design.md`, `docs/decisions/011-settings-information-architecture.md`, `docs/compliance/originality-log.md`).
 - [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. Evidence-backed capabilities are registered individually; remaining typed fields stay partial and are read-only.

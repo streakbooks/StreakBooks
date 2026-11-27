@@ -25,6 +25,7 @@ BEGIN
   PERFORM public.save_company_identity_and_tax(c, expected, desired);
   IF (SELECT name FROM public.companies WHERE id=c) <> 'Updated Fixture'
      OR (SELECT legal_name FROM public.companies WHERE id=c) <> 'Updated Legal Entity'
+     OR (SELECT country_code FROM public.companies WHERE id=c) <> 'IN'
      OR (SELECT fiscal_year_end_month FROM public.companies WHERE id=c) <> 6
      OR (SELECT fiscal_year_end_day FROM public.companies WHERE id=c) <> 30
      OR (SELECT tax_regime FROM public.company_tax_settings WHERE company_id=c) <> 'gst'

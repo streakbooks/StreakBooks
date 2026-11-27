@@ -78,6 +78,24 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/documents/documents-loader.test.ts and tests/integration/settings-company-identity-atomic.sql",
   },
   {
+    key: "company.timezone",
+    label: "Organisation time zone",
+    moduleId: "settings",
+    route: "/settings/organisation/overview",
+    scope: "company",
+    defaultValue: "Selected during organisation setup; UTC is the migration fallback",
+    validation:
+      "Application validates IANA zones and a database trigger rejects unsupported zones for every company write",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "companies.timezone through the version-checked organisation identity RPC",
+    audit:
+      "audit_events stores the before/after identity values in the same transaction; invalid writes roll back",
+    consumer:
+      "Company-local business dates drive sales, document and notification scheduling helpers",
+    test: "src/lib/company-validation.test.ts, src/lib/sales/dates.test.ts, src/lib/notifications/communication-rules.test.ts, and tests/integration/settings-company-identity-atomic.sql",
+  },
+  {
     key: "company.fiscal_year_end",
     label: "Organisation fiscal year end",
     moduleId: "settings",
@@ -513,10 +531,8 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "settings",
     status: "partial",
     route: "/settings/organisation/overview",
-    missingEvidence: [
-      "field-level consumers for legal identity, country, fiscal year, timezone and legacy tax summary",
-    ],
-    note: "Base currency, document locale and document date format have field-level consumer tests; other organisation identity, timezone and legacy tax-summary fields remain partial.",
+    missingEvidence: ["field-level consumers for country and legacy tax summary"],
+    note: "Base currency, legal name, fiscal year end, time zone, document locale and document date format have field-level evidence; country and legacy tax-summary fields remain partial.",
   },
   {
     key: "accounting.workflow_safeguards",

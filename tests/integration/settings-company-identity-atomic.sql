@@ -40,6 +40,21 @@ BEGIN
     RAISE EXCEPTION 'Organisation save did not record exact before/after audit evidence';
   END IF;
 
+  -- The database rejects invalid IANA zones even when callers bypass the UI.
+  BEGIN
+    PERFORM public.save_company_identity_and_tax(
+      c, desired, jsonb_set(desired, '{timezone}', '"Mars/Olympus"'::jsonb)
+    );
+    RAISE EXCEPTION 'Invalid organisation timezone was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%Invalid organisation timezone%' THEN RAISE; END IF;
+  END;
+  IF (SELECT timezone FROM public.companies WHERE id=c) <> 'Asia/Kolkata'
+     OR (SELECT count(*) FROM public.audit_events
+         WHERE company_id=c AND action='settings.organization_identity') <> audit_before + 1 THEN
+    RAISE EXCEPTION 'Rejected timezone update changed identity or created audit history';
+  END IF;
+
   -- Locale and document date style are saved as one versioned company preference
   -- and are passed into customer-facing document/email formatting.
   PERFORM public.save_company_localisation_if_unchanged(c, localisation_expected, localisation_desired);

@@ -247,3 +247,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Invalid or malformed `section` query values still fail closed to the Settings overview, and now carry a validated marker so the page explains why it fell back.
 - Added parser regression coverage for unknown and array-valued categories. This prevents malformed links from appearing to succeed silently.
 - Focused Settings search tests passed (2 files / 17 tests); typecheck, changed-file ESLint, `check:ui`, and `git diff --check` passed. No schema or hosted Supabase change was made.
+
+## 2026-11-27 Database time-zone validation
+
+- Added a database trigger that checks `companies.timezone` against PostgreSQL's IANA time-zone catalog for inserts and every update to the field. Invalid direct RPC/table writes now fail atomically, alongside the existing application-level validator.
+- Extended the network-disabled PostgreSQL workflow harness to apply this migration and prove an invalid identity RPC cannot alter company values or emit an audit event. Registered the time zone as an individually complete Settings capability; company identity remains partial for country and legacy tax-summary evidence.
+- Focused tests passed (4 files / 29 tests), migration identity/history checks passed (8 tests), changed-file ESLint passed, and `npm run test:workflows:postgres` passed using an ephemeral PostgreSQL 17 container with networking disabled. No hosted Supabase operation was performed.

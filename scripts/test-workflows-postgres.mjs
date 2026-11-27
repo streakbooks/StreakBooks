@@ -139,6 +139,7 @@ try {
   sql(read("tests/fixtures/workflows/settings-company-identity-baseline.sql"));
   sql(read("supabase/migrations/20261126150000_settings_company_identity_atomic.sql"));
   sql(read("supabase/migrations/20261126210000_settings_base_currency_posting_guard.sql"));
+  sql(read("supabase/migrations/20261127100000_settings_timezone_guard.sql"));
   sql(`INSERT INTO public.journals (
     company_id, journal_number, journal_date, status, source_type, currency_code,
     created_by, posted_at, posted_by

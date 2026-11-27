@@ -400,3 +400,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - New payroll runs now preselect the organisation's configured default schedule when it is still active. If it is missing or inactive, no schedule is silently substituted and the preparer must choose one; opening each new run resets stale dates and selections.
 - Added pure selection tests for active, inactive, deleted and unset defaults. No schema, hosted Supabase or deployment change was made. Batch 5 remains partial for unverified schedule/component settings and other modules.
 - Focused tests passed (3 files / 24 tests); typecheck, changed-file ESLint, `check:ui` (775 TSX files, zero violations) and `git diff --check` passed.
+
+## 2026-11-27 Account-wide appearance preferences
+
+- Moved personal theme, named palette and validated custom palette persistence from organisation-scoped `user_ui_preferences` to a new `user_global_preferences` table keyed by the authenticated user. The authenticated app shell syncs the saved choice across modules and the Profile card edits it without a selected company.
+- Added per-user RLS, explicit grants, a local-only SQL regression for cross-user read/write isolation, a drop-only rollback script and field-level capability evidence. No hosted database was accessed; this migration must remain unapplied until separate backup and migration safety evidence is available.
+- Focused tests passed (3 files / 23 tests); migration checks passed (389 unique versions, 8 history tests); the isolated network-disabled PostgreSQL 17 workflow harness passed including the two-user RLS regression; typecheck, changed-file ESLint, `check:ui` (776 TSX files, zero violations) and `git diff --check` passed.

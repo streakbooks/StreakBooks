@@ -704,6 +704,24 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/notifications/communication-settings.server.test.ts and document email consumer tests",
   },
   {
+    key: "personal.appearance_preferences",
+    label: "Account-wide appearance preferences",
+    moduleId: "profile",
+    route: "/profile",
+    scope: "user",
+    defaultValue: "System colour mode and the StreakBooks Classic palette",
+    validation:
+      "Theme and palette values are validated; custom palettes require every supplied colour to pass the supported colour validator",
+    permission:
+      "Authenticated user can read and write only their own preference row under auth.uid() RLS",
+    entitlement: null,
+    persistence: "user_global_preferences keyed by authenticated user and personal_appearance",
+    audit: "No company audit is recorded for this non-financial, user-owned display preference",
+    consumer:
+      "Profile appearance loads independently of the selected organisation and applies across workspaces and devices",
+    test: "src/lib/settings/personal-appearance.functions.test.ts and tests/integration/user-global-appearance-preferences.sql",
+  },
+  {
     key: "notifications.reply_to",
     label: "Outgoing email reply-to address",
     moduleId: "settings",
@@ -886,14 +904,6 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     route: "/settings/integrations/overview",
     missingEvidence: ["verified provider connection and delivery evidence per provider"],
     note: "A configured status badge alone does not prove provider delivery.",
-  },
-  {
-    key: "personal.profile_preferences",
-    moduleId: "profile",
-    status: "partial",
-    route: "/settings/personal/overview",
-    missingEvidence: ["account-wide preference scope"],
-    note: "Profile groups account details, security and appearance. Colour mode plus named and validated custom palettes sync per user within each organisation; preferences are not account-global.",
   },
 ] as const;
 

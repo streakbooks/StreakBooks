@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PERSONAL_APPEARANCE, normalizePersonalAppearance } from "./personal-appearance";
+import {
+  DEFAULT_PERSONAL_APPEARANCE,
+  normalizePersonalAppearance,
+  personalAppearanceSyncChanges,
+} from "./personal-appearance";
 import { DEFAULT_CUSTOM_PALETTE } from "@/lib/theme";
 
 describe("personal appearance preferences", () => {
@@ -10,7 +14,7 @@ describe("personal appearance preferences", () => {
     );
   });
 
-  it("normalizes named and custom palettes to validated per-organisation preferences", () => {
+  it("normalizes named and custom palettes to validated account preferences", () => {
     expect(normalizePersonalAppearance({ theme: "dark", palette: "sapphire" })).toEqual({
       theme: "dark",
       palette: "sapphire",
@@ -43,6 +47,28 @@ describe("personal appearance preferences", () => {
         lightBackground: "#aabbcc",
         darkBackground: "#010203",
       },
+    });
+  });
+
+  it("applies the signed-in user's saved palette over stale local custom settings", () => {
+    const saved = normalizePersonalAppearance({ theme: "light", palette: "sapphire" });
+    const local = normalizePersonalAppearance({ theme: "dark", palette: "custom" });
+    expect(personalAppearanceSyncChanges(local, saved)).toEqual({
+      theme: "light",
+      palette: "sapphire",
+    });
+  });
+
+  it("loads custom colours when the saved account palette is custom", () => {
+    const saved = normalizePersonalAppearance({ theme: "dark", palette: "custom" });
+    const local = normalizePersonalAppearance({ theme: "dark", palette: "custom" });
+    expect(personalAppearanceSyncChanges(local, saved)).toEqual({});
+    const changed = {
+      ...local,
+      customPalette: { ...local.customPalette, primary: "#123456" },
+    };
+    expect(personalAppearanceSyncChanges(changed, saved)).toEqual({
+      customPalette: saved.customPalette,
     });
   });
 });

@@ -38,3 +38,19 @@ export function normalizePersonalAppearance(value: unknown): PersonalAppearanceP
   const customPalette = validateCustomPalette(record["customPalette"]);
   return { theme, palette, customPalette };
 }
+
+export function personalAppearanceSyncChanges(
+  current: PersonalAppearancePreferences,
+  saved: PersonalAppearancePreferences,
+): Partial<PersonalAppearancePreferences> {
+  const changes: Partial<PersonalAppearancePreferences> = {};
+  if (current.theme !== saved.theme) changes.theme = saved.theme;
+  if (current.palette !== saved.palette) changes.palette = saved.palette;
+  if (
+    saved.palette === "custom" &&
+    JSON.stringify(current.customPalette) !== JSON.stringify(saved.customPalette)
+  ) {
+    changes.customPalette = saved.customPalette;
+  }
+  return changes;
+}

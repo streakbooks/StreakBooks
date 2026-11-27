@@ -12,6 +12,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
+import { PersonalAppearanceSync } from "@/components/settings/PersonalAppearanceSync";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { needsMfaStepUp } from "@/lib/auth-session";
@@ -113,6 +114,7 @@ function CompanyLayout() {
 
   return (
     <AppShell user={user}>
+      <PersonalAppearanceSync />
       <Outlet />
     </AppShell>
   );

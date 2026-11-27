@@ -215,7 +215,7 @@ function ProfilePage() {
             </CardContent>
           </Card>
 
-          <PersonalAppearanceCard companyId={company?.id ?? null} />
+          <PersonalAppearanceCard />
 
           <ChangePasswordCard />
           <SecuritySettingsCard />

@@ -94,7 +94,7 @@ This table is synchronized with `MODULE_SETTINGS_COVERAGE`, which is checked aga
 | Settings            | Tenant configuration and preference navigation               | **IMPLEMENTED** as a shell; field coverage remains partial                                                                                         |
 | Help                | No organisation configuration surface                        | **NOT APPLICABLE**                                                                                                                                 |
 | Platform            | Platform-owner settings separate from tenant scope           | **PARTIAL**                                                                                                                                        |
-| Profile             | Personal profile and preferences                             | **PARTIAL**                                                                                                                                        |
+| Profile             | Personal profile and preferences                             | **PARTIAL** (theme and validated palettes sync account-wide; security and support-access preferences remain read-only pending enforcement)            |
 | Onboarding          | Initial organisation setup and safe defaults                 | **PARTIAL**                                                                                                                                        |
 | Auth                | Authentication screens; policy owned by server configuration | **NOT APPLICABLE**                                                                                                                                 |
 

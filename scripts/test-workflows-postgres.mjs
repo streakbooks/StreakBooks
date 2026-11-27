@@ -97,6 +97,8 @@ try {
   }
   if (!ready) throw Error("Postgres did not become ready");
   sql(read("tests/fixtures/workflows/baseline.sql"));
+  sql(read("supabase/migrations/20261127150000_user_global_appearance_preferences.sql"));
+  sql(read("tests/integration/user-global-appearance-preferences.sql"));
   sql(
     fn(
       "supabase/migrations/20261019200000_cross_cutting_settings_fx_demo.sql",

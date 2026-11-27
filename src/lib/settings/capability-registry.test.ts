@@ -24,6 +24,8 @@ describe("Settings capability coverage registry", () => {
         expect(setting.moduleId).toBe("expense-management");
       } else if (setting.route === "/expense-management/approvals") {
         expect(setting.moduleId).toBe("expense-management");
+      } else if (setting.scope === "user") {
+        expect(setting.route).toBe("/profile");
       } else {
         expect(setting.route).toMatch(/^\/settings\//);
       }
@@ -299,5 +301,22 @@ describe("Settings capability coverage registry", () => {
         "complete",
       );
     }
+  });
+
+  it("tracks account-wide appearance preferences behind per-user row security", () => {
+    expect(
+      SETTING_CAPABILITY_REGISTRY.find(
+        (setting) => setting.key === "personal.appearance_preferences",
+      ),
+    ).toMatchObject({
+      moduleId: "profile",
+      route: "/profile",
+      scope: "user",
+      permission: expect.stringContaining("auth.uid() RLS"),
+      persistence: expect.stringContaining("user_global_preferences"),
+      consumer: expect.stringContaining("across workspaces and devices"),
+      test: expect.stringContaining("user-global-appearance-preferences.sql"),
+    });
+    expect(SETTINGS_GAPS.find((gap) => gap.key === "personal.profile_preferences")).toBeUndefined();
   });
 });

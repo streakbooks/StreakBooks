@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -10,6 +9,7 @@ import {
   savePersonalAppearancePreferences,
 } from "@/lib/settings/personal-appearance.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { usePersonalAppearanceSync } from "@/hooks/use-personal-appearance-sync";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,74 +22,49 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export function PersonalAppearanceCard({ companyId }: { companyId: string | null }) {
+export function PersonalAppearanceCard() {
   const theme = useTheme();
   const queryClient = useQueryClient();
   const fetchPreferences = useServerFn(getPersonalAppearancePreferences);
   const savePreferences = useServerFn(savePersonalAppearancePreferences);
-  const queryKey = ["personal-appearance", companyId] as const;
+  const queryKey = ["personal-appearance"] as const;
   const preferencesQuery = useQuery({
     queryKey,
-    queryFn: () => fetchPreferences({ data: { companyId: companyId! } }),
-    enabled: Boolean(companyId),
+    queryFn: () => fetchPreferences({ data: {} }),
   });
   const persistedPreferences = preferencesQuery.data;
-  const { preference: themePreference, palette: themePalette, setPreference, setPalette } = theme;
-  const { customColors, setCustomColors } = theme;
+  const customColors = theme.customColors;
   const customPaletteValue = JSON.stringify(customColors);
   const savedCustomPaletteValue = persistedPreferences
     ? JSON.stringify(persistedPreferences.customPalette)
     : "";
   const mutation = useMutation({
     mutationFn: (preferences: PersonalAppearancePreferences) => {
-      if (!companyId) return Promise.resolve(preferences);
-      return savePreferences({ data: { companyId, ...preferences } });
+      return savePreferences({ data: preferences });
     },
     onSuccess: (preferences) => queryClient.setQueryData(queryKey, preferences),
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  useEffect(() => {
-    if (!preferencesQuery.isSuccess || !persistedPreferences) return;
-    if (themePreference !== persistedPreferences.theme) {
-      setPreference(persistedPreferences.theme);
-    }
-    if (persistedPreferences.palette === "custom") {
-      if (themePalette !== "custom" || customPaletteValue !== savedCustomPaletteValue) {
-        setCustomColors(persistedPreferences.customPalette);
-      }
-    } else if (themePalette !== "custom" && themePalette !== persistedPreferences.palette) {
-      setPalette(persistedPreferences.palette);
-    }
-  }, [
-    preferencesQuery.isSuccess,
-    persistedPreferences,
-    themePreference,
-    themePalette,
-    customPaletteValue,
-    savedCustomPaletteValue,
-    setPreference,
-    setPalette,
-    setCustomColors,
-  ]);
+  usePersonalAppearanceSync(preferencesQuery);
 
   const currentPreferences = (): PersonalAppearancePreferences => ({
     theme: theme.preference,
     palette: theme.palette,
     customPalette: theme.customColors,
   });
-  const savingDisabled = Boolean(companyId && preferencesQuery.isPending) || mutation.isPending;
+  const savingDisabled = preferencesQuery.isPending || mutation.isPending;
 
   const updateTheme = (value: string) => {
     if (!isThemePreference(value)) return;
     theme.setPreference(value);
-    if (companyId) mutation.mutate({ ...currentPreferences(), theme: value });
+    mutation.mutate({ ...currentPreferences(), theme: value });
   };
 
   const updatePalette = (value: string) => {
     if (!isPaletteId(value)) return;
     theme.setPalette(value);
-    if (companyId) mutation.mutate({ ...currentPreferences(), palette: value });
+    mutation.mutate({ ...currentPreferences(), palette: value });
   };
 
   return (
@@ -97,11 +72,12 @@ export function PersonalAppearanceCard({ companyId }: { companyId: string | null
       <CardHeader>
         <CardTitle className="text-base">Appearance</CardTitle>
         <CardDescription>
-          Colour mode and custom or named palettes sync for your user in this organisation.
+          Colour mode and custom or named palettes sync for your account across organisations and
+          devices.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {preferencesQuery.isError && companyId ? (
+        {preferencesQuery.isError ? (
           <Alert variant="destructive">
             <AlertDescription>
               StreakBooks could not load saved appearance preferences. Changes still apply in this
@@ -145,11 +121,6 @@ export function PersonalAppearanceCard({ companyId }: { companyId: string | null
             </Select>
           </div>
         </div>
-        {!companyId ? (
-          <p className="text-xs text-muted-foreground">
-            Select an organisation to sync these preferences across devices.
-          </p>
-        ) : null}
         {mutation.isPending ? (
           <p role="status" className="text-xs text-muted-foreground">
             Saving appearance preferences…
@@ -170,7 +141,7 @@ export function PersonalAppearanceCard({ companyId }: { companyId: string | null
                 type="button"
                 size="sm"
                 variant="outline"
-                disabled={!companyId || savingDisabled}
+                disabled={savingDisabled}
                 onClick={() => mutation.mutate(currentPreferences())}
               >
                 Save custom palette

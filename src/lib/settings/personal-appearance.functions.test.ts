@@ -21,15 +21,11 @@ vi.mock("@tanstack/react-start", () => ({
 }));
 
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
-vi.mock("@/lib/assert-company-access", () => ({ assertCompanyMember: vi.fn() }));
-
-import { assertCompanyMember } from "@/lib/assert-company-access";
 import {
   getPersonalAppearancePreferences,
   savePersonalAppearancePreferences,
 } from "./personal-appearance.functions";
 
-const companyId = "10000000-0000-4000-8000-000000000001";
 const userId = "20000000-0000-4000-8000-000000000002";
 
 function makeQuery(
@@ -45,8 +41,7 @@ function makeQuery(
 }
 
 describe("personal appearance server functions", () => {
-  it("loads only the authenticated user's row after checking organisation membership", async () => {
-    vi.mocked(assertCompanyMember).mockResolvedValue(undefined);
+  it("loads only the authenticated user's account-wide row", async () => {
     const query = makeQuery({
       data: {
         preference_value: {
@@ -65,11 +60,11 @@ describe("personal appearance server functions", () => {
     });
     const supabase = { from: vi.fn(() => query) };
     const invoke = getPersonalAppearancePreferences as unknown as (args: {
-      data: { companyId: string };
+      data: Record<string, never>;
       context: { supabase: typeof supabase; userId: string };
     }) => Promise<unknown>;
 
-    await expect(invoke({ data: { companyId }, context: { supabase, userId } })).resolves.toEqual({
+    await expect(invoke({ data: {}, context: { supabase, userId } })).resolves.toEqual({
       theme: "dark",
       palette: "custom",
       customPalette: {
@@ -80,25 +75,22 @@ describe("personal appearance server functions", () => {
         darkBackground: "#010203",
       },
     });
-    expect(assertCompanyMember).toHaveBeenCalledWith(supabase, companyId);
-    expect(query.eq).toHaveBeenCalledWith("company_id", companyId);
+    expect(supabase.from).toHaveBeenCalledWith("user_global_preferences");
     expect(query.eq).toHaveBeenCalledWith("user_id", userId);
     expect(query.eq).toHaveBeenCalledWith("preference_key", "personal_appearance");
   });
 
   it("validates input and upserts only the authenticated user’s supported preferences", async () => {
-    vi.mocked(assertCompanyMember).mockResolvedValue(undefined);
     const query = makeQuery();
     const supabase = { from: vi.fn(() => query) };
     const invoke = savePersonalAppearancePreferences as unknown as (args: {
-      data: { companyId: string; theme: unknown; palette: unknown; customPalette?: unknown };
+      data: { theme: unknown; palette: unknown; customPalette?: unknown };
       context: { supabase: typeof supabase; userId: string };
     }) => Promise<unknown>;
 
     await expect(
       invoke({
         data: {
-          companyId,
           theme: "dark",
           palette: "custom",
           customPalette: {
@@ -124,7 +116,6 @@ describe("personal appearance server functions", () => {
     });
     expect(query.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        company_id: companyId,
         user_id: userId,
         preference_key: "personal_appearance",
         preference_value: {
@@ -139,12 +130,12 @@ describe("personal appearance server functions", () => {
           },
         },
       }),
-      { onConflict: "company_id,user_id,preference_key" },
+      { onConflict: "user_id,preference_key" },
     );
 
     expect(() =>
       invoke({
-        data: { companyId, theme: "dark", palette: "invalid" },
+        data: { theme: "dark", palette: "invalid" },
         context: { supabase, userId },
       }),
     ).toThrow("Choose a supported named colour palette");

@@ -76,6 +76,17 @@ Route: `/settings/purchases/overview` → **Purchases defaults**; consumers: new
 4. Edit the due date manually and confirm changing supplier does not overwrite the manual override.
 5. Run `src/lib/purchases/bill-form-helpers.test.ts`, the workflow settings server tests, and `npm.cmd run test:workflows:postgres` to verify precedence, persistence, audit and tenant-safe rollback.
 
+## Expense mileage and claim currency defaults
+
+Routes: `/expense-management/settings`, `/expense-management/mileage` and `/expense-management/my-expenses/new`. These settings use only the organisation's base and enabled currencies. A foreign default requires multi-currency claims; mileage claim calculation continues to use the saved rate's own unit.
+
+1. In a dedicated test organisation, set **Default distance unit** to miles and confirm a new mileage-rate form starts in miles. Select kilometres manually and confirm the explicit choice wins; save a mileage claim and confirm its selected rate controls the unit and amount.
+2. Enable a test foreign currency in Organisation → Currencies, allow multi-currency claims, and select it as the default claim currency. Open a new employee claim and confirm its line-entry labels, totals, template matches and saved draft use that currency.
+3. Confirm only templates recorded in the active currency are offered. Existing templates in another currency must not be loaded into a form that would reinterpret their minor-unit amounts.
+4. Remove/disable a selected foreign currency and confirm the backend rejects it as a new default. Turn off multi-currency claims and confirm the default returns to the organisation base currency.
+5. Use a base-currency cash advance, petty-cash float or company card and confirm the workflow does not offer it for a claim in a different currency.
+6. Verify offline drafts retain their explicit currency and sync without changing their amount/currency pair. Use a dedicated non-production organisation and do not post test claims to live ledgers.
+
 ## Scope and permission review
 
 - Tenant settings continue to use the existing server functions, membership checks, version checks and row-level security. Route visibility is not authorization.

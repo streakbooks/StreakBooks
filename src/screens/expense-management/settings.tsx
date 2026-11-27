@@ -13,6 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PersistedSwitch } from "@/components/common/PersistedSwitch";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
@@ -22,6 +29,7 @@ import {
   EXPENSE_MANAGEMENT_MIGRATION,
   EXPENSE_NOTIFICATIONS_MIGRATION,
   getExpenseManagementSettings,
+  listExpenseClaimCurrencies,
   importLegacyEmployeeExpenseClaims,
   previewLegacyEmployeeExpenseMigration,
   saveExpenseManagementSettings,
@@ -84,6 +92,7 @@ export function ExpenseManagementSettingsPage() {
     canEdit || can("expenses.view" as Permission) || can("expenses.submit" as Permission);
   const queryClient = useQueryClient();
   const fetchSettings = useServerFn(getExpenseManagementSettings);
+  const fetchCurrencies = useServerFn(listExpenseClaimCurrencies);
   const saveSettings = useServerFn(saveExpenseManagementSettings);
   const fetchAccounts = useServerFn(listAccounts);
   const fetchLegacyPreview = useServerFn(previewLegacyEmployeeExpenseMigration);
@@ -93,6 +102,12 @@ export function ExpenseManagementSettingsPage() {
   const settingsQ = useQuery({
     queryKey: ["expense-management-settings", company?.id],
     queryFn: () => fetchSettings({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canView,
+  });
+
+  const currenciesQ = useQuery({
+    queryKey: ["expense-claim-currencies", company?.id],
+    queryFn: () => fetchCurrencies({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canView,
   });
 
@@ -330,16 +345,36 @@ export function ExpenseManagementSettingsPage() {
 
         <div className="grid gap-2">
           <Label htmlFor="em-currency">Default claim currency</Label>
-          <Input
-            id="em-currency"
-            value={draft.defaultClaimCurrency}
-            disabled={!canEdit || save.isPending}
-            placeholder={company.base_currency ?? "USD"}
-            maxLength={3}
-            onChange={(event) =>
-              setDraft({ ...draft, defaultClaimCurrency: event.target.value.toUpperCase() })
+          <Select
+            value={draft.defaultClaimCurrency || "base"}
+            onValueChange={(value) =>
+              setDraft({ ...draft, defaultClaimCurrency: value === "base" ? "" : value })
             }
-          />
+            disabled={!canEdit || save.isPending || currenciesQ.isPending || currenciesQ.isError}
+          >
+            <SelectTrigger id="em-currency" aria-label="Default claim currency">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="base">
+                Organisation base currency ({company.base_currency ?? "USD"})
+              </SelectItem>
+              {(currenciesQ.data ?? [])
+                .filter((code) => code !== company.base_currency)
+                .map((code) => (
+                  <SelectItem key={code} value={code} disabled={!draft.allowMultiCurrencyClaims}>
+                    {code}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          {currenciesQ.isError ? (
+            <p className="text-sm text-destructive">Company currencies could not be loaded.</p>
+          ) : !draft.allowMultiCurrencyClaims ? (
+            <p className="text-sm text-muted-foreground">
+              Enable multi-currency claims before selecting a foreign currency.
+            </p>
+          ) : null}
         </div>
 
         <div className="grid gap-2">
@@ -489,7 +524,13 @@ export function ExpenseManagementSettingsPage() {
             id="em-fx"
             checked={draft.allowMultiCurrencyClaims}
             disabled={!canEdit || save.isPending}
-            onCheckedChange={(checked) => setDraft({ ...draft, allowMultiCurrencyClaims: checked })}
+            onCheckedChange={(checked) =>
+              setDraft({
+                ...draft,
+                allowMultiCurrencyClaims: checked,
+                defaultClaimCurrency: checked ? draft.defaultClaimCurrency : "",
+              })
+            }
           />
         </div>
 

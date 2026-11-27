@@ -568,7 +568,7 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     missingEvidence: [
       "field-level consumers and audit evidence for expense thresholds, approvals, reimbursement accounts and claim defaults",
     ],
-    note: "The saved default distance unit now initializes new mileage-rate forms; each saved mileage rate remains authoritative for claim calculations. Other expense settings remain partial until their effects and audit evidence are verified.",
+    note: "Saved distance units initialize new mileage-rate forms, and a validated default claim currency initializes new employee claim drafts only when it is enabled and multi-currency claims are allowed. Templates and company-paid sources must match the active currency. Expense settings remain partial because other fields and field-level audit evidence are not complete.",
   },
   {
     key: "payroll.settings_audit_coverage",

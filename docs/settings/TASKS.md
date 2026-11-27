@@ -222,3 +222,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Connected the saved company default distance unit to the new mileage-rate form. A user's explicit unit selection takes precedence, while claim creation continues to use the selected saved rate's unit as the calculation authority.
 - Added resolver regressions and documented expense-management coverage as partial; thresholds, approval policy, reimbursement-account effects and field-level audit evidence remain outstanding.
 - No schema change or hosted Supabase operation was made. Batch 5 remains in progress.
+
+## 2026-11-27 Expense claim currency consumer
+
+- Connected the saved default claim currency to new employee claim drafts. Currency choices are loaded from the organisation base currency and enabled-currency list; the server rejects unsupported defaults and foreign defaults when multi-currency claims are disabled.
+- New claim forms wait for settings/currency lookups before enabling entry, and claim templates are filtered to currency-compatible values so existing minor-unit amounts are not reinterpreted. Offline drafts retain the explicit currency selected when they were created.
+- Added resolver, validation and template-compatibility tests. Focused tests passed (4 files / 28 tests), typecheck, changed-file ESLint, `check:modules`, `check:navigation`, `check:ui`, and `git diff --check` passed. Expense settings still remain partial because other fields and field-level audit evidence are not complete. No schema change or hosted Supabase operation was made.

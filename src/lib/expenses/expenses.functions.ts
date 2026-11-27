@@ -5,6 +5,7 @@ import { callRpc, companyIdOf, isMissingRelation } from "@/lib/planning/rpc";
 import {
   mapExpenseManagementSettings,
   toExpenseManagementSettingsPayload,
+  validateExpenseClaimCurrency,
 } from "@/lib/expenses/settings";
 import {
   mapExpenseClaimDetail,
@@ -269,6 +270,35 @@ export const getExpenseManagementSettings = createServerFn({ method: "GET" })
     return mapExpenseManagementSettings(raw, data.companyId);
   });
 
+export const listExpenseClaimCurrencies = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(async ({ data, context }): Promise<string[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const [companyResult, currenciesResult] = await Promise.all([
+      context.supabase
+        .from("companies" as never)
+        .select("base_currency" as never)
+        .eq("id" as never, data.companyId as never)
+        .maybeSingle(),
+      context.supabase
+        .from("company_currencies" as never)
+        .select("currency_code" as never)
+        .eq("company_id" as never, data.companyId as never),
+    ]);
+    if (companyResult.error) throw new Error(companyResult.error.message);
+    if (currenciesResult.error) throw new Error(currenciesResult.error.message);
+    const baseCurrency = String(
+      (companyResult.data as { base_currency?: string | null } | null)?.base_currency ?? "USD",
+    ).toUpperCase();
+    const enabled = ((currenciesResult.data ?? []) as Array<{ currency_code?: string | null }>).map(
+      (row) => String(row.currency_code ?? ""),
+    );
+    return [...new Set([baseCurrency, ...enabled.map((code) => code.trim().toUpperCase())])].filter(
+      (code) => /^[A-Z]{3}$/.test(code),
+    );
+  });
+
 export const saveExpenseManagementSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: { companyId: string; draft: ExpenseManagementSettingsInput }) => ({
@@ -290,6 +320,34 @@ export const saveExpenseManagementSettings = createServerFn({ method: "POST" })
       !/^[A-Za-z]{3}$/.test(data.draft.defaultClaimCurrency)
     ) {
       throw new Error("Default claim currency must be a 3-letter ISO code.");
+    }
+    const requestedClaimCurrency = data.draft.defaultClaimCurrency?.trim().toUpperCase();
+    if (requestedClaimCurrency) {
+      const [companyResult, currenciesResult] = await Promise.all([
+        context.supabase
+          .from("companies" as never)
+          .select("base_currency" as never)
+          .eq("id" as never, data.companyId as never)
+          .maybeSingle(),
+        context.supabase
+          .from("company_currencies" as never)
+          .select("currency_code" as never)
+          .eq("company_id" as never, data.companyId as never),
+      ]);
+      if (companyResult.error) throw new Error(companyResult.error.message);
+      if (currenciesResult.error) throw new Error(currenciesResult.error.message);
+      const baseCurrency = String(
+        (companyResult.data as { base_currency?: string | null } | null)?.base_currency ?? "USD",
+      ).toUpperCase();
+      const enabledCurrencies = (
+        (currenciesResult.data ?? []) as Array<{ currency_code?: string | null }>
+      ).map((row) => String(row.currency_code ?? ""));
+      validateExpenseClaimCurrency({
+        baseCurrency,
+        defaultCurrency: requestedClaimCurrency,
+        allowMultiCurrencyClaims: data.draft.allowMultiCurrencyClaims ?? true,
+        enabledCurrencies,
+      });
     }
     if (
       data.draft.requireReceiptAboveMinor !== undefined &&

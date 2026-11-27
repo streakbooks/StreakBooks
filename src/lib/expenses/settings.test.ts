@@ -1,5 +1,76 @@
 import { describe, expect, it } from "vitest";
-import { mapExpenseManagementSettings, toExpenseManagementSettingsPayload } from "./settings";
+import {
+  expenseClaimCurrencyOptions,
+  mapExpenseManagementSettings,
+  resolveExpenseClaimCurrency,
+  toExpenseManagementSettingsPayload,
+  validateExpenseClaimCurrency,
+} from "./settings";
+
+describe("expense claim currency settings", () => {
+  it("offers only valid unique enabled currencies with the base currency first", () => {
+    expect(expenseClaimCurrencyOptions("inr", ["USD", "usd", "US", "EUR"])).toEqual([
+      "INR",
+      "EUR",
+      "USD",
+    ]);
+  });
+
+  it("uses an enabled default only when multi-currency claims are allowed", () => {
+    const currencies = ["INR", "USD"];
+    expect(
+      resolveExpenseClaimCurrency({
+        baseCurrency: "INR",
+        defaultCurrency: "usd",
+        allowMultiCurrencyClaims: true,
+        enabledCurrencies: currencies,
+      }),
+    ).toBe("USD");
+    expect(
+      resolveExpenseClaimCurrency({
+        baseCurrency: "INR",
+        defaultCurrency: "EUR",
+        allowMultiCurrencyClaims: true,
+        enabledCurrencies: currencies,
+      }),
+    ).toBe("INR");
+    expect(
+      resolveExpenseClaimCurrency({
+        baseCurrency: "INR",
+        defaultCurrency: "USD",
+        allowMultiCurrencyClaims: false,
+        enabledCurrencies: currencies,
+      }),
+    ).toBe("INR");
+  });
+
+  it("rejects disabled or unsupported company currencies when saving a default", () => {
+    expect(
+      validateExpenseClaimCurrency({
+        baseCurrency: "INR",
+        defaultCurrency: "INR",
+        allowMultiCurrencyClaims: false,
+        enabledCurrencies: [],
+      }),
+    ).toBe("INR");
+    expect(() =>
+      validateExpenseClaimCurrency({
+        baseCurrency: "INR",
+        defaultCurrency: "USD",
+        allowMultiCurrencyClaims: false,
+        enabledCurrencies: ["USD"],
+      }),
+    ).toThrow(/Enable multi-currency/);
+    expect(() =>
+      validateExpenseClaimCurrency({
+        baseCurrency: "INR",
+        defaultCurrency: "USD",
+        allowMultiCurrencyClaims: true,
+        enabledCurrencies: [],
+      }),
+    ).toThrow(/enabled company currency/);
+  });
+});
 
 describe("expense management settings mapping", () => {
   it("returns a safe default when settings do not exist yet", () => {

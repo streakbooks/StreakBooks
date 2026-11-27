@@ -53,6 +53,8 @@ import {
   linkExpenseClaimCorporateCard,
   linkExpenseClaimPettyCashFloat,
   listExpenseCashAdvances,
+  getExpenseManagementSettings,
+  listExpenseClaimCurrencies,
   listExpenseClaimTemplates,
   listExpenseClaims,
   listExpenseCorporateCards,
@@ -63,6 +65,8 @@ import {
   withdrawExpenseClaim,
 } from "@/lib/expenses/expenses.functions";
 import type { ExpensePaymentSource } from "@/lib/expenses/types";
+import { resolveExpenseClaimCurrency } from "@/lib/expenses/settings";
+import { isExpenseClaimTemplateCompatible } from "@/lib/expenses/templates";
 import {
   enqueueOfflineExpenseClaimDraft,
   isBrowserOffline,
@@ -91,7 +95,7 @@ export function ExpenseManagementClaimsPage({
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
   const queryClient = useQueryClient();
-  const currency = company?.base_currency ?? "USD";
+  const baseCurrency = company?.base_currency ?? "USD";
   const today = new Date().toISOString().slice(0, 10);
   const canSubmit = can("expenses.submit" as Permission);
   const canViewAll =
@@ -138,6 +142,8 @@ export function ExpenseManagementClaimsPage({
   const deleteClaim = useServerFn(deleteExpenseClaimDraft);
   const duplicateClaim = useServerFn(duplicateExpenseClaim);
   const saveTemplate = useServerFn(saveExpenseClaimTemplate);
+  const fetchExpenseSettings = useServerFn(getExpenseManagementSettings);
+  const fetchExpenseCurrencies = useServerFn(listExpenseClaimCurrencies);
 
   const allowed = mode === "my-expenses" ? canSubmit || canViewAll : canViewAll;
 
@@ -164,6 +170,25 @@ export function ExpenseManagementClaimsPage({
       }),
     enabled: Boolean(company?.id) && allowed,
     ...expenseQueryOptions,
+  });
+
+  const expenseSettingsQ = useQuery({
+    queryKey: ["expense-management-settings", company?.id],
+    queryFn: () => fetchExpenseSettings({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && mode === "my-expenses" && canSubmit && forceCreate,
+  });
+
+  const expenseCurrenciesQ = useQuery({
+    queryKey: ["expense-claim-currencies", company?.id],
+    queryFn: () => fetchExpenseCurrencies({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && mode === "my-expenses" && canSubmit && forceCreate,
+  });
+
+  const currency = resolveExpenseClaimCurrency({
+    baseCurrency,
+    defaultCurrency: expenseSettingsQ.data?.defaultClaimCurrency,
+    allowMultiCurrencyClaims: expenseSettingsQ.data?.allowMultiCurrencyClaims,
+    enabledCurrencies: expenseCurrenciesQ.data ?? [],
   });
 
   const accountsQ = useQuery({
@@ -551,6 +576,10 @@ export function ExpenseManagementClaimsPage({
   const applyTemplate = (templateId: string) => {
     const template = (templatesQ.data ?? []).find((row) => row.id === templateId);
     if (!template) return;
+    if (!isExpenseClaimTemplateCompatible(template, currency, baseCurrency)) {
+      toast.error("This template uses a different currency from the current claim.");
+      return;
+    }
     setTitle(template.titleTemplate || template.name);
     setDescription(template.descriptionTemplate ?? "");
     setLines(
@@ -630,6 +659,7 @@ export function ExpenseManagementClaimsPage({
   const createLookupQueries = [
     accountsQ,
     templatesQ,
+    ...(!isOffline && forceCreate ? [expenseSettingsQ, expenseCurrenciesQ] : []),
     ...(paymentSource === "cash_advance" ? [advancesQ] : []),
     ...(paymentSource === "company_paid" ? [pettyFloatsQ] : []),
     ...(paymentSource === "corporate_card" ? [cardsQ] : []),
@@ -645,6 +675,11 @@ export function ExpenseManagementClaimsPage({
   const createForm =
     mode === "my-expenses" && canSubmit && forceCreate && createLookupsFailed ? (
       <QueryErrorState queries={createLookupQueries} title="Could not load claim create options" />
+    ) : mode === "my-expenses" &&
+      canSubmit &&
+      forceCreate &&
+      createLookupQueries.some((query) => query.isPending) ? (
+      <LoadingState />
     ) : mode === "my-expenses" && canSubmit && forceCreate ? (
       <form
         id="expense-claim-create"
@@ -678,7 +713,9 @@ export function ExpenseManagementClaimsPage({
               </Button>
             </div>
           ) : null}
-          {(templatesQ.data?.length ?? 0) > 0 ? (
+          {(templatesQ.data?.filter((template) =>
+            isExpenseClaimTemplateCompatible(template, currency, baseCurrency),
+          ).length ?? 0) > 0 ? (
             <div className="grid gap-1">
               <Label htmlFor="em-template">Load template</Label>
               <RecordLookupSelect
@@ -691,11 +728,15 @@ export function ExpenseManagementClaimsPage({
                 }}
               >
                 <option value="">Select template</option>
-                {(templatesQ.data ?? []).map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.name}
-                  </option>
-                ))}
+                {(templatesQ.data ?? [])
+                  .filter((template) =>
+                    isExpenseClaimTemplateCompatible(template, currency, baseCurrency),
+                  )
+                  .map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
               </RecordLookupSelect>
             </div>
           ) : null}

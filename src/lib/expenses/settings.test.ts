@@ -3,11 +3,26 @@ import {
   expenseClaimCurrencyOptions,
   mapExpenseManagementSettings,
   resolveExpenseClaimCurrency,
+  resolveExpenseMultiCurrencyClaimsPolicy,
   toExpenseManagementSettingsPayload,
   validateExpenseClaimCurrency,
 } from "./settings";
 
 describe("expense claim currency settings", () => {
+  it("keeps the saved multi-currency policy for partial updates", () => {
+    expect(resolveExpenseMultiCurrencyClaimsPolicy(undefined, false)).toBe(false);
+    expect(resolveExpenseMultiCurrencyClaimsPolicy(true, false)).toBe(true);
+    expect(resolveExpenseMultiCurrencyClaimsPolicy(undefined, undefined)).toBe(true);
+    expect(() =>
+      validateExpenseClaimCurrency({
+        baseCurrency: "INR",
+        defaultCurrency: "USD",
+        allowMultiCurrencyClaims: resolveExpenseMultiCurrencyClaimsPolicy(undefined, false),
+        enabledCurrencies: ["USD"],
+      }),
+    ).toThrow(/Enable multi-currency/);
+  });
+
   it("offers only valid unique enabled currencies with the base currency first", () => {
     expect(expenseClaimCurrencyOptions("inr", ["USD", "usd", "US", "EUR"])).toEqual([
       "INR",

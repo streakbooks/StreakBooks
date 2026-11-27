@@ -75,6 +75,13 @@ export function resolveExpenseClaimCurrency(input: {
     : base;
 }
 
+export function resolveExpenseMultiCurrencyClaimsPolicy(
+  requested: boolean | null | undefined,
+  current: boolean | null | undefined,
+): boolean {
+  return requested ?? current ?? true;
+}
+
 export function validateExpenseClaimCurrency(input: {
   baseCurrency: string | null | undefined;
   defaultCurrency: string | null | undefined;

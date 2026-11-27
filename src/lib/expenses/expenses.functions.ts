@@ -4,6 +4,7 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { callRpc, companyIdOf, isMissingRelation } from "@/lib/planning/rpc";
 import {
   mapExpenseManagementSettings,
+  resolveExpenseMultiCurrencyClaimsPolicy,
   toExpenseManagementSettingsPayload,
   validateExpenseClaimCurrency,
 } from "@/lib/expenses/settings";
@@ -323,7 +324,7 @@ export const saveExpenseManagementSettings = createServerFn({ method: "POST" })
     }
     const requestedClaimCurrency = data.draft.defaultClaimCurrency?.trim().toUpperCase();
     if (requestedClaimCurrency) {
-      const [companyResult, currenciesResult] = await Promise.all([
+      const [companyResult, currenciesResult, settingsResult] = await Promise.all([
         context.supabase
           .from("companies" as never)
           .select("base_currency" as never)
@@ -333,19 +334,31 @@ export const saveExpenseManagementSettings = createServerFn({ method: "POST" })
           .from("company_currencies" as never)
           .select("currency_code" as never)
           .eq("company_id" as never, data.companyId as never),
+        context.supabase
+          .from("expense_management_settings" as never)
+          .select("allow_multi_currency_claims" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .maybeSingle(),
       ]);
       if (companyResult.error) throw new Error(companyResult.error.message);
       if (currenciesResult.error) throw new Error(currenciesResult.error.message);
+      if (settingsResult.error) throw new Error(settingsResult.error.message);
       const baseCurrency = String(
         (companyResult.data as { base_currency?: string | null } | null)?.base_currency ?? "USD",
       ).toUpperCase();
       const enabledCurrencies = (
         (currenciesResult.data ?? []) as Array<{ currency_code?: string | null }>
       ).map((row) => String(row.currency_code ?? ""));
+      const currentSettings = settingsResult.data as {
+        allow_multi_currency_claims?: boolean | null;
+      } | null;
       validateExpenseClaimCurrency({
         baseCurrency,
         defaultCurrency: requestedClaimCurrency,
-        allowMultiCurrencyClaims: data.draft.allowMultiCurrencyClaims ?? true,
+        allowMultiCurrencyClaims: resolveExpenseMultiCurrencyClaimsPolicy(
+          data.draft.allowMultiCurrencyClaims,
+          currentSettings?.allow_multi_currency_claims,
+        ),
         enabledCurrencies,
       });
     }

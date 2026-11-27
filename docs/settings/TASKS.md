@@ -225,7 +225,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 ## 2026-11-27 Expense claim currency consumer
 
-- Connected the saved default claim currency to new employee claim drafts. Currency choices are loaded from the organisation base currency and enabled-currency list; the server rejects unsupported defaults and foreign defaults when multi-currency claims are disabled.
+- Connected the saved default claim currency to new employee claim drafts. Currency choices are loaded from the organisation base currency and enabled-currency list; the server rejects unsupported defaults and foreign defaults when multi-currency claims are disabled, using the saved policy when a partial settings patch omits that field.
 - New online claim forms wait for settings/currency lookups before enabling entry, and claim templates are filtered to currency-compatible values so existing minor-unit amounts are not reinterpreted. Offline starts use the base currency without attempting live settings/currency requests; offline drafts retain the explicit currency selected when they were created.
 - Added resolver, validation and template-compatibility tests. Focused tests passed (4 files / 28 tests), typecheck, changed-file ESLint, `check:modules`, `check:navigation`, `check:ui`, and `git diff --check` passed. Expense settings still remain partial because other fields and field-level audit evidence are not complete. No schema change or hosted Supabase operation was made.
 

@@ -406,3 +406,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Moved personal theme, named palette and validated custom palette persistence from organisation-scoped `user_ui_preferences` to a new `user_global_preferences` table keyed by the authenticated user. The authenticated app shell syncs the saved choice across modules and the Profile card edits it without a selected company.
 - Added per-user RLS, explicit grants, a local-only SQL regression for cross-user read/write isolation, a drop-only rollback script and field-level capability evidence. No hosted database was accessed; this migration must remain unapplied until separate backup and migration safety evidence is available.
 - Focused tests passed (3 files / 23 tests); migration checks passed (389 unique versions, 8 history tests); the isolated network-disabled PostgreSQL 17 workflow harness passed including the two-user RLS regression; typecheck, changed-file ESLint, `check:ui` (776 TSX files, zero violations) and `git diff --check` passed.
+
+## 2026-11-27 Organisation server-function API cleanup
+
+- Replaced the last four deprecated `.inputValidator()` calls in `src/` with `.validator()` and removed the legacy method from the organisation server-function test mock. Source search confirms no deprecated calls remain.
+- Focused organisation-function tests passed (1 file / 4 tests); changed-file ESLint passed; production build passed. TanStack server-function deprecation warnings are gone. The build still reports the Vite `vite-tsconfig-paths` advisory because the shared `@lovable.dev/vite-tanstack-config` wrapper injects/requires that plugin; Nitro also reports Windows symlink `EPERM` warnings while preparing deployment output. Neither warning caused build failure.
+- No database migration, hosted Supabase operation or deployment was performed.

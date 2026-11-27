@@ -90,7 +90,7 @@ export const getCompanyContext = createServerFn({ method: "GET" })
 
 export const setActiveCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     // Membership check (server) + DB trigger as defence in depth.
@@ -105,7 +105,7 @@ export const setActiveCompany = createServerFn({ method: "POST" })
 
 export const createCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(validateCompanyInput)
+  .validator(validateCompanyInput)
   .handler(async ({ data, context }) => {
     const { data: id, error } = await context.supabase.rpc("create_company", {
       _name: data.name,
@@ -157,7 +157,7 @@ export type CompanyDetails = CompanySummary & {
 
 export const getCompanyDetails = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }): Promise<CompanyDetails> => {
     const { supabase, userId } = context;
     await assertCompanyMember(supabase, data.companyId);
@@ -279,7 +279,7 @@ export type CompanyMember = {
 
 export const listCompanyMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }): Promise<CompanyMember[]> => {
     const { supabase, userId } = context;
     await assertCompanyPermission(supabase, data.companyId, "members.view");

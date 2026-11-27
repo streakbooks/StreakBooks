@@ -106,7 +106,7 @@ Routes: `/expense-management/settings`, `/expense-management/mileage` and `/expe
 
 ## Test environment
 
-The `e2e/settings-navigation.spec.ts` cases require an authenticated test account supplied through `E2E_EMAIL` and `E2E_PASSWORD`. The local browser session used during this task rendered an application error on `/settings`; do not count that screen as passed browser verification. Use a dedicated, non-production test organisation for save or permission tests.
+The `e2e/settings-navigation.spec.ts` cases require an authenticated test account supplied through `E2E_EMAIL` and `E2E_PASSWORD`. The local browser at `http://localhost:8080/settings` loaded the Settings Centre after refresh, but no authenticated end-to-end save or permission flow was run. Use a dedicated, non-production test organisation for those tests.
 
 ## Known review boundaries
 

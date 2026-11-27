@@ -109,7 +109,8 @@ export const categoryMeta: CategoryMeta[] = [
   {
     id: "pos",
     label: "Point of Sale",
-    description: "Register setup, location access and cash sessions.",
+    description:
+      "Open register setup and catalogue checkout. Tax and tender configuration are not available yet.",
     synonyms: ["pos", "register", "till", "cash drawer", "cashier", "location access"],
     moduleLinks: [
       { label: "Registers & sessions", to: "/pos/registers" },

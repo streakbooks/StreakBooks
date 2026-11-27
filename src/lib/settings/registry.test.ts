@@ -53,6 +53,7 @@ describe("Settings Centre category routing and search", () => {
   it("routes Point of Sale setup from its own Settings category", () => {
     const posMeta = categoryMeta.find((item) => item.id === "pos");
     expect(posMeta?.availability).toBe("partial");
+    expect(posMeta?.description).toContain("Tax and tender configuration are not available yet.");
     expect(posMeta?.moduleLinks).toEqual([
       { label: "Registers & sessions", to: "/pos/registers" },
       { label: "Catalogue checkout", to: "/pos" },

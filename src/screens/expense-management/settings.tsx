@@ -7,19 +7,12 @@ import { CompanyEmptyState } from "@/components/common/company-empty";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
-import { AccountLookup } from "@/components/lookup";
+import { AccountLookup, LookupSelect } from "@/components/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { PersistedSwitch } from "@/components/common/PersistedSwitch";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
@@ -104,12 +97,30 @@ export function ExpenseManagementSettingsPage() {
     queryFn: () => fetchSettings({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canView,
   });
-
   const currenciesQ = useQuery({
     queryKey: ["expense-claim-currencies", company?.id],
     queryFn: () => fetchCurrencies({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canView,
   });
+  const claimCurrencyOptions = useMemo(
+    () => [
+      {
+        id: "base",
+        label: `Organisation base currency (${company?.base_currency ?? "USD"})`,
+      },
+      ...(currenciesQ.data ?? [])
+        .filter((code) => code !== company?.base_currency)
+        .map((code) => ({
+          id: code,
+          label: code,
+          disabled: !(draft?.allowMultiCurrencyClaims ?? false),
+          ...(draft?.allowMultiCurrencyClaims
+            ? {}
+            : { disabledReason: "Enable multi-currency claims to choose a foreign currency." }),
+        })),
+    ],
+    [company?.base_currency, currenciesQ.data, draft?.allowMultiCurrencyClaims],
+  );
 
   const accountsQ = useQuery({
     queryKey: ["accounts", company?.id, "expense-settings"],
@@ -345,32 +356,24 @@ export function ExpenseManagementSettingsPage() {
 
         <div className="grid gap-2">
           <Label htmlFor="em-currency">Default claim currency</Label>
-          <Select
+          <LookupSelect
+            id="em-currency"
+            ariaLabel="Default claim currency"
+            options={claimCurrencyOptions}
             value={draft.defaultClaimCurrency || "base"}
-            onValueChange={(value) =>
+            onChange={(value) =>
               setDraft({ ...draft, defaultClaimCurrency: value === "base" ? "" : value })
             }
+            placeholder="Choose claim currency"
+            searchPlaceholder="Search currencies"
+            emptyText="No enabled currencies"
             disabled={!canEdit || save.isPending || currenciesQ.isPending || currenciesQ.isError}
-          >
-            <SelectTrigger id="em-currency" aria-label="Default claim currency">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="base">
-                Organisation base currency ({company.base_currency ?? "USD"})
-              </SelectItem>
-              {(currenciesQ.data ?? [])
-                .filter((code) => code !== company.base_currency)
-                .map((code) => (
-                  <SelectItem key={code} value={code} disabled={!draft.allowMultiCurrencyClaims}>
-                    {code}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-          {currenciesQ.isError ? (
-            <p className="text-sm text-destructive">Company currencies could not be loaded.</p>
-          ) : !draft.allowMultiCurrencyClaims ? (
+            loading={currenciesQ.isPending}
+            error={currenciesQ.isError ? "Company currencies could not be loaded." : undefined}
+            onRetry={() => void currenciesQ.refetch()}
+            allowClear={false}
+          />
+          {!draft.allowMultiCurrencyClaims ? (
             <p className="text-sm text-muted-foreground">
               Enable multi-currency claims before selecting a foreign currency.
             </p>

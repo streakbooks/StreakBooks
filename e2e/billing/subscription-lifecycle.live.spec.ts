@@ -57,14 +57,22 @@ test.describe("Billing subscription lifecycle (live / Stripe test mode)", () => 
   test("H — invoice history and PDF controls are visible", async ({ page }) => {
     await openSubscription(page);
     await expect(page.getByRole("heading", { name: "Billing documents" })).toBeVisible();
-    await expect(page.getByText(/Outstanding with Stripe|Issued StreakBooks invoices/i)).toBeVisible();
+    await expect(
+      page.getByText(/Outstanding with Stripe|Issued StreakBooks invoices/i),
+    ).toBeVisible();
   });
 
   test("hybrid — India company offers Razorpay methods, not Stripe card", async ({ page }) => {
-    test.skip(process.env.E2E_BILLING_COUNTRY !== "IN", "Set E2E_BILLING_COUNTRY=IN for an Indian org.");
+    test.skip(
+      process.env.E2E_BILLING_COUNTRY !== "IN",
+      "Set E2E_BILLING_COUNTRY=IN for an Indian org.",
+    );
     await openSubscription(page);
     const subscribe = page.getByRole("button", { name: "Subscribe" }).first();
-    test.skip(!(await subscribe.isVisible().catch(() => false)), "Already subscribed; open CheckoutForm manually.");
+    test.skip(
+      !(await subscribe.isVisible().catch(() => false)),
+      "Already subscribed; open CheckoutForm manually.",
+    );
     await subscribe.click();
     await expect(page.getByText(/UPI AutoPay|e-mandate/i).first()).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText(/Secure Stripe Checkout/i)).toHaveCount(0);
@@ -77,7 +85,10 @@ test.describe("Billing subscription lifecycle (live / Stripe test mode)", () => 
     );
     await openSubscription(page);
     const subscribe = page.getByRole("button", { name: "Subscribe" }).first();
-    test.skip(!(await subscribe.isVisible().catch(() => false)), "Already subscribed; open CheckoutForm manually.");
+    test.skip(
+      !(await subscribe.isVisible().catch(() => false)),
+      "Already subscribed; open CheckoutForm manually.",
+    );
     await subscribe.click();
     await expect(page.getByText(/Cards, wallets|Stripe Checkout/i).first()).toBeVisible({
       timeout: 20_000,
@@ -93,15 +104,23 @@ test.describe("Billing subscription lifecycle (live / Stripe test mode)", () => 
       await yearly.click();
       await monthly.click();
     }
-    await expect(page.getByRole("button", { name: /Subscribe|Switch plan|Keep current plan/i }).first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Subscribe|Switch plan|Keep current plan/i }).first(),
+    ).toBeVisible();
   });
 
   test("A — new monthly subscribe (Stripe Checkout redirect)", async ({ page }) => {
     test.skip(!mutations, "Set E2E_BILLING_MUTATIONS=true to exercise Checkout.");
     await openSubscription(page);
     const subscribe = page.getByRole("button", { name: "Subscribe" }).first();
-    test.skip(!(await subscribe.isVisible().catch(() => false)), "Org already has a paid subscription.");
-    await page.getByRole("button", { name: "Monthly", exact: true }).click().catch(() => undefined);
+    test.skip(
+      !(await subscribe.isVisible().catch(() => false)),
+      "Org already has a paid subscription.",
+    );
+    await page
+      .getByRole("button", { name: "Monthly", exact: true })
+      .click()
+      .catch(() => undefined);
     await subscribe.click();
     await page.waitForURL(/checkout\.stripe\.com|stripe\.com|billing\.stripe\.com|\/settings/, {
       timeout: 60_000,
@@ -113,7 +132,10 @@ test.describe("Billing subscription lifecycle (live / Stripe test mode)", () => 
     test.skip(!mutations, "Set E2E_BILLING_MUTATIONS=true to exercise upgrades.");
     await openSubscription(page);
     const switchBtn = page.getByRole("button", { name: "Switch plan" }).first();
-    test.skip(!(await switchBtn.isVisible().catch(() => false)), "No switchable higher plan visible.");
+    test.skip(
+      !(await switchBtn.isVisible().catch(() => false)),
+      "No switchable higher plan visible.",
+    );
     await switchBtn.click();
     await expect(page.getByText(/Due now|prorat|no charge today|period end/i).first()).toBeVisible({
       timeout: 20_000,
@@ -156,15 +178,24 @@ test.describe("Billing subscription lifecycle (live / Stripe test mode)", () => 
     }
     test.skip(!mutations, "No scheduled change; enable mutations to create a downgrade first.");
     // Soft assertion: page still loads plan switching without error.
-    await expect(page.getByRole("button", { name: /Subscribe|Switch plan/i }).first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Subscribe|Switch plan/i }).first(),
+    ).toBeVisible();
   });
 
   test("G — past_due recovery surface", async ({ page }) => {
     await openSubscription(page);
     const recovery = page.getByText(/Payment due|Update.*payment|past due|failed payment/i);
-    if (await recovery.first().isVisible().catch(() => false)) {
+    if (
+      await recovery
+        .first()
+        .isVisible()
+        .catch(() => false)
+    ) {
       await expect(recovery.first()).toBeVisible();
-      await expect(page.getByRole("button", { name: /Manage billing|Update payment|Pay/i }).first()).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: /Manage billing|Update payment|Pay/i }).first(),
+      ).toBeVisible();
     } else {
       test.info().annotations.push({
         type: "note",

@@ -16,18 +16,18 @@ Vercel currently has **Supabase variables only**. Missing payment vars cause:
 
 Apply to **Preview** and **Production** (and Development for local `vercel env pull`). Use **Test Mode** keys only until go-live.
 
-| Variable | Purpose |
-| --- | --- |
-| `STRIPE_SECRET_KEY` | `sk_test_…` Stripe API |
-| `STRIPE_WEBHOOK_SECRET` | `whsec_…` for `/api/billing/stripe` |
-| `RAZORPAY_KEY_ID` | `rzp_test_…` |
-| `RAZORPAY_KEY_SECRET` | Razorpay API secret |
-| `RAZORPAY_WEBHOOK_SECRET` | Dashboard webhook secret (≠ API secret) |
-| `RAZORPAY_MODE` | `test` |
-| `STREAKBOOKS_CRON_SECRET` | Auth for `/api/billing/webhook-retry` |
-| `CRON_SECRET` | Same value as above (Vercel Cron Bearer) |
-| `APP_ORIGIN` | Canonical app URL (Preview URL or production host) |
-| `SUPABASE_*` / `VITE_SUPABASE_*` | Already present |
+| Variable                         | Purpose                                            |
+| -------------------------------- | -------------------------------------------------- |
+| `STRIPE_SECRET_KEY`              | `sk_test_…` Stripe API                             |
+| `STRIPE_WEBHOOK_SECRET`          | `whsec_…` for `/api/billing/stripe`                |
+| `RAZORPAY_KEY_ID`                | `rzp_test_…`                                       |
+| `RAZORPAY_KEY_SECRET`            | Razorpay API secret                                |
+| `RAZORPAY_WEBHOOK_SECRET`        | Dashboard webhook secret (≠ API secret)            |
+| `RAZORPAY_MODE`                  | `test`                                             |
+| `STREAKBOOKS_CRON_SECRET`        | Auth for `/api/billing/webhook-retry`              |
+| `CRON_SECRET`                    | Same value as above (Vercel Cron Bearer)           |
+| `APP_ORIGIN`                     | Canonical app URL (Preview URL or production host) |
+| `SUPABASE_*` / `VITE_SUPABASE_*` | Already present                                    |
 
 Do **not** set `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true` on staging.
 
@@ -40,10 +40,10 @@ Do **not** set `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true` on staging.
 
 ## Hybrid routing (DB)
 
-| Country | Provider |
-| --- | --- |
-| IN | Razorpay only |
-| GB / US / … | Stripe only |
+| Country     | Provider      |
+| ----------- | ------------- |
+| IN          | Razorpay only |
+| GB / US / … | Stripe only   |
 
 ## Acceptance smoke
 

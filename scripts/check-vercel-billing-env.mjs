@@ -44,5 +44,7 @@ for (const key of required) {
   if (!ok) missing += 1;
   console.log(`${key}: ${ok ? "present" : "MISSING"}`);
 }
-console.log(missing ? `\n${missing} required billing variable(s) missing.` : "\nAll required names present.");
+console.log(
+  missing ? `\n${missing} required billing variable(s) missing.` : "\nAll required names present.",
+);
 process.exit(missing ? 1 : 0);

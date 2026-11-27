@@ -96,8 +96,10 @@ test("checkout provider refresh preserves drafts and invalid entries cannot hand
   await page.getByRole("radio", { name: /UPI AutoPay/ }).click();
   await page.getByRole("button", { name: "Disable Razorpay fixture" }).click();
   await expect(card).toBeChecked();
-  await page.getByRole("button", { name: "Continue to payment" }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  await page.getByRole("button", { name: /Continue to (payment|Stripe|Razorpay)/i }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: /Enter a billing email|required|invalid/i }),
+  ).toBeVisible();
   await expect(page.getByRole("status")).toContainText("Checkout handoffs: 0");
 });
 for (const mode of ["light", "dark"]) {

@@ -458,6 +458,9 @@ function CheckoutFixture() {
         busy={false}
         serverError={null}
         providers={{ stripe: true, razorpay }}
+        // Fixture intentionally offers both providers so draft/handoff coverage can switch
+        // methods. Production checkout always passes server-routed providers only.
+        routedProviders={["stripe", "razorpay"]}
         quote={{
           currency: "INR",
           interval: "monthly",

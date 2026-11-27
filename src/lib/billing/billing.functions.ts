@@ -238,9 +238,7 @@ function withListPrice(plan: BillingPlanView, list: PriceList | null): BillingPl
     (providers ?? []).some((provider) => flags[provider as "stripe" | "razorpay"]);
 
   if (plan.pricePublished) {
-    const ready = list
-      ? routedReady(list.providers)
-      : Boolean(flags.stripe || flags.razorpay);
+    const ready = list ? routedReady(list.providers) : Boolean(flags.stripe || flags.razorpay);
     return { ...plan, checkoutReady: ready };
   }
   if (!list) return { ...plan, checkoutReady: false };

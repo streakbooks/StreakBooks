@@ -49,10 +49,7 @@ import {
   type PriceQuote,
 } from "@/lib/billing/pricing";
 import { formatMinorAmount } from "@/lib/billing/domain/money";
-import {
-  BILLING_CHARGE_RULES,
-  planChangePaymentCopy,
-} from "@/lib/billing/domain/billing-policy";
+import { BILLING_CHARGE_RULES, planChangePaymentCopy } from "@/lib/billing/domain/billing-policy";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { cn } from "@/lib/utils";
 
@@ -84,13 +81,7 @@ function paymentProviderReady(data: BillingOverview): boolean {
   return routed.some((provider) => data.providers[provider]);
 }
 
-function PaymentSetupCallout({
-  data,
-  plans,
-}: {
-  data: BillingOverview;
-  plans: BillingPlanView[];
-}) {
+function PaymentSetupCallout({ data, plans }: { data: BillingOverview; plans: BillingPlanView[] }) {
   const hasCatalogPrices = plans.some(
     (plan) => plan.pricePublished || plan.listPrice?.monthlyMinor != null,
   );
@@ -112,11 +103,12 @@ function PaymentSetupCallout({
       <AlertDescription className="space-y-2">
         <p>
           Plan prices are published for {data.countryCode}. Subscribe needs {providerLabel} API keys
-          in server environment variables — not products you create in the {providerLabel} dashboard.
+          in server environment variables — not products you create in the {providerLabel}{" "}
+          dashboard.
         </p>
         <p className="text-muted-foreground">
-          You can ignore Stripe&apos;s setup guide steps such as &quot;Create a recurring product&quot;
-          or customer portal; StreakBooks creates provider prices on first checkout.
+          You can ignore Stripe&apos;s setup guide steps such as &quot;Create a recurring
+          product&quot; or customer portal; StreakBooks creates provider prices on first checkout.
         </p>
         <p className="text-muted-foreground">
           Server env required:{" "}
@@ -238,7 +230,7 @@ export function SubscriptionPanel({
       return;
     }
     setActivating(true);
-  void (async () => {
+    void (async () => {
       try {
         const result = await confirmCheckout({ data: { companyId, sessionId } });
         if (result.status === "applied") {
@@ -485,7 +477,9 @@ export function SubscriptionPanel({
       } else {
         toast.success(
           `Downgrade scheduled. You keep your current plan until${
-            result.effectiveAt ? ` ${new Date(result.effectiveAt).toLocaleDateString()}` : " renewal"
+            result.effectiveAt
+              ? ` ${new Date(result.effectiveAt).toLocaleDateString()}`
+              : " renewal"
           }.`,
         );
       }
@@ -545,12 +539,11 @@ export function SubscriptionPanel({
   const currentPlan = data.subscription
     ? visiblePlans(data).find((plan) => plan.code === data.subscription?.planCode)
     : null;
-  const currentMonthly =
-    currentPlan?.listPrice?.monthlyMinor ?? currentPlan?.monthlyMinor ?? 0;
+  const currentMonthly = currentPlan?.listPrice?.monthlyMinor ?? currentPlan?.monthlyMinor ?? 0;
   const targetMonthly = target?.listPrice?.monthlyMinor ?? target?.monthlyMinor ?? 0;
   const isUpgradeSwitch = Boolean(
     switchPreview?.kind === "upgrade" ||
-      (target && intent === "switch" && targetMonthly > currentMonthly),
+    (target && intent === "switch" && targetMonthly > currentMonthly),
   );
   const switchCopy = planChangePaymentCopy(isUpgradeSwitch ? "upgrade" : "downgrade");
   const scheduledPlanName = data.subscription?.scheduledPlanCode
@@ -565,8 +558,8 @@ export function SubscriptionPanel({
           <Loader2 className="size-4 animate-spin" aria-hidden />
           <AlertTitle>Activating your subscription</AlertTitle>
           <AlertDescription>
-            Payment succeeded. We are confirming it with Stripe and updating your plan — this usually
-            takes a few seconds.
+            Payment succeeded. We are confirming it with Stripe and updating your plan — this
+            usually takes a few seconds.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -632,7 +625,7 @@ export function SubscriptionPanel({
       {data.ready && !data.isDemo ? <BillingDocuments companyId={companyId} /> : null}
       {data.ready && !data.isDemo ? <ReferralPanel companyId={companyId} /> : null}
 
-      {(checkout.isPending || planChange.isPending) ? (
+      {checkout.isPending || planChange.isPending ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
           role="status"
@@ -751,7 +744,10 @@ export function SubscriptionPanel({
                 {switchPreview && !previewLoading ? (
                   <>
                     {switchPreview.lines.slice(0, 4).map((line) => (
-                      <div key={`${line.description}-${line.amountMinor}`} className="flex justify-between gap-4">
+                      <div
+                        key={`${line.description}-${line.amountMinor}`}
+                        className="flex justify-between gap-4"
+                      >
                         <dt className="text-muted-foreground">{line.description}</dt>
                         <dd>
                           {formatMinor(
@@ -875,8 +871,7 @@ function PlanPicker({
   const anyListPrices = plans.some((plan) => plan.listPrice?.monthlyMinor != null);
   const anyYearly = plans.some(
     (plan) =>
-      plan.listPrice?.yearlyMinor != null ||
-      (plan.pricePublished && plan.monthlyMinor !== null),
+      plan.listPrice?.yearlyMinor != null || (plan.pricePublished && plan.monthlyMinor !== null),
   );
   const anyPromo = anyPriced || (anyListPrices && paymentProviderReady(data));
   const trialPlan = plans.find((plan) => plan.code === data.settings.trialPlanCode);
@@ -1089,8 +1084,7 @@ function PlanCard({
   onChoose: () => void;
 }) {
   const current =
-    overview.subscription?.planCode === plan.code &&
-    overview.subscription.interval === interval;
+    overview.subscription?.planCode === plan.code && overview.subscription.interval === interval;
   const paidHere = current && paidSubscription(overview.subscription);
   const recommended = plan.code === overview.settings.trialPlanCode && !current;
   const list =

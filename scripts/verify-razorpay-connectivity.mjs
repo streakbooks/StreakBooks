@@ -33,7 +33,9 @@ const localIgnored =
   envIgnored || gitignore.split(/\r?\n/).some((line) => line.trim() === ".env.local");
 console.log(`gitignore covers .env / .env.*: ${envIgnored ? "yes" : "NO"}`);
 console.log(`.env.local ignored: ${localIgnored ? "yes" : "NO"}`);
-console.log(`.env.local exists: ${existsSync(resolve(process.cwd(), ".env.local")) ? "yes" : "no"}`);
+console.log(
+  `.env.local exists: ${existsSync(resolve(process.cwd(), ".env.local")) ? "yes" : "no"}`,
+);
 
 const keyId = env.RAZORPAY_KEY_ID ?? "";
 const secret = env.RAZORPAY_KEY_SECRET ?? "";
@@ -47,7 +49,9 @@ function fail(message) {
 }
 
 if (!keyId || !secret) {
-  fail("RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in .env.local (do not paste into chat).");
+  fail(
+    "RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in .env.local (do not paste into chat).",
+  );
 }
 if (mode !== "test") {
   fail('RAZORPAY_MODE must be "test" for this verification (live payments are disabled).');

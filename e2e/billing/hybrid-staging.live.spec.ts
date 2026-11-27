@@ -33,7 +33,9 @@ const evidenceDir = join(process.cwd(), "test-results", "hybrid-billing-evidence
 function accountFor(market: Market): { email?: string; password?: string } {
   if (market === "IN") {
     return {
-      email: process.env.E2E_IN_EMAIL ?? (process.env.E2E_BILLING_COUNTRY === "IN" ? process.env.E2E_EMAIL : undefined),
+      email:
+        process.env.E2E_IN_EMAIL ??
+        (process.env.E2E_BILLING_COUNTRY === "IN" ? process.env.E2E_EMAIL : undefined),
       password:
         process.env.E2E_IN_PASSWORD ??
         (process.env.E2E_BILLING_COUNTRY === "IN" ? process.env.E2E_PASSWORD : undefined),
@@ -41,14 +43,18 @@ function accountFor(market: Market): { email?: string; password?: string } {
   }
   if (market === "GB") {
     return {
-      email: process.env.E2E_GB_EMAIL ?? (process.env.E2E_BILLING_COUNTRY === "GB" ? process.env.E2E_EMAIL : undefined),
+      email:
+        process.env.E2E_GB_EMAIL ??
+        (process.env.E2E_BILLING_COUNTRY === "GB" ? process.env.E2E_EMAIL : undefined),
       password:
         process.env.E2E_GB_PASSWORD ??
         (process.env.E2E_BILLING_COUNTRY === "GB" ? process.env.E2E_PASSWORD : undefined),
     };
   }
   return {
-    email: process.env.E2E_US_EMAIL ?? (process.env.E2E_BILLING_COUNTRY === "US" ? process.env.E2E_EMAIL : undefined),
+    email:
+      process.env.E2E_US_EMAIL ??
+      (process.env.E2E_BILLING_COUNTRY === "US" ? process.env.E2E_EMAIL : undefined),
     password:
       process.env.E2E_US_PASSWORD ??
       (process.env.E2E_BILLING_COUNTRY === "US" ? process.env.E2E_PASSWORD : undefined),
@@ -106,7 +112,9 @@ test.describe("Hybrid staging — India → Razorpay", () => {
     const subscribe = page.getByRole("button", { name: "Subscribe" }).first();
     if (await subscribe.isVisible().catch(() => false)) {
       await subscribe.click();
-      await expect(page.getByText(/UPI AutoPay|e-mandate/i).first()).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByText(/UPI AutoPay|e-mandate/i).first()).toBeVisible({
+        timeout: 20_000,
+      });
       await expect(page.getByText(/Secure Stripe Checkout/i)).toHaveCount(0);
       await evidence(page, "in-checkout-methods");
     } else {
@@ -127,9 +135,15 @@ test.describe("Hybrid staging — India → Razorpay", () => {
     const subscribe = page.getByRole("button", { name: "Subscribe" }).first();
     test.skip(!(await subscribe.isVisible().catch(() => false)), "Already subscribed.");
     await subscribe.click();
-    const upi = page.getByLabel(/UPI AutoPay/i).or(page.getByText(/UPI AutoPay/i)).first();
+    const upi = page
+      .getByLabel(/UPI AutoPay/i)
+      .or(page.getByText(/UPI AutoPay/i))
+      .first();
     if (await upi.isVisible().catch(() => false)) await upi.click();
-    await page.getByRole("button", { name: /Pay|Subscribe|Continue/i }).last().click();
+    await page
+      .getByRole("button", { name: /Pay|Subscribe|Continue/i })
+      .last()
+      .click();
     await page.waitForURL(/razorpay\.com|checkout\.razorpay|api\.razorpay|\/settings/, {
       timeout: 90_000,
     });
@@ -140,7 +154,10 @@ test.describe("Hybrid staging — India → Razorpay", () => {
   test("IN — isolation: Manage billing must not open Stripe portal", async ({ page }) => {
     await openSubscription(page, account.email!, account.password!);
     const manage = page.getByRole("button", { name: /Manage billing/i }).first();
-    test.skip(!(await manage.isVisible().catch(() => false)), "Manage billing not shown (no paid sub).");
+    test.skip(
+      !(await manage.isVisible().catch(() => false)),
+      "Manage billing not shown (no paid sub).",
+    );
     await manage.click();
     // Either toast/error about Razorpay, or stay on-site — never billing.stripe.com
     await page.waitForTimeout(2000);
@@ -165,7 +182,9 @@ test.describe("Hybrid staging — UK → Stripe", () => {
       await expect(page.getByText(/UPI AutoPay/i)).toHaveCount(0);
       await evidence(page, "gb-checkout-methods");
     } else {
-      await expect(page.getByText(/Subscription|Active|Trial|Manage billing/i).first()).toBeVisible();
+      await expect(
+        page.getByText(/Subscription|Active|Trial|Manage billing/i).first(),
+      ).toBeVisible();
     }
   });
 
@@ -174,10 +193,18 @@ test.describe("Hybrid staging — UK → Stripe", () => {
     await openSubscription(page, account.email!, account.password!);
     const subscribe = page.getByRole("button", { name: "Subscribe" }).first();
     test.skip(!(await subscribe.isVisible().catch(() => false)), "Already subscribed.");
-    await page.getByRole("button", { name: "Monthly", exact: true }).click().catch(() => undefined);
+    await page
+      .getByRole("button", { name: "Monthly", exact: true })
+      .click()
+      .catch(() => undefined);
     await subscribe.click();
-    await page.getByRole("button", { name: /Pay|Subscribe|Continue/i }).last().click();
-    await page.waitForURL(/checkout\.stripe\.com|billing\.stripe\.com|\/settings/, { timeout: 90_000 });
+    await page
+      .getByRole("button", { name: /Pay|Subscribe|Continue/i })
+      .last()
+      .click();
+    await page.waitForURL(/checkout\.stripe\.com|billing\.stripe\.com|\/settings/, {
+      timeout: 90_000,
+    });
     await evidence(page, "gb-stripe-redirect");
     expect(page.url()).toMatch(/stripe\.com|section=subscription/);
   });
@@ -216,7 +243,9 @@ test.describe("Hybrid staging — US → Stripe", () => {
       await expect(page.getByText(/UPI AutoPay/i)).toHaveCount(0);
       await evidence(page, "us-checkout-methods");
     } else {
-      await expect(page.getByText(/Subscription|Active|Trial|Manage billing/i).first()).toBeVisible();
+      await expect(
+        page.getByText(/Subscription|Active|Trial|Manage billing/i).first(),
+      ).toBeVisible();
     }
   });
 
@@ -226,8 +255,13 @@ test.describe("Hybrid staging — US → Stripe", () => {
     const subscribe = page.getByRole("button", { name: "Subscribe" }).first();
     test.skip(!(await subscribe.isVisible().catch(() => false)), "Already subscribed.");
     await subscribe.click();
-    await page.getByRole("button", { name: /Pay|Subscribe|Continue/i }).last().click();
-    await page.waitForURL(/checkout\.stripe\.com|billing\.stripe\.com|\/settings/, { timeout: 90_000 });
+    await page
+      .getByRole("button", { name: /Pay|Subscribe|Continue/i })
+      .last()
+      .click();
+    await page.waitForURL(/checkout\.stripe\.com|billing\.stripe\.com|\/settings/, {
+      timeout: 90_000,
+    });
     await evidence(page, "us-stripe-redirect");
     expect(page.url()).toMatch(/stripe\.com|section=subscription/);
   });

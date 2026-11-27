@@ -16,6 +16,7 @@ export type AccountRow = {
   code: string;
   name: string;
   account_type: string;
+  account_kind: string | null;
   subtype: string | null;
   normal_balance: string;
   is_system: boolean;
@@ -32,7 +33,7 @@ export const listAccounts = createServerFn({ method: "GET" })
     const { data: rows, error } = await context.supabase
       .from("accounts" as never)
       .select(
-        "id, code, name, account_type, subtype, normal_balance, is_system, is_postable, is_control, is_active" as never,
+        "id, code, name, account_type, account_kind, subtype, normal_balance, is_system, is_postable, is_control, is_active" as never,
       )
       .eq("company_id" as never, data.companyId as never)
       .order("code" as never);

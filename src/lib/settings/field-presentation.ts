@@ -24,7 +24,8 @@ const FIELDS: Record<string, SettingsFieldPresentation> = {
   },
   "accounting.warn_bank_direct_posting": {
     label: "Warn on direct bank postings",
-    description: "Show a warning before direct posting to a bank ledger account.",
+    description:
+      "Show a non-blocking warning on manual journals that post to a bank or cash account.",
   },
   "accounting.warn_backdated_days": {
     label: "Backdated entry warning (days)",

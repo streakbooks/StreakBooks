@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { inspectManualJournal, type JournalDraftLine } from "./manual-journal-review";
+import {
+  directBankPostingWarningLines,
+  inspectManualJournal,
+  type JournalDraftLine,
+} from "./manual-journal-review";
 
 const base: JournalDraftLine[] = [
   { accountId: "expense", description: "Service", debit: "100.00", credit: "" },
@@ -48,5 +52,57 @@ describe("manual journal draft preflight", () => {
     const invalid = review([{ ...base[0]!, debit: "999999999999999.99" }, base[1]!]);
     expect(invalid.invalidLines).toEqual([1]);
     expect(invalid.canPost).toBe(false);
+  });
+});
+
+describe("direct bank posting warning", () => {
+  const accounts = [
+    {
+      id: "bank",
+      account_type: "asset",
+      subtype: "bank",
+      is_active: true,
+      is_postable: true,
+    },
+    {
+      id: "cash",
+      account_type: "asset",
+      account_kind: "cash",
+      is_active: true,
+      is_postable: true,
+    },
+    {
+      id: "receivable",
+      account_type: "asset",
+      subtype: "current_asset",
+      is_active: true,
+      is_postable: true,
+    },
+  ];
+
+  it("identifies only selected bank or cash lines that contain an amount", () => {
+    expect(
+      directBankPostingWarningLines(
+        [
+          { ...base[0]!, accountId: "bank" },
+          { ...base[1]!, accountId: "cash" },
+          { ...base[0]!, accountId: "receivable" },
+          { ...base[0]!, accountId: "bank", debit: "", credit: "" },
+        ],
+        accounts,
+        true,
+      ),
+    ).toEqual([1, 2]);
+  });
+
+  it("does not warn when disabled or when the account is inactive or not postable", () => {
+    const line = { ...base[0]!, accountId: "bank" };
+    expect(directBankPostingWarningLines([line], accounts, false)).toEqual([]);
+    expect(
+      directBankPostingWarningLines([line], [{ ...accounts[0]!, is_active: false }], true),
+    ).toEqual([]);
+    expect(
+      directBankPostingWarningLines([line], [{ ...accounts[0]!, is_postable: false }], true),
+    ).toEqual([]);
   });
 });

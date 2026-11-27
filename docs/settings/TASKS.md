@@ -2,6 +2,13 @@
 
 Ordered work for the Settings module brief. Status reflects repository work, not hosted production state.
 
+## 2026-11-27 Direct bank-posting warning consumer
+
+- Connected the existing `warn_bank_direct_posting` preference to populated manual-journal lines that use an active, postable bank or cash ledger account. The warning is advisory and never blocks posting; the typed Accounting settings control is now complete based on the existing version-checked, permission-gated, audited writer.
+- Updated the legacy Accounting safeguards summary to identify the bank and back-date warnings as active, while leaving duplicate-number, control-account and auto-credit preferences explicitly partial/read-only. No migration was needed.
+- Focused helper, capability-registry and safeguards UI tests passed (3 files / 23 tests); UI contract check passed (775 TSX files, zero violations). Changed-file lint and typecheck are being resolved before commit; no hosted Supabase access or deployment was performed.
+- Batch 3 remains partial because regional Tax and other Accounting controls still lack complete evidence.
+
 - [x] Phase 0 — audit current routes, UI, persistence, consumers, permissions, tests and module registry (`audit.md`). No feature code changed in this phase.
 - [x] Phase 1 — official public benchmark, clean-room IA, decision and originality record (`benchmark.md`, `ia-design.md`, `docs/decisions/011-settings-information-architecture.md`, `docs/compliance/originality-log.md`).
 - [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. Evidence-backed capabilities are registered individually; remaining typed fields stay partial and are read-only.

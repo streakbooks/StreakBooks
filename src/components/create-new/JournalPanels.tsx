@@ -15,7 +15,10 @@ import {
 } from "@/lib/create-new/money-documents.functions";
 import { fromMinorUnits, toSafeMinorNumber } from "@/lib/accounting/money";
 import { tryParseMinor } from "@/lib/purchases/money-input";
-import { inspectManualJournal } from "@/lib/accounting/manual-journal-review";
+import {
+  directBankPostingWarningLines,
+  inspectManualJournal,
+} from "@/lib/accounting/manual-journal-review";
 import { importJournalLinesCsv, JOURNAL_CSV_HEADERS } from "@/lib/accounting/journal-csv-import";
 import { toCsv } from "@/lib/sales/csv";
 import { validateAutoReverseDate } from "@/lib/accounting/fx-reval";
@@ -49,6 +52,9 @@ type AccountRow = {
   is_postable: boolean;
   is_active: boolean;
   is_control?: boolean;
+  account_type: string;
+  account_kind?: string | null;
+  subtype?: string | null;
 };
 
 const emptyLine = (): Line => ({ accountId: "", description: "", debit: "", credit: "" });
@@ -117,6 +123,14 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
           Number(accountingSettingsQ.data?.document["warn_backdated_days"] ?? 90),
         )
       : null;
+  const directBankWarningLines =
+    mode === "post" && accountingSettingsQ.isSuccess
+      ? directBankPostingWarningLines(
+          lines,
+          allAccounts,
+          Boolean(accountingSettingsQ.data.document["warn_bank_direct_posting"] ?? true),
+        )
+      : [];
   const canSubmit =
     review.canPost &&
     !reverseError &&
@@ -581,6 +595,13 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
         }
         totals={
           <div className="space-y-2">
+            {directBankWarningLines.length > 0 ? (
+              <p role="status" className="text-sm text-amber-700">
+                Lines {directBankWarningLines.join(", ")} post directly to a bank or cash account.
+                Consider using the receipt or payment workflow to keep bank reconciliation history
+                linked. This warning does not block posting.
+              </p>
+            ) : null}
             <TotalsSummary
               lines={[
                 {

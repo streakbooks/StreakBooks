@@ -197,6 +197,23 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/settings/backdated-journal-warning.test.ts",
   },
   {
+    key: "accounting.warn_bank_direct_posting",
+    label: "Direct bank or cash posting warning",
+    moduleId: "accounting",
+    route: "/settings/accounting/overview",
+    scope: "company",
+    defaultValue: "true",
+    validation:
+      "accountingConfigSchema requires a boolean and defaults new organisations to enabled",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "organisation_config.accounting through the version-checked settings RPC",
+    audit: "settings_change_log records before/after category documents",
+    consumer:
+      "Manual journal entry shows a non-blocking warning for populated bank or cash account lines; posting remains available",
+    test: "src/lib/accounting/manual-journal-review.test.ts and src/lib/settings/capability-registry.test.ts",
+  },
+  {
     key: "accounting.reporting_basis",
     label: "Default reporting basis",
     moduleId: "reports",
@@ -577,9 +594,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/settings/accounting/overview",
     missingEvidence: [
-      "workflow consumers and behavior tests for duplicate, control-account and bank-posting warnings plus auto-credit",
+      "workflow consumers and behavior tests for duplicate-number and control-account warnings plus auto-credit",
     ],
-    note: "Manual-journal memo enforcement and the backdate warning have tested consumers; duplicate, control-account and bank-posting warnings plus auto-credit remain read-only until their workflows enforce them.",
+    note: "Manual-journal memo, backdate warning and direct bank/cash posting warning have tested consumers; duplicate-number and control-account warnings plus auto-credit remain read-only until their workflows enforce them.",
   },
   {
     key: "tax.regional_configuration",

@@ -8,8 +8,6 @@ describe("Accounting workflow safeguards", () => {
       <ReadOnlyAccountingWorkflowSafeguards
         warnDuplicateNumbers={false}
         warnControlAccounts={true}
-        warnBankPosting={false}
-        backdatedDays="90"
         autoApplyCredits={false}
       />,
     );
@@ -19,7 +17,8 @@ describe("Accounting workflow safeguards", () => {
     expect(markup).toContain("not yet enforced by their workflows");
     expect(markup).toContain('aria-describedby="settings-accounting-partial-note"');
     expect(markup).toContain("Warn on duplicate document numbers");
-    expect(markup).toContain('value="90"');
+    expect(markup).toContain("Direct bank-posting and back-dated journal warnings are active");
+    expect(markup).not.toContain("Warn bank-account direct posting");
     expect(markup).toContain('disabled=""');
   });
 });

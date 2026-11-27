@@ -39,16 +39,12 @@ type Props = { companyId: string; canEdit: boolean; canLock: boolean };
 type WorkflowSafeguardsProps = {
   warnDuplicateNumbers: boolean;
   warnControlAccounts: boolean;
-  warnBankPosting: boolean;
-  backdatedDays: string;
   autoApplyCredits: boolean;
 };
 
 export function ReadOnlyAccountingWorkflowSafeguards({
   warnDuplicateNumbers,
   warnControlAccounts,
-  warnBankPosting,
-  backdatedDays,
   autoApplyCredits,
 }: WorkflowSafeguardsProps) {
   return (
@@ -56,9 +52,9 @@ export function ReadOnlyAccountingWorkflowSafeguards({
       <Alert>
         <AlertTitle>Workflow safeguards are not active yet</AlertTitle>
         <AlertDescription id="settings-accounting-partial-note">
-          Duplicate-number, control-account, bank-posting and back-dated-entry warnings, along with
-          automatic credit application, are not yet enforced by their workflows. They are read-only
-          here so a saved preference cannot imply behavior that is not available.
+          Duplicate-number and control-account warnings plus automatic credit application are not
+          yet enforced by their workflows. They remain read-only so a saved preference cannot imply
+          behavior that is not available.
         </AlertDescription>
       </Alert>
       <fieldset
@@ -77,18 +73,14 @@ export function ReadOnlyAccountingWorkflowSafeguards({
           <Switch id="settings-warn-control" checked={warnControlAccounts} />
         </div>
         <div className="flex items-center justify-between">
-          <Label htmlFor="settings-warn-bank">Warn bank-account direct posting</Label>
-          <Switch id="settings-warn-bank" checked={warnBankPosting} />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="settings-backdated-days">Warn back-dated entries beyond (days)</Label>
-          <Input id="settings-backdated-days" value={backdatedDays} inputMode="numeric" readOnly />
-        </div>
-        <div className="flex items-center justify-between">
           <Label htmlFor="settings-auto-credits">Auto-apply credits / prepayments</Label>
           <Switch id="settings-auto-credits" checked={autoApplyCredits} />
         </div>
       </fieldset>
+      <p className="text-xs text-muted-foreground">
+        Direct bank-posting and back-dated journal warnings are active in manual journals. Their
+        settings are available in the typed Accounting preferences.
+      </p>
     </>
   );
 }
@@ -444,8 +436,6 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
           <ReadOnlyAccountingWorkflowSafeguards
             warnDuplicateNumbers={warnDup}
             warnControlAccounts={warnControl}
-            warnBankPosting={warnBank}
-            backdatedDays={backdated}
             autoApplyCredits={autoCredits}
           />
           {cfgServerChanged ? (

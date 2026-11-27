@@ -52,8 +52,10 @@ SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.plan_versions WHERE visibilit
   AND plan_code IN ('starter', 'growth', 'premium', 'practice')), 'No legacy version is live');
 SELECT pg_temp.ok((SELECT count(*) FROM public.plan_versions WHERE plan_code = 'pro' AND status = 'published') = 1,
   'Previous top-tier PRO version is archived, not deleted');
-SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.plan_prices p JOIN public.plan_versions v ON v.id = p.version_id
-  WHERE v.plan_code IN ('standard', 'pro', 'business') AND v.status = 'published'), 'No price is invented for the new plans');
+-- Launch migration publishes price-book rows for STANDARD / PRO / BUSINESS.
+SELECT pg_temp.ok(EXISTS (SELECT 1 FROM public.plan_prices p JOIN public.plan_versions v ON v.id = p.version_id
+  WHERE v.plan_code IN ('standard', 'pro', 'business') AND v.status = 'published' AND v.price_book),
+  'Launch price-book rows exist for STANDARD / PRO / BUSINESS');
 
 -- ---------------------------------------------------------------- entitlement matrix (D1, D19)
 SELECT pg_temp.ok(pg_temp.limit_of('standard', 'users') = 2 AND pg_temp.limit_of('pro', 'users') = 5
@@ -153,8 +155,10 @@ SELECT pg_temp.ok((SELECT f->>'availability' FROM jsonb_array_elements(public.li
   'Public catalogue marks OCR as coming soon');
 RESET ROLE;
 BEGIN;
+-- Use a non-launch currency so this does not collide with launch USD month rows.
 INSERT INTO public.plan_prices (version_id, currency, billing_interval, amount_minor)
-  SELECT id, 'USD', 'month', 4200 FROM public.plan_versions WHERE plan_code = 'pro' AND status = 'published';
+  SELECT id, 'EUR', 'month', 4200 FROM public.plan_versions WHERE plan_code = 'pro' AND status = 'published' AND price_book
+  ON CONFLICT DO NOTHING;
 SET LOCAL ROLE anon;
 SELECT pg_temp.ok((SELECT x->'prices' FROM jsonb_array_elements(public.list_public_billing_plans()) x
   WHERE x->>'code' = 'pro') = 'null'::jsonb, 'Legacy catalogue never shows a price-book plan price');

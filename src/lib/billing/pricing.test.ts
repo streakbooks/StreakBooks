@@ -287,6 +287,7 @@ describe("currency and checkout payload", () => {
     const uk = paymentMethodsFor("GB", { stripe: true, razorpay: true });
     expect(uk.filter((method) => method.available).map((method) => method.id)).toEqual(["card"]);
     expect(paymentMethodsFor("CA").map((method) => method.id)).toEqual(["card"]);
+    // Catalogue still lists Stripe card for India; routing filters it at checkout.
     expect(paymentMethodsFor("IN").map((method) => method.id)).toEqual(["card", "upi", "emandate"]);
     expect(
       paymentMethodsFor("IN", { stripe: false, razorpay: true })

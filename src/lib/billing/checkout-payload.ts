@@ -57,10 +57,10 @@ export type PayMethodChoice = {
 };
 
 /**
- * Show only integrations that can start a real recurring subscription.
- * Stripe Checkout selects the eligible wallets and local methods dynamically,
- * based on the customer's country and the merchant's enabled Stripe methods.
- * Razorpay subscriptions support Indian UPI AutoPay and e-mandate where enabled.
+ * Catalogue of recurring methods by billing country and env keys.
+ * Country→provider routing (India→Razorpay, international→Stripe) is applied by
+ * `paymentMethodsForRoutedCountry` in provider-resolution.ts using DB routes —
+ * do not treat this list as the final checkout offer without routing.
  */
 export function paymentMethodsFor(
   country: string,
@@ -192,6 +192,10 @@ export function stripeCheckoutBody(draft: CheckoutDraft): URLSearchParams {
   if (draft.trialEndUnix != null) {
     body.set("subscription_data[trial_end]", String(draft.trialEndUnix));
   }
+  body.set(
+    "custom_text[submit][message]",
+    "After payment you will return to StreakBooks to confirm your subscription.",
+  );
   return body;
 }
 

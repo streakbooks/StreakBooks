@@ -78,13 +78,25 @@ export default {
         return handleBillingWebhook(request);
       }
       if (pathname === "/api/billing/webhook-retry") {
-        if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
+        // Vercel Cron invokes GET; external schedulers should prefer POST.
+        if (request.method !== "POST" && request.method !== "GET") {
+          return new Response("Method Not Allowed", { status: 405 });
+        }
         const { authenticateCronRequest } = await import("./integrations/supabase/cron-auth");
         const authFailure = await authenticateCronRequest(request);
         if (authFailure) return authFailure;
         const { retryDueWebhooks } = await import("./lib/billing/webhooks");
         try {
+          const started = Date.now();
           const result = await retryDueWebhooks();
+          console.info(
+            "Billing webhook retry",
+            JSON.stringify({
+              processed: result.processed,
+              failed: result.failed,
+              durationMs: Date.now() - started,
+            }),
+          );
           return Response.json(result, { headers: { "cache-control": "no-store" } });
         } catch (error) {
           console.error(

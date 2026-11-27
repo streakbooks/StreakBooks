@@ -47,3 +47,12 @@ change the hosted project.
 
 End-to-end checks with Stripe test mode and Razorpay test mode need test keys on a deployed
 environment and are run manually from the runbook (`13-runbook.md`) before go-live.
+
+### Stripe Test Clocks (optional, local)
+
+```bash
+STRIPE_TEST_CLOCKS=1 STRIPE_SECRET_KEY=sk_test_… npm test -- --run src/lib/billing/stripe-test-clock.integration.test.ts
+STRIPE_TEST_CLOCKS=full STRIPE_SECRET_KEY=sk_test_… npm test -- --run src/lib/billing/stripe-test-clock.integration.test.ts
+```
+
+See `17-production-readiness-validation.md` for journey coverage and production blockers.

@@ -23,6 +23,7 @@ import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  confirmBillingCheckout,
   createBillingCheckout,
   getBillingOverview,
   previewBillingQuote,
@@ -33,6 +34,10 @@ import type { CheckoutBillingInput, PayMethodId } from "@/lib/billing/checkout-p
 import {
   changeOrganisationPlan,
   openBillingPortal,
+  previewOrganisationPlanChange,
+  reverseScheduledPlanChange,
+  syncOrganisationSubscription,
+  type PlanChangePreview,
 } from "@/lib/billing/subscription-actions.functions";
 import {
   formatMinor,
@@ -44,6 +49,10 @@ import {
   type PriceQuote,
 } from "@/lib/billing/pricing";
 import { formatMinorAmount } from "@/lib/billing/domain/money";
+import {
+  BILLING_CHARGE_RULES,
+  planChangePaymentCopy,
+} from "@/lib/billing/domain/billing-policy";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { cn } from "@/lib/utils";
 
@@ -66,13 +75,13 @@ function paidSubscription(sub: BillingOverview["subscription"]): boolean {
   );
 }
 
-function checkoutProviderForCountry(countryCode: string): "stripe" | "razorpay" {
-  return countryCode === "IN" ? "razorpay" : "stripe";
-}
-
 function paymentProviderReady(data: BillingOverview): boolean {
-  const provider = checkoutProviderForCountry(data.countryCode);
-  return data.providers[provider];
+  const routed = data.routedProviders?.length
+    ? data.routedProviders
+    : data.countryCode === "IN"
+      ? (["razorpay"] as const)
+      : (["stripe"] as const);
+  return routed.some((provider) => data.providers[provider]);
 }
 
 function PaymentSetupCallout({
@@ -86,7 +95,12 @@ function PaymentSetupCallout({
   if (!hasCatalogPrices || paymentProviderReady(data)) return null;
   if (data.subscription && paidSubscription(data.subscription)) return null;
 
-  const provider = checkoutProviderForCountry(data.countryCode);
+  const routed = data.routedProviders?.length
+    ? data.routedProviders
+    : data.countryCode === "IN"
+      ? (["razorpay"] as const)
+      : (["stripe"] as const);
+  const provider = routed.find((item) => !data.providers[item]) ?? routed[0] ?? "stripe";
   const providerLabel = provider === "stripe" ? "Stripe" : "Razorpay";
 
   return (
@@ -131,13 +145,20 @@ export function SubscriptionPanel({
   initialInterval?: BillingInterval;
 }) {
   const fetchOverview = useServerFn(getBillingOverview);
+  const confirmCheckout = useServerFn(confirmBillingCheckout);
   const preview = useServerFn(previewBillingQuote);
   const startCheckout = useServerFn(createBillingCheckout);
   const changePlan = useServerFn(changeOrganisationPlan);
+  const previewPlanChange = useServerFn(previewOrganisationPlanChange);
+  const reversePlanChange = useServerFn(reverseScheduledPlanChange);
   const openPortal = useServerFn(openBillingPortal);
+  const syncSubscription = useServerFn(syncOrganisationSubscription);
+  const [activating, setActivating] = useState(false);
+  const [planSwitchPending, setPlanSwitchPending] = useState<string | null>(null);
   const overview = useQuery({
     queryKey: billingKey(companyId),
     queryFn: () => fetchOverview({ data: { companyId } }),
+    refetchInterval: activating || planSwitchPending ? 2_500 : false,
   });
   const [interval, setInterval] = useState<BillingInterval>(initialInterval ?? "month");
   const [offerCode, setOfferCode] = useState("");
@@ -146,7 +167,12 @@ export function SubscriptionPanel({
   const [quotes, setQuotes] = useState<Record<string, PriceQuote>>({});
   const [target, setTarget] = useState<BillingPlanView | null>(null);
   const [intent, setIntent] = useState<"subscribe" | "switch">("subscribe");
+  const [switchPreview, setSwitchPreview] = useState<PlanChangePreview | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const openedFromLink = useRef(false);
+  const handledCheckoutReturn = useRef(false);
+  const handledPlanChangeReturn = useRef(false);
   const data = overview.data;
   const checkoutQuote = useQuery({
     queryKey: [
@@ -171,14 +197,133 @@ export function SubscriptionPanel({
   });
 
   useEffect(() => {
+    if (handledCheckoutReturn.current) return;
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
-    if (checkout === "success") {
-      toast.success("Payment submitted. Access updates when the provider confirms it.");
-    } else if (checkout === "cancel") {
+    if (!checkout) return;
+    handledCheckoutReturn.current = true;
+    const sessionId = params.get("session_id");
+    const cleanReturnUrl = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      url.searchParams.delete("session_id");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    };
+    if (checkout === "cancel") {
+      cleanReturnUrl();
       toast.message("Checkout was cancelled. No charge was made.");
+      return;
     }
-  }, []);
+    if (checkout !== "success") return;
+    const finish = (message: string, variant: "success" | "message" = "success") => {
+      cleanReturnUrl();
+      setActivating(false);
+      if (variant === "success") toast.success(message);
+      else toast.message(message);
+      void overview.refetch();
+    };
+    if (!sessionId) {
+      setActivating(true);
+      toast.message("Payment received. Activating your subscription…");
+      window.setTimeout(() => {
+        void overview.refetch().then(() => setActivating(false));
+      }, 8_000);
+      cleanReturnUrl();
+      return;
+    }
+    setActivating(true);
+  void (async () => {
+      try {
+        const result = await confirmCheckout({ data: { companyId, sessionId } });
+        if (result.status === "applied") {
+          finish("Subscription is active. Thank you for subscribing.");
+        } else if (result.status === "already_active") {
+          finish("Your subscription is already active.");
+        } else if (result.status === "pending") {
+          cleanReturnUrl();
+          toast.message(`${result.reason} We will keep checking for a moment.`);
+          window.setTimeout(() => {
+            void overview.refetch().then(() => setActivating(false));
+          }, 12_000);
+        } else {
+          finish(result.reason, "message");
+        }
+      } catch (error) {
+        cleanReturnUrl();
+        setActivating(false);
+        toast.error(friendlyAuthError(error));
+        void overview.refetch();
+      }
+    })();
+  }, [companyId, confirmCheckout, overview]);
+
+  useEffect(() => {
+    if (handledPlanChangeReturn.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const planChangeResult = params.get("plan_change");
+    if (!planChangeResult) return;
+    handledPlanChangeReturn.current = true;
+    const cleanReturnUrl = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("plan_change");
+      url.searchParams.delete("session_id");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    };
+    if (planChangeResult === "cancel") {
+      cleanReturnUrl();
+      toast.message("Plan change payment was cancelled.");
+      return;
+    }
+    if (planChangeResult !== "success") return;
+    cleanReturnUrl();
+    setPlanSwitchPending(null);
+    setActivating(true);
+    toast.success("Payment received. Updating your plan…");
+    void (async () => {
+      try {
+        await syncSubscription({ data: { companyId } });
+        await overview.refetch();
+      } catch (error) {
+        toast.error(friendlyAuthError(error));
+      } finally {
+        setActivating(false);
+      }
+    })();
+  }, [companyId, overview, syncSubscription]);
+
+  useEffect(() => {
+    if (!activating || !data?.subscription) return;
+    if (paidSubscription(data.subscription)) setActivating(false);
+  }, [activating, data?.subscription]);
+
+  useEffect(() => {
+    if (!planSwitchPending || !data?.subscription) return;
+    if (data.subscription.planCode === planSwitchPending) {
+      setPlanSwitchPending(null);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      void syncSubscription({ data: { companyId } }).then(() => overview.refetch());
+    }, 4_000);
+    const stop = window.setTimeout(() => setPlanSwitchPending(null), 45_000);
+    return () => {
+      window.clearInterval(timer);
+      window.clearTimeout(stop);
+    };
+  }, [planSwitchPending, data?.subscription, companyId, syncSubscription, overview]);
+
+  // Hosted invoice pages often do not redirect back — sync when the user returns after an upgrade.
+  useEffect(() => {
+    if (!planSwitchPending) return;
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      void syncSubscription({ data: { companyId } })
+        .then(() => overview.refetch())
+        .catch(() => undefined);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [companyId, overview, planSwitchPending, syncSubscription]);
 
   useEffect(() => {
     if (openedFromLink.current || !data?.ready || !initialPlan) return;
@@ -199,10 +344,44 @@ export function SubscriptionPanel({
   function openPlan(plan: BillingPlanView) {
     if (!data || !plan.pricePublished) return;
     const paid = paidSubscription(data.subscription);
-    if (paid && data.subscription?.planCode === plan.code) return;
+    const samePlanSameInterval =
+      paid && data.subscription?.planCode === plan.code && data.subscription.interval === interval;
+    if (samePlanSameInterval) return;
     setIntent(paid ? "switch" : "subscribe");
     setTarget(plan);
+    setSwitchPreview(null);
+    setPreviewError(null);
   }
+
+  useEffect(() => {
+    if (!target || intent !== "switch" || !data?.ready) return;
+    let cancelled = false;
+    setPreviewLoading(true);
+    setPreviewError(null);
+    void previewPlanChange({
+      data: {
+        companyId,
+        planCode: target.code,
+        interval,
+        origin: window.location.origin,
+      },
+    })
+      .then((preview) => {
+        if (!cancelled) setSwitchPreview(preview);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setSwitchPreview(null);
+          setPreviewError(friendlyAuthError(error));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [target, intent, interval, companyId, data?.ready, previewPlanChange]);
 
   async function applyCode() {
     if (!data) return;
@@ -275,21 +454,52 @@ export function SubscriptionPanel({
     },
   });
   const planChange = useMutation({
-    mutationFn: (planCode: string) => changePlan({ data: { companyId, planCode, interval } }),
+    mutationFn: (planCode: string) =>
+      changePlan({
+        data: { companyId, planCode, interval, origin: window.location.origin },
+      }),
     onSuccess: (result) => {
+      if (result.paymentActionUrl) {
+        setTarget(null);
+        setPlanSwitchPending(result.targetPlanCode);
+        toast.message("Opening Stripe to pay the prorated upgrade…");
+        window.location.assign(result.paymentActionUrl);
+        return;
+      }
       setTarget(null);
-      toast.success(
-        result.applies === "after_payment"
-          ? "The upgrade is being charged now for the rest of this period. The new plan starts as soon as the payment is confirmed."
-          : `The new plan starts at your next renewal${
-              result.effectiveAt ? ` on ${new Date(result.effectiveAt).toLocaleDateString()}` : ""
-            }. Existing records stay available.`,
-      );
+      if (result.kind === "upgrade") {
+        setPlanSwitchPending(result.targetPlanCode);
+        toast.success(
+          result.chargedOnFile
+            ? "Upgrade charged to your card on file. Updating your plan…"
+            : result.alreadyApplied
+              ? "Your plan is already upgraded."
+              : "Upgrade complete. Refreshing your subscription…",
+        );
+      } else {
+        toast.success(
+          `Downgrade scheduled. You keep your current plan until${
+            result.effectiveAt ? ` ${new Date(result.effectiveAt).toLocaleDateString()}` : " renewal"
+          }.`,
+        );
+      }
       void overview.refetch();
     },
     onError: (error) => {
       toast.error(friendlyAuthError(error));
     },
+  });
+  const reverseScheduled = useMutation({
+    mutationFn: () => reversePlanChange({ data: { companyId } }),
+    onSuccess: (result) => {
+      if (!result.reversed) {
+        toast.message(result.reason ?? "Nothing to reverse.");
+        return;
+      }
+      toast.success("Scheduled plan change cancelled. You keep your current plan.");
+      void overview.refetch();
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const portal = useMutation({
     mutationFn: () => openPortal({ data: { companyId, origin: window.location.origin } }),
@@ -314,7 +524,7 @@ export function SubscriptionPanel({
   }
   if (!data) return null;
 
-  const busy = checkout.isPending || planChange.isPending;
+  const busy = checkout.isPending || planChange.isPending || activating;
   const quote = target ? (quotes[target.code] ?? null) : null;
   const due =
     target && target.monthlyMinor !== null
@@ -326,17 +536,114 @@ export function SubscriptionPanel({
       ? target.listPrice.currency
       : data.currency;
   const checkingOut = target != null && intent === "subscribe";
+  const currentPlan = data.subscription
+    ? visiblePlans(data).find((plan) => plan.code === data.subscription?.planCode)
+    : null;
+  const currentMonthly =
+    currentPlan?.listPrice?.monthlyMinor ?? currentPlan?.monthlyMinor ?? 0;
+  const targetMonthly = target?.listPrice?.monthlyMinor ?? target?.monthlyMinor ?? 0;
+  const isUpgradeSwitch = Boolean(
+    switchPreview?.kind === "upgrade" ||
+      (target && intent === "switch" && targetMonthly > currentMonthly),
+  );
+  const switchCopy = planChangePaymentCopy(isUpgradeSwitch ? "upgrade" : "downgrade");
+  const scheduledPlanName = data.subscription?.scheduledPlanCode
+    ? (data.plans.find((plan) => plan.code === data.subscription?.scheduledPlanCode)?.name ??
+      data.subscription.scheduledPlanCode)
+    : null;
 
   return (
     <div className="space-y-8">
+      {activating ? (
+        <Alert>
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+          <AlertTitle>Activating your subscription</AlertTitle>
+          <AlertDescription>
+            Payment succeeded. We are confirming it with Stripe and updating your plan — this usually
+            takes a few seconds.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {planSwitchPending && data.subscription?.planCode !== planSwitchPending ? (
+        <Alert variant="default" className="border-dashed">
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+          <AlertTitle>Upgrade in progress</AlertTitle>
+          <AlertDescription className="text-sm">
+            Finish payment on Stripe for{" "}
+            <strong>
+              {visiblePlans(data).find((p) => p.code === planSwitchPending)?.name ??
+                planSwitchPending}
+            </strong>
+            . This page updates automatically when Stripe confirms the charge.
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <AccountSummary
         data={data}
         portalPending={portal.isPending}
+        reversePending={reverseScheduled.isPending}
+        scheduledPlanName={scheduledPlanName}
         onPortal={() => portal.mutate()}
+        onReverseScheduled={() => reverseScheduled.mutate()}
       />
+      {data.subscription?.status === "past_due" ? (
+        <Alert variant="destructive" className="max-w-3xl">
+          <Info className="size-4" aria-hidden />
+          <AlertTitle>Payment failed</AlertTitle>
+          <AlertDescription className="space-y-2 text-sm">
+            <p>
+              Your last renewal could not be collected. Access continues during the grace period.
+              Update the card to avoid interruption.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={portal.isPending}
+              onClick={() => portal.mutate()}
+            >
+              Update payment method
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {data.ready && paidSubscription(data.subscription) ? (
+        <Alert variant="default" className="max-w-3xl border-dashed bg-muted/30">
+          <Info className="size-4" aria-hidden />
+          <AlertTitle>When Stripe charges</AlertTitle>
+          <AlertDescription className="text-sm leading-relaxed">
+            <ul className="mt-1 list-disc space-y-1 pl-4">
+              {BILLING_CHARGE_RULES.map((rule) => (
+                <li key={rule.title}>
+                  <strong>{rule.title}</strong>: {rule.body}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      ) : null}
       {data.ready && !data.isDemo ? <SubscriptionLifecycle companyId={companyId} /> : null}
       {data.ready && !data.isDemo ? <BillingDocuments companyId={companyId} /> : null}
       {data.ready && !data.isDemo ? <ReferralPanel companyId={companyId} /> : null}
+
+      {(checkout.isPending || planChange.isPending) ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+          aria-label="Redirecting to secure checkout"
+        >
+          <div className="flex flex-col items-center gap-3 rounded-xl border bg-card px-8 py-6 shadow-lg">
+            <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+            <p className="text-sm font-medium">
+              {planChange.isPending ? "Opening Stripe payment…" : "Redirecting to secure checkout…"}
+            </p>
+            <p className="max-w-xs text-center text-xs text-muted-foreground">
+              Do not close this window. You will return to StreakBooks when payment is complete.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       {checkingOut && target ? (
         <CheckoutForm
@@ -349,6 +656,7 @@ export function SubscriptionPanel({
           busy={checkout.isPending}
           serverError={checkout.isError ? friendlyAuthError(checkout.error) : null}
           providers={data.providers}
+          routedProviders={data.routedProviders}
           quote={checkoutQuote.data ?? null}
           quoteLoading={checkoutQuote.isFetching}
           quoteError={checkoutQuote.isError ? friendlyAuthError(checkoutQuote.error) : null}
@@ -389,25 +697,98 @@ export function SubscriptionPanel({
           {target ? (
             <>
               <DialogHeader>
-                <DialogTitle>Switch to {target.name}</DialogTitle>
-                <DialogDescription>
-                  On Stripe an upgrade is charged now for the rest of the period and starts once
-                  that payment is confirmed. A downgrade, and any change on Razorpay, starts at the
-                  next renewal. Records already posted stay available.
-                </DialogDescription>
+                <DialogTitle>
+                  {switchCopy.titleVerb} to {target.name}
+                </DialogTitle>
+                <DialogDescription>{switchCopy.description}</DialogDescription>
               </DialogHeader>
               <dl className="space-y-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
                 <div className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">Plan</dt>
-                  <dd className="font-medium">{target.name}</dd>
+                  <dt className="text-muted-foreground">From</dt>
+                  <dd className="font-medium">
+                    {currentPlan?.name ?? data.subscription?.planName ?? "—"}
+                    {data.subscription?.interval
+                      ? ` · ${data.subscription.interval === "year" ? "Yearly" : "Monthly"}`
+                      : ""}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">Billing</dt>
-                  <dd className="font-medium">{interval === "year" ? "Yearly" : "Monthly"}</dd>
+                  <dt className="text-muted-foreground">To</dt>
+                  <dd className="font-medium">
+                    {target.name} · {interval === "year" ? "Yearly" : "Monthly"}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">Price</dt>
-                  <dd className="font-medium">{formatMinor(due, dueCurrency)}</dd>
+                  <dt className="text-muted-foreground">List price</dt>
+                  <dd className="font-medium">
+                    {switchPreview
+                      ? formatMinor(
+                          switchPreview.listAmountMinor,
+                          isBillingCurrency(switchPreview.currency)
+                            ? switchPreview.currency
+                            : dueCurrency,
+                        )
+                      : formatMinor(due, dueCurrency)}
+                  </dd>
+                </div>
+                {previewLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                    Calculating prorated amount…
+                  </div>
+                ) : null}
+                {previewError ? (
+                  <p role="alert" className="text-destructive-ink">
+                    {previewError}
+                  </p>
+                ) : null}
+                {switchPreview && !previewLoading ? (
+                  <>
+                    {switchPreview.lines.slice(0, 4).map((line) => (
+                      <div key={`${line.description}-${line.amountMinor}`} className="flex justify-between gap-4">
+                        <dt className="text-muted-foreground">{line.description}</dt>
+                        <dd>
+                          {formatMinor(
+                            line.amountMinor,
+                            isBillingCurrency(switchPreview.currency)
+                              ? switchPreview.currency
+                              : dueCurrency,
+                          )}
+                        </dd>
+                      </div>
+                    ))}
+                    <div className="flex justify-between gap-4 border-t pt-2 font-medium">
+                      <dt>Due now</dt>
+                      <dd>
+                        {switchPreview.paymentRequired
+                          ? formatMinor(
+                              switchPreview.amountDueMinor,
+                              isBillingCurrency(switchPreview.currency)
+                                ? switchPreview.currency
+                                : dueCurrency,
+                            )
+                          : "£0 — no charge today"}
+                      </dd>
+                    </div>
+                  </>
+                ) : null}
+                <div className="flex justify-between gap-4 border-t pt-2">
+                  <dt className="text-muted-foreground">Payment now</dt>
+                  <dd className="font-medium">
+                    {switchPreview
+                      ? switchPreview.paymentRequired
+                        ? "Yes — open Stripe"
+                        : "No charge today"
+                      : switchCopy.paymentNow}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">New plan starts</dt>
+                  <dd className="font-medium">
+                    {switchPreview?.effectiveAt
+                      ? new Date(switchPreview.effectiveAt).toLocaleDateString()
+                      : switchCopy.whenStarts}
+                  </dd>
                 </div>
               </dl>
               <DialogFooter className="gap-2 sm:gap-0">
@@ -421,10 +802,16 @@ export function SubscriptionPanel({
                 </Button>
                 <Button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || previewLoading || Boolean(previewError)}
                   onClick={() => planChange.mutate(target.code)}
                 >
-                  {planChange.isPending ? "Updating…" : "Confirm switch"}
+                  {planChange.isPending
+                    ? isUpgradeSwitch
+                      ? "Opening Stripe…"
+                      : "Scheduling…"
+                    : switchPreview?.paymentRequired
+                      ? "Continue to Stripe"
+                      : switchCopy.button}
                 </Button>
               </DialogFooter>
             </>
@@ -585,11 +972,17 @@ function PlanPicker({
 function AccountSummary({
   data,
   portalPending,
+  reversePending,
+  scheduledPlanName,
   onPortal,
+  onReverseScheduled,
 }: {
   data: BillingOverview;
   portalPending: boolean;
+  reversePending: boolean;
+  scheduledPlanName: string | null;
   onPortal: () => void;
+  onReverseScheduled: () => void;
 }) {
   const sub = data.subscription;
   const renewal =
@@ -603,7 +996,15 @@ function AccountSummary({
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-base font-semibold">{data.companyName}</h2>
-          <Badge variant={sub?.status === "active" ? "success" : "secondary"}>
+          <Badge
+            variant={
+              sub?.status === "active"
+                ? "success"
+                : sub?.status === "past_due"
+                  ? "destructive"
+                  : "secondary"
+            }
+          >
             {sub ? statusLabel(sub.status) : "No subscription"}
           </Badge>
         </div>
@@ -611,8 +1012,12 @@ function AccountSummary({
           {sub ? (
             <>
               {sub.planName}
+              {sub.interval ? ` · ${sub.interval === "year" ? "Yearly" : "Monthly"}` : ""}
               {renewal ? ` · ${renewal}` : ""}
               {sub.cancelAtPeriodEnd ? " · Cancels at period end" : ""}
+              {scheduledPlanName && sub.scheduledAt
+                ? ` · Changes to ${scheduledPlanName} on ${new Date(sub.scheduledAt).toLocaleDateString()}`
+                : ""}
             </>
           ) : (
             "Choose a plan below to subscribe."
@@ -630,6 +1035,17 @@ function AccountSummary({
         ) : null}
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
+        {scheduledPlanName && sub?.scheduledAt ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={reversePending}
+            onClick={onReverseScheduled}
+          >
+            {reversePending ? "Reversing…" : "Keep current plan"}
+          </Button>
+        ) : null}
         {sub?.provider === "stripe" ? (
           <Button
             type="button"
@@ -666,7 +1082,9 @@ function PlanCard({
   busy: boolean;
   onChoose: () => void;
 }) {
-  const current = overview.subscription?.planCode === plan.code;
+  const current =
+    overview.subscription?.planCode === plan.code &&
+    overview.subscription.interval === interval;
   const paidHere = current && paidSubscription(overview.subscription);
   const recommended = plan.code === overview.settings.trialPlanCode && !current;
   const list =

@@ -38,7 +38,14 @@ SELECT pg_temp.ok((SELECT minor_units FROM billing.currencies WHERE code = 'JPY'
 SELECT pg_temp.ok((SELECT minor_units FROM billing.currencies WHERE code = 'KWD') = 3, 'KWD has 3 minor units');
 SELECT pg_temp.ok((SELECT default_currency FROM billing.countries WHERE code = 'IN') = 'INR', 'India defaults to INR');
 SELECT pg_temp.ok((SELECT default_currency FROM billing.countries WHERE code = 'AQ') IS NULL, 'Antarctica has no currency');
-SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM billing.countries WHERE billing_enabled), 'No country billing-enabled by default');
+-- Launch migration enables checkout countries; all others stay closed.
+SELECT pg_temp.ok(
+  (SELECT count(*) FROM billing.countries WHERE billing_enabled AND code IN ('GB', 'US', 'IN', 'AU', 'NZ', 'IE', 'CA')) = 7
+  AND NOT EXISTS (
+    SELECT 1 FROM billing.countries
+     WHERE billing_enabled AND code NOT IN ('GB', 'US', 'IN', 'AU', 'NZ', 'IE', 'CA')
+  ),
+  'Only launch countries are billing-enabled');
 
 -- ---------------------------------------------------------------- backfill and new companies
 SELECT pg_temp.ok((SELECT count(*) FROM billing.billing_account_companies) = 2, 'Existing companies backfilled');

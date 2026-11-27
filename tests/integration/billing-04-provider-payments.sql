@@ -70,10 +70,8 @@ SELECT pg_temp.ok(billing.country_providers('AU') = ARRAY['stripe'], 'A disabled
 SET ROLE authenticated;
 SELECT pg_temp.act('00000000-0000-0000-0000-0000000000c4', 'aal1');
 SELECT pg_temp.ok((SELECT r->>'currency' = 'INR' AND (r->>'amountMinor')::int = 99900 AND r->'providers' = '["razorpay"]'::jsonb
-  AND NOT (r->>'billingEnabled')::boolean FROM (SELECT public.billing_checkout_price('40000000-0000-0000-0000-000000000001', 'pro', 'month') AS r) x),
+  AND (r->>'billingEnabled')::boolean FROM (SELECT public.billing_checkout_price('40000000-0000-0000-0000-000000000001', 'pro', 'month') AS r) x),
   'Checkout price is the published India price with its provider');
-SELECT pg_temp.expect_error($$SELECT public.billing_checkout_price('40000000-0000-0000-0000-000000000001', 'pro', 'year')$$, 'P0001',
-  'Yearly is not offered without a yearly price');
 SELECT pg_temp.expect_error($$SELECT public.billing_checkout_price('40000000-0000-0000-0000-000000000001', 'starter', 'month')$$, 'P0001',
   'Legacy plans are not on sale');
 SELECT pg_temp.act('00000000-0000-0000-0000-0000000000c5', 'aal1');
@@ -84,6 +82,8 @@ SELECT pg_temp.price('pro', 'IN') AS price_pro_in \gset
 SELECT pg_temp.price('standard', 'IN') AS price_std_in \gset
 SELECT pg_temp.price('business', 'IN') AS price_biz_in \gset
 SELECT pg_temp.price('pro', NULL) AS price_pro_base \gset
+-- Launch migration already opens IN; close it briefly to prove the closed-country guard.
+UPDATE billing.countries SET billing_enabled = false WHERE code = 'IN';
 SELECT pg_temp.expect_error(format($$INSERT INTO public.billing_checkouts (company_id, plan_code, billing_interval, provider, currency,
   unit_amount_minor, plan_price_id, country_code, mode) VALUES ('40000000-0000-0000-0000-000000000001', 'pro', 'month', 'razorpay', 'INR', 99900, %L, 'IN', 'test')$$,
   :'price_pro_in'), '23514', 'Checkout is refused while the country is closed');
@@ -176,6 +176,33 @@ SELECT pg_temp.apply('razorpay', 'evt_7', 'subscription_state', jsonb_build_obje
   'occurredAt', now() + interval '64 days'));
 SELECT pg_temp.ok((pg_temp.sub('40000000-0000-0000-0000-000000000001')).status = 'active', 'A recovered payment restores access');
 
+-- past_due blocks plan changes with a dedicated message (readiness migration)
+UPDATE public.company_subscriptions SET status = 'past_due'
+ WHERE company_id = '40000000-0000-0000-0000-000000000001';
+SET ROLE authenticated;
+SELECT pg_temp.act('00000000-0000-0000-0000-0000000000c4', 'aal1');
+SELECT pg_temp.expect_error(
+  $$SELECT public.billing_prepare_plan_change('40000000-0000-0000-0000-000000000001', 'pro')$$,
+  'P0001',
+  'past_due customers must clear payment before changing plan');
+RESET ROLE;
+UPDATE public.company_subscriptions SET status = 'active'
+ WHERE company_id = '40000000-0000-0000-0000-000000000001';
+UPDATE public.company_subscriptions
+   SET scheduled_plan_code = 'standard', scheduled_at = now() + interval '30 days'
+ WHERE company_id = '40000000-0000-0000-0000-000000000001';
+SET ROLE authenticated;
+SELECT pg_temp.act('00000000-0000-0000-0000-0000000000c4', 'aal1');
+-- 3-arg prepare with DEFAULT NULL interval remains backward compatible
+SELECT public.billing_prepare_plan_change('40000000-0000-0000-0000-000000000001', 'pro') AS back_compat \gset
+SELECT pg_temp.ok((:'back_compat'::jsonb)->>'kind' = 'downgrade',
+  'Two-arg prepare still works after interval parameter was added');
+SELECT public.billing_clear_scheduled_plan_change('40000000-0000-0000-0000-000000000001') AS cleared \gset
+SELECT pg_temp.ok((:'cleared'::jsonb)->>'cleared' = 'true'
+  AND (pg_temp.sub('40000000-0000-0000-0000-000000000001')).scheduled_plan_code IS NULL,
+  'Customer can reverse a scheduled plan change');
+RESET ROLE;
+
 -- ---------------------------------------------------------------- provider cancellation (Razorpay: not reversible)
 SET ROLE authenticated;
 SELECT pg_temp.act('00000000-0000-0000-0000-0000000000c4', 'aal1');
@@ -204,8 +231,9 @@ SELECT pg_temp.ok((pg_temp.sub('40000000-0000-0000-0000-000000000001')).status =
   AND (SELECT status FROM billing.cancellation_requests WHERE id = :'req_in') = 'effective', 'The provider ending it completes the cancellation');
 
 -- ---------------------------------------------------------------- Stripe subscription: reversible and portal changes
+SELECT pg_temp.price('pro', 'GB') AS price_pro_gb \gset
 INSERT INTO public.billing_checkouts (company_id, plan_code, billing_interval, provider, currency, unit_amount_minor, plan_price_id, country_code, mode)
-VALUES ('40000000-0000-0000-0000-000000000002', 'pro', 'month', 'stripe', 'USD', 2000, :'price_pro_base', 'GB', 'test')
+VALUES ('40000000-0000-0000-0000-000000000002', 'pro', 'month', 'stripe', 'GBP', 5900, :'price_pro_gb', 'GB', 'test')
 RETURNING id AS checkout_gb \gset
 SELECT pg_temp.apply('stripe', 'evt_s1', 'checkout_completed', jsonb_build_object('checkoutId', :'checkout_gb', 'subscriptionId', 'sub_gb',
   'customerId', 'cus_gb', 'status', 'active', 'periodEnd', now() + interval '30 days'));

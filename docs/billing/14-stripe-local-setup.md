@@ -39,6 +39,12 @@ An incomplete Stripe **Setup guide** chip is normal while you are only using **t
 
 5. In the app: **Settings → Subscription** → **Subscribe** → test card `4242 4242 4242 4242`.
 
+After payment, Stripe returns to Settings with `checkout=success&session_id=cs_…`. The app **confirms the Checkout session on the server** (same database path as webhooks), so the subscription turns on even if `stripe listen` was not running. Webhooks remain the primary path in production; keep step 4 for invoice sync and renewals.
+
+## Checkout branding (optional)
+
+StreakBooks uses **hosted Stripe Checkout** for first subscribe, and Stripe’s **hosted invoice page** for mid-cycle upgrades (prorated difference). Both leave the app briefly, then return — same model as many accounting products. Brand the pages in Stripe **Settings → Branding** (logo, accent color).
+
 ## Where to click in Stripe (your Settings screenshot)
 
 - **Personal settings → Developers** — API keys, webhook endpoints (production), Workbench logs.

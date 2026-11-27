@@ -6,13 +6,15 @@
  * |--------------------|-------------------------------------|---------------------------|
  * | First subscribe    | Yes — hosted Checkout               | After payment / trial     |
  * | Free trial         | No until trial ends                 | Immediate on trial plan   |
- * | Upgrade            | Yes — prorated remainder of period  | After payment succeeds    |
+ * | Upgrade (Stripe)   | Yes — prorated remainder of period  | After payment succeeds    |
+ * | Upgrade (Razorpay) | No mid-cycle charge                 | At next renewal           |
  * | Downgrade          | No                                  | At period end / renewal   |
  * | Cancel             | No                                  | At period end             |
  * | Renewal            | Yes — full plan price               | Continues                 |
  */
 
 export type PlanChangeKind = "upgrade" | "downgrade" | "same";
+export type BillingProviderLabel = "stripe" | "razorpay";
 
 export function classifyPlanChange(
   currentAmountMinor: number,
@@ -23,14 +25,38 @@ export function classifyPlanChange(
   return "same";
 }
 
-/** Human-readable timing for switch dialogs and toasts. */
-export function planChangePaymentCopy(kind: "upgrade" | "downgrade"): {
+/** Human-readable timing for switch dialogs and toasts — provider-aware. */
+export function planChangePaymentCopy(
+  kind: "upgrade" | "downgrade",
+  provider: BillingProviderLabel = "stripe",
+): {
   titleVerb: string;
   paymentNow: string;
   whenStarts: string;
   button: string;
   description: string;
 } {
+  if (provider === "razorpay") {
+    if (kind === "upgrade") {
+      return {
+        titleVerb: "Upgrade",
+        paymentNow: "No charge today",
+        whenStarts: "At your next renewal",
+        button: "Schedule plan change",
+        description:
+          "Razorpay plan changes apply at the next renewal. There is no mid-cycle charge. You keep your current plan until then; you can reverse the scheduled change before the effective date.",
+      };
+    }
+    return {
+      titleVerb: "Downgrade",
+      paymentNow: "No charge today",
+      whenStarts: "At your next renewal",
+      button: "Schedule plan change",
+      description:
+        "You keep your current plan until this period ends. The lower price starts at renewal. Nothing is charged for switching down today. You can reverse before that date.",
+    };
+  }
+
   if (kind === "upgrade") {
     return {
       titleVerb: "Upgrade",
@@ -51,18 +77,65 @@ export function planChangePaymentCopy(kind: "upgrade" | "downgrade"): {
   };
 }
 
+export function billingChargeRules(
+  provider: BillingProviderLabel | null | undefined,
+): { title: string; body: string }[] {
+  if (provider === "razorpay") {
+    return [
+      {
+        title: "Upgrade",
+        body: "Scheduled for the next renewal on Razorpay. No mid-cycle charge.",
+      },
+      {
+        title: "Downgrade",
+        body: "No charge today. You keep the current plan until renewal. You can reverse before that date.",
+      },
+      {
+        title: "Monthly ↔ annual",
+        body: "Interval changes follow the same renewal schedule as plan changes on Razorpay.",
+      },
+      {
+        title: "First subscribe / trial",
+        body: "Checkout for the plan price, or a free trial period first. Trial is separate from upgrades.",
+      },
+    ];
+  }
+  if (provider === "stripe") {
+    return [
+      {
+        title: "Upgrade",
+        body: "Pay the prorated difference now on Stripe. New plan starts after payment (Xero / Netflix).",
+      },
+      {
+        title: "Downgrade",
+        body: "No charge today. You keep the current plan until renewal (Netflix / Hotstar). You can reverse before that date.",
+      },
+      {
+        title: "Monthly ↔ annual",
+        body: "Same rules: higher effective monthly charges prorated now; lower schedules at renewal.",
+      },
+      {
+        title: "First subscribe / trial",
+        body: "Checkout for the plan price, or a free trial period first. Trial is separate from upgrades.",
+      },
+    ];
+  }
+  return BILLING_CHARGE_RULES;
+}
+
+/** Generic rules when no paid provider is locked yet (subscribe / trial). */
 export const BILLING_CHARGE_RULES: { title: string; body: string }[] = [
   {
     title: "Upgrade",
-    body: "Pay the prorated difference now on Stripe. New plan starts after payment (Xero / Netflix).",
+    body: "Stripe charges a prorated difference now; Razorpay applies the new plan at renewal.",
   },
   {
     title: "Downgrade",
-    body: "No charge today. You keep the current plan until renewal (Netflix / Hotstar). You can reverse before that date.",
+    body: "No charge today. You keep the current plan until renewal. You can reverse before that date.",
   },
   {
     title: "Monthly ↔ annual",
-    body: "Same rules: higher effective monthly charges prorated now; lower schedules at renewal.",
+    body: "Higher effective monthly charges may be due now on Stripe; Razorpay schedules at renewal.",
   },
   {
     title: "First subscribe / trial",

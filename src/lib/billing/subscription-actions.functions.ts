@@ -167,6 +167,8 @@ export function parsePlanChange(input: {
 
 export type PlanChangePreview = {
   kind: "upgrade" | "downgrade";
+  /** Locked from company_subscriptions.provider — UI must not guess. */
+  provider: "stripe" | "razorpay";
   planCode: string;
   planName: string;
   interval: "month" | "year";
@@ -184,6 +186,7 @@ export type PlanChangePreview = {
 
 export type PlanChangeResult = {
   kind: "upgrade" | "downgrade";
+  provider: "stripe" | "razorpay";
   applies: "after_payment" | "period_end";
   effectiveAt: string | null;
   targetPlanCode: string;
@@ -239,6 +242,7 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
     if (change.provider !== "stripe") {
       return {
         kind: change.kind,
+        provider: change.provider,
         planCode: change.planCode,
         planName: change.planName,
         interval: change.interval,
@@ -273,6 +277,7 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
       const paymentRequired = change.kind === "upgrade" && preview.amountDueMinor > 0;
       return {
         kind: change.kind,
+        provider: "stripe",
         planCode: change.planCode,
         planName: change.planName,
         interval: change.interval,
@@ -472,12 +477,13 @@ export const changePlanFor = createServerOnlyFn(
 
     return {
       kind: change.kind,
+      provider: change.provider,
       applies:
         change.kind === "upgrade" && change.provider === "stripe" ? "after_payment" : "period_end",
       effectiveAt: change.periodEnd,
       targetPlanCode: data.planCode,
       targetInterval: change.interval,
-      paymentActionUrl,
+      paymentActionUrl: change.provider === "stripe" ? paymentActionUrl : null,
       amountDueMinor,
       alreadyApplied,
       chargedOnFile: change.kind === "upgrade" && chargedOnFile && !paymentActionUrl,

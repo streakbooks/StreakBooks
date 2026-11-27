@@ -164,6 +164,19 @@ describe("Settings capability coverage registry", () => {
         ?.status,
     ).toBe("complete");
     expect(
+      SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "banking.import_formats"),
+    ).toMatchObject({
+      moduleId: "banking",
+      permission: expect.stringContaining("banking.feeds.manage"),
+      persistence: expect.stringContaining("organisation_config.banking"),
+      audit: expect.stringContaining("settings_change_log"),
+      consumer: expect.stringContaining("file types"),
+      test: expect.stringContaining("import-format-preference.test.ts"),
+    });
+    expect(
+      SETTING_FIELD_COVERAGE.find((setting) => setting.key === "banking.import_formats")?.status,
+    ).toBe("complete");
+    expect(
       SETTING_FIELD_COVERAGE.find((setting) => setting.key === "reports.default_comparison")
         ?.status,
     ).toBe("complete");

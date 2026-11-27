@@ -405,7 +405,9 @@ export const bankingConfigSchema = z.object({
   auto_apply_rules: z.boolean().default(false),
   rule_confidence_threshold: z.number().min(0).max(1).default(0.85),
   reconciliation_tolerance_minor: z.number().int().min(0).default(0),
-  import_formats: z.array(z.enum(["csv", "ofx", "qif", "mt940", "camt"])).default(["csv"]),
+  import_formats: z
+    .array(z.enum(["csv", "ofx", "qif", "mt940", "camt"]))
+    .default(["csv", "ofx", "qif"]),
 });
 
 export const notificationsConfigSchema = z.object({

@@ -145,7 +145,7 @@ const FIELDS: Record<string, SettingsFieldPresentation> = {
   },
   "banking.import_formats": {
     label: "Allowed statement import formats",
-    description: "Enter the supported import types as a comma-separated list.",
+    description: "Enter supported formats: csv, ofx or qif. TXT and QFX use the matching parser.",
   },
   "notifications.email_from_name": {
     label: "Email sender name",

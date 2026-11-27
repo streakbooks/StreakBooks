@@ -388,3 +388,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Connected the saved Purchases duplicate-detection preference to the supplier-invoice preflight shown during bill entry. The default remains enabled; malformed or unreadable settings fail closed. Disabling the advisory lookup does not disable the database uniqueness guard or allow an unacknowledged duplicate.
 - Registered the preference as a complete field capability with the existing versioned, permission-gated and audited settings writer. The Purchases module remains partial for bill inbox ingestion, amount-based approval thresholds and contractor tax tracking.
 - Focused tests passed (2 files / 18 tests), changed-file ESLint, `check:ui` and `git diff --check` passed. Typecheck identified a nullable query-result narrowing issue which is corrected; the clean rerun is pending. No schema or hosted Supabase operation was performed.
+
+## 2026-11-27 Banking import-format preference consumer
+
+- Connected the saved organisation Banking `import_formats` policy to statement upload. The default now preserves all currently supported formats (CSV/TXT, OFX/QFX and QIF); the file picker and dropped-file validation use the saved selection, while MT940/CAMT remain unavailable because no parser exists.
+- Registered this field as complete against the existing permission-gated, version-checked and audited settings RPC and the actual import component. Banking remains partial for automatic rule application, confidence thresholds and reconciliation tolerance.
+- Focused tests passed (5 files / 60 tests); typecheck, changed-file ESLint, `check:ui` (775 TSX files, zero violations) and `git diff --check` passed. No database schema or hosted Supabase operation was needed.

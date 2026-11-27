@@ -669,6 +669,24 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/purchases/duplicate-detection-preference.test.ts and existing purchase_bills_supplier_invoice_uidx database guard",
   },
   {
+    key: "banking.import_formats",
+    label: "Allowed bank statement import formats",
+    moduleId: "banking",
+    route: "/settings/banking/overview",
+    scope: "company",
+    defaultValue: "CSV, OFX/QFX and QIF",
+    validation:
+      "Banking category schema validates format values; only implemented import formats are offered",
+    permission:
+      "company.settings.edit to change the organisation preference; banking.feeds.manage to import statements",
+    entitlement: null,
+    persistence: "organisation_config.banking through the version-checked settings RPC",
+    audit: "settings_change_log stores previous and resulting category documents",
+    consumer:
+      "Bank statement upload filters accepted file types and validates dropped files against the saved organisation formats",
+    test: "src/lib/banking/import-format-preference.test.ts and existing OFX/QIF parser tests",
+  },
+  {
     key: "notifications.email_from_name",
     label: "Outgoing email sender name",
     moduleId: "settings",
@@ -845,8 +863,10 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "banking",
     status: "partial",
     route: "/settings/banking/overview",
-    missingEvidence: ["consumer tests for every typed field"],
-    note: "Rule, feed and import workspaces have their own configuration owners; central typed values are not all proven to drive them.",
+    missingEvidence: [
+      "consumer tests for automatic rule application, confidence threshold and reconciliation tolerance",
+    ],
+    note: "Allowed statement import formats now filter the file picker and reject disabled types; automatic rules and tolerance settings remain read-only until their workflows consume them.",
   },
   {
     key: "users.security_preferences",

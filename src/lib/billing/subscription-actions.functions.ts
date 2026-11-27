@@ -19,7 +19,11 @@ function optionalInterval(value: string | undefined): BillingInterval | null {
 
 async function stripePost(path: string, body: URLSearchParams): Promise<Record<string, unknown>> {
   const secret = process.env["STRIPE_SECRET_KEY"];
-  if (!secret) throw new Error("Stripe is not configured. Add a test secret on the server.");
+  if (!secret) {
+    throw new Error(
+      "Stripe is not configured. Set STRIPE_SECRET_KEY (sk_test_…) on the server environment and redeploy.",
+    );
+  }
   assertStripeTestKey(secret);
   const response = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: "POST",
@@ -198,13 +202,16 @@ async function recordPlanChange(input: {
   actor: string;
 }): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { error } = await supabaseAdmin.rpc("billing_record_plan_change" as never, {
-    _company_id: input.companyId,
-    _plan_price_id: input.planPriceId,
-    _kind: input.kind,
-    _effective_at: input.effectiveAt,
-    _actor: input.actor,
-  } as never);
+  const { error } = await supabaseAdmin.rpc(
+    "billing_record_plan_change" as never,
+    {
+      _company_id: input.companyId,
+      _plan_price_id: input.planPriceId,
+      _kind: input.kind,
+      _effective_at: input.effectiveAt,
+      _actor: input.actor,
+    } as never,
+  );
   if (error) throw new Error(error.message);
 }
 
@@ -244,7 +251,8 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
         paymentRequired: false,
         lines: [
           {
-            description: "Razorpay plan changes apply at the next renewal with no mid-cycle charge.",
+            description:
+              "Razorpay plan changes apply at the next renewal with no mid-cycle charge.",
             amountMinor: 0,
           },
         ],

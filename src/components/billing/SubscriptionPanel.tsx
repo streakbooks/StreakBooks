@@ -49,7 +49,8 @@ import {
   type PriceQuote,
 } from "@/lib/billing/pricing";
 import { formatMinorAmount } from "@/lib/billing/domain/money";
-import { BILLING_CHARGE_RULES, planChangePaymentCopy } from "@/lib/billing/domain/billing-policy";
+import { billingChargeRules, planChangePaymentCopy } from "@/lib/billing/domain/billing-policy";
+import { lockedSubscriptionProvider } from "@/lib/billing/provider-resolution";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { cn } from "@/lib/utils";
 
@@ -457,7 +458,7 @@ export function SubscriptionPanel({
         data: { companyId, planCode, interval, origin: window.location.origin },
       }),
     onSuccess: (result) => {
-      if (result.paymentActionUrl) {
+      if (result.paymentActionUrl && result.provider === "stripe") {
         setTarget(null);
         setPlanSwitchPending(result.targetPlanCode);
         toast.message("Opening Stripe to pay the prorated upgrade…");
@@ -465,7 +466,15 @@ export function SubscriptionPanel({
         return;
       }
       setTarget(null);
-      if (result.kind === "upgrade") {
+      if (result.applies === "period_end") {
+        toast.success(
+          `${result.kind === "upgrade" ? "Upgrade" : "Downgrade"} scheduled. You keep your current plan until${
+            result.effectiveAt
+              ? ` ${new Date(result.effectiveAt).toLocaleDateString()}`
+              : " renewal"
+          }.`,
+        );
+      } else if (result.kind === "upgrade") {
         setPlanSwitchPending(result.targetPlanCode);
         toast.success(
           result.chargedOnFile
@@ -531,10 +540,17 @@ export function SubscriptionPanel({
       ? (quote?.dueMinor ??
         listAmount(target.monthlyMinor, interval, data.settings.annualFreeMonths))
       : (target?.listPrice?.monthlyMinor ?? 0);
-  const dueCurrency =
+  const listCurrency =
     target?.listPrice && isBillingCurrency(target.listPrice.currency)
       ? target.listPrice.currency
-      : data.currency;
+      : null;
+  // Region / subscription currency wins; never show GBP for an INR subscription.
+  const dueCurrency =
+    switchPreview && isBillingCurrency(switchPreview.currency)
+      ? switchPreview.currency
+      : listCurrency === data.currency
+        ? listCurrency
+        : data.currency;
   const checkingOut = target != null && intent === "subscribe";
   const currentPlan = data.subscription
     ? visiblePlans(data).find((plan) => plan.code === data.subscription?.planCode)
@@ -545,7 +561,14 @@ export function SubscriptionPanel({
     switchPreview?.kind === "upgrade" ||
     (target && intent === "switch" && targetMonthly > currentMonthly),
   );
-  const switchCopy = planChangePaymentCopy(isUpgradeSwitch ? "upgrade" : "downgrade");
+  const lockedProvider =
+    lockedSubscriptionProvider(switchPreview?.provider) ??
+    lockedSubscriptionProvider(data.subscription?.provider);
+  const switchCopy = planChangePaymentCopy(
+    isUpgradeSwitch ? "upgrade" : "downgrade",
+    lockedProvider ?? "stripe",
+  );
+  const chargeRules = billingChargeRules(lockedProvider);
   const scheduledPlanName = data.subscription?.scheduledPlanCode
     ? (data.plans.find((plan) => plan.code === data.subscription?.scheduledPlanCode)?.name ??
       data.subscription.scheduledPlanCode)
@@ -558,8 +581,8 @@ export function SubscriptionPanel({
           <Loader2 className="size-4 animate-spin" aria-hidden />
           <AlertTitle>Activating your subscription</AlertTitle>
           <AlertDescription>
-            Payment succeeded. We are confirming it with Stripe and updating your plan — this
-            usually takes a few seconds.
+            Payment succeeded. We are confirming it with your payment provider and updating your
+            plan — this usually takes a few seconds.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -568,12 +591,25 @@ export function SubscriptionPanel({
           <Loader2 className="size-4 animate-spin" aria-hidden />
           <AlertTitle>Upgrade in progress</AlertTitle>
           <AlertDescription className="text-sm">
-            Finish payment on Stripe for{" "}
-            <strong>
-              {visiblePlans(data).find((p) => p.code === planSwitchPending)?.name ??
-                planSwitchPending}
-            </strong>
-            . This page updates automatically when Stripe confirms the charge.
+            {lockedProvider === "razorpay" ? (
+              <>
+                Plan change for{" "}
+                <strong>
+                  {visiblePlans(data).find((p) => p.code === planSwitchPending)?.name ??
+                    planSwitchPending}
+                </strong>{" "}
+                is waiting for Razorpay confirmation. This page updates when the webhook arrives.
+              </>
+            ) : (
+              <>
+                Finish payment on Stripe for{" "}
+                <strong>
+                  {visiblePlans(data).find((p) => p.code === planSwitchPending)?.name ??
+                    planSwitchPending}
+                </strong>
+                . This page updates automatically when Stripe confirms the charge.
+              </>
+            )}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -592,27 +628,37 @@ export function SubscriptionPanel({
           <AlertDescription className="space-y-2 text-sm">
             <p>
               Your last renewal could not be collected. Access continues during the grace period.
-              Update the card to avoid interruption.
+              {lockedProvider === "razorpay"
+                ? " Update the UPI mandate or payment method in Razorpay to avoid interruption."
+                : " Update the card to avoid interruption."}
             </p>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              disabled={portal.isPending}
-              onClick={() => portal.mutate()}
-            >
-              Update payment method
-            </Button>
+            {lockedProvider === "stripe" ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={portal.isPending}
+                onClick={() => portal.mutate()}
+              >
+                Update payment method
+              </Button>
+            ) : null}
           </AlertDescription>
         </Alert>
       ) : null}
       {data.ready && paidSubscription(data.subscription) ? (
         <Alert variant="default" className="max-w-3xl border-dashed bg-muted/30">
           <Info className="size-4" aria-hidden />
-          <AlertTitle>When Stripe charges</AlertTitle>
+          <AlertTitle>
+            {lockedProvider === "razorpay"
+              ? "When Razorpay charges"
+              : lockedProvider === "stripe"
+                ? "When Stripe charges"
+                : "When billing charges"}
+          </AlertTitle>
           <AlertDescription className="text-sm leading-relaxed">
             <ul className="mt-1 list-disc space-y-1 pl-4">
-              {BILLING_CHARGE_RULES.map((rule) => (
+              {chargeRules.map((rule) => (
                 <li key={rule.title}>
                   <strong>{rule.title}</strong>: {rule.body}
                 </li>
@@ -635,7 +681,11 @@ export function SubscriptionPanel({
           <div className="flex flex-col items-center gap-3 rounded-xl border bg-card px-8 py-6 shadow-lg">
             <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
             <p className="text-sm font-medium">
-              {planChange.isPending ? "Opening Stripe payment…" : "Redirecting to secure checkout…"}
+              {planChange.isPending
+                ? lockedProvider === "razorpay"
+                  ? "Scheduling plan change…"
+                  : "Opening Stripe payment…"
+                : "Redirecting to secure checkout…"}
             </p>
             <p className="max-w-xs text-center text-xs text-muted-foreground">
               Do not close this window. You will return to StreakBooks when payment is complete.
@@ -659,11 +709,7 @@ export function SubscriptionPanel({
           quote={checkoutQuote.data ?? null}
           quoteLoading={checkoutQuote.isFetching}
           quoteError={checkoutQuote.isError ? friendlyAuthError(checkoutQuote.error) : null}
-          priceCurrency={
-            target.listPrice && isBillingCurrency(target.listPrice.currency)
-              ? target.listPrice.currency
-              : undefined
-          }
+          priceCurrency={dueCurrency}
           onBack={() => setTarget(null)}
           onPay={(billing, method, copy) =>
             checkout.mutate({ planCode: target.code, method, billing, copy })
@@ -769,7 +815,7 @@ export function SubscriptionPanel({
                                 ? switchPreview.currency
                                 : dueCurrency,
                             )
-                          : "£0 — no charge today"}
+                          : `${formatMinor(0, dueCurrency)} — no charge today`}
                       </dd>
                     </div>
                   </>
@@ -779,7 +825,9 @@ export function SubscriptionPanel({
                   <dd className="font-medium">
                     {switchPreview
                       ? switchPreview.paymentRequired
-                        ? "Yes — open Stripe"
+                        ? lockedProvider === "razorpay"
+                          ? "No charge today"
+                          : "Yes — open Stripe"
                         : "No charge today"
                       : switchCopy.paymentNow}
                   </dd>
@@ -800,21 +848,27 @@ export function SubscriptionPanel({
                   disabled={busy}
                   onClick={() => setTarget(null)}
                 >
-                  Cancel
+                  {switchPreview?.changeSupported === false ? "Close" : "Cancel"}
                 </Button>
-                <Button
-                  type="button"
-                  disabled={busy || previewLoading || Boolean(previewError)}
-                  onClick={() => planChange.mutate(target.code)}
-                >
-                  {planChange.isPending
-                    ? isUpgradeSwitch
-                      ? "Opening Stripe…"
-                      : "Scheduling…"
-                    : switchPreview?.paymentRequired
-                      ? "Continue to Stripe"
-                      : switchCopy.button}
-                </Button>
+                {switchPreview?.changeSupported === false ? (
+                  <Button type="button" onClick={() => setTarget(null)}>
+                    Got it
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    disabled={busy || previewLoading || Boolean(previewError)}
+                    onClick={() => planChange.mutate(target.code)}
+                  >
+                    {planChange.isPending
+                      ? switchPreview?.paymentRequired && lockedProvider === "stripe"
+                        ? "Opening Stripe…"
+                        : "Scheduling…"
+                      : switchPreview?.paymentRequired && lockedProvider === "stripe"
+                        ? "Continue to Stripe"
+                        : switchCopy.button}
+                  </Button>
+                )}
               </DialogFooter>
             </>
           ) : null}
@@ -825,18 +879,18 @@ export function SubscriptionPanel({
 }
 
 function monthlyPrices(plan: BillingPlanView): Record<BillingCurrency, number> {
-  if (plan.listPrice?.monthlyMinor != null && isBillingCurrency(plan.listPrice.currency)) {
-    const amount = plan.listPrice.monthlyMinor;
-    return { USD: amount, GBP: amount, INR: amount, AUD: amount, NZD: amount };
-  }
   const catalog = planByCode(plan.code)?.monthly;
-  return {
+  const base = {
     USD: plan.monthlyUsd,
     GBP: plan.monthlyGbp,
     INR: plan.monthlyInr,
     AUD: catalog?.AUD ?? plan.monthlyGbp,
     NZD: catalog?.NZD ?? plan.monthlyGbp,
   };
+  if (plan.listPrice?.monthlyMinor != null && isBillingCurrency(plan.listPrice.currency)) {
+    return { ...base, [plan.listPrice.currency]: plan.listPrice.monthlyMinor };
+  }
+  return base;
 }
 
 function PlanPicker({

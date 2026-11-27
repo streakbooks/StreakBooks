@@ -52,6 +52,11 @@ export default {
         const { handleRazorpayCheckout } = await import("./lib/billing/razorpay-checkout.server");
         return handleRazorpayCheckout(request, pathname);
       }
+      if (pathname === "/api/billing/razorpay/hosted") {
+        const { handleRazorpayHostedCheckout } =
+          await import("./lib/billing/razorpay-hosted-checkout.server");
+        return handleRazorpayHostedCheckout(request);
+      }
       if (
         pathname === "/api/advisors/create-checkout" ||
         pathname === "/api/advisors/verify-payment"

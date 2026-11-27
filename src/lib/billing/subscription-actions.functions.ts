@@ -167,6 +167,8 @@ export function parsePlanChange(input: {
 
 export type PlanChangePreview = {
   kind: "upgrade" | "downgrade";
+  /** Locked from company_subscriptions.provider — UI must not guess. */
+  provider: "stripe" | "razorpay";
   planCode: string;
   planName: string;
   interval: "month" | "year";
@@ -177,6 +179,9 @@ export type PlanChangePreview = {
   chargeMinor: number;
   effectiveAt: string | null;
   paymentRequired: boolean;
+  /** False when the provider cannot mutate the mandate (Razorpay UPI / e-mandate). */
+  changeSupported: boolean;
+  unsupportedReason: string | null;
   lines: { description: string; amountMinor: number }[];
   currentPlanCode: string;
   currentInterval: string;
@@ -184,6 +189,7 @@ export type PlanChangePreview = {
 
 export type PlanChangeResult = {
   kind: "upgrade" | "downgrade";
+  provider: "stripe" | "razorpay";
   applies: "after_payment" | "period_end";
   effectiveAt: string | null;
   targetPlanCode: string;
@@ -227,18 +233,13 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
       data.planCode,
       data.interval,
     );
-    const { ensureProviderPrice } = await import("@/lib/billing/providers/price-mapping.server");
-    const providerPriceId = await ensureProviderPrice(change.provider, {
-      planPriceId: change.planPriceId,
-      planName: change.planName,
-      currency: change.currency,
-      amountMinor: change.amountMinor,
-      interval: change.interval,
-    });
 
     if (change.provider !== "stripe") {
+      const unsupportedReason =
+        "UPI and e-mandate subscriptions cannot change plan. Cancel this subscription and subscribe to the new plan after it ends.";
       return {
         kind: change.kind,
+        provider: change.provider,
         planCode: change.planCode,
         planName: change.planName,
         interval: change.interval,
@@ -249,10 +250,11 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
         chargeMinor: 0,
         effectiveAt: change.periodEnd,
         paymentRequired: false,
+        changeSupported: false,
+        unsupportedReason,
         lines: [
           {
-            description:
-              "Razorpay plan changes apply at the next renewal with no mid-cycle charge.",
+            description: unsupportedReason,
             amountMinor: 0,
           },
         ],
@@ -260,6 +262,15 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
         currentInterval: change.currentInterval,
       };
     }
+
+    const { ensureProviderPrice } = await import("@/lib/billing/providers/price-mapping.server");
+    const providerPriceId = await ensureProviderPrice(change.provider, {
+      planPriceId: change.planPriceId,
+      planName: change.planName,
+      currency: change.currency,
+      amountMinor: change.amountMinor,
+      interval: change.interval,
+    });
 
     const { createStripeClient, stripePreviewPlanChange, friendlyStripePlanChangeError } =
       await import("@/lib/billing/providers/stripe.server");
@@ -273,6 +284,7 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
       const paymentRequired = change.kind === "upgrade" && preview.amountDueMinor > 0;
       return {
         kind: change.kind,
+        provider: "stripe",
         planCode: change.planCode,
         planName: change.planName,
         interval: change.interval,
@@ -283,6 +295,8 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
         chargeMinor: preview.chargeMinor,
         effectiveAt: change.kind === "upgrade" ? null : change.periodEnd,
         paymentRequired,
+        changeSupported: true,
+        unsupportedReason: null,
         lines: preview.lines,
         currentPlanCode: change.currentPlanCode,
         currentInterval: change.currentInterval,
@@ -364,6 +378,13 @@ export const changePlanFor = createServerOnlyFn(
       data.planCode,
       data.interval,
     );
+
+    if (change.provider !== "stripe") {
+      // India Razorpay paths are UPI AutoPay / e-mandate — Razorpay rejects plan PATCH.
+      throw new Error(
+        "UPI and e-mandate subscriptions cannot change plan. Cancel this subscription and subscribe to the new plan after it ends.",
+      );
+    }
 
     const { ensureProviderPrice } = await import("@/lib/billing/providers/price-mapping.server");
     const providerPriceId = await ensureProviderPrice(change.provider, {
@@ -451,33 +472,17 @@ export const changePlanFor = createServerOnlyFn(
           stripeResult.subscription,
         );
       }
-    } else {
-      const { createRazorpayClient, razorpayChangePlan } =
-        await import("@/lib/billing/providers/razorpay.server");
-      await razorpayChangePlan(
-        createRazorpayClient(),
-        change.providerSubscriptionId,
-        providerPriceId,
-      );
-      if (change.kind === "upgrade") {
-        await recordPlanChange({
-          companyId: data.companyId,
-          planPriceId: change.planPriceId,
-          kind: "scheduled",
-          effectiveAt: change.periodEnd,
-          actor: context.userId,
-        });
-      }
     }
 
     return {
       kind: change.kind,
+      provider: change.provider,
       applies:
         change.kind === "upgrade" && change.provider === "stripe" ? "after_payment" : "period_end",
       effectiveAt: change.periodEnd,
       targetPlanCode: data.planCode,
       targetInterval: change.interval,
-      paymentActionUrl,
+      paymentActionUrl: change.provider === "stripe" ? paymentActionUrl : null,
       amountDueMinor,
       alreadyApplied,
       chargedOnFile: change.kind === "upgrade" && chargedOnFile && !paymentActionUrl,

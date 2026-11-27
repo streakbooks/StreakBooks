@@ -12,6 +12,7 @@ DO $$
 DECLARE
   audit_row public.audit_events%ROWTYPE;
   audit_count integer;
+  _insert_audit_id uuid;
   _company_id uuid := '10000000-0000-4000-8000-000000000011';
 BEGIN
   SELECT * INTO audit_row FROM public.audit_events AS ae
@@ -23,13 +24,16 @@ BEGIN
      OR audit_row.details->'after'->>'require_receipt_above_minor' <> '5000' THEN
     RAISE EXCEPTION 'Expense settings insert omitted field-level audit evidence';
   END IF;
+  _insert_audit_id := audit_row.id;
 
   UPDATE public.expense_management_settings
   SET default_distance_unit = 'mi', required_approval_count = 2
   WHERE expense_management_settings.company_id = _company_id;
 
   SELECT * INTO audit_row FROM public.audit_events AS ae
-   WHERE ae.company_id = _company_id AND ae.action = 'settings.expense_management'
+   WHERE ae.company_id = _company_id
+     AND ae.action = 'settings.expense_management'
+     AND ae.id <> _insert_audit_id
    ORDER BY id DESC LIMIT 1;
   IF audit_row.details->'before'->>'default_distance_unit' <> 'km'
      OR audit_row.details->'after'->>'default_distance_unit' <> 'mi'
@@ -40,6 +44,14 @@ BEGIN
 
   SELECT count(*) INTO audit_count FROM public.audit_events AS ae
    WHERE ae.company_id = _company_id AND ae.action = 'settings.expense_management';
+
+  UPDATE public.expense_management_settings
+  SET default_distance_unit = 'mi'
+  WHERE expense_management_settings.company_id = _company_id;
+  IF (SELECT count(*) FROM public.audit_events AS ae
+      WHERE ae.company_id = _company_id AND ae.action = 'settings.expense_management') <> audit_count THEN
+    RAISE EXCEPTION 'A no-op expense settings update created audit noise';
+  END IF;
 
   PERFORM set_config('test.fail_audit', 'on', true);
   BEGIN
@@ -53,7 +65,7 @@ BEGIN
   PERFORM set_config('test.fail_audit', 'off', true);
 
   IF (SELECT claim_number_prefix FROM public.expense_management_settings
-      WHERE expense_management_settings.company_id = company_id) <> 'CLAIM-'
+      WHERE expense_management_settings.company_id = _company_id) <> 'CLAIM-'
      OR (SELECT count(*) FROM public.audit_events
          WHERE audit_events.company_id = _company_id
            AND action = 'settings.expense_management') <> audit_count THEN

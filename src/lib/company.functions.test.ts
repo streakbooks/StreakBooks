@@ -82,6 +82,7 @@ describe("organisation identity Settings save", () => {
       companyId,
       "company.settings.edit",
     );
+    expect(assertCompanyPermission).toHaveBeenCalledWith(supabase, companyId, "tax.settings");
     expect(supabase.rpc).toHaveBeenCalledWith(
       "save_company_identity_and_tax",
       expect.objectContaining({
@@ -105,6 +106,26 @@ describe("organisation identity Settings save", () => {
       update({ data: { ...baseline, companyId }, context: { supabase } }),
     ).rejects.toThrow("Reload organisation settings before saving.");
     expect(supabase.rpc).not.toHaveBeenCalled();
+  });
+
+  it("does not require Tax permission when saving unchanged Tax values with company details", async () => {
+    const supabase = client({ data: { name: "Updated" } });
+    await update({
+      data: {
+        ...baseline,
+        expected: baseline,
+        companyId,
+        name: "Updated Northgate",
+      },
+      context: { supabase },
+    });
+
+    expect(assertCompanyPermission).toHaveBeenCalledOnce();
+    expect(assertCompanyPermission).toHaveBeenCalledWith(
+      supabase,
+      companyId,
+      "company.settings.edit",
+    );
   });
 
   it("surfaces stale-snapshot RPC errors without retrying or writing separate tables", async () => {

@@ -239,21 +239,22 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/company-validation.test.ts, src/lib/tax/country-packs.test.ts and tests/integration/settings-company-identity-atomic.sql",
   },
   {
-    key: "company.prices_include_tax",
-    label: "Tax-inclusive sales pricing",
-    moduleId: "settings",
-    route: "/settings/organisation/overview",
+    key: "tax.registration_summary",
+    label: "Tax registration summary and document treatment",
+    moduleId: "tax",
+    route: "/tax",
     scope: "company",
-    defaultValue: "false (tax-exclusive pricing)",
+    defaultValue: "Tax regime none; tax-exclusive pricing; registration details unset",
     validation:
-      "The organisation identity RPC validates the saved boolean together with a version-checked snapshot",
-    permission: "company.settings.edit",
+      "Tax settings validator checks values and compare-and-set filters protect each submitted field against stale writes",
+    permission: "tax.settings",
     entitlement: null,
-    persistence: "company_tax_settings.prices_include_tax through save_company_identity_and_tax",
-    audit: "audit_events records the before/after pricing treatment in the same transaction",
+    persistence: "company_tax_settings through updateTaxSettings partial writes",
+    audit:
+      "company_tax_settings audit trigger records exact changed fields in settings_change_log in the same transaction",
     consumer:
-      "Sales line preparation loads the company setting and uses it to calculate inclusive versus exclusive tax",
-    test: "src/lib/sales/sales-common.test.ts and src/lib/sales/line-helpers.test.ts; tests/integration/settings-company-identity-atomic.sql proves persistence and audit",
+      "Tax overview uses regime and registration status; Sales loads inclusive versus exclusive pricing for document lines",
+    test: "src/lib/tax/tax.functions.test.ts, src/lib/tax/tax-workspace.test.ts, src/lib/sales/sales-common.test.ts and tests/integration/company-tax-settings-audit.sql",
   },
   {
     key: "company.base_currency",
@@ -776,14 +777,6 @@ export type SettingGap = {
 /** Known settings still needing one or more proof points before promotion. */
 export const SETTINGS_GAPS: readonly SettingGap[] = [
   {
-    key: "company.identity_and_locale",
-    moduleId: "settings",
-    status: "partial",
-    route: "/settings/organisation/overview",
-    missingEvidence: ["one visible write owner for the Tax registration summary fields"],
-    note: "Country, base currency, legal name, fiscal year end, time zone, document locale, document date format and inclusive sales pricing have field-level consumer evidence. Tax summary edits now have same-transaction field audit and compare-and-set protection, but the legacy organisation and Tax forms still expose the same fields.",
-  },
-  {
     key: "accounting.workflow_safeguards",
     moduleId: "accounting",
     status: "partial",
@@ -798,11 +791,8 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "tax",
     status: "partial",
     route: "/settings/tax/overview",
-    missingEvidence: [
-      "effective-date, jurisdiction and reporting-consumer behavior tests",
-      "single visible write owner for Tax registration fields",
-    ],
-    note: "Tax rate/code history is audited and regime/registration updates are now field-audited and compare-and-set protected. The legacy organisation form still overlaps the Tax registration form, and effective-date, jurisdiction and statutory reporting behaviors remain partial.",
+    missingEvidence: ["effective-date, jurisdiction and reporting-consumer behavior tests"],
+    note: "Tax rate/code history and Tax registration updates are field-audited; Tax registration saves use compare-and-set protection. Effective-date, jurisdiction and statutory reporting behaviors remain partial.",
   },
   {
     key: "sales.typed_configuration",

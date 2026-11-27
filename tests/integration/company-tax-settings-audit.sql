@@ -1,3 +1,29 @@
+SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000001"}', false);
+DELETE FROM public.test_permissions
+WHERE company_id = '10000000-0000-4000-8000-000000000011'
+  AND user_id = '00000000-0000-4000-8000-000000000001'
+  AND permission = 'tax.settings';
+SET ROLE authenticated;
+DO $$
+BEGIN
+  IF auth.uid() IS NULL
+     OR public.has_company_permission(
+       '10000000-0000-4000-8000-000000000011', 'tax.settings'
+     ) THEN
+    RAISE EXCEPTION 'Unauthorized Tax settings fixture is not configured';
+  END IF;
+  BEGIN
+    UPDATE public.company_tax_settings SET tax_regime = 'vat'
+    WHERE company_id = '10000000-0000-4000-8000-000000000011';
+    RAISE EXCEPTION 'Tax update without tax.settings permission was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%Permission denied for Tax settings%' THEN RAISE; END IF;
+  END;
+END $$;
+RESET ROLE;
+INSERT INTO public.test_permissions(company_id, user_id, permission)
+VALUES ('10000000-0000-4000-8000-000000000011', '00000000-0000-4000-8000-000000000001', 'tax.settings');
+
 DO $$
 DECLARE
   _company_id uuid := '10000000-0000-4000-8000-000000000011';
@@ -52,9 +78,19 @@ BEGIN
 
   SELECT count(*) INTO _tax_rows_before FROM public.settings_change_log
   WHERE company_id = _company_id AND category = 'tax';
+  INSERT INTO public.test_permissions(company_id, user_id, permission)
+  VALUES (
+    '10000000-0000-4000-8000-000000000012',
+    '00000000-0000-4000-8000-000000000001',
+    'tax.settings'
+  );
   UPDATE public.company_tax_settings
   SET tax_regime = 'gst'
   WHERE company_id = '10000000-0000-4000-8000-000000000012';
+  DELETE FROM public.test_permissions
+  WHERE company_id = '10000000-0000-4000-8000-000000000012'
+    AND user_id = '00000000-0000-4000-8000-000000000001'
+    AND permission = 'tax.settings';
   IF (SELECT count(*) FROM public.settings_change_log
       WHERE company_id = _company_id AND category = 'tax') <> _tax_rows_before THEN
     RAISE EXCEPTION 'Another organisation update leaked into this organisation audit';

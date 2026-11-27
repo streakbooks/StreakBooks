@@ -1,4 +1,4 @@
--- Keep Tax workspace edits in the organisation settings history transaction.
+-- Keep Tax workspace edits in settings history and enforce Tax permission.
 -- Updated-at maintenance is excluded from the per-field audit.
 
 CREATE OR REPLACE FUNCTION public.audit_company_tax_settings_change()
@@ -12,6 +12,13 @@ DECLARE
 BEGIN
   IF NEW.company_id IS DISTINCT FROM OLD.company_id THEN
     RAISE EXCEPTION 'Tax settings cannot move between organisations';
+  END IF;
+
+  IF (pg_catalog.to_jsonb(NEW) - 'updated_at' - 'created_at')
+       IS DISTINCT FROM (pg_catalog.to_jsonb(OLD) - 'updated_at' - 'created_at')
+     AND auth.uid() IS NOT NULL
+     AND NOT public.has_company_permission(NEW.company_id, 'tax.settings') THEN
+    RAISE EXCEPTION 'Permission denied for Tax settings' USING ERRCODE = '42501';
   END IF;
 
   FOR _field IN
@@ -53,4 +60,4 @@ CREATE TRIGGER company_tax_settings_audit
   EXECUTE FUNCTION public.audit_company_tax_settings_change();
 
 COMMENT ON FUNCTION public.audit_company_tax_settings_change() IS
-  'Audits changed Tax configuration fields in settings_change_log in the same transaction; updated_at is excluded.';
+  'Enforces tax.settings and audits changed Tax fields in the same transaction; updated_at is excluded.';

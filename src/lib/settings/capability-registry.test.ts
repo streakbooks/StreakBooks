@@ -163,25 +163,23 @@ describe("Settings capability coverage registry", () => {
       persistence: expect.stringContaining("companies.base_currency"),
       test: expect.stringContaining("settings-company-identity-atomic.sql"),
     });
-    expect(SETTINGS_GAPS.find((gap) => gap.key === "company.identity_and_locale")?.status).toBe(
-      "partial",
-    );
+    expect(SETTINGS_GAPS.find((gap) => gap.key === "company.identity_and_locale")).toBeUndefined();
   });
 
-  it("records inclusive sales pricing only with its setting loader and calculation consumer", () => {
+  it("records Tax registration only with audit, compare-and-set and business consumers", () => {
     expect(
-      SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "company.prices_include_tax"),
+      SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "tax.registration_summary"),
     ).toMatchObject({
-      route: "/settings/organisation/overview",
-      permission: "company.settings.edit",
-      persistence: expect.stringContaining("save_company_identity_and_tax"),
+      moduleId: "tax",
+      route: "/tax",
+      permission: "tax.settings",
+      persistence: expect.stringContaining("updateTaxSettings"),
       audit: expect.stringContaining("same transaction"),
-      consumer: expect.stringContaining("inclusive versus exclusive tax"),
-      test: expect.stringContaining("sales-common.test.ts"),
+      validation: expect.stringContaining("compare-and-set"),
+      consumer: expect.stringContaining("inclusive versus exclusive pricing"),
+      test: expect.stringContaining("company-tax-settings-audit.sql"),
     });
-    expect(SETTINGS_GAPS.find((gap) => gap.key === "company.identity_and_locale")?.status).toBe(
-      "partial",
-    );
+    expect(SETTINGS_GAPS.find((gap) => gap.key === "company.identity_and_locale")).toBeUndefined();
   });
 
   it("records document locale and date-format consumers separately from storage format", () => {

@@ -32,7 +32,7 @@ import {
   upsertBranding,
   voidExchangeRate,
 } from "@/lib/settings/org-settings.functions";
-import { countries, currencies, months, taxRegimes, timezones } from "@/lib/company-constants";
+import { countries, currencies, months, timezones } from "@/lib/company-constants";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   categoryMeta,
@@ -57,7 +57,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import {
   Select,
@@ -334,9 +333,6 @@ export function SettingsForCompany({
   const [timezone, setTimezone] = useState("Europe/London");
   const [fyMonth, setFyMonth] = useState("3");
   const [fyDay, setFyDay] = useState("31");
-  const [taxRegime, setTaxRegime] = useState("none");
-  const [regNumber, setRegNumber] = useState("");
-  const [pricesIncludeTax, setPricesIncludeTax] = useState(false);
 
   const [locale, setLocale] = useState("en-GB");
   const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
@@ -382,9 +378,6 @@ export function SettingsForCompany({
     setTimezone(d.timezone);
     setFyMonth(String(d.fiscal_year_end_month));
     setFyDay(String(d.fiscal_year_end_day));
-    setTaxRegime(d.tax?.tax_regime ?? "none");
-    setRegNumber(d.tax?.registration_number ?? "");
-    setPricesIncludeTax(Boolean(d.tax?.prices_include_tax));
   }, [detailsQuery.isSuccess, detailsQuery.data, detailsDirty]);
 
   useEffect(() => {
@@ -475,9 +468,6 @@ export function SettingsForCompany({
     setTimezone(d.timezone);
     setFyMonth(String(d.fiscal_year_end_month));
     setFyDay(String(d.fiscal_year_end_day));
-    setTaxRegime(d.tax?.tax_regime ?? "none");
-    setRegNumber(d.tax?.registration_number ?? "");
-    setPricesIncludeTax(Boolean(d.tax?.prices_include_tax));
     setDetailsBaseline(JSON.stringify(d));
     setDetailsDirty(false);
   };
@@ -545,9 +535,9 @@ export function SettingsForCompany({
           fiscal_year_end_month: Number(fyMonth),
           fiscal_year_end_day: Number(fyDay),
           timezone,
-          tax_regime: taxRegime,
-          registration_number: regNumber,
-          prices_include_tax: pricesIncludeTax,
+          tax_regime: current.tax?.tax_regime ?? "none",
+          registration_number: current.tax?.registration_number ?? null,
+          prices_include_tax: Boolean(current.tax?.prices_include_tax),
         },
       });
     },
@@ -1051,52 +1041,18 @@ export function SettingsForCompany({
                             </SelectContent>
                           </RecordLookupSelect>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="org-tax-regime">Tax regime</Label>
-                          <Select
-                            value={taxRegime}
-                            disabled={!canEdit || saveMutation.isPending}
-                            onValueChange={(value) => {
-                              setTaxRegime(value);
-                              setDetailsDirty(true);
-                            }}
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 p-3 text-sm sm:col-span-2">
+                          <span className="text-muted-foreground">
+                            Tax registration and document tax treatment are managed in the Tax
+                            workspace.
+                          </span>
+                          <Link
+                            className="font-medium underline underline-offset-4"
+                            to="/tax"
+                            search={{ tab: "registration" }}
                           >
-                            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
-
-                            <SelectTrigger id="org-tax-regime">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {taxRegimes.map((t) => (
-                                <SelectItem key={t.value} value={t.value}>
-                                  {t.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2 sm:col-span-2">
-                          <Label htmlFor="tax-reg">Tax registration number</Label>
-                          <Input
-                            id="tax-reg"
-                            value={regNumber}
-                            disabled={!canEdit || saveMutation.isPending}
-                            onChange={(e) => {
-                              setRegNumber(e.target.value);
-                              setDetailsDirty(true);
-                            }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between gap-4 sm:col-span-2">
-                          <Label className="font-normal">Prices include tax by default</Label>
-                          <Switch
-                            checked={pricesIncludeTax}
-                            disabled={!canEdit || saveMutation.isPending}
-                            onCheckedChange={(checked) => {
-                              setPricesIncludeTax(checked);
-                              setDetailsDirty(true);
-                            }}
-                          />
+                            Manage tax settings
+                          </Link>
                         </div>
                         <SettingsSaveBar
                           label="Save organisation details"

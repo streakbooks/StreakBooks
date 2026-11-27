@@ -238,6 +238,13 @@ export const updateCompany = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "company.settings.edit");
+    if (
+      data.tax_regime !== data.expected.tax_regime ||
+      (data.registration_number || null) !== data.expected.registration_number ||
+      data.prices_include_tax !== data.expected.prices_include_tax
+    ) {
+      await assertCompanyPermission(supabase, data.companyId, "tax.settings");
+    }
     const { data: result, error } = await supabase.rpc(
       "save_company_identity_and_tax" as never,
       {

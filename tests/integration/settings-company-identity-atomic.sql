@@ -50,9 +50,11 @@ BEGIN
     IF SQLERRM NOT ILIKE '%Invalid organisation timezone%' THEN RAISE; END IF;
   END;
   IF (SELECT timezone FROM public.companies WHERE id=c) <> 'Asia/Kolkata'
+     OR (SELECT name FROM public.companies WHERE id=c) <> 'Updated Fixture'
+     OR (SELECT tax_regime FROM public.company_tax_settings WHERE company_id=c) <> 'gst'
      OR (SELECT count(*) FROM public.audit_events
          WHERE company_id=c AND action='settings.organization_identity') <> audit_before + 1 THEN
-    RAISE EXCEPTION 'Rejected timezone update changed identity or created audit history';
+    RAISE EXCEPTION 'Rejected timezone update changed organisation/tax values or created audit history';
   END IF;
 
   -- Locale and document date style are saved as one versioned company preference

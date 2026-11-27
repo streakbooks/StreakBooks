@@ -234,3 +234,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Changed the Expenses setting label and helper copy to state that missing receipts are flagged for high-risk review but do not currently block submission. The existing database risk scan emits that flag; the wording no longer promises enforcement it does not provide.
 - Added a manual review step and retained the Expense group as **PARTIAL** pending same-transaction setting audit and reimbursement-account consumer evidence.
 - Focused risk and settings tests passed (2 files / 10 tests); changed-file ESLint, `check:ui`, and `git diff --check` passed. No schema or hosted Supabase change was made.
+
+## 2026-11-27 Point of Sale Settings discovery
+
+- Added a dedicated Point of Sale Settings category with searchable links to the existing register/location setup and catalogue checkout screens. No duplicate settings data or route was introduced.
+- Changed POS module settings coverage from **MISSING** to **PARTIAL**: register setup and location access exist, while tax and tender configuration remain missing. Search, destination and fail-closed partial-state tests cover the addition.
+- Focused Settings registry tests passed (4 files / 34 tests); `check:modules`, `check:navigation`, `check:ui`, changed-file ESLint, typecheck, and `git diff --check` passed. No schema or hosted Supabase change was made.

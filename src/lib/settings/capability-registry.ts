@@ -674,7 +674,11 @@ export type ModuleSettingsCoverage = {
 export const MODULE_SETTINGS_COVERAGE: readonly ModuleSettingsCoverage[] = [
   { moduleId: "dashboard", status: "partial", expected: "Dashboard and display preferences" },
   { moduleId: "banking", status: "partial", expected: "Feeds, rules, imports and reconciliation" },
-  { moduleId: "pos", status: "missing", expected: "Register, locations, taxes and tenders" },
+  {
+    moduleId: "pos",
+    status: "partial",
+    expected: "Register setup and location access exist; tax and tender controls remain missing",
+  },
   {
     moduleId: "sales",
     status: "partial",

@@ -95,6 +95,7 @@ Routes: `/expense-management/settings`, `/expense-management/mileage` and `/expe
 - Platform-owner controls remain outside tenant settings.
 - Configuration secrets are not indexed by settings search.
 - A setting marked **Partial** must not be treated as an operative accounting rule.
+- Search Settings for “cash drawer” and open Point of Sale. Confirm both links reach `/pos/registers` and `/pos`, and that missing tax/tender controls are described as incomplete rather than presented as configurable settings.
 
 ## Responsive and accessibility review
 

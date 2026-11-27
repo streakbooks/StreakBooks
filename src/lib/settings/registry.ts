@@ -107,6 +107,17 @@ export const categoryMeta: CategoryMeta[] = [
     availability: "partial",
   },
   {
+    id: "pos",
+    label: "Point of Sale",
+    description: "Register setup, location access and cash sessions.",
+    synonyms: ["pos", "register", "till", "cash drawer", "cashier", "location access"],
+    moduleLinks: [
+      { label: "Registers & sessions", to: "/pos/registers" },
+      { label: "Catalogue checkout", to: "/pos" },
+    ],
+    availability: "partial",
+  },
+  {
     id: "dimensions",
     label: "Dimensions & Projects",
     description: "Classes, locations, departments, projects and custom dimensions.",

@@ -50,6 +50,16 @@ describe("Settings Centre category routing and search", () => {
     expect(payrollMeta?.availability).toBe("partial");
   });
 
+  it("routes Point of Sale setup from its own Settings category", () => {
+    const posMeta = categoryMeta.find((item) => item.id === "pos");
+    expect(posMeta?.availability).toBe("partial");
+    expect(posMeta?.moduleLinks).toEqual([
+      { label: "Registers & sessions", to: "/pos/registers" },
+      { label: "Catalogue checkout", to: "/pos" },
+    ]);
+    expect(searchSettings("cash drawer").some((item) => item.id === "pos")).toBe(true);
+  });
+
   it("never strands users in categories without an editable Settings Centre schema", () => {
     for (const category of [
       "contacts",
@@ -59,6 +69,7 @@ describe("Settings Centre category routing and search", () => {
       "fixed_assets",
       "payroll",
       "tax",
+      "pos",
     ] as const) {
       const meta = categoryMeta.find((item) => item.id === category);
       expect(meta?.moduleLinks?.length, category).toBeGreaterThan(0);

@@ -1,37 +1,40 @@
 # Mid-cycle plan upgrade — verification evidence (PR #98)
 
-**Head commit:** `3832bade` (and follow-ups on `feature/qb-midcycle-plan-upgrade`)  
+**Head commit:** `50cd7dc0` on `feature/qb-midcycle-plan-upgrade`  
 **Status:** **Not production-ready.** Automated sandbox + SQL passed; **authenticated staging workflows A/B await your manual runs.**  
 **Rules:** Test-mode only (`sk_test_`, `rzp_test_`). Never set `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`. Do not merge or deploy production from this evidence alone.
 
 ---
 
-## CI (GitHub Actions) — run `46041249866` @ `3832bade`
+## CI (GitHub Actions) — run `46042014608` @ `50cd7dc0` (completed)
 
 | Job | Result | Notes |
 | --- | --- | --- |
-| `browser-fixtures` | **Pass** | Checkout hand-off fixed |
+| `browser-fixtures` | **Pass** | |
 | `postgres` (platform/POS/banking/workflows/firm-access) | **Pass** | All five |
-| `validate` | **Fail** | `tsc` OK; `eslint .` → **2911** Prettier errors — **baseline repo debt also on `main`**, not introduced by PR-touched files |
-| Cloudflare Workers Builds | **Fail** | External Workers preview build; not StreakBooks app billing gates |
-| Supabase Preview | Skipped | No migration preview for this PR |
+| `validate` → typecheck | **Pass** | `tsc --noEmit` |
+| `validate` → lint | **Fail** | `eslint .` Prettier baseline debt (also on `main`); job stops here |
+| `validate` → build / module gates | **Not run** | Skipped after lint failure |
+| Vercel Preview build | **Pass** | Preview deployment build succeeded (see below) |
+| Cloudflare Workers Builds | **Fail** | External Workers preview; not app billing gate |
+| Supabase Preview | Skipped | |
 
 **Lint policy:** PR-touched files stay Prettier-clean. Do **not** mass-format the repo on this branch.
 
 ---
 
-## Vercel Preview deployments
+## Vercel Preview deployments (@ `50cd7dc0`)
 
 | Project (GitHub check) | State | URL / inspect |
 | --- | --- | --- |
-| **Vercel – streakbooks** (`paxaris/streakbooks`) | **Ready** | Alias: https://streakbooks-git-feature-qb-midcycle-plan-upgrade-paxaris.vercel.app · Deployment: https://streakbooks-lxx3kecak-paxaris.vercel.app · Inspect: https://vercel.com/paxaris/streakbooks/7cq4uH2XNs1uKhJU278tNxHCUr53 |
-| **Vercel – streak-books** | **Ready** (GitHub check) | Inspect: https://vercel.com/streak-books/streak-books/EEqNzu6S6EYEzYidTEnLvv2V72zE |
+| **Vercel – streakbooks** (`paxaris/streakbooks`) | **Ready** | **Use alias:** https://streakbooks-git-feature-qb-midcycle-plan-upgrade-paxaris.vercel.app · Deployment: https://streakbooks-f11oakpvs-paxaris.vercel.app · Inspect: https://vercel.com/paxaris/streakbooks/E17J97iPjmZhfKNKN175GFe9AjiU |
+| **Vercel – streak-books** | **Ready** (GitHub check) | Inspect: https://vercel.com/streak-books/streak-books/23dVdGJAczPQN1Xak4vJCVn728LY |
 
 **Agent verification notes**
 
-- CLI `vercel inspect` on the paxaris deployment: **status Ready**, preview target, git alias present.
-- Unauthenticated `curl` of the alias redirects to **Vercel SSO login** (Deployment Protection). Browser smoke of `/auth` after SSO is **your** step.
-- The agent Vercel MCP token cannot open the paxaris project; GitHub + CLI remain the authority for Ready status.
+- CLI `vercel inspect` on `dpl_E17J97iPjmZhfKNKN175GFe9AjiU`: **Ready**, preview, branch alias attached.
+- Alias is SSO-protected (Vercel Authentication). Sign in with team access before running Workflows A/B.
+- Prefer the **git branch alias** (stable across redeploys) over the ephemeral `*.vercel.app` deployment host.
 
 ---
 

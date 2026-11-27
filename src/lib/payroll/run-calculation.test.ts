@@ -6,6 +6,7 @@ import {
   formatQuantityFromMicro,
   parseQuantityMicroOrThrow,
 } from "@/lib/payroll/run-calculation";
+import { payrollCalculationPreferences } from "@/lib/payroll/calculation-preferences";
 import type {
   PayrollComponentTypeRow,
   PayrollEmployeeRow,
@@ -170,6 +171,35 @@ describe("computeRunCalculation with run adjustments", () => {
       is_recurring_default: false,
     }),
   ];
+
+  it("applies the saved organisation rounding mode to payroll-run calculations", () => {
+    const preferences = payrollCalculationPreferences({ rounding_mode: "half_even" }, USD);
+    const percentageDeduction = component({
+      id: "c-percent-deduction",
+      code: "PCT",
+      kind: "deduction",
+      calculation_method: "percentage",
+      percentage_base: "gross",
+      is_taxable: false,
+      sort_order: 20,
+    });
+
+    const result = computeRunCalculation({
+      periodStart: "2026-03-01",
+      periodEnd: "2026-03-31",
+      ...preferences,
+      employees: [employeeRow("emp-rounding")],
+      allSalaryLines: [
+        salaryLine("emp-rounding", basicId, 1_050),
+        { ...salaryLine("emp-rounding", percentageDeduction.id, 0), percentage_bps: 100 },
+      ],
+      components: [components[0]!, percentageDeduction],
+      adjustmentsByEmployee: {},
+      variableLinesByEmployee: {},
+    });
+
+    expect(result.employees[0]?.employeeDeductionsMinor).toBe(10n);
+  });
 
   it("includes manual run adjustments in gross and net after recalculate-style input", () => {
     const empId = "emp-1";

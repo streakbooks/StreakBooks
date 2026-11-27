@@ -32,9 +32,11 @@ describe("payroll calculation preferences", () => {
 
   it.each([
     [{ default_working_days_per_week: 0 }, "USD"],
+    [{ default_working_days_per_week: null }, "USD"],
     [{ default_working_hours_per_day: 25 }, "USD"],
     [{ payroll_currency: "US" }, "USD"],
     [{ rounding_mode: "banker's rounding" }, "USD"],
+    [{ rounding_mode: null }, "USD"],
   ])("rejects malformed saved settings %o", (settings, fallback) => {
     expect(() => payrollCalculationPreferences(settings, fallback)).toThrow(/invalid/i);
   });

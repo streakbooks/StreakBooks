@@ -214,5 +214,5 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 ## 2026-11-27 Payroll calculation settings fail-closed handling
 
 - Centralized the saved payroll rounding, currency and working-schedule mapping used by calculation previews and payroll-run calculations. Malformed persisted values now stop the calculation with an actionable error instead of silently substituting default rounding or accepting an invalid currency/schedule.
-- Added focused regressions for saved policy propagation, legacy defaults and malformed values. Payroll remains **PARTIAL**: the settings save audit summarizes only selected fields, so field-level audit evidence for calculation/payment settings is still required before those controls are called complete.
+- Added focused regressions for saved policy propagation into the actual payroll-run calculator, legacy defaults, and malformed/null values. Focused checks passed (3 files / 28 tests), changed-file ESLint and TypeScript passed. Payroll remains **PARTIAL**: the settings save audit summarizes only selected fields, so field-level audit evidence for calculation/payment settings is still required before those controls are called complete.
 - No schema change or hosted Supabase operation was made. This advances Batch 5 but does not complete Payroll or the remaining Settings batches.

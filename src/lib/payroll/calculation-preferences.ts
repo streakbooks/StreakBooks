@@ -12,8 +12,16 @@ export function payrollCalculationPreferences(
   settings: Record<string, unknown>,
   fallbackCurrency: string,
 ): PayrollCalculationPreferences {
-  const days = Number(settings["default_working_days_per_week"] ?? 5);
-  const hours = Number(settings["default_working_hours_per_day"] ?? 8);
+  const days = Number(
+    settings["default_working_days_per_week"] === undefined
+      ? 5
+      : settings["default_working_days_per_week"],
+  );
+  const hours = Number(
+    settings["default_working_hours_per_day"] === undefined
+      ? 8
+      : settings["default_working_hours_per_day"],
+  );
   if (!Number.isFinite(days) || days <= 0 || days > 7) {
     throw new Error("Payroll settings contain an invalid working-days value.");
   }
@@ -25,7 +33,8 @@ export function payrollCalculationPreferences(
     throw new Error("Payroll settings contain an invalid currency.");
   }
 
-  const savedRoundingMode = settings["rounding_mode"] ?? "half_up";
+  const savedRoundingMode =
+    settings["rounding_mode"] === undefined ? "half_up" : settings["rounding_mode"];
   if (
     typeof savedRoundingMode !== "string" ||
     !(ROUNDING_MODES as readonly string[]).includes(savedRoundingMode)

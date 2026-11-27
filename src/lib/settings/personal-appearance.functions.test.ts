@@ -34,6 +34,8 @@ function makeQuery(
   const query = {
     select: vi.fn(() => query),
     eq: vi.fn(() => query),
+    order: vi.fn(() => query),
+    limit: vi.fn(() => query),
     maybeSingle: vi.fn(async () => result),
     upsert: vi.fn(async () => result),
   };
@@ -41,6 +43,35 @@ function makeQuery(
 }
 
 describe("personal appearance server functions", () => {
+  it("uses the most recent accessible personal palette until an account-wide row exists", async () => {
+    const current = makeQuery({ data: null, error: null });
+    const legacy = makeQuery({
+      data: { preference_value: { theme: "dark", palette: "teal" } },
+      error: null,
+    });
+    const supabase = { from: vi.fn().mockReturnValueOnce(current).mockReturnValueOnce(legacy) };
+    const invoke = getPersonalAppearancePreferences as unknown as (args: {
+      data: Record<string, never>;
+      context: { supabase: typeof supabase; userId: string };
+    }) => Promise<unknown>;
+    await expect(invoke({ data: {}, context: { supabase, userId } })).resolves.toMatchObject({
+      theme: "dark",
+      palette: "teal",
+    });
+    expect(supabase.from.mock.calls).toEqual([
+      ["user_global_preferences"],
+      ["user_ui_preferences"],
+    ]);
+    expect(legacy.eq.mock.calls).toEqual([
+      ["user_id", userId],
+      ["preference_key", "personal_appearance"],
+    ]);
+    expect(legacy.order.mock.calls).toEqual([
+      ["updated_at", { ascending: false }],
+      ["company_id", { ascending: true }],
+    ]);
+    expect(legacy.limit).toHaveBeenCalledWith(1);
+  });
   it("loads only the authenticated user's account-wide row", async () => {
     const query = makeQuery({
       data: {
@@ -76,6 +107,7 @@ describe("personal appearance server functions", () => {
       },
     });
     expect(supabase.from).toHaveBeenCalledWith("user_global_preferences");
+    expect(supabase.from).toHaveBeenCalledTimes(1);
     expect(query.eq).toHaveBeenCalledWith("user_id", userId);
     expect(query.eq).toHaveBeenCalledWith("preference_key", "personal_appearance");
   });

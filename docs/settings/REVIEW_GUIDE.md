@@ -111,3 +111,8 @@ The `e2e/settings-navigation.spec.ts` cases require an authenticated test accoun
 ## Known review boundaries
 
 The registry and coverage matrix enumerate every typed config field and every registered application module. They do not claim every module-specific setting has been consolidated into this workspace. See `coverage-matrix.md` and `defect-register.md` for unresolved implementation and test evidence.
+
+### Report basis and personal appearance
+
+- In a test organisation, open Settings → Reports → Default reporting basis. In Accounting choose Cash and save. Open profit and loss, then balance sheet, with no saved view or URL overrides. Both should open on cash basis. Select Accrual inside one report and confirm that its explicit choice takes precedence.
+- For an existing test user with organisation-scoped appearance preferences and no account-wide preference, open Profile → Appearance. Expect the most recently saved accessible palette. Save a different palette, switch organisations, and sign in on a second device with the same account. Expect the newly saved account-wide palette. A separate user should see their own preference.

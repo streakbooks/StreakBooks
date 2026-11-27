@@ -18,8 +18,23 @@ export const getPersonalAppearancePreferences = createServerFn({ method: "GET" }
       .eq("preference_key" as never, PERSONAL_APPEARANCE_KEY as never)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    const value = (row as { preference_value?: unknown } | null)?.preference_value;
-    return normalizePersonalAppearance(value);
+    if (row)
+      return normalizePersonalAppearance((row as { preference_value: unknown }).preference_value);
+    // Before account-wide preferences, users could choose a different palette in each company.
+    // RLS limits this fallback to their own preferences in companies they can still access.
+    const legacy = await context.supabase
+      .from("user_ui_preferences" as never)
+      .select("preference_value" as never)
+      .eq("user_id" as never, context.userId as never)
+      .eq("preference_key" as never, PERSONAL_APPEARANCE_KEY as never)
+      .order("updated_at" as never, { ascending: false })
+      .order("company_id" as never, { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (legacy.error) throw new Error(legacy.error.message);
+    return normalizePersonalAppearance(
+      (legacy.data as { preference_value: unknown } | null)?.preference_value,
+    );
   });
 
 export const savePersonalAppearancePreferences = createServerFn({ method: "POST" })

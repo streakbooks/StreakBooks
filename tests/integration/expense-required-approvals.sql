@@ -73,3 +73,64 @@ BEGIN
 END $$;
 
 SELECT 'PASS: required approval count gates claims until distinct approvers meet the setting' AS result;
+
+SELECT set_config('request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-000000000001"}', false);
+UPDATE public.expense_claims
+SET approval_status = 'submitted', submitted_at = clock_timestamp() - interval '6 days'
+WHERE id = '40000000-0000-4000-8000-000000000021';
+SELECT public.save_expense_approval_escalation_days(
+  '10000000-0000-4000-8000-000000000011', 5
+);
+DO $$
+DECLARE
+  _list jsonb;
+BEGIN
+  _list := public.list_expense_approval_escalations(
+    '10000000-0000-4000-8000-000000000011'
+  );
+  IF jsonb_array_length(_list->'claims') <> 1
+     OR (_list->>'escalation_days')::integer <> 5 THEN
+    RAISE EXCEPTION 'TEST: overdue claim did not follow the five-day escalation setting';
+  END IF;
+END $$;
+
+SELECT public.save_expense_approval_escalation_days(
+  '10000000-0000-4000-8000-000000000011', 7
+);
+DO $$
+DECLARE
+  _list jsonb;
+BEGIN
+  _list := public.list_expense_approval_escalations(
+    '10000000-0000-4000-8000-000000000011'
+  );
+  IF jsonb_array_length(_list->'claims') <> 0
+     OR (_list->>'escalation_days')::integer <> 7 THEN
+    RAISE EXCEPTION 'TEST: changing the escalation window did not update the overdue queue';
+  END IF;
+END $$;
+
+SELECT public.save_expense_approval_escalation_days(
+  '10000000-0000-4000-8000-000000000011', 0
+);
+DO $$
+DECLARE
+  _list jsonb;
+BEGIN
+  _list := public.list_expense_approval_escalations(
+    '10000000-0000-4000-8000-000000000011'
+  );
+  IF jsonb_array_length(_list->'claims') <> 0
+     OR (_list->>'escalation_days')::integer <> 0
+     OR NOT EXISTS (
+       SELECT 1 FROM public.audit_events
+       WHERE company_id = '10000000-0000-4000-8000-000000000011'
+         AND action = 'settings.expense_management'
+         AND details->'after'->>'approval_escalation_days' = '0'
+     ) THEN
+    RAISE EXCEPTION 'TEST: zero-day setting did not disable or audit escalation';
+  END IF;
+END $$;
+
+SELECT 'PASS: expense escalation setting controls overdue queue and audited disable state' AS result;

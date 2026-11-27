@@ -31,6 +31,13 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Focused tests passed (3 files / 30 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed with the two-approver regression. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
 - Expense Management remains partial because receipt/spending thresholds, escalation, advances, petty cash and rebilling still need evidence.
 
+## 2026-11-27 Expense approval escalation window
+
+- Added isolated evidence around the production escalation settings writer and queue reader. A submitted claim older than the saved five-day threshold appears in the queue, changing the threshold to seven days removes it, and zero disables the queue; each save is covered by the existing same-transaction field-level settings audit.
+- Added the setting as a separately registered capability and updated the coverage matrix. The regression runs after the existing expense schema fixture and uses a test-only delegation stub; hosted schema and data are not touched.
+- Focused tests passed (4 files / 33 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed with the threshold and disabled-queue assertions. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
+- Expense Management remains partial because receipt/spending thresholds, advances, petty cash and rebilling still need field-level consumer evidence.
+
 - [x] Phase 0 — audit current routes, UI, persistence, consumers, permissions, tests and module registry (`audit.md`). No feature code changed in this phase.
 - [x] Phase 1 — official public benchmark, clean-room IA, decision and originality record (`benchmark.md`, `ia-design.md`, `docs/decisions/011-settings-information-architecture.md`, `docs/compliance/originality-log.md`).
 - [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. Evidence-backed capabilities are registered individually; remaining typed fields stay partial and are read-only.

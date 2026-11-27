@@ -4,6 +4,9 @@ INSERT INTO auth.users(id) VALUES
   ('00000000-0000-4000-8000-000000000003')
 ON CONFLICT (id) DO NOTHING;
 
+CREATE OR REPLACE FUNCTION private.expense_user_has_active_delegation(uuid, uuid)
+RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
+
 ALTER TABLE public.expense_management_settings
   ADD COLUMN version integer NOT NULL DEFAULT 0,
   ADD COLUMN created_by uuid REFERENCES auth.users(id),
@@ -13,7 +16,8 @@ ALTER TABLE public.expense_management_settings
 ALTER TABLE public.expense_claims
   ADD COLUMN claimant_user_id uuid REFERENCES auth.users(id),
   ADD COLUMN approved_at timestamptz,
-  ADD COLUMN approved_by uuid REFERENCES auth.users(id);
+  ADD COLUMN approved_by uuid REFERENCES auth.users(id),
+  ADD COLUMN submitted_at timestamptz;
 
 CREATE TABLE public.expense_claim_approvals (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

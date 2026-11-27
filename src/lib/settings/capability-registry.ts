@@ -115,6 +115,24 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "tests/integration/expense-required-approvals.sql and tests/integration/expense-settings-audit.sql",
   },
   {
+    key: "expense-management.approval_escalation_days",
+    label: "Expense approval escalation window",
+    moduleId: "expense-management",
+    route: "/expense-management/approvals",
+    scope: "company",
+    defaultValue: "5",
+    validation: "Settings RPC accepts 0–90 days; zero disables escalation",
+    permission:
+      "expenses.manage_policies or expenses.admin to configure; expenses.approve or expenses.admin to review",
+    entitlement: null,
+    persistence:
+      "expense_management_settings.approval_escalation_days through save_expense_approval_escalation_days",
+    audit: "audit_events records before/after expense settings in the same transaction",
+    consumer:
+      "Overdue submitted and in-review claims enter the escalation queue at the configured age; zero returns an empty queue",
+    test: "tests/integration/expense-required-approvals.sql and tests/integration/expense-settings-audit.sql",
+  },
+  {
     key: "documents.number_sequences",
     label: "Sales and purchase document number sequences",
     moduleId: "settings",
@@ -708,9 +726,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/expense-management/settings",
     missingEvidence: [
-      "consumer tests and audit coverage for receipt/spending thresholds, escalation policy, advances, petty-cash and rebilling fields",
+      "consumer tests and audit coverage for receipt/spending thresholds, advances, petty-cash and rebilling fields",
     ],
-    note: "The employee payable account, default claim currency, default distance unit, self-approval guard and required approval count have field-level evidence. Other typed expense policies, including thresholds, escalation, advances, petty-cash and rebilling, remain partial.",
+    note: "The employee payable account, default claim currency, default distance unit, self-approval guard, required approval count and escalation window have field-level evidence. Other typed expense policies, including thresholds, advances, petty-cash and rebilling, remain partial.",
   },
   {
     key: "banking.typed_configuration",

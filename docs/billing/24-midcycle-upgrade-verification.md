@@ -1,67 +1,240 @@
 # Mid-cycle plan upgrade — verification evidence (PR #98)
 
-**Status:** Sandbox / automated verification in progress. **Not production-ready** until every critical scenario below is Pass.
+**Head commit:** `3832bade` (and follow-ups on `feature/qb-midcycle-plan-upgrade`)  
+**Status:** **Not production-ready.** Automated sandbox + SQL passed; **authenticated staging workflows A/B await your manual runs.**  
+**Rules:** Test-mode only (`sk_test_`, `rzp_test_`). Never set `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`. Do not merge or deploy production from this evidence alone.
 
-**Rules:** Test-mode provider keys only (`sk_test_`, `rzp_test_`). `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS` must remain unset. Do not merge on unit tests alone.
+---
 
-## How to re-run
+## CI (GitHub Actions) — run `46041249866` @ `3832bade`
 
-```bash
-# Connectivity (no mutations beyond GET)
-npm run verify:razorpay
+| Job | Result | Notes |
+| --- | --- | --- |
+| `browser-fixtures` | **Pass** | Checkout hand-off fixed |
+| `postgres` (platform/POS/banking/workflows/firm-access) | **Pass** | All five |
+| `validate` | **Fail** | `tsc` OK; `eslint .` → **2911** Prettier errors — **baseline repo debt also on `main`**, not introduced by PR-touched files |
+| Cloudflare Workers Builds | **Fail** | External Workers preview build; not StreakBooks app billing gates |
+| Supabase Preview | Skipped | No migration preview for this PR |
 
-# Razorpay Test Mode plan-change suite
-npm run test:billing:sandbox:razorpay
+**Lint policy:** PR-touched files stay Prettier-clean. Do **not** mass-format the repo on this branch.
 
-# Stripe Test Clock full journey (proration, zero-charge, renewal, failure recovery)
-npm run test:billing:sandbox:stripe
+---
 
-# Isolated Postgres billing (pending_payment does not grant plan; webhook dedupe; reverse)
-npm run test:billing:postgres
+## Vercel Preview deployments
 
-# Authenticated app UI (requires dedicated test user — never commit credentials)
-E2E_BILLING_ENABLED=true E2E_BILLING_MUTATIONS=true \
-  E2E_EMAIL=… E2E_PASSWORD=… E2E_BASE_URL=http://localhost:8080 \
-  npm run test:billing:live
+| Project (GitHub check) | State | URL / inspect |
+| --- | --- | --- |
+| **Vercel – streakbooks** (`paxaris/streakbooks`) | **Ready** | Alias: https://streakbooks-git-feature-qb-midcycle-plan-upgrade-paxaris.vercel.app · Deployment: https://streakbooks-lxx3kecak-paxaris.vercel.app · Inspect: https://vercel.com/paxaris/streakbooks/7cq4uH2XNs1uKhJU278tNxHCUr53 |
+| **Vercel – streak-books** | **Ready** (GitHub check) | Inspect: https://vercel.com/streak-books/streak-books/EEqNzu6S6EYEzYidTEnLvv2V72zE |
+
+**Agent verification notes**
+
+- CLI `vercel inspect` on the paxaris deployment: **status Ready**, preview target, git alias present.
+- Unauthenticated `curl` of the alias redirects to **Vercel SSO login** (Deployment Protection). Browser smoke of `/auth` after SSO is **your** step.
+- The agent Vercel MCP token cannot open the paxaris project; GitHub + CLI remain the authority for Ready status.
+
+---
+
+## Scenario matrix (automated + staging)
+
+| # | Scenario | Result | Notes |
+| --- | --- | --- | --- |
+| R1 | Razorpay test credentials | **Pass** | `npm run verify:razorpay` |
+| R2 | Card / UPI / e-mandate identification | **Pass** | `RAZORPAY_SANDBOX=1` |
+| R3 | Immediate card upgrade (charged amount) | **Awaiting Workflow A** | Pre-auth API subs cannot prove charge |
+| R4 | UPI / e-mandate unsupported | **Pass** | App fail-closed |
+| R5 | Failure / delayed / duplicate webhook | **Pass (SQL/sig)** | billing-04 + HMAC |
+| R6 | Razorpay amount, tax, renewal | **Awaiting Workflow A** | Capture sheet below |
+| R7 | Entitlements after provider confirm | **Pass (SQL)** | `pending_payment` ≠ plan change |
+| S1 | Authenticated Settings UI upgrade | **Awaiting Workflow B** | Needs `E2E_*` |
+| S2–S5 | Stripe Test Clock journeys | **Pass** | `test:billing:sandbox:stripe` 6/1 |
+| S6 | 3DS recovery | **Awaiting Workflow B** | Use SCA test card |
+| D1–D3 | Lock / idempotency / rollback | **Pass** | SQL + stable Idempotency-Key |
+| C1 | PR-touched lint | **Pass** | Full-repo lint still fails on `main` debt |
+
+---
+
+## Workflow A — Razorpay authenticated card upgrade (India)
+
+### Prerequisites (you configure; do not paste secrets into chat)
+
+1. Razorpay Dashboard → **Test Mode** (toggle top-left).
+2. Local/staging env already has `RAZORPAY_KEY_ID=rzp_test_…`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_MODE=test`.
+3. Webhook URL points at the **preview or tunnel** hosting this branch:  
+   `POST https://<APP_ORIGIN>/api/billing/razorpay`  
+   Events: `subscription.authenticated`, `subscription.activated`, `subscription.charged`, `subscription.updated`, `subscription.pending`, `subscription.halted` (see `docs/billing/22-razorpay-test-mode-setup.md`).
+4. App under test: prefer **paxaris preview** (after Vercel SSO) or `http://localhost:8080` on this branch.
+
+### Steps
+
+1. **Create Indian staging organisation**
+   - Sign in → **Onboarding / Create organisation**.
+   - Country: **India (IN)**.
+   - Name e.g. `SB Razorpay Card Upgrade QA`.
+   - Open **Settings → Subscription**.
+
+2. **Subscribe Standard Monthly via Card**
+   - Interval: **Monthly**.
+   - Plan: **Standard** → **Subscribe**.
+   - Payment method: **Card** (Razorpay — not UPI / e-mandate).
+   - Complete Razorpay hosted Checkout with a **Test Mode card** from Razorpay docs (Dashboard → Test Mode → payment methods).  
+     Do **not** use a live card.
+   - Return to StreakBooks; wait until UI shows an **active** subscription (webhook-driven).
+
+3. **Confirm provider activation**
+   - Razorpay Dashboard → **Test Mode** → **Subscriptions** → open the new subscription.
+   - Confirm status is **authenticated** and/or **active** (capture which).
+   - Copy **Subscription ID** (`sub_…`).
+
+4. **Upgrade Standard → Pro (immediate)**
+   - Settings → Subscription → **Pro** → **Switch plan**.
+   - On **Review your plan change**, capture every field in the sheet below (especially Due today / estimate wording / Next renewal / Provider / Payment method).
+   - Click **Change plan** (must **not** say Continue to Stripe).
+   - Wait for success / “updating” banner; refresh until plan shows **Pro**.
+
+5. **Verify webhooks + DB**
+   - Razorpay Dashboard → **Webhooks** → deliveries for `subscription.updated` (and `subscription.charged` if an add-on charge occurred). Note HTTP 2xx.
+   - Supabase project `qugoaaizclvkzesptovm` → SQL (service role / SQL editor):
+
+```sql
+select company_id, provider, provider_subscription_id, plan_code, status,
+       currency, unit_amount_minor, current_period_end, scheduled_plan_code
+from public.company_subscriptions
+where provider_subscription_id = '<sub_…>';
 ```
 
-## Scenario matrix
+   - Expect: `provider = razorpay`, `plan_code = pro` (or your Pro code) **only after** webhook success; currency `INR`.
 
-| # | Scenario | Automation | Result | Notes |
-| --- | --- | --- | --- | --- |
-| R1 | Razorpay test credentials configured securely | `verify:razorpay` | **Pass** | `.env.local` gitignored; `rzp_test_` + `RAZORPAY_MODE=test` |
-| R2 | Card mandate identification from notes | `RAZORPAY_SANDBOX=1` | **Pass** | `pay_method=card\|upi\|emandate` on created subs |
-| R3 | Immediate mid-cycle upgrade (card, charged amount) | Sandbox API | **Partial** | `RAZORPAY_SANDBOX=1`: card sub created + inspect OK; PATCH `now` on pre-auth `created` mandate rejected by Razorpay (expected). Charge/tax/renewal need Dashboard-authenticated card mandate |
-| R4 | UPI / e-mandate unsupported | App + sandbox | **Pass** | `razorpaySupportsImmediatePlanChange` false; UI Got it path |
-| R5 | Payment failure / delayed / duplicate webhook | SQL + signatures | **Pass (SQL/sig)** | `billing_webhook_receive` dedupe; Razorpay HMAC redelivery valid; delayed apply covered in billing-04 |
-| R6 | Charged amount, tax, renewal date (Razorpay) | Manual Dashboard | **Not verified** | Blocked until authenticated card mandate exists in Test Mode |
-| R7 | Entitlements only after provider confirmation | SQL billing-04 | **Pass** | `pending_payment` leaves `plan_code` unchanged until provider event |
-| S1 | Authenticated org upgrade via app UI | Playwright live | **Blocked** | `E2E_EMAIL` / `E2E_PASSWORD` not present in this environment |
-| S2 | Monthly + annual upgrades | Stripe Test Clock | **Pass** | `npm run test:billing:sandbox:stripe` — 6 passed / 1 skipped (2026-11-27) |
-| S3 | Zero-charge upgrade (already on price) | Stripe Test Clock | **Pass** | `alreadyOnPrice` + `amountDueMinor=0` after same-price confirm |
-| S4 | Failed payment + recovery | Stripe Test Clock | **Pass** | Fail token + Visa restore path in full clock journey |
-| S5 | Proration + invoice + renewal preservation | Stripe Test Clock | **Pass** | Shared `prorationDateUnix`; same-interval `current_period_end` preserved; invoice pay path |
-| S6 | 3DS authentication recovery | Stripe | **Not verified** | Requires PaymentIntent that demands SCA; not covered by Visa `tok_visa` clock path |
-| D1 | Provider lock + `company_subscriptions` consistency | SQL + code review | **Pass (SQL)** | Prepare uses locked provider; pending never mutates plan |
-| D2 | Idempotency / concurrent confirm | Stripe keys | **Pass** | Key stable per company + full price id + kind + 60s bucket; retry covered in clock journey |
-| D3 | Rollback after provider failure | SQL billing-04 | **Pass** | Cancel confirm failure leaves subscription running |
-| C1 | PR-touched ESLint clean | eslint path list | **Pass** | No mass-format; repo-wide Prettier debt remains on `main` |
+### Capture sheet A (paste into PR comment when done)
 
-## Failed / blocked scenario analysis
+| Field | Value |
+| --- | --- |
+| App URL used | |
+| Company name / id | |
+| Razorpay subscription id | `sub_` |
+| Status after Checkout | authenticated / active |
+| Webhook events seen | |
+| Preview: remaining days | |
+| Preview: due today (UI) | |
+| Preview: tax (UI) | |
+| Preview: next renewal (UI) | |
+| Provider adjustment / charge (Dashboard) | |
+| Provider tax (if shown) | |
+| `company_subscriptions.plan_code` after confirm | |
+| `current_period_end` | |
+| Entitlements match Pro? (users limit etc.) | yes / no |
+| Any Stripe CTA shown? | must be **no** |
+| Pass / Fail | |
 
-1. **Razorpay immediate charge evidence (R3/R6):** Creating a subscription via API leaves status `created`. Razorpay rejects in-place plan updates until the mandate is authenticated in Checkout. Next step: complete one Test Mode **card** checkout for an India org, then re-run upgrade against that `sub_*` and capture invoice/adjustment amounts from the Dashboard or `subscription.charged` webhook.
-2. **Authenticated Stripe UI (S1):** No `E2E_*` credentials in the agent environment. Provide a dedicated Stripe-test org user (non-production) to run `npm run test:billing:live`.
-3. **3DS (S6):** Test Clock Visa path does not force SCA. Use Stripe test cards that require authentication on a hosted invoice payment URL when UI credentials are available.
-4. **CI validate lint:** Unrelated Prettier debt (~3k files on `main`) still fails `eslint .`. Tracked separately; not introduced by PR-touched files.
+---
+
+## Workflow B — Stripe authenticated upgrade (UK)
+
+### Prerequisites
+
+1. Stripe Dashboard → **Test mode**.
+2. Env: `STRIPE_SECRET_KEY=sk_test_…`, webhook secret for `/api/billing/stripe` (or existing staging wiring).
+3. Dedicated **UK** staging user + organisation (country **GB**).  
+4. Put credentials **only** in local env (never commit, never paste into chat):
+
+```bash
+# .env.local (gitignored)
+E2E_BILLING_ENABLED=true
+E2E_BILLING_MUTATIONS=true
+E2E_BASE_URL=https://streakbooks-git-feature-qb-midcycle-plan-upgrade-paxaris.vercel.app
+# or http://localhost:8080
+E2E_EMAIL=…
+E2E_PASSWORD=…
+E2E_BILLING_COUNTRY=GB
+```
+
+5. Optional automation after manual subscribe:
+
+```bash
+npm run test:billing:live
+```
+
+### Steps
+
+1. **Create / open UK organisation**
+   - Country **United Kingdom**.
+   - Settings → Subscription — methods must be Stripe card only (no UPI).
+
+2. **Subscribe Standard Monthly**
+   - Subscribe → Stripe Checkout.
+   - Card: `4242 4242 4242 4242`, any future expiry, any CVC, any postal code.
+   - Wait for active subscription (webhook / confirm return).
+
+3. **Standard → Pro monthly upgrade**
+   - Switch to **Pro** → review modal (**Confirm and pay** / Stripe path OK; never Razorpay).
+   - Capture due today, tax, next renewal, recurring price.
+   - Complete payment if hosted invoice / 3DS appears.
+   - Confirm UI plan = Pro; Stripe subscription item price = Pro monthly.
+
+4. **Annual upgrade / interval**
+   - Toggle **Yearly** → Switch plan on a higher annual price (or Pro yearly).
+   - Capture preview; confirm; verify invoice + period behaviour (anchor rules).
+
+5. **Payment failure**
+   - Stripe Customer → default payment method → use decline test card `4000 0000 0000 0341` (or attach via Customer Portal **Manage billing** if exposed).
+   - Trigger renewal/upgrade that charges; expect past_due / recovery UI; restore `4242…`.
+
+6. **3DS (where supported)**
+   - Use Stripe test card that requires authentication, e.g. `4000 0025 0000 3155` (confirm against current Stripe test-card docs).
+   - Complete 3DS challenge on hosted invoice/Checkout.
+   - Entitlements must flip **only after** payment succeeds (not on redirect alone).
+
+### Capture sheet B
+
+| Field | Value |
+| --- | --- |
+| App URL | |
+| Company / user (email only) | |
+| Stripe customer id | `cus_` |
+| Stripe subscription id | `sub_` |
+| After monthly upgrade: invoice id / amount_due / tax | |
+| Next renewal (`current_period_end`) | |
+| Annual change: invoice / period | |
+| Failure card result | |
+| 3DS card + outcome | |
+| DB `plan_code` / `provider=stripe` | |
+| `npm run test:billing:live` result | pass / skip / fail |
+| Pass / Fail | |
+
+---
+
+## How to re-run automation (no live keys)
+
+```bash
+npm run verify:razorpay
+npm run test:billing:sandbox:razorpay
+npm run test:billing:sandbox:stripe
+npm run test:billing:postgres
+# After you set E2E_* locally:
+npm run test:billing:live
+```
+
+---
+
+## What I need from you (exact)
+
+1. Complete **Workflow A** capture sheet (India + Razorpay Test Mode **Card**).
+2. Complete **Workflow B** capture sheet (UK + Stripe Test Mode).
+3. Confirm Vercel SSO access to  
+   https://streakbooks-git-feature-qb-midcycle-plan-upgrade-paxaris.vercel.app  
+   and that Settings → Subscription loads.
+4. Optionally paste **redacted** capture sheets into PR #98 (subscription ids OK; **no** API secrets / passwords).
+
+---
 
 ## Production readiness checklist
 
-- [ ] All R* and S* critical rows are Pass (not Partial / Blocked)
-- [ ] Authenticated India card upgrade shows due-today + tax + renewal in UI matching provider
-- [ ] Authenticated Stripe monthly/annual upgrade via Settings → Subscription
-- [ ] Failed payment keeps prior plan; recovery restores access
-- [ ] Duplicate webhook does not double-apply entitlements
-- [ ] No live keys (`sk_live_` / `rzp_live_`) used in verification
-- [ ] Ops sign-off recorded in PR before merge authorisation
+- [x] Test-mode keys only; no production deploy; no merge
+- [x] Automated Stripe Test Clock + Razorpay sandbox connectivity + SQL pending/dedupe
+- [x] GitHub `browser-fixtures` + postgres green; validate fail classified as baseline lint debt
+- [x] Vercel preview **Ready** for paxaris `streakbooks` (SSO-protected)
+- [ ] Workflow A fully Pass (authenticated Razorpay card upgrade + webhook + DB)
+- [ ] Workflow B fully Pass (UI monthly + annual + failure + 3DS where supported)
+- [ ] Ops sign-off on this document
 
-**Verdict as of this document:** **Not production ready** — Razorpay charged-amount path and authenticated Stripe UI remain open.
+**Verdict:** **Not production ready** until Workflows A and B are recorded as Pass.

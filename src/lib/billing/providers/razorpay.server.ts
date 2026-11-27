@@ -132,22 +132,77 @@ export async function razorpayCancel(
   }
 }
 
-/** Razorpay cannot prorate and cannot update UPI or e-mandate subscriptions. */
+export type RazorpaySubscriptionInspect = {
+  id: string;
+  status: string;
+  plan_id: string | null;
+  current_start: number | null;
+  current_end: number | null;
+  charge_at: number | null;
+  notes: Record<string, unknown>;
+  payment_method: string | null;
+};
+
+/** Read subscription cycle + mandate hints before attempting a plan change. */
+export async function razorpayInspectSubscription(
+  client: RazorpayClient,
+  subscriptionId: string,
+): Promise<RazorpaySubscriptionInspect> {
+  const raw = await client.request(
+    "GET",
+    `subscriptions/${encodeURIComponent(subscriptionId)}`,
+  );
+  const notesRaw = raw["notes"];
+  const notes =
+    notesRaw && typeof notesRaw === "object" && !Array.isArray(notesRaw)
+      ? (notesRaw as Record<string, unknown>)
+      : {};
+  return {
+    id: String(raw["id"] ?? subscriptionId),
+    status: String(raw["status"] ?? ""),
+    plan_id: raw["plan_id"] == null ? null : String(raw["plan_id"]),
+    current_start:
+      typeof raw["current_start"] === "number" ? raw["current_start"] : null,
+    current_end: typeof raw["current_end"] === "number" ? raw["current_end"] : null,
+    charge_at: typeof raw["charge_at"] === "number" ? raw["charge_at"] : null,
+    notes,
+    payment_method: raw["payment_method"] == null ? null : String(raw["payment_method"]),
+  };
+}
+
+/**
+ * Update plan when the mandate allows it.
+ * Card: `now` for immediate upgrades (Razorpay charges/refunds the difference).
+ * UPI / e-mandate: Razorpay rejects — surface a clear migration message.
+ */
 export async function razorpayChangePlan(
   client: RazorpayClient,
   subscriptionId: string,
   planId: string,
-): Promise<void> {
+  scheduleChangeAt: "now" | "cycle_end" = "cycle_end",
+): Promise<Record<string, unknown>> {
   try {
-    await client.request("PATCH", `subscriptions/${encodeURIComponent(subscriptionId)}`, {
-      plan_id: planId,
-      schedule_change_at: "cycle_end",
-      customer_notify: true,
-    });
+    return await client.request(
+      "PATCH",
+      `subscriptions/${encodeURIComponent(subscriptionId)}`,
+      {
+        plan_id: planId,
+        schedule_change_at: scheduleChangeAt,
+        customer_notify: true,
+      },
+    );
   } catch (error) {
     if (error instanceof RazorpayError && /(UPI|emandate|e-mandate)/i.test(error.message)) {
       throw new Error(
         "UPI and e-mandate subscriptions cannot change plan. Cancel this subscription and subscribe to the new plan after it ends.",
+      );
+    }
+    if (
+      error instanceof RazorpayError &&
+      /offer|domestic card|only.*update.*offer/i.test(error.message)
+    ) {
+      throw new Error(
+        "This Razorpay card mandate only allows offer updates mid-cycle. Schedule the plan change for renewal, or cancel and subscribe again.",
       );
     }
     throw error;

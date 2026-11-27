@@ -24,13 +24,13 @@ describe("hybrid provider resolution", () => {
     expect(normaliseRoutedProviders([], "IN")).toEqual(["razorpay"]);
   });
 
-  it("hides Stripe card for India when only Razorpay is routed", () => {
+  it("offers Razorpay card + UPI + e-mandate for India when Razorpay is routed", () => {
     const methods = paymentMethodsForRoutedCountry(
       "IN",
       { stripe: true, razorpay: true },
       ["razorpay"],
     );
-    expect(methods.map((m) => m.id)).toEqual(["upi", "emandate"]);
+    expect(methods.map((m) => m.id)).toEqual(["card", "upi", "emandate"]);
     expect(methods.every((m) => m.provider === "razorpay")).toBe(true);
   });
 

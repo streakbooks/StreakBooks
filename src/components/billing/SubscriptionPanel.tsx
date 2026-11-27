@@ -455,7 +455,13 @@ export function SubscriptionPanel({
   const planChange = useMutation({
     mutationFn: (planCode: string) =>
       changePlan({
-        data: { companyId, planCode, interval, origin: window.location.origin },
+        data: {
+          companyId,
+          planCode,
+          interval,
+          origin: window.location.origin,
+          prorationDateUnix: switchPreview?.prorationDateUnix ?? null,
+        },
       }),
     onSuccess: (result) => {
       if (result.paymentActionUrl && result.provider === "stripe") {
@@ -738,109 +744,222 @@ export function SubscriptionPanel({
           if (!open && !busy) setTarget(null);
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           {target ? (
             <>
               <DialogHeader>
-                <DialogTitle>
-                  {switchCopy.titleVerb} to {target.name}
-                </DialogTitle>
+                <DialogTitle>Review your plan change</DialogTitle>
                 <DialogDescription>{switchCopy.description}</DialogDescription>
               </DialogHeader>
-              <dl className="space-y-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
-                <div className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">From</dt>
-                  <dd className="font-medium">
-                    {currentPlan?.name ?? data.subscription?.planName ?? "—"}
-                    {data.subscription?.interval
-                      ? ` · ${data.subscription.interval === "year" ? "Yearly" : "Monthly"}`
-                      : ""}
-                  </dd>
+              {previewLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  Calculating authoritative amounts…
                 </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">To</dt>
-                  <dd className="font-medium">
-                    {target.name} · {interval === "year" ? "Yearly" : "Monthly"}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">List price</dt>
-                  <dd className="font-medium">
-                    {switchPreview
-                      ? formatMinor(
-                          switchPreview.listAmountMinor,
-                          isBillingCurrency(switchPreview.currency)
-                            ? switchPreview.currency
-                            : dueCurrency,
-                        )
-                      : formatMinor(due, dueCurrency)}
-                  </dd>
-                </div>
-                {previewLoading ? (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                    Calculating prorated amount…
+              ) : null}
+              {previewError ? (
+                <p role="alert" className="text-sm text-destructive-ink">
+                  {previewError}
+                </p>
+              ) : null}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <dl className="space-y-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-muted-foreground">Current plan</dt>
+                    <dd className="text-right font-medium">
+                      {currentPlan?.name ?? data.subscription?.planName ?? "—"}
+                      {data.subscription?.interval
+                        ? ` · ${data.subscription.interval === "year" ? "Yearly" : "Monthly"}`
+                        : ""}
+                    </dd>
                   </div>
-                ) : null}
-                {previewError ? (
-                  <p role="alert" className="text-destructive-ink">
-                    {previewError}
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-muted-foreground">New plan</dt>
+                    <dd className="text-right font-medium">
+                      {target.name} · {interval === "year" ? "Yearly" : "Monthly"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-muted-foreground">Current price</dt>
+                    <dd className="font-medium">
+                      {formatMinor(
+                        switchPreview?.currentListAmountMinor ?? currentMonthly,
+                        dueCurrency,
+                      )}
+                      /mo
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-muted-foreground">New price</dt>
+                    <dd className="font-medium">
+                      {formatMinor(
+                        switchPreview?.newRecurringMinor ??
+                          switchPreview?.listAmountMinor ??
+                          due,
+                        dueCurrency,
+                      )}
+                      /{interval === "year" ? "yr" : "mo"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-muted-foreground">Provider</dt>
+                    <dd className="font-medium capitalize">
+                      {lockedProvider ?? switchPreview?.provider ?? "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-muted-foreground">Payment method</dt>
+                    <dd className="text-right font-medium">
+                      {switchPreview?.paymentMethodLabel ?? "—"}
+                    </dd>
+                  </div>
+                </dl>
+                <div className="space-y-3 rounded-lg border px-4 py-3 text-sm shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Subscription summary
                   </p>
-                ) : null}
-                {switchPreview && !previewLoading ? (
-                  <>
-                    {switchPreview.lines.slice(0, 4).map((line) => (
-                      <div
-                        key={`${line.description}-${line.amountMinor}`}
-                        className="flex justify-between gap-4"
-                      >
-                        <dt className="text-muted-foreground">{line.description}</dt>
-                        <dd>
-                          {formatMinor(
-                            line.amountMinor,
-                            isBillingCurrency(switchPreview.currency)
-                              ? switchPreview.currency
-                              : dueCurrency,
-                          )}
-                        </dd>
-                      </div>
-                    ))}
-                    <div className="flex justify-between gap-4 border-t pt-2 font-medium">
-                      <dt>Due now</dt>
-                      <dd>
-                        {switchPreview.paymentRequired
-                          ? formatMinor(
-                              switchPreview.amountDueMinor,
+                  {switchPreview && !previewLoading ? (
+                    <dl className="space-y-2">
+                      {switchPreview.remainingDays != null ? (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted-foreground">Remaining period</dt>
+                          <dd className="font-medium">{switchPreview.remainingDays} days</dd>
+                        </div>
+                      ) : null}
+                      {switchPreview.creditMinor > 0 ? (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted-foreground">Unused credit</dt>
+                          <dd>
+                            −
+                            {formatMinor(
+                              switchPreview.creditMinor,
                               isBillingCurrency(switchPreview.currency)
                                 ? switchPreview.currency
                                 : dueCurrency,
-                            )
-                          : `${formatMinor(0, dueCurrency)} — no charge today`}
-                      </dd>
+                            )}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {switchPreview.chargeMinor > 0 ? (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted-foreground">Prorated upgrade</dt>
+                          <dd>
+                            {formatMinor(
+                              switchPreview.chargeMinor,
+                              isBillingCurrency(switchPreview.currency)
+                                ? switchPreview.currency
+                                : dueCurrency,
+                            )}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {switchPreview.taxMinor > 0 ? (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted-foreground">Tax</dt>
+                          <dd>
+                            {formatMinor(
+                              switchPreview.taxMinor,
+                              isBillingCurrency(switchPreview.currency)
+                                ? switchPreview.currency
+                                : dueCurrency,
+                            )}
+                          </dd>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted-foreground">Tax</dt>
+                          <dd className="text-muted-foreground">As calculated by provider</dd>
+                        </div>
+                      )}
+                      <div className="flex justify-between gap-3 border-t pt-2 font-semibold">
+                        <dt>Due today</dt>
+                        <dd>
+                          {switchPreview.paymentRequired
+                            ? formatMinor(
+                                switchPreview.totalDueMinor || switchPreview.amountDueMinor,
+                                isBillingCurrency(switchPreview.currency)
+                                  ? switchPreview.currency
+                                  : dueCurrency,
+                              )
+                            : `${formatMinor(0, dueCurrency)} — no charge today`}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Next renewal</dt>
+                        <dd className="font-medium">
+                          {switchPreview.nextRenewalAt
+                            ? new Date(switchPreview.nextRenewalAt).toLocaleDateString()
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Then recurring</dt>
+                        <dd className="font-medium">
+                          {formatMinor(switchPreview.newRecurringMinor, dueCurrency)}/
+                          {interval === "year" ? "yr" : "mo"}
+                        </dd>
+                      </div>
+                    </dl>
+                  ) : (
+                    <p className="text-muted-foreground">Waiting for server preview…</p>
+                  )}
+                  {switchPreview && !previewLoading ? (
+                    <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-950 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-100">
+                      <p className="font-medium">What to expect</p>
+                      <ul className="mt-1 list-disc space-y-1 pl-4">
+                        {switchPreview.changeSupported && switchPreview.kind === "upgrade" ? (
+                          <li>
+                            {switchPreview.paymentRequired
+                              ? `We'll charge a prorated amount today of ${formatMinor(
+                                  switchPreview.totalDueMinor || switchPreview.amountDueMinor,
+                                  isBillingCurrency(switchPreview.currency)
+                                    ? switchPreview.currency
+                                    : dueCurrency,
+                                )}${
+                                  switchPreview.taxMinor > 0
+                                    ? ` (includes ${formatMinor(
+                                        switchPreview.taxMinor,
+                                        isBillingCurrency(switchPreview.currency)
+                                          ? switchPreview.currency
+                                          : dueCurrency,
+                                      )} tax when reported)`
+                                    : ""
+                                } for the upgrade.`
+                              : "No charge today — zero-amount upgrade or scheduled change."}
+                          </li>
+                        ) : null}
+                        {switchPreview.appliesMode === "period_end" ? (
+                          <li>
+                            You keep your current plan until{" "}
+                            {switchPreview.effectiveAt
+                              ? new Date(switchPreview.effectiveAt).toLocaleDateString()
+                              : "renewal"}
+                            . The new price starts then.
+                          </li>
+                        ) : null}
+                        {switchPreview.appliesMode === "immediate" ? (
+                          <li>
+                            New entitlements activate only after{" "}
+                            {lockedProvider === "stripe" ? "Stripe" : "Razorpay"} confirms the
+                            update
+                            {switchPreview.paymentRequired ? " and payment" : ""}.
+                          </li>
+                        ) : null}
+                        {switchPreview.nextRenewalAt ? (
+                          <li>
+                            Your next billing date stays{" "}
+                            {new Date(switchPreview.nextRenewalAt).toLocaleDateString()} (cycle
+                            not reset).
+                          </li>
+                        ) : null}
+                        {switchPreview.changeSupported === false ? (
+                          <li>{switchPreview.unsupportedReason}</li>
+                        ) : null}
+                      </ul>
                     </div>
-                  </>
-                ) : null}
-                <div className="flex justify-between gap-4 border-t pt-2">
-                  <dt className="text-muted-foreground">Payment now</dt>
-                  <dd className="font-medium">
-                    {switchPreview
-                      ? switchPreview.paymentRequired
-                        ? lockedProvider === "razorpay"
-                          ? "No charge today"
-                          : "Yes — open Stripe"
-                        : "No charge today"
-                      : switchCopy.paymentNow}
-                  </dd>
+                  ) : null}
                 </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">New plan starts</dt>
-                  <dd className="font-medium">
-                    {switchPreview?.effectiveAt
-                      ? new Date(switchPreview.effectiveAt).toLocaleDateString()
-                      : switchCopy.whenStarts}
-                  </dd>
-                </div>
-              </dl>
+              </div>
               <DialogFooter className="gap-2 sm:gap-0">
                 <Button
                   type="button"
@@ -857,15 +976,19 @@ export function SubscriptionPanel({
                 ) : (
                   <Button
                     type="button"
-                    disabled={busy || previewLoading || Boolean(previewError)}
+                    disabled={busy || previewLoading || Boolean(previewError) || !switchPreview}
                     onClick={() => planChange.mutate(target.code)}
                   >
                     {planChange.isPending
                       ? switchPreview?.paymentRequired && lockedProvider === "stripe"
                         ? "Opening Stripe…"
-                        : "Scheduling…"
-                      : switchPreview?.paymentRequired && lockedProvider === "stripe"
-                        ? "Continue to Stripe"
+                        : lockedProvider === "razorpay"
+                          ? "Updating with Razorpay…"
+                          : "Confirming…"
+                      : switchPreview?.kind === "upgrade"
+                        ? switchPreview.paymentRequired && lockedProvider === "stripe"
+                          ? "Confirm and pay"
+                          : "Change plan"
                         : switchCopy.button}
                   </Button>
                 )}

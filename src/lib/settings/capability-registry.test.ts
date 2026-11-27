@@ -119,6 +119,19 @@ describe("Settings capability coverage registry", () => {
     }
   });
 
+  it("records the audited legal-name field and document branding consumer", () => {
+    expect(
+      SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "company.legal_name"),
+    ).toMatchObject({
+      route: "/settings/organisation/overview",
+      permission: "company.settings.edit",
+      persistence: expect.stringContaining("companies.legal_name"),
+      audit: expect.stringContaining("before/after"),
+      consumer: expect.stringContaining("document branding"),
+      test: expect.stringContaining("documents-loader.test.ts"),
+    });
+  });
+
   it("records audited document numbering and allocation evidence", () => {
     expect(
       SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "documents.number_sequences"),

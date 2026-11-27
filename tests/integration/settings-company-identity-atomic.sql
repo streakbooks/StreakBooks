@@ -24,6 +24,7 @@ BEGIN
   -- One successful save updates both tables and records the same transaction's before/after.
   PERFORM public.save_company_identity_and_tax(c, expected, desired);
   IF (SELECT name FROM public.companies WHERE id=c) <> 'Updated Fixture'
+     OR (SELECT legal_name FROM public.companies WHERE id=c) <> 'Updated Legal Entity'
      OR (SELECT tax_regime FROM public.company_tax_settings WHERE company_id=c) <> 'gst'
      OR NOT (SELECT prices_include_tax FROM public.company_tax_settings WHERE company_id=c) THEN
     RAISE EXCEPTION 'Organisation identity and tax settings were not saved together';

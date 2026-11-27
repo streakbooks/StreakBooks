@@ -194,3 +194,8 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - Added field-level evidence for invoice, bill, quote and credit document sequences. Sequence edits use a validated compare-and-set RPC with same-transaction before/after audit; rewinds and stale writes are rejected. Allocation honors saved prefix/padding and advances the company-scoped counter atomically.
 - Added focused allocator wrapper tests and extended the isolated legacy Settings SQL regression to assert the emitted number and incremented counter. No schema or hosted database change was made; authenticated browser review and the wider Settings batches remain open.
+
+## 2026-11-27 Legal-name consumer evidence
+
+- Added a direct document-context regression showing the company legal name from organisation Settings is carried into customer-facing branding while the trading/display name remains separate. The existing identity SQL regression now explicitly asserts the saved legal-name column and already verifies the full before/after audit payload, permission checks and rollback behavior.
+- Registered `company.legal_name` as a complete field capability. Organisation identity overall remains partial because country, fiscal year, timezone and tax configuration still need broader server-side effect coverage.

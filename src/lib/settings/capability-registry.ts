@@ -61,6 +61,23 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "tests/integration/settings-company-identity-atomic.sql proves pre-posting update, journal currency consumption, posting locks and post-history rejection",
   },
   {
+    key: "company.legal_name",
+    label: "Organisation legal name",
+    moduleId: "settings",
+    route: "/settings/organisation/overview",
+    scope: "company",
+    defaultValue: "No separate legal name; organisation display name is used",
+    validation: "Company identity server validator trims and bounds legal name to 200 characters",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "companies.legal_name through save_company_identity_and_tax",
+    audit:
+      "audit_events stores exact before/after organisation identity values in the same transaction",
+    consumer:
+      "Customer-facing document branding shows the saved legal name when it differs from the display name",
+    test: "src/lib/documents/documents-loader.test.ts and tests/integration/settings-company-identity-atomic.sql",
+  },
+  {
     key: "company.locale",
     label: "Organisation document locale",
     moduleId: "settings",

@@ -22,7 +22,13 @@ function database(
           error: null,
           data:
             table === "companies"
-              ? { name: "Example Co", timezone: "UTC", locale, date_format: dateFormat }
+              ? {
+                  name: "Example Co",
+                  legal_name: "Example Company Limited",
+                  timezone: "UTC",
+                  locale,
+                  date_format: dateFormat,
+                }
               : table === "company_branding"
                 ? { payment_instructions: brandingInstructions }
                 : table === "company_workflow_settings" && selected === "sales_payment_instructions"
@@ -71,5 +77,12 @@ describe("loadCompanyDocContext Sales payment instructions", () => {
     );
     expect(ctx.locale).toBe("en-US");
     expect(ctx.dateFormat).toBe("MM/DD/YYYY");
+  });
+
+  it("uses a distinct saved legal name in customer-facing document branding", async () => {
+    const ctx = await loadCompanyDocContext(database(null, "") as never, companyId);
+
+    expect(ctx.branding.displayName).toBe("Example Co");
+    expect(ctx.branding.legalName).toBe("Example Company Limited");
   });
 });

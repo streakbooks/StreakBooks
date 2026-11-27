@@ -1,5 +1,6 @@
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
+import { assertCheckoutOrigin } from "@/lib/billing/checkout-origin";
 import { assertCheckoutRegion, resolveBillingRegion } from "@/lib/billing/region";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -355,35 +356,11 @@ function assertInterval(value: string): BillingInterval {
   return value;
 }
 
-const LOCAL_ORIGINS = [
-  "http://127.0.0.1:8080",
-  "http://localhost:8080",
-  "http://127.0.0.1:3000",
-  "http://localhost:3000",
-];
-
 function assertOrigin(origin: string): string {
-  let url: URL;
-  try {
-    url = new URL(origin);
-  } catch {
-    throw new Error("The return address is not valid.");
-  }
-  if (url.protocol !== "https:" && url.protocol !== "http:")
-    throw new Error("The return address is not valid.");
-  if (url.username || url.password) throw new Error("The return address is not valid.");
-  const allowed = new Set(LOCAL_ORIGINS);
-  for (const key of ["APP_ORIGIN", "SITE_URL", "VITE_SITE_URL"] as const) {
-    const value = process.env[key];
-    if (!value) continue;
-    try {
-      allowed.add(new URL(value).origin);
-    } catch {
-      // Ignore a malformed configured origin.
-    }
-  }
-  if (!allowed.has(url.origin)) throw new Error("The return address is not allowed.");
-  return url.origin;
+  return assertCheckoutOrigin(origin, {
+    host: getRequestHeader("x-forwarded-host") ?? getRequestHeader("host"),
+    proto: getRequestHeader("x-forwarded-proto") ?? "https",
+  });
 }
 
 async function assertOperator(supabase: Client): Promise<void> {
@@ -946,7 +923,22 @@ async function openPriceBookCheckout(input: {
         offerId: providerCouponId,
       }),
     );
-    session = { id: String(created["id"] ?? ""), url: String(created["short_url"] ?? "") };
+    const subscriptionId = String(created["id"] ?? "");
+    if (!subscriptionId) throw new Error("The payment provider did not start the checkout.");
+    const { razorpayHostedCheckoutUrl, razorpaySubscriptionReturnUrl } =
+      await import("@/lib/billing/razorpay-hosted-checkout.server");
+    session = {
+      id: subscriptionId,
+      url: razorpayHostedCheckoutUrl({
+        origin: input.origin,
+        subscriptionId,
+        checkoutId,
+        successUrl: razorpaySubscriptionReturnUrl(input.origin),
+        cancelUrl: `${input.origin}/settings?section=subscription&checkout=cancel`,
+        planName: input.price.planName,
+        email: input.billing.email || undefined,
+      }),
+    };
   }
   if (!session.id || !session.url)
     throw new Error("The payment provider did not start the checkout.");
@@ -1258,10 +1250,24 @@ async function openRazorpayCheckout(draft: Parameters<typeof razorpayPlanBody>[0
     short_url?: string;
     error?: { description?: string };
   };
-  if (!subResponse.ok || !subPayload.id || !subPayload.short_url) {
+  if (!subResponse.ok || !subPayload.id) {
     throw new Error(subPayload.error?.description ?? "Razorpay could not start the subscription.");
   }
-  return { id: subPayload.id, url: subPayload.short_url };
+  const { razorpayHostedCheckoutUrl, razorpaySubscriptionReturnUrl } =
+    await import("@/lib/billing/razorpay-hosted-checkout.server");
+  const origin = new URL(draft.successUrl).origin;
+  return {
+    id: subPayload.id,
+    url: razorpayHostedCheckoutUrl({
+      origin,
+      subscriptionId: subPayload.id,
+      checkoutId: draft.checkoutId,
+      successUrl: razorpaySubscriptionReturnUrl(origin),
+      cancelUrl: draft.cancelUrl,
+      planName: draft.planName,
+      email: draft.billing?.email,
+    }),
+  };
 }
 
 export const saveBillingSettings = createServerFn({ method: "POST" })

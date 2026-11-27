@@ -9,7 +9,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - [ ] Phase 3 / Batch 2 — organisation identity and tax summary use a transactional, stale-snapshot-guarded RPC with before/after audit; its isolated SQL regression passes CI. Profile now supports verified email changes, breadcrumb trail and same-organisation custom palette sync; account-wide preference scope remains partial.
 - [ ] Phase 3 / Batch 3 — accounting and tax settings; prove safety and effective-date/audit requirements. Base currency now has tested journal consumption, posting locks and post-history change rejection; the configured backdate threshold now produces a non-blocking manual-journal warning. Other accounting/tax coverage and authenticated review remain open.
 - [ ] Phase 3 / Batch 4 — sales and purchases settings; prove document workflow effects. Purchase-order three-way matching is now an editable, audited preference enforced during bill authorisation; other purchase inbox/approval/duplicate/contractor settings and sales controls without consumers remain partial/read-only.
-- [ ] Phase 3 / Batch 5 — banking, inventory, assets, expenses, payroll and projects; preserve existing module owners.
+- [ ] Phase 3 / Batch 5 — banking, inventory, assets, expenses, payroll and projects; preserve existing module owners. Payroll core configuration now has transactional field-level audit with redacted payslip notes; schedule/component settings and broader module coverage remain open.
 - [ ] Phase 3 / Batch 6 — users, access, firm/client grants, approvals and portal settings.
 - [ ] Phase 3 / Batch 7 — notifications, automation, integrations and API. Outgoing email sender name/reply-to and organisation digest quiet hours now have tested consumers; provider connections, AI, voice and API controls remain partial.
 - [ ] Phase 3 / Batch 8 — AI/voice, billing/subscription, security/audit, data/privacy.
@@ -266,3 +266,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - Added a regression that keeps organisation MFA and idle-timeout fields partial/read-only until the authentication and session runtime enforce them. The Settings panel derives its disabled state from this evidence registry, so unsupported security controls cannot be saved as if enforced.
 - Focused Settings registry tests passed; no schema, hosted Supabase or deployment operation was performed.
+
+## 2026-11-27 Payroll configuration audit evidence
+
+- Added a database trigger for payroll configuration changes that writes field-level before/after values in the same transaction as the settings row. The payslip footer note is redacted; no-op updates create no audit event, audit failure rolls back the settings write, and unauthenticated service maintenance is not attributed to a user.
+- Added an isolated PostgreSQL regression fixture and integration test for insert/update, note redaction, no-op and rollback behavior. Registered the core payroll configuration as a complete capability because existing payroll validation, permission checks and run/payment consumers are separately covered.
+- Payroll module coverage and Batch 5 remain partial for schedule/component policies and other modules. Hosted Supabase was not accessed; the migration is pending local validation and GitHub review.

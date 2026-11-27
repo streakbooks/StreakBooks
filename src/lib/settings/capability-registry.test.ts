@@ -17,6 +17,8 @@ describe("Settings capability coverage registry", () => {
         expect(setting.moduleId).toBe("tax");
       } else if (setting.route === "/settings") {
         expect(setting.moduleId).toBe("settings");
+      } else if (setting.route === "/payroll/settings") {
+        expect(setting.moduleId).toBe("payroll");
       } else {
         expect(setting.route).toMatch(/^\/settings\//);
       }
@@ -53,14 +55,19 @@ describe("Settings capability coverage registry", () => {
     });
   });
 
-  it("keeps payroll settings partial until field-level audit evidence exists", () => {
+  it("registers payroll configuration only with server validation, permission, audit and consumer evidence", () => {
     expect(
       SETTINGS_GAPS.find((gap) => gap.key === "payroll.settings_audit_coverage"),
+    ).toBeUndefined();
+    expect(
+      SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "payroll.configuration"),
     ).toMatchObject({
       moduleId: "payroll",
-      status: "partial",
       route: "/payroll/settings",
-      missingEvidence: [expect.stringContaining("before/after audit")],
+      permission: expect.stringContaining("payroll.settings.edit"),
+      audit: expect.stringContaining("same-transaction"),
+      consumer: expect.stringContaining("payroll-run"),
+      test: expect.stringContaining("payroll-settings-audit.sql"),
     });
   });
 

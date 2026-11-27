@@ -499,6 +499,25 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/notifications/communication-rules.test.ts and digest-schedule.test.ts",
   },
   {
+    key: "payroll.configuration",
+    label: "Payroll configuration",
+    moduleId: "payroll",
+    route: "/payroll/settings",
+    scope: "company",
+    defaultValue:
+      "Payroll is disabled until the organisation configures its accounts and acknowledges the compliance notice",
+    validation:
+      "save_payroll_settings checks country, currency, pay policy, account ownership, schedule ownership, version and required setup before enabling",
+    permission: "payroll.settings.edit; reads require payroll.view",
+    entitlement: null,
+    persistence: "payroll_settings through the version-checked save_payroll_settings RPC",
+    audit:
+      "An AFTER trigger records same-transaction before/after configuration fields; free-text payslip notes are redacted",
+    consumer:
+      "Saved country, currency, schedules, accounts, rounding, approvals and payment policy feed payroll-run calculation, posting and payment workflows",
+    test: "tests/integration/payroll-settings-audit.sql plus payroll calculation, run, account and payment regression tests",
+  },
+  {
     key: "features.classes",
     label: "Classes feature",
     moduleId: "accounting",
@@ -585,16 +604,6 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
       "integration evidence that the configured employee payable account reaches the actual reimbursement journal",
     ],
     note: "Expense setting inserts and updates now record exact field-level before/after values in the same transaction; audit failure rolls back the change. Saved distance units initialize new mileage-rate forms; default claim currency initializes eligible drafts; spending controls and self-approval have guards. Expense settings remain partial until an integration test proves the configured employee payable account reaches the actual reimbursement journal.",
-  },
-  {
-    key: "payroll.settings_audit_coverage",
-    moduleId: "payroll",
-    status: "partial",
-    route: "/payroll/settings",
-    missingEvidence: [
-      "field-level before/after audit evidence for payroll calculation, approval, and payment settings",
-    ],
-    note: "Payroll settings are permission-checked and their calculation policy feeds run previews and calculations. The existing audit event is only a summary, so settings remain partial until sensitive field-level changes have safe, same-transaction audit evidence.",
   },
   {
     key: "banking.typed_configuration",

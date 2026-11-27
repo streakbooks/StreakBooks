@@ -143,6 +143,9 @@ try {
   sql(read("tests/fixtures/workflows/expense-settings-audit-baseline.sql"));
   sql(read("supabase/migrations/20261127110000_expense_settings_audit.sql"));
   sql(read("tests/integration/expense-settings-audit.sql"));
+  sql(read("tests/fixtures/workflows/payroll-settings-audit-baseline.sql"));
+  sql(read("supabase/migrations/20261127120000_payroll_settings_audit.sql"));
+  sql(read("tests/integration/payroll-settings-audit.sql"));
   sql(`INSERT INTO public.journals (
     company_id, journal_number, journal_date, status, source_type, currency_code,
     created_by, posted_at, posted_by

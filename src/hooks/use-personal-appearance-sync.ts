@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTheme } from "@/hooks/use-theme";
 import {
   personalAppearanceSyncChanges,
@@ -11,9 +11,11 @@ export function usePersonalAppearanceSync(preferences: {
 }) {
   const { preference, palette, customColors, setPreference, setPalette, setCustomColors } =
     useTheme();
+  const applied = useRef<PersonalAppearancePreferences | undefined>(undefined);
   useEffect(() => {
     const saved = preferences.data;
-    if (!preferences.isSuccess || !saved) return;
+    if (!preferences.isSuccess || !saved || applied.current === saved) return;
+    applied.current = saved;
     const changes = personalAppearanceSyncChanges(
       { theme: preference, palette, customPalette: customColors },
       saved,

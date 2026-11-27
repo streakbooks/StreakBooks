@@ -42,13 +42,14 @@ export const Route = createFileRoute("/_authenticated/profile")({
 });
 
 function ProfilePage() {
+  const { user } = Route.useRouteContext();
   const fetchProfile = useServerFn(getMyProfile);
   const saveProfile = useServerFn(updateMyProfile);
   const queryClient = useQueryClient();
   const { company } = useActiveCompany();
 
   const profileQuery = useQuery({
-    queryKey: ["my-profile"],
+    queryKey: ["my-profile", user.id],
     queryFn: () => fetchProfile(),
   });
 
@@ -70,7 +71,7 @@ function ProfilePage() {
   const mutation = useMutation({
     mutationFn: () => saveProfile({ data: { full_name: fullName, job_title: jobTitle } }),
     onSuccess: (data) => {
-      queryClient.setQueryData(["my-profile"], data);
+      queryClient.setQueryData(["my-profile", user.id], data);
       toast.success("Profile updated");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -215,7 +216,7 @@ function ProfilePage() {
             </CardContent>
           </Card>
 
-          <PersonalAppearanceCard />
+          <PersonalAppearanceCard key={user.id} userId={user.id} />
 
           <ChangePasswordCard />
           <SecuritySettingsCard />

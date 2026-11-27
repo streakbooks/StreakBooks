@@ -114,7 +114,7 @@ function CompanyLayout() {
 
   return (
     <AppShell user={user}>
-      <PersonalAppearanceSync />
+      <PersonalAppearanceSync key={user.id} userId={user.id} />
       <Outlet />
     </AppShell>
   );

@@ -9,7 +9,7 @@ import {
   savePersonalAppearancePreferences,
 } from "@/lib/settings/personal-appearance.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { usePersonalAppearanceSync } from "@/hooks/use-personal-appearance-sync";
+
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,12 +22,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export function PersonalAppearanceCard() {
+export function PersonalAppearanceCard({ userId }: { userId: string }) {
   const theme = useTheme();
   const queryClient = useQueryClient();
   const fetchPreferences = useServerFn(getPersonalAppearancePreferences);
   const savePreferences = useServerFn(savePersonalAppearancePreferences);
-  const queryKey = ["personal-appearance"] as const;
+  const queryKey = ["personal-appearance", userId] as const;
   const preferencesQuery = useQuery({
     queryKey,
     queryFn: () => fetchPreferences({ data: {} }),
@@ -45,8 +45,6 @@ export function PersonalAppearanceCard() {
     onSuccess: (preferences) => queryClient.setQueryData(queryKey, preferences),
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
-
-  usePersonalAppearanceSync(preferencesQuery);
 
   const currentPreferences = (): PersonalAppearancePreferences => ({
     theme: theme.preference,

@@ -848,21 +848,27 @@ export function SubscriptionPanel({
                   disabled={busy}
                   onClick={() => setTarget(null)}
                 >
-                  Cancel
+                  {switchPreview?.changeSupported === false ? "Close" : "Cancel"}
                 </Button>
-                <Button
-                  type="button"
-                  disabled={busy || previewLoading || Boolean(previewError)}
-                  onClick={() => planChange.mutate(target.code)}
-                >
-                  {planChange.isPending
-                    ? switchPreview?.paymentRequired && lockedProvider === "stripe"
-                      ? "Opening Stripe…"
-                      : "Scheduling…"
-                    : switchPreview?.paymentRequired && lockedProvider === "stripe"
-                      ? "Continue to Stripe"
-                      : switchCopy.button}
-                </Button>
+                {switchPreview?.changeSupported === false ? (
+                  <Button type="button" onClick={() => setTarget(null)}>
+                    Got it
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    disabled={busy || previewLoading || Boolean(previewError)}
+                    onClick={() => planChange.mutate(target.code)}
+                  >
+                    {planChange.isPending
+                      ? switchPreview?.paymentRequired && lockedProvider === "stripe"
+                        ? "Opening Stripe…"
+                        : "Scheduling…"
+                      : switchPreview?.paymentRequired && lockedProvider === "stripe"
+                        ? "Continue to Stripe"
+                        : switchCopy.button}
+                  </Button>
+                )}
               </DialogFooter>
             </>
           ) : null}

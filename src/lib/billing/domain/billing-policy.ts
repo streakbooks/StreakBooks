@@ -37,23 +37,15 @@ export function planChangePaymentCopy(
   description: string;
 } {
   if (provider === "razorpay") {
-    if (kind === "upgrade") {
-      return {
-        titleVerb: "Upgrade",
-        paymentNow: "No charge today",
-        whenStarts: "At your next renewal",
-        button: "Schedule plan change",
-        description:
-          "Razorpay plan changes apply at the next renewal. There is no mid-cycle charge. You keep your current plan until then; you can reverse the scheduled change before the effective date.",
-      };
-    }
+    // India Razorpay checkouts use UPI AutoPay / e-mandate — Razorpay does not allow
+    // mid-mandate plan updates. Customers cancel at period end, then subscribe again.
     return {
-      titleVerb: "Downgrade",
-      paymentNow: "No charge today",
-      whenStarts: "At your next renewal",
-      button: "Schedule plan change",
+      titleVerb: kind === "upgrade" ? "Upgrade" : "Downgrade",
+      paymentNow: "Not available on UPI AutoPay",
+      whenStarts: "After you cancel and subscribe again",
+      button: "Got it",
       description:
-        "You keep your current plan until this period ends. The lower price starts at renewal. Nothing is charged for switching down today. You can reverse before that date.",
+        "UPI AutoPay and bank e-mandate subscriptions cannot change plan on Razorpay. Keep your current plan until the period ends, cancel at renewal if you want to leave, then subscribe to the new plan. Your current mandate is not charged for this dialog.",
     };
   }
 
@@ -83,16 +75,16 @@ export function billingChargeRules(
   if (provider === "razorpay") {
     return [
       {
-        title: "Upgrade",
-        body: "Scheduled for the next renewal on Razorpay. No mid-cycle charge.",
+        title: "Upgrade / downgrade",
+        body: "UPI AutoPay and e-mandate cannot change plan mid-mandate. Cancel at period end, then subscribe to the new plan.",
       },
       {
-        title: "Downgrade",
-        body: "No charge today. You keep the current plan until renewal. You can reverse before that date.",
+        title: "Cancel",
+        body: "No charge today. Access continues until renewal, then the mandate ends.",
       },
       {
         title: "Monthly ↔ annual",
-        body: "Interval changes follow the same renewal schedule as plan changes on Razorpay.",
+        body: "Same as plan changes — start a new subscription after the current mandate ends.",
       },
       {
         title: "First subscribe / trial",

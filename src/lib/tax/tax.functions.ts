@@ -5,7 +5,11 @@ import { assertUuid } from "@/lib/company-validation";
 import { isRateEffective } from "@/lib/tax/tax-math";
 import { postJournal } from "@/lib/accounting/posting-engine";
 import { requireAccountInCompany } from "@/lib/purchases/accounts";
-import { buildTaxSettingsPatch, type TaxSettingsInput } from "@/lib/tax/tax-settings-patch";
+import {
+  buildTaxSettingsExpected,
+  buildTaxSettingsPatch,
+  type TaxSettingsInput,
+} from "@/lib/tax/tax-settings-patch";
 import {
   isAccountTypeAllowedForTaxRole,
   describeAllowedTypes,
@@ -32,12 +36,16 @@ export const getTaxSettings = createServerFn({ method: "GET" })
 
 export const updateTaxSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: TaxSettingsInput & { companyId: string }) => {
-    const { companyId, ...fields } = input;
+  .validator((input: TaxSettingsInput & { companyId: string; expected: TaxSettingsInput }) => {
+    const { companyId, expected, ...fields } = input;
     // Validates and keeps only the fields that were actually sent (partial update, TX-02).
     const patch = buildTaxSettingsPatch(fields);
     if (Object.keys(patch).length === 0) throw new Error("Nothing to update");
-    return { companyId: assertUuid(companyId), patch };
+    return {
+      companyId: assertUuid(companyId),
+      patch,
+      expected: buildTaxSettingsExpected(patch, expected),
+    };
   })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "tax.settings");
@@ -61,11 +69,19 @@ export const updateTaxSettings = createServerFn({ method: "POST" })
         throw new Error(`${label} must be a ${describeAllowedTypes(role)} account`);
       }
     }
-    const { error } = await context.supabase
+    let query = context.supabase
       .from("company_tax_settings" as never)
       .update({ ...data.patch, updated_at: new Date().toISOString() } as never)
       .eq("company_id" as never, data.companyId as never);
+    for (const [column, value] of Object.entries(data.expected)) {
+      query =
+        value === null
+          ? query.is(column as never, null as never)
+          : query.eq(column as never, value as never);
+    }
+    const { data: updated, error } = await query.select("company_id" as never).maybeSingle();
     if (error) throw new Error(error.message);
+    if (!updated) throw new Error("Tax settings changed since loaded. Reload before saving.");
     return { ok: true };
   });
 

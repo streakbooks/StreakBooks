@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTaxSettingsPatch } from "./tax-settings-patch";
+import { buildTaxSettingsExpected, buildTaxSettingsPatch } from "./tax-settings-patch";
 import { buildTaxAdjustmentJournal } from "./tax-adjustment";
 
 const UUID = "11111111-1111-4111-8111-111111111111";
@@ -48,6 +48,27 @@ describe("TX-02 updateTaxSettings is a partial update", () => {
 
   it("an empty input produces an empty patch", () => {
     expect(buildTaxSettingsPatch({})).toEqual({});
+  });
+
+  it("builds compare-and-set values for only patched fields and preserves explicit nulls", () => {
+    const patch = buildTaxSettingsPatch({ registrationNumber: "GB123", filingFrequency: null });
+    expect(
+      buildTaxSettingsExpected(patch, { registrationNumber: "OLD", filingFrequency: "quarterly" }),
+    ).toEqual({ registration_number: "OLD", filing_frequency: "quarterly" });
+    expect(
+      buildTaxSettingsExpected({ registration_number: null }, { registrationNumber: null }),
+    ).toEqual({
+      registration_number: null,
+    });
+  });
+
+  it("requires a loaded expected value for every patched Tax field", () => {
+    expect(() => buildTaxSettingsExpected({ registration_number: "GB123" }, undefined)).toThrow(
+      /Reload the latest Tax settings/,
+    );
+    expect(() =>
+      buildTaxSettingsExpected({ registration_number: "GB123" }, { registrationNumber: undefined }),
+    ).toThrow(/Reload the latest Tax settings/);
   });
 });
 

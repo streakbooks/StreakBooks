@@ -780,10 +780,8 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "settings",
     status: "partial",
     route: "/settings/organisation/overview",
-    missingEvidence: [
-      "a single Tax registration write owner and compare-and-set protection for stale Tax workspace edits",
-    ],
-    note: "Country, base currency, legal name, fiscal year end, time zone, document locale, document date format and inclusive sales pricing have field-level consumer evidence. Tax summary edits now have same-transaction field audit, but the legacy organisation and Tax forms still share write paths and the Tax editor has no stale-snapshot guard.",
+    missingEvidence: ["one visible write owner for the Tax registration summary fields"],
+    note: "Country, base currency, legal name, fiscal year end, time zone, document locale, document date format and inclusive sales pricing have field-level consumer evidence. Tax summary edits now have same-transaction field audit and compare-and-set protection, but the legacy organisation and Tax forms still expose the same fields.",
   },
   {
     key: "accounting.workflow_safeguards",
@@ -802,9 +800,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     route: "/settings/tax/overview",
     missingEvidence: [
       "effective-date, jurisdiction and reporting-consumer behavior tests",
-      "single write owner and compare-and-set protection for Tax registration fields",
+      "single visible write owner for Tax registration fields",
     ],
-    note: "Tax rate/code history is audited and regime/registration updates are now field-audited. The legacy organisation form still overlaps the Tax registration form, and effective-date, jurisdiction and statutory reporting behaviors remain partial.",
+    note: "Tax rate/code history is audited and regime/registration updates are now field-audited and compare-and-set protected. The legacy organisation form still overlaps the Tax registration form, and effective-date, jurisdiction and statutory reporting behaviors remain partial.",
   },
   {
     key: "sales.typed_configuration",

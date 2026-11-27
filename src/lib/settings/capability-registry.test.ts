@@ -20,6 +20,8 @@ describe("Settings capability coverage registry", () => {
         expect(setting.moduleId).toBe("settings");
       } else if (setting.route === "/payroll/settings") {
         expect(setting.moduleId).toBe("payroll");
+      } else if (setting.route === "/expense-management/settings") {
+        expect(setting.moduleId).toBe("expense-management");
       } else {
         expect(setting.route).toMatch(/^\/settings\//);
       }
@@ -70,6 +72,27 @@ describe("Settings capability coverage registry", () => {
       consumer: expect.stringContaining("payroll-run"),
       test: expect.stringContaining("payroll-settings-audit.sql"),
     });
+  });
+
+  it("proves the saved employee payable account reaches the reimbursement journal", () => {
+    expect(
+      SETTING_CAPABILITY_REGISTRY.find(
+        (setting) => setting.key === "expense-management.reimbursement_account",
+      ),
+    ).toMatchObject({
+      moduleId: "expense-management",
+      route: "/expense-management/settings",
+      persistence: expect.stringContaining("employee_payable_account_id"),
+      audit: expect.stringContaining("same transaction"),
+      consumer: expect.stringContaining("public.post_journal"),
+      test: expect.stringContaining("expense-reimbursement-settings.sql"),
+    });
+    expect(
+      SETTINGS_GAPS.find((gap) => gap.key === "expense-management.typed_configuration")
+        ?.missingEvidence,
+    ).not.toContain(
+      "integration evidence that the configured employee payable account reaches the actual reimbursement journal",
+    );
   });
 
   it("keeps MFA, idle-timeout and support-access consent read-only until enforcement exists", () => {

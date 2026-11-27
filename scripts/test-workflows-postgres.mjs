@@ -160,6 +160,17 @@ try {
   sql(
     "DELETE FROM public.journal_lines WHERE journal_id IN (SELECT id FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000011' AND idempotency_key='settings_base_currency_consumer'); DELETE FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000011' AND idempotency_key='settings_base_currency_consumer';",
   );
+  sql(read("tests/fixtures/workflows/expense-reimbursement-settings-baseline.sql"));
+  sql(
+    fn(
+      "supabase/migrations/20261107152000_expense_management_partial_payroll_reimburse.sql",
+      "public.reimburse_expense_claim",
+    ),
+  );
+  sql(read("tests/integration/expense-reimbursement-settings.sql"));
+  sql(
+    "DELETE FROM public.expense_claim_reimbursement_payments WHERE claim_id='40000000-0000-4000-8000-000000000013'; DELETE FROM public.journal_lines WHERE journal_id IN (SELECT id FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000013' AND idempotency_key LIKE 'expense_claim:40000000-0000-4000-8000-000000000013:reimburse:%'); DELETE FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000013' AND idempotency_key LIKE 'expense_claim:40000000-0000-4000-8000-000000000013:reimburse:%'; DELETE FROM public.expense_claims WHERE id='40000000-0000-4000-8000-000000000013';",
+  );
   sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
   sql(
     fn(

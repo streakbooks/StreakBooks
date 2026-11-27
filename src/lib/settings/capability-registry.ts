@@ -25,6 +25,24 @@ export type SettingCapability = {
  */
 export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
   {
+    key: "expense-management.reimbursement_account",
+    label: "Employee reimbursement payable account",
+    moduleId: "expense-management",
+    route: "/expense-management/settings",
+    scope: "company",
+    defaultValue: "Not configured until an organisation selects its employee payable account",
+    validation:
+      "Reimbursement RPC requires a configured payable account distinct from the selected bank account",
+    permission:
+      "expenses.reimburse or expenses.admin for reimbursement; settings editor is permission-gated",
+    entitlement: null,
+    persistence: "expense_management_settings.employee_payable_account_id",
+    audit: "Expense settings trigger records the field-level change in the same transaction",
+    consumer:
+      "reimburse_expense_claim sends the configured account as the debit line to public.post_journal",
+    test: "tests/integration/expense-reimbursement-settings.sql proves the configured account reaches the balanced posted journal",
+  },
+  {
     key: "documents.number_sequences",
     label: "Sales and purchase document number sequences",
     moduleId: "settings",
@@ -601,9 +619,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/expense-management/settings",
     missingEvidence: [
-      "integration evidence that the configured employee payable account reaches the actual reimbursement journal",
+      "consumer tests and audit coverage for the remaining claim policy, advance, petty-cash and rebilling fields",
     ],
-    note: "Expense setting inserts and updates now record exact field-level before/after values in the same transaction; audit failure rolls back the change. Saved distance units initialize new mileage-rate forms; default claim currency initializes eligible drafts; spending controls and self-approval have guards. Expense settings remain partial until an integration test proves the configured employee payable account reaches the actual reimbursement journal.",
+    note: "The employee payable account is separately complete: reimbursement uses it in the posted journal and is covered by an isolated integration test. Saved distance units initialize new mileage-rate forms; default claim currency initializes eligible drafts; spending controls and self-approval have guards. Other typed expense policies remain partial.",
   },
   {
     key: "banking.typed_configuration",

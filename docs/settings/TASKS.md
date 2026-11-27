@@ -273,6 +273,12 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Added an isolated PostgreSQL regression fixture and integration test for insert/update, note redaction, no-op and rollback behavior. Registered the core payroll configuration as a complete capability because existing payroll validation, permission checks and run/payment consumers are separately covered.
 - Payroll module coverage and Batch 5 remain partial for schedule/component policies and other modules. The isolated workflow harness passed on PostgreSQL 17; the 14-test Settings registry suite, migration checks (8 tests), changed-file ESLint, UI contract check and diff check passed. The PR-head GitHub run is validating the full suite/build; hosted Supabase was not accessed.
 
+## 2026-11-27 Expense reimbursement account consumer
+
+- Added an isolated PostgreSQL integration that invokes the existing reimbursement RPC and real `post_journal` function, then asserts the configured employee payable account is the debit line, the selected bank account is the credit line, and the journal balances.
+- Registered the reimbursement account as a separately complete capability. Expense Management remains partial because other claim, advance, petty-cash and rebilling policy fields still need consumer and audit evidence.
+- The test fixture stubs only unrelated claim-event and bank-eligibility helpers; posting, account lookup, permissions, reimbursement RPC and journal assertions execute against their actual workflow code. The fixture runs in the network-disabled local Postgres harness; no hosted Supabase database is involved.
+
 ## 2026-11-27 Security setting fail-closed evidence
 
 - Centralized the typed-field completion check used by the Settings editor and added regressions proving owner MFA, idle timeout and support-access consent stay disabled until their authentication/session or client-approval flows exist.

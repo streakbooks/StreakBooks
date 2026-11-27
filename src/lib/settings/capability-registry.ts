@@ -582,9 +582,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/expense-management/settings",
     missingEvidence: [
-      "same-transaction field-level audit evidence for expense settings and consumer tests for reimbursement account effects",
+      "integration evidence that the configured employee payable account reaches the actual reimbursement journal",
     ],
-    note: "Saved distance units initialize new mileage-rate forms; a validated default claim currency initializes eligible employee claim drafts; missing receipts and unapproved spending requests create review flags; approved spending requests are enforced at claim submission; self-approval is guarded by the approval RPC; and the reimbursement payable account is consumed by payment posting. Expense settings remain partial because field-level audit evidence and reimbursement consumer tests are incomplete.",
+    note: "Expense setting inserts and updates now record exact field-level before/after values in the same transaction; audit failure rolls back the change. Saved distance units initialize new mileage-rate forms; default claim currency initializes eligible drafts; spending controls and self-approval have guards. Expense settings remain partial until an integration test proves the configured employee payable account reaches the actual reimbursement journal.",
   },
   {
     key: "payroll.settings_audit_coverage",

@@ -618,8 +618,11 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "settings",
     status: "partial",
     route: "/settings/users/overview",
-    missingEvidence: ["enforcement proof for MFA and idle timeout"],
-    note: "Preferences must not be described as enforcement until auth/session behavior consumes them.",
+    missingEvidence: [
+      "enforcement proof for MFA and idle timeout",
+      "client-controlled approval flow before support access",
+    ],
+    note: "MFA and idle-timeout preferences do not yet control authentication/session behavior; support-access consent does not yet gate a support workflow. All remain read-only.",
   },
   {
     key: "integrations.provider_connections",
@@ -688,6 +691,12 @@ export const SETTING_FIELD_COVERAGE: readonly SettingFieldCoverage[] = Object.en
     };
   }),
 );
+
+export function isSettingsFieldComplete(key: string): boolean {
+  return SETTING_FIELD_COVERAGE.some(
+    (setting) => setting.key === key && setting.status === "complete",
+  );
+}
 
 export type ModuleSettingsCoverage = {
   moduleId: string;

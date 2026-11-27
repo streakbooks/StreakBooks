@@ -5,6 +5,7 @@ import {
   SETTING_CAPABILITY_REGISTRY,
   SETTING_FIELD_COVERAGE,
   SETTINGS_GAPS,
+  isSettingsFieldComplete,
   validateSettingsCapabilityRegistry,
 } from "./capability-registry";
 
@@ -71,13 +72,21 @@ describe("Settings capability coverage registry", () => {
     });
   });
 
-  it("keeps MFA and idle-timeout preferences read-only until auth/session enforcement exists", () => {
-    for (const key of ["users.force_mfa_for_owners", "users.session_idle_minutes"]) {
+  it("keeps MFA, idle-timeout and support-access consent read-only until enforcement exists", () => {
+    for (const key of [
+      "users.force_mfa_for_owners",
+      "users.session_idle_minutes",
+      "users.support_access_consent",
+    ]) {
       expect(SETTING_FIELD_COVERAGE.find((setting) => setting.key === key)?.status).toBe("partial");
+      expect(isSettingsFieldComplete(key)).toBe(false);
     }
     expect(
       SETTINGS_GAPS.find((gap) => gap.key === "users.security_preferences")?.missingEvidence,
-    ).toEqual(["enforcement proof for MFA and idle timeout"]);
+    ).toEqual([
+      "enforcement proof for MFA and idle timeout",
+      "client-controlled approval flow before support access",
+    ]);
   });
 
   it("accounts for typed fields and marks unproven controls partial", () => {

@@ -22,7 +22,7 @@ import {
 } from "@/lib/settings/registry";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { settingsFieldPresentation } from "@/lib/settings/field-presentation";
-import { SETTING_FIELD_COVERAGE } from "@/lib/settings/capability-registry";
+import { isSettingsFieldComplete } from "@/lib/settings/capability-registry";
 import { CheckCircle2, CircleAlert, Loader2 } from "lucide-react";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -278,9 +278,7 @@ export function SettingsCategoryConfigPanel({
                   {Object.entries(draft).map(([key, value]) => {
                     const id = "settings-" + category + "-" + key;
                     const field = settingsFieldPresentation(category, key);
-                    const fieldComplete =
-                      SETTING_FIELD_COVERAGE.find((item) => item.key === `${category}.${key}`)
-                        ?.status === "complete";
+                    const fieldComplete = isSettingsFieldComplete(`${category}.${key}`);
                     const fieldDisabled = disabled || !fieldComplete;
                     const options = ENUM_OPTIONS[category + "." + key];
                     const error = fieldErrors[key];

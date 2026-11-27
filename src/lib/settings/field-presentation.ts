@@ -181,7 +181,8 @@ const FIELDS: Record<string, SettingsFieldPresentation> = {
   },
   "users.support_access_consent": {
     label: "Require support-access consent",
-    description: "Require explicit consent before supported staff-support access.",
+    description:
+      "Require client approval before support can access organisation data. This control is read-only until its approval flow is available.",
   },
 };
 

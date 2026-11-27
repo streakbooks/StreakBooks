@@ -271,4 +271,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - Added a database trigger for payroll configuration changes that writes field-level before/after values in the same transaction as the settings row. The payslip footer note is redacted; no-op updates create no audit event, audit failure rolls back the settings write, and unauthenticated service maintenance is not attributed to a user.
 - Added an isolated PostgreSQL regression fixture and integration test for insert/update, note redaction, no-op and rollback behavior. Registered the core payroll configuration as a complete capability because existing payroll validation, permission checks and run/payment consumers are separately covered.
-- Payroll module coverage and Batch 5 remain partial for schedule/component policies and other modules. Hosted Supabase was not accessed; the migration is pending local validation and GitHub review.
+- Payroll module coverage and Batch 5 remain partial for schedule/component policies and other modules. The isolated workflow harness passed on PostgreSQL 17; the 14-test Settings registry suite, migration checks (8 tests), changed-file ESLint, UI contract check and diff check passed. The PR-head GitHub run is validating the full suite/build; hosted Supabase was not accessed.
+
+## 2026-11-27 Security setting fail-closed evidence
+
+- Centralized the typed-field completion check used by the Settings editor and added regressions proving owner MFA, idle timeout and support-access consent stay disabled until their authentication/session or client-approval flows exist.
+- Updated the security gap and field copy so support access cannot be mistaken for an active consent gate. Focused capability tests (14) and changed-file ESLint passed. The wider Settings security/access batch remains open.

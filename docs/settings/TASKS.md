@@ -189,3 +189,8 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Promoted the supported organisation locale and document date format as separate capabilities after adding consumer tests for loading them into document context and formatting a customer invoice email with the selected locale/date pattern.
 - Extended the existing isolated PostgreSQL identity regression to exercise the audited localisation RPC: exact before/after audit, unsupported locale rejection, stale snapshot rejection, permission denial and audit-failure rollback.
 - Focused tests passed (3 files / 29 tests); the network-disabled PostgreSQL 17 workflow harness, typecheck, changed-file ESLint and `git diff --check` passed. No migration or hosted database change was made; broader identity and Settings batches remain partial.
+
+## 2026-11-27 Document numbering evidence
+
+- Added field-level evidence for invoice, bill, quote and credit document sequences. Sequence edits use a validated compare-and-set RPC with same-transaction before/after audit; rewinds and stale writes are rejected. Allocation honors saved prefix/padding and advances the company-scoped counter atomically.
+- Added focused allocator wrapper tests and extended the isolated legacy Settings SQL regression to assert the emitted number and incremented counter. No schema or hosted database change was made; authenticated browser review and the wider Settings batches remain open.

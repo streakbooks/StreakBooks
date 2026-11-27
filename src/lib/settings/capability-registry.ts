@@ -25,6 +25,24 @@ export type SettingCapability = {
  */
 export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
   {
+    key: "documents.number_sequences",
+    label: "Sales and purchase document number sequences",
+    moduleId: "settings",
+    route: "/settings",
+    scope: "company",
+    defaultValue: "Per-company sequences initialize when the first matching document is created",
+    validation:
+      "Settings server function validates sequence type, prefix, next number and padding; SQL RPC repeats range checks and forbids rewinds",
+    permission: "company.settings.edit for changes; authenticated company member for allocation",
+    entitlement: null,
+    persistence: "document_sequences through compare-and-set save RPC and atomic number allocator",
+    audit:
+      "save_document_sequence_if_unchanged records before/after settings in the same database transaction",
+    consumer:
+      "Invoice, bill, quote and credit workflows allocate unique company-scoped numbers under row locks",
+    test: "tests/integration/settings-legacy-cas.sql and src/lib/settings/document-numbering.test.ts",
+  },
+  {
     key: "company.base_currency",
     label: "Organisation base currency",
     moduleId: "settings",

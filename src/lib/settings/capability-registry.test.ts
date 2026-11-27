@@ -15,6 +15,8 @@ describe("Settings capability coverage registry", () => {
       // The rate/code master is edited in the canonical Tax workspace linked from Settings.
       if (setting.route === "/tax") {
         expect(setting.moduleId).toBe("tax");
+      } else if (setting.route === "/settings") {
+        expect(setting.moduleId).toBe("settings");
       } else {
         expect(setting.route).toMatch(/^\/settings\//);
       }
@@ -115,6 +117,18 @@ describe("Settings capability coverage registry", () => {
         test: expect.stringContaining("settings-company-identity-atomic.sql"),
       });
     }
+  });
+
+  it("records audited document numbering and allocation evidence", () => {
+    expect(
+      SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "documents.number_sequences"),
+    ).toMatchObject({
+      route: "/settings",
+      permission: expect.stringContaining("company.settings.edit"),
+      persistence: expect.stringContaining("document_sequences"),
+      audit: expect.stringContaining("before/after"),
+      test: expect.stringContaining("settings-legacy-cas.sql"),
+    });
   });
 
   it("promotes only the tested manual-journal backdate warning from Accounting settings", () => {

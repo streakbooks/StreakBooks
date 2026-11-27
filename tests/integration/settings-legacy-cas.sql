@@ -101,6 +101,13 @@ BEGIN
      WHERE company_id=c AND document_type='sales_invoice') <> 43 THEN
    RAISE EXCEPTION 'Number allocator was overwritten';
  END IF;
+ IF public.allocate_document_number(c,'sales_invoice') <> 'INV-0043' THEN
+   RAISE EXCEPTION 'Document allocation did not respect the saved prefix and padding';
+ END IF;
+ IF (SELECT next_number FROM public.document_sequences
+     WHERE company_id=c AND document_type='sales_invoice') <> 44 THEN
+   RAISE EXCEPTION 'Document allocation did not advance the sequence atomically';
+ END IF;
 
  BEGIN
    PERFORM public.save_company_localisation_if_unchanged(other_id,loc_old,loc_new);

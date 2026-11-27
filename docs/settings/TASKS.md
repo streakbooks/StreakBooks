@@ -376,3 +376,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - Centralized the typed-field completion check used by the Settings editor and added regressions proving owner MFA, idle timeout and support-access consent stay disabled until their authentication/session or client-approval flows exist.
 - Updated the security gap and field copy so support access cannot be mistaken for an active consent gate. Focused capability tests (14) and changed-file ESLint passed. The wider Settings security/access batch remains open.
+
+## 2026-11-27 Sales and Purchases policy availability clarity
+
+- Added field-specific explanations to disabled Sales and Purchases policy controls, including unavailable late-fee posting, scheduled reminder delivery, amount-based bill approval, bill inbox ingestion and contractor tax reporting. Duplicate supplier-invoice checks remain mandatory for bill integrity; the preference cannot disable the guard.
+- Kept unsupported controls fail-closed and preserved existing workflow behavior. Fixed the Organisation save payload's empty-registration fallback after TypeScript identified a nullable-to-string mismatch.
+- Focused tests passed (3 files / 23 tests), changed-file ESLint, `check:ui` (775 TSX files, zero violations), typecheck and `git diff --check` passed. No schema or hosted Supabase operation was performed. Settings batches 3–9 and authenticated review remain open; no deployment or production verification occurred.

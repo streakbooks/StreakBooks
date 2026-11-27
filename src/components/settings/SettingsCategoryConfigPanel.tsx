@@ -303,8 +303,8 @@ export function SettingsCategoryConfigPanel({
                               {!fieldComplete ? (
                                 <span className="mt-2 flex items-center gap-2">
                                   <Badge variant="secondary">Partial</Badge>
-                                  Editing is paused until the setting’s effect and access checks are
-                                  verified.
+                                  {field.partialReason ??
+                                    "Editing is paused until this setting’s effect and access checks are verified."}
                                 </span>
                               ) : null}
                             </p>
@@ -328,8 +328,8 @@ export function SettingsCategoryConfigPanel({
                             {!fieldComplete ? (
                               <span className="mt-2 flex items-center gap-2">
                                 <Badge variant="secondary">Partial</Badge>
-                                Editing is paused until the setting’s effect and access checks are
-                                verified.
+                                {field.partialReason ??
+                                  "Editing is paused until this setting’s effect and access checks are verified."}
                               </span>
                             ) : null}
                           </p>
@@ -372,8 +372,8 @@ export function SettingsCategoryConfigPanel({
                             {!fieldComplete ? (
                               <span className="mt-2 flex items-center gap-2">
                                 <Badge variant="secondary">Partial</Badge>
-                                Editing is paused until the setting’s effect and access checks are
-                                verified.
+                                {field.partialReason ??
+                                  "Editing is paused until this setting’s effect and access checks are verified."}
                               </span>
                             ) : null}
                           </p>
@@ -422,8 +422,8 @@ export function SettingsCategoryConfigPanel({
                             {!fieldComplete ? (
                               <span className="mt-2 flex items-center gap-2">
                                 <Badge variant="secondary">Partial</Badge>
-                                Editing is paused until the setting’s effect and access checks are
-                                verified.
+                                {field.partialReason ??
+                                  "Editing is paused until this setting’s effect and access checks are verified."}
                               </span>
                             ) : null}
                           </p>

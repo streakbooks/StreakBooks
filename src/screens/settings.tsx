@@ -536,7 +536,7 @@ export function SettingsForCompany({
           fiscal_year_end_day: Number(fyDay),
           timezone,
           tax_regime: current.tax?.tax_regime ?? "none",
-          registration_number: current.tax?.registration_number ?? null,
+          registration_number: current.tax?.registration_number ?? "",
           prices_include_tax: Boolean(current.tax?.prices_include_tax),
         },
       });

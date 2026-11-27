@@ -45,6 +45,13 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Focused tests passed (4 files / 34 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed with the new risk-scanner and audit assertions. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
 - Expense Management remains partial because advance, petty-cash and rebilling settings still need field-level consumer evidence.
 
+## 2026-11-27 Expense advance and petty-cash accounts
+
+- Added an isolated regression that saves employee-advance and petty-cash account IDs with the production versioned settings RPC, then invokes the production issue/fund functions. The real posting engine creates balanced journals using the configured debit accounts and selected bank/cash account.
+- Extended field-level audit assertions for both account mappings and registered the two settings separately. The test uses only isolated fixture rows and the network-disabled PostgreSQL 17 harness.
+- Focused tests passed (4 files / 34 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed with the account-mapping journal assertions. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
+- Expense Management remains partial because rebilling and other cash-advance/petty-cash policies still need consumer evidence.
+
 - [x] Phase 0 — audit current routes, UI, persistence, consumers, permissions, tests and module registry (`audit.md`). No feature code changed in this phase.
 - [x] Phase 1 — official public benchmark, clean-room IA, decision and originality record (`benchmark.md`, `ia-design.md`, `docs/decisions/011-settings-information-architecture.md`, `docs/compliance/originality-log.md`).
 - [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. Evidence-backed capabilities are registered individually; remaining typed fields stay partial and are read-only.

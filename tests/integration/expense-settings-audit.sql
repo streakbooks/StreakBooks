@@ -31,7 +31,9 @@ BEGIN
   UPDATE public.expense_management_settings
   SET default_distance_unit = 'mi', default_claim_currency = 'USD', required_approval_count = 2,
       require_receipt_above_minor = 6000,
-      require_spending_request_above_minor = 8000
+      require_spending_request_above_minor = 8000,
+      employee_advance_account_id = '20000000-0000-4000-8000-000000000021',
+      petty_cash_account_id = '20000000-0000-4000-8000-000000000022'
   WHERE expense_management_settings.company_id = _company_id;
 
   SELECT * INTO audit_row FROM public.audit_events AS ae
@@ -48,7 +50,11 @@ BEGIN
      OR audit_row.details->'before'->>'require_receipt_above_minor' <> '5000'
      OR audit_row.details->'after'->>'require_receipt_above_minor' <> '6000'
      OR audit_row.details->'before'->>'require_spending_request_above_minor' <> '7500'
-     OR audit_row.details->'after'->>'require_spending_request_above_minor' <> '8000' THEN
+     OR audit_row.details->'after'->>'require_spending_request_above_minor' <> '8000'
+     OR audit_row.details->'before'->'employee_advance_account_id' IS DISTINCT FROM 'null'::jsonb
+     OR audit_row.details->'after'->>'employee_advance_account_id' <> '20000000-0000-4000-8000-000000000021'
+     OR audit_row.details->'before'->'petty_cash_account_id' IS DISTINCT FROM 'null'::jsonb
+     OR audit_row.details->'after'->>'petty_cash_account_id' <> '20000000-0000-4000-8000-000000000022' THEN
     RAISE EXCEPTION 'Expense settings update omitted exact before/after values';
   END IF;
 

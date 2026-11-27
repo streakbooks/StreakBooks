@@ -208,6 +208,18 @@ try {
   ])
     sql(fn("supabase/migrations/20261107144000_expense_management_disputes_rebilling.sql", name));
   sql(read("tests/integration/expense-required-approvals.sql"));
+  sql(read("tests/fixtures/workflows/expense-account-mapping-baseline.sql"));
+  for (const name of [
+    "private.expense_cash_advance_json",
+    "public.issue_expense_cash_advance",
+  ])
+    sql(fn("supabase/migrations/20261107140000_expense_management_cash_advances.sql", name));
+  for (const name of [
+    "private.expense_petty_cash_float_json",
+    "public.fund_expense_petty_cash_float",
+  ])
+    sql(fn("supabase/migrations/20261107141000_expense_management_petty_cash.sql", name));
+  sql(read("tests/integration/expense-account-mapping.sql"));
   sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
   sql(
     fn(
@@ -310,7 +322,7 @@ try {
     );
   await Promise.all([race(), race(), race()]);
   const check = sql(
-    "DO $$ BEGIN IF (SELECT count(*) FROM public.journals)<>2 OR (SELECT count(*) FROM public.journal_lines)<>4 THEN RAISE EXCEPTION 'Concurrent replay created duplicate recognition journals'; END IF; END $$;",
+    "DO $$ BEGIN IF (SELECT count(*) FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000001')<>2 OR (SELECT count(*) FROM public.journal_lines WHERE company_id='10000000-0000-4000-8000-000000000001')<>4 THEN RAISE EXCEPTION 'Concurrent replay created duplicate recognition journals'; END IF; END $$;",
   );
   sql(
     `UPDATE public.companies SET is_demo=true WHERE id='10000000-0000-4000-8000-000000000001'; SET ROLE authenticated; SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',false); SELECT public.reset_demo_company('10000000-0000-4000-8000-000000000001'); DO $$ BEGIN IF EXISTS(SELECT 1 FROM public.sales_orders) OR EXISTS(SELECT 1 FROM public.deferral_schedules) OR EXISTS(SELECT 1 FROM public.deferral_entries) THEN RAISE EXCEPTION 'Demo reset left workflow dependencies'; END IF; END $$;`,

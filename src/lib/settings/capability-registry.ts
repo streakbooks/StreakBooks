@@ -150,6 +150,40 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "tests/integration/expense-required-approvals.sql, tests/integration/expense-settings-audit.sql and src/lib/expenses/risk.test.ts",
   },
   {
+    key: "expense-management.employee_advance_account",
+    label: "Employee advance account mapping",
+    moduleId: "expense-management",
+    route: "/expense-management/settings",
+    scope: "company",
+    defaultValue: "not configured",
+    validation: "Versioned settings RPC saves the organisation-owned ledger account",
+    permission: "expenses.manage_policies or expenses.admin",
+    entitlement: null,
+    persistence:
+      "expense_management_settings.employee_advance_account_id through save_expense_management_settings",
+    audit: "audit_events records before/after account mapping in the same transaction",
+    consumer:
+      "Issuing a cash advance posts the configured employee advance asset against the selected bank/cash account",
+    test: "tests/integration/expense-account-mapping.sql and tests/integration/expense-settings-audit.sql",
+  },
+  {
+    key: "expense-management.petty_cash_account",
+    label: "Petty cash account mapping",
+    moduleId: "expense-management",
+    route: "/expense-management/settings",
+    scope: "company",
+    defaultValue: "not configured",
+    validation: "Versioned settings RPC saves the organisation-owned ledger account",
+    permission: "expenses.manage_policies or expenses.admin",
+    entitlement: null,
+    persistence:
+      "expense_management_settings.petty_cash_account_id through save_expense_management_settings",
+    audit: "audit_events records before/after account mapping in the same transaction",
+    consumer:
+      "Funding a petty cash float posts the configured petty cash asset against the selected bank/cash account",
+    test: "tests/integration/expense-account-mapping.sql and tests/integration/expense-settings-audit.sql",
+  },
+  {
     key: "documents.number_sequences",
     label: "Sales and purchase document number sequences",
     moduleId: "settings",
@@ -743,9 +777,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/expense-management/settings",
     missingEvidence: [
-      "consumer tests and audit coverage for advances, petty-cash and rebilling fields",
+      "consumer tests and audit coverage for rebilling and other unverified advance/petty-cash fields",
     ],
-    note: "The employee payable account, default claim currency, default distance unit, self-approval guard, required approval count, escalation window and receipt/spending thresholds have field-level evidence. Other typed expense policies, including advances, petty-cash and rebilling, remain partial.",
+    note: "The employee payable, employee advance and petty cash account mappings, default claim currency, default distance unit, self-approval guard, required approval count, escalation window and receipt/spending thresholds have field-level evidence. Rebilling and other advance/petty-cash policies remain partial.",
   },
   {
     key: "banking.typed_configuration",

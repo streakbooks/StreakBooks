@@ -287,13 +287,14 @@ describe("currency and checkout payload", () => {
     const uk = paymentMethodsFor("GB", { stripe: true, razorpay: true });
     expect(uk.filter((method) => method.available).map((method) => method.id)).toEqual(["card"]);
     expect(paymentMethodsFor("CA").map((method) => method.id)).toEqual(["card"]);
-    // Catalogue still lists Stripe card for India; routing filters it at checkout.
+    // India card is Razorpay-backed so mid-cycle upgrades are possible on eligible cards.
     expect(paymentMethodsFor("IN").map((method) => method.id)).toEqual(["card", "upi", "emandate"]);
+    expect(paymentMethodsFor("IN").find((m) => m.id === "card")?.provider).toBe("razorpay");
     expect(
       paymentMethodsFor("IN", { stripe: false, razorpay: true })
         .filter((m) => m.available)
         .map((m) => m.id),
-    ).toEqual(["upi", "emandate"]);
+    ).toEqual(["card", "upi", "emandate"]);
     expect(
       paymentMethodsFor("IN", { stripe: false, razorpay: false }).every((m) => !m.available),
     ).toBe(true);

@@ -16,21 +16,23 @@ describe("billing policy (industry standard)", () => {
     const upgrade = planChangePaymentCopy("upgrade", "stripe");
     const downgrade = planChangePaymentCopy("downgrade", "stripe");
     expect(upgrade.paymentNow.toLowerCase()).toContain("prorated");
-    expect(upgrade.button.toLowerCase()).toContain("stripe");
+    expect(upgrade.button.toLowerCase()).toContain("confirm");
+    expect(upgrade.button.toLowerCase()).not.toContain("razorpay");
     expect(upgrade.whenStarts.toLowerCase()).toContain("payment");
     expect(downgrade.paymentNow.toLowerCase()).toContain("no charge");
     expect(downgrade.whenStarts.toLowerCase()).toContain("renewal");
   });
 
-  it("explains Razorpay UPI cannot change plan mid-mandate", () => {
+  it("explains Razorpay card vs UPI without routing to Stripe", () => {
     const upgrade = planChangePaymentCopy("upgrade", "razorpay");
     const downgrade = planChangePaymentCopy("downgrade", "razorpay");
     expect(upgrade.button.toLowerCase()).not.toContain("stripe");
-    expect(upgrade.button.toLowerCase()).toContain("got it");
     expect(upgrade.description.toLowerCase()).toMatch(/upi|e-mandate|emandate/);
+    expect(upgrade.description.toLowerCase()).toMatch(/card/);
     expect(upgrade.description.toLowerCase()).toContain("cancel");
     expect(downgrade.button).toBe(upgrade.button);
     expect(billingChargeRules("razorpay").some((rule) => /stripe/i.test(rule.body))).toBe(false);
     expect(billingChargeRules("razorpay").some((rule) => /upi/i.test(rule.body))).toBe(true);
+    expect(billingChargeRules("razorpay").some((rule) => /card/i.test(rule.body))).toBe(true);
   });
 });

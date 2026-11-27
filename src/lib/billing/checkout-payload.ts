@@ -68,15 +68,23 @@ export function paymentMethodsFor(
 ): PayMethodChoice[] {
   if (!isBillingCountry(country)) return [];
   const india = country.toUpperCase() === "IN";
+  // India locks to Razorpay (including card). International card stays on Stripe.
   const methods: PayMethodChoice[] = [
     {
       id: "card",
-      title: "Cards, wallets and other eligible local methods",
-      detail:
-        "Secure Stripe Checkout shows the payment methods supported for this subscription and your location. Availability varies.",
-      provider: "stripe",
-      available: providers.stripe,
-      reason: providers.stripe ? null : "Stripe checkout is not configured.",
+      title: india ? "Card" : "Cards, wallets and other eligible local methods",
+      detail: india
+        ? "Recurring card on Razorpay. Eligible cards support mid-cycle plan upgrades where Razorpay allows; UPI AutoPay does not."
+        : "Secure Stripe Checkout shows the payment methods supported for this subscription and your location. Availability varies.",
+      provider: india ? "razorpay" : "stripe",
+      available: india ? providers.razorpay : providers.stripe,
+      reason: india
+        ? providers.razorpay
+          ? null
+          : "Razorpay checkout is not configured."
+        : providers.stripe
+          ? null
+          : "Stripe checkout is not configured.",
     },
   ];
   if (india) {
@@ -84,7 +92,8 @@ export function paymentMethodsFor(
       {
         id: "upi",
         title: "UPI AutoPay",
-        detail: "Authorise recurring payments through an eligible UPI app on Razorpay.",
+        detail:
+          "Authorise recurring payments through an eligible UPI app on Razorpay. Plan changes mid-mandate are not supported — cancel at period end, then subscribe again.",
         provider: "razorpay",
         available: providers.razorpay,
         reason: providers.razorpay ? null : "Razorpay checkout is not configured.",
@@ -93,7 +102,7 @@ export function paymentMethodsFor(
         id: "emandate",
         title: "Indian bank e-mandate",
         detail:
-          "Authorise recurring bank debits on Razorpay through an eligible bank. This is not an ordinary NEFT transfer.",
+          "Authorise recurring bank debits on Razorpay through an eligible bank. Mid-mandate plan changes are not supported.",
         provider: "razorpay",
         available: providers.razorpay,
         reason: providers.razorpay ? null : "Razorpay checkout is not configured.",

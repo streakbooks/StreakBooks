@@ -90,11 +90,15 @@ describe("Stripe client", () => {
       downgraded,
     ]);
     const client = createStripeClient(stripeEnv, fetch);
-    await stripeChangePrice(client, "sub_1", "price_biz", "upgrade", "k1");
+    await stripeChangePrice(client, "sub_1", "price_biz", "upgrade", "k1", {
+      prorationDateUnix: 1_700_000_000,
+    });
     await stripeChangePrice(client, "sub_1", "price_std", "downgrade", "k2");
     const upgrade = new URLSearchParams(String(calls[4]!.init.body));
     expect(upgrade.get("payment_behavior")).toBe("pending_if_incomplete");
     expect(upgrade.get("proration_behavior")).toBe("always_invoice");
+    expect(upgrade.get("proration_date")).toBe("1700000000");
+    expect(upgrade.get("billing_cycle_anchor")).toBe("unchanged");
     expect(upgrade.get("items[0][price]")).toBe("price_biz");
     const downgrade = new URLSearchParams(String(calls[9]!.init.body));
     expect(downgrade.get("proration_behavior")).toBe("none");
@@ -204,6 +208,38 @@ describe("Razorpay client", () => {
         startAtUnix: null,
       }),
     ).toMatchObject({ total_count: 120, notes: { checkout_id: "c" } });
+  });
+
+  it("supports immediate Razorpay plan updates for eligible card mandates", async () => {
+    const { fetch, calls } = mockFetch([{ body: { id: "sub_1", status: "active" } }]);
+    await razorpayChangePlan(createRazorpayClient(razorpayEnv, fetch), "sub_1", "plan_x", "now");
+    expect(JSON.parse(String(calls[0]!.init.body))).toMatchObject({
+      schedule_change_at: "now",
+    });
+  });
+
+  it("inspects Razorpay subscription notes for pay_method", async () => {
+    const { razorpayInspectSubscription } = await import("./razorpay.server");
+    const { fetch } = mockFetch([
+      {
+        body: {
+          id: "sub_1",
+          status: "active",
+          plan_id: "plan_x",
+          current_start: 1_700_000_000,
+          current_end: 1_700_259_200,
+          notes: { pay_method: "card" },
+          payment_method: "card",
+        },
+      },
+    ]);
+    const inspected = await razorpayInspectSubscription(
+      createRazorpayClient(razorpayEnv, fetch),
+      "sub_1",
+    );
+    expect(inspected.notes["pay_method"]).toBe("card");
+    expect(inspected.payment_method).toBe("card");
+    expect(inspected.current_end).toBe(1_700_259_200);
   });
 });
 

@@ -87,9 +87,11 @@ export function CheckoutForm({
   const [error, setError] = useState("");
   const currency = priceCurrency ?? checkoutCurrencyForCountry(defaultCountry);
   const dueMinor = quote && quote.currency === currency ? quote.dueMinor : null;
-  const available = paymentMethodsForRoutedCountry(defaultCountry, providers, routedProviders).filter(
-    (item) => item.available,
-  );
+  const available = paymentMethodsForRoutedCountry(
+    defaultCountry,
+    providers,
+    routedProviders,
+  ).filter((item) => item.available);
   const selectedMethod = available.find((item) => item.id === method);
   const hostedProvider =
     selectedMethod?.provider === "razorpay"
@@ -99,15 +101,22 @@ export function CheckoutForm({
         : "our payment partner";
 
   const routedKey = (routedProviders ?? []).join(",");
+  const stripeAvailable = providers.stripe;
+  const razorpayAvailable = providers.razorpay;
 
   useEffect(() => {
     // Country comes from the server, not an editable country picker or browser locale.
     setBilling((current) => ({ ...current, country: defaultCountry }));
-    const choices = paymentMethodsForRoutedCountry(defaultCountry, providers, routedProviders).filter(
-      (item) => item.available,
-    );
-    setMethod(choices.find((item) => item.id === "upi")?.id ?? choices[0]?.id ?? "card");
-  }, [defaultCountry, providers, routedKey, routedProviders]);
+    const choices = paymentMethodsForRoutedCountry(
+      defaultCountry,
+      { stripe: stripeAvailable, razorpay: razorpayAvailable },
+      routedProviders,
+    ).filter((item) => item.available);
+    setMethod((current) => {
+      if (choices.some((item) => item.id === current)) return current;
+      return choices.find((item) => item.id === "upi")?.id ?? choices[0]?.id ?? "card";
+    });
+  }, [defaultCountry, stripeAvailable, razorpayAvailable, routedKey, routedProviders]);
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => {
@@ -351,9 +360,9 @@ export function CheckoutForm({
             <Shield className="size-4" aria-hidden />
             <AlertDescription className="text-xs leading-relaxed">
               Card details are entered on <strong>{hostedProvider}</strong>&apos;s secure checkout
-              page — not inside StreakBooks. After you pay, you&apos;ll come back here to activate your
-              plan. This is the same pattern used by major accounting SaaS products and keeps your PCI
-              scope low.
+              page — not inside StreakBooks. After you pay, you&apos;ll come back here to activate
+              your plan. This is the same pattern used by major accounting SaaS products and keeps
+              your PCI scope low.
             </AlertDescription>
           </Alert>
           <p className="text-xs text-muted-foreground">

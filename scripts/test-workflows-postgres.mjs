@@ -202,6 +202,11 @@ try {
       "public.scan_expense_claim_risks",
     ),
   );
+  for (const name of [
+    "public.get_expense_management_settings",
+    "public.save_expense_management_settings",
+  ])
+    sql(fn("supabase/migrations/20261107144000_expense_management_disputes_rebilling.sql", name));
   sql(read("tests/integration/expense-required-approvals.sql"));
   sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
   sql(

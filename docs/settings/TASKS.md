@@ -40,7 +40,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 ## 2026-11-27 Expense receipt and spending thresholds
 
-- Added an isolated regression around the production claim-risk scan. Claims at the configured receipt and spending-request thresholds receive the corresponding flags; setting thresholds above the claim amount removes those flags.
+- Added an isolated regression around the production versioned settings RPC and claim-risk scan. Claims at the configured receipt and spending-request thresholds receive the corresponding flags; saving thresholds above the claim amount removes those flags.
 - Extended the existing settings audit regression to verify exact before/after values for both thresholds, then registered the fields as one coverage capability. The risk-scan regression uses test-only access, duplicate, attachment and claim-line fixtures to isolate the settings consumer.
 - Focused tests passed (4 files / 34 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed with the new risk-scanner and audit assertions. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
 - Expense Management remains partial because advance, petty-cash and rebilling settings still need field-level consumer evidence.

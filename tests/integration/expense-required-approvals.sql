@@ -76,10 +76,33 @@ SELECT 'PASS: required approval count gates claims until distinct approvers meet
 
 SELECT set_config('request.jwt.claims',
   '{"sub":"00000000-0000-4000-8000-000000000001"}', false);
-UPDATE public.expense_management_settings
-SET require_receipt_above_minor = 1000,
-    require_spending_request_above_minor = 500
-WHERE company_id = '10000000-0000-4000-8000-000000000011';
+DO $$
+DECLARE
+  _settings public.expense_management_settings%ROWTYPE;
+BEGIN
+  SELECT * INTO _settings FROM public.expense_management_settings
+  WHERE company_id = '10000000-0000-4000-8000-000000000011';
+  PERFORM public.save_expense_management_settings(
+    _settings.company_id,
+    jsonb_build_object(
+      'version', _settings.version,
+      'enabled', _settings.enabled,
+      'claim_number_prefix', _settings.claim_number_prefix,
+      'default_claim_currency', _settings.default_claim_currency,
+      'employee_payable_account_id', _settings.employee_payable_account_id,
+      'employee_advance_account_id', _settings.employee_advance_account_id,
+      'petty_cash_account_id', _settings.petty_cash_account_id,
+      'rebilling_income_account_id', _settings.rebilling_income_account_id,
+      'fx_gain_account_id', _settings.fx_gain_account_id,
+      'fx_loss_account_id', _settings.fx_loss_account_id,
+      'require_receipt_above_minor', 1000,
+      'require_spending_request_above_minor', 500,
+      'allow_multi_currency_claims', _settings.allow_multi_currency_claims,
+      'prevent_self_approval', _settings.prevent_self_approval,
+      'default_distance_unit', _settings.default_distance_unit
+    )
+  );
+END $$;
 DO $$
 DECLARE
   _scan jsonb;
@@ -93,10 +116,33 @@ BEGIN
     RAISE EXCEPTION 'TEST: expense claim risk scan ignored configured receipt or spending thresholds';
   END IF;
 END $$;
-UPDATE public.expense_management_settings
-SET require_receipt_above_minor = 1001,
-    require_spending_request_above_minor = 1001
-WHERE company_id = '10000000-0000-4000-8000-000000000011';
+DO $$
+DECLARE
+  _settings public.expense_management_settings%ROWTYPE;
+BEGIN
+  SELECT * INTO _settings FROM public.expense_management_settings
+  WHERE company_id = '10000000-0000-4000-8000-000000000011';
+  PERFORM public.save_expense_management_settings(
+    _settings.company_id,
+    jsonb_build_object(
+      'version', _settings.version,
+      'enabled', _settings.enabled,
+      'claim_number_prefix', _settings.claim_number_prefix,
+      'default_claim_currency', _settings.default_claim_currency,
+      'employee_payable_account_id', _settings.employee_payable_account_id,
+      'employee_advance_account_id', _settings.employee_advance_account_id,
+      'petty_cash_account_id', _settings.petty_cash_account_id,
+      'rebilling_income_account_id', _settings.rebilling_income_account_id,
+      'fx_gain_account_id', _settings.fx_gain_account_id,
+      'fx_loss_account_id', _settings.fx_loss_account_id,
+      'require_receipt_above_minor', 1001,
+      'require_spending_request_above_minor', 1001,
+      'allow_multi_currency_claims', _settings.allow_multi_currency_claims,
+      'prevent_self_approval', _settings.prevent_self_approval,
+      'default_distance_unit', _settings.default_distance_unit
+    )
+  );
+END $$;
 DO $$
 DECLARE
   _scan jsonb;

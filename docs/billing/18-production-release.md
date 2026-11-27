@@ -16,7 +16,7 @@ Local Docker SQL suites and Stripe Test Clocks are green.
 | Invoice visibility (Stripe open/paid/void/proration + platform PDFs) | **Completed** (code); UI E2E **not executed** without credentials |
 | Webhook store / retry / dead-letter | **Completed** (code + SQL suite historically); cron host config **pending verify** |
 | Vercel Cron route compatibility (GET + POST) | **Implemented this release prep** |
-| `vercel.json` cron every 5 minutes | **Implemented this release prep** — deploy to activate |
+| `vercel.json` cron daily (Hobby-safe `0 4 * * *`) | **Implemented** — upgrade to Pro (or external scheduler) for 2–5 minute retries |
 | Live Playwright A–J suite | **Implemented** — **not executed** (needs `E2E_BILLING_ENABLED`) |
 
 Preserve accounting engine behaviour: `is_demo` gating rules unchanged; no rewrite of payment pipeline.
@@ -144,7 +144,7 @@ Scenarios A–J are encoded in `e2e/billing/subscription-lifecycle.live.spec.ts`
 | Overlap | `billing_webhook_claim` uses `FOR UPDATE SKIP LOCKED` |
 | Dead-letter | `billing_events.status = dead` after repeated failures; Payment Operations requeue |
 | Logging | Structured `console.info` / `console.error` with counts + event ids (no payloads/secrets) |
-| In-repo schedule | `vercel.json` → `*/5 * * * *` |
+| In-repo schedule | `vercel.json` → `0 4 * * *` (Hobby daily limit; Pro can restore `*/5 * * * *`) |
 
 ### Vercel compatibility
 

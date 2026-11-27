@@ -50,7 +50,7 @@ POST https://<app-host>/api/billing/webhook-retry
 Authorization: Bearer <STREAKBOOKS_CRON_SECRET>
 ```
 
-In-repo schedule: `vercel.json` registers `GET /api/billing/webhook-retry` every 5 minutes.
+In-repo schedule: `vercel.json` registers `GET /api/billing/webhook-retry` daily at 04:00 UTC (`0 4 * * *`) so Hobby-plan deploys succeed. Use an external scheduler every 2–5 minutes when Pro cron or another host is available.
 Set `CRON_SECRET` and `STREAKBOOKS_CRON_SECRET` to the **same** value on Vercel (Cron sends
 `Authorization: Bearer <CRON_SECRET>`). External schedulers may POST. Missing secret → HTTP 500;
 wrong Bearer → 401; success → `{ "processed", "failed" }`. Details: `18-production-release.md`.

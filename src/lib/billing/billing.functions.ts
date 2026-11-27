@@ -357,12 +357,10 @@ function assertInterval(value: string): BillingInterval {
 }
 
 function assertOrigin(origin: string): string {
-  const host = getRequestHeader("x-forwarded-host") ?? getRequestHeader("host");
-  const proto = getRequestHeader("x-forwarded-proto") ?? "https";
-  return assertCheckoutOrigin(origin, {
-    ...(host != null ? { host } : {}),
-    ...(proto != null ? { proto } : {}),
-  });
+  // Do not call getRequestHeader here — billing.functions is imported by client
+  // components (SubscriptionPanel). Request-host allowlisting lives in the
+  // Razorpay hosted bridge handler only.
+  return assertCheckoutOrigin(origin);
 }
 
 async function assertOperator(supabase: Client): Promise<void> {

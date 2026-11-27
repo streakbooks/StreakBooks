@@ -116,3 +116,7 @@ The registry and coverage matrix enumerate every typed config field and every re
 
 - In a test organisation, open Settings → Reports → Default reporting basis. In Accounting choose Cash and save. Open profit and loss, then balance sheet, with no saved view or URL overrides. Both should open on cash basis. Select Accrual inside one report and confirm that its explicit choice takes precedence.
 - For an existing test user with organisation-scoped appearance preferences and no account-wide preference, open Profile → Appearance. Expect the most recently saved accessible palette. Save a different palette, switch organisations, and sign in on a second device with the same account. Expect the newly saved account-wide palette. A separate user should see their own preference.
+
+### Portal invitation controls
+
+Open Settings → Portals with a dedicated test organisation. A read-only member should be unable to edit settlement accounts. As an authorised administrator, clear the invitation lifetime or enter 91 and verify the inline validation. Set a valid lifetime and require an authenticator, save, and issue a test invitation. Even if the staff checkbox is clear, the new membership should require MFA and expire after the configured number of days. Hosted execution requires the portal MFA migration and approved test identities.

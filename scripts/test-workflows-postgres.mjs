@@ -97,6 +97,13 @@ try {
   }
   if (!ready) throw Error("Postgres did not become ready");
   sql(read("tests/fixtures/workflows/baseline.sql"));
+  sql(read("supabase/migrations/20261127160000_portal_invitation_mfa_policy.sql"));
+  sql("BEGIN;" + read("tests/integration/portal-invitation-mfa-policy.sql") + "ROLLBACK;");
+  sql(read("supabase/rollback/20261127160000_portal_invitation_mfa_policy.sql"));
+  sql(
+    "DO $$ BEGIN IF has_function_privilege('authenticated','public.invite_portal_user(jsonb)','EXECUTE') THEN RAISE EXCEPTION 'Invitation rollback left execution enabled'; END IF; END $$;",
+  );
+  sql(read("supabase/migrations/20261127160000_portal_invitation_mfa_policy.sql"));
   sql(read("supabase/migrations/20261127150000_user_global_appearance_preferences.sql"));
   sql(read("tests/integration/user-global-appearance-preferences.sql"));
   sql(

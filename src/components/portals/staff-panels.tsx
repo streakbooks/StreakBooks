@@ -98,6 +98,9 @@ export function PortalSettingsPanel({
   }
   if (!current) return null;
 
+  const inviteDays = Number(current["invite_days"] ?? 14);
+  const validInviteDays = Number.isInteger(inviteDays) && inviteDays >= 1 && inviteDays <= 90;
+
   function set<K extends string>(key: K, value: unknown) {
     setForm({ ...(form ?? settings ?? {}), [key]: value });
   }
@@ -113,6 +116,7 @@ export function PortalSettingsPanel({
       </p>
       <div className="grid gap-3 md:grid-cols-2">
         <AccountSelect
+          disabled={!canEdit || persist.isPending}
           label="Settlement bank account"
           value={String(current["settlement_account_id"] ?? "")}
           accounts={(settings?.["bank_accounts"] as Account[]) ?? []}
@@ -124,7 +128,7 @@ export function PortalSettingsPanel({
             className="mt-1 block h-9 w-full rounded-md border border-input bg-background px-2"
             value={String(current["settlement_user_id"] ?? "")}
             onValueChange={(event) => set("settlement_user_id", event)}
-            disabled={!canEdit}
+            disabled={!canEdit || persist.isPending}
           >
             <option value="">Not set</option>
             {((settings?.["actors"] as Actor[]) ?? []).map((actor) => (
@@ -135,12 +139,14 @@ export function PortalSettingsPanel({
           </RecordLookupSelect>
         </label>
         <AccountSelect
+          disabled={!canEdit || persist.isPending}
           label="Card-fee expense account"
           value={String(current["fee_expense_account_id"] ?? "")}
           accounts={(settings?.["expense_accounts"] as Account[]) ?? []}
           onChange={(value) => set("fee_expense_account_id", value)}
         />
         <AccountSelect
+          disabled={!canEdit || persist.isPending}
           label="Default purchase account"
           value={String(current["default_purchase_account_id"] ?? "")}
           accounts={(settings?.["purchase_accounts"] as Account[]) ?? []}
@@ -151,12 +157,19 @@ export function PortalSettingsPanel({
           <Input
             className="mt-1"
             type="number"
+            aria-invalid={!validInviteDays}
             min={1}
             max={90}
+            aria-describedby={!validInviteDays ? "portal-invite-days-error" : undefined}
             value={String(current["invite_days"] ?? 14)}
             onChange={(event) => set("invite_days", event.target.value)}
-            disabled={!canEdit}
+            disabled={!canEdit || persist.isPending}
           />
+          {!validInviteDays && (
+            <span id="portal-invite-days-error" role="alert">
+              Enter a whole number from 1 to 90.
+            </span>
+          )}
         </label>
       </div>
       <label className="flex items-center gap-2 text-sm">
@@ -164,7 +177,7 @@ export function PortalSettingsPanel({
           type="checkbox"
           checked={Boolean(current["require_mfa"])}
           onChange={(event) => set("require_mfa", event.target.checked)}
-          disabled={!canEdit}
+          disabled={!canEdit || persist.isPending}
         />
         Require an authenticator for new portal invitations
       </label>
@@ -173,13 +186,16 @@ export function PortalSettingsPanel({
           type="checkbox"
           checked={Boolean(current["allow_sandbox"])}
           onChange={(event) => set("allow_sandbox", event.target.checked)}
-          disabled={!canEdit}
+          disabled={!canEdit || persist.isPending}
         />
         Allow sandbox checkout when Stripe and Razorpay are not configured. A sandbox confirmation
         posts a real receipt and collects no card funds.
       </label>
       <div className="flex flex-wrap gap-2">
-        <Button disabled={!canEdit || persist.isPending} onClick={() => persist.mutate()}>
+        <Button
+          disabled={!canEdit || !form || !validInviteDays || persist.isPending}
+          onClick={() => persist.mutate()}
+        >
           Save portal settings
         </Button>
         <Button variant="outline" disabled={reminders.isPending} onClick={() => reminders.mutate()}>
@@ -331,7 +347,7 @@ export function ContactPortalPanel({
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={mfa} onChange={(event) => setMfa(event.target.checked)} />
-          Require an authenticator after they accept
+          Require an authenticator for this invitation even when optional for the organisation
         </label>
         <Button type="submit" disabled={sendInvite.isPending || (!isCustomer && !isSupplier)}>
           Create invitation
@@ -598,6 +614,7 @@ export function PortalInbox({ companyId }: { companyId: string }) {
 }
 
 function AccountSelect({
+  disabled,
   label,
   value,
   accounts,
@@ -606,6 +623,7 @@ function AccountSelect({
   label: string;
   value: string;
   accounts: Account[];
+  disabled: boolean;
   onChange: (value: string) => void;
 }) {
   return (
@@ -613,6 +631,7 @@ function AccountSelect({
       {label}
       <RecordLookupSelect
         className="mt-1 block h-9 w-full rounded-md border border-input bg-background px-2"
+        disabled={disabled}
         value={value}
         onValueChange={(event) => onChange(event)}
       >

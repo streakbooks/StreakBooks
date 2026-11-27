@@ -417,3 +417,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - [x] Route Reports users to the Accounting basis editor. Profit and loss and balance sheet now use the Accounting basis even if an older Reports document contains a different value. Explicit report choices retain precedence. Both Accounting editors invalidate affected cached reports after saving.
 - Local Settings and Reports suites passed (83 files, 721 tests). Verify with an authenticated test organisation by saving Cash in Accounting, opening profit and loss, and switching that report to Accrual. Regional Tax work and authenticated acceptance are still open.
+
+## 2026-11-27 Portal invitation policy (Batch 6)
+
+- [x] Enforce the organisation MFA requirement on new portal invitations. Staff can require MFA on individual invitations when optional. Six isolated database scenarios verify the stored membership flag and expiration, including organisations without a settings row. Existing memberships are outside this change.
+- [x] Reject invalid invitation lifetimes before saving. The portal form enforces the 1–90 whole-day range and disables account selectors for read-only users. The Settings Centre now remounts company-specific drafts when switching company.
+- Portal unit tests: 28 passed. Local network-isolated workflow PostgreSQL suite passed with migration, emergency invitation suspension and reapplication. Migration history: 392 unique versions, eight checks passed. Hosted application, real authenticator enrollment and full portal settings acceptance remain pending.

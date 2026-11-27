@@ -26,7 +26,7 @@ vi.mock("@/integrations/supabase/auth-middleware", () => ({
 }));
 vi.mock("@/lib/portals/portal-payments.server", () => ({ checkoutModeFor: vi.fn() }));
 import { checkoutModeFor } from "./portal-payments.server";
-import { getPortalInvoice } from "./portals.functions";
+import { getPortalInvoice, savePortalSettings } from "./portals.functions";
 const membershipId = "11111111-1111-4111-8111-111111111111";
 const invoiceId = "22222222-2222-4222-8222-222222222222";
 const rpc = vi.fn();
@@ -76,5 +76,27 @@ describe("invoice payment capability", () => {
   it("rejects malformed record identifiers before any database access", async () => {
     await expect(run("invalid")).rejects.toThrow("Invalid");
     expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("portal invitation settings", () => {
+  const save = (inviteDays?: number) =>
+    (savePortalSettings as unknown as (args: unknown) => Promise<unknown>)({
+      data: { companyId: membershipId, inviteDays },
+      context: { supabase: { rpc } },
+    });
+  it.each([0, 91, 2.5])("rejects invalid invitation lifetime %s before saving", async (days) => {
+    await expect(save(days)).rejects.toThrow();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it.each([
+    [undefined, 14],
+    [1, 1],
+    [90, 90],
+  ])("persists the requested or default lifetime", async (input, expected) => {
+    await save(input);
+    expect(rpc).toHaveBeenCalledWith("save_portal_settings", {
+      payload: expect.objectContaining({ invite_days: expected }),
+    });
   });
 });

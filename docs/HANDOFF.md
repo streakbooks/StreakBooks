@@ -500,3 +500,5 @@ Fixed the Settings overview company query to read tax regime through the authori
 2026-11-27 — PR #92 reconciled with main through 44336170. The checkout fixture passed on 30839d75. Batch 3 fixes the report basis source and cached reports for both Accounting editors (721 Settings/Reports tests passed). Authenticated acceptance, remaining batches and production verification remain open.
 
 2026-11-27 — Batch 2 now reads the latest accessible legacy personal palette when the signed-in user has no account-wide preference. New saves use the existing account-wide writer. Both appearance suites passed (7 tests). No schema changes.
+
+2026-11-27 — Batch 6 fixes new portal invitation MFA precedence, valid lifetime handling and read-only account selectors. Migration 20261127160000, its emergency rollback and reapplication passed in the isolated PostgreSQL workflow suite. The rollback pauses new invitations through the authenticated RPC. Existing memberships and hosted Supabase were untouched.

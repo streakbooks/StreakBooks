@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { z } from "zod";
 import { assertUuid } from "@/lib/company-validation";
 import { callSalesRpc, requireRpc, type SalesClient } from "@/lib/sales/rpc";
 
@@ -481,7 +482,7 @@ export const savePortalSettings = createServerFn({ method: "POST" })
         : null,
       allowSandbox: Boolean(input.allowSandbox),
       requireMfa: Boolean(input.requireMfa),
-      inviteDays: Math.min(90, Math.max(1, Math.floor(Number(input.inviteDays) || 14))),
+      inviteDays: z.number().int().min(1).max(90).default(14).parse(input.inviteDays),
     }),
   )
   .handler(async ({ data, context }) =>

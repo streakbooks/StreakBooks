@@ -165,7 +165,7 @@ export function SettingsPage() {
     );
   }
 
-  return <SettingsForCompany companyId={companyId} />;
+  return <SettingsForCompany key={companyId} companyId={companyId} />;
 }
 
 export function SettingsForCompany({

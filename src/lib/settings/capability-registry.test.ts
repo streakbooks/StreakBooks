@@ -168,6 +168,22 @@ describe("Settings capability coverage registry", () => {
     );
   });
 
+  it("records inclusive sales pricing only with its setting loader and calculation consumer", () => {
+    expect(
+      SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "company.prices_include_tax"),
+    ).toMatchObject({
+      route: "/settings/organisation/overview",
+      permission: "company.settings.edit",
+      persistence: expect.stringContaining("save_company_identity_and_tax"),
+      audit: expect.stringContaining("same transaction"),
+      consumer: expect.stringContaining("inclusive versus exclusive tax"),
+      test: expect.stringContaining("sales-common.test.ts"),
+    });
+    expect(SETTINGS_GAPS.find((gap) => gap.key === "company.identity_and_locale")?.status).toBe(
+      "partial",
+    );
+  });
+
   it("records document locale and date-format consumers separately from storage format", () => {
     for (const key of ["company.locale", "company.date_format"]) {
       expect(SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === key)).toMatchObject({

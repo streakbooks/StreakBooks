@@ -210,10 +210,7 @@ try {
   sql(read("tests/integration/expense-required-approvals.sql"));
   sql(read("tests/fixtures/workflows/expense-account-mapping-baseline.sql"));
   sql(read("supabase/migrations/20261127130000_expense_settings_account_scope.sql"));
-  for (const name of [
-    "private.expense_cash_advance_json",
-    "public.issue_expense_cash_advance",
-  ])
+  for (const name of ["private.expense_cash_advance_json", "public.issue_expense_cash_advance"])
     sql(fn("supabase/migrations/20261107140000_expense_management_cash_advances.sql", name));
   for (const name of [
     "private.expense_petty_cash_float_json",

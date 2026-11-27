@@ -239,6 +239,23 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/company-validation.test.ts, src/lib/tax/country-packs.test.ts and tests/integration/settings-company-identity-atomic.sql",
   },
   {
+    key: "company.prices_include_tax",
+    label: "Tax-inclusive sales pricing",
+    moduleId: "settings",
+    route: "/settings/organisation/overview",
+    scope: "company",
+    defaultValue: "false (tax-exclusive pricing)",
+    validation:
+      "The organisation identity RPC validates the saved boolean together with a version-checked snapshot",
+    permission: "company.settings.edit",
+    entitlement: null,
+    persistence: "company_tax_settings.prices_include_tax through save_company_identity_and_tax",
+    audit: "audit_events records the before/after pricing treatment in the same transaction",
+    consumer:
+      "Sales line preparation loads the company setting and uses it to calculate inclusive versus exclusive tax",
+    test: "src/lib/sales/sales-common.test.ts and src/lib/sales/line-helpers.test.ts; tests/integration/settings-company-identity-atomic.sql proves persistence and audit",
+  },
+  {
     key: "company.base_currency",
     label: "Organisation base currency",
     moduleId: "settings",
@@ -763,8 +780,10 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     moduleId: "settings",
     status: "partial",
     route: "/settings/organisation/overview",
-    missingEvidence: ["field-level consumer tests for the legacy tax summary fields"],
-    note: "Country, base currency, legal name, fiscal year end, time zone, document locale and document date format have field-level consumer evidence. The legacy tax summary still needs clearer proof against Tax module ownership and reporting effects.",
+    missingEvidence: [
+      "single write owner and reporting/return consumer evidence for the legacy tax regime and registration summary fields",
+    ],
+    note: "Country, base currency, legal name, fiscal year end, time zone, document locale, document date format and inclusive sales pricing have field-level consumer evidence. Tax regime and registration summary values remain partial because both organisation identity and Tax settings can write the same fields through different save paths.",
   },
   {
     key: "accounting.workflow_safeguards",

@@ -2,6 +2,12 @@
 
 Ordered work for the Settings module brief. Status reflects repository work, not hosted production state.
 
+## 2026-11-27 Inclusive sales-pricing consumer
+
+- Added a field-level consumer regression proving the organisation's saved `prices_include_tax` value is read by Sales before invoice-line tax calculation; missing values retain the exclusive-pricing default, while read errors fail visibly.
+- Registered the setting as complete only against the version-checked identity RPC, same-transaction audit, loader test and existing inclusive/exclusive calculation tests. The organisation identity group remains partial: the legacy tax regime and registration summary still have two write paths shared with the Tax module.
+- Focused tests passed (3 files / 26 tests), `check:ui` passed (775 TSX files, zero violations), and `git diff --check` passed. GitHub validation also identified a Prettier-only formatting issue in the isolated Postgres harness; that line is corrected locally. No migration or hosted Supabase operation was needed.
+
 ## 2026-11-27 Direct bank-posting warning consumer
 
 - Connected the existing `warn_bank_direct_posting` preference to populated manual-journal lines that use an active, postable bank or cash ledger account. The warning is advisory and never blocks posting; the typed Accounting settings control is now complete based on the existing version-checked, permission-gated, audited writer.

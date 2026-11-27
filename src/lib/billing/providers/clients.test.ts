@@ -52,18 +52,71 @@ describe("Stripe client", () => {
   });
 
   it("upgrades with a pending update and downgrades without proration", async () => {
-    const item = { body: { items: { data: [{ id: "si_1" }] } } };
-    const { fetch, calls } = mockFetch([item, { body: {} }, item, { body: {} }]);
+    const subscription = {
+      body: { items: { data: [{ id: "si_1", price: { id: "price_cur" } }] } },
+    };
+    const monthPrice = { body: { id: "price_cur", recurring: { interval: "month" } } };
+    const targetMonth = { body: { id: "price_biz", recurring: { interval: "month" } } };
+    const upgraded = {
+      body: {
+        items: { data: [{ id: "si_1", price: { id: "price_biz" } }] },
+        latest_invoice: "in_up",
+      },
+    };
+    const invoice = {
+      body: {
+        id: "in_up",
+        status: "open",
+        amount_due: 1000,
+        hosted_invoice_url: "https://invoice.stripe.com/i/up",
+      },
+    };
+    const downgraded = {
+      body: { items: { data: [{ id: "si_1", price: { id: "price_std" } }] } },
+    };
+    const openInvoices = { body: { data: [] } };
+    const { fetch, calls } = mockFetch([
+      // upgrade: GET sub → list open invoices → GET current price → GET target → POST update → GET invoice
+      subscription,
+      openInvoices,
+      monthPrice,
+      targetMonth,
+      upgraded,
+      invoice,
+      // downgrade: GET sub → GET current → GET target → POST update
+      subscription,
+      monthPrice,
+      { body: { id: "price_std", recurring: { interval: "month" } } },
+      downgraded,
+    ]);
     const client = createStripeClient(stripeEnv, fetch);
     await stripeChangePrice(client, "sub_1", "price_biz", "upgrade", "k1");
     await stripeChangePrice(client, "sub_1", "price_std", "downgrade", "k2");
-    const upgrade = new URLSearchParams(String(calls[1]!.init.body));
+    const upgrade = new URLSearchParams(String(calls[4]!.init.body));
     expect(upgrade.get("payment_behavior")).toBe("pending_if_incomplete");
     expect(upgrade.get("proration_behavior")).toBe("always_invoice");
     expect(upgrade.get("items[0][price]")).toBe("price_biz");
-    const downgrade = new URLSearchParams(String(calls[3]!.init.body));
+    const downgrade = new URLSearchParams(String(calls[9]!.init.body));
     expect(downgrade.get("proration_behavior")).toBe("none");
+    expect(downgrade.get("billing_cycle_anchor")).toBe("unchanged");
     expect(downgrade.get("payment_behavior")).toBeNull();
+  });
+
+  it("omits billing_cycle_anchor when the recurring interval changes", async () => {
+    const subscription = {
+      body: { items: { data: [{ id: "si_1", price: { id: "price_year" } }] } },
+    };
+    const { fetch, calls } = mockFetch([
+      subscription,
+      { body: { id: "price_year", recurring: { interval: "year" } } },
+      { body: { id: "price_month", recurring: { interval: "month" } } },
+      { body: { items: { data: [{ id: "si_1", price: { id: "price_month" } }] } } },
+    ]);
+    const client = createStripeClient(stripeEnv, fetch);
+    await stripeChangePrice(client, "sub_1", "price_month", "downgrade", "k-interval");
+    const body = new URLSearchParams(String(calls[3]!.init.body));
+    expect(body.get("proration_behavior")).toBe("none");
+    expect(body.get("billing_cycle_anchor")).toBeNull();
   });
 
   it("checks out with the mapped price, never an inline amount", () => {
@@ -86,6 +139,18 @@ describe("Stripe client", () => {
 });
 
 describe("Razorpay client", () => {
+  it("refuses live key ids when RAZORPAY_MODE=test", () => {
+    expect(() =>
+      createRazorpayClient({
+        RAZORPAY_KEY_ID: "rzp_live_abc",
+        RAZORPAY_KEY_SECRET: "secret",
+        RAZORPAY_MODE: "test",
+        STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS: "true",
+      }),
+    ).toThrow(/RAZORPAY_MODE=test/);
+    expect(createRazorpayClient(razorpayEnv).mode).toBe("test");
+  });
+
   it("cancels at cycle end", async () => {
     const { fetch, calls } = mockFetch([{ body: { current_end: 1767225600 } }]);
     const result = await razorpayCancel(createRazorpayClient(razorpayEnv, fetch), "sub_1");

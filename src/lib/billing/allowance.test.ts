@@ -48,6 +48,10 @@ describe("provider keys", () => {
       /STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/,
     );
     expect(() => assertRazorpayTestKey("rzp_live_abc", live)).not.toThrow();
+    expect(() => assertRazorpayTestKey("rzp_live_abc", { ...live, RAZORPAY_MODE: "test" })).toThrow(
+      /RAZORPAY_MODE=test/,
+    );
+    expect(() => assertRazorpayTestKey("rzp_test_abc", { RAZORPAY_MODE: "test" })).not.toThrow();
   });
 });
 

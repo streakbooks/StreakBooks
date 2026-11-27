@@ -32,7 +32,7 @@ Server-only environment (never `VITE_`):
 | ----------------------------------------------------------------------- | ------------------------------------------------------------- |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Database access (service role only on the server)             |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`                            | Stripe (test keys until go-live)                              |
-| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`     | Razorpay (test keys until go-live)                            |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_MODE=test` | Razorpay Test Mode (see `22-razorpay-test-mode-setup.md`) |
 | `STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS`                                     | Must be `true` before live keys are accepted; owner decision  |
 | `STREAKBOOKS_CRON_SECRET` (and `_PREVIOUS` while rotating)                  | Authenticates `/api/billing/webhook-retry`                    |
 | `APP_ORIGIN` or `SITE_URL`                                              | Allowed checkout return origin                                |
@@ -43,8 +43,19 @@ Server-only environment (never `VITE_`):
 Provider webhooks: Stripe → `https://<app>/api/v1/webhooks/stripe` (or `/api/billing/stripe`),
 Razorpay → `https://<app>/api/v1/webhooks/razorpay`. Event lists are in `06-payment-integration.md`.
 
-Schedule `POST /api/billing/webhook-retry` every few minutes with the cron secret. The lifecycle
-sweep runs inside the existing platform worker tick (`billing_lifecycle`, every 15 minutes).
+Schedule `POST /api/billing/webhook-retry` every 2–5 minutes with the cron secret:
+
+```http
+POST https://<app-host>/api/billing/webhook-retry
+Authorization: Bearer <STREAKBOOKS_CRON_SECRET>
+```
+
+In-repo schedule: `vercel.json` registers `GET /api/billing/webhook-retry` daily at 04:00 UTC (`0 4 * * *`) so Hobby-plan deploys succeed. Use an external scheduler every 2–5 minutes when Pro cron or another host is available.
+Set `CRON_SECRET` and `STREAKBOOKS_CRON_SECRET` to the **same** value on Vercel (Cron sends
+`Authorization: Bearer <CRON_SECRET>`). External schedulers may POST. Missing secret → HTTP 500;
+wrong Bearer → 401; success → `{ "processed", "failed" }`. Details: `18-production-release.md`.
+
+The lifecycle sweep runs inside the existing platform worker tick (`billing_lifecycle`, every 15 minutes).
 
 ## 3. Go-live checklist (owner decisions)
 

@@ -37,6 +37,8 @@ CREATE TABLE public.company_members (
   user_id uuid NOT NULL REFERENCES auth.users(id),
   role public.company_role NOT NULL,
   status public.membership_status NOT NULL DEFAULT 'active',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (company_id, user_id)
 );
 CREATE TABLE public.role_permissions (

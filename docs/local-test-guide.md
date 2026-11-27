@@ -13,6 +13,17 @@ npm.cmd run dev
 Open `http://localhost:8080` and sign in with the local test accounts. Never copy production
 credentials into a test fixture or commit a `.env` file.
 
+### Supabase keys for billing and server functions
+
+Copy `.env` to `.env.local` and add **server-only** values (never `VITE_*`):
+
+- `SUPABASE_SERVICE_ROLE_KEY` — Supabase Dashboard → **Settings → API** → **service_role** (or
+  `supabase projects api-keys --project-ref qugoaaizclvkzesptovm`)
+- `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` for subscription checkout — see
+  `docs/billing/14-stripe-local-setup.md`
+
+Restart `npm run dev` after changing `.env.local`.
+
 ## Run partner governance tests
 
 ```powershell

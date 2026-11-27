@@ -59,6 +59,75 @@ export const listBillingDocuments = createServerFn({ method: "GET" })
       })) as BillingDocumentList,
   );
 
+export type ProviderInvoice = {
+  id: string;
+  number: string | null;
+  status: string;
+  currency: string;
+  totalMinor: number;
+  amountDueMinor: number;
+  createdAt: string;
+  dueAt: string | null;
+  hostedInvoiceUrl: string | null;
+  pdfUrl: string | null;
+  /** True when this looks like a mid-cycle proration / upgrade invoice. */
+  proration: boolean;
+};
+
+/**
+ * Live Stripe invoices for the organisation (open, paid, void, uncollectible).
+ * Complements immutable platform invoices in billing.invoices — does not duplicate them.
+ */
+export const listProviderInvoices = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ companyId: z.string().uuid() }).strict().parse(input),
+  )
+  .handler(async ({ data, context }): Promise<{ invoices: ProviderInvoice[] }> => {
+    const { assertCompanyPermission } = await import("@/lib/assert-company-access");
+    await assertCompanyPermission(context.supabase, data.companyId, "billing.view");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("company_subscriptions" as never)
+      .select("provider, provider_customer_id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    const sub = row as { provider: string; provider_customer_id: string | null } | null;
+    if (sub?.provider !== "stripe" || !sub.provider_customer_id) {
+      return { invoices: [] };
+    }
+    const { createStripeClient } = await import("@/lib/billing/providers/stripe.server");
+    const stripe = createStripeClient();
+    const listed = await stripe.request(
+      "GET",
+      `invoices?customer=${encodeURIComponent(sub.provider_customer_id)}&limit=24`,
+    );
+    const rows = Array.isArray(listed["data"]) ? (listed["data"] as Record<string, unknown>[]) : [];
+    const invoices: ProviderInvoice[] = rows.map((invoice) => {
+      const lines =
+        (invoice["lines"] as { data?: Record<string, unknown>[] } | undefined)?.data ?? [];
+      const proration = lines.some((line) => line["proration"] === true);
+      const created = Number(invoice["created"] ?? 0);
+      const due = Number(invoice["due_date"] ?? 0);
+      return {
+        id: String(invoice["id"] ?? ""),
+        number: typeof invoice["number"] === "string" ? invoice["number"] : null,
+        status: String(invoice["status"] ?? "unknown"),
+        currency: String(invoice["currency"] ?? "gbp").toUpperCase(),
+        totalMinor: Number(invoice["total"] ?? 0),
+        amountDueMinor: Number(invoice["amount_due"] ?? 0),
+        createdAt: created > 0 ? new Date(created * 1000).toISOString() : new Date().toISOString(),
+        dueAt: due > 0 ? new Date(due * 1000).toISOString() : null,
+        hostedInvoiceUrl:
+          typeof invoice["hosted_invoice_url"] === "string" ? invoice["hosted_invoice_url"] : null,
+        pdfUrl: typeof invoice["invoice_pdf"] === "string" ? invoice["invoice_pdf"] : null,
+        proration,
+      };
+    });
+    return { invoices };
+  });
+
 export const documentRequest = z
   .object({ kind: z.enum(["invoice", "credit_note"]), id: z.string().uuid() })
   .strict();

@@ -153,6 +153,9 @@ export function friendlyAuthError(error: unknown): string {
   if (key.includes("rate limit") || key.includes("too many")) {
     return "Too many attempts. Please wait a moment and try again.";
   }
+  if (key.includes("idempoten")) {
+    return "That upgrade was already started. Confirm again to open Stripe, or wait a few seconds and retry.";
+  }
   return raw;
 }
 

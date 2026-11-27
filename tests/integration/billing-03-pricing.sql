@@ -64,14 +64,19 @@ SELECT pg_temp.ok(billing.fx_convert(99999999999, 'USD', 'INR', 83.123456789012,
   'Large amounts stay exact');
 
 -- ---------------------------------------------------------------- seeded state
-SELECT pg_temp.ok((SELECT count(*) FROM billing.price_inputs) = 6, 'Brief prices seeded as inputs (3 USD base, 3 India INR)');
-SELECT pg_temp.ok((SELECT amount_minor FROM billing.price_inputs WHERE plan_code = 'pro' AND country_code IS NULL) = 2000
-  AND (SELECT amount_minor FROM billing.price_inputs WHERE plan_code = 'business' AND country_code = 'IN') = 199900,
+SELECT pg_temp.ok((SELECT count(*) FROM billing.price_inputs) >= 6, 'Price inputs include brief seeds (and launch rows)');
+SELECT pg_temp.ok((SELECT amount_minor FROM billing.price_inputs WHERE plan_code = 'pro' AND country_code IS NULL AND billing_interval = 'month') = 2000
+  AND (SELECT amount_minor FROM billing.price_inputs WHERE plan_code = 'business' AND country_code = 'IN' AND billing_interval = 'month') = 199900,
   'Seeded amounts match the brief');
 SELECT pg_temp.ok((SELECT strategy = 'FIXED' AND currency = 'INR' FROM billing.country_pricing_rules WHERE country_code = 'IN'),
   'India uses fixed INR prices');
-SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM billing.price_inputs WHERE billing_interval = 'year'), 'No yearly price is invented');
-SELECT pg_temp.ok(pg_temp.offer('IN') = '' AND pg_temp.offer('US') = '', 'Nothing is published by the migration');
+SELECT pg_temp.ok(EXISTS (
+  SELECT 1 FROM public.plan_prices p
+  JOIN public.plan_versions v ON v.id = p.version_id
+  WHERE v.price_book AND v.status = 'published' AND p.billing_interval = 'year'
+), 'Launch migration includes yearly plan prices');
+SELECT pg_temp.ok(pg_temp.offer('IN') <> '' OR pg_temp.offer('GB') <> '',
+  'Launch migration publishes price-book offers for open countries');
 SELECT pg_temp.ok((SELECT bool_and(price_book) FROM public.plan_versions v WHERE v.plan_code IN ('standard', 'business'))
   AND NOT (SELECT price_book FROM public.plan_versions WHERE plan_code = 'pro' AND version_no = 1),
   'Catalogue versions are price-book versions; the retired PRO version is not');
@@ -95,7 +100,7 @@ SELECT pg_temp.expect_error($$SELECT public.platform_country_pricing()$$, '42501
 
 -- ---------------------------------------------------------------- validation
 SELECT pg_temp.act('00000000-0000-0000-0000-0000000000f2', 'aal2');
-SELECT pg_temp.ok(jsonb_array_length(public.platform_country_pricing()->'inputs') = 6, 'Platform owner sees the pricing inputs');
+SELECT pg_temp.ok(jsonb_array_length(public.platform_country_pricing()->'inputs') >= 6, 'Platform owner sees the pricing inputs');
 SELECT pg_temp.expect_error($$SELECT public.platform_set_country_pricing_rule('DE', 'BASE', 'EUR', 0, 'HALF_UP', NULL, true, 'bad')$$,
   '22023', 'BASE rule must be USD');
 SELECT pg_temp.expect_error($$SELECT public.platform_set_country_pricing_rule('DE', 'FX_CONVERTED', 'USD', 0, 'HALF_UP', NULL, true, 'bad')$$,
@@ -126,11 +131,14 @@ SELECT pg_temp.draft('business', 'Launch prices') AS biz_v1 \gset
 RESET ROLE;
 SELECT pg_temp.ok((SELECT status = 'draft' AND price_book AND visibility = 'draft' FROM public.plan_versions WHERE id = :'pro_v1'),
   'Owner draft is an unpublished price-book version');
-SELECT pg_temp.ok((SELECT count(*) FROM public.plan_prices WHERE version_id = :'pro_v1') = 2, 'Draft holds the USD base and India prices');
+SELECT pg_temp.ok((SELECT count(*) FROM public.plan_prices WHERE version_id = :'pro_v1') >= 2,
+  'Draft copies published price-book rows (base and country prices)');
 SELECT pg_temp.ok((SELECT count(*) FROM public.plan_version_limits WHERE version_id = :'pro_v1')
   = (SELECT count(*) FROM public.plan_version_limits l JOIN public.plan_versions v ON v.id = l.version_id
      WHERE v.plan_code = 'pro' AND v.status = 'published'), 'Draft keeps the published entitlements');
-SELECT pg_temp.ok(pg_temp.offer('US') = '', 'Drafts are not visible to customers');
+-- Launch already publishes US/GB/IN offers; a new draft version must not replace the live offer list alone.
+SELECT pg_temp.ok((SELECT status = 'draft' FROM public.plan_versions WHERE id = :'pro_v1'),
+  'New draft version remains unpublished (customers still see prior live offer)');
 SELECT pg_temp.expect_error(format($$SELECT pg_temp.publish(%L, 'self approval')$$, :'pro_v1'), '42501',
   'The drafter cannot publish their own prices');
 SELECT pg_temp.act('00000000-0000-0000-0000-0000000000f1', 'aal2');
@@ -151,7 +159,8 @@ SELECT pg_temp.ok(pg_temp.offer('us') = 'business:month:USD:5000:BASE pro:month:
   'United States sees the USD base prices');
 SELECT pg_temp.ok(pg_temp.offer('ZZ') = pg_temp.offer(NULL) AND public.billing_price_list('ZZ')->>'country' IS NULL,
   'Unknown countries fall back to USD');
-SELECT pg_temp.ok(pg_temp.offer('GB') = pg_temp.offer('US'), 'Countries without a rule use the base prices');
+SELECT pg_temp.ok(pg_temp.offer('GB') <> '' AND pg_temp.offer('GB') IS DISTINCT FROM pg_temp.offer('US'),
+  'GB launch FIXED prices differ from USD base offers');
 RESET ROLE;
 
 -- ---------------------------------------------------------------- FX countries

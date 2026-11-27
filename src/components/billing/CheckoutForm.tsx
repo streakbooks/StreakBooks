@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, Lock, Shield } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,11 +9,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   checkoutCurrencyForCountry,
   parseCheckoutBilling,
-  paymentMethodsFor,
   type CheckoutBillingInput,
   type PayMethodId,
   type PaymentProviderAvailability,
 } from "@/lib/billing/checkout-payload";
+import {
+  paymentMethodsForRoutedCountry,
+  type BillingProviderId,
+} from "@/lib/billing/provider-resolution";
 import { billingCountries } from "@/lib/billing/billing-countries";
 import {
   formatMinor,
@@ -47,6 +51,7 @@ export function CheckoutForm({
   busy,
   serverError,
   providers,
+  routedProviders,
   quote,
   quoteLoading,
   quoteError,
@@ -63,6 +68,8 @@ export function CheckoutForm({
   busy: boolean;
   serverError: string | null;
   providers: PaymentProviderAvailability;
+  /** From `billing.country_providers` via overview — never trust a client-chosen gateway. */
+  routedProviders?: BillingProviderId[];
   quote: PriceQuote | null;
   quoteLoading: boolean;
   quoteError: string | null;
@@ -80,18 +87,31 @@ export function CheckoutForm({
   const [error, setError] = useState("");
   const currency = priceCurrency ?? checkoutCurrencyForCountry(defaultCountry);
   const dueMinor = quote && quote.currency === currency ? quote.dueMinor : null;
-  const available = paymentMethodsFor(defaultCountry, providers).filter((item) => item.available);
+  const available = paymentMethodsForRoutedCountry(
+    defaultCountry,
+    providers,
+    routedProviders,
+  ).filter((item) => item.available);
+  const selectedMethod = available.find((item) => item.id === method);
+  const hostedProvider =
+    selectedMethod?.provider === "razorpay"
+      ? "Razorpay"
+      : selectedMethod?.provider === "stripe"
+        ? "Stripe"
+        : "our payment partner";
 
-  const { stripe, razorpay } = providers;
+  const routedKey = (routedProviders ?? []).join(",");
 
   useEffect(() => {
     // Country comes from the server, not an editable country picker or browser locale.
     setBilling((current) => ({ ...current, country: defaultCountry }));
-    const choices = paymentMethodsFor(defaultCountry, { stripe, razorpay }).filter(
-      (item) => item.available,
-    );
+    const choices = paymentMethodsForRoutedCountry(
+      defaultCountry,
+      providers,
+      routedProviders,
+    ).filter((item) => item.available);
     setMethod(choices.find((item) => item.id === "upi")?.id ?? choices[0]?.id ?? "card");
-  }, [defaultCountry, stripe, razorpay]);
+  }, [defaultCountry, providers, routedKey, routedProviders]);
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => {
@@ -331,13 +351,21 @@ export function CheckoutForm({
               Promotion applied: {formatMinor(quote.discountMinor, quote.currency)} reduction.
             </p>
           ) : null}
+          <Alert variant="default" className="border-dashed bg-muted/40">
+            <Shield className="size-4" aria-hidden />
+            <AlertDescription className="text-xs leading-relaxed">
+              Card details are entered on <strong>{hostedProvider}</strong>&apos;s secure checkout
+              page — not inside StreakBooks. After you pay, you&apos;ll come back here to activate
+              your plan. This is the same pattern used by major accounting SaaS products and keeps
+              your PCI scope low.
+            </AlertDescription>
+          </Alert>
           <p className="text-xs text-muted-foreground">
             The billing currency follows your organisation region; markets without a supported local
             price currently use USD.{" "}
             {quote?.taxLabel
               ? `${quote.taxLabel} is shown as configured for your country and appears on your invoice.`
-              : "No tax is added for your country."}{" "}
-            Payment methods will be confirmed by the hosted provider.
+              : "No tax is added for your country."}
           </p>
           {error || serverError || quoteError ? (
             <p role="alert" className="text-sm text-destructive-ink">
@@ -350,7 +378,7 @@ export function CheckoutForm({
             disabled={busy || quoteLoading || dueMinor == null || !available.length}
             onClick={() => submit(false)}
           >
-            {busy ? "Opening secure payment…" : "Continue to payment"}
+            {busy ? `Redirecting to ${hostedProvider}…` : `Continue to ${hostedProvider}`}
           </Button>
           <Button
             type="button"

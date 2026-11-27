@@ -9,7 +9,6 @@ import { assertUuid } from "@/lib/company-validation";
 import {
   isPayMethodId,
   parseCheckoutBilling,
-  paymentMethodsFor,
   razorpayPlanBody,
   razorpaySubscriptionBody,
   stripeCheckoutBody,
@@ -18,6 +17,12 @@ import {
   type CheckoutBillingInput,
   type PayMethodId,
 } from "@/lib/billing/checkout-payload";
+import {
+  assertProviderRouted,
+  normaliseRoutedProviders,
+  paymentMethodsForRoutedCountry,
+  type BillingProviderId,
+} from "@/lib/billing/provider-resolution";
 import {
   DEFAULT_TRIAL_DAYS,
   DEFAULT_TRIAL_PLAN,
@@ -36,6 +41,11 @@ import { planPrice, type PriceList } from "@/lib/billing/domain/country-pricing"
 import { providerAddsTax, type CheckoutTax } from "@/lib/billing/domain/tax";
 import { assertDiscountCap, assertPriceFloor } from "@/lib/billing/provider-actions";
 import { assertRazorpayTestKey, assertStripeTestKey } from "@/lib/billing/provider-keys";
+import {
+  assertNoRecentOpenCheckout,
+  expireStaleOpenCheckouts,
+  subscriptionSuccessUrl,
+} from "@/lib/billing/checkout-confirm.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -55,7 +65,16 @@ export type BillingPlanView = {
   summary: string;
   /** Null until the plan has a published price (price-book plans before phase 3). */
   monthlyMinor: number | null;
+  /**
+   * True when the country price book has a purchasable amount for this plan.
+   * Independent of whether Stripe/Razorpay API keys are present on the server.
+   */
   pricePublished: boolean;
+  /**
+   * True when Subscribe can open checkout (published price + routed provider configured).
+   * False with a published price means server payment credentials are missing.
+   */
+  checkoutReady: boolean;
   monthlyGbp: number;
   monthlyUsd: number;
   monthlyInr: number;
@@ -109,6 +128,9 @@ export type BillingOverview = {
     provider: string;
     cancelAtPeriodEnd: boolean;
     offerCode: string | null;
+    /** Downgrade scheduled at period end (industry standard). */
+    scheduledPlanCode: string | null;
+    scheduledAt: string | null;
   } | null;
   usage: { invoicesThisMonth: number; billsThisMonth: number; users: number };
   plans: BillingPlanView[];
@@ -119,7 +141,10 @@ export type BillingOverview = {
     pastDueGraceDays: number;
   };
   offers: BillingOfferView[];
+  /** Server env keys present (not country routing). */
   providers: { stripe: boolean; razorpay: boolean };
+  /** Country routes from `billing.country_providers` via the price list. */
+  routedProviders: BillingProviderId[];
   isOperator: boolean;
 };
 
@@ -181,13 +206,15 @@ function monthlyMinor(plan: PlanRow, currency: BillingCurrency): number | null {
 }
 
 function toPlanView(plan: PlanRow, currency: BillingCurrency): BillingPlanView {
+  const published = hasLegacyPrice(plan);
   return {
     code: plan.code,
     name: plan.name,
     audience: plan.audience,
     summary: plan.summary,
     monthlyMinor: monthlyMinor(plan, currency),
-    pricePublished: hasLegacyPrice(plan),
+    pricePublished: published,
+    checkoutReady: published,
     monthlyGbp: plan.monthly_gbp,
     monthlyUsd: plan.monthly_usd,
     monthlyInr: plan.monthly_inr,
@@ -206,20 +233,27 @@ function toPlanView(plan: PlanRow, currency: BillingCurrency): BillingPlanView {
 }
 
 function withListPrice(plan: BillingPlanView, list: PriceList | null): BillingPlanView {
-  if (plan.pricePublished || !list) return plan;
+  const flags = providerFlags();
+  const routedReady = (providers: string[] | null | undefined) =>
+    (providers ?? []).some((provider) => flags[provider as "stripe" | "razorpay"]);
+
+  if (plan.pricePublished) {
+    const ready = list ? routedReady(list.providers) : Boolean(flags.stripe || flags.razorpay);
+    return { ...plan, checkoutReady: ready };
+  }
+  if (!list) return { ...plan, checkoutReady: false };
+
   const month = planPrice(list, plan.code, "month");
   const year = planPrice(list, plan.code, "year");
   const currency = month?.currency ?? year?.currency;
-  if (!currency) return plan;
-  const flags = providerFlags();
-  const purchasable =
-    month !== null &&
-    list.billingEnabled === true &&
-    isBillingCurrency(currency) &&
-    (list.providers ?? []).some((provider) => flags[provider]);
+  if (!currency) return { ...plan, checkoutReady: false };
+  const catalogReady =
+    month !== null && list.billingEnabled === true && isBillingCurrency(currency);
+  const providerReady = routedReady(list.providers);
   return {
     ...plan,
-    pricePublished: purchasable,
+    pricePublished: catalogReady,
+    checkoutReady: catalogReady && providerReady,
     listPrice: {
       currency,
       monthlyMinor: month?.amountMinor ?? null,
@@ -429,6 +463,7 @@ export const getBillingOverview = createServerFn({ method: "GET" })
         settings: EMPTY_SETTINGS,
         offers: [],
         providers: providerFlags(),
+        routedProviders: normaliseRoutedProviders(null, region.country),
         isOperator: false,
       };
     }
@@ -468,6 +503,8 @@ export const getBillingOverview = createServerFn({ method: "GET" })
       provider: string;
       cancel_at_period_end: boolean;
       offer_code: string | null;
+      scheduled_plan_code: string | null;
+      scheduled_at: string | null;
     } | null;
     const planName =
       plans.find((plan) => plan.code === sub?.plan_code)?.name ?? sub?.plan_code ?? "";
@@ -513,6 +550,8 @@ export const getBillingOverview = createServerFn({ method: "GET" })
             provider: sub.provider,
             cancelAtPeriodEnd: sub.cancel_at_period_end,
             offerCode: sub.offer_code,
+            scheduledPlanCode: sub.scheduled_plan_code,
+            scheduledAt: sub.scheduled_at,
           }
         : null,
       usage,
@@ -520,6 +559,7 @@ export const getBillingOverview = createServerFn({ method: "GET" })
       settings,
       offers,
       providers: providerFlags(),
+      routedProviders: normaliseRoutedProviders(priceList?.providers, region.country),
       isOperator,
     };
   });
@@ -529,6 +569,26 @@ function providerFlags(): { stripe: boolean; razorpay: boolean } {
     stripe: Boolean(process.env["STRIPE_SECRET_KEY"]),
     razorpay: Boolean(process.env["RAZORPAY_KEY_ID"] && process.env["RAZORPAY_KEY_SECRET"]),
   };
+}
+
+/** DB country routes; checkout snapshot first, then price list, then seed defaults. */
+async function resolveRoutedProviders(
+  supabase: Client,
+  country: string,
+  checkout: CheckoutPrice | null,
+): Promise<BillingProviderId[]> {
+  if (checkout?.providers?.length) {
+    return normaliseRoutedProviders(checkout.providers, country);
+  }
+  const { data, error } = await supabase.rpc(
+    "billing_price_list" as never,
+    { _country: country } as never,
+  );
+  if (!error && data) {
+    const list = data as PriceList;
+    if (list.providers?.length) return normaliseRoutedProviders(list.providers, country);
+  }
+  return normaliseRoutedProviders(null, country);
 }
 
 async function usageCounts(supabase: Client, companyId: string) {
@@ -655,7 +715,8 @@ export const createCheckoutFor = createServerOnlyFn(
       data.offerCode,
     );
     assertCheckoutRegion(data.billing.country, priced.country);
-    const method = paymentMethodsFor(priced.country, providerFlags()).find(
+    const routed = await resolveRoutedProviders(supabase, priced.country, priced.checkout);
+    const method = paymentMethodsForRoutedCountry(priced.country, providerFlags(), routed).find(
       (item) => item.id === data.method,
     );
     if (!method?.available) {
@@ -666,9 +727,7 @@ export const createCheckoutFor = createServerOnlyFn(
         "Online payment is not open in your country yet. Your trial and records are not affected.",
       );
     }
-    if (priced.checkout && !priced.checkout.providers.includes(method.provider)) {
-      throw new Error("That payment method is not offered in your country.");
-    }
+    assertProviderRouted(method.provider, routed);
     if (priced.quote.recurringMinor < 1)
       throw new Error("The recurring price must be at least one minor unit.");
     // Do not open a second paid subscription for the same organisation.
@@ -682,6 +741,8 @@ export const createCheckoutFor = createServerOnlyFn(
         "This organisation already has a payment subscription. Use Manage billing to change it.",
       );
     }
+    await expireStaleOpenCheckouts(data.companyId);
+    await assertNoRecentOpenCheckout(supabase, data.companyId);
 
     if (priced.checkout) {
       return openPriceBookCheckout({
@@ -728,7 +789,7 @@ export const createCheckoutFor = createServerOnlyFn(
       unitAmountMinor: priced.quote.recurringMinor,
       discountMinor: priced.quote.discountMinor,
       promoDurationMonths: priced.quote.promoDurationMonths,
-      successUrl: `${data.origin}/settings?section=subscription&checkout=success`,
+      successUrl: subscriptionSuccessUrl(data.origin),
       cancelUrl: `${data.origin}/settings?section=subscription&checkout=cancel`,
       trialEndUnix: trialEndUnixOrNull(sub?.trial_ends_at ?? null, new Date()),
       billing: data.billing,
@@ -752,6 +813,22 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(parseCheckoutRequest)
   .handler(({ data, context }) => createCheckoutFor(context, data));
+
+export const confirmBillingCheckout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId?: string; sessionId?: string }) => {
+    const sessionId = typeof input?.sessionId === "string" ? input.sessionId.trim() : "";
+    if (!sessionId.startsWith("cs_")) throw new Error("Missing or invalid checkout session.");
+    return { companyId: assertUuid(input?.companyId), sessionId };
+  })
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "billing.manage");
+    const { confirmStripeCheckoutSession } = await import("@/lib/billing/checkout-confirm.server");
+    return confirmStripeCheckoutSession({
+      companyId: data.companyId,
+      sessionId: data.sessionId,
+    });
+  });
 
 async function openPriceBookCheckout(input: {
   supabase: Client;
@@ -836,7 +913,7 @@ async function openPriceBookCheckout(input: {
         checkoutId,
         companyId: input.companyId,
         planCode: input.price.planCode,
-        successUrl: `${input.origin}/settings?section=subscription&checkout=success`,
+        successUrl: subscriptionSuccessUrl(input.origin),
         cancelUrl: `${input.origin}/settings?section=subscription&checkout=cancel`,
         customerId,
         email: input.billing.email || null,

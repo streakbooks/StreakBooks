@@ -17,7 +17,22 @@ export function BillingAccessBanner({ companyId }: { companyId: string }) {
       </div>
     );
   }
-  if (overview.data?.access !== "read_only") return null;
+  const data = overview.data;
+  if (!data) return null;
+
+  if (data.subscription?.status === "past_due") {
+    return (
+      <div role="status" className="border-b bg-warning/15 px-4 py-2 text-sm print:hidden md:px-6">
+        A subscription payment failed. You keep access during the grace period — update the card to
+        avoid interruption.{" "}
+        <Link to="/settings" search={{ section: "subscription" }} className="font-medium underline">
+          Fix billing
+        </Link>
+      </div>
+    );
+  }
+
+  if (data.access !== "read_only") return null;
   return (
     <div
       role="status"

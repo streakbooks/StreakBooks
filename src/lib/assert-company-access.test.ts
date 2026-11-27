@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
+import {
+  assertCompanyMember,
+  assertCompanyPermission,
+  assertCompanyPermissionAny,
+} from "@/lib/assert-company-access";
 
 const companyId = "11111111-1111-4111-8111-111111111111";
 
@@ -30,6 +34,46 @@ describe("assertCompanyPermission", () => {
   it("surfaces RPC failures instead of treating them as grants", async () => {
     const supabase = mockClient({ data: null, error: { message: "rpc unavailable" } });
     await expect(assertCompanyPermission(supabase, companyId, "sales.view")).rejects.toThrow(
+      "rpc unavailable",
+    );
+  });
+});
+
+describe("assertCompanyPermissionAny", () => {
+  it("accepts an alternative permission and records the access once", async () => {
+    const client = {
+      rpc: vi
+        .fn()
+        .mockResolvedValueOnce({ data: false, error: null })
+        .mockResolvedValueOnce({ data: true, error: null })
+        .mockResolvedValueOnce({ data: null, error: null }),
+    };
+    const supabase = client as typeof client & Parameters<typeof assertCompanyPermission>[0];
+
+    await expect(
+      assertCompanyPermissionAny(supabase, companyId, [
+        "expenses.manage_policies",
+        "expenses.admin",
+      ]),
+    ).resolves.toBeUndefined();
+    expect(supabase.rpc).toHaveBeenNthCalledWith(2, "has_company_permission", {
+      _company_id: companyId,
+      _permission: "expenses.admin",
+    });
+    expect(supabase.rpc).toHaveBeenNthCalledWith(3, "record_firm_client_access", {
+      _company_id: companyId,
+      _module_key: "expenses",
+    });
+  });
+
+  it("fails closed when no permission grants access or a permission RPC fails", async () => {
+    const denied = mockClient({ data: false, error: null });
+    await expect(
+      assertCompanyPermissionAny(denied, companyId, ["expenses.manage_policies", "expenses.admin"]),
+    ).rejects.toThrow("You do not have permission");
+
+    const failed = mockClient({ data: null, error: { message: "rpc unavailable" } });
+    await expect(assertCompanyPermissionAny(failed, companyId, ["expenses.admin"])).rejects.toThrow(
       "rpc unavailable",
     );
   });

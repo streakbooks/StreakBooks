@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
+import {
+  assertCompanyMember,
+  assertCompanyPermission,
+  assertCompanyPermissionAny,
+} from "@/lib/assert-company-access";
 import { callRpc, companyIdOf, isMissingRelation } from "@/lib/planning/rpc";
 import {
   mapExpenseManagementSettings,
@@ -307,7 +311,10 @@ export const saveExpenseManagementSettings = createServerFn({ method: "POST" })
     draft: input.draft,
   }))
   .handler(async ({ data, context }): Promise<ExpenseManagementSettings> => {
-    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_policies");
+    await assertCompanyPermissionAny(context.supabase, data.companyId, [
+      "expenses.manage_policies",
+      "expenses.admin",
+    ]);
     if (
       data.draft.claimNumberPrefix !== undefined &&
       (data.draft.claimNumberPrefix.trim().length < 1 ||

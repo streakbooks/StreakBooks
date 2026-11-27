@@ -79,6 +79,24 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "src/lib/expenses/mileage.test.ts and tests/integration/expense-settings-audit.sql",
   },
   {
+    key: "expense-management.prevent_self_approval",
+    label: "Prevent employees from approving their own claims",
+    moduleId: "expense-management",
+    route: "/expense-management/settings",
+    scope: "company",
+    defaultValue: "true",
+    validation: "Settings RPC validates and versions the boolean policy",
+    permission:
+      "expenses.manage_policies or expenses.admin to edit; expenses.approve to decide claims",
+    entitlement: null,
+    persistence:
+      "expense_management_settings.prevent_self_approval through save_expense_management_settings",
+    audit: "audit_events records the before/after expense policy in the same transaction",
+    consumer:
+      "Expense claim and spending-request approval guards reject a requester approving their own item when enabled",
+    test: "tests/integration/expense-self-approval-settings.sql and tests/integration/expense-settings-audit.sql",
+  },
+  {
     key: "documents.number_sequences",
     label: "Sales and purchase document number sequences",
     moduleId: "settings",
@@ -672,9 +690,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/expense-management/settings",
     missingEvidence: [
-      "consumer tests and audit coverage for receipt/spending thresholds, approval settings, advances, petty-cash and rebilling fields",
+      "consumer tests and audit coverage for receipt/spending thresholds, approval-count policy, advances, petty-cash and rebilling fields",
     ],
-    note: "The employee payable account, default claim currency and default distance unit have field-level evidence. Other typed expense policies, including thresholds, approvals, advances, petty-cash and rebilling, remain partial.",
+    note: "The employee payable account, default claim currency, default distance unit and self-approval guard have field-level evidence. Other typed expense policies, including thresholds, approval-count policy, advances, petty-cash and rebilling, remain partial.",
   },
   {
     key: "banking.typed_configuration",

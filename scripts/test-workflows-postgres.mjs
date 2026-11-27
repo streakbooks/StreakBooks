@@ -143,6 +143,13 @@ try {
   sql(read("tests/fixtures/workflows/expense-settings-audit-baseline.sql"));
   sql(read("supabase/migrations/20261127110000_expense_settings_audit.sql"));
   sql(read("tests/integration/expense-settings-audit.sql"));
+  sql(
+    fn(
+      "supabase/migrations/20261107135000_expense_management_approvals.sql",
+      "private.expense_claim_assert_approver",
+    ),
+  );
+  sql(read("tests/integration/expense-self-approval-settings.sql"));
   sql(read("tests/fixtures/workflows/payroll-settings-audit-baseline.sql"));
   sql(read("supabase/migrations/20261127120000_payroll_settings_audit.sql"));
   sql(read("tests/integration/payroll-settings-audit.sql"));

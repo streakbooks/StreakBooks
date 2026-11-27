@@ -16,6 +16,14 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Focused tests passed (3 files / 30 tests), changed-file ESLint passed, `check:ui` passed (775 TSX files, zero violations), and `npm.cmd run test:workflows:postgres` passed in a disposable network-disabled PostgreSQL 17 container. The modified SQL assertion proves default claim currency and distance unit before/after audit values. No hosted Supabase operation or deployment was performed; current-head GitHub CI is pending.
 - Batch 5 remains partial because receipt/spending thresholds, approval settings, advances, petty cash and rebilling still need field-level evidence.
 
+## 2026-11-27 Expense self-approval policy
+
+- Added an isolated regression around the production `private.expense_claim_assert_approver` helper. It proves the default-on setting rejects a claimant's own approval, allows a different authorised approver, and permits self-approval only when the saved policy is explicitly disabled.
+- Aligned the server-side Settings save permission with the page and RPC: either `expenses.manage_policies` or `expenses.admin` can save. Added helper tests proving alternate permission grants, denied access, RPC errors and one access-audit event.
+- The workflow harness now loads that exact helper from the existing approvals migration. The policy uses the audited, versioned Expense settings RPC; no migration was added.
+- Focused tests passed (3 files / 30 tests), changed-file ESLint and `git diff --check` passed, `check:ui` passed (775 TSX files, zero violations), and the network-disabled PostgreSQL 17 workflow harness passed including the new self-approval case. Current-head GitHub validation is pending. No hosted Supabase operation or deployment was performed.
+- Expense Management remains partial because threshold, approval-count, advance, petty-cash and rebilling fields still need evidence.
+
 - [x] Phase 0 — audit current routes, UI, persistence, consumers, permissions, tests and module registry (`audit.md`). No feature code changed in this phase.
 - [x] Phase 1 — official public benchmark, clean-room IA, decision and originality record (`benchmark.md`, `ia-design.md`, `docs/decisions/011-settings-information-architecture.md`, `docs/compliance/originality-log.md`).
 - [x] Phase 2 — define typed per-setting coverage metadata and fail-closed coverage tests; document ownership and honest statuses. Evidence-backed capabilities are registered individually; remaining typed fields stay partial and are read-only.

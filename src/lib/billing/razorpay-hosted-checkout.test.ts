@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   razorpayHostedCheckoutUrl,
   razorpaySubscriptionReturnUrl,
-} from "@/lib/billing/razorpay-hosted-checkout.server";
+} from "@/lib/billing/razorpay-hosted-checkout";
 
 describe("razorpay hosted checkout urls", () => {
   it("builds a same-origin bridge url with subscription and return targets", () => {

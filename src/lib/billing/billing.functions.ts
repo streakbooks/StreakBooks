@@ -928,7 +928,7 @@ async function openPriceBookCheckout(input: {
     const subscriptionId = String(created["id"] ?? "");
     if (!subscriptionId) throw new Error("The payment provider did not start the checkout.");
     const { razorpayHostedCheckoutUrl, razorpaySubscriptionReturnUrl } =
-      await import("@/lib/billing/razorpay-hosted-checkout.server");
+      await import("@/lib/billing/razorpay-hosted-checkout");
     session = {
       id: subscriptionId,
       url: razorpayHostedCheckoutUrl({
@@ -1256,7 +1256,7 @@ async function openRazorpayCheckout(draft: Parameters<typeof razorpayPlanBody>[0
     throw new Error(subPayload.error?.description ?? "Razorpay could not start the subscription.");
   }
   const { razorpayHostedCheckoutUrl, razorpaySubscriptionReturnUrl } =
-    await import("@/lib/billing/razorpay-hosted-checkout.server");
+    await import("@/lib/billing/razorpay-hosted-checkout");
   const origin = new URL(draft.successUrl).origin;
   return {
     id: subPayload.id,

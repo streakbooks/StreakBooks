@@ -27,7 +27,7 @@ BEGIN
   _insert_audit_id := audit_row.id;
 
   UPDATE public.expense_management_settings
-  SET default_distance_unit = 'mi', required_approval_count = 2
+  SET default_distance_unit = 'mi', default_claim_currency = 'USD', required_approval_count = 2
   WHERE expense_management_settings.company_id = _company_id;
 
   SELECT * INTO audit_row FROM public.audit_events AS ae
@@ -37,6 +37,8 @@ BEGIN
    ORDER BY id DESC LIMIT 1;
   IF audit_row.details->'before'->>'default_distance_unit' <> 'km'
      OR audit_row.details->'after'->>'default_distance_unit' <> 'mi'
+     OR audit_row.details->'before'->'default_claim_currency' IS DISTINCT FROM 'null'::jsonb
+     OR audit_row.details->'after'->>'default_claim_currency' <> 'USD'
      OR audit_row.details->'before'->>'required_approval_count' <> '1'
      OR audit_row.details->'after'->>'required_approval_count' <> '2' THEN
     RAISE EXCEPTION 'Expense settings update omitted exact before/after values';

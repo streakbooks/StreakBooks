@@ -6,8 +6,15 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - Connected the existing `warn_bank_direct_posting` preference to populated manual-journal lines that use an active, postable bank or cash ledger account. The warning is advisory and never blocks posting; the typed Accounting settings control is now complete based on the existing version-checked, permission-gated, audited writer.
 - Updated the legacy Accounting safeguards summary to identify the bank and back-date warnings as active, while leaving duplicate-number, control-account and auto-credit preferences explicitly partial/read-only. No migration was needed.
-- Focused helper, capability-registry and safeguards UI tests passed (3 files / 23 tests); UI contract check passed (775 TSX files, zero violations). Changed-file lint and typecheck are being resolved before commit; no hosted Supabase access or deployment was performed.
+- Focused helper, capability-registry and safeguards UI tests passed (3 files / 23 tests); changed-file lint and UI contract check passed (775 TSX files, zero violations). Local typecheck stalled without diagnostics, but GitHub Actions [run #45948663653](https://github.com/streakbooks/StreakBooks/actions/runs/45948663653) passed validation, browser fixtures and all six isolated PostgreSQL suites for this commit. No hosted Supabase access or deployment was performed.
 - Batch 3 remains partial because regional Tax and other Accounting controls still lack complete evidence.
+
+## 2026-11-27 Expense defaults field evidence
+
+- Promoted the existing Expense Management default claim currency and distance unit after tracing their versioned settings RPC, `expenses.manage_policies` permission, same-transaction audit and real new-claim/mileage-rate consumers.
+- Extended the isolated settings audit regression to assert exact before/after values for the default claim currency. The existing focused resolver tests cover enabled-currency/multi-currency fallback and mileage unit precedence.
+- Focused tests passed (3 files / 30 tests), changed-file ESLint passed, `check:ui` passed (775 TSX files, zero violations), and `npm.cmd run test:workflows:postgres` passed in a disposable network-disabled PostgreSQL 17 container. The modified SQL assertion proves default claim currency and distance unit before/after audit values. No hosted Supabase operation or deployment was performed; current-head GitHub CI is pending.
+- Batch 5 remains partial because receipt/spending thresholds, approval settings, advances, petty cash and rebilling still need field-level evidence.
 
 - [x] Phase 0 — audit current routes, UI, persistence, consumers, permissions, tests and module registry (`audit.md`). No feature code changed in this phase.
 - [x] Phase 1 — official public benchmark, clean-room IA, decision and originality record (`benchmark.md`, `ia-design.md`, `docs/decisions/011-settings-information-architecture.md`, `docs/compliance/originality-log.md`).

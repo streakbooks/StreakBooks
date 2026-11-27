@@ -43,6 +43,42 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     test: "tests/integration/expense-reimbursement-settings.sql proves the configured account reaches the balanced posted journal",
   },
   {
+    key: "expense-management.default_claim_currency",
+    label: "Default employee expense claim currency",
+    moduleId: "expense-management",
+    route: "/expense-management/settings",
+    scope: "company",
+    defaultValue: "Organisation base currency",
+    validation:
+      "Expense settings server function checks ISO format, enabled company currencies and the multi-currency policy; claim creation safely falls back to base currency",
+    permission:
+      "expenses.manage_policies or expenses.admin to edit; expense claimant to create own claims",
+    entitlement: null,
+    persistence:
+      "expense_management_settings.default_claim_currency through save_expense_management_settings",
+    audit: "audit_events records before/after expense settings in the same transaction",
+    consumer:
+      "New online employee claim drafts use the saved currency only when enabled and multi-currency claims are allowed",
+    test: "src/lib/expenses/settings.test.ts and tests/integration/expense-settings-audit.sql",
+  },
+  {
+    key: "expense-management.default_distance_unit",
+    label: "Default mileage distance unit",
+    moduleId: "expense-management",
+    route: "/expense-management/settings",
+    scope: "company",
+    defaultValue: "km",
+    validation: "save_expense_management_settings validates the value is km or mi",
+    permission: "expenses.manage_policies or expenses.admin to edit",
+    entitlement: null,
+    persistence:
+      "expense_management_settings.default_distance_unit through save_expense_management_settings",
+    audit: "audit_events records before/after expense settings in the same transaction",
+    consumer:
+      "New mileage rates use the organisation unit unless the user explicitly chooses another unit; trip calculation uses the saved rate's unit",
+    test: "src/lib/expenses/mileage.test.ts and tests/integration/expense-settings-audit.sql",
+  },
+  {
     key: "documents.number_sequences",
     label: "Sales and purchase document number sequences",
     moduleId: "settings",
@@ -636,9 +672,9 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     status: "partial",
     route: "/expense-management/settings",
     missingEvidence: [
-      "consumer tests and audit coverage for the remaining claim policy, advance, petty-cash and rebilling fields",
+      "consumer tests and audit coverage for receipt/spending thresholds, approval settings, advances, petty-cash and rebilling fields",
     ],
-    note: "The employee payable account is separately complete: reimbursement uses it in the posted journal and is covered by an isolated integration test. Saved distance units initialize new mileage-rate forms; default claim currency initializes eligible drafts; spending controls and self-approval have guards. Other typed expense policies remain partial.",
+    note: "The employee payable account, default claim currency and default distance unit have field-level evidence. Other typed expense policies, including thresholds, approvals, advances, petty-cash and rebilling, remain partial.",
   },
   {
     key: "banking.typed_configuration",

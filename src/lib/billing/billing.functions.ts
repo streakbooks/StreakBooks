@@ -65,7 +65,16 @@ export type BillingPlanView = {
   summary: string;
   /** Null until the plan has a published price (price-book plans before phase 3). */
   monthlyMinor: number | null;
+  /**
+   * True when the country price book has a purchasable amount for this plan.
+   * Independent of whether Stripe/Razorpay API keys are present on the server.
+   */
   pricePublished: boolean;
+  /**
+   * True when Subscribe can open checkout (published price + routed provider configured).
+   * False with a published price means server payment credentials are missing.
+   */
+  checkoutReady: boolean;
   monthlyGbp: number;
   monthlyUsd: number;
   monthlyInr: number;
@@ -197,13 +206,15 @@ function monthlyMinor(plan: PlanRow, currency: BillingCurrency): number | null {
 }
 
 function toPlanView(plan: PlanRow, currency: BillingCurrency): BillingPlanView {
+  const published = hasLegacyPrice(plan);
   return {
     code: plan.code,
     name: plan.name,
     audience: plan.audience,
     summary: plan.summary,
     monthlyMinor: monthlyMinor(plan, currency),
-    pricePublished: hasLegacyPrice(plan),
+    pricePublished: published,
+    checkoutReady: published,
     monthlyGbp: plan.monthly_gbp,
     monthlyUsd: plan.monthly_usd,
     monthlyInr: plan.monthly_inr,
@@ -222,20 +233,29 @@ function toPlanView(plan: PlanRow, currency: BillingCurrency): BillingPlanView {
 }
 
 function withListPrice(plan: BillingPlanView, list: PriceList | null): BillingPlanView {
-  if (plan.pricePublished || !list) return plan;
+  const flags = providerFlags();
+  const routedReady = (providers: string[] | null | undefined) =>
+    (providers ?? []).some((provider) => flags[provider as "stripe" | "razorpay"]);
+
+  if (plan.pricePublished) {
+    const ready = list
+      ? routedReady(list.providers)
+      : Boolean(flags.stripe || flags.razorpay);
+    return { ...plan, checkoutReady: ready };
+  }
+  if (!list) return { ...plan, checkoutReady: false };
+
   const month = planPrice(list, plan.code, "month");
   const year = planPrice(list, plan.code, "year");
   const currency = month?.currency ?? year?.currency;
-  if (!currency) return plan;
-  const flags = providerFlags();
-  const purchasable =
-    month !== null &&
-    list.billingEnabled === true &&
-    isBillingCurrency(currency) &&
-    (list.providers ?? []).some((provider) => flags[provider]);
+  if (!currency) return { ...plan, checkoutReady: false };
+  const catalogReady =
+    month !== null && list.billingEnabled === true && isBillingCurrency(currency);
+  const providerReady = routedReady(list.providers);
   return {
     ...plan,
-    pricePublished: purchasable,
+    pricePublished: catalogReady,
+    checkoutReady: catalogReady && providerReady,
     listPrice: {
       currency,
       monthlyMinor: month?.amountMinor ?? null,

@@ -58,12 +58,15 @@ if (keyId && !keyId.startsWith("rzp_test_")) {
 if (allowLive) {
   fail("STREAKBOOKS_ALLOW_LIVE_PAYMENT_KEYS must not be true during Test Mode verification.");
 }
-if (!(env.RAZORPAY_WEBHOOK_SECRET ?? "")) {
-  fail("RAZORPAY_WEBHOOK_SECRET is required for webhook signature verification.");
+const webhookMissing = !(env.RAZORPAY_WEBHOOK_SECRET ?? "");
+if (webhookMissing) {
+  console.warn(
+    "WARN: RAZORPAY_WEBHOOK_SECRET missing — API auth can still be checked; webhooks will fail until set.",
+  );
 }
 
 if (failed) {
-  console.error("\nConnectivity skipped until local Test Mode credentials are present.");
+  console.error("\nConnectivity skipped until local Test Mode API credentials are present.");
   process.exit(1);
 }
 
@@ -94,4 +97,8 @@ try {
   fail(error instanceof Error ? error.message : String(error));
 }
 
+if (webhookMissing) {
+  console.warn("\nAPI connectivity OK, but set RAZORPAY_WEBHOOK_SECRET before subscription E2E.");
+  process.exit(2);
+}
 process.exit(failed ? 1 : 0);

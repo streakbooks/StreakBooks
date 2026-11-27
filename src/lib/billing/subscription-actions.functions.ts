@@ -19,7 +19,11 @@ function optionalInterval(value: string | undefined): BillingInterval | null {
 
 async function stripePost(path: string, body: URLSearchParams): Promise<Record<string, unknown>> {
   const secret = process.env["STRIPE_SECRET_KEY"];
-  if (!secret) throw new Error("Stripe is not configured. Add a test secret on the server.");
+  if (!secret) {
+    throw new Error(
+      "Stripe is not configured. Set STRIPE_SECRET_KEY (sk_test_…) on the server environment and redeploy.",
+    );
+  }
   assertStripeTestKey(secret);
   const response = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: "POST",

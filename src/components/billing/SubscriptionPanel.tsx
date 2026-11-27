@@ -91,7 +91,9 @@ function PaymentSetupCallout({
   data: BillingOverview;
   plans: BillingPlanView[];
 }) {
-  const hasCatalogPrices = plans.some((plan) => plan.listPrice?.monthlyMinor != null);
+  const hasCatalogPrices = plans.some(
+    (plan) => plan.pricePublished || plan.listPrice?.monthlyMinor != null,
+  );
   if (!hasCatalogPrices || paymentProviderReady(data)) return null;
   if (data.subscription && paidSubscription(data.subscription)) return null;
 
@@ -116,20 +118,24 @@ function PaymentSetupCallout({
           You can ignore Stripe&apos;s setup guide steps such as &quot;Create a recurring product&quot;
           or customer portal; StreakBooks creates provider prices on first checkout.
         </p>
-        {import.meta.env.DEV ? (
-          <p className="text-muted-foreground">
-            Local dev: add{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-xs">
-              {provider === "stripe" ? "STRIPE_SECRET_KEY" : "RAZORPAY_KEY_ID"}=
-            </code>{" "}
-            and webhook forwarding to{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-xs">.env.local</code>. See{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-xs">
-              docs/billing/14-stripe-local-setup.md
-            </code>{" "}
-            in the repository.
-          </p>
-        ) : null}
+        <p className="text-muted-foreground">
+          Server env required:{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">
+            {provider === "stripe"
+              ? "STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET"
+              : "RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET + RAZORPAY_WEBHOOK_SECRET + RAZORPAY_MODE=test"}
+          </code>
+          {import.meta.env.DEV ? (
+            <>
+              {" "}
+              in <code className="rounded bg-muted px-1 py-0.5 text-xs">.env.local</code>. On
+              Vercel, set the same names for Preview and Production (Test Mode keys only for
+              staging).
+            </>
+          ) : (
+            <> on the Vercel project (Preview / Production), then redeploy.</>
+          )}
+        </p>
       </AlertDescription>
     </Alert>
   );
@@ -329,7 +335,7 @@ export function SubscriptionPanel({
     if (openedFromLink.current || !data?.ready || !initialPlan) return;
     const plan = visiblePlans(data).find((item) => item.code === initialPlan);
     openedFromLink.current = true;
-    if (!plan?.pricePublished) return;
+    if (!plan?.checkoutReady) return;
     const paid = paidSubscription(data.subscription);
     if (paid && data.subscription?.planCode === plan.code) return;
     setIntent(paid ? "switch" : "subscribe");
@@ -342,7 +348,7 @@ export function SubscriptionPanel({
   }
 
   function openPlan(plan: BillingPlanView) {
-    if (!data || !plan.pricePublished) return;
+    if (!data || !plan.checkoutReady) return;
     const paid = paidSubscription(data.subscription);
     const samePlanSameInterval =
       paid && data.subscription?.planCode === plan.code && data.subscription.interval === interval;
@@ -395,7 +401,7 @@ export function SubscriptionPanel({
       toast.error(data.message ?? "Subscriptions are not available yet.");
       return;
     }
-    const targets = visiblePlans(data).filter((plan) => plan.pricePublished);
+    const targets = visiblePlans(data).filter((plan) => plan.checkoutReady);
     if (targets.length === 0) {
       toast.error("Promo codes can be used once plan prices are published.");
       return;
@@ -1132,7 +1138,10 @@ function PlanCard({
         <p className="mt-1 text-xs text-muted-foreground">
           {[
             plan.trialEnabled ? `${plan.trialDays}-day free trial, no card needed` : null,
-            plan.listPrice && !plan.pricePublished ? "Online payment opens soon" : null,
+            !plan.pricePublished ? "Online payment opens soon" : null,
+            plan.pricePublished && !plan.checkoutReady
+              ? "Payment provider keys are missing on the server"
+              : null,
           ]
             .filter(Boolean)
             .join(". ") || "Not yet on sale"}
@@ -1143,23 +1152,29 @@ function PlanCard({
         </p>
       ) : (
         <p className="mt-1 text-xs text-muted-foreground">
-          {interval === "year" ? "Billed once a year" : "Billed monthly"}
+          {plan.pricePublished && !plan.checkoutReady
+            ? "Payment provider keys are missing on the server"
+            : interval === "year"
+              ? "Billed once a year"
+              : "Billed monthly"}
         </p>
       )}
       <Button
         type="button"
         className="mt-4 w-full"
         variant={recommended ? "default" : "outline"}
-        disabled={busy || paidHere || !plan.pricePublished}
+        disabled={busy || paidHere || !plan.checkoutReady}
         onClick={onChoose}
       >
-        {paidHere || (current && !plan.pricePublished)
+        {paidHere
           ? "Current plan"
           : !plan.pricePublished
             ? "Available soon"
-            : paidSubscription(overview.subscription)
-              ? "Switch plan"
-              : "Subscribe"}
+            : !plan.checkoutReady
+              ? "Setup required"
+              : paidSubscription(overview.subscription)
+                ? "Switch plan"
+                : "Subscribe"}
       </Button>
       <p className="mt-4 text-sm">{plan.summary}</p>
       <ul className="mt-3 space-y-2 text-sm text-muted-foreground">

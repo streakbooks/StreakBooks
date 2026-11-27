@@ -4,7 +4,20 @@ import {
   calculateMileageNetMinor,
   isMileageRateEffectiveOn,
   mapExpenseMileageRate,
+  resolveMileageRateUnit,
 } from "./mileage";
+
+describe("resolveMileageRateUnit", () => {
+  it("uses the company default for a new rate until the user chooses a unit", () => {
+    expect(resolveMileageRateUnit("mi", null)).toBe("mi");
+    expect(resolveMileageRateUnit("km", undefined)).toBe("km");
+    expect(resolveMileageRateUnit(undefined, null)).toBe("km");
+  });
+
+  it("preserves an explicit new-rate choice over the company default", () => {
+    expect(resolveMileageRateUnit("mi", "km")).toBe("km");
+  });
+});
 
 describe("calculateMileageNetMinor", () => {
   it("rounds distance × rate into minor units", () => {

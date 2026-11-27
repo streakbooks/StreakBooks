@@ -15,6 +15,14 @@ export type ExpenseMileageRate = {
   isActive: boolean;
 };
 
+/** Resolve the suggested unit for a new rate; an explicit choice wins over the company default. */
+export function resolveMileageRateUnit(
+  companyDefault: "km" | "mi" | null | undefined,
+  selected: "km" | "mi" | null | undefined,
+): "km" | "mi" {
+  return selected ?? companyDefault ?? "km";
+}
+
 export type ExpenseMileageLineDraft = {
   expenseDate: string;
   distanceValue: number;

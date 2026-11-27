@@ -561,6 +561,16 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     note: "Supplier summary, bill terms, bill notes, purchase-order preference and three-way-match authorization have field-level consumers; unsupported purchase policies stay read-only.",
   },
   {
+    key: "expense-management.typed_configuration",
+    moduleId: "expense-management",
+    status: "partial",
+    route: "/expense-management/settings",
+    missingEvidence: [
+      "field-level consumers and audit evidence for expense thresholds, approvals, reimbursement accounts and claim defaults",
+    ],
+    note: "The saved default distance unit now initializes new mileage-rate forms; each saved mileage rate remains authoritative for claim calculations. Other expense settings remain partial until their effects and audit evidence are verified.",
+  },
+  {
     key: "payroll.settings_audit_coverage",
     moduleId: "payroll",
     status: "partial",
@@ -678,7 +688,7 @@ export const MODULE_SETTINGS_COVERAGE: readonly ModuleSettingsCoverage[] = [
   {
     moduleId: "expense-management",
     status: "partial",
-    expected: "Claims, limits, approvals and reimbursement",
+    expected: "Claims, limits, approvals, reimbursement and mileage defaults",
   },
   { moduleId: "crm", status: "partial", expected: "Pipelines, territories and CRM defaults" },
   {

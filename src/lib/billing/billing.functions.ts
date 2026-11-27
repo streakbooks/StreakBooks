@@ -357,9 +357,11 @@ function assertInterval(value: string): BillingInterval {
 }
 
 function assertOrigin(origin: string): string {
+  const host = getRequestHeader("x-forwarded-host") ?? getRequestHeader("host");
+  const proto = getRequestHeader("x-forwarded-proto") ?? "https";
   return assertCheckoutOrigin(origin, {
-    host: getRequestHeader("x-forwarded-host") ?? getRequestHeader("host"),
-    proto: getRequestHeader("x-forwarded-proto") ?? "https",
+    ...(host != null ? { host } : {}),
+    ...(proto != null ? { proto } : {}),
   });
 }
 
@@ -936,7 +938,7 @@ async function openPriceBookCheckout(input: {
         successUrl: razorpaySubscriptionReturnUrl(input.origin),
         cancelUrl: `${input.origin}/settings?section=subscription&checkout=cancel`,
         planName: input.price.planName,
-        email: input.billing.email || undefined,
+        ...(input.billing.email ? { email: input.billing.email } : {}),
       }),
     };
   }
@@ -1265,7 +1267,7 @@ async function openRazorpayCheckout(draft: Parameters<typeof razorpayPlanBody>[0
       successUrl: razorpaySubscriptionReturnUrl(origin),
       cancelUrl: draft.cancelUrl,
       planName: draft.planName,
-      email: draft.billing?.email,
+      ...(draft.billing?.email ? { email: draft.billing.email } : {}),
     }),
   };
 }

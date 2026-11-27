@@ -125,7 +125,7 @@ export function ExpenseManagementClaimsPage({
   const [splitAccountB, setSplitAccountB] = useState("");
   const [templateName, setTemplateName] = useState("");
   const [offlineDrafts, setOfflineDrafts] = useState<OfflineExpenseClaimDraft[]>([]);
-  const [isOffline, setIsOffline] = useState(false);
+  const [isOffline, setIsOffline] = useState(() => isBrowserOffline());
 
   const fetchClaims = useServerFn(listExpenseClaims);
   const fetchAccounts = useServerFn(listAccounts);
@@ -175,13 +175,15 @@ export function ExpenseManagementClaimsPage({
   const expenseSettingsQ = useQuery({
     queryKey: ["expense-management-settings", company?.id],
     queryFn: () => fetchExpenseSettings({ data: { companyId: company!.id } }),
-    enabled: Boolean(company?.id) && mode === "my-expenses" && canSubmit && forceCreate,
+    enabled:
+      Boolean(company?.id) && mode === "my-expenses" && canSubmit && forceCreate && !isOffline,
   });
 
   const expenseCurrenciesQ = useQuery({
     queryKey: ["expense-claim-currencies", company?.id],
     queryFn: () => fetchExpenseCurrencies({ data: { companyId: company!.id } }),
-    enabled: Boolean(company?.id) && mode === "my-expenses" && canSubmit && forceCreate,
+    enabled:
+      Boolean(company?.id) && mode === "my-expenses" && canSubmit && forceCreate && !isOffline,
   });
 
   const currency = resolveExpenseClaimCurrency({

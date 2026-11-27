@@ -205,3 +205,8 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Added an organisation metadata regression that carries the saved June 30 year end into the real accounting fiscal-year range calculation. The isolated identity SQL regression now saves and asserts that month/day alongside legal name, before/after audit and stale-write safety; its invalid February 30 and rollback coverage remains in place.
 - Registered `company.fiscal_year_end` as a complete capability. The organisation identity group remains partial because country, timezone and broader tax/reporting configuration still need consumer coverage.
 - Focused tests passed (3 files / 18 tests), the isolated PostgreSQL 17 workflow harness passed, and changed-file ESLint plus `git diff --check` passed. Hosted Supabase and migrations were not touched.
+
+## 2026-11-27 Global Settings capability search
+
+- Extended global Settings search to index standalone verified capabilities in addition to typed fields. Multi-word queries now find organisation identity, document numbering and Tax controls and route to the canonical owning page.
+- Added pure search regressions and a browser-fixture test for fiscal-year discovery. Focused tests passed (2 files / 22 tests), `check:ui`, changed-file ESLint, TypeScript and `git diff --check` passed. The browser fixture awaits the next GitHub run; authenticated localhost review remains pending.

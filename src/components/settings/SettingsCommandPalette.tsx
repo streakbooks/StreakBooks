@@ -9,8 +9,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { searchSettings } from "@/lib/settings/registry";
-import { SETTING_FIELD_COVERAGE } from "@/lib/settings/capability-registry";
-import { settingsRouteForSection } from "@/lib/settings/route-model";
+import { searchSettingsFields } from "@/lib/settings/search";
 import { navItems } from "@/lib/nav";
 
 type Props = {
@@ -43,15 +42,7 @@ export function SettingsCommandPalette({
   }, [open]);
 
   const matches = searchSettings(query).filter((category) => category.id !== "demo" || showDemo);
-  const fieldQuery = query.trim().toLowerCase();
-  const fieldMatches = fieldQuery
-    ? SETTING_FIELD_COVERAGE.filter(
-        (field) =>
-          field.label.toLowerCase().includes(fieldQuery) ||
-          field.key.toLowerCase().includes(fieldQuery) ||
-          field.consumer.toLowerCase().includes(fieldQuery),
-      ).slice(0, 8)
-    : [];
+  const fieldMatches = searchSettingsFields(query);
   const modules = navItems.filter(
     (item) =>
       item.to !== "/settings" &&
@@ -123,19 +114,17 @@ export function SettingsCommandPalette({
                 key={field.key}
                 value={`${field.label} ${field.key} ${field.consumer}`}
                 onSelect={() => {
-                  selectFromKeyboard(() => onSelectSection(field.category));
+                  selectFromKeyboard(() => void navigate({ to: field.to as never }));
                 }}
               >
                 <Link
-                  to="/settings/$group/$page"
-                  params={settingsRouteForSection(field.category)}
-                  search={{ section: field.category }}
+                  to={field.to as never}
                   onClick={onLinkClick}
                   className="flex w-full items-start justify-between gap-3 py-2"
                 >
                   <span>
                     <span className="block font-medium">{field.label}</span>
-                    <span className="text-xs text-muted-foreground">{field.category}</span>
+                    <span className="text-xs text-muted-foreground">{field.section ?? "Tax"}</span>
                   </span>
                   {field.status === "partial" ? (
                     <span className="text-xs text-muted-foreground">Partial</span>

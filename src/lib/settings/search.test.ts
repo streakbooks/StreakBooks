@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSettingsSearch } from "./search";
+import { parseSettingsSearch, searchSettingsFields } from "./search";
 
 describe("Settings billing deep-link parsing", () => {
   it("retains valid plan and billing interval", () => {
@@ -70,5 +70,33 @@ describe("Settings billing deep-link parsing", () => {
     ]) {
       expect(parseSettingsSearch({ returnTo })).not.toHaveProperty("returnTo");
     }
+  });
+});
+
+describe("global Settings field search", () => {
+  it("finds standalone audited company capabilities and opens their canonical route", () => {
+    expect(searchSettingsFields("fiscal year end")).toContainEqual(
+      expect.objectContaining({
+        key: "company.fiscal_year_end",
+        to: "/settings/organisation/overview",
+        status: "complete",
+      }),
+    );
+  });
+
+  it("finds legacy document numbering in its canonical settings section", () => {
+    expect(searchSettingsFields("document sequences")).toContainEqual(
+      expect.objectContaining({
+        key: "documents.number_sequences",
+        to: "/settings/documents/numbering",
+        section: "documents",
+      }),
+    );
+  });
+
+  it("routes Tax capabilities to the owning Tax workspace", () => {
+    expect(searchSettingsFields("tax rate and code")).toContainEqual(
+      expect.objectContaining({ key: "tax.rate_code_master", to: "/tax", section: null }),
+    );
   });
 });

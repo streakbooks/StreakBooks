@@ -241,3 +241,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - Added a dedicated Point of Sale Settings category with searchable links to the existing register/location setup and catalogue checkout screens. No duplicate settings data or route was introduced.
 - Changed POS module settings coverage from **MISSING** to **PARTIAL**: register setup and location access exist, while tax and tender configuration remain missing. Search, destination and fail-closed partial-state tests cover the addition.
 - Focused Settings registry tests passed (4 files / 34 tests); `check:modules`, `check:navigation`, `check:ui`, changed-file ESLint, typecheck, and `git diff --check` passed. No schema or hosted Supabase change was made.
+
+## 2026-11-27 Invalid Settings category feedback
+
+- Invalid or malformed `section` query values still fail closed to the Settings overview, and now carry a validated marker so the page explains why it fell back.
+- Added parser regression coverage for unknown and array-valued categories. This prevents malformed links from appearing to succeed silently.
+- Focused Settings search tests passed (2 files / 17 tests); typecheck, changed-file ESLint, `check:ui`, and `git diff --check` passed. No schema or hosted Supabase change was made.

@@ -197,6 +197,8 @@ export function SettingsForCompany({
     ? undefined
     : (canonicalRoute?.panel ?? parseSettingsPanel(currentSearch["settingsPanel"]));
   const section = resolveSettingsCategory(sectionRaw);
+  const invalidSection =
+    !embeddedSection && !canonicalRoute && currentSearch["invalidSection"] === true;
   const returnTo = validateSettingsReturnTo(currentSearch["returnTo"]);
   const returnPath = returnTo?.split(/[?#]/, 1)[0] ?? "";
   const returnModule = MODULE_REGISTRY.find(
@@ -792,6 +794,15 @@ export function SettingsForCompany({
                 </a>
               ) : null}
             </nav>
+          ) : null}
+          {invalidSection ? (
+            <Alert>
+              <AlertTitle>Settings category unavailable</AlertTitle>
+              <AlertDescription>
+                This link points to an unknown Settings category. Showing the Settings overview;
+                choose a supported category from the navigation.
+              </AlertDescription>
+            </Alert>
           ) : null}
           {!detail && sectionMeta && !embeddedSection && !isHubView ? (
             <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border bg-card/60 p-4 shadow-sm sm:p-5">

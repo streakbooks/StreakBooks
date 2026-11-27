@@ -3,6 +3,7 @@ import { validateSettingsPanelSearch, type SettingsPanelId } from "./panels";
 import { validateSettingsReturnTo } from "./return-context";
 import { SETTING_CAPABILITY_REGISTRY, SETTING_FIELD_COVERAGE } from "./capability-registry";
 import type { SettingsCategory } from "./categories";
+import { SETTINGS_CATEGORIES } from "./categories";
 import { settingsRouteForSection, settingsRoutePath } from "./route-model";
 
 export type SettingsFieldSearchResult = {
@@ -80,6 +81,7 @@ export function searchSettingsFields(query: string): SettingsFieldSearchResult[]
 /** Normalize untrusted deep-link parameters without changing valid billing links. */
 export function parseSettingsSearch(search: Record<string, unknown>): {
   section: string;
+  invalidSection?: boolean;
   plan?: string;
   interval?: "month" | "year";
   returnTo?: string;
@@ -95,9 +97,15 @@ export function parseSettingsSearch(search: Record<string, unknown>): {
     search["interval"] === "month" || search["interval"] === "year"
       ? search["interval"]
       : undefined;
+  const sectionCandidate = search["section"];
+  const invalidSection =
+    sectionCandidate !== undefined &&
+    (typeof sectionCandidate !== "string" ||
+      !SETTINGS_CATEGORIES.includes(sectionCandidate as SettingsCategory));
   const returnTo = validateSettingsReturnTo(search["returnTo"]);
   return {
     section: resolveSettingsCategory(search["section"]),
+    ...(invalidSection ? { invalidSection: true } : {}),
     ...(plan ? { plan } : {}),
     ...(interval ? { interval } : {}),
     ...(returnTo ? { returnTo } : {}),

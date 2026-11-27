@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest";
 import { parseSettingsSearch, searchSettingsFields } from "./search";
 
 describe("Settings billing deep-link parsing", () => {
+  it("falls back safely and signals an invalid Settings category", () => {
+    expect(parseSettingsSearch({ section: "made-up" })).toMatchObject({
+      section: "overview",
+      invalidSection: true,
+    });
+    expect(parseSettingsSearch({ section: ["sales"] })).toMatchObject({
+      section: "overview",
+      invalidSection: true,
+    });
+    expect(parseSettingsSearch({})).not.toHaveProperty("invalidSection");
+  });
+
   it("retains valid plan and billing interval", () => {
     expect(
       parseSettingsSearch({ section: "billing", plan: "pro_annual-2", interval: "year" }),

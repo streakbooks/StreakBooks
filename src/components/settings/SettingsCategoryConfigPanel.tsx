@@ -66,7 +66,6 @@ type DraftState = {
 const ENUM_OPTIONS: Record<string, readonly string[]> = {
   "accounting.reporting_basis": ["accrual", "cash"],
   "sales.late_fee_type": ["fixed", "percentage"],
-  "reports.default_basis": ["accrual", "cash"],
   "reports.default_comparison": ["none", "prior_period", "prior_year"],
   "products.valuation_method": ["fifo", "average", "standard"],
   "automation.ai_mode": ["off", "read_only", "suggest", "draft", "execute_with_approval"],
@@ -276,6 +275,22 @@ export function SettingsCategoryConfigPanel({
 
                 <div className="grid gap-3 lg:grid-cols-2">
                   {Object.entries(draft).map(([key, value]) => {
+                    if (category === "reports" && key === "default_basis") {
+                      return (
+                        <div key={key} className="space-y-1 rounded-lg border bg-card p-4">
+                          <SettingsDestinationLink
+                            destination={{ to: "/settings", section: "accounting" }}
+                            className="font-medium text-primary underline"
+                          >
+                            Default reporting basis
+                          </SettingsDestinationLink>
+                          <p className="text-sm text-muted-foreground">
+                            Choose cash or accrual in Accounting settings. Individual reports can
+                            override this default.
+                          </p>
+                        </div>
+                      );
+                    }
                     const id = "settings-" + category + "-" + key;
                     const field = settingsFieldPresentation(category, key);
                     const fieldComplete = isSettingsFieldComplete(`${category}.${key}`);

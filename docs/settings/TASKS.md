@@ -210,3 +210,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - Extended global Settings search to index standalone verified capabilities in addition to typed fields. Multi-word queries now find organisation identity, document numbering and Tax controls and route to the canonical owning page.
 - Added pure search regressions and a browser-fixture test for fiscal-year discovery. Focused tests passed (2 files / 22 tests), `check:ui`, changed-file ESLint, TypeScript and `git diff --check` passed. The browser fixture awaits the next GitHub run; authenticated localhost review remains pending.
+
+## 2026-11-27 Payroll calculation settings fail-closed handling
+
+- Centralized the saved payroll rounding, currency and working-schedule mapping used by calculation previews and payroll-run calculations. Malformed persisted values now stop the calculation with an actionable error instead of silently substituting default rounding or accepting an invalid currency/schedule.
+- Added focused regressions for saved policy propagation, legacy defaults and malformed values. Payroll remains **PARTIAL**: the settings save audit summarizes only selected fields, so field-level audit evidence for calculation/payment settings is still required before those controls are called complete.
+- No schema change or hosted Supabase operation was made. This advances Batch 5 but does not complete Payroll or the remaining Settings batches.

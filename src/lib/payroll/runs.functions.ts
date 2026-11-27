@@ -7,7 +7,7 @@ import {
   computeRunCalculation,
   serialiseRunCalculationForRpc,
 } from "@/lib/payroll/run-calculation";
-import { assertRoundingMode } from "@/lib/payroll/settings-draft";
+import { payrollCalculationPreferences } from "@/lib/payroll/calculation-preferences";
 import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
 import type {
   PayrollEmployeeRow,
@@ -299,10 +299,7 @@ async function loadRunCalculationInputs(
   });
 
   return {
-    roundingMode: assertRoundingMode(str(pick(settingsRow, "rounding_mode") || "half_up")),
-    workingDaysPerWeek: num(pick(settingsRow, "default_working_days_per_week") || 5),
-    workingHoursPerDay: num(pick(settingsRow, "default_working_hours_per_day") || 8),
-    currencyCode: str(pick(settingsRow, "payroll_currency") || run.currency),
+    ...payrollCalculationPreferences(settingsRow, run.currency),
     components,
     employees,
     allSalaryLines,

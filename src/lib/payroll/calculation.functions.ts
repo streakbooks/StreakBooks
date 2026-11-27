@@ -11,7 +11,7 @@ import {
   type LineInput,
 } from "@/lib/payroll/calculation-engine";
 import { PAYROLL_MIGRATION } from "@/lib/payroll/payroll.functions";
-import { assertRoundingMode } from "@/lib/payroll/settings-draft";
+import { payrollCalculationPreferences } from "@/lib/payroll/calculation-preferences";
 import type {
   PayrollComponentTypeRow,
   PayrollEmployeeRow,
@@ -287,10 +287,12 @@ export const previewCalculatePayroll = createServerFn({ method: "POST" })
       throw new Error("Configure payroll settings before running a calculation preview.");
     }
 
-    const roundingMode = assertRoundingMode(str(settingsRow["rounding_mode"] || "half_up"));
-    const workingDaysPerWeek = num(settingsRow["default_working_days_per_week"] || 5);
-    const workingHoursPerDay = num(settingsRow["default_working_hours_per_day"] || 8);
-    const payrollCurrency = str(settingsRow["payroll_currency"] || "USD");
+    const {
+      roundingMode,
+      workingDaysPerWeek,
+      workingHoursPerDay,
+      currencyCode: payrollCurrency,
+    } = payrollCalculationPreferences(settingsRow, "USD");
 
     const componentsRes = await context.supabase
       .from("payroll_component_types" as never)

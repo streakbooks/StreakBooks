@@ -53,6 +53,17 @@ describe("Settings capability coverage registry", () => {
     });
   });
 
+  it("keeps payroll settings partial until field-level audit evidence exists", () => {
+    expect(
+      SETTINGS_GAPS.find((gap) => gap.key === "payroll.settings_audit_coverage"),
+    ).toMatchObject({
+      moduleId: "payroll",
+      status: "partial",
+      route: "/payroll/settings",
+      missingEvidence: [expect.stringContaining("before/after audit")],
+    });
+  });
+
   it("accounts for typed fields and marks unproven controls partial", () => {
     expect(SETTING_FIELD_COVERAGE.length).toBeGreaterThan(0);
     expect(

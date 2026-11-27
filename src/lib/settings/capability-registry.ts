@@ -561,6 +561,16 @@ export const SETTINGS_GAPS: readonly SettingGap[] = [
     note: "Supplier summary, bill terms, bill notes, purchase-order preference and three-way-match authorization have field-level consumers; unsupported purchase policies stay read-only.",
   },
   {
+    key: "payroll.settings_audit_coverage",
+    moduleId: "payroll",
+    status: "partial",
+    route: "/payroll/settings",
+    missingEvidence: [
+      "field-level before/after audit evidence for payroll calculation, approval, and payment settings",
+    ],
+    note: "Payroll settings are permission-checked and their calculation policy feeds run previews and calculations. The existing audit event is only a summary, so settings remain partial until sensitive field-level changes have safe, same-transaction audit evidence.",
+  },
+  {
     key: "banking.typed_configuration",
     moduleId: "banking",
     status: "partial",

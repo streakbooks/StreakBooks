@@ -73,3 +73,44 @@ export function upiMigrationFeatureEnabled(
   const raw = (env["RAZORPAY_UPI_MIGRATION_ENABLED"] ?? "1").trim().toLowerCase();
   return raw !== "0" && raw !== "false" && raw !== "off";
 }
+
+/** Pre-confirm statuses: old plan is still authoritative; migration can be abandoned safely. */
+export const UPI_MIGRATION_PRE_CONFIRM: ReadonlySet<UpiMigrationStatus> = new Set([
+  "initiated",
+  "new_subscription_created",
+  "awaiting_customer_authorization",
+  "awaiting_payment",
+]);
+
+/** Post-confirm: new plan may already be live — never auto-abandon; finish cancel or manual review. */
+export function isUpiMigrationPreConfirm(status: UpiMigrationStatus): boolean {
+  return UPI_MIGRATION_PRE_CONFIRM.has(status);
+}
+
+/**
+ * How long a customer may leave mandate authorisation unfinished before recovery
+ * marks the migration failed and releases the one-open-per-company lock.
+ * Default 2 hours (was effectively 24h with no resume path).
+ */
+export function upiMigrationAbandonTimeoutMs(
+  env: Record<string, string | undefined> = process.env,
+): number {
+  const raw = Number(env["RAZORPAY_UPI_MIGRATION_ABANDON_HOURS"] ?? "2");
+  const hours = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 72) : 2;
+  return hours * 60 * 60 * 1000;
+}
+
+export function shouldAbandonAwaitingUpiMigration(input: {
+  status: UpiMigrationStatus;
+  createdAt: string;
+  updatedAt?: string | null;
+  nowMs?: number;
+  abandonTimeoutMs?: number;
+}): boolean {
+  if (!isUpiMigrationPreConfirm(input.status)) return false;
+  const now = input.nowMs ?? Date.now();
+  const started = Date.parse(input.createdAt || input.updatedAt || "");
+  if (!Number.isFinite(started)) return false;
+  const timeout = input.abandonTimeoutMs ?? upiMigrationAbandonTimeoutMs();
+  return now - started >= timeout;
+}

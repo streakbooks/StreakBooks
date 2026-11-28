@@ -678,12 +678,12 @@ export const SETTING_CAPABILITY_REGISTRY: readonly SettingCapability[] = [
     validation:
       "Banking category schema validates format values; only implemented import formats are offered",
     permission:
-      "company.settings.edit to change the organisation preference; banking.feeds.manage to import statements",
+      "company.settings.edit to change the organisation preference; banking.import to import statements",
     entitlement: null,
     persistence: "organisation_config.banking through the version-checked settings RPC",
     audit: "settings_change_log stores previous and resulting category documents",
     consumer:
-      "Bank statement upload filters accepted file types and validates dropped files against the saved organisation formats",
+      "Bank statement upload filters accepted file types and rechecks the saved organisation formats on the server before creating the import record",
     test: "src/lib/banking/import-format-preference.test.ts and existing OFX/QIF parser tests",
   },
   {

@@ -120,3 +120,7 @@ The registry and coverage matrix enumerate every typed config field and every re
 ### Portal invitation controls
 
 Open Settings → Portals with a dedicated test organisation. A read-only member should be unable to edit settlement accounts. As an authorised administrator, clear the invitation lifetime or enter 91 and verify the inline validation. Set a valid lifetime and require an authenticator, save, and issue a test invitation. Even if the staff checkbox is clear, the new membership should require MFA and expire after the configured number of days. Hosted execution requires the portal MFA migration and approved test identities.
+
+### Bank statement formats
+
+In a test organisation, open Settings → Banking and select only OFX/QFX. Save and reload. In Banking → Import, selecting a CSV should show the format is unavailable. Preview an OFX file, turn off OFX in a second tab, then return and submit the preview. Expect rejection before an import history record or statement row is created.

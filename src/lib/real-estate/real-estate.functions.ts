@@ -12,7 +12,7 @@ import {
 } from "@/lib/real-estate/types";
 
 export const REAL_ESTATE_MIGRATION =
-  "Real Estate Management needs database updates 20261128232000 through 20261128280000.";
+  "Real Estate Management needs database updates 20261128232000 through 20261128281000.";
 
 type Supabase = Parameters<typeof assertCompanyMember>[0];
 

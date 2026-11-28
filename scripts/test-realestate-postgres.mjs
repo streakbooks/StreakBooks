@@ -61,6 +61,7 @@ try {
   sql(read("supabase/migrations/20261128232200_real_estate_money.sql"));
   sql(read("supabase/migrations/20261128232300_real_estate_controls.sql"));
   sql(read("supabase/migrations/20261128280000_real_estate_ledger_tie.sql"));
+  sql(read("supabase/migrations/20261128281000_real_estate_hierarchy_guards.sql"));
   sql(read("tests/integration/real-estate-foundation.sql"));
 
   const unit = sql("SELECT id FROM public.realestate_units WHERE unit_code = 'A-102';").match(

@@ -244,7 +244,7 @@ export async function failAbandonedUpiMigration(
     }
   }
 
-  return transition(
+  const failed = await transition(
     client,
     migration.id,
     [
@@ -257,8 +257,11 @@ export async function failAbandonedUpiMigration(
     {
       failureReason: reason.slice(0, 500),
       nextRetryAt: null,
+      // Free the UNIQUE idempotency_key so a retry in the same 10-minute bucket can insert.
+      releaseIdempotencyKey: "true",
     },
   );
+  return failed;
 }
 
 /**
@@ -334,11 +337,14 @@ async function resumeOrReleaseOpenMigration(
 
   // Creation never finished (no Razorpay sub / checkout) — safe to release immediately.
   const neverProvisioned = !open.newProviderSubscriptionId && !open.checkoutId;
-  if (timedOut || planChanged || neverProvisioned) {
+  // Cannot resume without both provider sub + checkout — never leave the customer
+  // stuck behind a dead-end toast; release and let start create a fresh attempt.
+  const cannotResume = !open.newProviderSubscriptionId || !open.checkoutId || neverProvisioned;
+  if (timedOut || planChanged || cannotResume) {
     await failAbandonedUpiMigration(
       open.id,
-      neverProvisioned
-        ? "Previous plan migration never reached Razorpay checkout. Safe to retry."
+      neverProvisioned || cannotResume
+        ? "Previous plan migration never reached a resumable Razorpay checkout. Safe to retry."
         : timedOut
           ? "Previous plan migration was abandoned before mandate authorisation completed."
           : "Previous upgrade target changed before mandate authorisation. Safe to retry.",
@@ -412,6 +418,33 @@ export async function startUpiSubscriptionMigration(
     }),
   );
   if (!migration) throw new Error("Could not create the migration record.");
+
+  // Terminal idempotent hits (legacy insert) must not continue provisioning.
+  if (migration.status === "failed" || migration.status === "completed") {
+    migration = parseMigrationRow(
+      await rpc(client, "billing_migration_insert", {
+        _company_id: input.companyId,
+        _actor: input.userId,
+        _mandate_kind: input.mandateKind,
+        _old_sub_id: input.oldProviderSubscriptionId,
+        _from_plan: input.fromPlanCode,
+        _to_plan: input.planCode,
+        _from_interval: input.fromInterval,
+        _to_interval: input.interval,
+        _currency: input.currency,
+        _from_amount: input.fromAmountMinor,
+        _to_amount: input.toAmountMinor,
+        _prorated: amounts.proratedEstimateMinor,
+        _upfront: amounts.upfrontAddonMinor,
+        _upfront_enabled: amounts.upfrontEnabled,
+        _plan_price_id: input.planPriceId,
+        _idempotency_key: `${idempotencyKey}:retry:${Date.now()}`,
+      }),
+    );
+    if (!migration || migration.status === "failed" || migration.status === "completed") {
+      throw new Error("Could not start a new plan migration. Refresh and try again.");
+    }
+  }
 
   if (
     migration.status !== "initiated" &&

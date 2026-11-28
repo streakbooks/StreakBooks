@@ -63,9 +63,9 @@ try {
   sql(read("supabase/migrations/20261128280000_real_estate_ledger_tie.sql"));
   sql(read("tests/integration/real-estate-foundation.sql"));
 
-  const unit = sql(
-    "SELECT id FROM public.realestate_units WHERE unit_code = 'A-102';",
-  ).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
+  const unit = sql("SELECT id FROM public.realestate_units WHERE unit_code = 'A-102';").match(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+  )?.[0];
   if (!unit) throw new Error("Spare unit was not created");
   const claims = `SET ROLE authenticated; SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001"}', false);`;
   const statement = `${claims} SELECT public.realestate_place_hold('20000000-0000-4000-8000-000000000001', jsonb_build_object('unit_id','${unit}','holder_name','Race'));`;
@@ -77,7 +77,9 @@ try {
   if (fulfilled !== 1) {
     throw new Error(
       `Concurrent reservation did not allow exactly one winner: ${raced
-        .map((result) => (result.status === "rejected" ? result.reason?.stderr || result.reason?.message : "ok"))
+        .map((result) =>
+          result.status === "rejected" ? result.reason?.stderr || result.reason?.message : "ok",
+        )
         .join(" | ")}`,
     );
   }

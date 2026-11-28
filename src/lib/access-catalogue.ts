@@ -995,7 +995,8 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
       {
         permission: "realestate.costs.manage",
         label: "Manage development costs",
-        detail: "Record classified project costs. Capitalisable costs are not posted automatically.",
+        detail:
+          "Record classified project costs. Capitalisable costs are not posted automatically.",
       },
       {
         permission: "realestate.budgets.manage",

@@ -5,6 +5,7 @@ import {
   parseCheckoutBilling,
   paymentMethodsFor,
   stripeCheckoutBody,
+  trialEndUnixForPaidCheckout,
   trialEndUnixOrNull,
 } from "@/lib/billing/checkout-payload";
 import {
@@ -268,6 +269,33 @@ describe("currency and checkout payload", () => {
     expect(trialEndUnixOrNull("2026-11-15T12:00:00.000Z", NOW)).toBe(
       Math.floor(Date.parse("2026-11-15T12:00:00.000Z") / 1000),
     );
+  });
+
+  it("does not forward a no-card signup trial into paid Stripe/Razorpay checkout", () => {
+    const remainingTrial = "2026-12-15T12:00:00.000Z";
+    expect(
+      trialEndUnixForPaidCheckout({
+        trialEndsAt: remainingTrial,
+        existingProvider: "none",
+        now: NOW,
+      }),
+    ).toBeNull();
+    expect(
+      trialEndUnixForPaidCheckout({
+        trialEndsAt: remainingTrial,
+        existingProvider: null,
+        now: NOW,
+      }),
+    ).toBeNull();
+    // Explicit defer path keeps provider-side trial (admin/policy only).
+    expect(
+      trialEndUnixForPaidCheckout({
+        trialEndsAt: remainingTrial,
+        existingProvider: "none",
+        deferFirstCharge: true,
+        now: NOW,
+      }),
+    ).toBe(Math.floor(Date.parse(remainingTrial) / 1000));
   });
 
   it("prices checkout from the billing country and does not assume the United Kingdom", () => {

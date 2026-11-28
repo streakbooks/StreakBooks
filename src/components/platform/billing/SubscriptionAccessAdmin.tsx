@@ -276,7 +276,9 @@ export function SubscriptionAccessAdmin({ canEdit }: Props) {
                       data: {
                         companyId,
                         extraDays: Number(extraDays),
+                        newEndsAt: null,
                         reason: reason || "Trial extension",
+                        notes: notes || "",
                       },
                     })
                       .then((result) => {

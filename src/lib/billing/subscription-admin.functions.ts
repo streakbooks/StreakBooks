@@ -141,19 +141,26 @@ export const extendPlatformCompanyTrial = createServerFn({ method: "POST" })
     z
       .object({
         companyId: z.string().uuid(),
-        extraDays: z.number().int().min(1).max(366),
+        extraDays: z.number().int().min(1).max(366).nullable().default(null),
+        newEndsAt: z.string().datetime().nullable().default(null),
         reason: z.string().trim().min(3).max(1000),
+        notes: z.string().trim().max(2000).default(""),
+      })
+      .refine((row) => row.newEndsAt != null || (row.extraDays != null && row.extraDays >= 1), {
+        message: "Provide extra days or a new expiry date.",
       })
       .parse(v),
   )
   .handler(async ({ context, data }) =>
-    unwrap<{ ok: true; trialEndsAt: string }>(
+    unwrap<{ ok: true; trialEndsAt: string; previousEndsAt: string | null }>(
       await context.supabase.rpc(
         "platform_extend_company_trial" as never,
         {
           _company_id: data.companyId,
           _extra_days: data.extraDays,
           _reason: data.reason,
+          _notes: data.notes,
+          _new_ends_at: data.newEndsAt,
         } as never,
       ),
     ),

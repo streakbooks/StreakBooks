@@ -399,6 +399,17 @@ export async function retryDueWebhooks(limit = 20): Promise<{ processed: number;
       migrationError instanceof Error ? migrationError.message : migrationError,
     );
   }
+  try {
+    const { ensureAndProcessTrialReminders } = await import("@/lib/billing/trial-lifecycle.server");
+    const reminders = await ensureAndProcessTrialReminders(limit);
+    processed += reminders.processed;
+    failed += reminders.failed;
+  } catch (reminderError) {
+    console.error(
+      "Trial reminder batch failed",
+      reminderError instanceof Error ? reminderError.message : reminderError,
+    );
+  }
   if (failed > 0) {
     console.error(
       "Billing webhook retry batch",

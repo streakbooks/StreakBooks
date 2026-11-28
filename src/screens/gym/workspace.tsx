@@ -29,6 +29,7 @@ import {
   freezeGymMembership,
   getGymPortal,
   getGymStatement,
+  linkGymPortal,
   getGymWorkspace,
   issueGymVoucher,
   recogniseGymRevenue,
@@ -1488,7 +1489,12 @@ function BudgetForm({
 }
 
 function PortalPanel({ companyId, currency }: { companyId: string; currency: string }) {
+  const { can } = useCan();
   const fetchPortal = useServerFn(getGymPortal);
+  const link = useServerFn(linkGymPortal);
+  const linkMutation = useGymMutation(
+    (input: { data: { companyId: string; memberId: string; userId: string } }) => link(input),
+  );
   const portal = useQuery({
     queryKey: ["gym-portal", companyId],
     queryFn: () => fetchPortal({ data: { companyId } }),
@@ -1496,15 +1502,7 @@ function PortalPanel({ companyId, currency }: { companyId: string; currency: str
   });
   if (portal.isError) return <QueryErrorState queries={[portal]} />;
   if (portal.isPending || !portal.data) return <LoadingState />;
-  if (!portal.data.linked) {
-    return (
-      <EmptyState
-        title="No member profile is linked to this sign-in"
-        description="An administrator with gym.portal.manage can link a member to a user. This page never shows another member's balance."
-      />
-    );
-  }
-  return (
+  const mine = portal.data.linked ? (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">{portal.data.display_name}</CardTitle>
@@ -1526,6 +1524,41 @@ function PortalPanel({ companyId, currency }: { companyId: string; currency: str
         />
       </CardContent>
     </Card>
+  ) : (
+    <EmptyState
+      title="No member profile is linked to this sign-in"
+      description="This page shows only the member linked to the signed-in user."
+    />
+  );
+  if (!can("gym.portal.manage")) return mine;
+  return (
+    <div className="grid gap-3">
+      <Form
+        title="Link a sign-in"
+        pending={linkMutation.isPending}
+        onSubmit={(form) =>
+          linkMutation.mutate({
+            data: {
+              companyId,
+              memberId: String(form.get("member_id") || ""),
+              userId: String(form.get("user_id") || ""),
+            },
+          })
+        }
+      >
+        <Field label="Member id">
+          <Input name="member_id" required />
+        </Field>
+        <Field label="Sign-in user id">
+          <Input name="user_id" required />
+        </Field>
+      </Form>
+      <p className="text-xs text-muted-foreground">
+        The sign-in must already belong to this organisation. One sign-in can link to one member.
+        The member view below is only the signed-in user.
+      </p>
+      {mine}
+    </div>
   );
 }
 

@@ -1310,9 +1310,6 @@ DECLARE
   _destination TEXT := COALESCE(_payload->>'destination', 'accounts_receivable');
   _journal UUID;
   _refundable BIGINT;
-  _left BIGINT;
-  _receipt RECORD;
-  _take BIGINT;
 BEGIN
   PERFORM public.gym_require(_company_id, 'gym.members.manage');
   PERFORM public.gym_require(_company_id, 'gym.reverse');
@@ -1347,7 +1344,15 @@ BEGIN
   IF _row.cancel_policy = 'refund_unrecognised' THEN
     IF _destination NOT IN ('bank', 'accounts_receivable') THEN RAISE EXCEPTION 'Refund destination is invalid'; END IF;
     IF _destination = 'bank' THEN
-      SELECT COALESCE(SUM(amount_minor - refunded_minor), 0) INTO _refundable
+      SELECT
+        COALESCE(SUM(amount_minor - refunded_minor), 0)
+        - COALESCE((
+          SELECT SUM(f.amount_minor)
+          FROM public.gym_refunds f
+          JOIN public.gym_memberships m ON m.id = f.membership_id
+          WHERE f.company_id = _company_id AND f.destination = 'bank' AND m.member_id = _row.member_id
+        ), 0)
+      INTO _refundable
       FROM public.gym_receipts
       WHERE company_id = _company_id AND member_id = _row.member_id AND status = 'posted';
       IF _refundable < _remaining THEN
@@ -1356,34 +1361,18 @@ BEGIN
     END IF;
     _journal := public.gym_post_balanced(
       _company_id, 'gym_refund', _id, CURRENT_DATE, 'Refund of unrecognised membership',
-      _row.currency_code, _row.fx_rate_to_base, 'gym-refund-' || _payload->>'idempotency_key',
+      _row.currency_code, _row.fx_rate_to_base, 'gym-refund-' || (_payload->>'idempotency_key'),
       jsonb_build_array(
         jsonb_build_object('account_id', public.gym_mapped_account(_company_id, 'deferred_membership_revenue'), 'debit_minor', _remaining, 'credit_minor', 0, 'description', 'Refund unrecognised membership'),
         jsonb_build_object('account_id', public.gym_mapped_account(_company_id, _destination), 'debit_minor', 0, 'credit_minor', _remaining, 'description', 'Refund unrecognised membership')
       )
     );
-    IF _destination = 'bank' THEN
-      _left := _remaining;
-      FOR _receipt IN
-        SELECT id, amount_minor - refunded_minor AS open_amount
-        FROM public.gym_receipts
-        WHERE company_id = _company_id AND member_id = _row.member_id AND status = 'posted'
-          AND amount_minor > refunded_minor
-        ORDER BY received_on
-        FOR UPDATE
-      LOOP
-        EXIT WHEN _left = 0;
-        _take := LEAST(_left, _receipt.open_amount);
-        UPDATE public.gym_receipts SET refunded_minor = refunded_minor + _take WHERE id = _receipt.id;
-        _left := _left - _take;
-      END LOOP;
-    END IF;
     INSERT INTO public.gym_refunds (company_id, membership_id, amount_minor, destination, journal_id, idempotency_key)
     VALUES (_company_id, _id, _remaining, _destination, _journal, _payload->>'idempotency_key');
   ELSIF _row.cancel_policy = 'forfeit' THEN
     _journal := public.gym_post_balanced(
       _company_id, 'gym_cancellation', _id, CURRENT_DATE, 'Forfeit of unused membership',
-      _row.currency_code, _row.fx_rate_to_base, 'gym-forfeit-' || _payload->>'idempotency_key',
+      _row.currency_code, _row.fx_rate_to_base, 'gym-forfeit-' || (_payload->>'idempotency_key'),
       jsonb_build_array(
         jsonb_build_object('account_id', public.gym_mapped_account(_company_id, 'deferred_membership_revenue'), 'debit_minor', _remaining, 'credit_minor', 0, 'description', 'Forfeit unused membership'),
         jsonb_build_object('account_id', public.gym_mapped_account(_company_id, 'cancellation_fee_revenue'), 'debit_minor', 0, 'credit_minor', _remaining, 'description', 'Cancellation fee')
@@ -2089,6 +2078,13 @@ SET search_path = public
 AS $$
 BEGIN
   PERFORM public.gym_require(_company_id, 'gym.portal.manage');
+  IF _user_id IS NULL THEN RAISE EXCEPTION 'A sign-in is required'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.company_members
+    WHERE company_id = _company_id AND user_id = _user_id AND status = 'active'
+  ) THEN
+    RAISE EXCEPTION 'That sign-in is not an active member of this organisation';
+  END IF;
   IF EXISTS (
     SELECT 1 FROM public.gym_members WHERE company_id = _company_id AND user_id = _user_id AND id <> _member_id
   ) THEN
@@ -2213,7 +2209,8 @@ BEGIN
       'deferred_minor', COALESCE((SELECT SUM(amount_minor) FROM public.gym_recognition_lines WHERE company_id = _company_id AND status = 'scheduled'), 0),
       'recognised_minor', COALESCE((SELECT SUM(amount_minor) FROM public.gym_recognition_lines WHERE company_id = _company_id AND status = 'recognised'), 0),
       'invoiced_minor', COALESCE((SELECT SUM(amount_minor) FROM public.gym_charges WHERE company_id = _company_id AND status <> 'void'), 0),
-      'collected_minor', COALESCE((SELECT SUM(amount_minor - refunded_minor) FROM public.gym_receipts WHERE company_id = _company_id AND status = 'posted'), 0),
+      'collected_minor', COALESCE((SELECT SUM(amount_minor - refunded_minor) FROM public.gym_receipts WHERE company_id = _company_id AND status = 'posted'), 0)
+        - COALESCE((SELECT SUM(amount_minor) FROM public.gym_refunds WHERE company_id = _company_id AND destination = 'bank'), 0),
       'outstanding_minor', COALESCE((SELECT SUM(amount_minor - allocated_minor) FROM public.gym_charges WHERE company_id = _company_id AND status = 'open'), 0),
       'unallocated_minor', COALESCE((SELECT SUM(amount_minor - allocated_minor - refunded_minor) FROM public.gym_receipts WHERE company_id = _company_id AND status = 'posted'), 0),
       'checkins_today', (SELECT count(*) FROM public.gym_attendance WHERE company_id = _company_id AND attended_on = CURRENT_DATE),

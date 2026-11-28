@@ -397,6 +397,22 @@ export const convertGymLead = createServerFn({ method: "POST" })
     });
   });
 
+export const linkGymPortal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; memberId: string; userId: string }) => ({
+    companyId: companyIdOf(input),
+    memberId: input.memberId,
+    userId: input.userId,
+  }))
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "gym.portal.manage");
+    return posted(context.supabase, "gym_link_portal", {
+      _company_id: data.companyId,
+      _member_id: data.memberId,
+      _user_id: data.userId,
+    });
+  });
+
 export const saveGymBudget = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(payloadValidator)

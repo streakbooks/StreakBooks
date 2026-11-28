@@ -11,19 +11,19 @@ Status words mean:
 | 1–2 | Repository fit and capability notes | Implemented |
 | 3–4 | Schema, permissions, activation | Verified in isolated Postgres |
 | 5 | Navigation | Implemented, route inventory updated |
-| 6–10 | Members, plans, lifecycle, renewal | Verified for activation idempotency, freeze dates in unit tests, renewal function present |
-| 11–15 | Invoices, receipts, recognition, statements | Verified for the annual 120000 example, receipt, one recognition, retry, and statement totals |
-| 16 | Vouchers | Implemented. Redemption requires an open balance. |
+| 6–10 | Members, plans, lifecycle, renewal | Verified in isolated Postgres: freeze shifts dates and posts nothing, reactivation, renewal without a duplicate, keep-deferred, bank refund, and forfeit |
+| 11–15 | Invoices, receipts, recognition, statements | Verified for the annual 120000 example, receipt, one recognition, retry, statement totals, and a locked period refusing a receipt |
+| 16 | Vouchers | Verified: redemption reduces an open charge and the liability |
 | 17–19 | Appointments, classes, attendance | Verified for overlap, waitlist promotion and check-in |
-| 20–21 | Trainers, packages, commission | Verified for session liability. Commission approval posts when accounts are mapped. |
+| 20–21 | Trainers, packages, commission | Verified for session liability and one commission approval journal. A second approval does not post. |
 | 22–26 | Payroll, inventory, CRM campaigns | Not connected. Links point at the existing modules. |
 | 27–28 | Branches and budgets | Budget upsert verified in isolated Postgres. A repeated line updates in place and posts no journal. |
-| 29 | Member portal | Implemented for a sign-in linked to one member |
+| 29 | Member portal | Verified: a linked sign-in sees only that member. An administrator can link a sign-in that already belongs to the organisation. |
 | 30–31 | Messaging providers and predictive models | Not connected. Churn text is withheld below five opening memberships. |
 | 32–33 | Actions, dashboard, reports | Implemented from stored rows. Financial statements stay in Reports. |
 | 34–41 | Localisation proof, hosted migration, production release | Not started |
 
-Production readiness: not ready. The hosted database has not had this migration applied. Card acquiring is not verified. Authenticated browser coverage is not complete.
+Production readiness: not ready. The hosted database has not had this migration applied. Card acquiring, inventory, payroll, SMS, and authenticated browser coverage are not verified.
 
 ## Verification recorded with this batch
 

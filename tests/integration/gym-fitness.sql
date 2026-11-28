@@ -39,6 +39,9 @@ DECLARE
   workspace JSONB;
   statement JSONB;
   budget JSONB;
+  side JSONB;
+  side_member JSONB;
+  approved JSONB;
   deferred BIGINT;
   recognised BIGINT;
   journals BIGINT;
@@ -164,6 +167,145 @@ BEGIN
     (SELECT count(*) FROM public.gym_recognition_lines WHERE status = 'scheduled') = 11,
     'cancellation without a forfeit policy does not earn the balance'
   );
+
+  PERFORM public.test_assert(
+    (SELECT amount_minor FROM public.gym_commissions WHERE package_id = (package->>'id')::UUID) = 1000,
+    'ten percent of the delivered session waits as commission'
+  );
+  approved := public.gym_approve_commission(c, (SELECT id FROM public.gym_commissions WHERE package_id = (package->>'id')::UUID));
+  PERFORM public.test_assert(approved->>'status' = 'approved' AND approved->>'journal_id' IS NOT NULL, 'approving commission posts the payable');
+  approved := public.gym_approve_commission(c, (approved->>'id')::UUID);
+  PERFORM public.test_assert(approved->>'replayed' = 'true', 'approving the same commission does not post again');
+
+  side := public.gym_save_plan(c, jsonb_build_object(
+    'code', 'MONTH3', 'name', 'Three months', 'billing_interval', 'month', 'term_count', 3,
+    'price_minor', 30000, 'joining_fee_minor', 0, 'tax_bps', 0,
+    'joining_fee_policy', 'defer', 'recognition', 'monthly', 'cancel_policy', 'keep_deferred',
+    'currency_code', 'USD', 'requires_acceptance', false
+  ));
+  side_member := public.gym_create_member(c, jsonb_build_object('display_name', 'Meera Shah', 'email', 'meera@gym.test', 'status', 'prospect'));
+  side := public.gym_activate_membership(c, jsonb_build_object(
+    'member_id', side_member->>'id', 'plan_id', side->>'id', 'starts_on', '2026-03-01', 'idempotency_key', 'month-meera'
+  ));
+  journals := (SELECT count(*) FROM public.journals);
+  side := public.gym_freeze_membership(c, jsonb_build_object('membership_id', side->>'id', 'days', 10));
+  PERFORM public.test_assert(
+    side->>'status' = 'frozen'
+      AND (SELECT recognise_on FROM public.gym_recognition_lines WHERE membership_id = (side->>'id')::UUID AND line_no = 1) = '2026-03-11'
+      AND (SELECT ends_on FROM public.gym_memberships WHERE id = (side->>'id')::UUID) = '2026-06-10'
+      AND (SELECT count(*) FROM public.journals) = journals,
+    'a freeze shifts the service period and posts no journal'
+  );
+  side := public.gym_reactivate_membership(c, (side->>'id')::UUID);
+  PERFORM public.test_assert(side->>'status' = 'active', 'a frozen membership can be reactivated');
+  side := public.gym_renew_membership(c, jsonb_build_object('membership_id', side->>'id', 'idempotency_key', 'renew-meera'));
+  approved := public.gym_renew_membership(c, jsonb_build_object('membership_id', (SELECT renewed_from_id FROM public.gym_memberships WHERE id = (side->>'id')::UUID), 'idempotency_key', 'renew-meera-again'));
+  PERFORM public.test_assert(
+    (SELECT starts_on FROM public.gym_memberships WHERE id = (side->>'id')::UUID) = '2026-06-11'
+      AND approved->>'replayed' = 'true'
+      AND approved->>'id' = side->>'id',
+    'renewal starts the day after the contract and does not duplicate'
+  );
+
+  side := public.gym_save_plan(c, jsonb_build_object(
+    'code', 'REFUND', 'name', 'Refundable month', 'billing_interval', 'month', 'term_count', 1,
+    'price_minor', 12000, 'joining_fee_minor', 0, 'tax_bps', 0,
+    'joining_fee_policy', 'defer', 'recognition', 'monthly', 'cancel_policy', 'refund_unrecognised',
+    'currency_code', 'USD', 'requires_acceptance', false
+  ));
+  side_member := public.gym_create_member(c, jsonb_build_object('display_name', 'Neil Roy', 'email', 'neil@gym.test', 'status', 'prospect'));
+  side := public.gym_activate_membership(c, jsonb_build_object(
+    'member_id', side_member->>'id', 'plan_id', side->>'id', 'starts_on', '2026-04-01', 'idempotency_key', 'refund-neil'
+  ));
+  PERFORM public.gym_record_receipt(c, jsonb_build_object(
+    'member_id', side_member->>'id', 'amount_minor', 12000, 'method', 'bank_transfer', 'idempotency_key', 'neil-pay', 'received_on', '2026-04-01'
+  ));
+  side := public.gym_cancel_membership(c, jsonb_build_object(
+    'membership_id', side->>'id', 'destination', 'bank', 'idempotency_key', 'refund-neil-cancel'
+  ));
+  PERFORM public.test_assert(
+    side->>'replayed' = 'false'
+      AND (SELECT amount_minor FROM public.gym_refunds WHERE idempotency_key = 'refund-neil-cancel') = 12000
+      AND (SELECT refunded_minor FROM public.gym_receipts WHERE idempotency_key = 'neil-pay') = 0
+      AND (SELECT status FROM public.gym_charges WHERE membership_id = (side->>'id')::UUID) = 'settled'
+      AND (SELECT count(*) FROM public.gym_recognition_lines WHERE membership_id = (side->>'id')::UUID AND status = 'scheduled') = 0
+      AND (SELECT count(*) FROM public.journals WHERE source_type::TEXT = 'gym_refund') = 1,
+    'a cash refund of unrecognised membership returns cash and leaves the settled charge in place'
+  );
+  approved := public.gym_cancel_membership(c, jsonb_build_object(
+    'membership_id', side->>'id', 'destination', 'bank', 'idempotency_key', 'refund-neil-cancel'
+  ));
+  PERFORM public.test_assert(approved->>'replayed' = 'true', 'repeating a refund does not post again');
+
+  side := public.gym_save_plan(c, jsonb_build_object(
+    'code', 'FORFEIT', 'name', 'Forfeit month', 'billing_interval', 'month', 'term_count', 1,
+    'price_minor', 6000, 'joining_fee_minor', 0, 'tax_bps', 0,
+    'joining_fee_policy', 'defer', 'recognition', 'monthly', 'cancel_policy', 'forfeit',
+    'currency_code', 'USD', 'requires_acceptance', false
+  ));
+  side_member := public.gym_create_member(c, jsonb_build_object('display_name', 'Isha Sen', 'email', 'isha@gym.test', 'status', 'prospect'));
+  side := public.gym_activate_membership(c, jsonb_build_object(
+    'member_id', side_member->>'id', 'plan_id', side->>'id', 'starts_on', '2026-05-01', 'idempotency_key', 'forfeit-isha'
+  ));
+  side := public.gym_cancel_membership(c, jsonb_build_object('membership_id', side->>'id', 'idempotency_key', 'forfeit-isha-cancel'));
+  PERFORM public.test_assert(
+    (SELECT count(*) FROM public.journals WHERE source_type::TEXT = 'gym_cancellation') = 1
+      AND (SELECT count(*) FROM public.gym_recognition_lines WHERE membership_id = (side->>'id')::UUID AND status = 'cancelled') = 1,
+    'forfeit earns the unused balance only when the contract says so'
+  );
+
+  side := public.gym_issue_voucher(c, jsonb_build_object('amount_minor', 5000, 'idempotency_key', 'voucher-1'));
+  side_member := public.gym_create_member(c, jsonb_build_object('display_name', 'Kabir Das', 'email', 'kabir@gym.test', 'status', 'prospect'));
+  approved := public.gym_save_plan(c, jsonb_build_object(
+    'code', 'OPEN', 'name', 'Open month', 'billing_interval', 'month', 'term_count', 1,
+    'price_minor', 8000, 'joining_fee_minor', 0, 'tax_bps', 0,
+    'joining_fee_policy', 'defer', 'recognition', 'monthly', 'cancel_policy', 'keep_deferred',
+    'currency_code', 'USD', 'requires_acceptance', false
+  ));
+  approved := public.gym_activate_membership(c, jsonb_build_object(
+    'member_id', side_member->>'id', 'plan_id', approved->>'id', 'starts_on', '2026-06-01', 'idempotency_key', 'open-kabir'
+  ));
+  side := public.gym_redeem_voucher(c, jsonb_build_object(
+    'voucher_id', side->>'id', 'member_id', side_member->>'id', 'amount_minor', 5000, 'idempotency_key', 'redeem-1'
+  ));
+  PERFORM public.test_assert(
+    (SELECT remaining_minor FROM public.gym_vouchers WHERE idempotency_key = 'voucher-1') = 0
+      AND (SELECT allocated_minor FROM public.gym_charges WHERE membership_id = (approved->>'id')::UUID) = 5000
+      AND side->>'journal_id' IS NOT NULL,
+    'a voucher reduces the open balance and the liability'
+  );
+
+  PERFORM public.gym_link_portal(c, (side_member->>'id')::UUID, '10000000-0000-4000-8000-000000000002');
+  PERFORM set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000002"}', false);
+  side := public.gym_my_portal(c);
+  PERFORM public.test_assert(side->>'linked' = 'true' AND side->>'display_name' = 'Kabir Das', 'a linked sign-in sees only that member');
+  PERFORM set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000001"}', false);
+  side := public.gym_my_portal(c);
+  PERFORM public.test_assert(side->>'linked' = 'false', 'an unlinked sign-in does not see another member');
+  BEGIN
+    PERFORM public.gym_link_portal(c, (member->>'id')::UUID, '10000000-0000-4000-8000-000000000002');
+    RAISE EXCEPTION 'one sign-in was linked twice';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%already linked%' THEN RAISE; END IF;
+  END;
+
+  RESET ROLE;
+  UPDATE public.accounting_periods SET status = 'locked' WHERE company_id = c;
+  SET ROLE authenticated;
+  PERFORM set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000001"}', false);
+  BEGIN
+    PERFORM public.gym_record_receipt(c, jsonb_build_object(
+      'member_id', member->>'id', 'amount_minor', 100, 'method', 'cash', 'idempotency_key', 'locked-period'
+    ));
+    RAISE EXCEPTION 'a locked period accepted a receipt';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%posting is not allowed%' THEN RAISE; END IF;
+  END;
+  RESET ROLE;
+  UPDATE public.accounting_periods SET status = 'open' WHERE company_id = c;
+  SET ROLE authenticated;
+  PERFORM set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000001"}', false);
+  PERFORM public.test_assert(true, 'a locked accounting period rejects a new receipt');
 
   PERFORM public.gym_upsert_settings(c, jsonb_build_object(
     'enabled', false, 'currency_code', 'USD', 'country_code', 'US', 'timezone', 'UTC',

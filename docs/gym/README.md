@@ -12,7 +12,7 @@ Disabling the module sets `gym_settings.enabled` to false. It does not delete jo
 | Receipt of cash or bank transfer | Bank | Accounts receivable |
 | Monthly or daily recognition | Deferred membership revenue | Membership revenue |
 | Cancellation with `keep_deferred` | No journal | The remaining schedule stays a liability |
-| Refund of unrecognised balance | Deferred membership revenue | Bank or accounts receivable |
+| Refund of unrecognised balance | Deferred membership revenue | Bank or accounts receivable. A bank refund does not reopen the settled charge. |
 | Forfeit, only when the contract says so | Deferred membership revenue | Cancellation fee revenue |
 | Prepaid sessions sold | Accounts receivable | Prepaid session liability |
 | Session delivered | Prepaid session liability | Session revenue |

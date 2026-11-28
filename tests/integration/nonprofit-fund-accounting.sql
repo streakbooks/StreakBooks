@@ -191,6 +191,89 @@ BEGIN
   PERFORM public.nonprofit_refund_donation(c, (donation->>'id')::UUID, '2026-11-13', 150);
   PERFORM public.test_assert((SELECT status = 'refunded' FROM public.nonprofit_donations WHERE id = (donation->>'id')::UUID), 'donation refund and chargeback fee are recorded');
 
+  PERFORM public.test_assert(public.nonprofit_fund_spendable(c, gen, '2026-10-01') = 0, 'spendable as of a date before activity is zero');
+  PERFORM public.nonprofit_submit_donation(c, jsonb_build_object(
+    'donor_id', donor, 'donated_on', '2026-11-15', 'currency_code', 'USD',
+    'amount_minor', 4000, 'in_kind', 'inventory', 'method', 'in_kind', 'idempotency_key', 'stock-1',
+    'allocations', jsonb_build_array(jsonb_build_object('fund_id', gen, 'amount_minor', 4000))
+  ));
+  PERFORM public.nonprofit_submit_donation(c, jsonb_build_object(
+    'donor_id', donor, 'donated_on', '2026-11-15', 'currency_code', 'USD',
+    'amount_minor', 9000, 'in_kind', 'fixed_asset', 'method', 'in_kind', 'idempotency_key', 'asset-1',
+    'allocations', jsonb_build_array(jsonb_build_object('fund_id', gen, 'amount_minor', 9000))
+  ));
+  PERFORM public.nonprofit_post_movement(c, jsonb_build_object(
+    'kind', 'inventory_distribution', 'fund_id', gen, 'amount_minor', 1500,
+    'on', '2026-11-16', 'currency_code', 'USD', 'idempotency_key', 'dist-1'
+  ));
+  BEGIN
+    PERFORM public.nonprofit_post_movement(c, jsonb_build_object(
+      'kind', 'inventory_distribution', 'fund_id', gen, 'amount_minor', 99999,
+      'on', '2026-11-16', 'currency_code', 'USD', 'idempotency_key', 'dist-too-much'
+    ));
+    RAISE EXCEPTION 'FAIL: inventory distribution above the balance was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM !~* 'Inventory balance' THEN RAISE; END IF;
+  END;
+  PERFORM public.nonprofit_post_movement(c, jsonb_build_object(
+    'kind', 'depreciation', 'fund_id', gen, 'amount_minor', 900,
+    'on', '2026-11-16', 'currency_code', 'USD', 'idempotency_key', 'dep-1'
+  ));
+  BEGIN
+    PERFORM public.nonprofit_post_movement(c, jsonb_build_object(
+      'kind', 'depreciation', 'fund_id', gen, 'amount_minor', 99999,
+      'on', '2026-11-16', 'currency_code', 'USD', 'idempotency_key', 'dep-too-much'
+    ));
+    RAISE EXCEPTION 'FAIL: depreciation above book value was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM !~* 'book value' THEN RAISE; END IF;
+  END;
+  PERFORM public.nonprofit_post_movement(c, jsonb_build_object(
+    'kind', 'payroll_accrual', 'fund_id', gen, 'amount_minor', 800,
+    'on', '2026-11-16', 'currency_code', 'USD', 'idempotency_key', 'pay-accrue'
+  ));
+  PERFORM public.nonprofit_post_movement(c, jsonb_build_object(
+    'kind', 'payroll_payment', 'fund_id', gen, 'amount_minor', 800,
+    'on', '2026-11-17', 'currency_code', 'USD', 'idempotency_key', 'pay-settle'
+  ));
+  BEGIN
+    PERFORM public.nonprofit_post_movement(c, jsonb_build_object(
+      'kind', 'payroll_payment', 'fund_id', gen, 'amount_minor', 800,
+      'on', '2026-11-17', 'currency_code', 'USD', 'idempotency_key', 'pay-again'
+    ));
+    RAISE EXCEPTION 'FAIL: payroll payment without a payable was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM !~* 'Payroll payable' THEN RAISE; END IF;
+  END;
+  PERFORM public.nonprofit_post_movement(c, jsonb_build_object(
+    'kind', 'investment_income', 'fund_id', gen, 'amount_minor', 250,
+    'on', '2026-11-17', 'currency_code', 'USD', 'idempotency_key', 'invest-1'
+  ));
+  PERFORM public.nonprofit_post_movement(c, jsonb_build_object(
+    'kind', 'fx_settlement', 'fund_id', gen, 'difference_minor', -40,
+    'on', '2026-11-17', 'currency_code', 'USD', 'idempotency_key', 'fx-loss'
+  ));
+  pledge_id := (public.nonprofit_create_pledge(c, jsonb_build_object(
+    'donor_id', donor, 'fund_id', gen, 'pledged_on', '2026-11-18', 'amount_minor', 5000,
+    'currency_code', 'USD', 'unconditional', true
+  ))->>'id')::UUID;
+  PERFORM public.nonprofit_impair_pledge(c, pledge_id, 1200, '2026-11-18');
+  PERFORM public.test_assert((SELECT impaired_minor = 1200 AND status = 'recognised' FROM public.nonprofit_pledges WHERE id = pledge_id), 'partial pledge impairment keeps the remainder recognised');
+  BEGIN
+    PERFORM public.nonprofit_impair_pledge(c, pledge_id, 99999, '2026-11-18');
+    RAISE EXCEPTION 'FAIL: impairment above the outstanding pledge was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM !~* 'Impairment exceeds' THEN RAISE; END IF;
+  END;
+  PERFORM public.nonprofit_allocate_expense(c, (expense->>'id')::UUID, 'administration', 400, '2026-11-18', 'alloc-1');
+  PERFORM public.test_assert((SELECT allocated_minor = 400 FROM public.nonprofit_expenses WHERE id = (expense->>'id')::UUID), 'allocation records the amount moved to another class');
+  BEGIN
+    PERFORM public.nonprofit_allocate_expense(c, (expense->>'id')::UUID, 'fundraising', 700, '2026-11-18', 'alloc-too-much');
+    RAISE EXCEPTION 'FAIL: allocation above the original expense was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM !~* 'Allocation exceeds' THEN RAISE; END IF;
+  END;
+
   PERFORM public.test_assert((
     SELECT SUM(debit_minor) = SUM(credit_minor) AND SUM(debit_minor) > 0
     FROM public.journal_lines WHERE company_id = c

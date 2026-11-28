@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { NonprofitSubnav } from "@/components/nonprofit/NonprofitSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
@@ -19,6 +19,7 @@ import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
+  allocateNonprofitExpense,
   createNonprofitDonor,
   createNonprofitFund,
   createNonprofitGrant,
@@ -27,7 +28,9 @@ import {
   getNonprofitPortal,
   getNonprofitWorkspace,
   grantNonprofitPortal,
+  impairNonprofitPledge,
   postNonprofitExpense,
+  postNonprofitMovement,
   receiveNonprofitGrant,
   recogniseNonprofitGrant,
   releaseNonprofitRestriction,
@@ -614,11 +617,14 @@ function PledgeForm({
   pledges: Row[];
 }) {
   const save = useServerFn(createNonprofitPledge);
+  const impair = useServerFn(impairNonprofitPledge);
   const refresh = useRefresh(companyId);
   const [donorId, setDonorId] = useState("");
   const [fundId, setFundId] = useState("");
   const [amount, setAmount] = useState("");
   const [unconditional, setUnconditional] = useState(false);
+  const [pledgeId, setPledgeId] = useState("");
+  const [impairAmount, setImpairAmount] = useState("");
   const mutation = useMutation({
     mutationFn: () =>
       save({
@@ -639,6 +645,23 @@ function PledgeForm({
         unconditional ? "Pledge recognised" : "Conditional pledge recorded without revenue",
       );
       setAmount("");
+      await refresh();
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+  const impairMutation = useMutation({
+    mutationFn: () =>
+      impair({
+        data: {
+          companyId,
+          pledgeId,
+          amountMinor: minor(impairAmount, currency),
+          on: new Date().toISOString().slice(0, 10),
+        },
+      }),
+    onSuccess: async () => {
+      toast.success("Pledge impaired. The remainder stays recognised.");
+      setImpairAmount("");
       await refresh();
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -673,9 +696,35 @@ function PledgeForm({
           Save pledge
         </Button>
       </form>
+      <form
+        className="grid gap-3 md:grid-cols-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          impairMutation.mutate();
+        }}
+      >
+        <Field label="Recognised pledge">
+          <SelectRows
+            rows={pledges}
+            value={pledgeId}
+            onChange={setPledgeId}
+            labelKey="pledge_number"
+          />
+        </Field>
+        <Field label={`Impairment (${currency})`}>
+          <Input
+            value={impairAmount}
+            onChange={(event) => setImpairAmount(event.target.value)}
+            required
+          />
+        </Field>
+        <Button type="submit" variant="outline" disabled={impairMutation.isPending}>
+          Impair outstanding balance
+        </Button>
+      </form>
       <Table
         rows={pledges}
-        columns={["pledge_number", "amount_minor", "status", "collected_minor"]}
+        columns={["pledge_number", "amount_minor", "status", "collected_minor", "impaired_minor"]}
       />
     </div>
   );
@@ -917,9 +966,164 @@ function ExpenseForm({
       </form>
       <Table
         rows={expenses}
-        columns={["category", "amount_minor", "functional_class", "status", "rejection_reason"]}
+        columns={[
+          "category",
+          "amount_minor",
+          "functional_class",
+          "allocated_minor",
+          "status",
+          "rejection_reason",
+        ]}
       />
+      <MovementForm companyId={companyId} currency={currency} funds={funds} />
+      <AllocationForm companyId={companyId} currency={currency} expenses={expenses} />
     </div>
+  );
+}
+
+function MovementForm({
+  companyId,
+  currency,
+  funds,
+}: {
+  companyId: string;
+  currency: string;
+  funds: Row[];
+}) {
+  const save = useServerFn(postNonprofitMovement);
+  const refresh = useRefresh(companyId);
+  const key = useRef(crypto.randomUUID());
+  const [fundId, setFundId] = useState("");
+  const [kind, setKind] = useState("depreciation");
+  const [amount, setAmount] = useState("");
+  const mutation = useMutation({
+    mutationFn: () => {
+      const magnitude = Math.abs(minor(amount, currency));
+      return save({
+        data: {
+          companyId,
+          kind: kind === "fx_gain" || kind === "fx_loss" ? "fx_settlement" : kind,
+          fundId,
+          amountMinor: kind === "fx_loss" ? -magnitude : magnitude,
+          currencyCode: currency,
+          on: new Date().toISOString().slice(0, 10),
+          idempotencyKey: key.current,
+        },
+      });
+    },
+    onSuccess: async () => {
+      toast.success("Fund movement posted");
+      key.current = crypto.randomUUID();
+      setAmount("");
+      await refresh();
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+  return (
+    <form
+      className="grid gap-3 md:grid-cols-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        mutation.mutate();
+      }}
+    >
+      <Field label="Fund">
+        <SelectRows rows={funds} value={fundId} onChange={setFundId} labelKey="code" />
+      </Field>
+      <Field label="Movement">
+        {/* lookup-fixed-enum: depreciation, payroll, investment, inventory and FX kinds */}
+        <select
+          className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+          value={kind}
+          onChange={(event) => setKind(event.target.value)}
+          aria-label="Movement"
+        >
+          <option value="depreciation">Depreciation</option>
+          <option value="payroll_accrual">Payroll accrual</option>
+          <option value="payroll_payment">Payroll payment</option>
+          <option value="investment_income">Investment income</option>
+          <option value="inventory_distribution">Inventory distribution</option>
+          <option value="fx_gain">Exchange gain</option>
+          <option value="fx_loss">Exchange loss</option>
+        </select>
+      </Field>
+      <Field label={`Amount (${currency})`}>
+        <Input value={amount} onChange={(event) => setAmount(event.target.value)} required />
+      </Field>
+      <Button type="submit" variant="outline" disabled={mutation.isPending}>
+        Post movement
+      </Button>
+    </form>
+  );
+}
+
+function AllocationForm({
+  companyId,
+  currency,
+  expenses,
+}: {
+  companyId: string;
+  currency: string;
+  expenses: Row[];
+}) {
+  const save = useServerFn(allocateNonprofitExpense);
+  const refresh = useRefresh(companyId);
+  const key = useRef(crypto.randomUUID());
+  const [expenseId, setExpenseId] = useState("");
+  const [functionalClass, setFunctionalClass] = useState("administration");
+  const [amount, setAmount] = useState("");
+  const posted = expenses.filter((row) => row.status === "posted");
+  const mutation = useMutation({
+    mutationFn: () =>
+      save({
+        data: {
+          companyId,
+          expenseId,
+          functionalClass,
+          amountMinor: minor(amount, currency),
+          on: new Date().toISOString().slice(0, 10),
+          idempotencyKey: key.current,
+        },
+      }),
+    onSuccess: async () => {
+      toast.success("Expense allocated to another functional class");
+      key.current = crypto.randomUUID();
+      setAmount("");
+      await refresh();
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+  return (
+    <form
+      className="grid gap-3 md:grid-cols-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        mutation.mutate();
+      }}
+    >
+      <Field label="Posted expense">
+        <SelectRows rows={posted} value={expenseId} onChange={setExpenseId} labelKey="category" />
+      </Field>
+      <Field label="Move to">
+        {/* lookup-fixed-enum: functional expense classes */}
+        <select
+          className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+          value={functionalClass}
+          onChange={(event) => setFunctionalClass(event.target.value)}
+          aria-label="Functional class"
+        >
+          <option value="programme">Programme</option>
+          <option value="administration">Administration</option>
+          <option value="fundraising">Fundraising</option>
+        </select>
+      </Field>
+      <Field label={`Amount (${currency})`}>
+        <Input value={amount} onChange={(event) => setAmount(event.target.value)} required />
+      </Field>
+      <Button type="submit" variant="outline" disabled={mutation.isPending}>
+        Allocate
+      </Button>
+    </form>
   );
 }
 

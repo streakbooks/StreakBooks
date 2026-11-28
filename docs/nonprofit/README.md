@@ -18,11 +18,14 @@ Receipt wording states that the document is not a government filing. Country pac
 
 ## What is not production ready
 
-This module is **not production ready**. Remote Supabase and Vercel have not received it. Public donation pages, live card charging, statutory filing, PDF and spreadsheet exports, full volunteer, member and grantor portals, expense-allocation posting, disbursement approval, recurring card runs and historical statement packs are still outstanding.
+This module is **not production ready**. Hosted Supabase and Vercel production have not been verified for these migrations. Public donation pages, live card charging, statutory filing, PDF and spreadsheet exports, full volunteer, member and grantor portals, disbursement approval, recurring card runs and historical statement packs are still outstanding.
+
+The screen can now post depreciation, payroll accrual and payment, investment income, inventory distribution, exchange gain or loss, pledge impairment and a functional-class allocation. Each of those still uses `post_journal`.
 
 Migrations:
 
 - `supabase/migrations/20261128220000_nonprofit_fund_accounting.sql`
 - `supabase/migrations/20261128221000_nonprofit_operations.sql`
+- `supabase/migrations/20261128233000_nonprofit_posting_depth.sql`
 
 Local proof: `npm run test:nonprofit:postgres` on disposable PostgreSQL 17. That command does not touch a hosted database.

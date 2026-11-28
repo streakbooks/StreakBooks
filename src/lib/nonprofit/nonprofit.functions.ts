@@ -13,7 +13,7 @@ import {
 } from "@/lib/nonprofit/types";
 
 export const NONPROFIT_MIGRATION =
-  "Nonprofit Management needs database updates 20261128220000 and 20261128221000.";
+  "Nonprofit Management needs database updates 20261128220000, 20261128221000 and 20261128233000.";
 
 async function posted(
   supabase: Parameters<typeof assertCompanyMember>[0],
@@ -193,6 +193,93 @@ export const postNonprofitExpense = createServerFn({ method: "POST" })
     return posted(context.supabase, "nonprofit_post_expense", {
       _company_id: data.companyId,
       _payload: data.payload,
+    });
+  });
+
+export const postNonprofitMovement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (input: {
+      companyId: string;
+      kind: string;
+      fundId: string;
+      amountMinor: number;
+      currencyCode: string;
+      on: string;
+      idempotencyKey: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      kind: input.kind,
+      fundId: input.fundId,
+      amountMinor: input.amountMinor,
+      currencyCode: input.currencyCode,
+      on: input.on,
+      idempotencyKey: input.idempotencyKey,
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.post");
+    const fx = data.kind === "fx_settlement";
+    return posted(context.supabase, "nonprofit_post_movement", {
+      _company_id: data.companyId,
+      _payload: {
+        kind: data.kind,
+        fund_id: data.fundId,
+        on: data.on,
+        currency_code: data.currencyCode,
+        idempotency_key: data.idempotencyKey,
+        ...(fx ? { difference_minor: data.amountMinor } : { amount_minor: data.amountMinor }),
+      },
+    });
+  });
+
+export const impairNonprofitPledge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; pledgeId: string; amountMinor: number; on: string }) => ({
+    companyId: companyIdOf(input),
+    pledgeId: input.pledgeId,
+    amountMinor: input.amountMinor,
+    on: input.on,
+  }))
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.post");
+    return posted(context.supabase, "nonprofit_impair_pledge", {
+      _company_id: data.companyId,
+      _pledge_id: data.pledgeId,
+      _amount: data.amountMinor,
+      _on: data.on,
+    });
+  });
+
+export const allocateNonprofitExpense = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (input: {
+      companyId: string;
+      expenseId: string;
+      functionalClass: string;
+      amountMinor: number;
+      on: string;
+      idempotencyKey: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      expenseId: input.expenseId,
+      functionalClass: input.functionalClass,
+      amountMinor: input.amountMinor,
+      on: input.on,
+      idempotencyKey: input.idempotencyKey,
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.allocations.manage");
+    await assertCompanyPermission(context.supabase, data.companyId, "nonprofit.post");
+    return posted(context.supabase, "nonprofit_allocate_expense", {
+      _company_id: data.companyId,
+      _expense_id: data.expenseId,
+      _class: data.functionalClass,
+      _amount: data.amountMinor,
+      _on: data.on,
+      _key: data.idempotencyKey,
     });
   });
 

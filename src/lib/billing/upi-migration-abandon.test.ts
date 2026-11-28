@@ -229,6 +229,36 @@ describe("recoverDueUpiMigrations stale pre-confirm", () => {
   });
 });
 
+describe("retry after incomplete initiation", () => {
+  it("releases initiated rows that never got a Razorpay subscription or checkout", async () => {
+    const emptyInitiated = migrationRow({
+      status: "initiated",
+      newProviderSubscriptionId: null,
+      checkoutId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    const failed = migrationRow({
+      ...emptyInitiated,
+      status: "failed",
+      failureReason: "Previous plan migration never reached Razorpay checkout. Safe to retry.",
+    });
+    rpcHandler = (fn) => {
+      if (fn === "billing_migration_get") return emptyInitiated;
+      if (fn === "billing_migration_transition") return failed;
+      return null;
+    };
+
+    const result = await failAbandonedUpiMigration(
+      emptyInitiated.id,
+      "Previous plan migration never reached Razorpay checkout. Safe to retry.",
+    );
+    expect(result.status).toBe("failed");
+    expect(inspectMock).not.toHaveBeenCalled();
+    expect(cancelMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("old subscription stays authoritative until confirm", () => {
   it("does not treat old mandate as retired while awaiting authorisation", () => {
     expect(

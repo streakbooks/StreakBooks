@@ -25,7 +25,10 @@ import {
   collectRealEstate,
   confirmRealEstateBooking,
   createRealEstateBroker,
+  createRealEstateLevel,
+  createRealEstatePhase,
   createRealEstateProject,
+  createRealEstateStructure,
   createRealEstateUnit,
   expireRealEstateHolds,
   getRealEstateLedgerTie,
@@ -36,6 +39,7 @@ import {
   recordRealEstateCost,
   refundRealEstate,
   releaseRealEstateHold,
+  repriceRealEstateUnit,
   reverseRealEstateRecognition,
   saveRealEstateBudget,
   saveRealEstateCommissionRule,
@@ -276,27 +280,96 @@ function Projects({
 }) {
   const { can } = useCan();
   const save = useServerFn(createRealEstateProject);
+  const savePhase = useServerFn(createRealEstatePhase);
+  const saveStructure = useServerFn(createRealEstateStructure);
+  const saveLevel = useServerFn(createRealEstateLevel);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [phaseCode, setPhaseCode] = useState("");
+  const [phaseName, setPhaseName] = useState("");
+  const [structureCode, setStructureCode] = useState("");
+  const [structureName, setStructureName] = useState("");
+  const [structureKind, setStructureKind] = useState("building");
+  const [phaseId, setPhaseId] = useState("");
+  const [structureId, setStructureId] = useState("");
+  const [levelLabel, setLevelLabel] = useState("");
   const refresh = useRefresh(companyId);
   const mutation = useMutation({
-    mutationFn: () =>
-      save({ data: { companyId, payload: { code, name, location, status: "active" } } }),
-    onSuccess: async () => {
-      toast.success("Project created");
-      setCode("");
-      setName("");
+    mutationFn: (action: "project" | "phase" | "structure" | "level") => {
+      if (action === "phase") {
+        return savePhase({
+          data: {
+            companyId,
+            payload: {
+              project_id: projectId,
+              code: phaseCode,
+              name: phaseName,
+              sequence:
+                data.phases.filter((row) => cell(row, "project_id") === projectId).length + 1,
+            },
+          },
+        });
+      }
+      if (action === "structure") {
+        return saveStructure({
+          data: {
+            companyId,
+            payload: {
+              project_id: projectId,
+              phase_id: phaseId,
+              kind: structureKind,
+              code: structureCode,
+              name: structureName,
+            },
+          },
+        });
+      }
+      if (action === "level") {
+        return saveLevel({
+          data: {
+            companyId,
+            payload: {
+              structure_id: structureId,
+              label: levelLabel,
+              sequence:
+                data.levels.filter((row) => cell(row, "structure_id") === structureId).length + 1,
+            },
+          },
+        });
+      }
+      return save({ data: { companyId, payload: { code, name, location, status: "active" } } });
+    },
+    onSuccess: async (_result, action) => {
+      if (action === "project") {
+        setCode("");
+        setName("");
+        setLocation("");
+      } else if (action === "phase") {
+        setPhaseCode("");
+        setPhaseName("");
+      } else if (action === "structure") {
+        setStructureCode("");
+        setStructureName("");
+      } else {
+        setLevelLabel("");
+      }
+      toast.success("Project structure saved");
       await refresh();
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
+  const phases = data.phases.filter((row) => !projectId || cell(row, "project_id") === projectId);
+  const structures = data.structures.filter(
+    (row) => !projectId || cell(row, "project_id") === projectId,
+  );
   return (
     <div className="grid gap-4">
       {can("realestate.manage") ? (
         <form
           className="grid gap-3 md:grid-cols-3"
-          onSubmit={(event) => submit(event, () => mutation.mutate())}
+          onSubmit={(event) => submit(event, () => mutation.mutate("project"))}
         >
           <Field label="Code">
             <Input value={code} onChange={(event) => setCode(event.target.value)} required />
@@ -334,6 +407,130 @@ function Projects({
           { key: "location", label: "Location", render: (row) => cell(row, "location") },
         ]}
       />
+      {can("realestate.manage") ? (
+        <div className="grid gap-4">
+          <form
+            className="grid gap-3 md:grid-cols-4"
+            onSubmit={(event) => submit(event, () => mutation.mutate("phase"))}
+          >
+            <Field label="Project">
+              <ProjectSelect
+                projects={data.projects}
+                value={projectId}
+                onChange={(next) => {
+                  setProjectId(next);
+                  setPhaseId("");
+                  setStructureId("");
+                }}
+              />
+            </Field>
+            <Field label="Phase code">
+              <Input
+                value={phaseCode}
+                onChange={(event) => setPhaseCode(event.target.value)}
+                required
+              />
+            </Field>
+            <Field label="Phase name">
+              <Input
+                value={phaseName}
+                onChange={(event) => setPhaseName(event.target.value)}
+                required
+              />
+            </Field>
+            <Button type="submit" disabled={mutation.isPending || !projectId}>
+              Add phase
+            </Button>
+          </form>
+          <form
+            className="grid gap-3 md:grid-cols-4"
+            onSubmit={(event) => submit(event, () => mutation.mutate("structure"))}
+          >
+            <Field label="Phase">
+              <NativeSelect
+                value={phaseId}
+                onChange={setPhaseId}
+                options={phases.map((row) => cell(row, "id"))}
+                labels={phases.map((row) => `${cell(row, "code")} · ${cell(row, "name")}`)}
+              />
+            </Field>
+            <Field label="Structure kind">
+              <NativeSelect
+                value={structureKind}
+                onChange={setStructureKind}
+                options={[
+                  "building",
+                  "tower",
+                  "block",
+                  "villa_cluster",
+                  "warehouse",
+                  "mixed",
+                  "land",
+                ]}
+              />
+            </Field>
+            <Field label="Structure code">
+              <Input
+                value={structureCode}
+                onChange={(event) => setStructureCode(event.target.value)}
+                required
+              />
+            </Field>
+            <Field label="Structure name">
+              <Input
+                value={structureName}
+                onChange={(event) => setStructureName(event.target.value)}
+                required
+              />
+            </Field>
+            <Button type="submit" disabled={mutation.isPending || !projectId}>
+              Add structure
+            </Button>
+          </form>
+          <form
+            className="grid gap-3 md:grid-cols-3"
+            onSubmit={(event) => submit(event, () => mutation.mutate("level"))}
+          >
+            <Field label="Structure">
+              <NativeSelect
+                value={structureId}
+                onChange={setStructureId}
+                options={structures.map((row) => cell(row, "id"))}
+                labels={structures.map((row) => `${cell(row, "code")} · ${cell(row, "name")}`)}
+              />
+            </Field>
+            <Field label="Floor or level">
+              <Input
+                value={levelLabel}
+                onChange={(event) => setLevelLabel(event.target.value)}
+                required
+              />
+            </Field>
+            <Button type="submit" disabled={mutation.isPending || !structureId}>
+              Add level
+            </Button>
+          </form>
+        </div>
+      ) : null}
+      <RowTable
+        rows={data.phases}
+        columns={[
+          { key: "code", label: "Phase", render: (row) => cell(row, "code") },
+          { key: "name", label: "Name", render: (row) => cell(row, "name") },
+        ]}
+      />
+      <RowTable
+        rows={data.structures}
+        columns={[
+          { key: "code", label: "Structure", render: (row) => cell(row, "code") },
+          { key: "kind", label: "Kind", render: (row) => cell(row, "kind") },
+          { key: "name", label: "Name", render: (row) => cell(row, "name") },
+        ]}
+      />
+      <RowTable
+        rows={data.levels}
+        columns={[{ key: "label", label: "Level", render: (row) => cell(row, "label") }]}
+      />
     </div>
   );
 }
@@ -353,12 +550,16 @@ function Inventory({
   const create = useServerFn(createRealEstateUnit);
   const importUnits = useServerFn(importRealEstateUnits);
   const transition = useServerFn(transitionRealEstateUnit);
+  const reprice = useServerFn(repriceRealEstateUnit);
   const refresh = useRefresh(companyId);
   const [projectId, setProjectId] = useState(search.project);
+  const [structureId, setStructureId] = useState("");
+  const [levelId, setLevelId] = useState("");
   const [code, setCode] = useState("");
   const [kind, setKind] = useState("apartment");
   const [price, setPrice] = useState("");
   const [area, setArea] = useState("");
+  const [nextPrice, setNextPrice] = useState("");
   const [csv, setCsv] = useState("");
   const [unitId, setUnitId] = useState(search.unit);
   const [nextStatus, setNextStatus] = useState("");
@@ -367,18 +568,32 @@ function Inventory({
   const selectedStatus = selected ? cell(selected, "status") : "";
   const edges = isUnitStatus(selectedStatus) ? genericTransitions(selectedStatus) : [];
   const mutation = useMutation({
-    mutationFn: async (action: "create" | "import" | "transition") => {
+    mutationFn: async (action: "create" | "import" | "transition" | "reprice") => {
       if (action === "create") {
         return create({
           data: {
             companyId,
             payload: {
               project_id: projectId,
+              structure_id: structureId,
+              level_id: levelId,
               unit_code: code,
               kind,
               status: "available",
               saleable_area: Number(area || 0),
               list_price_minor: Number(toMinorUnits(price || "0", currency)),
+            },
+          },
+        });
+      }
+      if (action === "reprice") {
+        return reprice({
+          data: {
+            companyId,
+            payload: {
+              unit_id: selected ? cell(selected, "id") : "",
+              list_price_minor: Number(toMinorUnits(nextPrice || "0", currency)),
+              reason: "List price updated",
             },
           },
         });
@@ -407,7 +622,16 @@ function Inventory({
         },
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (_result, action) => {
+      if (action === "create") {
+        setCode("");
+        setPrice("");
+        setArea("");
+      } else if (action === "reprice") {
+        setNextPrice("");
+      } else if (action === "import") {
+        setCsv("");
+      }
       toast.success("Inventory updated");
       await refresh();
     },
@@ -421,7 +645,42 @@ function Inventory({
           onSubmit={(event) => submit(event, () => mutation.mutate("create"))}
         >
           <Field label="Project">
-            <ProjectSelect projects={data.projects} value={projectId} onChange={setProjectId} />
+            <ProjectSelect
+              projects={data.projects}
+              value={projectId}
+              onChange={(next) => {
+                setProjectId(next);
+                setStructureId("");
+                setLevelId("");
+              }}
+            />
+          </Field>
+          <Field label="Structure">
+            <NativeSelect
+              value={structureId}
+              onChange={(next) => {
+                setStructureId(next);
+                setLevelId("");
+              }}
+              options={data.structures
+                .filter((row) => cell(row, "project_id") === projectId)
+                .map((row) => cell(row, "id"))}
+              labels={data.structures
+                .filter((row) => cell(row, "project_id") === projectId)
+                .map((row) => cell(row, "code"))}
+            />
+          </Field>
+          <Field label="Level">
+            <NativeSelect
+              value={levelId}
+              onChange={setLevelId}
+              options={data.levels
+                .filter((row) => cell(row, "structure_id") === structureId)
+                .map((row) => cell(row, "id"))}
+              labels={data.levels
+                .filter((row) => cell(row, "structure_id") === structureId)
+                .map((row) => cell(row, "label"))}
+            />
           </Field>
           <Field label="Unit code">
             <Input value={code} onChange={(event) => setCode(event.target.value)} required />
@@ -495,6 +754,24 @@ function Inventory({
           </Field>
           <Button type="submit" disabled={mutation.isPending || !nextStatus}>
             Update status
+          </Button>
+        </form>
+      ) : null}
+      {selected && can("realestate.inventory.manage") ? (
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(event) => submit(event, () => mutation.mutate("reprice"))}
+        >
+          <Field label={`Reprice ${cell(selected, "unit_code")}`}>
+            <Input
+              value={nextPrice}
+              onChange={(event) => setNextPrice(event.target.value)}
+              inputMode="decimal"
+              required
+            />
+          </Field>
+          <Button type="submit" variant="outline" disabled={mutation.isPending || !nextPrice}>
+            Save price
           </Button>
         </form>
       ) : null}

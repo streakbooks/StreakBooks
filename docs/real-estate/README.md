@@ -4,7 +4,8 @@ Development and property-sales module at `/real-estate`. It is separate from Pro
 
 ## What this foundation does
 
-- Projects, structures and a property register with status history
+- Projects, phases, structures, levels and a property register with status and price history
+- A structure can only use a phase from its own project, and a unit floor must belong to the selected structure
 - Reservations that lock a unit, including one active reservation per unit
 - Bookings, agreements and contractual payment schedules that do not post revenue
 - Customer collections posted as bank and contract liability
@@ -22,7 +23,7 @@ Customer and broker portals, construction contracts, escrow, financing, tax pack
 
 ## Database
 
-Migrations `20261128232000` through `20261128280000`. Hosted application is blocked until backup evidence exists for Supabase project `qugoaaizclvkzesptovm`. The latest authorisation does not replace that backup check.
+Migrations `20261128232000` through `20261128281000`. Hosted application is blocked until backup evidence exists for Supabase project `qugoaaizclvkzesptovm`. The latest authorisation does not replace that backup check.
 
 ```powershell
 npm.cmd run test:realestate:postgres

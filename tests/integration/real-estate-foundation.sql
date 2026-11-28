@@ -63,6 +63,17 @@ BEGIN
   ));
 
   project := (public.realestate_create_project(c, '{"code":"HT","name":"Harbour Tower","currency_code":"USD","status":"active"}'::jsonb)->>'id')::UUID;
+  PERFORM public.test_assert((
+    public.realestate_create_level(c, jsonb_build_object(
+      'structure_id', public.realestate_create_structure(c, jsonb_build_object(
+        'project_id', project,
+        'phase_id', public.realestate_create_phase(c, jsonb_build_object('project_id', project, 'code', 'P1', 'name', 'Phase 1', 'sequence', 1))->>'id',
+        'kind', 'tower', 'code', 'T1', 'name', 'Tower 1'
+      ))->>'id',
+      'label', 'Level 1',
+      'sequence', 1
+    ))->>'id' IS NOT NULL
+  ), 'phase, structure and level are created');
   unit := (public.realestate_create_unit(c, jsonb_build_object(
     'project_id', project, 'unit_code', 'A-101', 'kind', 'apartment', 'status', 'available',
     'saleable_area', 50, 'list_price_minor', 100000
@@ -71,6 +82,16 @@ BEGIN
     'project_id', project, 'unit_code', 'A-102', 'kind', 'apartment', 'status', 'available', 'list_price_minor', 80000
   ))->>'id')::UUID;
   PERFORM public.test_assert(spare IS NOT NULL, 'second unit is created for the concurrency check');
+  PERFORM public.realestate_reprice_unit(c, jsonb_build_object('unit_id', spare, 'list_price_minor', 90000, 'reason', 'Opening price'));
+  PERFORM public.test_assert((SELECT list_price_minor FROM public.realestate_units WHERE id = spare) = 90000, 'repricing keeps a price history without posting');
+  PERFORM public.test_assert((SELECT count(*) FROM public.journals) = 0, 'repricing does not post a journal');
+  PERFORM public.realestate_create_project(c, '{"code":"OT","name":"Other Tower","currency_code":"USD","status":"active"}'::jsonb);
+  PERFORM public.realestate_create_level(c, jsonb_build_object(
+    'structure_id', public.realestate_create_structure(c, jsonb_build_object(
+      'project_id', project, 'kind', 'block', 'code', 'B1', 'name', 'Annex'
+    ))->>'id',
+    'label', 'Annex', 'sequence', 1
+  ));
 
   hold := (public.realestate_place_hold(c, jsonb_build_object('unit_id', unit, 'holder_name', 'Asha'))->>'id')::UUID;
   sale := (public.realestate_confirm_booking(c, jsonb_build_object(
@@ -137,6 +158,18 @@ SELECT public.test_raises(
   $$SELECT public.realestate_recognise('20000000-0000-4000-8000-000000000001', jsonb_build_object('sale_id', (SELECT id FROM public.realestate_sales LIMIT 1), 'policy', 'point_in_time', 'trigger', 'cash', 'approved', true, 'control_transferred', true, 'calculation_ref', 'CALC-NO', 'evidence_note', 'Cash arrived in the bank today.', 'requested_minor', 1, 'idempotency_key', 'cash-no', 'journal_date', '2026-11-28', 'fx_rate_to_base', 1))$$,
   'does not recognise revenue',
   'cash does not recognise revenue'
+);
+
+SELECT public.test_raises(
+  $$SELECT public.realestate_create_structure('20000000-0000-4000-8000-000000000001', jsonb_build_object('project_id', (SELECT id FROM public.realestate_projects WHERE code = 'OT'), 'phase_id', (SELECT id FROM public.realestate_phases WHERE code = 'P1'), 'kind', 'tower', 'code', 'BAD', 'name', 'Wrong phase'))$$,
+  'Phase is not in this project',
+  'a structure cannot use another project phase'
+);
+
+SELECT public.test_raises(
+  $$SELECT public.realestate_create_unit('20000000-0000-4000-8000-000000000001', jsonb_build_object('project_id', (SELECT id FROM public.realestate_projects WHERE code = 'HT'), 'structure_id', (SELECT id FROM public.realestate_structures WHERE code = 'T1'), 'level_id', (SELECT id FROM public.realestate_levels WHERE label = 'Annex'), 'unit_code', 'A-199', 'kind', 'apartment', 'status', 'available', 'list_price_minor', 1))$$,
+  'Floor is not in this structure',
+  'a floor must belong to the selected structure'
 );
 
 SELECT public.test_raises(

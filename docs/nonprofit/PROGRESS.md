@@ -76,7 +76,7 @@ Frontend, backend and database percentages count the working subset that has cod
 | Supabase objects | `nonprofit_funds`, donations and disbursements exist. Submit, movement, request and decide functions exist. `post_journal` remains. 33 nonprofit tables have row-level security. 17 distinct `nonprofit.*` permissions. Anonymous execute is absent. |
 | Hosted activity | One settings row is enabled, gateway is not configured, and there are no funds, donations or nonprofit journals. No live rows were inserted during this check. |
 | Vercel production | not verified |
-| Outstanding product work | recurring charges, public donation pages, live gateways, statutory filing, exports, full portals and historical statement packs |
+| Outstanding product work | recurring charges, public donation pages, live gateways, statutory filing, exports and full portals. The historical statement function is local in `20261128250000` and is not hosted. |
 | Current blocker | authenticated browser workflow needs a sign-in; the module is not production ready |
 
 ## Scenario coverage in the PostgreSQL suite
@@ -87,4 +87,6 @@ Also covered on 28 November 2026: donated inventory distribution and its over-di
 
 Also covered later the same day: disbursement segregation, a posted disbursement, an ineligible beneficiary with no journal, and hidden disbursement rows.
 
-Not covered by that suite: recurring charges and a full historical statement pack.
+Also covered later the same day: a historical fund statement for a quiet period, the split-donation day, an interfund transfer, a restriction release, the identity of opening plus activity to closing, an inverted period, cross-tenant denial, portal denial, and a viewer reading the report without beneficiary records.
+
+Not covered by that suite: recurring charges. The statement is a management report, not a statutory filing, PDF, or spreadsheet.

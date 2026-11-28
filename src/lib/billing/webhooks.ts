@@ -212,6 +212,29 @@ export async function processStoredEvent(
         : razorpayEvents(claimed.payload as RazorpayEvent);
     const results: unknown[] = [];
     for (const event of events) {
+      const subscriptionId =
+        "subscriptionId" in event.data ? String(event.data.subscriptionId ?? "") : "";
+      if (claimed.provider === "razorpay" && subscriptionId) {
+        const { handleRetiredUpiMigrationSubscriptionEvent } =
+          await import("@/lib/billing/upi-migration.server");
+        const retired = await handleRetiredUpiMigrationSubscriptionEvent({
+          subscriptionId,
+          kind: event.kind,
+          eventType: claimed.eventType,
+          status: "status" in event.data ? (event.data.status as string | null) : null,
+        });
+        if (retired.handled) {
+          // Never apply entitlement mutations for the retired (old) migration subscription.
+          results.push({
+            result: "applied",
+            reason: retired.result,
+            migrationId: retired.migrationId,
+            action: retired.action,
+          });
+          continue;
+        }
+      }
+
       const result = await rpc<{ result: string; offerCode?: string | null }>(
         client,
         "billing_apply_provider_event",
@@ -251,16 +274,54 @@ export async function processStoredEvent(
         ? await stripePaymentFor(claimed)
         : razorpayPayment(claimed.payload as RazorpayEvent);
     if (payment) {
-      const recorded = await rpc<{ result: string; reason?: string }>(
-        client,
-        "billing_record_provider_payment",
-        { _provider: claimed.provider, _mode: claimed.mode ?? "test", _payment: payment },
-      );
-      // A payment can arrive before the checkout that created its subscription; retry later.
-      if (recorded.result === "skipped" && recorded.reason === "unknown subscription") {
-        throw new Error("The subscription for this payment is not active yet.");
+      if (claimed.provider === "razorpay" && payment.subscriptionId) {
+        const { isRetiredUpiMigrationSubscriptionPayment } =
+          await import("@/lib/billing/upi-migration.server");
+        const retiredPay = await isRetiredUpiMigrationSubscriptionPayment(payment.subscriptionId);
+        if (retiredPay.retired) {
+          console.error(
+            "UPI migration unexpected payment on retired subscription",
+            JSON.stringify({
+              migrationId: retiredPay.migrationId,
+              subscriptionId: payment.subscriptionId,
+              paymentId: payment.paymentId,
+            }),
+          );
+          results.push({
+            result: "applied",
+            reason: "retired_migration_payment_alerted",
+            migrationId: retiredPay.migrationId,
+          });
+          // Do not throw — avoids infinite webhook retry on known retired-sub charges.
+        } else {
+          const recorded = await rpc<{ result: string; reason?: string }>(
+            client,
+            "billing_record_provider_payment",
+            { _provider: claimed.provider, _mode: claimed.mode ?? "test", _payment: payment },
+          );
+          if (recorded.result === "skipped" && recorded.reason === "unknown subscription") {
+            throw new Error("The subscription for this payment is not active yet.");
+          }
+          results.push({
+            ...recorded,
+            result: recorded.result === "skipped" ? "skipped" : "applied",
+          });
+        }
+      } else {
+        const recorded = await rpc<{ result: string; reason?: string }>(
+          client,
+          "billing_record_provider_payment",
+          { _provider: claimed.provider, _mode: claimed.mode ?? "test", _payment: payment },
+        );
+        // A payment can arrive before the checkout that created its subscription; retry later.
+        if (recorded.result === "skipped" && recorded.reason === "unknown subscription") {
+          throw new Error("The subscription for this payment is not active yet.");
+        }
+        results.push({
+          ...recorded,
+          result: recorded.result === "skipped" ? "skipped" : "applied",
+        });
       }
-      results.push({ ...recorded, result: recorded.result === "skipped" ? "skipped" : "applied" });
     }
     const refund =
       claimed.provider === "stripe"

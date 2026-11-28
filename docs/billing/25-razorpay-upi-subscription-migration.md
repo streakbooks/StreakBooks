@@ -54,11 +54,14 @@ Illegal transitions are rejected by RPC.
 
 ## Double-billing prevention
 
-1. Never cancel the old sub before the new sub is **webhook-confirmed**.
+1. Never cancel the old sub before the new sub is **webhook-confirmed** and Razorpay inspect shows authenticated/active/pending.
 2. After confirmation, cancel the old sub with **`cancel_at_cycle_end: false`** (immediate) so the next UPI debit cannot land on the old mandate.
-3. One open migration per company (`UNIQUE` where status not terminal).
-4. Idempotent cancel retries keyed by migration id + old sub id.
-5. `subscription_state` for the old id becomes “unknown subscription” after the company row points at the new id — old renewals do not re-apply entitlements.
+3. Re-inspect after cancel; if status is not terminal, keep cancellation pending until `subscription.cancelled` (or retry).
+4. One open migration per company (`UNIQUE` where status not terminal).
+5. Idempotent cancel retries keyed by migration id + old sub id.
+6. After the company row points at the new id (or migration status is post-switch), events for the **old** id are matched via `billing_migration_by_old_subscription` — never applied as entitlement mutations, never silently “unknown”. Unexpected `charged` / billable state / payments alert admins (`requires_manual_review` when cancel is still open).
+7. While migration is still awaiting authorisation **and** `company_subscriptions` still points at the old id, old renewals apply normally (paid access preserved). They are logged, not swallowed.
+8. Cron `recoverDueUpiMigrations` re-inspects the new sub after restarts; cancel retries use Razorpay inspect + `subscription.cancelled` webhooks.
 
 ## Proration policy
 

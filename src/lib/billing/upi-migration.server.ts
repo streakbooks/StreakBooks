@@ -362,6 +362,337 @@ export async function startUpiSubscriptionMigration(
   };
 }
 
+/**
+ * Classify provider events that still refer to a migration's *old* subscription id
+ * after company_subscriptions already points at the new id.
+ */
+export type RetiredMigrationEventAction =
+  | { action: "ignore_non_mutating"; reason: string }
+  | { action: "mark_old_cancelled"; reason: string }
+  | { action: "alert_unexpected_charge"; reason: string }
+  | { action: "alert_payment_failed"; reason: string }
+  | { action: "alert_other"; reason: string };
+
+/** Statuses where the new mandate is authoritative and the old id must not mutate entitlements. */
+export const UPI_MIGRATION_POST_SWITCH_STATUSES: ReadonlySet<UpiMigrationStatus> = new Set([
+  "new_subscription_confirmed",
+  "old_subscription_cancellation_pending",
+  "old_subscription_cancellation_failed",
+  "entitlement_update_pending",
+  "requires_manual_review",
+  "completed",
+]);
+
+/**
+ * Old-sub events are "retired" only after the company has switched (or the migration
+ * row already records confirmation). While still awaiting authorisation and the company
+ * still points at the old id, events must apply normally so paid access is preserved.
+ */
+export function migrationTreatsOldSubscriptionAsRetired(
+  migration: Pick<
+    UpiMigrationRow,
+    "status" | "confirmedAt" | "oldProviderSubscriptionId" | "newProviderSubscriptionId"
+  >,
+  liveProviderSubscriptionId: string | null,
+): boolean {
+  if (UPI_MIGRATION_POST_SWITCH_STATUSES.has(migration.status) || migration.confirmedAt) {
+    return true;
+  }
+  if (
+    liveProviderSubscriptionId &&
+    liveProviderSubscriptionId !== migration.oldProviderSubscriptionId
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function classifyRetiredMigrationSubscriptionEvent(input: {
+  kind: "checkout_completed" | "subscription_state" | "payment_failed" | "subscription_ended";
+  eventType?: string | null;
+  status?: string | null;
+}): RetiredMigrationEventAction {
+  if (input.kind === "subscription_ended") {
+    return {
+      action: "mark_old_cancelled",
+      reason: "Old migration subscription ended or cancelled at the provider.",
+    };
+  }
+  if (input.kind === "payment_failed") {
+    return {
+      action: "alert_payment_failed",
+      reason: "Payment failed on the retired migration subscription.",
+    };
+  }
+  if (input.kind === "checkout_completed") {
+    return {
+      action: "alert_other",
+      reason: "Unexpected checkout_completed for a retired migration subscription.",
+    };
+  }
+  // subscription_state — renewals/charges on the old mandate after switch are dangerous.
+  const eventType = (input.eventType ?? "").toLowerCase();
+  if (
+    eventType.includes("charged") ||
+    eventType.includes("activated") ||
+    eventType.includes("authenticated")
+  ) {
+    return {
+      action: "alert_unexpected_charge",
+      reason: "Provider reported activity on the retired migration subscription after switch.",
+    };
+  }
+  if (
+    input.status === "active" ||
+    input.status === "trialing" ||
+    input.status === "past_due" ||
+    input.status === "paused"
+  ) {
+    return {
+      action: "alert_unexpected_charge",
+      reason: "Retired migration subscription still reporting a billable state after switch.",
+    };
+  }
+  return {
+    action: "ignore_non_mutating",
+    reason: "Non-mutating event for retired migration subscription.",
+  };
+}
+
+async function fetchLiveProviderSubscriptionId(companyId: string): Promise<string | null> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("company_subscriptions" as never)
+    .select("provider_subscription_id" as never)
+    .eq("company_id" as never, companyId as never)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const row = data as { provider_subscription_id?: string | null } | null;
+  const id = row?.provider_subscription_id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
+async function loadMigrationForOldSubscription(
+  subscriptionId: string,
+): Promise<UpiMigrationRow | null> {
+  const client = await admin();
+  return parseMigrationRow(
+    await rpc(client, "billing_migration_by_old_subscription", {
+      _subscription_id: subscriptionId,
+    }),
+  );
+}
+
+/** Heal a lagging migration row when entitlements already moved to the new subscription. */
+async function healMigrationRowAfterCompanySwitch(
+  client: Admin,
+  migration: UpiMigrationRow,
+  liveProviderSubscriptionId: string | null,
+): Promise<UpiMigrationRow> {
+  if (UPI_MIGRATION_POST_SWITCH_STATUSES.has(migration.status) || migration.confirmedAt) {
+    return migration;
+  }
+  const newId = liveProviderSubscriptionId || migration.newProviderSubscriptionId;
+  if (!newId || newId === migration.oldProviderSubscriptionId) return migration;
+  if (
+    migration.status === "initiated" ||
+    migration.status === "new_subscription_created" ||
+    migration.status === "awaiting_customer_authorization" ||
+    migration.status === "awaiting_payment"
+  ) {
+    return transition(
+      client,
+      migration.id,
+      [
+        "initiated",
+        "new_subscription_created",
+        "awaiting_customer_authorization",
+        "awaiting_payment",
+      ],
+      "new_subscription_confirmed",
+      {
+        newProviderSubscriptionId: newId,
+        markConfirmed: "true",
+      },
+    );
+  }
+  return migration;
+}
+
+/**
+ * Handle a webhook that targets the old subscription id for an in-flight or recent migration.
+ * Never applies entitlement mutations through billing_apply_provider_event once retired.
+ */
+export async function handleRetiredUpiMigrationSubscriptionEvent(input: {
+  subscriptionId: string;
+  kind: "checkout_completed" | "subscription_state" | "payment_failed" | "subscription_ended";
+  eventType?: string | null;
+  status?: string | null;
+}): Promise<{
+  handled: boolean;
+  result: string;
+  migrationId?: string;
+  action?: RetiredMigrationEventAction["action"];
+}> {
+  const client = await admin();
+  let migration = await loadMigrationForOldSubscription(input.subscriptionId);
+  if (!migration) return { handled: false, result: "not_migration" };
+
+  const liveSubId = await fetchLiveProviderSubscriptionId(migration.companyId);
+  if (!migrationTreatsOldSubscriptionAsRetired(migration, liveSubId)) {
+    // Pre-switch: old mandate is still the company subscription — apply entitlements normally.
+    // Log renewals during migration for ops visibility without swallowing the event.
+    const eventType = (input.eventType ?? "").toLowerCase();
+    if (eventType.includes("charged") || input.kind === "payment_failed") {
+      console.warn(
+        "UPI migration old-subscription event while still on old mandate",
+        JSON.stringify({
+          migrationId: migration.id,
+          kind: input.kind,
+          eventType: input.eventType ?? null,
+          status: migration.status,
+        }),
+      );
+    }
+    return { handled: false, result: "still_active_old_subscription", migrationId: migration.id };
+  }
+
+  migration = await healMigrationRowAfterCompanySwitch(client, migration, liveSubId);
+
+  const classified = classifyRetiredMigrationSubscriptionEvent({
+    kind: input.kind,
+    eventType: input.eventType ?? null,
+    status: input.status ?? null,
+  });
+
+  if (classified.action === "mark_old_cancelled") {
+    if (
+      migration.status === "old_subscription_cancellation_pending" ||
+      migration.status === "old_subscription_cancellation_failed" ||
+      migration.status === "new_subscription_confirmed" ||
+      migration.status === "requires_manual_review"
+    ) {
+      let row = migration;
+      if (row.status === "new_subscription_confirmed" || row.status === "requires_manual_review") {
+        row = await transition(
+          client,
+          row.id,
+          [row.status],
+          "old_subscription_cancellation_pending",
+          {},
+        );
+      } else if (row.status === "old_subscription_cancellation_failed") {
+        row = await transition(
+          client,
+          row.id,
+          ["old_subscription_cancellation_failed"],
+          "old_subscription_cancellation_pending",
+          {},
+        );
+      }
+      await transition(client, row.id, ["old_subscription_cancellation_pending"], "completed", {
+        markOldCancelled: "true",
+        nextRetryAt: null,
+        failureReason: null,
+      });
+    } else if (migration.status !== "completed") {
+      console.info(
+        "UPI migration old subscription ended",
+        JSON.stringify({ migrationId: migration.id, status: migration.status }),
+      );
+    }
+    return {
+      handled: true,
+      result: "old_subscription_cancelled",
+      migrationId: migration.id,
+      action: classified.action,
+    };
+  }
+
+  if (
+    classified.action === "alert_unexpected_charge" ||
+    classified.action === "alert_payment_failed" ||
+    classified.action === "alert_other"
+  ) {
+    console.error(
+      "UPI migration retired-subscription alert",
+      JSON.stringify({
+        migrationId: migration.id,
+        companyId: migration.companyId,
+        oldSubscriptionId: migration.oldProviderSubscriptionId,
+        newSubscriptionId: migration.newProviderSubscriptionId,
+        liveSubscriptionId: liveSubId,
+        kind: input.kind,
+        eventType: input.eventType ?? null,
+        action: classified.action,
+        reason: classified.reason,
+      }),
+    );
+    if (
+      classified.action === "alert_unexpected_charge" &&
+      (migration.status === "old_subscription_cancellation_pending" ||
+        migration.status === "old_subscription_cancellation_failed" ||
+        migration.status === "new_subscription_confirmed")
+    ) {
+      try {
+        if (migration.status === "new_subscription_confirmed") {
+          await transition(
+            client,
+            migration.id,
+            ["new_subscription_confirmed"],
+            "requires_manual_review",
+            { failureReason: classified.reason },
+          );
+        } else {
+          await transition(
+            client,
+            migration.id,
+            [
+              "old_subscription_cancellation_pending",
+              "old_subscription_cancellation_failed",
+            ] as UpiMigrationStatus[],
+            "requires_manual_review",
+            { failureReason: classified.reason },
+          );
+        }
+      } catch {
+        /* alert log is enough if transition races */
+      }
+    }
+    return {
+      handled: true,
+      result: "alerted",
+      migrationId: migration.id,
+      action: classified.action,
+    };
+  }
+
+  return {
+    handled: true,
+    result: "ignored_non_mutating",
+    migrationId: migration.id,
+    action: classified.action,
+  };
+}
+
+/** True when a provider payment belongs to a retired migration subscription (do not retry forever). */
+export async function isRetiredUpiMigrationSubscriptionPayment(
+  subscriptionId: string,
+): Promise<{ retired: boolean; migrationId?: string }> {
+  const migration = await loadMigrationForOldSubscription(subscriptionId);
+  if (!migration) return { retired: false };
+  const liveSubId = await fetchLiveProviderSubscriptionId(migration.companyId);
+  if (!migrationTreatsOldSubscriptionAsRetired(migration, liveSubId)) {
+    return { retired: false, migrationId: migration.id };
+  }
+  return { retired: true, migrationId: migration.id };
+}
+
+function isNewSubscriptionAuthoritativelyConfirmed(providerStatus: string): boolean {
+  // Razorpay `pending` means payment failure / attention — never treat as confirmation.
+  return /^(authenticated|active)$/i.test(providerStatus.trim());
+}
+
 /** After checkout_completed applied for a migration checkout — cancel the old mandate. */
 export async function onUpiMigrationNewSubscriptionConfirmed(input: {
   checkoutId: string;
@@ -387,6 +718,18 @@ export async function onUpiMigrationNewSubscriptionConfirmed(input: {
     migration.status === "new_subscription_created" ||
     migration.status === "initiated"
   ) {
+    // Authoritative check: new subscription must be authenticated/active before we cancel the old one.
+    const { createRazorpayClient, razorpayInspectSubscription } =
+      await import("@/lib/billing/providers/razorpay.server");
+    const inspected = await razorpayInspectSubscription(
+      createRazorpayClient(),
+      input.newSubscriptionId,
+    );
+    if (!isNewSubscriptionAuthoritativelyConfirmed(inspected.status)) {
+      throw new Error(
+        `New migration subscription is not confirmed yet (status=${inspected.status}).`,
+      );
+    }
     migration = await transition(
       client,
       migration.id,
@@ -460,14 +803,29 @@ export async function cancelOldSubscriptionForMigration(
       );
     }
     await razorpayCancelImmediate(razorpay, migration.oldProviderSubscriptionId);
+    // Re-fetch authoritative status — do not trust cancel HTTP alone if status is still active.
+    const after = await razorpayInspectSubscription(razorpay, migration.oldProviderSubscriptionId);
+    if (/cancel|complet|expir|halted/i.test(after.status)) {
+      return transition(
+        client,
+        migration.id,
+        ["old_subscription_cancellation_pending"],
+        "completed",
+        {
+          markOldCancelled: "true",
+          nextRetryAt: null,
+        },
+      );
+    }
+    // Cancel accepted but status not terminal yet — wait for subscription.cancelled webhook / retry.
     return transition(
       client,
       migration.id,
       ["old_subscription_cancellation_pending"],
-      "completed",
+      "old_subscription_cancellation_failed",
       {
-        markOldCancelled: "true",
-        nextRetryAt: null,
+        failureReason: `Cancel requested; provider status still ${after.status}. Waiting for confirmation.`,
+        nextRetryAt: new Date(Date.now() + 60_000).toISOString(),
       },
     );
   } catch (error) {
@@ -514,13 +872,46 @@ export async function recoverDueUpiMigrations(
         else processed += 1;
         continue;
       }
-      if (row.status === "awaiting_customer_authorization" || row.status === "awaiting_payment") {
+      if (
+        row.status === "awaiting_customer_authorization" ||
+        row.status === "awaiting_payment" ||
+        row.status === "new_subscription_created"
+      ) {
+        // Restart-safe: if the new sub is already authenticated/active (webhook applied
+        // entitlements but confirm/cancel step failed), advance and cancel the old mandate.
+        if (row.newProviderSubscriptionId) {
+          const { createRazorpayClient, razorpayInspectSubscription } =
+            await import("@/lib/billing/providers/razorpay.server");
+          const inspected = await razorpayInspectSubscription(
+            createRazorpayClient(),
+            row.newProviderSubscriptionId,
+          );
+          if (isNewSubscriptionAuthoritativelyConfirmed(inspected.status)) {
+            await onUpiMigrationNewSubscriptionConfirmed({
+              checkoutId: row.checkoutId ?? "",
+              newSubscriptionId: row.newProviderSubscriptionId,
+            });
+            processed += 1;
+            continue;
+          }
+        }
+        const liveSubId = await fetchLiveProviderSubscriptionId(row.companyId);
+        if (
+          liveSubId &&
+          liveSubId !== row.oldProviderSubscriptionId &&
+          row.newProviderSubscriptionId
+        ) {
+          await healMigrationRowAfterCompanySwitch(client, row, liveSubId);
+          await cancelOldSubscriptionForMigration(id);
+          processed += 1;
+          continue;
+        }
         const ageMs = Date.now() - Date.parse(row.createdAt || row.updatedAt);
         if (Number.isFinite(ageMs) && ageMs > 24 * 60 * 60 * 1000) {
           await transition(
             client,
             id,
-            ["awaiting_customer_authorization", "awaiting_payment"],
+            ["awaiting_customer_authorization", "awaiting_payment", "new_subscription_created"],
             "failed",
             {
               failureReason: "Customer did not complete UPI mandate authorisation in time.",

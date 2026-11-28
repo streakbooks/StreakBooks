@@ -393,8 +393,8 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
               },
               {
                 description: amounts.upfrontEnabled
-                  ? `Estimated one-time upgrade difference for remaining ${amounts.remainingDays ?? "—"} day(s) (not a provider invoice). Collected as a one-time addon when you authorise.`
-                  : "No one-time difference is collected (upfront addon disabled). Recurring Pro price starts on the new mandate.",
+                  ? `Estimated one-time upgrade difference for remaining ${amounts.remainingDays ?? "—"} day(s). This is a StreakBooks estimate attached as a Razorpay subscription addon — Razorpay’s charged amount is authoritative and may differ. It is not a guaranteed invoice total.`
+                  : "Zero-upfront mode: no one-time difference addon is sent to Razorpay. Only the new plan’s recurring mandate is authorised; recurring amount starts per Razorpay’s schedule.",
                 amountMinor: due,
               },
             ],

@@ -988,9 +988,11 @@ export function SubscriptionPanel({
                         {switchPreview.appliesMode === "migration" ? (
                           <li>
                             You will authorise a <strong>new</strong> UPI AutoPay / e-mandate for
-                            the higher plan. Your current plan stays active until that succeeds. We
-                            cancel the old mandate only after confirmation — amounts shown as due
-                            today are <strong>estimates</strong>, not a Razorpay invoice.
+                            the higher plan. Your current plan stays active until Razorpay confirms
+                            that mandate. We cancel the old mandate only after that confirmation.
+                            Any amount due today is a <strong>StreakBooks estimate</strong>{" "}
+                            (optional one-time addon) — Razorpay’s charged amount is authoritative
+                            and may differ. If due today is ₹0, no upfront addon is sent.
                           </li>
                         ) : null}
                         {switchPreview.nextRenewalAt ? (

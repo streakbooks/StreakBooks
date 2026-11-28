@@ -230,6 +230,26 @@ describe("recoverDueUpiMigrations stale pre-confirm", () => {
 });
 
 describe("retry after incomplete initiation", () => {
+  it("passes releaseIdempotencyKey when abandoning so the UNIQUE key can be reused", async () => {
+    const open = migrationRow({
+      status: "awaiting_customer_authorization",
+      newProviderSubscriptionId: "sub_new",
+      checkoutId: null,
+    });
+    const failed = migrationRow({ status: "failed" });
+    rpcHandler = (fn, args) => {
+      if (fn === "billing_migration_get") return open;
+      if (fn === "billing_migration_transition") {
+        expect(args?.["_patch"]).toMatchObject({ releaseIdempotencyKey: "true" });
+        return failed;
+      }
+      return null;
+    };
+    inspectMock.mockResolvedValue({ status: "created" });
+    cancelMock.mockResolvedValue({ status: "cancelled" });
+    await failAbandonedUpiMigration(open.id, "cannot resume");
+  });
+
   it("releases initiated rows that never got a Razorpay subscription or checkout", async () => {
     const emptyInitiated = migrationRow({
       status: "initiated",

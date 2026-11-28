@@ -35,6 +35,7 @@ import {
   transferNonprofitFunds,
 } from "@/lib/nonprofit/nonprofit.functions";
 import { isNpSectionKey, npSection, type NpSectionKey } from "@/lib/nonprofit/sections";
+import { donationAllocations } from "@/lib/nonprofit/donation-entry";
 import { explainFundUtilisation } from "@/lib/nonprofit/insights";
 import type { NonprofitRecord, NonprofitSettings, NonprofitWorkspace } from "@/lib/nonprofit/types";
 import type { Permission } from "@/lib/permissions";
@@ -197,6 +198,7 @@ function SectionBody({
         donors={donors}
         funds={funds}
         donations={donations}
+        receipts={rows(data.receipts)}
       />
     );
   }
@@ -487,17 +489,21 @@ function DonationForm({
   donors,
   funds,
   donations,
+  receipts,
 }: {
   companyId: string;
   currency: string;
   donors: Row[];
   funds: Row[];
   donations: Row[];
+  receipts: Row[];
 }) {
   const save = useServerFn(submitNonprofitDonation);
   const refresh = useRefresh(companyId);
   const [donorId, setDonorId] = useState("");
   const [fundId, setFundId] = useState("");
+  const [secondFundId, setSecondFundId] = useState("");
+  const [secondAmount, setSecondAmount] = useState("");
   const [amount, setAmount] = useState("");
   const [conditional, setConditional] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
@@ -514,7 +520,12 @@ function DonationForm({
             amount_minor: minor(amount, currency),
             conditional,
             idempotency_key: idempotencyKey,
-            allocations: [{ fund_id: fundId, amount_minor: minor(amount, currency) }],
+            allocations: donationAllocations({
+              amountMinor: minor(amount, currency),
+              primaryFundId: fundId,
+              secondaryFundId: secondFundId,
+              secondaryMinor: secondAmount ? minor(secondAmount, currency) : 0,
+            }),
           },
         },
       }),
@@ -548,6 +559,18 @@ function DonationForm({
             labelKey="code"
           />
         </Field>
+        <Field label="Second fund">
+          <SelectRows
+            rows={funds.filter((fund) => fund.status === "active")}
+            value={secondFundId}
+            onChange={setSecondFundId}
+            labelKey="code"
+            allowEmpty
+          />
+        </Field>
+        <Field label={`Second fund amount (${currency})`}>
+          <Input value={secondAmount} onChange={(event) => setSecondAmount(event.target.value)} />
+        </Field>
         <Field label={`Amount (${currency})`}>
           <Input value={amount} onChange={(event) => setAmount(event.target.value)} required />
         </Field>
@@ -566,6 +589,10 @@ function DonationForm({
       <Table
         rows={donations}
         columns={["donation_number", "amount_minor", "status", "donated_on"]}
+      />
+      <Table
+        rows={receipts}
+        columns={["receipt_number", "amount_minor", "donation_id", "wording"]}
       />
     </div>
   );

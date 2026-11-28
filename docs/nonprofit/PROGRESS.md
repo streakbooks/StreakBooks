@@ -51,7 +51,7 @@ Frontend, backend and database percentages count the working subset that has cod
 - Migration versions `20261128220000` and `20261128221000` sit after open pull-request versions `20261128120000` and `20261128130000`.
 - Disposable PostgreSQL 17 applied the fixture and both migrations, then passed `tests/integration/nonprofit-fund-accounting.sql`.
 - The same run proved one concurrent donation with idempotency key `race-1` posted one journal.
-- Vitest: 9 files, 39 tests, 0 failed, for nonprofit planners, permissions, compliance wording, gateway signatures, insights, the module registry and the access catalogue.
+- Vitest: 10 files, 42 tests, 0 failed, for nonprofit planners, donation splits, permissions, compliance wording, gateway signatures, insights, the module registry and the access catalogue.
 - `tsc --noEmit` passed.
 - `check:modules`, `check:navigation`, `check:ui`, `check:browsing-coverage` and `check:visual-coverage` passed.
 - ESLint with Prettier passed on the nonprofit files and the navigation, permission and registry edits.
@@ -82,7 +82,7 @@ Frontend, backend and database percentages count the working subset that has cod
 | Supabase production | not deployed |
 | Vercel preview | not deployed |
 | Vercel production | not deployed |
-| Tests executed | Vitest 39; PostgreSQL integration suite 1 run, passed, including the concurrent replay |
+| Tests executed | Vitest 42; PostgreSQL integration suite 1 run, passed, including the concurrent replay |
 | Tests failed | 0 in the last Vitest run and the last PostgreSQL run |
 | Outstanding defects | none recorded from those runs |
 | Current blocker | none for continued local development |

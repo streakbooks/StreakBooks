@@ -31,6 +31,9 @@ export type NonprofitRecord = {
   office: Cell;
   pack_id: Cell;
   due_on: Cell;
+  receipt_number: Cell;
+  wording: Cell;
+  donation_id: Cell;
 };
 
 export type NonprofitSettings = {
@@ -48,6 +51,7 @@ export type NonprofitWorkspace = {
   funds: NonprofitRecord[];
   donors: NonprofitRecord[];
   donations: NonprofitRecord[];
+  receipts: NonprofitRecord[];
   pledges: NonprofitRecord[];
   grants: NonprofitRecord[];
   expenses: NonprofitRecord[];
@@ -107,6 +111,9 @@ const RECORD_KEYS = [
   "office",
   "pack_id",
   "due_on",
+  "receipt_number",
+  "wording",
+  "donation_id",
 ] as const satisfies readonly (keyof NonprofitRecord)[];
 
 function pick(value: unknown, key: string): unknown {
@@ -171,6 +178,7 @@ export function mapNonprofitWorkspace(value: unknown): NonprofitWorkspace {
     funds: mapList(pick(value, "funds")),
     donors: mapList(pick(value, "donors")),
     donations: mapList(pick(value, "donations")),
+    receipts: mapList(pick(value, "receipts")),
     pledges: mapList(pick(value, "pledges")),
     grants: mapList(pick(value, "grants")),
     expenses: mapList(pick(value, "expenses")),

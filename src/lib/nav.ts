@@ -13,6 +13,7 @@ import {
   LifeBuoy,
   Briefcase,
   Building2,
+  HeartHandshake,
   Handshake,
   Percent,
   FolderOpen,
@@ -107,6 +108,13 @@ export const navItems: NavItem[] = [
     icon: Building2,
     group: "records",
     description: "Portfolios, owners, rentals and owner settlement",
+  },
+  {
+    label: "Nonprofit",
+    to: "/nonprofit",
+    icon: HeartHandshake,
+    group: "records",
+    description: "Funds, donations, grants and programme accounting",
   },
   {
     label: "Contacts",

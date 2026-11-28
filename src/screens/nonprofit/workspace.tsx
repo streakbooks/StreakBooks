@@ -25,6 +25,7 @@ import {
   createNonprofitGrant,
   createNonprofitPledge,
   createNonprofitRecord,
+  decideNonprofitDisbursement,
   getNonprofitPortal,
   getNonprofitWorkspace,
   grantNonprofitPortal,
@@ -34,6 +35,7 @@ import {
   receiveNonprofitGrant,
   recogniseNonprofitGrant,
   releaseNonprofitRestriction,
+  requestNonprofitDisbursement,
   satisfyNonprofitGrant,
   saveNonprofitSettings,
   submitNonprofitDonation,
@@ -279,6 +281,15 @@ function SectionBody({
           fields={["display_name", "eligibility_status"]}
           confidential
         />
+        {data.beneficiaries == null ? null : (
+          <DisbursementForm
+            companyId={companyId}
+            currency={currency}
+            funds={funds}
+            beneficiaries={rows(data.beneficiaries)}
+            disbursements={rows(data.disbursements)}
+          />
+        )}
         <RecordForm
           companyId={companyId}
           kind="board_member"
@@ -1344,6 +1355,132 @@ function SettingsForm({ companyId, settings }: { companyId: string; settings: No
         Save settings
       </Button>
     </form>
+  );
+}
+
+function DisbursementForm({
+  companyId,
+  currency,
+  funds,
+  beneficiaries,
+  disbursements,
+}: {
+  companyId: string;
+  currency: string;
+  funds: Row[];
+  beneficiaries: Row[];
+  disbursements: Row[];
+}) {
+  const request = useServerFn(requestNonprofitDisbursement);
+  const decide = useServerFn(decideNonprofitDisbursement);
+  const refresh = useRefresh(companyId);
+  const [beneficiaryId, setBeneficiaryId] = useState("");
+  const [fundId, setFundId] = useState("");
+  const [amount, setAmount] = useState("");
+  const onError = (error: unknown) => toast.error(friendlyAuthError(error));
+  const requestMutation = useMutation({
+    mutationFn: () =>
+      request({
+        data: {
+          companyId,
+          beneficiaryId,
+          fundId,
+          amountMinor: minor(amount, currency),
+        },
+      }),
+    onSuccess: async (result) => {
+      toast.success(
+        result.status === "rejected"
+          ? (result.reason ?? "Request rejected")
+          : "Disbursement requested",
+      );
+      setAmount("");
+      await refresh();
+    },
+    onError,
+  });
+  const decideMutation = useMutation({
+    mutationFn: (input: { id: string; decision: "posted" | "rejected" }) =>
+      decide({
+        data: {
+          companyId,
+          disbursementId: input.id,
+          decision: input.decision,
+          on: new Date().toISOString().slice(0, 10),
+        },
+      }),
+    onSuccess: async (result) => {
+      toast.success(result.status === "posted" ? "Disbursement posted" : "Disbursement rejected");
+      await refresh();
+    },
+    onError,
+  });
+  const waiting = disbursements.filter((row) => row.status === "draft");
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Disbursements</CardTitle>
+        <CardDescription>
+          A request does not pay anyone. Approval posts programme expense and bank through the
+          ledger.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3">
+        <form
+          className="grid gap-3 md:grid-cols-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            requestMutation.mutate();
+          }}
+        >
+          <Field label="Beneficiary">
+            <SelectRows
+              rows={beneficiaries}
+              value={beneficiaryId}
+              onChange={setBeneficiaryId}
+              labelKey="display_name"
+            />
+          </Field>
+          <Field label="Fund">
+            <SelectRows rows={funds} value={fundId} onChange={setFundId} labelKey="code" />
+          </Field>
+          <Field label={`Amount (${currency})`}>
+            <Input value={amount} onChange={(event) => setAmount(event.target.value)} required />
+          </Field>
+          <Button type="submit" disabled={requestMutation.isPending}>
+            Request disbursement
+          </Button>
+        </form>
+        {waiting.map((row) => (
+          <div key={text(row.id)} className="flex flex-wrap items-center gap-2 text-sm">
+            <span>
+              {text(row.display_name)} {text(row.amount_minor)}
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => decideMutation.mutate({ id: text(row.id), decision: "posted" })}
+              disabled={decideMutation.isPending}
+            >
+              Approve and post
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => decideMutation.mutate({ id: text(row.id), decision: "rejected" })}
+              disabled={decideMutation.isPending}
+            >
+              Reject
+            </Button>
+          </div>
+        ))}
+        <Table
+          rows={disbursements}
+          columns={["display_name", "amount_minor", "status", "rejection_reason"]}
+        />
+      </CardContent>
+    </Card>
   );
 }
 

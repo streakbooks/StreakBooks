@@ -2,7 +2,7 @@
 
 Status: **not production ready**.
 
-Updated after posting-depth work on `feature/nonprofit-posting-depth`. The foundation is on GitHub main as pull request 101. Percentages count verified milestones in this file. A written screen without a passing check stays at zero for that milestone.
+Updated after disbursement approval on `feature/nonprofit-disbursements`. Posting depth is on GitHub main as pull request 103. The foundation is pull request 101. Percentages count verified milestones in this file. A written screen without a passing check stays at zero for that milestone.
 
 ## Batch position
 
@@ -67,7 +67,7 @@ Frontend, backend and database percentages count the working subset that has cod
 
 | Item | Value |
 | --- | --- |
-| Branch | `feature/nonprofit-posting-depth` |
+| Branch | `feature/nonprofit-disbursements` |
 | Worktree | `D:\StreakBooks-Cursor` |
 | Foundation merge | https://github.com/streakbooks/StreakBooks/pull/101 at `51ea59accec84a3c689029afc08b13d98b896b43` |
 | Pull request | this posting-depth branch, not opened in this note until the commit exists |
@@ -83,7 +83,7 @@ Frontend, backend and database percentages count the working subset that has cod
 | Tests failed | 0 in those two runs |
 | Outstanding defects | hosted CLI install blocked by low free space on `C:` |
 | Current blocker | hosted migration cannot be applied until the Supabase CLI can run and the project ref is confirmed as `qugoaaizclvkzesptovm` |
-| Next batch | Disbursement approval, then free disk space and apply the three migrations with `db query --remote -f` plus `migration repair`, never `db push` |
+| Next batch | Recurring charges remain outstanding. Hosted apply still waits for a Supabase login that can see `qugoaaizclvkzesptovm`. Codex reserved `20261128222000` on `codex/settings-nonprofit-coverage`; this batch uses `20261128240000`. |
 
 ## Scenario coverage in the PostgreSQL suite
 

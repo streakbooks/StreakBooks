@@ -62,6 +62,7 @@ export type NonprofitWorkspace = {
   volunteers: NonprofitRecord[];
   memberships: NonprofitRecord[];
   beneficiaries: NonprofitRecord[] | null;
+  disbursements: NonprofitRecord[] | null;
   board: NonprofitRecord[];
   compliance: NonprofitRecord[];
   actions: NonprofitRecord[];
@@ -169,6 +170,7 @@ export function mapNonprofitWorkspace(value: unknown): NonprofitWorkspace {
   const framework = pick(settings, "accounting_framework");
   const country = pick(settings, "country_code");
   const beneficiaries = pick(value, "beneficiaries");
+  const disbursements = pick(value, "disbursements");
   return {
     settings: {
       enabled: pick(settings, "enabled") === true,
@@ -191,6 +193,7 @@ export function mapNonprofitWorkspace(value: unknown): NonprofitWorkspace {
     volunteers: mapList(pick(value, "volunteers")),
     memberships: mapList(pick(value, "memberships")),
     beneficiaries: beneficiaries == null ? null : mapList(beneficiaries),
+    disbursements: disbursements == null ? null : mapList(disbursements),
     board: mapList(pick(value, "board")),
     compliance: mapList(pick(value, "compliance")),
     actions: mapList(pick(value, "actions")),

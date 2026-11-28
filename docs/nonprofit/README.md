@@ -18,7 +18,7 @@ Receipt wording states that the document is not a government filing. Country pac
 
 ## What is not production ready
 
-This module is **not production ready**. Hosted Supabase and Vercel production have not been verified for these migrations. Public donation pages, live card charging, statutory filing, PDF and spreadsheet exports, full volunteer, member and grantor portals, recurring card runs and historical statement packs are still outstanding.
+This module is **not production ready**. The hosted schema for these migrations is present on project `qugoaaizclvkzesptovm`, and a dry run found nothing further to apply. Vercel production and an authenticated organisation workflow have not been verified. No live donation or disbursement rows were created. Public donation pages, live card charging, statutory filing, PDF and spreadsheet exports, full volunteer, member and grantor portals, recurring card runs and historical statement packs are still outstanding.
 
 The screen can now post depreciation, payroll accrual and payment, investment income, inventory distribution, exchange gain or loss, pledge impairment and a functional-class allocation. An eligible beneficiary disbursement can be requested and approved. While segregation is on, the requester cannot approve it. Each journal still uses `post_journal`.
 

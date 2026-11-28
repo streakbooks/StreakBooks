@@ -57,33 +57,27 @@ Frontend, backend and database percentages count the working subset that has cod
 
 ## Not verified
 
-- Authenticated browser use. The earlier attempt on port 8082 failed before any organisation workflow. This checkout was not opened in a browser for the new forms.
-- Authenticated browser use of the new movement, impairment and allocation forms.
-- Hosted Supabase. This session did not apply SQL. The Supabase CLI is not installed, `C:` had about 0.19 GB free so the CLI download failed with `ENOSPC`, and there is no linked project file in this checkout. No `db push` or remote query was run.
-- Vercel production.
-- A restore point for project `qugoaaizclvkzesptovm`. Repository notes still have no target-specific backup for that project.
+- Authenticated browser use of the Nonprofit screens. On 28 November 2026, `http://localhost:8081/nonprofit` redirected to the sign-in page and kept `redirect=/nonprofit`. No organisation workflow was signed in.
+- Vercel production for `c697e459`. GitHub deployments returned no records. Pull-request previews for 103 and 105 had completed earlier.
+- A restore point for project `qugoaaizclvkzesptovm` recorded in this repository. The hosted history was already applied when checked; it was not rebuilt.
 
 ## Coordinates
 
 | Item | Value |
 | --- | --- |
-| Branch | `feature/nonprofit-disbursements` |
+| Branch | `main` at the hosted check, then this documentation update |
 | Worktree | `D:\StreakBooks-Cursor` |
-| Foundation merge | https://github.com/streakbooks/StreakBooks/pull/101 at `51ea59accec84a3c689029afc08b13d98b896b43` |
-| Pull request | this posting-depth branch, not opened in this note until the commit exists |
-| GitHub CI | pull request 101 validate passed before merge; this branch is not on GitHub yet |
-| Merge | foundation only; posting depth is not merged |
-| Latest observed `origin/main` | `51ea59accec84a3c689029afc08b13d98b896b43` |
-| Supabase development | disposable Docker PostgreSQL 17 only |
-| Supabase migration status | three local files; hosted apply not run |
-| Supabase production | not deployed |
-| Vercel preview | pull request 101 previews succeeded; this branch has no preview yet |
+| Foundation merge | https://github.com/streakbooks/StreakBooks/pull/101 |
+| Posting-depth merge | https://github.com/streakbooks/StreakBooks/pull/103 |
+| Disbursement merge | https://github.com/streakbooks/StreakBooks/pull/105 at `c697e4595e4ef1307e88f0f848609b980235ab60` |
+| Latest observed `origin/main` | `c697e4595e4ef1307e88f0f848609b980235ab60` |
+| Supabase project | `qugoaaizclvkzesptovm`, StreakBooks, `ap-southeast-2`, production |
+| Supabase migration status | 398 local files and 398 hosted versions. Dry run reported the remote database up to date. Nonprofit versions `20261128220000`, `20261128221000`, `20261128233000` and `20261128240000` are present. Codex version `20261128222000` is not. |
+| Supabase objects | `nonprofit_funds`, donations and disbursements exist. Submit, movement, request and decide functions exist. `post_journal` remains. 33 nonprofit tables have row-level security. 17 distinct `nonprofit.*` permissions. Anonymous execute is absent. |
+| Hosted activity | One settings row is enabled, gateway is not configured, and there are no funds, donations or nonprofit journals. No live rows were inserted during this check. |
 | Vercel production | not verified |
-| Tests executed | Vitest 7 files / 24 tests passed; PostgreSQL suite passed on 28 November 2026, including concurrent replay |
-| Tests failed | 0 in those two runs |
-| Outstanding defects | hosted CLI install blocked by low free space on `C:` |
-| Current blocker | hosted migration cannot be applied until the Supabase CLI can run and the project ref is confirmed as `qugoaaizclvkzesptovm` |
-| Next batch | Recurring charges remain outstanding. Hosted apply still waits for a Supabase login that can see `qugoaaizclvkzesptovm`. Codex reserved `20261128222000` on `codex/settings-nonprofit-coverage`; this batch uses `20261128240000`. |
+| Outstanding product work | recurring charges, public donation pages, live gateways, statutory filing, exports, full portals and historical statement packs |
+| Current blocker | authenticated browser workflow needs a sign-in; the module is not production ready |
 
 ## Scenario coverage in the PostgreSQL suite
 
@@ -91,4 +85,6 @@ Covered: fund close at zero, split donation with a fee, idempotent replay, restr
 
 Also covered on 28 November 2026: donated inventory distribution and its over-distribution rejection, donated fixed-asset journal, depreciation and over-depreciation rejection, payroll accrual, payroll payment and a second payment without a payable, investment income, pledge impairment and an over-impairment rejection, foreign-exchange loss, shared expense allocation and an over-allocation rejection, and spendable as of a date before activity.
 
-Not covered by that suite: disbursement approval, recurring charges, and a full historical statement pack.
+Also covered later the same day: disbursement segregation, a posted disbursement, an ineligible beneficiary with no journal, and hidden disbursement rows.
+
+Not covered by that suite: recurring charges and a full historical statement pack.

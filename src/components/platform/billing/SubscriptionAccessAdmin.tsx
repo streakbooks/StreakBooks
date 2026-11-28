@@ -184,6 +184,7 @@ export function SubscriptionAccessAdmin({ canEdit }: Props) {
                     value={planCode}
                     onChange={(e) => setPlanCode(e.target.value)}
                   >
+                    {/* lookup-fixed-enum: Short fixed sale-plan codes for complimentary grants. */}
                     {PLAN_OPTIONS.map((code) => (
                       <option key={code} value={code}>
                         {code}

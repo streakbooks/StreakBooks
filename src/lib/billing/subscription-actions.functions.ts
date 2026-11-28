@@ -882,7 +882,80 @@ export const getOrganisationUpiMigration = createServerFn({ method: "POST" })
     await assertCompanyPermission(context.supabase, data.companyId, "billing.manage");
     const { getOpenUpiMigration, migrationCustomerCopy } =
       await import("@/lib/billing/upi-migration.server");
+    const { isUpiMigrationPreConfirm } = await import("@/lib/billing/upi-migration-states");
     const migration = await getOpenUpiMigration(data.companyId);
-    if (!migration) return { migration: null as null, message: null as string | null };
-    return { migration, message: migrationCustomerCopy(migration.status) };
+    if (!migration) {
+      return {
+        migration: null as null,
+        message: null as string | null,
+        canResume: false,
+        canAbandon: false,
+      };
+    }
+    const canResume =
+      isUpiMigrationPreConfirm(migration.status) &&
+      Boolean(migration.newProviderSubscriptionId && migration.checkoutId);
+    const canAbandon = isUpiMigrationPreConfirm(migration.status);
+    return {
+      migration,
+      message: migrationCustomerCopy(migration.status),
+      canResume,
+      canAbandon,
+    };
+  });
+
+export const resumeOrganisationUpiMigration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; origin?: string }) => ({
+    companyId: assertUuid(input?.companyId),
+    origin: typeof input?.origin === "string" ? input.origin.trim() : "",
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "billing.manage");
+    if (!data.origin) {
+      throw new Error("Resume needs a return URL. Refresh the page and try again.");
+    }
+    const { getOpenUpiMigration } = await import("@/lib/billing/upi-migration.server");
+    const { isUpiMigrationPreConfirm } = await import("@/lib/billing/upi-migration-states");
+    const migration = await getOpenUpiMigration(data.companyId);
+    if (!migration) throw new Error("No UPI plan upgrade is in progress.");
+    if (!isUpiMigrationPreConfirm(migration.status)) {
+      throw new Error("This upgrade is past mandate authorisation and cannot be resumed.");
+    }
+    if (!migration.newProviderSubscriptionId || !migration.checkoutId) {
+      throw new Error("This upgrade is not ready to resume. Cancel it and start again.");
+    }
+    const { razorpayHostedCheckoutUrl, razorpaySubscriptionReturnUrl } =
+      await import("@/lib/billing/razorpay-hosted-checkout");
+    const { planByCode } = await import("@/lib/billing/pricing");
+    const planName = planByCode(migration.toPlanCode)?.name ?? migration.toPlanCode;
+    return {
+      checkoutUrl: razorpayHostedCheckoutUrl({
+        origin: data.origin,
+        subscriptionId: migration.newProviderSubscriptionId,
+        checkoutId: migration.checkoutId,
+        successUrl: razorpaySubscriptionReturnUrl(data.origin),
+        cancelUrl: `${data.origin}/settings?section=subscription&checkout=cancel`,
+        planName,
+      }),
+      migrationId: migration.id,
+    };
+  });
+
+export const abandonOrganisationUpiMigration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "billing.manage");
+    const { getOpenUpiMigration, failAbandonedUpiMigration } =
+      await import("@/lib/billing/upi-migration.server");
+    const migration = await getOpenUpiMigration(data.companyId);
+    if (!migration) throw new Error("No UPI plan upgrade is in progress.");
+    const failed = await failAbandonedUpiMigration(
+      migration.id,
+      "Customer cancelled mandate authorisation from Settings. Previous plan unchanged.",
+    );
+    return { migration: failed };
   });

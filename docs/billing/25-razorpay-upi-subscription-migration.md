@@ -74,6 +74,14 @@ Illegal transitions are rejected by RPC.
 
 `/api/billing/webhook-retry` (existing cron) also calls `recoverDueUpiMigrations`:
 
-- Stuck `awaiting_*` past TTL → mark `failed` if new sub never authenticated; leave entitlements on old plan.
+- Stuck pre-confirm (`initiated` / `new_subscription_created` / `awaiting_*`) past
+  `RAZORPAY_UPI_MIGRATION_ABANDON_HOURS` (default **2**) → re-inspect Razorpay first;
+  if the new sub is already authenticated/active, advance confirm+cancel-old instead of
+  expiring; otherwise cancel the unused new sub, mark `failed`, release the one-open lock.
+- Customer **Resume** reuses the existing hosted checkout URL; **Cancel upgrade** calls
+  `failAbandonedUpiMigration` (pre-confirm only).
+- Retry after `failed` starts a new migration (new idempotency window); never while an
+  open row exists unless resume/abandon released it.
 - `old_subscription_cancellation_*` → re-fetch old sub; cancel again or mark completed if already cancelled.
-- Never create a second new subscription for the same migration.
+- Never create a second new subscription for the same migration while one is open.
+- Never auto-abandon post-confirm / `requires_manual_review` — old-mandate cancel must finish.

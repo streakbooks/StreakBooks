@@ -8,7 +8,10 @@ import {
 } from "@/lib/billing/plan-change-math";
 import {
   canTransitionUpiMigration,
+  isUpiMigrationPreConfirm,
+  shouldAbandonAwaitingUpiMigration,
   upfrontMigrationEnabled,
+  UPI_MIGRATION_TERMINAL,
   upiMigrationFeatureEnabled,
   type UpiMigrationStatus,
 } from "@/lib/billing/upi-migration-states";
@@ -192,6 +195,158 @@ export type StartUpiMigrationInput = {
  * Creates migration row + open checkout + new Razorpay subscription.
  * Does **not** cancel the old subscription.
  */
+
+/**
+ * Fail a pre-confirm migration, cancel any unused new Razorpay subscription, and
+ * release the one-open-per-company lock so the customer can retry safely.
+ */
+export async function failAbandonedUpiMigration(
+  migrationId: string,
+  reason: string,
+): Promise<UpiMigrationRow> {
+  const client = await admin();
+  const migration = parseMigrationRow(
+    await rpc(client, "billing_migration_get", { _id: migrationId }),
+  );
+  if (!migration) throw new Error("Unknown migration.");
+  if (UPI_MIGRATION_TERMINAL.has(migration.status)) return migration;
+  if (!isUpiMigrationPreConfirm(migration.status)) {
+    throw new Error(
+      "This upgrade has already confirmed a new plan. Support must finish cancelling the old mandate — it cannot be abandoned from Settings.",
+    );
+  }
+
+  // Cancel unused new Razorpay subscription when still unauthenticated so retries do not pile up.
+  if (migration.newProviderSubscriptionId) {
+    try {
+      const { createRazorpayClient, razorpayCancelImmediate, razorpayInspectSubscription } =
+        await import("@/lib/billing/providers/razorpay.server");
+      const razorpay = createRazorpayClient();
+      const inspected = await razorpayInspectSubscription(
+        razorpay,
+        migration.newProviderSubscriptionId,
+      );
+      if (isNewSubscriptionAuthoritativelyConfirmed(inspected.status)) {
+        throw new Error(
+          "Razorpay already confirmed the new mandate. Finish this upgrade instead of abandoning it.",
+        );
+      }
+      if (!/cancel|complet|expir|halted/i.test(inspected.status)) {
+        await razorpayCancelImmediate(razorpay, migration.newProviderSubscriptionId);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "cancel failed";
+      if (/already confirmed/i.test(message)) throw error;
+      console.error(
+        "UPI migration abandon: could not cancel unused new subscription",
+        JSON.stringify({ migrationId, message }),
+      );
+    }
+  }
+
+  return transition(
+    client,
+    migration.id,
+    [
+      "initiated",
+      "new_subscription_created",
+      "awaiting_customer_authorization",
+      "awaiting_payment",
+    ],
+    "failed",
+    {
+      failureReason: reason.slice(0, 500),
+      nextRetryAt: null,
+    },
+  );
+}
+
+/**
+ * When an open migration already exists:
+ * - resume hosted checkout if still awaiting authorisation
+ * - advance if Razorpay already confirmed the new mandate
+ * - fail+release if timed out / provider cancelled / customer chose a different plan
+ * Returns null when the lock was released so the caller may start a fresh migration.
+ */
+async function resumeOrReleaseOpenMigration(
+  open: UpiMigrationRow,
+  input: Pick<StartUpiMigrationInput, "origin" | "planName" | "planCode" | "interval">,
+): Promise<{ migration: UpiMigrationRow; checkoutUrl: string } | null> {
+  if (!isUpiMigrationPreConfirm(open.status)) {
+    throw new Error(
+      open.status === "requires_manual_review"
+        ? "A plan upgrade is waiting on support to finish cancelling the previous mandate. Retry after that completes."
+        : "A plan migration is already processing. Your current plan stays active until it finishes.",
+    );
+  }
+
+  const timedOut = shouldAbandonAwaitingUpiMigration({
+    status: open.status,
+    createdAt: open.createdAt,
+    updatedAt: open.updatedAt,
+  });
+  const planChanged = open.toPlanCode !== input.planCode || open.toInterval !== input.interval;
+
+  if (open.newProviderSubscriptionId) {
+    const { createRazorpayClient, razorpayInspectSubscription } =
+      await import("@/lib/billing/providers/razorpay.server");
+    const inspected = await razorpayInspectSubscription(
+      createRazorpayClient(),
+      open.newProviderSubscriptionId,
+    );
+    if (isNewSubscriptionAuthoritativelyConfirmed(inspected.status)) {
+      await onUpiMigrationNewSubscriptionConfirmed({
+        checkoutId: open.checkoutId ?? "",
+        newSubscriptionId: open.newProviderSubscriptionId,
+      });
+      throw new Error(
+        "Your new UPI mandate is already confirmed. Refresh this page — we are finishing the upgrade.",
+      );
+    }
+    const providerDead = /cancel|complet|expir|halted/i.test(inspected.status);
+    if (providerDead || timedOut || planChanged) {
+      await failAbandonedUpiMigration(
+        open.id,
+        providerDead
+          ? `Previous migration subscription ended at Razorpay (${inspected.status}).`
+          : timedOut
+            ? "Previous mandate authorisation timed out or was abandoned. Safe to retry."
+            : "Previous upgrade target changed before mandate authorisation. Safe to retry.",
+      );
+      return null;
+    }
+    if (open.checkoutId) {
+      const { razorpayHostedCheckoutUrl, razorpaySubscriptionReturnUrl } =
+        await import("@/lib/billing/razorpay-hosted-checkout");
+      return {
+        migration: open,
+        checkoutUrl: razorpayHostedCheckoutUrl({
+          origin: input.origin,
+          subscriptionId: open.newProviderSubscriptionId,
+          checkoutId: open.checkoutId,
+          successUrl: razorpaySubscriptionReturnUrl(input.origin),
+          cancelUrl: `${input.origin}/settings?section=subscription&checkout=cancel`,
+          planName: input.planName,
+        }),
+      };
+    }
+  }
+
+  if (timedOut || planChanged) {
+    await failAbandonedUpiMigration(
+      open.id,
+      timedOut
+        ? "Previous plan migration was abandoned before mandate authorisation completed."
+        : "Previous upgrade target changed before mandate authorisation. Safe to retry.",
+    );
+    return null;
+  }
+
+  throw new Error(
+    "A plan migration is already awaiting mandate authorisation. Resume it from the banner or wait for it to expire.",
+  );
+}
+
 export async function startUpiSubscriptionMigration(
   input: StartUpiMigrationInput,
 ): Promise<{ migration: UpiMigrationRow; checkoutUrl: string }> {
@@ -207,13 +362,20 @@ export async function startUpiSubscriptionMigration(
   });
 
   const client = await admin();
-  const open = parseMigrationRow(
+  let open = parseMigrationRow(
     await rpc(client, "billing_migration_open_for_company", { _company_id: input.companyId }),
   );
   if (open) {
-    throw new Error(
-      "A plan migration is already in progress. Finish or wait for it before starting another.",
+    const resumed = await resumeOrReleaseOpenMigration(open, input);
+    if (resumed) return resumed;
+    open = parseMigrationRow(
+      await rpc(client, "billing_migration_open_for_company", { _company_id: input.companyId }),
     );
+    if (open) {
+      throw new Error(
+        "A plan migration is already in progress. Finish or wait for it before starting another.",
+      );
+    }
   }
 
   const idempotencyKey = [
@@ -906,17 +1068,35 @@ export async function recoverDueUpiMigrations(
           processed += 1;
           continue;
         }
-        const ageMs = Date.now() - Date.parse(row.createdAt || row.updatedAt);
-        if (Number.isFinite(ageMs) && ageMs > 24 * 60 * 60 * 1000) {
-          await transition(
-            client,
+        // Never expire solely on wall-clock if provider still shows a live
+        // pending subscription — inspected above. Dead/timed-out pre-confirm
+        // rows are failed via failAbandoned (cancels unused new Razorpay sub).
+        if (
+          shouldAbandonAwaitingUpiMigration({
+            status: row.status,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+          })
+        ) {
+          if (row.newProviderSubscriptionId) {
+            const { createRazorpayClient, razorpayInspectSubscription } =
+              await import("@/lib/billing/providers/razorpay.server");
+            const again = await razorpayInspectSubscription(
+              createRazorpayClient(),
+              row.newProviderSubscriptionId,
+            );
+            if (isNewSubscriptionAuthoritativelyConfirmed(again.status)) {
+              await onUpiMigrationNewSubscriptionConfirmed({
+                checkoutId: row.checkoutId ?? "",
+                newSubscriptionId: row.newProviderSubscriptionId,
+              });
+              processed += 1;
+              continue;
+            }
+          }
+          await failAbandonedUpiMigration(
             id,
-            ["awaiting_customer_authorization", "awaiting_payment", "new_subscription_created"],
-            "failed",
-            {
-              failureReason: "Customer did not complete UPI mandate authorisation in time.",
-              nextRetryAt: null,
-            },
+            "Customer did not complete UPI mandate authorisation in time.",
           );
           failed += 1;
         } else {
@@ -940,13 +1120,14 @@ export async function recoverDueUpiMigrations(
 export function migrationCustomerCopy(status: UpiMigrationStatus): string {
   switch (status) {
     case "awaiting_customer_authorization":
-    case "awaiting_payment":
     case "new_subscription_created":
-      return "Authorise the new UPI AutoPay mandate to finish your upgrade. Your current plan stays active until then.";
+      return "Waiting for UPI AutoPay mandate authorisation. Resume checkout to finish, or cancel and retry. Your current plan stays active.";
+    case "awaiting_payment":
+      return "Mandate authorisation received — upgrade payment is processing. Do not start another upgrade.";
     case "new_subscription_confirmed":
     case "old_subscription_cancellation_pending":
     case "entitlement_update_pending":
-      return "New plan confirmed. Finishing cancellation of your previous mandate…";
+      return "Upgrade successful on the new plan. Finishing cancellation of your previous mandate…";
     case "old_subscription_cancellation_failed":
       return "Your new plan is active. We are still cancelling the old mandate — you will not be asked to pay twice if recovery succeeds. Contact support if this persists.";
     case "requires_manual_review":
@@ -954,7 +1135,7 @@ export function migrationCustomerCopy(status: UpiMigrationStatus): string {
     case "completed":
       return "Upgrade complete. You are on the new plan.";
     case "failed":
-      return "This upgrade did not finish. Your previous plan is unchanged.";
+      return "Mandate authorisation failed or expired — you can retry the upgrade. Your previous plan is unchanged.";
     default:
       return "Preparing your plan upgrade…";
   }
